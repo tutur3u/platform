@@ -116,7 +116,12 @@ export function poolPolicyReasons(
       .map((r) => Date.parse(r.createdAt)),
     ...ids.map((id) => context.ledger.lastAdmissions?.[id] ?? 0)
   );
-  if (context.now.getTime() - latest < policy.pacingMs)
+  const elapsedSinceAdmission = context.now.getTime() - latest;
+  if (
+    policy.pacingMs > 0 &&
+    elapsedSinceAdmission >= 0 &&
+    elapsedSinceAdmission < policy.pacingMs
+  )
     reasons.push('pool-pacing');
   return reasons;
 }

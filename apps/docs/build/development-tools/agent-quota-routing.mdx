@@ -135,11 +135,12 @@ callers must inspect `status`, not just the process exit code. Errors never echo
 raw input. These commands always use non-credential provider status caches;
 they never invoke provider probes; receipt scans select matching final provider-limit messages only.
 
-Use the installed shared guidance:
-
-- [Account balancing and safe continuation](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation).
-- [Shared accounts and replacement-thread handover](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover).
-- [Capacity-aware provider preference](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+Pool selection follows the shared-account contract: identify quota pools by
+provider identity, deduplicate aliases, apply owner reserves and concurrency caps,
+and use provider preference only to order otherwise eligible healthy pools. Keep
+reviewer independence, privacy authorization, queue drainage and writer custody as
+hard gates. If a same-thread transition is unsafe, preserve the handover packet and
+workspace binding for one successor thread; never reparent children or replay work.
 
 ### Admission and outcome protocol
 
@@ -410,7 +411,10 @@ another provider continuation has started. An armed snooze alone is not evidence
 that a continuation has queued. No controller, timer, automatic failover, or native
 pre-delegation hook is installed by this package.
 
-See the maintained [reset-wait rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation).
+For a reset-only wait, the owner may use the read-only reroute plan: preserve
+queued text and dirty files, cancel old-account queued selections, obtain fresh
+admission and the thread transition lease, then configure and verify a task-bound
+running continuation. Configuration alone does not count as resumption.
 
 
 ### Receipt and model-scope admission gates
@@ -423,7 +427,9 @@ completed. Relative resets (for example, `6 days, 23 hours`) use the observation
 time and round duration up to whole seconds. A limit without a reset remains
 exhausted until a later fresh covering-window check shows usage below 100%, or
 for at most seven days when no reset is reported. A receipt with a reset expires
-at that timestamp unless a newer receipt supersedes it.
+at that timestamp unless a newer receipt supersedes it. Invalid ledger rows more than five minutes
+ahead are quarantined per account; that pool remains UNKNOWN until a later fresh
+covering provider window is observed. The row is never trusted as a quota failure.
 
 Cache window IDs, labels and model scopes are preserved. Claude windows are
 model-scoped only when the label names a recognized model family (`Opus`,
@@ -443,8 +449,9 @@ paths remain unknown. A provider identity hash, when present, takes precedence
 for alias deduplication. Account keys and fingerprints are removed from hook JSON
 output. Cache reads reject symlinks, non-regular files and files over 2 MB.
 
-Reservations without a currently active native binding expire after 30 minutes;
-completion or expiry retains a 30-day request tombstone. A usage-limit receipt
+Reservations without a currently active native binding expire at their recorded
+expiry, capped at 30 minutes; positional admits use a shorter five-minute
+provisional reservation. Completion or expiry retains a 30-day request tombstone. A usage-limit receipt
 expires at its recorded reset unless a newer receipt exists. Expired capacity
 observations and dead-owner leases are compacted; live or uncertain expired lease
 owners remain protected until release or confirmed death. Lease

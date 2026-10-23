@@ -2,7 +2,7 @@ import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { admit } from '../src/admission';
+import { accountKey, admit } from '../src/admission';
 import { collectSnapshot } from '../src/collectors/snapshot';
 import { completedFailureClass, receiptReset } from '../src/failure-receipt';
 import { emptyLedger, readLedger, transactLedger } from '../src/hook-ledger';
@@ -132,6 +132,76 @@ const proof: RerouteEvidence = {
   uncertainMutations: false,
 };
 describe('independent review regressions', () => {
+  it('quarantines a future ledger receipt per account without blocking other pools', () => {
+    const { request, context } = fixture();
+    const codex = context.accounts.find((item) => item.instanceId === 'codex')!;
+    const future = new Date(context.now.getTime() + 86400_000).toISOString();
+    context.ledger.observations.push({
+      eventId: 'future-codex-limit',
+      instanceId: 'codex',
+      accountKey: accountKey(codex),
+      outcome: 'usage-limit',
+      observedAt: future,
+      resetsAt: new Date(context.now.getTime() + 2 * 86400_000).toISOString(),
+      model: 'gpt-6.1-sol',
+      windowScope: { kind: 'models', modelPrefixes: ['gpt-'] },
+    });
+
+    const result = admit(request, context);
+    expect(result.chosen?.providerInstanceId).toBe('antigravity');
+    expect(result.pools.find((pool) => pool.pool === 'codex')).toMatchObject({
+      state: 'UNKNOWN',
+    });
+    expect(result.pools.find((pool) => pool.pool === 'codex')?.reasons).toEqual(
+      expect.arrayContaining(['future-receipt-untrusted'])
+    );
+    expect(
+      result.pools.find((pool) => pool.pool === 'codex')?.reasons
+    ).not.toContain('observed-usage-limit');
+    expect(context.ledger.observations).toEqual([]);
+    expect(context.ledger.futureQuarantines).toHaveProperty(accountKey(codex));
+  });
+  it('quarantines a future descendant receipt without trusting its reset', () => {
+    const { request, context } = fixture();
+    const future = new Date(context.now.getTime() + 86400_000).toISOString();
+    const futureSnapshot: ChildSnapshot = {
+      ...snapshot,
+      runs: [
+        {
+          ...snapshot.runs[0]!,
+          id: 'future-run',
+          instanceId: 'codex',
+          model: 'gpt-6.1-sol',
+          rootNodeId: 'future-node',
+        },
+      ],
+      failures: [
+        {
+          ...snapshot.failures[0]!,
+          runId: 'future-run',
+          nodeId: 'future-node',
+          message: 'Usage Limit Reached. resets in 6 days',
+          observedAt: future,
+          resetAt: new Date(
+            context.now.getTime() + 7 * 86400_000
+          ).toISOString(),
+        },
+      ],
+    };
+
+    applyDescendantReceipts(futureSnapshot, context);
+    expect(context.ledger.observations).toEqual([]);
+    expect(context.ledger.futureQuarantines).toHaveProperty(
+      accountKey(context.accounts.find((item) => item.instanceId === 'codex')!)
+    );
+    const result = admit(request, context);
+    expect(result.pools.find((pool) => pool.pool === 'codex')?.state).toBe(
+      'UNKNOWN'
+    );
+    expect(
+      result.pools.find((pool) => pool.pool === 'codex')?.reasons
+    ).not.toContain('observed-usage-limit');
+  });
   it('applies a completed-run receipt before plain admission despite fresh zero-percent cache', () => {
     const { request, context } = fixture();
     applyDescendantReceipts(snapshot, context);

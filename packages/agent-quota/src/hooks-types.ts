@@ -64,6 +64,7 @@ export interface SwitchLease {
 export interface HookLedger {
   poolHolds?: Record<string, boolean>;
   lastAdmissions?: Record<string, number>;
+  futureQuarantines?: Record<string, string>;
   version: 1;
   observations: Observation[];
   retiredRequests?: { requestId: string; retiredAt: string }[];

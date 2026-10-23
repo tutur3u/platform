@@ -6,6 +6,7 @@ import {
   recoveryAdmissionKey,
   usageLimitReceiptActive,
 } from './failure-receipt';
+import { applyFutureQuarantines } from './future-quarantine';
 import { HookError } from './hook-ledger';
 import type {
   AdmissionContext,
@@ -109,6 +110,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
     now,
     active.flatMap((item) => item.reservationIds ?? [])
   );
+  applyFutureQuarantines(context);
   const existing = ledger.reservations.find(
     (item) => item.requestId === request.requestId
   );
@@ -225,6 +227,8 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         reasons.push('pool-near-limit');
       if (candidates.length && !unblockedCandidates.length)
         reasons.push('observed-block-ledger');
+      if (context.ledger.futureQuarantines?.[key])
+        reasons.push('future-receipt-untrusted');
       const quotaFresh = ranking.state !== 'UNKNOWN';
       let state: 'FRESH' | 'STALE' | 'UNKNOWN' | 'EXHAUSTED' = quotaFresh
         ? ranking.state === 'exhausted'

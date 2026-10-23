@@ -241,3 +241,86 @@ it('returns exit 3 for retryable ledger contention', async () => {
     log.mockRestore();
   }
 });
+
+it('reads the clock again after acquiring the ledger transaction before pacing and reservation', async () => {
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const previous = process.exitCode;
+  const initial = new Date('2026-10-23T01:00:00Z');
+  const inside = new Date(initial.getTime() + 1000);
+  const observed = vi.fn().mockReturnValueOnce(initial).mockReturnValue(inside);
+  const pool = {
+    instanceId: 'claude_mira',
+    provider: 'claude' as const,
+    label: 'fixture',
+    available: true,
+    models: ['claude-opus-4-6'],
+    windows: [
+      {
+        kind: 'short' as const,
+        usedPercent: 20,
+        authoritative: true,
+        observedAt: initial.toISOString(),
+        resetsAt: new Date(inside.getTime() + 60 * 60_000).toISOString(),
+        source: 'fixture',
+      },
+    ],
+  };
+  fixture.blocked = false;
+  fixture.collect.mockResolvedValue({
+    accounts: [pool],
+    blocks: [],
+    active: [],
+    t3ObservedAt: initial.toISOString(),
+    poolSettings: {
+      claude_mira: {
+        reservePercent: 0,
+        nearUsedPercent: 90,
+        hysteresisPercent: 0,
+        pacingMs: 0,
+        maxConcurrent: 2,
+        preference: 0,
+      },
+    },
+  });
+  let transactionLedger: Record<string, unknown> | undefined;
+  fixture.transaction.mockImplementation(
+    (operation: (ledger: Record<string, unknown>) => unknown) => {
+      transactionLedger = {
+        version: 1,
+        observations: [],
+        reservations: [],
+        leases: [],
+        leaseHistory: [],
+        lastAdmissions: { claude_mira: initial.getTime() + 500 },
+      };
+      return operation(transactionLedger);
+    }
+  );
+  try {
+    await runPositionalAdmit(['claude_mira', 'claude-opus-4-6'], () => '', {
+      now: observed,
+      collectPoolReceipts: () => ({
+        threads: [],
+        runs: [],
+        tasks: [],
+        failures: [],
+        transfers: [],
+      }),
+    });
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(observed).toHaveBeenCalledTimes(2);
+    expect(output.status).toBe('ADMIT');
+    expect(fixture.transaction.mock.calls.length).toBeGreaterThan(0);
+    expect(
+      (
+        transactionLedger?.reservations as
+          | Array<{ createdAt: string }>
+          | undefined
+      )?.[0]?.createdAt
+    ).toBe(inside.toISOString());
+  } finally {
+    fixture.blocked = true;
+    process.exitCode = previous;
+    log.mockRestore();
+  }
+});

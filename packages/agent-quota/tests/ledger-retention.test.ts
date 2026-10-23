@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { usageLimitReceiptActive } from '../src/failure-receipt';
 import { emptyLedger } from '../src/hook-ledger';
 import {
   isReservationActive,
@@ -9,7 +10,7 @@ import { validLedger } from '../src/ledger-validation';
 
 const now = new Date('2026-10-23T08:00:00.000Z');
 
-it('rejects far-future observations and reservation expiries beyond their TTL', () => {
+it('quarantines future observations individually and rejects reservation expiries beyond their TTL', () => {
   const ledger = emptyLedger();
   ledger.observations.push({
     eventId: 'future',
@@ -18,7 +19,21 @@ it('rejects far-future observations and reservation expiries beyond their TTL', 
     outcome: 'usage-limit',
     observedAt: new Date(now.getTime() + 30 * 86400_000).toISOString(),
   });
-  expect(validLedger(ledger, now)).toBe(false);
+  expect(validLedger(ledger, now)).toBe(true);
+  expect(
+    usageLimitReceiptActive(
+      {
+        observedAt: ledger.observations[0]!.observedAt,
+        resetsAt: new Date(now.getTime() + 86400_000).toISOString(),
+      },
+      now
+    )
+  ).toBe(false);
+  pruneLedger(ledger, now);
+  expect(ledger.observations).toEqual([]);
+  expect(ledger.futureQuarantines).toMatchObject({
+    'claude:hehe': now.toISOString(),
+  });
 
   const createdAt = now.toISOString();
   const expiresAt = new Date(now.getTime() + RESERVATION_TTL + 60_000);
@@ -62,4 +77,23 @@ it('honors a provisional reservation expiry sooner than the default TTL', () => 
   expect(
     isReservationActive(reservation, new Date(now.getTime() + 5 * 60_000))
   ).toBe(false);
+});
+
+it('expires a reservation created more than five minutes in the future and drops future pacing marks', () => {
+  const future = new Date(now.getTime() + 86400_000).toISOString();
+  const ledger = emptyLedger();
+  ledger.reservations.push({
+    requestId: 'future-reservation',
+    threadId: 'owner',
+    instanceId: 'codex',
+    accountKey: 'codex:codex',
+    model: 'gpt-6.1-sol',
+    createdAt: future,
+  });
+  ledger.lastAdmissions = { codex: Date.parse(future) };
+  expect(validLedger(ledger, now)).toBe(true);
+  expect(isReservationActive(ledger.reservations[0]!, now)).toBe(false);
+  pruneLedger(ledger, now);
+  expect(ledger.reservations).toEqual([]);
+  expect(ledger.lastAdmissions).toEqual({});
 });

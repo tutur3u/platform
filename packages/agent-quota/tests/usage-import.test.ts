@@ -540,6 +540,44 @@ describe('Usage UI and typed manual observations', () => {
     ).toThrow('usage-import-settings-not-narrow');
     expect(() => validatePoolSettings({})).toThrow('pool-settings-invalid');
   });
+  it('skips pacing for zero intervals when a ledger mark is slightly ahead', () => {
+    const a = {
+      ...account('claude_mira'),
+      windows: [
+        {
+          kind: 'short' as const,
+          usedPercent: 20,
+          authoritative: true,
+          observedAt: now.toISOString(),
+          resetsAt: '2026-10-23T06:00:00Z',
+          source: 'fixture',
+        },
+      ],
+    };
+    const ctx = {
+      accounts: [a],
+      active: [],
+      ledger: emptyLedger(),
+      now,
+      poolSettings: {
+        claude_mira: {
+          reservePercent: 0,
+          nearUsedPercent: 90,
+          hysteresisPercent: 0,
+          pacingMs: 0,
+          maxConcurrent: 2,
+          preference: 0,
+        },
+      },
+    };
+    ctx.ledger.lastAdmissions = {
+      claude_mira: now.getTime() + 60_000,
+    };
+    expect(poolPolicyReasons(a, 'claude-opus', 0, ctx)).not.toContain(
+      'pool-pacing'
+    );
+  });
+
   it('latches near depletion until the hysteresis threshold and applies pacing/shared concurrency', () => {
     const a = applyManualUsage(
       [account('claude_mira')],

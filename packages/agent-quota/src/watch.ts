@@ -3,9 +3,10 @@ import { matchingBlocks, type QuotaBlock } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
 import { usageLimitReceiptActive } from './failure-receipt';
+import { applyFutureQuarantines } from './future-quarantine';
 import { readLedger } from './hook-ledger';
 import type { Observation } from './hooks-types';
-import { isReservationActive } from './ledger-retention';
+import { isReservationActive, pruneLedger } from './ledger-retention';
 import { recommend, SIGNAL_TTL_MS } from './policy';
 import type { PoolSettings } from './pool-settings';
 import { chooseRoleCandidate } from './role-policy';
@@ -298,13 +299,18 @@ export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
   const data = await collectAll({ snapshotsOnly: true });
   if (data.active === undefined) throw new Error('watch-activity-unknown');
   const active = data.active;
+  const ledger = await readLedger();
+  pruneLedger(
+    ledger,
+    now,
+    active.flatMap((assignment) => assignment.reservationIds ?? [])
+  );
+  applyFutureQuarantines({ accounts: data.accounts, active, ledger, now });
   const accounts = collapseAccounts(data.accounts);
   const ownerAccount = accounts.find((account) =>
     (account.instanceIds ?? [account.instanceId]).includes(owner)
   );
   if (!ownerAccount) throw new Error('watch-owner-unverified');
-
-  const ledger = await readLedger();
   const ownerStatus = ownerWatchStatus(
     ownerAccount,
     data.blocks,

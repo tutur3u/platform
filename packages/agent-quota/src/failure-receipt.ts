@@ -5,16 +5,17 @@ export function usageLimitReceiptActive(
   receipt: { resetsAt?: string | null; observedAt: string },
   now: Date
 ) {
+  const observed = Date.parse(receipt.observedAt);
+  if (
+    !Number.isFinite(observed) ||
+    observed > now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+  )
+    return false;
   if (receipt.resetsAt) {
     const reset = Date.parse(receipt.resetsAt);
     return Number.isFinite(reset) && reset > now.getTime();
   }
-  const observed = Date.parse(receipt.observedAt);
-  return (
-    Number.isFinite(observed) &&
-    observed <= now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS &&
-    now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
-  );
+  return now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS;
 }
 export type FailureClass = 'usage-limit' | 'capacity' | 'auth' | 'other';
 export function recoveryAdmissionKey(

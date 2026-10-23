@@ -1,5 +1,8 @@
 import { CAPACITY_COOLDOWN_MS } from './capacity';
-import { usageLimitReceiptActive } from './failure-receipt';
+import {
+  MAX_FUTURE_OBSERVATION_SKEW_MS,
+  usageLimitReceiptActive,
+} from './failure-receipt';
 import type { HookLedger } from './hooks-types';
 import { processState } from './process-identity';
 
@@ -10,13 +13,17 @@ export function isReservationActive(
   now: Date,
   activeIds: string[] = []
 ) {
+  const createdAt = Date.parse(reservation.createdAt);
+  if (
+    !Number.isFinite(createdAt) ||
+    createdAt > now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+  )
+    return false;
   if (
     reservation.nativeReservationId &&
     activeIds.includes(reservation.nativeReservationId)
   )
     return true;
-  const createdAt = Date.parse(reservation.createdAt);
-  if (!Number.isFinite(createdAt)) return false;
   const maxExpiry = createdAt + RESERVATION_TTL;
   const expiry = reservation.expiresAt
     ? Math.min(Date.parse(reservation.expiresAt), maxExpiry)
@@ -30,6 +37,18 @@ export function pruneLedger(
 ) {
   const time = now.getTime();
   ledger.retiredRequests ??= [];
+  ledger.futureQuarantines ??= {};
+  for (const [accountKey, quarantinedAt] of Object.entries(
+    ledger.futureQuarantines
+  )) {
+    const timestamp = Date.parse(quarantinedAt);
+    if (
+      !Number.isFinite(timestamp) ||
+      timestamp > time + MAX_FUTURE_OBSERVATION_SKEW_MS ||
+      time - timestamp > RETENTION
+    )
+      delete ledger.futureQuarantines[accountKey];
+  }
   ledger.reservations = ledger.reservations.filter((reservation) => {
     const createdAt = Date.parse(reservation.createdAt);
     if (
@@ -48,6 +67,20 @@ export function pruneLedger(
     return false;
   });
   ledger.observations = ledger.observations.filter((event) => {
+    const observedAt = Date.parse(event.observedAt);
+    if (
+      !Number.isFinite(observedAt) ||
+      observedAt > time + MAX_FUTURE_OBSERVATION_SKEW_MS
+    ) {
+      if (
+        !event.clearedAt &&
+        Number.isFinite(observedAt) &&
+        observedAt > time + MAX_FUTURE_OBSERVATION_SKEW_MS &&
+        (event.outcome === 'usage-limit' || event.outcome === 'capacity-error')
+      )
+        ledger.futureQuarantines![event.accountKey] ??= now.toISOString();
+      return false;
+    }
     if (event.clearedAt) return time - Date.parse(event.clearedAt) <= RETENTION;
     const expired =
       event.outcome === 'usage-limit'
@@ -65,6 +98,11 @@ export function pruneLedger(
       });
     return false;
   });
+  for (const [instanceId, lastAdmission] of Object.entries(
+    ledger.lastAdmissions ?? {}
+  ))
+    if (lastAdmission > time + MAX_FUTURE_OBSERVATION_SKEW_MS)
+      delete ledger.lastAdmissions?.[instanceId];
   ledger.leases = ledger.leases.filter((lease) => {
     if (
       Date.parse(lease.expiresAt) > time ||

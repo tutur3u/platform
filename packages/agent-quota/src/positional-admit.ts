@@ -10,6 +10,7 @@ import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
 import { collectPoolReceipts } from './collectors/children';
 import { usageLimitReceiptActive } from './failure-receipt';
+import { applyFutureQuarantines } from './future-quarantine';
 import { HookError, transactLedger } from './hook-ledger';
 import type { AdmissionContext, HookLedger } from './hooks-types';
 import { pruneLedger } from './ledger-retention';
@@ -102,6 +103,7 @@ export function gateDecision(
     context.now,
     context.active.flatMap((item) => item.reservationIds ?? [])
   );
+  applyFutureQuarantines(context);
   const nativeIds = context.active.flatMap((item) => item.reservationIds ?? []);
   const reserved = ledger.reservations.filter(
     (item) =>
@@ -135,6 +137,8 @@ export function gateDecision(
     rank.activeCount,
     context
   );
+  if (context.ledger.futureQuarantines?.[accountKey(account)])
+    reasons.push('future-receipt-untrusted');
   clearRecoveredLimits({ ...context, ledger });
   if (
     ledger.observations.some(
@@ -273,12 +277,13 @@ export async function runPositionalAdmit(
       args.includes('--reserve-owner') ||
       Boolean(owner && (account?.instanceIds ?? [pool]).includes(owner));
     const result = await dependencies.transactLedger((ledger) => {
+      const transactionNow = dependencies.now();
       const context = {
         ...collected,
         active,
         blocks: collected.blocks ?? blocks,
         ledger,
-        now,
+        now: transactionNow,
       };
       applyDescendantReceipts(
         poolReceipts,

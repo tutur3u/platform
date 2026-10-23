@@ -7,6 +7,8 @@ import { expect, it } from 'vitest';
 import { checkpointDecision } from '../src/checkpoint-ready';
 import {
   CHECKPOINT_READ_BUDGET_MS,
+  CHECKPOINT_RUNS_QUERY,
+  CHECKPOINT_THREAD_QUERY,
   collectCheckpointThread,
   collectChildren,
   collectPoolReceipts,
@@ -422,25 +424,19 @@ it('reads checkpoint state directly for one thread within its latency budget', a
     `);
     const indexedPlans = [
       db
-        .prepare(
-          'EXPLAIN QUERY PLAN SELECT * FROM orchestration_v2_projection_threads WHERE thread_id=?'
-        )
-        .all('owner'),
+        .prepare(`EXPLAIN QUERY PLAN ${CHECKPOINT_THREAD_QUERY}`)
+        .all('owner')
+        .map((row) => String((row as { detail: string }).detail)),
       db
-        .prepare(
-          "EXPLAIN QUERY PLAN SELECT * FROM orchestration_v2_projection_runs WHERE thread_id=? AND status IN ('queued','running')"
-        )
-        .all('owner'),
-      db
-        .prepare(
-          "EXPLAIN QUERY PLAN SELECT * FROM orchestration_v2_projection_nodes WHERE thread_id=? AND status IN ('running','pending','waiting')"
-        )
-        .all('owner'),
-    ]
-      .flat()
-      .map((row) => String((row as { detail: string }).detail));
-    expect(indexedPlans.join(' ')).toContain('USING INDEX');
-    expect(indexedPlans).toHaveLength(3);
+        .prepare(`EXPLAIN QUERY PLAN ${CHECKPOINT_RUNS_QUERY}`)
+        .all('owner')
+        .map((row) => String((row as { detail: string }).detail)),
+    ];
+    expect(indexedPlans).toHaveLength(2);
+    for (const plan of indexedPlans)
+      expect(
+        plan.some((detail) => /SEARCH .+ USING .+INDEX/.test(detail))
+      ).toBe(true);
     db.exec(`
       BEGIN;
       WITH RECURSIVE seq(n) AS (
