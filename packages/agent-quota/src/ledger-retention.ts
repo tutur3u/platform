@@ -3,10 +3,12 @@ import {
   MAX_FUTURE_OBSERVATION_SKEW_MS,
   usageLimitReceiptActive,
 } from './failure-receipt';
+import { recordFutureQuarantine } from './future-quarantine';
+import { FUTURE_QUARANTINE_TTL_MS } from './future-quarantine-constants';
 import type { HookLedger } from './hooks-types';
 import { processState } from './process-identity';
 
-const RETENTION = 30 * 86400_000;
+const RETENTION = FUTURE_QUARANTINE_TTL_MS;
 export const RESERVATION_TTL = 30 * 60_000;
 export function isReservationActive(
   reservation: HookLedger['reservations'][number],
@@ -38,9 +40,9 @@ export function pruneLedger(
   const time = now.getTime();
   ledger.retiredRequests ??= [];
   ledger.futureQuarantines ??= {};
-  for (const [accountKey, quarantinedAt] of Object.entries(
-    ledger.futureQuarantines
-  )) {
+  for (const [accountKey, value] of Object.entries(ledger.futureQuarantines)) {
+    const quarantinedAt =
+      typeof value === 'string' ? value : value.quarantinedAt;
     const timestamp = Date.parse(quarantinedAt);
     if (
       !Number.isFinite(timestamp) ||
@@ -78,7 +80,10 @@ export function pruneLedger(
         observedAt > time + MAX_FUTURE_OBSERVATION_SKEW_MS &&
         (event.outcome === 'usage-limit' || event.outcome === 'capacity-error')
       )
-        ledger.futureQuarantines![event.accountKey] ??= now.toISOString();
+        recordFutureQuarantine(ledger, event.accountKey, now, {
+          observedAt: event.observedAt,
+          model: event.model,
+        });
       return false;
     }
     if (event.clearedAt) return time - Date.parse(event.clearedAt) <= RETENTION;
