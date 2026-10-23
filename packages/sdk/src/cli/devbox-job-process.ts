@@ -48,9 +48,10 @@ export async function runProcessGroup(options: ProcessGroupOptions) {
     detached: true,
   });
   let reason: 'timeout' | 'cancel' | undefined;
+  let settled = false;
   let killTimer: ReturnType<typeof setTimeout> | undefined;
   const terminate = (why: 'timeout' | 'cancel') => {
-    if (reason || !child.pid) return;
+    if (settled || reason || !child.pid) return;
     reason = why;
     const pid = child.pid;
     signalProcessGroup(pid, 'SIGTERM');
@@ -105,6 +106,7 @@ export async function runProcessGroup(options: ProcessGroupOptions) {
       cancelled: reason === 'cancel',
     };
   } finally {
+    settled = true;
     if (timeout) clearTimeout(timeout);
     if (killTimer) clearTimeout(killTimer);
     if (poller) clearInterval(poller);
