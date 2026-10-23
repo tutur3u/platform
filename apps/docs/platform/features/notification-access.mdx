@@ -13,8 +13,10 @@ in depth.
 ## Who sees a notification
 
 - A notification with a recipient account (`user_id`) is visible only to that
-  account. The row does not keep a copy of the recipient's address, so later
-  address changes or reuse of the address by another account do not expose it.
+  account. Email is never matched on such rows, so later address changes or
+  reuse of the address by another account do not expose it. New and updated
+  rows do not keep a copy of the recipient's address; copies stored before this
+  rule are inert and left for a separate batched cleanup.
 - A row is addressed by email only while it is an **unclaimed workspace
   invitation** (`type = 'workspace_invite'` with no `user_id`). It is shown to
   the account whose **confirmed** address matches. Unconfirmed addresses never
@@ -36,9 +38,10 @@ for the caller's confirmed address.
 ## Account deletion
 
 Deleting a `public.users` row deletes that account's notifications instead of
-leaving them without a recipient. The rollout migration removed existing
-recipient-less rows that were not invitations, since they could only have been
-left behind by deleted accounts.
+leaving them without a recipient. The rollout migration removed rows left behind
+by deleted accounts: recipient-less rows that were not invitations, and
+recipient-less invitations with no pending email invite for that workspace and
+address.
 
 ## Scope and exceptions
 
@@ -48,6 +51,8 @@ left behind by deleted accounts.
   resolves only the caller's own confirmed address.
 - Delivery (email and push batches) is unchanged; batch rows keep the delivery
   address they need.
+- Notifications are no longer published to Supabase Realtime; clients refresh
+  through the API.
 
 Regression coverage: `apps/database/supabase/tests/security-notification-email-access.sql`
 and `apps/database/supabase/tests/security-user-email-helper.sql`, run by the

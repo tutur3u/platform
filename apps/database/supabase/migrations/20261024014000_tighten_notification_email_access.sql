@@ -58,16 +58,13 @@ create trigger normalize_notification_email
 
 -- 3. Existing rows.
 -- Rows whose recipient account was deleted lost their user id through the old
--- ON DELETE SET NULL action. Only unclaimed invitations are meant to be
--- addressed by email, so remove the other orphaned rows.
+-- ON DELETE SET NULL action while keeping the recipient's address. Only
+-- unclaimed invitations are meant to be addressed by email, so remove the other
+-- recipient-less rows, then normalize the remaining addresses and remove
+-- invitations that no longer have a pending email invite for that address.
 delete from public.notifications
 where user_id is null
   and type is distinct from 'workspace_invite';
-
-update public.notifications
-set email = null
-where user_id is not null
-  and email is not null;
 
 update public.notifications
 set email = nullif(lower(btrim(email)), '')
@@ -75,7 +72,26 @@ where user_id is null
   and email is not null
   and email is distinct from nullif(lower(btrim(email)), '');
 
+delete from public.notifications as n
+where n.user_id is null
+  and n.type = 'workspace_invite'
+  and not exists (
+    select 1
+    from public.workspace_email_invites as wei
+    where wei.ws_id = n.entity_id
+      and lower(btrim(wei.email)) = n.email
+  );
+
+-- Address copies already stored on rows that have a recipient are never
+-- matched: every policy and the API filter match email only when user_id is
+-- null, and recipients can no longer be cleared (step 4). The trigger above
+-- keeps new and updated rows free of copies; the existing copies are left for
+-- a separate batched cleanup to avoid rewriting the whole table here.
+
 -- 4. Deleting an account deletes its notifications instead of orphaning them.
+-- Existing rows already satisfy the previous foreign key, so the replacement
+-- is added NOT VALID to avoid a full-table validation scan under lock; it is
+-- enforced for every new write and its ON DELETE action applies to all rows.
 alter table public.notifications
   drop constraint if exists notifications_user_id_fkey;
 
@@ -84,9 +100,6 @@ alter table public.notifications
   foreign key (user_id) references public.users(id)
   on delete cascade
   not valid;
-
-alter table public.notifications
-  validate constraint notifications_user_id_fkey;
 
 -- 5. Claim unclaimed invitations only for a confirmed address. The previous
 --    triggers ran on account creation, before confirmation, and one of them
@@ -285,6 +298,21 @@ create policy notifications_delete_policy on public.notifications
 -- 7. Notifications are server-owned: routes use the service role.
 revoke all on table public.notifications from public, anon, authenticated;
 grant all on table public.notifications to service_role;
+
+-- Clients refresh through the API, so stop publishing row changes.
+do $$
+begin
+  if exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime drop table public.notifications;
+  end if;
+end;
+$$;
 
 comment on table public.notifications is
   'Server-owned notification records. Read and written through service-role API routes only. Email addressing is limited to unclaimed workspace invitations; see apps/docs/platform/features/notification-access.mdx.';

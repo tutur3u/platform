@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(25);
+select plan(32);
 
 -- Privileges and shape.
 select ok(
@@ -277,7 +277,7 @@ select is(
 reset role;
 
 -- Policies stay correct as defence in depth if table access were re-granted.
-grant select on public.notifications to authenticated;
+grant select, update on public.notifications to authenticated;
 
 select set_config(
   'request.jwt.claims',
@@ -340,6 +340,108 @@ select is(
   ),
   0,
   'An unconfirmed session sees no email-addressed invitation'
+);
+
+reset role;
+
+-- A legacy address copy on a row that already has a recipient is never matched
+-- or reassigned, even when another account later confirms that address.
+alter table public.notifications disable trigger normalize_notification_email;
+
+insert into public.notifications (id, user_id, email, scope, type, title)
+values (
+  'e2000000-0000-0000-0000-0000000000e1',
+  'e2000000-0000-0000-0000-000000000001',
+  'notif-recycled@example.test',
+  'user',
+  'workspace_invite',
+  'Owned row with a legacy address copy'
+);
+
+alter table public.notifications enable trigger normalize_notification_email;
+
+insert into auth.users (id, email, email_confirmed_at) values
+  ('e2000000-0000-0000-0000-000000000005', 'notif-recycled@example.test', null);
+
+insert into public.users (id)
+values ('e2000000-0000-0000-0000-000000000005')
+on conflict do nothing;
+
+update auth.users
+set email_confirmed_at = now()
+where id = 'e2000000-0000-0000-0000-000000000005';
+
+select is(
+  (select user_id from public.notifications where id = 'e2000000-0000-0000-0000-0000000000e1'),
+  'e2000000-0000-0000-0000-000000000001'::uuid,
+  'A recycled address never reassigns a row that has a recipient'
+);
+
+select set_config(
+  'request.jwt.claims',
+  '{"role":"authenticated","sub":"e2000000-0000-0000-0000-000000000005"}',
+  true
+);
+set local role authenticated;
+
+select is(
+  (select updated_count from public.sync_my_notifications()),
+  0,
+  'Sync never reassigns a row that has a recipient'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.notifications
+    where id = 'e2000000-0000-0000-0000-0000000000e1'
+  ),
+  0,
+  'A recycled address does not expose a row that has a recipient'
+);
+
+select lives_ok(
+  $$update public.notifications set read_at = now() where id = 'e2000000-0000-0000-0000-0000000000e1'$$,
+  'A non-recipient may attempt an update'
+);
+
+reset role;
+
+select is(
+  (select read_at from public.notifications where id = 'e2000000-0000-0000-0000-0000000000e1'),
+  null::timestamptz,
+  'The update policy does not let a non-recipient change the row'
+);
+
+-- An account created with an already-confirmed address (for example OAuth)
+-- claims its pending invitation at creation.
+insert into public.notifications (id, user_id, email, scope, type, title)
+values (
+  'e2000000-0000-0000-0000-0000000000c6',
+  null,
+  'notif-oauth@example.test',
+  'user',
+  'workspace_invite',
+  'Invite before an OAuth signup'
+);
+
+insert into auth.users (id, email, email_confirmed_at) values
+  ('e2000000-0000-0000-0000-000000000006', 'Notif-OAuth@example.test', now());
+
+select is(
+  (select user_id from public.notifications where id = 'e2000000-0000-0000-0000-0000000000c6'),
+  'e2000000-0000-0000-0000-000000000006'::uuid,
+  'An account created with a confirmed address claims its invitation'
+);
+
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+set local role anon;
+
+select throws_ok(
+  $$select count(*) from public.notifications$$,
+  '42501',
+  null,
+  'anon cannot read the table directly'
 );
 
 reset role;
