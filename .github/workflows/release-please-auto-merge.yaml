@@ -182,8 +182,8 @@ jobs:
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
+          cache: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          pub-cache: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
 
       # `generate: true` in pubspec.yaml means this also runs gen-l10n, which
       # flutter-analyze needs before it can resolve lib/l10n/gen.

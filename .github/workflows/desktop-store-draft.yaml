@@ -43,8 +43,8 @@ jobs:
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
+          cache: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          pub-cache: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       - name: Validate public configuration and packaging helpers
         env:
           DESKTOP_PUBLIC_CONFIG: ${{ vars.DESKTOP_PUBLIC_CONFIG }}
