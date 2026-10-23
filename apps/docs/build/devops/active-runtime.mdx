@@ -83,6 +83,8 @@ profile is defined separately and has no automated staging publisher here.
 | Calendar smart scheduling | `apps/infrastructure/vercel.json` (every six hours) | Infrastructure `/api/cron/calendar/smart-schedule` gateway → Calendar |
 | Immediate notification recovery | `apps/cron-control/wrangler.jsonc` (every five minutes) | Cloudflare recovery gate → authenticated Web immediate-delivery processor |
 
+New schedules go to Cloudflare; the [background work inventory](/build/devops/background-work-inventory)
+lists every remaining legacy owner and its migration target.
 The [Cloudflare Cron Control guide](/build/devops/cloudflare-cron-control)
 explains the idle skip, requeue RPC, pending-batch check, and delivery token.
 Calendar's Infrastructure gateway authenticates the scheduler and uses its

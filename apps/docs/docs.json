@@ -347,6 +347,7 @@
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",
                   "build/devops/cloudflare-backend-ownership",
+                  "build/devops/background-work-inventory",
                   "build/devops/mobile-store-deployment",
                   "build/devops/desktop-beta-distribution",
                   "build/devops/secrets-and-configuration",

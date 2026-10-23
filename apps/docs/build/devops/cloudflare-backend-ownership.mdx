@@ -34,8 +34,9 @@ not spending caps.
 | Per-entity coordination, leases or ordered state | Durable Object | No self-rearming alarm chains; check the stop fence before rescheduling |
 | Best-effort follow-up of a request | `ctx.waitUntil` on the Worker host | Only for bounded, losable work; durable business work needs a queue |
 
-Reuse Cron Control for recurring jobs instead of adding another controller for
-the same work. Preserve current cadence when moving a schedule; changing it needs
+The [background work inventory](/build/devops/background-work-inventory) maps
+every current owner to its target and cutover class. Reuse Cron Control for
+recurring jobs instead of adding another controller for the same work. Preserve current cadence when moving a schedule; changing it needs
 job-specific evidence and a product decision.
 
 ## Shrink-only guard
