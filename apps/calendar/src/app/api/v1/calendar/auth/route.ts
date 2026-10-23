@@ -2,6 +2,7 @@ import { OAuth2Client } from '@tuturuuu/google';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -57,7 +58,11 @@ export async function GET(request: NextRequest) {
   });
 
   const authUrl = auth.generateAuthUrl({
-    state: normalizedWsId,
+    state: createCalendarOAuthState(
+      'google',
+      { userId: user.id, wsId: normalizedWsId },
+      oauthConfig.config.clientSecret
+    ),
     scope: [
       'https://www.googleapis.com/auth/calendar', // Full calendar access
       'https://www.googleapis.com/auth/userinfo.email', // Get user email

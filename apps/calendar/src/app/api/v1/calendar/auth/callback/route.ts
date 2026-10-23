@@ -1,6 +1,8 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import {
   buildGoogleCalendarPostAuthRedirectUrl,
@@ -24,17 +26,16 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-  const wsId = url.searchParams.get('state');
+  const state = url.searchParams.get('state');
 
   calendarOAuthDebug('🔍 [DEBUG] OAuth callback parameters:', {
     hasCode: !!code,
-    wsId,
-    url: request.url,
+    hasState: !!state,
   });
 
-  if (!wsId) {
-    calendarOAuthDebug('❌ [DEBUG] Missing wsId in callback');
-    return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+  if (!state) {
+    calendarOAuthDebug('❌ [DEBUG] Missing state in callback');
+    return NextResponse.json({ error: 'state is required' }, { status: 400 });
   }
 
   if (!code) {
@@ -52,6 +53,57 @@ export async function GET(request: Request) {
       },
       { status: 503 }
     );
+  }
+
+  // The state is signed at initiation and binds this flow to the initiating
+  // user and workspace; never trust a workspace taken from the URL alone.
+  const verifiedState = verifyCalendarOAuthState(
+    'google',
+    state,
+    oauthConfig.config.clientSecret
+  );
+  if (!verifiedState.ok) {
+    calendarOAuthDebug('❌ [DEBUG] Rejected OAuth state', {
+      reason: verifiedState.reason,
+    });
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 400 });
+  }
+  const { wsId } = verifiedState;
+
+  calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
+  const authContext = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
+
+  if (!authContext.ok) {
+    calendarOAuthDebug('❌ [DEBUG] User not authenticated');
+    return NextResponse.json(
+      { error: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+  const { supabase, user } = authContext;
+
+  if (user.id !== verifiedState.userId) {
+    calendarOAuthDebug('❌ [DEBUG] OAuth state belongs to another user');
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
+  }
+
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   calendarOAuthDebug('🔍 [DEBUG] Creating OAuth2Client...');
@@ -109,25 +161,6 @@ export async function GET(request: Request) {
       );
       // Continue without user info - token will still be saved
     }
-
-    calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
-    const authContext = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: true,
-    });
-
-    calendarOAuthDebug('🔍 [DEBUG] User auth result:', {
-      hasUser: authContext.ok,
-      userId: authContext.ok ? authContext.user.id : null,
-    });
-
-    if (!authContext.ok) {
-      calendarOAuthDebug('❌ [DEBUG] User not authenticated');
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-    const { supabase, user } = authContext;
 
     calendarOAuthDebug('🔍 [DEBUG] Checking for existing tokens...');
     // Check if this specific Google account is already connected

@@ -16,6 +16,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
@@ -99,7 +100,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const authUrl = await cca.getAuthCodeUrl({
       scopes: MICROSOFT_CALENDAR_SCOPES,
       redirectUri: config.redirectUri,
-      state: normalizedWsId,
+      state: createCalendarOAuthState(
+        'microsoft',
+        { userId: user.id, wsId: normalizedWsId },
+        config.clientSecret
+      ),
       prompt: 'consent',
       codeChallenge,
       codeChallengeMethod: 'S256',

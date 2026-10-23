@@ -54,6 +54,7 @@ vi.mock('@/lib/workspace-helper', () => ({
   normalizeWorkspaceId: normalizeWorkspaceIdMock,
 }));
 
+import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
 describe('Google Calendar auth route', () => {
@@ -146,8 +147,25 @@ describe('Google Calendar auth route', () => {
     expect(generatedAuthUrlInputs[0]).toMatchObject({
       access_type: 'offline',
       include_granted_scopes: true,
-      state: 'workspace-1',
     });
     expect(generatedAuthUrlInputs[0]).not.toHaveProperty('prompt');
+  });
+
+  it('issues a signed state bound to the initiating user and workspace', async () => {
+    const response = await GET(
+      new NextRequest('https://tuturuuu.com/api/v1/calendar/auth?wsId=personal')
+    );
+    const body = (await response.json()) as { authUrl: string };
+    const state = new URL(body.authUrl).searchParams.get('state');
+
+    expect(response.status).toBe(200);
+    expect(state).not.toBe('workspace-1');
+    expect(
+      verifyCalendarOAuthState('google', state, 'google-client-secret')
+    ).toEqual({ ok: true, userId: 'user-1', wsId: 'workspace-1' });
+    expect(verifyCalendarOAuthState('google', state, 'other-secret')).toEqual({
+      ok: false,
+      reason: 'signature',
+    });
   });
 });

@@ -9,10 +9,12 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
@@ -44,7 +46,17 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
 
-  const { code, state: wsId, error, error_description } = result.data;
+  const { code, state, error, error_description } = result.data;
+  const config = getMicrosoftOAuthConfig();
+  const configComplete = isMicrosoftConfigComplete(config);
+  // The state is signed at initiation and binds this flow to the initiating
+  // user and workspace; never trust a workspace taken from the URL alone.
+  const verifiedState = configComplete
+    ? verifyCalendarOAuthState('microsoft', state, config.clientSecret)
+    : null;
+  const calendarPath = verifiedState?.ok
+    ? `/${encodeURIComponent(verifiedState.wsId)}/calendar`
+    : '/';
 
   if (error) {
     calendarOAuthError(
@@ -52,10 +64,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
       error_description
     );
-    // Safe redirect URL construction
-    const redirectUrl = wsId
-      ? new URL(`/${wsId}/calendar`, request.url)
-      : new URL('/', request.url);
+    const redirectUrl = new URL(calendarPath, request.url);
     redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
     redirectUrl.searchParams.set(
       'message',
@@ -65,9 +74,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.redirect(redirectUrl, 302);
   }
 
-  if (!wsId) {
-    calendarOAuthDebug('❌ [DEBUG] Missing wsId in callback');
-    return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+  if (!state) {
+    calendarOAuthDebug('❌ [DEBUG] Missing state in callback');
+    return NextResponse.json({ error: 'state is required' }, { status: 400 });
   }
 
   if (!code) {
@@ -75,13 +84,28 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'No code provided' }, { status: 400 });
   }
 
+  if (!configComplete) {
+    return NextResponse.json(
+      { error: 'Microsoft OAuth not configured' },
+      { status: 500 }
+    );
+  }
+
+  if (!verifiedState?.ok) {
+    calendarOAuthDebug('❌ [DEBUG] Rejected OAuth state', {
+      reason: verifiedState?.reason,
+    });
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 400 });
+  }
+  const { wsId } = verifiedState;
+
   // Retrieve the PKCE code verifier from the cookie
   const cookieStore = await cookies();
   const codeVerifier = cookieStore.get('ms_pkce_verifier')?.value;
 
   if (!codeVerifier) {
     calendarOAuthError('❌ [DEBUG] Missing PKCE code verifier');
-    const redirectUrl = new URL(`/${wsId}/calendar`, request.url);
+    const redirectUrl = new URL(calendarPath, request.url);
     redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
     redirectUrl.searchParams.set(
       'message',
@@ -90,13 +114,40 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.redirect(redirectUrl, 302);
   }
 
-  const config = getMicrosoftOAuthConfig();
+  calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
 
-  if (!isMicrosoftConfigComplete(config)) {
+  if (!auth.ok) {
+    calendarOAuthDebug('❌ [DEBUG] User not authenticated');
     return NextResponse.json(
-      { error: 'Microsoft OAuth not configured' },
+      { error: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+  const { supabase, user } = auth;
+
+  if (user.id !== verifiedState.userId) {
+    calendarOAuthDebug('❌ [DEBUG] OAuth state belongs to another user');
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
+  }
+
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
       { status: 500 }
     );
+  }
+
+  if (!membership.ok) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -143,20 +194,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       email: accountEmail,
       name: accountName,
     });
-
-    calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
-    const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: true,
-    });
-
-    if (!auth.ok) {
-      calendarOAuthDebug('❌ [DEBUG] User not authenticated');
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-    const { supabase, user } = auth;
 
     // Check if this Microsoft account is already connected
     calendarOAuthDebug('🔍 [DEBUG] Checking for existing Microsoft token...');
@@ -314,7 +351,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
 
     // Create redirect response and clear the PKCE cookie
-    const redirectUrl = new URL(`/${wsId}/calendar`, request.url);
+    const redirectUrl = new URL(calendarPath, request.url);
     redirectUrl.searchParams.set('provider', 'microsoft');
     redirectUrl.searchParams.set('connected', 'true');
 
