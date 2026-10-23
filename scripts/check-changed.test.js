@@ -324,7 +324,7 @@ test('REV-6467-3: NUL-delimited paths preserve tabs, newlines and spaces', () =>
 });
 
 test('REV-6467-4: explicit option-like file arguments fail closed', () => {
-  assert.throws(() => parseArgs(['--files', '--write']), /option-like/);
+  assert.throws(() => parseArgs(['--files', '--write']), /[Oo]ption-like/);
 });
 
 test('REV-6467-5: hook refuses tracked staged or unstaged edits before planning', () => {
@@ -361,4 +361,66 @@ test('root config dry-run prints the CI-only coverage warning', () => {
     0
   );
   assert.match(logs.join('\n'), /not covered; CI only.*bun\.lock/);
+});
+
+test('REV-6467-8: hook refuses untracked inputs in selected reverse dependents', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-hook-untracked-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const [workspace, manifest] of [
+    ['packages/shared', { name: 'shared' }],
+    [
+      'apps/consumer',
+      { name: 'consumer', dependencies: { shared: 'workspace:*' } },
+    ],
+  ]) {
+    fs.mkdirSync(path.join(root, workspace), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, workspace, 'package.json'),
+      JSON.stringify(manifest)
+    );
+  }
+  const head = 'a'.repeat(40);
+  for (const untracked of [
+    'packages/shared/new.ts',
+    'apps/consumer/new.d.ts',
+    '',
+  ]) {
+    const logs = [];
+    const queries = [];
+    const baseGit = fakeGit({
+      'git config': '',
+      'git rev-parse HEAD': head,
+      'git status': '',
+      'git merge-base': 'base',
+      'git diff --name-status': 'M\0packages/shared/src/a.ts\0',
+      'git branch --show-current': 'chore/gate',
+    });
+    const result = main(['--hook', '--dry-run', '--no-ttr'], {
+      root,
+      stdin: `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`,
+      env: { TUTURUUU_PRE_PUSH: '1' },
+      execFile: (command, args) => {
+        if (args[0] !== 'ls-files') return baseGit(command, args);
+        queries.push(args);
+        return untracked ? `${untracked}\0` : '';
+      },
+      log: (line) => logs.push(line),
+      spawn: () => {
+        throw new Error('untracked refusal/dry-run must not execute checks');
+      },
+    });
+    assert.equal(result, untracked ? 1 : 0);
+    assert.deepEqual(queries, [
+      [
+        'ls-files',
+        '--others',
+        '--exclude-standard',
+        '-z',
+        '--',
+        'packages/shared',
+        'apps/consumer',
+      ],
+    ]);
+    if (untracked) assert.ok(logs.join('\n').includes(untracked));
+  }
 });

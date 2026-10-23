@@ -258,6 +258,11 @@ test('REV-6467-2: root/shared configuration explicitly requires CI coverage', ()
     'turbo.json',
     'package.json',
     'bun.lock',
+    'bunfig.toml',
+    '.npmrc',
+    'vitest.config.ts',
+    '.oxlintrc.json',
+    '.oxfmtrc.json',
     'packages/typescript-config/base.json',
   ]) {
     const plan = planChecks(changed(file), context());
@@ -273,8 +278,15 @@ test('REV-6467-2: root/shared configuration explicitly requires CI coverage', ()
   }
 });
 
-test('REV-6467-4: option-like path components cannot reach file tools', () => {
+test('REV-6467-4: option-like repository/workspace-relative paths cannot reach file tools', () => {
   for (const file of ['-a.ts', './-a.ts', 'packages/utils/-a.test.ts']) {
-    assert.throws(() => planChecks(changed(file), context()), /option-like/);
+    assert.throws(() => planChecks(changed(file), context()), /[Oo]ption-like/);
   }
+});
+
+test('REV-6467-6: Git app dash route directories remain valid tool arguments', () => {
+  const file = 'apps/git/src/app/[locale]/-/[wsId]/page.tsx';
+  const plan = planChecks(changed(file), context([file]));
+  assert.ok(plan.steps.some((step) => step.id === 'type-check:apps/git'));
+  assert.ok(plan.steps.find((step) => step.id === 'biome').args.includes(file));
 });

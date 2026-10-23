@@ -59,9 +59,13 @@ function reverseDependents(selected, workspaces = []) {
 
 function assertSafePaths(files) {
   for (const file of files) {
-    if (file.split(/[\\/]/).some((part) => part.startsWith('-'))) {
+    const relative = path.posix.normalize(file.replaceAll('\\', '/'));
+    if (
+      relative.startsWith('-') ||
+      /^(?:apps|packages)\/[^/]+\/-/.test(relative)
+    ) {
       throw new Error(
-        `Paths with option-like components are not supported: ${JSON.stringify(file)}`
+        `Option-like repository/workspace-relative paths are not supported: ${JSON.stringify(file)}`
       );
     }
   }

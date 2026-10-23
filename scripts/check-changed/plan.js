@@ -106,7 +106,7 @@ function planChecks(changes, context) {
   const steps = [];
   const skipped = [];
   const sharedConfig = all.filter((file) =>
-    /^(?:tsconfig\.json|biome\.jsonc?|turbo\.json|package\.json|bun\.lock)$|^packages\/typescript-config\/.*\.json$/.test(
+    /^(?:tsconfig\.json|biome\.jsonc?|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
       file
     )
   );

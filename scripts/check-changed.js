@@ -19,7 +19,11 @@ const {
   readWorkspaces,
   assertSafePaths,
 } = require('./check-changed/workspaces.js');
-const { BIOME_VERSION, planChecks } = require('./check-changed/plan.js');
+const {
+  BIOME_VERSION,
+  planChecks,
+  workspaceOf,
+} = require('./check-changed/plan.js');
 const {
   classifyDiagnostics,
   missingDistPackages,
@@ -324,6 +328,37 @@ function main(argv = process.argv.slice(2), deps = {}) {
       ),
   });
   const steps = selectSteps(plan.steps, options.only, options.skip);
+  if (options.hook) {
+    const selected = [
+      ...new Set(
+        [
+          ...changes.map((change) => workspaceOf(change.file)),
+          ...steps.map((step) => step.typeCheck?.workspace ?? step.cwd),
+        ].filter(Boolean)
+      ),
+    ];
+    const untracked = selected.length
+      ? git(
+          [
+            'ls-files',
+            '--others',
+            '--exclude-standard',
+            '-z',
+            '--',
+            ...selected,
+          ],
+          execFile
+        )
+          .split('\0')
+          .filter(Boolean)
+      : [];
+    if (untracked.length) {
+      log(
+        `check:changed refused: untracked files in selected workspaces can affect pushed HEAD checks: ${untracked.map((file) => JSON.stringify(file)).join(', ')}`
+      );
+      return 1;
+    }
+  }
   const missing = missingDistPackages(root);
   log(
     `check:changed: ${changes.length} changed file(s) since ${base?.slice(0, 10) ?? 'n/a'}; ${steps.length} step(s).`

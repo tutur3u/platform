@@ -3,7 +3,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { readWorkspaces, reverseDependents } = require('./workspaces.js');
+const {
+  readWorkspaces,
+  reverseDependents,
+  assertSafePaths,
+} = require('./workspaces.js');
 
 test('workspace graph includes every dependency category and excludes paused apps', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'changed-workspaces-'));
@@ -55,4 +59,22 @@ test('reverse dependency cycles terminate without duplicate projects', () => {
     [...reverseDependents(new Set(['packages/a']), entries)],
     ['packages/a', 'packages/b']
   );
+});
+
+test('REV-6467-6: only option-like tool-relative prefixes are rejected', () => {
+  assert.doesNotThrow(() =>
+    assertSafePaths([
+      'apps/git/src/app/[locale]/-/[wsId]/page.tsx',
+      'packages/utils/src/-internal.ts',
+      'docs/-notes.md',
+    ])
+  );
+  for (const file of [
+    '-a.ts',
+    './-a.ts',
+    'packages/utils/-a.test.ts',
+    'apps/git/./--config.ts',
+  ]) {
+    assert.throws(() => assertSafePaths([file]), /Option-like/);
+  }
 });

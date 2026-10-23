@@ -64,7 +64,9 @@ project and classifies diagnostics:
 
 Shared-package changes also select transitive reverse dependents from workspace
 manifests. Root/shared configuration changes (`package.json`, `bun.lock`, root
-`tsconfig.json`, `biome.json`, `turbo.json`, and `packages/typescript-config`)
+`tsconfig.json`, `biome.json`, `turbo.json`, `bunfig.toml`, `.npmrc`,
+root `vitest.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json`, and
+`packages/typescript-config`)
 print **not covered; CI only** because this focused gate cannot prove their full
 repository effect. CI type-checking remains authoritative.
 
@@ -80,11 +82,23 @@ TUTURUUU_PRE_PUSH=0 git push       # skip once while opted in
 ```
 
 The hook refuses tracked staged or unstaged edits so it can check the exact
-pushed HEAD. Untracked files are not part of the committed check. NUL-delimited
-Git paths preserve whitespace; option-like filename components are rejected
-before file tools run. The hook checks committed changes only and skips deletions or pushes of refs
+pushed HEAD. It also refuses untracked files in changed workspaces and selected
+reverse dependents because those files can affect type-checking and test discovery.
+Ignored files are excluded from this check. NUL-delimited Git paths preserve
+whitespace; only option-like repository/workspace-relative prefixes are rejected
+before file tools run. Internal dash directories, including Git app routes, are valid. The hook checks committed changes only and skips deletions or pushes of refs
 other than `HEAD`. Agents should run `bun check:changed` explicitly before
 pushing whether or not the hook is enabled.
+
+### Bun upgrade and lock normalization
+
+Until the Bun 1.4.4 upgrade in #6427 lands, a normal `bun install` with installed
+Bun 1.4.4 can normalize the 1.4.3-era `bun.lock`. The resulting tracked change
+makes the opted-in hook refuse a push. Prefer `bun install --frozen-lockfile`
+for the existing lock or the repository-pinned Bun version; do not commit
+incidental normalization into an unrelated PR. If drift already exists, preserve
+its provenance and use a clean isolated checkout. #6427 owns the normalized lock;
+a passing frozen install alone does not prove a normal install leaves it stable.
 
 ## Regression coverage
 
