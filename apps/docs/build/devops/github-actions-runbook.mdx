@@ -644,6 +644,8 @@ uncached services, emit a warning annotation and step-summary line before the
 helper fails; E2E fallback does not hide that diagnostic. Raw CLI errors remain
 suppressed. Contract workflows keep strict image-cache setup.
 
+The same-day result planner may reuse shard 1's proof and leave a run without a seeder; its fingerprint covers every image-key input, so input changes invalidate that proof, and a manual `supabase-baseline` dispatch with `seed_images_only=true` provides the fallback.
+
 Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
 without a lockfile hash or prefix fallback. This chooses a coarser immutable
 archive over automatic deletion: lockfile changes cannot create new multi-GiB
