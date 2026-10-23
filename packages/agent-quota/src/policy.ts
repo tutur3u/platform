@@ -41,6 +41,20 @@ function rankOne(
 		(window): window is typeof window & { usedPercent: number } =>
 			typeof window.usedPercent === "number",
 	);
+	const isFresh = (window: (typeof windows)[number]): boolean => {
+		const observedAt = Date.parse(window.observedAt);
+		const resetAt = window.resetsAt ? Date.parse(window.resetsAt) : undefined;
+		return (
+			Number.isFinite(observedAt) &&
+			observedAt <= now.getTime() + 5 * 60_000 &&
+			now.getTime() - observedAt <= staleAfterMs &&
+			(resetAt === undefined ||
+				!Number.isFinite(resetAt) ||
+				resetAt > now.getTime())
+		);
+	};
+	const freshWindows = windows.filter(isFresh);
+	const staleWindows = windows.filter((window) => !isFresh(window));
 	const count = activeCount(account.instanceId, active);
 	const weight = Math.max(0, task.weight ?? 1);
 	const eligibleProvider =
@@ -65,8 +79,8 @@ function rankOne(
 		});
 
 	let score = 18;
-	if (windows.length) {
-		const headrooms = windows.map((window) => 100 - window.usedPercent);
+	if (freshWindows.length) {
+		const headrooms = freshWindows.map((window) => 100 - window.usedPercent);
 		const weakest = Math.min(...headrooms);
 		const avg =
 			headrooms.reduce((sum, value) => sum + value, 0) / headrooms.length;
@@ -75,7 +89,7 @@ function rankOne(
 			code: "headroom",
 			message: `${Math.round(weakest)}% remaining in the tightest reported window.`,
 		});
-		if (windows.some((window) => window.usedPercent > hardLimitPercent)) {
+		if (freshWindows.some((window) => window.usedPercent > hardLimitPercent)) {
 			eligible = false;
 			reasons.push({
 				code: "near-limit",
@@ -83,17 +97,16 @@ function rankOne(
 			});
 		}
 		const remaining = Math.min(...headrooms);
-		if (
-			reserve?.minRemainingPercent !== undefined &&
-			remaining < reserve.minRemainingPercent
-		) {
-			eligible = false;
-			reasons.push({
-				code: "reserve",
-				message: `Below the configured ${reserve.minRemainingPercent}% remaining reserve.`,
-			});
+		if (reserve?.minRemainingPercent !== undefined) {
+			if (remaining < reserve.minRemainingPercent) {
+				eligible = false;
+				reasons.push({
+					code: "reserve",
+					message: `Below the configured ${reserve.minRemainingPercent}% remaining reserve.`,
+				});
+			}
 		}
-		const reset = windows
+		const reset = freshWindows
 			.map((window) => window.resetsAt)
 			.filter((value): value is string => Boolean(value))
 			.map(Date.parse)
@@ -140,30 +153,39 @@ function rankOne(
 			});
 		}
 	}
+	if (reserve?.minRemainingPercent !== undefined && freshWindows.length === 0) {
+		eligible = false;
+		reasons.push({
+			code: "reserve-unknown",
+			message: `Cannot verify the configured ${reserve.minRemainingPercent}% remaining reserve.`,
+		});
+	}
 
-	const resetExpired = windows.some(
-		(window) => window.resetsAt && Date.parse(window.resetsAt) <= now.getTime(),
-	);
-	if (resetExpired) score = Math.min(score, 30);
-	const freshest = windows
-		.map((window) => Date.parse(window.observedAt))
-		.filter(Number.isFinite)
-		.reduce((latest, value) => Math.max(latest, value), 0);
-	if (
-		resetExpired ||
-		freshest === 0 ||
-		now.getTime() - freshest > staleAfterMs
-	) {
-		score = Math.min(score, 30);
+	if (staleWindows.length) {
+		score = Math.min(score, freshWindows.length ? 60 : 18);
 		reasons.push({
 			code: "stale",
-			message: resetExpired
-				? "A quota reset timestamp has passed; this signal is uncertain."
-				: freshest
-					? "Quota percentage is stale and counts as uncertain."
-					: "No quota percentage has been observed.",
+			message: freshWindows.length
+				? "At least one quota window is stale and counts as uncertain."
+				: "No current quota window is available; stale data counts as uncertain.",
 		});
-	} else {
+		if (
+			staleWindows.some(
+				(window) =>
+					window.resetsAt && Date.parse(window.resetsAt) <= now.getTime(),
+			)
+		)
+			reasons.push({
+				code: "reset-expired",
+				message: "A quota window reset timestamp has passed.",
+			});
+	} else if (windows.length === 0) {
+		reasons.push({
+			code: "stale",
+			message:
+				"No current quota window is available; token estimates are not headroom.",
+		});
+	} else if (freshWindows.length) {
 		reasons.push({ code: "fresh", message: "Quota percentage is current." });
 	}
 	score -= count * 30;

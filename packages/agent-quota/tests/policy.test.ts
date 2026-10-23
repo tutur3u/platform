@@ -94,7 +94,40 @@ describe("routing policy", () => {
 		expect(
 			result.ranked[0]?.reasons.some((reason) => reason.code === "stale"),
 		).toBe(true);
-		expect(result.ranked[0]?.score).toBe(30);
+		expect(result.ranked[0]?.score).toBe(18);
+	});
+
+	it("uses a fresh quota window when another window reset has expired", () => {
+		const mixed = account("codex", 10, now.toISOString());
+		mixed.windows = [
+			{
+				kind: "short",
+				usedPercent: 0,
+				resetsAt: "2026-10-22T00:00:00.000Z",
+				source: "fixture",
+				observedAt: now.toISOString(),
+				authoritative: true,
+			},
+			{
+				kind: "long",
+				usedPercent: 50,
+				resetsAt: "2026-10-23T01:00:00.000Z",
+				source: "fixture",
+				observedAt: now.toISOString(),
+				authoritative: true,
+			},
+		];
+		const result = recommend({
+			task: { provider: "codex" },
+			active: [],
+			accounts: [mixed],
+			now,
+		});
+		expect(result.ranked[0]?.eligible).toBe(true);
+		expect(result.ranked[0]?.score).toBe(46);
+		expect(
+			result.ranked[0]?.reasons.some((reason) => reason.code === "stale"),
+		).toBe(true);
 	});
 
 	it("keeps the configured orchestrator reserve and respects active concurrency", () => {
@@ -114,6 +147,18 @@ describe("routing policy", () => {
 			now,
 		});
 		expect(lowHeadroom.ranked[0]?.eligible).toBe(false);
+		const unknownQuota = recommend({
+			task: { provider: "claude" },
+			active: [],
+			accounts: [{ ...orchestrator, windows: [] }],
+			now,
+		});
+		expect(unknownQuota.ranked[0]?.eligible).toBe(false);
+		expect(
+			unknownQuota.ranked[0]?.reasons.some(
+				(reason) => reason.code === "reserve-unknown",
+			),
+		).toBe(true);
 	});
 
 	it("uses stable instance ids to break equal-score ties", () => {
