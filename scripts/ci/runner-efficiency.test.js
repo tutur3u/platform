@@ -25,7 +25,7 @@ test('translation checks run once per PR update and still cover both protected b
   }
 });
 
-test('exactly one E2E matrix job is eligible to write the shared Docker cache', () => {
+test('E2E reuses shared exact Supabase images without changing its paused cohorts', () => {
   const workflow = readWorkflow('e2e-tests.yaml');
   const job = workflow.jobs.e2e;
   assert.equal(
@@ -34,13 +34,16 @@ test('exactly one E2E matrix job is eligible to write the shared Docker cache', 
     '${{ fromJSON(needs.relevance.outputs.matrix) }}',
     'E2E must allocate the dynamic, uncached cohorts from the planner'
   );
-  const writer = job.steps.find(
-    (step) => step.id === 'prepare-supabase-docker-cache'
+  const cache = job.steps.find(
+    (step) => step.name === 'Restore shared Supabase images'
   );
+  assert.equal(cache.uses, './.github/actions/cache-supabase-images');
+  assert.deepEqual(cache.with, { profile: 'full' });
+  assert.equal(cache.if, "env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'");
+  assert.equal(workflow.env.SUPABASE_INTERNAL_IMAGE_REGISTRY, 'public.ecr.aws');
   assert.equal(
-    writer.if,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-    "${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}"
+    job.steps.some((step) => step.id === 'prepare-supabase-docker-cache'),
+    false
   );
   const eligible = DEFAULT_MATRIX.filter(
     (entry) => entry.mode === 'shard' && entry.shard === 1

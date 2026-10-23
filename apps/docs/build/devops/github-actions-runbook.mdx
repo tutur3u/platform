@@ -586,21 +586,43 @@ not reserve capacity or guarantee image retention.
 | --- | --- | --- |
 | Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
 | Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
-| Flutter SDK/pub | SDK archives can exceed 1 GiB | Mobile wrapper saves on main push/dispatch; direct desktop saves require trusted main/production push/dispatch |
-| Bun downloads | About 1 GiB per current Linux lockfile key | Main push/dispatch only, partitioned by OS, architecture, pinned Bun version and lockfile |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch, including desktop, release and employee jobs |
+| Bun downloads | About 1 GiB per observed Linux archive | Main push/dispatch only; one v2 archive per OS, architecture and pinned Bun version |
 | CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
 
 These are incident measurements, not fixed sizes or a guaranteed total. New
 Gradle keys use the `gradle-v1-` namespace; their first main push must populate
 them. PRs cannot warm missing heavyweight caches. The static budget gate is
 `node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
-`bun test:scripts`. It checks workflow and composite writers, including implicit
-setup-java and Flutter action saves, against trusted and untrusted events/refs.
+`bun test:scripts`. It inventories every save-capable cache action and setup cache input in
+workflows and composites, checking trusted and untrusted events/refs. Combined `actions/cache` still registers a post-job save when
+`lookup-only` is enabled, so it remains in the inventory. Unknown keys and paths
+have no implicit exemption. The explicit exceptions compare the complete input
+set and workflow/job: small E2E proof JSON, the MCP tooling pip download cache,
+Discord's pruned, lockfile-scoped uv downloads, and Buildx executable binaries.
+Rust Cargo saves and BuildKit layer exports are explicitly inventoried as paused
+source, with switchboard or job-fence checks and an exact scope list. These are
+not claims that retained archives are small or safe to reactivate. Each exception
+has a recorded reason; expanding paths, inputs or export scopes requires review.
 
-Bun dependency keys and restore prefixes both include `inputs.bun-version`.
-Keep the version in every fallback so a newer runner does not restore and
-refresh the last-access time of an obsolete version's archive. After confirming
-that no workflow or action pins Bun 1.4.3, the release owner can perform this
+Production mobile jobs only restore the Gradle/Pods caches populated by main
+builds. They register no unreachable main-push saves. The paused Docker E2E jobs
+reuse the exact shared `full` Supabase image profile instead of writing a second
+`supabase-docker-v2` archive of every locally present tag. The registry benchmark
+choice and all pause gates remain in place; this source change does not resume
+Docker or establish hosted runtime acceptance.
+
+Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
+without a lockfile hash or prefix fallback. This chooses a coarser immutable
+archive over automatic deletion: lockfile changes cannot create new multi-GiB
+archives or race a cleanup job, and no write-scoped API token or cleanup loop is
+needed. Bun still resolves the current lockfile and fetches missing packages;
+newly added downloads do not enter the archive until the pinned Bun version
+changes. This limits reuse of new packages but preserves install correctness.
+The runtime binary retains its separate cache. Old v1 archives receive no
+restores from v2 and age out under LRU; the first trusted v2 warmup and coexistence
+with old entries can still cause eviction. No immediate space reclamation is
+claimed. After confirming that no workflow or action pins Bun 1.4.3, the release owner can perform this
 one-time cleanup without adding a scheduled maintenance loop:
 
 ```sh

@@ -30,8 +30,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
   const runIndex = e2eJob.indexOf('Run Playwright shard');
   const diagnosticsIndex = e2eJob.indexOf('Collect Dockerized E2E diagnostics');
-  const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
-  const loadIndex = e2eJob.indexOf('Load cached Docker images');
+  const restoreIndex = e2eJob.indexOf('Restore shared Supabase images');
   const buildxIndex = e2eJob.indexOf('Setup Docker Buildx');
   const cacheExportIndex = bundleJob.indexOf(
     'Configure trusted BuildKit cache exports'
@@ -62,7 +61,6 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(runIndex, -1);
   assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
-  assert.notEqual(loadIndex, -1);
   assert.notEqual(buildxIndex, -1);
   assert.notEqual(cacheExportIndex, -1);
   assert.notEqual(secretIndex, -1);
@@ -85,10 +83,6 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.ok(
     cleanupIndex < restoreIndex,
     'runner disk cleanup must happen before restoring Supabase Docker images'
-  );
-  assert.ok(
-    cleanupIndex < loadIndex,
-    'runner disk cleanup must happen before loading Supabase Docker images'
   );
   assert.ok(
     buildxIndex < runIndex,
@@ -119,34 +113,15 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /\/opt\/az/u);
   assert.match(e2eJob, /\/opt\/hostedtoolcache\/CodeQL/u);
   assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
-  assert.match(
+  assert.match(e2eJob, /uses: \.\/\.github\/actions\/cache-supabase-images/u);
+  assert.match(e2eJob, /profile: full/u);
+  assert.doesNotMatch(
     e2eJob,
-    /key: supabase-docker-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-images/u,
-    'Supabase Docker cache keys must be stable for the platform and CLI version'
+    /supabase-docker-v2|prepare-supabase-docker-cache|docker load/u
   );
-  assert.match(
-    e2eJob,
-    /restore-keys: \|\n {12}supabase-docker-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-/u
-  );
-  assert.match(
-    e2eJob,
-    /steps\.cache-supabase\.outputs\.cache-matched-key != ''/u
-  );
-  assert.match(
-    e2eJob,
-    /github\.ref == 'refs\/heads\/main' && matrix\.mode == 'shard' && matrix\.shard == 1 && steps\.cache-supabase\.outputs\.cache-matched-key == ''/u
-  );
-  assert.doesNotMatch(e2eJob, /github\.(?:run_id|run_attempt).*supabase/u);
-  assert.match(
-    e2eJob,
-    /id: prepare-supabase-docker-cache/u,
-    'E2E cache upload must verify a tarball exists before saving'
-  );
-  assert.match(e2eJob, /cache-ready=true/u);
-  assert.match(
-    e2eJob,
-    /steps\.prepare-supabase-docker-cache\.outputs\.cache-ready == 'true'/u
-  );
+  const cacheIndex = e2eJob.indexOf('Restore shared Supabase images');
+  assert.ok(cacheIndex > e2eJob.indexOf('Install dependencies'));
+  assert.ok(cacheIndex < e2eJob.indexOf('Reuse migrated Supabase baseline'));
   assert.match(e2eJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
   assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
   assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);

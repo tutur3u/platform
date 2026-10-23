@@ -638,11 +638,17 @@ loading cached Supabase Docker images. Keep that cleanup ahead of the cache load
 running `docker system prune -af --volumes` after cached images are loaded would
 remove the images the shard is about to use, while skipping the cleanup can leave
 too little space for the web Docker image dependency layer.
-The default push workflow keeps the existing `cache` transport. To benchmark
+The paused E2E jobs use the shared `cache-supabase-images` action's exact `full`
+profile after dependency installation and before the migrated baseline. They no
+longer restore or save a separate `supabase-docker-v2` archive. The full profile
+covers the configured Supabase services, uses public ECR identities, verifies
+loaded images and saves only from trusted main pushes/dispatches. Existing
+archives are not deleted, and this cache consolidation does not resume Docker.
+The retained workflow keeps the `cache` transport by default. To benchmark
 the cache archive against direct registry pulls without changing healthy main
 runs, dispatch **E2E Tests** manually with **Supabase image transport benchmark
-mode** set to `registry`. Compare the `Restore cached Docker images`, `Load
-cached Docker images`, and `Run Playwright shard` step durations with an
+mode** set to `registry`. Compare the nested restore/load steps in `Restore shared Supabase images`
+and the `Run Playwright shard` duration with an
 otherwise equivalent `cache` dispatch. Do not replace the default until three
 successful paired runs show a consistent critical-path improvement; migration
 replay itself is only a small part of Supabase startup time.
