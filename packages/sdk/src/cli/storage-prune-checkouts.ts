@@ -261,7 +261,8 @@ export function buildArtifactSteps(
         if (failed) return failed;
         return command(
           [
-            'node',
+            // The absolute runtime running ttr, never `node` from PATH.
+            process.execPath,
             script,
             'prune',
             '--apply',
@@ -300,7 +301,8 @@ export function rustTargetSteps(ctx: PruneContext, category: StorageCategory) {
         if (failed) return failed;
         return command(
           [
-            'node',
+            // The absolute runtime running ttr, never `node` from PATH.
+            process.execPath,
             script,
             'prune',
             '--apply',

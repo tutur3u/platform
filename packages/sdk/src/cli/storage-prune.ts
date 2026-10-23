@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { dirname } from 'node:path';
 import type { StorageItem, StorageReport } from './storage-analyze';
 import { formatBytes, GiB } from './storage-headroom';
 import {
@@ -9,8 +10,13 @@ import {
   isBusy,
   isInside,
 } from './storage-holds';
-import { checkPathIdle, type OpenFiles } from './storage-liveness';
+import {
+  checkPathIdle,
+  type IdleLiveness,
+  type ProcessScan,
+} from './storage-liveness';
 import { type Measurer, measureTrees } from './storage-measure';
+import type { PrivacyProof } from './storage-privacy';
 import {
   buildArtifactSteps,
   nodeModulesSteps,
@@ -85,6 +91,8 @@ export interface PruneStep {
   reason?: string;
   /** Every path the step touches; holds and busy checks cover all of them. */
   fencePaths?: string[];
+  /** Rule root for the private-tree proof (default: each path's parent). */
+  root?: string;
   /** Runs the step after re-verifying its fences. */
   run?: () => StepResult;
 }
@@ -104,7 +112,13 @@ export interface PruneOptions {
   /** Strict cwd scan: throws unless every process could be inspected. */
   cwds: CwdLister;
   /** Open files under a path (lsof +D); see storage-liveness. */
-  openFiles: (path: string) => OpenFiles;
+  openFiles: IdleLiveness['openFiles'];
+  /**
+   * Process scan that may report hidden foreign processes (macOS, non-root);
+   * each path then needs a private-tree proof from `privacy`.
+   */
+  scan?: () => ProcessScan;
+  privacy?: (path: string, root: string) => PrivacyProof;
   git?: Git;
   prs: PullRequestLookup;
   exec?: Exec;
@@ -227,11 +241,22 @@ export function pruneStorage(options: PruneOptions) {
   // steps are planned as skipped with the reason, and apply re-checks anyway.
   let cwds: ReturnType<CwdLister> = [];
   let blind: string | null = null;
+  let hidden: ProcessScan['hidden'] = [];
   try {
-    cwds = options.cwds();
+    const scan = options.scan
+      ? options.scan()
+      : { cwds: options.cwds(), hidden: [] };
+    cwds = scan.cwds;
+    hidden = scan.hidden;
   } catch (error) {
     blind = `cwd scan failed: ${error instanceof Error ? error.message : String(error)}`;
   }
+  const liveness: IdleLiveness = {
+    cwds: options.cwds,
+    openFiles: options.openFiles,
+    scan: options.scan,
+    privacy: options.privacy,
+  };
   const steps: PruneStep[] = [];
   let planned = 0;
   const wanted = (path: string) =>
@@ -258,6 +283,22 @@ export function pruneStorage(options: PruneOptions) {
         reason: blind,
         run: undefined,
       });
+    // Hidden foreign processes: plan only paths with a private-tree proof.
+    const unproven = hidden.length
+      ? paths
+          .map((path) => ({
+            path,
+            proof: options.privacy?.(path, step.root ?? dirname(path)),
+          }))
+          .find((entry) => !entry.proof?.ok)
+      : undefined;
+    if (unproven)
+      return void steps.push({
+        ...step,
+        status: 'skipped',
+        reason: `${hidden.length} process(es) of other users cannot be inspected and ${unproven.path} is not provably private${unproven.proof && !unproven.proof.ok ? `: ${unproven.proof.reason}` : ''}`,
+        run: undefined,
+      });
     if (paths.some((path) => isBusy(path, cwds)))
       return void steps.push({
         ...step,
@@ -276,7 +317,7 @@ export function pruneStorage(options: PruneOptions) {
     steps.push({ ...step, status: 'planned' });
   };
   // Every destructive closure re-checks holds, live cwds and open files.
-  const fences = (paths: string[]): string | null => {
+  const fences = (paths: string[], root?: string): string | null => {
     const freshHolds = options.holds();
     const held = [
       ...new Set(paths.flatMap((path) => holdOwners(path, freshHolds))),
@@ -284,7 +325,8 @@ export function pruneStorage(options: PruneOptions) {
     if (held.length) return `held by ${held.join(', ')}`;
     const idle = checkPathIdle(
       paths.filter((path) => path.startsWith('/')),
-      { cwds: options.cwds, openFiles: options.openFiles }
+      liveness,
+      (path) => root ?? dirname(path)
     );
     return idle.ok ? null : idle.reason;
   };
@@ -303,7 +345,7 @@ export function pruneStorage(options: PruneOptions) {
     (): StepResult => {
       // Anchor first, so a swap during the checks below is detected.
       const identity = captureIdentity(root, target);
-      const failed = fences(fencePaths) ?? recheck?.() ?? null;
+      const failed = fences(fencePaths, root) ?? recheck?.() ?? null;
       if (failed) return failed;
       removeTree(identity);
       return null;
@@ -360,7 +402,9 @@ export function pruneStorage(options: PruneOptions) {
     olderThanDays,
     maxRemoveBytes,
     plannedBytes: planned,
-    steps: steps.map(({ run: _run, fencePaths: _paths, ...step }) => step),
+    steps: steps.map(
+      ({ run: _run, fencePaths: _paths, root: _root, ...step }) => step
+    ),
   };
 }
 

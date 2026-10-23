@@ -18,7 +18,9 @@ import {
   listProcessCwdsStrict,
   listVisibleCwds,
   openFilesUnder,
+  scanProcesses,
 } from './storage-liveness';
+import { privateTreeProof } from './storage-privacy';
 import {
   AUTO_CATEGORIES,
   defaultMaxRemoveBytes,
@@ -46,8 +48,8 @@ Usage: ttr storage <status|analyze|suggest|prune> [options]
 Options:
   --repo <path>                repository to inspect (repeat); default: the
                                current repo plus ttr resources project roots
-  --holds-dir <dir>            hold files (*.txt); default ~/.t3/cleanup/holds.d
-                               or TTR_STORAGE_HOLDS_DIRS (colon-separated)
+  --holds-dir <dir>            extra hold files dir (*.txt), added to
+                               ~/.t3/cleanup/holds.d and TTR_STORAGE_HOLDS_DIRS
   --older-than <days>          idle age for tmp, DerivedData, caches (default 7;
                                tmp candidates in analyze use 3)
   --offline                    skip GitHub PR lookups (merged = ancestry only)
@@ -330,7 +332,9 @@ export async function runStorageCommand(argv: string[]) {
     names: options.names,
     holds,
     cwds: () => listProcessCwdsStrict(),
-    openFiles: (path) => openFilesUnder(path),
+    scan: () => scanProcesses(),
+    privacy: (path, root) => privateTreeProof(path, root),
+    openFiles: (path, openOptions) => openFilesUnder(path, openOptions),
     prs: options.offline ? () => null : ghPullRequests,
     ttrArgv,
   });

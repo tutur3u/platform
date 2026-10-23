@@ -10,6 +10,7 @@ import {
   openFilesUnder,
   type Run,
   type RunResult,
+  systemTool,
 } from './storage-liveness';
 import { pruneStorage } from './storage-prune';
 
@@ -24,7 +25,7 @@ const self = 4242;
 const fake =
   (table: string, lsof: RunResult): Run =>
   (command) =>
-    command === 'ps' ? ok(table) : lsof;
+    command.endsWith('/ps') ? ok(table) : lsof;
 
 describe('strict process visibility', () => {
   const table = `${self} 501\n  77 501\n   1 0\n`;
@@ -40,11 +41,31 @@ describe('strict process visibility', () => {
     ]);
   });
 
+  it('parses negative uids (macOS nobody is -2) and runs tools by absolute path', () => {
+    const commands: string[] = [];
+    const run: Run = (command) => {
+      commands.push(command);
+      return command.endsWith('/ps')
+        ? ok(`${self} 501\n  88 -2\n`)
+        : ok(`p${self}\nfcwd\nn/home\np88\nfcwd\nn/var/empty\n`);
+    };
+    expect(
+      listProcessCwdsStrict({ run, self, alive: () => true })
+    ).toHaveLength(2);
+    expect(commands.every((command) => command.startsWith('/'))).toBe(true);
+    expect(systemTool('lsof', (path) => path === '/usr/bin/lsof')).toBe(
+      '/usr/bin/lsof'
+    );
+    // No tool found: an absolute path that fails to spawn, never PATH.
+    expect(systemTool('ps', () => false)).toBe('/bin/ps');
+  });
+
   it('rejects partial output that lists only this process', () => {
     expect(() =>
       listProcessCwdsStrict({
         run: fake(table, ok(`p${self}\nfcwd\nn/home\n`)),
         self,
+        euid: 1000,
         alive: () => true,
       })
     ).toThrow(/2 live process\(es\) of uid 0, 501 could not be inspected/u);
@@ -83,7 +104,7 @@ describe('strict process visibility', () => {
     expect(() =>
       listProcessCwdsStrict({
         run: (command) =>
-          command === 'ps'
+          command.endsWith('/ps')
             ? { status: 1, signal: null, stdout: '', stderr: 'denied' }
             : full,
         self,

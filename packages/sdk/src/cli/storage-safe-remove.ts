@@ -11,6 +11,12 @@ import { canonicalPath } from './storage-holds';
 // removal before anything is deleted, and only entries seen by the pre-scan
 // are deleted: anything created later makes its directory's rmdir fail.
 //
+// Every entry in the tree must be owned by the effective user and no
+// directory may be group- or world-writable (mode & 0o022), both in the
+// pre-scan and in the re-check before each unlink/rmdir: another user could
+// otherwise plant or swap entries inside the tree. Running as root therefore
+// removes only trees whose every entry is root-owned.
+//
 // Node has no openat/unlinkat, so a same-user process racing between a
 // verification and the syscall right after it is narrowed, not eliminated.
 
@@ -18,6 +24,8 @@ export interface FsOps {
   lstat: (path: string) => {
     dev: number;
     ino: number;
+    uid: number;
+    mode: number;
     isDirectory: () => boolean;
     isSymbolicLink: () => boolean;
   };
@@ -107,19 +115,42 @@ interface Node {
   dirs: Node[];
 }
 
+const effectiveUid = () => process.geteuid?.() ?? process.getuid?.() ?? -1;
+
+/** Why an entry may not be removed by this user, or null. */
+function ownershipProblem(
+  path: string,
+  info: ReturnType<FsOps['lstat']>,
+  euid: number
+) {
+  if (euid < 0) return `${path}: effective uid unknown`;
+  if (info.uid !== euid)
+    return `${path} is owned by uid ${info.uid}, not the effective uid ${euid}`;
+  if (info.isDirectory() && !info.isSymbolicLink() && info.mode & 0o022)
+    return `${path} is group- or world-writable (mode ${(info.mode & 0o7777).toString(8)})`;
+  return null;
+}
+
 /** Removes exactly the tree captured by `identity`; returns entries removed. */
 export function removeVerifiedTree(
   identity: TreeIdentity,
-  fs: FsOps = realFsOps
+  fs: FsOps = realFsOps,
+  euid: number = effectiveUid()
 ) {
   verifyChain(identity, fs);
   const rootDev = identity.chain[0]!.dev;
   const target = identity.chain.at(-1)!;
+  const owned = (path: string, info: ReturnType<FsOps['lstat']>) => {
+    const problem = ownershipProblem(path, info, euid);
+    if (problem) throw new Error(`${problem}; refusing the whole removal`);
+  };
+  owned(target.path, fs.lstat(target.path));
   const scan = (link: Link): Node => {
     const node: Node = { ...link, files: [], dirs: [] };
     for (const name of fs.readdir(link.path)) {
       const path = join(link.path, name);
       const info = fs.lstat(path);
+      owned(path, info);
       if (info.isDirectory() && !info.isSymbolicLink()) {
         if (info.dev !== rootDev)
           throw new Error(
@@ -135,7 +166,11 @@ export function removeVerifiedTree(
   let removed = 0;
   const same = (link: Link) => {
     const info = fs.lstat(link.path);
-    return info.dev === link.dev && info.ino === link.ino;
+    return (
+      info.dev === link.dev &&
+      info.ino === link.ino &&
+      ownershipProblem(link.path, info, euid) === null
+    );
   };
   const remove = (node: Node) => {
     for (const dir of node.dirs) remove(dir);

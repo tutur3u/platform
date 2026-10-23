@@ -33,6 +33,7 @@ const worktree = (
   classification: 'merged-clean' as const,
   evidence: 'pr #1 merged at HEAD',
   dirtyPaths: 0,
+  ignoredKept: [],
   locked: false,
   current: false,
   busy: false,

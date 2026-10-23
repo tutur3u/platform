@@ -67,6 +67,54 @@ function prune(
 
 // Real git worktrees; slow under a loaded host.
 describe('storage prune safety fences', { timeout: 30_000 }, () => {
+  it('keeps a merged-clean worktree whose ignored files are not rebuildable', async () => {
+    // Reviewer reproduction: `git worktree remove` deletes ignored files
+    // without --force, so coordination notes and env files were lost.
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    await writeFile(
+      join(fixture.repo, '.git', 'info', 'exclude'),
+      'tmp/\n.env.local\n.next\n'
+    );
+    const notes = await fixture.worktree('notes');
+    await mkdir(join(notes.path, 'tmp', 'agent-coordination'), {
+      recursive: true,
+    });
+    await writeFile(
+      join(notes.path, 'tmp', 'agent-coordination', 'backlog.md'),
+      'private backlog\n'
+    );
+    await writeFile(join(notes.path, '.env.local'), 'SECRET_NAME=value\n');
+    // Rebuildable ignored output alone does not fence a worktree.
+    const built = await fixture.worktree('built');
+    await mkdir(join(built.path, 'node_modules', 'pkg'), { recursive: true });
+    await writeFile(join(built.path, 'node_modules', 'pkg', 'index.js'), '');
+    await mkdir(join(built.path, 'apps', 'web', '.next'), { recursive: true });
+    await writeFile(join(built.path, 'apps', 'web', '.next', 'build'), '');
+
+    const dry = prune(fixture.repo, [], { apply: false });
+    const kept = dry.steps.find((step) => step.path === notes.path);
+    expect(kept?.status).toBe('skipped');
+    expect(kept?.reason).toContain(
+      'ignored non-rebuildable path(s) git worktree remove would delete'
+    );
+    expect(kept?.reason).toContain('.env.local');
+    expect(kept?.reason).toContain('tmp/');
+
+    const result = prune(fixture.repo, []);
+    expect(result.steps.find((step) => step.path === notes.path)?.status).toBe(
+      'skipped'
+    );
+    expect(
+      existsSync(join(notes.path, 'tmp', 'agent-coordination', 'backlog.md'))
+    ).toBe(true);
+    expect(existsSync(join(notes.path, '.env.local'))).toBe(true);
+    expect(result.steps.find((step) => step.path === built.path)?.status).toBe(
+      'done'
+    );
+    expect(existsSync(built.path)).toBe(false);
+  });
+
   it('removes only the merged clean worktree and deletes its branch with -d', async () => {
     const fixture = await createRepoFixture();
     roots.push(fixture.root);

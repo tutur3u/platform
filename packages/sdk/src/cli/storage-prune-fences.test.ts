@@ -177,7 +177,7 @@ describe('worktree fences after review', { timeout: 30_000 }, () => {
       categories: ['rust-target'],
       exec,
     });
-    const runs = calls.filter((argv) => argv[0] === 'node');
+    const runs = calls.filter((argv) => argv[0] === process.execPath);
     expect(runs).toHaveLength(1);
     expect(runs[0]?.[1]).toBe(join(fixture.repo, 'scripts', 'rust-cache.js'));
     expect(runs[0]).toContain(join(clean.path, 'apps/backend/target'));
@@ -237,7 +237,7 @@ describe('machine cache fences after review', () => {
 
     let ps = 0;
     const busyLater: Exec = (argv) => {
-      if (argv[0] === 'ps')
+      if (argv[0]?.endsWith('/ps'))
         return { status: 0, stdout: ps++ ? 'bun install\n' : '', stderr: '' };
       calls.push(argv);
       return { status: 0, stdout: '', stderr: '' };

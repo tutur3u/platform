@@ -24,10 +24,13 @@ async function tree() {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'ttr-safe-')));
   const cache = join(root, 'cache');
   const target = join(cache, 'Project');
-  await mkdir(join(target, 'nested', 'deeper'), { recursive: true });
+  await mkdir(join(target, 'nested', 'deeper'), {
+    recursive: true,
+    mode: 0o755,
+  });
   await writeFile(join(target, 'nested', 'deeper', 'blob'), 'x');
   const outside = join(root, 'outside');
-  await mkdir(outside);
+  await mkdir(outside, { mode: 0o755 });
   await writeFile(join(outside, 'sentinel'), 'keep');
   return { root, cache, target, outside };
 }
@@ -82,6 +85,8 @@ describe('identity-anchored removal', () => {
           ? {
               dev: info.dev + 1,
               ino: info.ino,
+              uid: info.uid,
+              mode: info.mode,
               isDirectory: () => true,
               isSymbolicLink: () => false,
             }
@@ -97,6 +102,69 @@ describe('identity-anchored removal', () => {
     ).toThrow(/mount boundary/u);
     expect(unlinked).toEqual([]);
     expect(existsSync(join(nested, 'deeper', 'blob'))).toBe(true);
+  });
+
+  it('refuses trees with foreign-owned entries or writable directories, even as root', async () => {
+    const { cache, target } = await tree();
+    const euid = process.geteuid?.() ?? 0;
+    const blob = join(target, 'nested', 'deeper', 'blob');
+    const unlinked: string[] = [];
+    const spy = (lstat: FsOps['lstat']): FsOps => ({
+      ...realFsOps,
+      lstat,
+      unlink: (path) => unlinked.push(path),
+      rmdir: (path) => unlinked.push(path),
+    });
+    const foreign = spy((path) => {
+      const info = lstatSync(path);
+      return path === blob ? Object.assign(info, { uid: euid + 1 }) : info;
+    });
+    expect(() =>
+      removeVerifiedTree(captureIdentity(cache, target), foreign)
+    ).toThrow(/owned by uid .* not the effective uid/u);
+    const writable = spy((path) => {
+      const info = lstatSync(path);
+      return path === join(target, 'nested')
+        ? Object.assign(info, { mode: info.mode | 0o002 })
+        : info;
+    });
+    expect(() =>
+      removeVerifiedTree(captureIdentity(cache, target), writable)
+    ).toThrow(/group- or world-writable/u);
+    // Root removes only trees whose every entry is root-owned.
+    expect(() =>
+      removeVerifiedTree(
+        captureIdentity(cache, target),
+        spy(realFsOps.lstat),
+        0
+      )
+    ).toThrow(/not the effective uid 0/u);
+    expect(unlinked).toEqual([]);
+    expect(existsSync(blob)).toBe(true);
+  });
+
+  it('re-checks ownership at the destructive boundary', async () => {
+    const { cache, target } = await tree();
+    const euid = process.geteuid?.() ?? 0;
+    const blob = join(target, 'nested', 'deeper', 'blob');
+    let blobChecks = 0;
+    const unlinked: string[] = [];
+    const flipping: FsOps = {
+      ...realFsOps,
+      // The pre-scan sees the file as ours; by the re-check right before its
+      // unlink it belongs to someone else.
+      lstat: (path) => {
+        const info = lstatSync(path);
+        return path === blob && blobChecks++ > 0
+          ? Object.assign(info, { uid: euid + 1 })
+          : info;
+      },
+      unlink: (path) => unlinked.push(path),
+    };
+    expect(() =>
+      removeVerifiedTree(captureIdentity(cache, target), flipping)
+    ).toThrow(/identity changed/u);
+    expect(unlinked).toEqual([]);
   });
 
   it('never deletes entries created after the pre-scan', async () => {

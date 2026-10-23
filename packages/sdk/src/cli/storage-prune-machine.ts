@@ -2,6 +2,7 @@ import { lstatSync, readdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { dockerOverrides, verifyLocalDocker } from './storage-docker-local';
 import { canonicalPath, isInside } from './storage-holds';
+import { systemTool } from './storage-liveness';
 import type { Exec, PruneContext, StepResult } from './storage-prune';
 import {
   newestMtime,
@@ -50,6 +51,7 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
         path: child,
         bytes: sizes[index]?.uniqueBytes ?? 0,
         description: `remove DerivedData/${child.slice(item.path.length + 1)} (idle > ${olderThanDays}d)`,
+        root: item.path,
         run: removeTree(item.path, child, () => {
           if (processRunning(exec, xcodeBusy))
             return 'Xcode or xcodebuild started';
@@ -88,6 +90,7 @@ export function tmpSteps(ctx: PruneContext, category: StorageCategory) {
       path: item.path,
       bytes: item.uniqueBytes,
       description: `remove idle tmp dir (${item.label})`,
+      root,
       run: removeTree(root, item.path, () =>
         newestMtime(item.path) > cutoff
           ? 're-check failed: written recently'
@@ -292,7 +295,7 @@ function safeReaddir(path: string) {
 
 /** Fails closed: an unreadable process list counts as busy. */
 function processRunning(exec: Exec, pattern: RegExp) {
-  const result = exec(['ps', '-axo', 'command=']);
+  const result = exec([systemTool('ps'), '-axo', 'command=']);
   return (
     result.status !== 0 ||
     result.stdout.split('\n').some((line) => pattern.test(line))

@@ -25,11 +25,13 @@ export function holdsDirs(
   env: NodeJS.ProcessEnv = process.env,
   flags: string[] = []
 ) {
-  if (flags.length) return flags.map((dir) => resolve(dir));
-  const fromEnv = env.TTR_STORAGE_HOLDS_DIRS?.split(':').filter(Boolean);
-  return fromEnv?.length
-    ? fromEnv.map((dir) => resolve(dir))
-    : [defaultHoldsDir];
+  // Extra directories add holds; they never replace the shared default.
+  const fromEnv = env.TTR_STORAGE_HOLDS_DIRS?.split(':').filter(Boolean) ?? [];
+  return [
+    ...new Set(
+      [defaultHoldsDir, ...fromEnv, ...flags].map((dir) => resolve(dir))
+    ),
+  ];
 }
 
 /**

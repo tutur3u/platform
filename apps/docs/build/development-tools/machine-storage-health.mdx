@@ -76,18 +76,29 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
 - Worktrees active in the last 24 hours.
 - Any path covered by a hold file. Hold files are `*.txt` in
   `~/.t3/cleanup/holds.d` (or `--holds-dir`, `TTR_STORAGE_HOLDS_DIRS`); one
-  absolute path or glob per line, `#` comments. A hold covers its path,
+  absolute path or glob per line, `#` comments. `--holds-dir` and
+  `TTR_STORAGE_HOLDS_DIRS` add directories; the shared default is always
+  read. A hold covers its path,
   everything below it and everything above it. An unreadable holds directory,
   or any non-comment line that is not an absolute path or glob, stops the run
   with the file and line; fix or comment out the line.
 - Any path a process may be using. Right before each removal, every process's
   working directory (`lsof -d cwd`, checked against the full `ps` table) and
   every open file under the path (`lsof +D`) are re-checked. A failed scan,
-  any `lsof` diagnostic, or a live process this user cannot inspect (another
-  user's or root's, when not running as root) means use is not proven absent,
-  and the step is skipped. As a non-root user on macOS, root's processes are
-  never inspectable, so path removals are skipped there until they can be
-  run with full visibility.
+  any `lsof` diagnostic, or an uninspectable live process of this user means
+  use is not proven absent, and the step is skipped. Uninspectable processes
+  of other users (including root) are tolerated only under the private-tree
+  rule below. `ps` and `lsof` run by absolute path and scripts by the
+  absolute runtime, so a shim directory on `PATH` cannot answer for them.
+- Worktrees whose ignored files are not rebuildable. `git worktree remove`
+  deletes ignored files without `--force`, so a worktree is kept when
+  `git ls-files -o -i --exclude-standard --directory` lists anything outside
+  build artifacts, `node_modules` and `target` (for example `.env.local` or
+  `tmp/agent-coordination/`); the dry run names those paths.
+- Trees with entries this user does not own, or with a group- or
+  world-writable directory (`mode & 0o022`), checked in the pre-scan and
+  again before every unlink. Running as root removes only fully root-owned
+  trees.
 - Anything reached through a symlink or across a mount. Trees are removed by
   directory identity (device and inode) captured before the checks and
   re-verified before every unlink; a swapped ancestor or a nested mount stops
@@ -110,6 +121,34 @@ working directories, open files and worktree state immediately before acting.
 Idle ages use the newest modification or change time anywhere in a tree (a
 deep, recently written file keeps the whole tree); trees over 500,000 entries
 or unreadable ones count as recent.
+
+## Process visibility on macOS: private-tree evidence
+
+Decision (orchestrator, 2026-10-23): a non-root user's `lsof` cannot inspect
+other users' or root's processes, so strict visibility would skip every
+removal on macOS. Removal (manual `prune` and automatic reclaim alike) may
+proceed with `private-tree` evidence only when all of these hold:
+
+1. Every live process of the effective user was inspected; only processes of
+   other uids may be hidden.
+2. The item has a private-tree proof: some directory at or above the rule
+   root is owned by the effective user, has `mode & 0o077 == 0` and no ACL;
+   every directory from there down to the item is owned by the effective user
+   and not group- or other-writable; all on one device.
+3. The open-file scan is scoped to the effective user (`lsof -a -u <euid>`).
+4. Never when running as root, and only on macOS. Linux stays fail-closed
+   until a container-mount check exists.
+
+Receipts and step checks record the evidence level (`private-tree` or
+`full-visibility`). Root's processes remain uninspectable under this rule;
+that residual is accepted only for proven-private trees. Idle Xcode
+DerivedData usually qualifies through `~/Library/Developer` (0700, no ACL).
+Worktrees and their artifacts under `~/.t3` do not qualify unless that tree
+is 0700; ttr never changes permissions to make something qualify.
+
+Regression coverage: `packages/sdk/src/cli/storage-privacy.test.ts` (scan
+rules per platform and uid, the proof's failure modes, scoped `lsof`, manual
+prune wiring) and `storage-liveness.test.ts` (strict scan parsing).
 
 ## Stale `node_modules`
 

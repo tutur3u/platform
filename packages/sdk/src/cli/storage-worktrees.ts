@@ -142,8 +142,59 @@ export interface WorktreeReport {
   owner: string;
   idleDays: number | null;
   pullRequest: PullRequestFacts | null;
+  /**
+   * Ignored paths outside the rebuildable allowlist (`.env.local`, `tmp/`,
+   * coordination notes...). `git worktree remove` deletes ignored files
+   * without --force, so any of these fences the worktree.
+   */
+  ignoredKept: string[];
   /** Never removable by `ttr storage prune`, with the reasons. */
   fences: string[];
+}
+
+// Ignored paths `git worktree remove` may delete without asking: rebuildable
+// outputs only. Mirrors the artifact patterns in storage-analyze plus
+// dependency installs and Rust targets anywhere in the checkout.
+const REBUILDABLE_IGNORED = [
+  /^\.turbo$/u,
+  /^(apps|packages)\/[^/]+\/\.turbo$/u,
+  /^apps\/[^/]+\/(\.next|\.open-next|\.dart_tool)$/u,
+  /^(apps|packages)\/[^/]+\/(dist|build)$/u,
+];
+
+/** True when an ignored path (git `--directory` form) is rebuildable output. */
+export function rebuildableIgnored(path: string) {
+  const rel = path.replace(/\/+$/u, '');
+  const segments = rel.split('/');
+  if (segments.includes('node_modules') || segments.includes('target'))
+    return true;
+  return REBUILDABLE_IGNORED.some((pattern) => pattern.test(rel));
+}
+
+/**
+ * Ignored, untracked paths in a worktree that are not rebuildable output.
+ * Throws if git cannot list them (the caller fences the worktree).
+ */
+export function ignoredNonRebuildable(git: Git, path: string) {
+  return git(path, [
+    'ls-files',
+    '-z',
+    '--others',
+    '--ignored',
+    '--exclude-standard',
+    '--directory',
+  ])
+    .split('\0')
+    .filter(Boolean)
+    .filter(
+      (entry, _index, all) =>
+        // A directory listed above other entries only contains them (git
+        // lists ignored files inside it individually): judge the entries.
+        !(
+          entry.endsWith('/') &&
+          all.some((other) => other !== entry && other.startsWith(entry))
+        ) && !rebuildableIgnored(entry)
+    );
 }
 
 /** Owner label from the checkout location (T3 lane, repo `.worktrees`, other). */
@@ -274,6 +325,7 @@ export function classifyWorktrees({
           classification: 'orphaned' as const,
           evidence: 'directory missing; `git worktree prune` clears the record',
           dirtyPaths: 0,
+          ignoredKept: [],
           busy: false,
           idleDays: null,
           pullRequest: null,
@@ -291,6 +343,14 @@ export function classifyWorktrees({
       ])
         .split('\n')
         .filter(Boolean).length;
+      let ignoredKept: string[] = [];
+      let ignoredError: string | null = null;
+      if (!entry.primary)
+        try {
+          ignoredKept = ignoredNonRebuildable(git, entry.path);
+        } catch (error) {
+          ignoredError = error instanceof Error ? error.message : String(error);
+        }
       const busy = isBusy(entry.path, cwds);
       const proof = mergeEvidence(git, entry, baseRef, prs);
       const classification: WorktreeClass = entry.primary
@@ -307,6 +367,10 @@ export function classifyWorktrees({
         busy && 'process working inside',
         heldBy.length && `held by ${heldBy.join(', ')}`,
         dirtyPaths > 0 && `${dirtyPaths} dirty path(s)`,
+        ignoredKept.length > 0 &&
+          `${ignoredKept.length} ignored non-rebuildable path(s) git worktree remove would delete: ${ignoredKept.slice(0, 5).join(', ')}${ignoredKept.length > 5 ? ', ...' : ''}`,
+        ignoredError &&
+          `ignored files could not be listed: ${ignoredError.slice(0, 120)}`,
         !proof.merged && !entry.primary && `unmerged (${proof.evidence})`,
         entry.branch?.startsWith('preserve/') && 'preserve/* branch',
       ].filter((fence): fence is string => Boolean(fence));
@@ -315,6 +379,7 @@ export function classifyWorktrees({
         classification,
         evidence: proof.evidence,
         dirtyPaths,
+        ignoredKept,
         busy,
         idleDays: idleDays(git, entry.path, now),
         pullRequest: proof.pr,

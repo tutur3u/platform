@@ -9,7 +9,13 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { holdOwners, isBusy, readHolds } from './storage-holds';
+import {
+  defaultHoldsDir,
+  holdOwners,
+  holdsDirs,
+  isBusy,
+  readHolds,
+} from './storage-holds';
 
 const dirs: string[] = [];
 afterEach(async () => {
@@ -48,6 +54,13 @@ describe('hold files', () => {
     expect(() => readHolds([dir])).toThrow(
       /Invalid hold in .*mastermind\.txt:3: "relative\/evidence # meant to be held"/u
     );
+  });
+
+  it('adds custom holds directories to the shared default, never replacing it', () => {
+    expect(holdsDirs({}, [])).toEqual([defaultHoldsDir]);
+    expect(
+      holdsDirs({ TTR_STORAGE_HOLDS_DIRS: '/extra/a:/extra/b' }, ['/flag'])
+    ).toEqual([defaultHoldsDir, '/extra/a', '/extra/b', '/flag']);
   });
 
   it('treats a missing directory as no holds but refuses an unreadable one', async () => {
