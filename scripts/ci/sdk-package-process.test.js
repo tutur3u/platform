@@ -140,3 +140,16 @@ test('termination EPERM is still a signal failure', async (t) => {
     { code: 'PROCESS_SIGNAL_FAILED' }
   );
 });
+
+test('non-Error probe failures are rethrown unchanged', async () => {
+  await assert.rejects(
+    drainGroup(
+      12345,
+      () => {
+        throw null;
+      },
+      25
+    ),
+    (error) => error === null
+  );
+});

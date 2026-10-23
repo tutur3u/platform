@@ -22,7 +22,7 @@ async function drainGroup(
     try {
       if (!exists(pid)) return;
     } catch (error) {
-      if (error.code !== 'EPERM') throw error;
+      if (error?.code !== 'EPERM') throw error;
       lastError = error;
     }
     await new Promise((resolve) => setTimeout(resolve, 20));
