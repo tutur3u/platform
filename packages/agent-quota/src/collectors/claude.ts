@@ -144,7 +144,11 @@ export async function collectClaude(
 			authoritative: false,
 		});
 	}
-	if (planLimitReached)
+	const resetTime = limitReset ? Date.parse(limitReset) : Number.NaN;
+	const limitStillActive =
+		planLimitReached &&
+		(!limitReset || !Number.isFinite(resetTime) || resetTime > Date.now());
+	if (limitStillActive)
 		windows.push({
 			kind: "weekly",
 			usedPercent: 100,

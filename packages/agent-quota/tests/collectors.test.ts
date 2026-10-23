@@ -91,6 +91,7 @@ describe("local collectors", () => {
 	it("treats a Claude plan-limit event as exhausted quota and records a visible reset time", async () => {
 		const root = await tempDir();
 		const observedAt = new Date().toISOString();
+		const resetsAt = new Date(Date.now() + 10 * 60_000).toISOString();
 		await writeFile(
 			join(root, "fixture.jsonl"),
 			`${JSON.stringify({
@@ -100,7 +101,7 @@ describe("local collectors", () => {
 					content: [
 						{
 							type: "text",
-							text: "Usage limit reached. Reset at 2026-10-23T02:00:00Z.",
+							text: `Usage limit reached. Reset at ${resetsAt}.`,
 						},
 					],
 				},
@@ -110,7 +111,7 @@ describe("local collectors", () => {
 		expect(result.windows[0]).toMatchObject({
 			kind: "weekly",
 			usedPercent: 100,
-			resetsAt: "2026-10-23T02:00:00Z",
+			resetsAt,
 			authoritative: true,
 		});
 	});
