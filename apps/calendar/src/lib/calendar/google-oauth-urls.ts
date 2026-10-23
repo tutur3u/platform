@@ -106,13 +106,33 @@ function resolveForwardedOrigin(request?: HeaderCarrier) {
   return normalizeHttpOrigin(`${protocol}://${forwardedHost}`);
 }
 
-export function resolveGoogleCalendarWebOrigin(request?: HeaderCarrier) {
+function resolveConfiguredWebOrigin() {
   return (
     normalizeHttpOrigin(process.env.WEB_APP_URL) ||
     normalizeHttpOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     normalizeHttpOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
     normalizeHttpOrigin(process.env.COOLIFY_URL) ||
-    normalizeHttpOrigin(process.env.COOLIFY_FQDN) ||
+    normalizeHttpOrigin(process.env.COOLIFY_FQDN)
+  );
+}
+
+/**
+ * Canonical public Web origin for browser redirects. Only deployment
+ * configuration is trusted here, never the request URL, Host or forwarded
+ * headers, so a redirect can never be steered to another origin.
+ */
+export function resolveCalendarCanonicalWebOrigin() {
+  return resolveConfiguredWebOrigin() || DEFAULT_WEB_ORIGIN;
+}
+
+/**
+ * Web origin used to build the OAuth `redirect_uri` sent to Google. Google
+ * only accepts registered redirect URIs, so a forwarded host fallback is
+ * kept for local proxies; browser redirects use the canonical origin instead.
+ */
+export function resolveGoogleCalendarWebOrigin(request?: HeaderCarrier) {
+  return (
+    resolveConfiguredWebOrigin() ||
     resolveForwardedOrigin(request) ||
     DEFAULT_WEB_ORIGIN
   );
@@ -128,17 +148,29 @@ export function resolveGoogleCalendarOAuthRedirectUri(request?: HeaderCarrier) {
   );
 }
 
-export function buildGoogleCalendarPostAuthRedirectUrl(
-  request: HeaderCarrier | undefined,
-  wsId: string
+/**
+ * Build a post-OAuth browser redirect on the canonical Web origin. Without a
+ * verified workspace the redirect falls back to the origin root.
+ */
+export function buildCalendarPostAuthRedirectUrl(
+  wsId: string | null,
+  searchParams: Record<string, string>
 ) {
   const redirectUrl = new URL(
-    `/${encodeURIComponent(wsId)}/calendar`,
-    resolveGoogleCalendarWebOrigin(request)
+    wsId ? `/${encodeURIComponent(wsId)}/calendar` : '/',
+    resolveCalendarCanonicalWebOrigin()
   );
 
-  redirectUrl.searchParams.set('provider', 'google');
-  redirectUrl.searchParams.set('connected', 'true');
+  for (const [key, value] of Object.entries(searchParams)) {
+    redirectUrl.searchParams.set(key, value);
+  }
 
   return redirectUrl;
+}
+
+export function buildGoogleCalendarPostAuthRedirectUrl(wsId: string) {
+  return buildCalendarPostAuthRedirectUrl(wsId, {
+    provider: 'google',
+    connected: 'true',
+  });
 }

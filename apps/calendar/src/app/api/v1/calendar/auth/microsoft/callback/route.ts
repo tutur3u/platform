@@ -9,12 +9,12 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { authorizeCalendarOAuthCallback } from '@/lib/calendar/calendar-oauth-callback-guard';
 import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
+import { buildCalendarPostAuthRedirectUrl } from '@/lib/calendar/google-oauth-urls';
 import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
@@ -54,9 +54,8 @@ export async function GET(request: Request): Promise<NextResponse> {
   const verifiedState = configComplete
     ? verifyCalendarOAuthState('microsoft', state, config.clientSecret)
     : null;
-  const calendarPath = verifiedState?.ok
-    ? `/${encodeURIComponent(verifiedState.wsId)}/calendar`
-    : '/';
+  // Browser redirects use the canonical Web origin, never the request host.
+  const redirectWsId = verifiedState?.ok ? verifiedState.wsId : null;
 
   if (error) {
     calendarOAuthError(
@@ -64,12 +63,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
       error_description
     );
-    const redirectUrl = new URL(calendarPath, request.url);
-    redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
-    redirectUrl.searchParams.set(
-      'message',
-      error_description || error || 'Unknown error'
-    );
+    const redirectUrl = buildCalendarPostAuthRedirectUrl(redirectWsId, {
+      error: 'microsoft_auth_failed',
+      message: error_description || error || 'Unknown error',
+    });
 
     return NextResponse.redirect(redirectUrl, 302);
   }
@@ -105,50 +102,21 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   if (!codeVerifier) {
     calendarOAuthError('❌ [DEBUG] Missing PKCE code verifier');
-    const redirectUrl = new URL(calendarPath, request.url);
-    redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
-    redirectUrl.searchParams.set(
-      'message',
-      'PKCE verification failed. Please try again.'
-    );
+    const redirectUrl = buildCalendarPostAuthRedirectUrl(redirectWsId, {
+      error: 'microsoft_auth_failed',
+      message: 'PKCE verification failed. Please try again.',
+    });
     return NextResponse.redirect(redirectUrl, 302);
   }
 
-  calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
-  const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: true,
+  // Same signed-in user, current workspace member, and first use of the state.
+  const authorization = await authorizeCalendarOAuthCallback({
+    provider: 'microsoft',
+    request,
+    verifiedState,
   });
-
-  if (!auth.ok) {
-    calendarOAuthDebug('❌ [DEBUG] User not authenticated');
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
-  const { supabase, user } = auth;
-
-  if (user.id !== verifiedState.userId) {
-    calendarOAuthDebug('❌ [DEBUG] OAuth state belongs to another user');
-    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
-  }
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { error: 'Failed to verify workspace access' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  if (!authorization.ok) return authorization.response;
+  const { supabase, user } = authorization;
 
   try {
     calendarOAuthDebug('🔍 [DEBUG] Creating MSAL client...');
@@ -351,9 +319,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
 
     // Create redirect response and clear the PKCE cookie
-    const redirectUrl = new URL(calendarPath, request.url);
-    redirectUrl.searchParams.set('provider', 'microsoft');
-    redirectUrl.searchParams.set('connected', 'true');
+    const redirectUrl = buildCalendarPostAuthRedirectUrl(wsId, {
+      provider: 'microsoft',
+      connected: 'true',
+    });
 
     const redirectResponse = NextResponse.redirect(redirectUrl, 302);
 

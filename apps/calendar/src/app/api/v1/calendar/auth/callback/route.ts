@@ -1,8 +1,10 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
+import { authorizeCalendarOAuthCallback } from '@/lib/calendar/calendar-oauth-callback-guard';
+import {
+  deriveCalendarOAuthPkce,
+  verifyCalendarOAuthState,
+} from '@/lib/calendar/calendar-oauth-state';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import {
   buildGoogleCalendarPostAuthRedirectUrl,
@@ -68,43 +70,20 @@ export async function GET(request: Request) {
     });
     return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 400 });
   }
-  const { wsId } = verifiedState;
 
-  calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
-  const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: true,
+  // Same signed-in user, current workspace member, and first use of the state.
+  const authorization = await authorizeCalendarOAuthCallback({
+    provider: 'google',
+    request,
+    verifiedState,
   });
-
-  if (!authContext.ok) {
-    calendarOAuthDebug('❌ [DEBUG] User not authenticated');
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
-  const { supabase, user } = authContext;
-
-  if (user.id !== verifiedState.userId) {
-    calendarOAuthDebug('❌ [DEBUG] OAuth state belongs to another user');
-    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
-  }
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { error: 'Failed to verify workspace access' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  if (!authorization.ok) return authorization.response;
+  const { supabase, user, wsId } = authorization;
+  const { codeVerifier } = deriveCalendarOAuthPkce(
+    'google',
+    verifiedState.nonce,
+    oauthConfig.config.clientSecret
+  );
 
   calendarOAuthDebug('🔍 [DEBUG] Creating OAuth2Client...');
   const auth = new OAuth2Client({
@@ -118,7 +97,7 @@ export async function GET(request: Request) {
       '🔍 [DEBUG] Exchanging authorization code for tokens...'
     );
     // Exchange the authorization code for tokens
-    const { tokens } = await auth.getToken(code);
+    const { tokens } = await auth.getToken({ code, codeVerifier });
 
     calendarOAuthDebug('🔍 [DEBUG] Token exchange result:', {
       hasAccessToken: !!tokens.access_token,
@@ -428,7 +407,7 @@ export async function GET(request: Request) {
     calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
     // Redirect to the calendar page with success indicator
     return NextResponse.redirect(
-      buildGoogleCalendarPostAuthRedirectUrl(request, wsId),
+      buildGoogleCalendarPostAuthRedirectUrl(wsId),
       302
     );
   } catch (error) {

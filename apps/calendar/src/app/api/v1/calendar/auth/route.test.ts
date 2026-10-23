@@ -54,7 +54,10 @@ vi.mock('@/lib/workspace-helper', () => ({
   normalizeWorkspaceId: normalizeWorkspaceIdMock,
 }));
 
-import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
+import {
+  deriveCalendarOAuthPkce,
+  verifyCalendarOAuthState,
+} from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
 describe('Google Calendar auth route', () => {
@@ -160,9 +163,25 @@ describe('Google Calendar auth route', () => {
 
     expect(response.status).toBe(200);
     expect(state).not.toBe('workspace-1');
-    expect(
-      verifyCalendarOAuthState('google', state, 'google-client-secret')
-    ).toEqual({ ok: true, userId: 'user-1', wsId: 'workspace-1' });
+    const verified = verifyCalendarOAuthState(
+      'google',
+      state,
+      'google-client-secret'
+    );
+    expect(verified).toMatchObject({
+      ok: true,
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    });
+    if (!verified.ok) throw new Error('expected a verified state');
+    expect(generatedAuthUrlInputs[0]).toMatchObject({
+      code_challenge: deriveCalendarOAuthPkce(
+        'google',
+        verified.nonce,
+        'google-client-secret'
+      ).codeChallenge,
+      code_challenge_method: 'S256',
+    });
     expect(verifyCalendarOAuthState('google', state, 'other-secret')).toEqual({
       ok: false,
       reason: 'signature',

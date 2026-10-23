@@ -1,4 +1,9 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 
 const STATE_VERSION = 1;
 const STATE_TTL_MS = 10 * 60 * 1000;
@@ -15,7 +20,13 @@ type CalendarOAuthStatePayload = {
 };
 
 export type CalendarOAuthStateVerification =
-  | { ok: true; userId: string; wsId: string }
+  | {
+      ok: true;
+      expiresAt: number;
+      nonce: string;
+      userId: string;
+      wsId: string;
+    }
   | { ok: false; reason: 'malformed' | 'signature' | 'expired' };
 
 // Derive a purpose-bound key so the provider client secret is never used
@@ -38,9 +49,30 @@ function sign(
 }
 
 /**
+ * Derive the PKCE (S256) pair for a flow from its signed state nonce. The
+ * verifier is keyed by the server-only state key, so it never travels to the
+ * browser and cannot be computed from the state alone.
+ */
+export function deriveCalendarOAuthPkce(
+  provider: CalendarOAuthProvider,
+  nonce: string,
+  clientSecret: string
+) {
+  const codeVerifier = createHmac('sha256', stateKey(provider, clientSecret))
+    .update(`pkce:${nonce}`)
+    .digest('base64url');
+  const codeChallenge = createHash('sha256')
+    .update(codeVerifier)
+    .digest('base64url');
+
+  return { codeChallenge, codeVerifier };
+}
+
+/**
  * Create the OAuth `state` for a calendar provider connection. It binds the
  * flow to the initiating user and workspace, expires, and is signed so the
- * callback can reject forged or swapped values.
+ * callback can reject forged or swapped values. The returned nonce is unique
+ * per flow and is consumed once by the callback.
  */
 export function createCalendarOAuthState(
   provider: CalendarOAuthProvider,
@@ -58,7 +90,11 @@ export function createCalendarOAuthState(
   };
   const content = Buffer.from(JSON.stringify(payload)).toString('base64url');
 
-  return `${content}.${sign(provider, content, clientSecret)}`;
+  return {
+    expiresAt: payload.exp,
+    nonce: payload.n,
+    state: `${content}.${sign(provider, content, clientSecret)}`,
+  };
 }
 
 function isPayload(
@@ -76,7 +112,8 @@ function isPayload(
     typeof payload.uid === 'string' &&
     payload.uid.length > 0 &&
     typeof payload.exp === 'number' &&
-    typeof payload.n === 'string'
+    typeof payload.n === 'string' &&
+    payload.n.length > 0
   );
 }
 
@@ -114,5 +151,11 @@ export function verifyCalendarOAuthState(
     return { ok: false, reason: 'expired' };
   }
 
-  return { ok: true, userId: payload.uid, wsId: payload.ws };
+  return {
+    ok: true,
+    expiresAt: payload.exp,
+    nonce: payload.n,
+    userId: payload.uid,
+    wsId: payload.ws,
+  };
 }

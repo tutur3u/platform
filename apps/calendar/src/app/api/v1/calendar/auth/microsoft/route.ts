@@ -104,7 +104,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         'microsoft',
         { userId: user.id, wsId: normalizedWsId },
         config.clientSecret
-      ),
+      ).state,
       prompt: 'consent',
       codeChallenge,
       codeChallengeMethod: 'S256',

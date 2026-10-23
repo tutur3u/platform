@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildCalendarPostAuthRedirectUrl,
   buildGoogleCalendarPostAuthRedirectUrl,
   resolveGoogleCalendarOAuthRedirectUri,
+  resolveGoogleCalendarWebOrigin,
 } from './google-oauth-urls';
 
 const WEB_ORIGIN_ENV_KEYS = [
@@ -50,32 +52,44 @@ describe('Google Calendar OAuth URLs', () => {
     clearWebOriginEnvs();
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');
 
-    const url = buildGoogleCalendarPostAuthRedirectUrl(
-      {
-        headers: new Headers(),
-      },
-      'workspace-1'
-    );
+    const url = buildGoogleCalendarPostAuthRedirectUrl('workspace-1');
 
     expect(url.toString()).toBe(
       'https://tuturuuu.com/workspace-1/calendar?provider=google&connected=true'
     );
   });
 
-  it('uses forwarded public host headers when configured origins are unavailable', () => {
+  it('never takes post-auth redirect origins from request headers', () => {
     clearWebOriginEnvs();
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');
 
-    const url = buildGoogleCalendarPostAuthRedirectUrl(
-      {
-        headers: new Headers({
-          'x-forwarded-host': 'tuturuuu.com',
-          'x-forwarded-proto': 'https',
-        }),
-      },
-      'workspace-1'
+    expect(buildGoogleCalendarPostAuthRedirectUrl('workspace-1').origin).toBe(
+      'https://tuturuuu.com'
     );
+    expect(buildCalendarPostAuthRedirectUrl(null, {}).origin).toBe(
+      'https://tuturuuu.com'
+    );
+  });
 
-    expect(url.origin).toBe('https://tuturuuu.com');
+  it('keeps the forwarded-host fallback only for the Google redirect_uri', () => {
+    clearWebOriginEnvs();
+
+    expect(
+      resolveGoogleCalendarWebOrigin({
+        headers: new Headers({
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+        }),
+      })
+    ).toBe('http://localhost:7803');
+  });
+
+  it('uses the configured Web origin for post-auth redirects', () => {
+    clearWebOriginEnvs();
+    vi.stubEnv('WEB_APP_URL', 'https://staging.tuturuuu.com');
+
+    expect(
+      buildCalendarPostAuthRedirectUrl(null, { error: 'x' }).toString()
+    ).toBe('https://staging.tuturuuu.com/?error=x');
   });
 });

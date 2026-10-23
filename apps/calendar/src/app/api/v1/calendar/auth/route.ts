@@ -2,10 +2,18 @@ import { OAuth2Client } from '@tuturuuu/google';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
+import {
+  createCalendarOAuthState,
+  deriveCalendarOAuthPkce,
+} from '@/lib/calendar/calendar-oauth-state';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+type GenerateAuthUrlOptions = NonNullable<
+  Parameters<InstanceType<typeof OAuth2Client>['generateAuthUrl']>[0]
+>;
+const S256 = 'S256' as GenerateAuthUrlOptions['code_challenge_method'];
 
 export async function GET(request: NextRequest) {
   const wsId = request.nextUrl.searchParams.get('wsId');
@@ -57,12 +65,21 @@ export async function GET(request: NextRequest) {
     redirectUri: resolveGoogleCalendarOAuthRedirectUri(request),
   });
 
+  const { nonce, state } = createCalendarOAuthState(
+    'google',
+    { userId: user.id, wsId: normalizedWsId },
+    oauthConfig.config.clientSecret
+  );
+  const { codeChallenge } = deriveCalendarOAuthPkce(
+    'google',
+    nonce,
+    oauthConfig.config.clientSecret
+  );
+
   const authUrl = auth.generateAuthUrl({
-    state: createCalendarOAuthState(
-      'google',
-      { userId: user.id, wsId: normalizedWsId },
-      oauthConfig.config.clientSecret
-    ),
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: S256,
     scope: [
       'https://www.googleapis.com/auth/calendar', // Full calendar access
       'https://www.googleapis.com/auth/userinfo.email', // Get user email

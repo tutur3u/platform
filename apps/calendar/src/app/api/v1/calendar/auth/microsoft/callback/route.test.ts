@@ -16,11 +16,17 @@ vi.mock('@tuturuuu/microsoft', () => ({
   ConfidentialClientApplication: vi.fn(
     function ConfidentialClientApplication(this: {
       acquireTokenByCode: typeof acquireTokenByCodeMock;
+      getTokenCache: () => { serialize: () => string };
     }) {
       this.acquireTokenByCode = acquireTokenByCodeMock;
+      this.getTokenCache = () => ({ serialize: () => '{}' });
     }
   ),
-  createGraphClient: vi.fn(),
+  createGraphClient: vi.fn(() => ({
+    api: () => ({
+      get: async () => ({ displayName: 'Person', mail: 'person@example.com' }),
+    }),
+  })),
   createMsalConfig: vi.fn(() => ({})),
   MICROSOFT_CALENDAR_SCOPES: ['Calendars.ReadWrite'],
 }));
@@ -41,10 +47,19 @@ vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: resolveSessionAuthContextMock,
 }));
 
+vi.mock('@/lib/calendar/microsoft-refresh-credential', () => ({
+  microsoftRefreshCredential: vi.fn(() => 'refresh-credential'),
+}));
+
 import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
 const SECRET = 'microsoft-client-secret';
+const ATTACKER_HEADERS = {
+  host: 'attacker.example',
+  'x-forwarded-host': 'attacker.example',
+  'x-forwarded-proto': 'https',
+};
 
 function signedState({
   provider = 'microsoft' as const,
@@ -56,20 +71,60 @@ function signedState({
   wsId?: string;
 } = {}) {
   return encodeURIComponent(
-    createCalendarOAuthState(provider, { userId, wsId }, SECRET)
+    createCalendarOAuthState(provider, { userId, wsId }, SECRET).state
   );
 }
 
-function callback(query: string) {
+function callback(
+  query: string,
+  {
+    headers,
+    origin = 'https://tuturuuu.com',
+  }: {
+    headers?: HeadersInit;
+    origin?: string;
+  } = {}
+) {
   return new Request(
-    `https://tuturuuu.com/api/v1/calendar/auth/microsoft/callback?${query}`
+    `${origin}/api/v1/calendar/auth/microsoft/callback?${query}`,
+    { headers }
   );
+}
+
+function createSupabaseClient() {
+  const query = {
+    eq: () => query,
+    insert: vi.fn(async () => ({ error: null })),
+    select: () => query,
+    single: vi.fn(async () => ({
+      data: null,
+      error: { code: 'PGRST116', message: 'No rows found' },
+    })),
+    upsert: vi.fn(async () => ({ error: null })),
+  };
+
+  return { from: vi.fn(() => query), query };
+}
+
+function locationOf(response: Response) {
+  return new URL(response.headers.get('location') ?? '');
 }
 
 describe('Microsoft Calendar OAuth callback route', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    for (const key of [
+      'WEB_APP_URL',
+      'NEXT_PUBLIC_WEB_APP_URL',
+      'NEXT_PUBLIC_APP_URL',
+      'COOLIFY_URL',
+      'COOLIFY_FQDN',
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
     vi.stubEnv('MICROSOFT_CLIENT_ID', 'microsoft-client-id');
     vi.stubEnv('MICROSOFT_CLIENT_SECRET', SECRET);
     vi.stubEnv(
@@ -81,11 +136,15 @@ describe('Microsoft Calendar OAuth callback route', () => {
     cookieGetMock.mockReturnValue({ value: 'pkce-verifier' });
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
-      supabase: { from: vi.fn() },
+      supabase: createSupabaseClient(),
       user: { id: 'user-1' },
     });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
-    acquireTokenByCodeMock.mockResolvedValue(null);
+    acquireTokenByCodeMock.mockResolvedValue({
+      accessToken: 'access-token',
+      account: { homeAccountId: 'home-account', username: 'person' },
+      expiresOn: new Date(Date.now() + 3600_000),
+    });
   });
 
   it.each([
@@ -93,7 +152,7 @@ describe('Microsoft Calendar OAuth callback route', () => {
     ['an absolute path', '/evil.example'],
     [
       'a state signed for another provider',
-      signedState({ provider: 'google' }),
+      decodeURIComponent(signedState({ provider: 'google' })),
     ],
   ])(
     'keeps provider error redirects on the app origin for %s',
@@ -101,11 +160,10 @@ describe('Microsoft Calendar OAuth callback route', () => {
       const response = await GET(
         callback(`error=access_denied&state=${encodeURIComponent(state)}`)
       );
-      const location = new URL(response.headers.get('location') ?? '');
 
       expect(response.status).toBe(302);
-      expect(location.origin).toBe('https://tuturuuu.com');
-      expect(location.pathname).toBe('/');
+      expect(locationOf(response).origin).toBe('https://tuturuuu.com');
+      expect(locationOf(response).pathname).toBe('/');
     }
   );
 
@@ -113,10 +171,42 @@ describe('Microsoft Calendar OAuth callback route', () => {
     const response = await GET(
       callback(`error=access_denied&state=${signedState()}`)
     );
-    const location = new URL(response.headers.get('location') ?? '');
 
-    expect(location.origin).toBe('https://tuturuuu.com');
-    expect(location.pathname).toBe('/workspace-1/calendar');
+    expect(locationOf(response).origin).toBe('https://tuturuuu.com');
+    expect(locationOf(response).pathname).toBe('/workspace-1/calendar');
+  });
+
+  it.each([
+    ['provider error', () => `error=access_denied&state=${signedState()}`],
+    ['successful connection', () => `code=abc&state=${signedState()}`],
+  ])(
+    'ignores attacker request hosts for the %s redirect',
+    async (_label, query) => {
+      const response = await GET(
+        callback(query(), {
+          headers: ATTACKER_HEADERS,
+          origin: 'https://attacker.example',
+        })
+      );
+
+      expect(response.status).toBe(302);
+      expect(locationOf(response).origin).toBe('https://tuturuuu.com');
+      expect(locationOf(response).pathname).toBe('/workspace-1/calendar');
+    }
+  );
+
+  it('ignores attacker request hosts when the PKCE cookie is missing', async () => {
+    cookieGetMock.mockReturnValue(undefined);
+
+    const response = await GET(
+      callback(`code=abc&state=${signedState()}`, {
+        headers: ATTACKER_HEADERS,
+        origin: 'https://attacker.example',
+      })
+    );
+
+    expect(locationOf(response).origin).toBe('https://tuturuuu.com');
+    expect(acquireTokenByCodeMock).not.toHaveBeenCalled();
   });
 
   it('rejects an unsigned workspace state before exchanging the code', async () => {
@@ -152,15 +242,20 @@ describe('Microsoft Calendar OAuth callback route', () => {
     expect(acquireTokenByCodeMock).not.toHaveBeenCalled();
   });
 
-  it('exchanges the code once the state, user and membership are verified', async () => {
-    const response = await GET(callback(`code=abc&state=${signedState()}`));
+  it('exchanges the code with the PKCE verifier and rejects a replayed state', async () => {
+    const state = signedState();
 
+    const first = await GET(callback(`code=abc&state=${state}`));
+    const replay = await GET(callback(`code=fresh&state=${state}`));
+
+    expect(first.status).toBe(302);
     expect(acquireTokenByCodeMock).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'abc', codeVerifier: 'pkce-verifier' })
     );
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({
-      error: 'No token received from Microsoft',
+    expect(replay.status).toBe(400);
+    await expect(replay.json()).resolves.toEqual({
+      error: 'Invalid OAuth state',
     });
+    expect(acquireTokenByCodeMock).toHaveBeenCalledTimes(1);
   });
 });

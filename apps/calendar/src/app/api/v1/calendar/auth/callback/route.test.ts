@@ -51,7 +51,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: verifyWorkspaceMembershipTypeMock,
 }));
 
-import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
+import {
+  createCalendarOAuthState,
+  deriveCalendarOAuthPkce,
+} from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
 function signedState({
@@ -66,13 +69,18 @@ function signedState({
   now?: number;
 } = {}) {
   return encodeURIComponent(
-    createCalendarOAuthState('google', { userId, wsId }, secret, now)
+    createCalendarOAuthState('google', { userId, wsId }, secret, now).state
   );
 }
 
-function callbackRequest(state: string, origin = 'https://tuturuuu.com') {
+function callbackRequest(
+  state: string,
+  origin = 'https://tuturuuu.com',
+  headers?: HeadersInit
+) {
   return new Request(
-    `${origin}/api/v1/calendar/auth/callback?code=abc&state=${state}`
+    `${origin}/api/v1/calendar/auth/callback?code=abc&state=${state}`,
+    { headers }
   );
 }
 
@@ -170,6 +178,17 @@ describe('Google Calendar OAuth callback route', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    for (const key of [
+      'WEB_APP_URL',
+      'NEXT_PUBLIC_WEB_APP_URL',
+      'NEXT_PUBLIC_APP_URL',
+      'COOLIFY_URL',
+      'COOLIFY_FQDN',
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
     vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -333,5 +352,58 @@ describe('Google Calendar OAuth callback route', () => {
     expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
     expect(supabase.calendarConnectionsUpsertMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('redirects to the canonical Web origin regardless of request host headers', async () => {
+    const response = await GET(
+      callbackRequest(signedState(), 'https://attacker.example', {
+        host: 'attacker.example',
+        'x-forwarded-host': 'attacker.example',
+        'x-forwarded-proto': 'https',
+      })
+    );
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(response.status).toBe(302);
+    expect(location.origin).toBe('https://tuturuuu.com');
+    expect(location.pathname).toBe('/workspace-1/calendar');
+  });
+
+  it('exchanges the code with the PKCE verifier bound to the state', async () => {
+    const created = createCalendarOAuthState(
+      'google',
+      { userId: 'user-1', wsId: 'workspace-1' },
+      'google-client-secret'
+    );
+
+    await GET(callbackRequest(encodeURIComponent(created.state)));
+
+    expect(getTokenMock).toHaveBeenCalledWith({
+      code: 'abc',
+      codeVerifier: deriveCalendarOAuthPkce(
+        'google',
+        created.nonce,
+        'google-client-secret'
+      ).codeVerifier,
+    });
+  });
+
+  it('rejects a replayed state even with a fresh code', async () => {
+    const state = signedState();
+
+    const first = await GET(callbackRequest(state));
+    const replay = await GET(
+      new Request(
+        `https://tuturuuu.com/api/v1/calendar/auth/callback?code=fresh&state=${state}`
+      )
+    );
+
+    expect(first.status).toBe(302);
+    expect(replay.status).toBe(400);
+    await expect(replay.json()).resolves.toEqual({
+      error: 'Invalid OAuth state',
+    });
+    expect(getTokenMock).toHaveBeenCalledTimes(1);
+    expect(fullSyncMock).toHaveBeenCalledTimes(1);
   });
 });
