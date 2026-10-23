@@ -108,7 +108,7 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
     try {
       const rows = execFileSync('ps', ['-axo', 'pid=,ppid=,pgid='], {
         encoding: 'utf8',
-        timeout: 10_000,
+        timeout: 5000,
         maxBuffer: 16 * 1024 * 1024,
       })
         .trim()
