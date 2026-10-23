@@ -72,6 +72,23 @@ describe('native Calendar hosting exception', () => {
     }
   });
 
+  it('audits the gateway rule alongside unrelated rules it does not model', () => {
+    const policy = config();
+    (policy.active.rules as unknown[]).push({
+      name: 'Unrelated country block',
+      active: true,
+      action: { mitigate: { action: 'deny' } },
+      conditionGroup: [
+        {
+          conditions: [{ type: 'geo_country', op: 'inc', value: ['AA', 'BB'] }],
+        },
+      ],
+    });
+    expect(auditCalendarGatewayFirewall(policy).rule).toBe(
+      CALENDAR_GATEWAY_RULE_NAME
+    );
+  });
+
   it('refuses a missing credential condition or a concurrent unpublished draft', () => {
     const missing = config();
     missing.active.rules[0]!.conditionGroup[0]!.conditions.pop();

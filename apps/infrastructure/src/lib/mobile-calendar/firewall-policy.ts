@@ -20,6 +20,7 @@ const ruleSchema = z.object({
   action: z.object({ mitigate: z.object({ action: z.string() }) }),
   conditionGroup: z.array(z.object({ conditions: z.array(conditionSchema) })),
 });
+const namedRuleSchema = z.object({ name: z.string() }).passthrough();
 const configSchema = z.object({
   active: z.object({
     firewallEnabled: z.boolean(),
@@ -34,12 +35,15 @@ export function auditCalendarGatewayFirewall(input: unknown) {
     const config = configSchema.parse(input);
     if (!config.active.firewallEnabled || config.draft != null)
       throw new Error();
-    const rules = config.active.rules.map((rule) => ruleSchema.parse(rule));
-    const candidates = rules.filter(
-      (rule) => rule.name === CALENDAR_GATEWAY_RULE_NAME
+    // Select the gateway rule before validating its shape: unrelated rules may
+    // use condition forms (e.g. array-valued `inc`) this audit does not model.
+    const candidates = config.active.rules.filter(
+      (rule) =>
+        namedRuleSchema.safeParse(rule).data?.name ===
+        CALENDAR_GATEWAY_RULE_NAME
     );
     if (candidates.length !== 1) throw new Error();
-    const rule = candidates[0]!;
+    const rule = ruleSchema.parse(candidates[0]);
     if (
       !rule.active ||
       rule.action.mitigate.action !== 'bypass' ||
