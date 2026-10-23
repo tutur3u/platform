@@ -44,13 +44,14 @@ import {
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
-Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [options]
+Usage: ttr resources <setup|status|monitor|run|hosts|enable|disable|uninstall> [options]
 
   setup --root <path>     opt in a project and its Git worktrees (repeat --root)
   status [--json]         show capacity, owners (command, age, CPU), waiters, idle warnings
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
   run -- COMMAND ARGS    queue any finite command; explicit setup required
   offload [--json]       local saturation plus trusted devbox runner eligibility
+  hosts [--json|--simulate] multi-host budgets, reservations, offline dry run
   enable | disable       toggle automatic admission for future commands
   uninstall              remove owned shell hooks/shims; preserve backups
 
@@ -67,6 +68,8 @@ attested trusted-development devbox runner (ttr box) when local lanes are
 saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
 no local environment is sent. --timeout <30s|10m|2h> bounds it (default 30m).
 ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
+Run option: --hosts admits across hosts.json hosts (weighted light/heavy slots,
+per-host budgets); off unless an operator installs hosts.json.
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
 Burst admission requires normal memory pressure and low CPU load, and stays
@@ -107,7 +110,8 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   const allowed: Record<string, string[]> = {
-    run: ['--ignore-pressure', '--offload', '--timeout'],
+    run: ['--ignore-pressure', '--offload', '--timeout', '--hosts'],
+    hosts: ['--json', '--simulate'],
     offload: ['--json', '--runner'],
     shim: [],
     status: ['--json'],
@@ -188,6 +192,28 @@ export async function runResourcesCommand(argv: string[]) {
     if (enabled && !shim) {
       const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
+    }
+    if (!shim && queued && !parent && options.includes('--hosts')) {
+      if (offload) throw new Error('Use --hosts or --offload, not both.');
+      const { hostsRun } = await import('./resources-hosts-dispatch.js');
+      const { hostsDependencies } = await import('./resources-hosts-cli.js');
+      const timeout = optionValue(options, '--timeout');
+      process.exitCode = await hostsRun({
+        home,
+        command: name,
+        args: command,
+        jobClass: isHeavyCommand(name, command) ? 'heavy' : 'light',
+        deps: hostsDependencies({
+          home,
+          name,
+          real,
+          command,
+          env,
+          timeoutSeconds: timeout ? parseDurationSeconds(timeout) : undefined,
+          ignorePressure: options.includes('--ignore-pressure'),
+        }),
+      });
+      return;
     }
     process.exitCode = queued
       ? await queuedResourceCommand(
@@ -296,6 +322,11 @@ export async function runResourcesCommand(argv: string[]) {
       if (Date.now() + 5000 >= deadline) break;
       await sleep(5000);
     } while (Date.now() < deadline);
+    return;
+  }
+  if (action === 'hosts') {
+    const { runHostsAction } = await import('./resources-hosts-cli.js');
+    await runHostsAction(home, options);
     return;
   }
   if (action === 'status') {
