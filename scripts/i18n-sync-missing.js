@@ -10,8 +10,7 @@
  *   node scripts/i18n-sync-missing.js
  */
 
-const fs = require('node:fs');
-const { atomicWriteFileSync } = require('./safe-fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('./safe-fs');
 const path = require('node:path');
 const {
   discoverTranslationDirs,
@@ -25,21 +24,21 @@ const {
 /**
  * Process a translation directory
  */
-function processDirectory(dir) {
-  const rootDir = getProjectRoot();
+function processDirectory(dir, rootDir = getProjectRoot()) {
   const fullDir = path.join(rootDir, dir);
 
   const enPath = path.join(fullDir, 'en.json');
   const viPath = path.join(fullDir, 'vi.json');
 
-  if (!fs.existsSync(enPath) || !fs.existsSync(viPath)) {
-    console.warn(`⚠️  Missing files in ${dir}`);
-    return { added: 0, dir };
-  }
-
   try {
-    const enContent = JSON.parse(fs.readFileSync(enPath, 'utf-8'));
-    const viContent = JSON.parse(fs.readFileSync(viPath, 'utf-8'));
+    const enSource = readOptionalFileSync(enPath, { encoding: 'utf8' });
+    const viSource = readOptionalFileSync(viPath, { encoding: 'utf8' });
+    if (enSource === undefined || viSource === undefined) {
+      console.warn(`Missing files in ${dir}`);
+      return { added: 0, dir };
+    }
+    const enContent = JSON.parse(enSource);
+    const viContent = JSON.parse(viSource);
 
     const enPaths = getAllKeyPaths(enContent);
     let addedCount = 0;
@@ -101,4 +100,5 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) main();
+module.exports = { processDirectory };
