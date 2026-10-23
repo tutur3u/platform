@@ -138,6 +138,8 @@ void main() {
     await tester.pumpAndSettle();
     // One editor: the gear deep-links instead of opening its own sheet.
     expect(router.state.matchedLocation, Routes.settingsAppPath('timer'));
+    // The gear asks the central screen to open the threshold editor.
+    expect(router.state.uri.queryParameters['focus'], 'threshold');
     expect(find.byKey(const ValueKey('central-timer')), findsOneWidget);
     expect(find.byType(ThresholdSettingsDialog), findsNothing);
 

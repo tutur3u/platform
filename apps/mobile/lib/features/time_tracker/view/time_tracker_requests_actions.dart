@@ -305,7 +305,7 @@ extension _RequestsViewActions on _RequestsViewState {
   Future<void> _showThresholdSettingsDialog() async {
     final wsId = _permissionsWorkspaceId;
     if (wsId == null || wsId.isEmpty || !mounted) return;
-    await context.push(Routes.settingsAppPath('timer'));
+    await context.push(Routes.settingsAppPath('timer', focus: 'threshold'));
     if (!mounted) return;
     final current = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (current?.id == wsId) await _loadPermissionsAndThreshold(wsId);
