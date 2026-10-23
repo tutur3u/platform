@@ -117,7 +117,11 @@ until an operator installs that file after a reviewed release; never write or
 activate it from an agent session.
 - The registry is trusted only in the canonical `~/.tuturuuu/resources`
   (0700 directory, 0600 file, owned by you, no symlinks, no writable parents).
-  Any other `TTR_RESOURCES_HOME` ignores it and disables `--hosts`.
+  A home inside an opted-in repository root is refused. Any other
+  `TTR_RESOURCES_HOME` ignores it and disables `--hosts`.
+- `--hosts` jobs are heavy unless `--class light`. Nested `run --hosts` reuses
+  the ancestor's reservation (verified by process ancestry). The disk probe is
+  bounded, runs outside the mutex, and reports `blockedBy=disk`.
 - Runners are re-validated against a fresh server-timestamped snapshot just
   before remote creation; if one is no longer eligible, the job requeues.
 - Hosts have separate light and heavy slots, per-class CPU/memory weights, and
