@@ -95,6 +95,19 @@ jobs:
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
+      # --frozen-lockfile accepts orphan entries that a plain install prunes,
+      # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
+      - name: Verify bun.lock is canonical
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        shell: bash
+        run: |
+          bun install --lockfile-only
+          if ! git diff --quiet -- bun.lock; then
+            git diff --stat -- bun.lock
+            echo "::error file=bun.lock::bun.lock is not canonical. Run 'bun install' locally and commit the resulting bun.lock."
+            exit 1
+          fi
+
       - name: Build workspace dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
