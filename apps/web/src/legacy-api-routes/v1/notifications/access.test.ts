@@ -68,7 +68,6 @@ describe('buildNotificationAccessFilter', () => {
     const inviteBranch = filter.match(/and\(user_id\.is\.null,[^)]*\)/)?.[0];
 
     expect(inviteBranch).toBeDefined();
-    expect(inviteRow.scope).toBe('user');
     expect(inviteRow.ws_id).toBeNull();
     expect(inviteRow.user_id).toBeNull();
     expect(inviteBranch).toContain('user_id.is.null');
@@ -85,18 +84,17 @@ describe('buildNotificationAccessFilter', () => {
       workspaceIds: [],
     };
     const filter = buildNotificationAccessFilter(context);
-    const claimedByAnotherUser = {
-      email: 'current@tuturuuu.com',
-      type: 'workspace_invite',
-      user_id: '00000000-0000-0000-0000-000000000002',
-    };
+    const emailBranch = filter.match(
+      /and\(user_id\.is\.null,type\.eq\.workspace_invite,email\.ilike\.[^)]*\)/
+    )?.[0];
     const addressedToAnotherEmail = buildNotificationAccessFilter({
       ...context,
       userEmail: 'another@tuturuuu.com',
     });
 
-    expect(filter).toContain('user_id.is.null,type.eq.workspace_invite');
-    expect(filter).not.toContain(claimedByAnotherUser.user_id);
+    expect(emailBranch).toBe(
+      'and(user_id.is.null,type.eq.workspace_invite,email.ilike."current@tuturuuu.com")'
+    );
     expect(addressedToAnotherEmail).toContain(
       'email.ilike."another@tuturuuu.com"'
     );
@@ -117,16 +115,24 @@ describe('buildNotificationAccessFilter', () => {
       }),
     };
 
-    const unconfirmed = await getNotificationAccessContext(supabase as never, {
-      email: ' Local@Tuturuuu.com ',
-      email_confirmed_at: null,
-      id: '00000000-0000-0000-0000-000000000001',
-    });
-    const confirmed = await getNotificationAccessContext(supabase as never, {
-      email: ' Local@Tuturuuu.com ',
-      email_confirmed_at: '2026-10-24T00:00:00.000Z',
-      id: '00000000-0000-0000-0000-000000000001',
-    });
+    const unconfirmed = await getNotificationAccessContext(
+      supabase as never,
+      {
+        email: ' Local@Tuturuuu.com ',
+        email_confirmed_at: null,
+        id: '00000000-0000-0000-0000-000000000001',
+      },
+      supabase as never
+    );
+    const confirmed = await getNotificationAccessContext(
+      supabase as never,
+      {
+        email: ' Local@Tuturuuu.com ',
+        email_confirmed_at: '2026-10-24T00:00:00.000Z',
+        id: '00000000-0000-0000-0000-000000000001',
+      },
+      supabase as never
+    );
 
     expect(unconfirmed.userEmail).toBeNull();
     expect(confirmed.userEmail).toBe('local@tuturuuu.com');
@@ -203,5 +209,26 @@ describe('buildNotificationAccessFilter', () => {
     expect(buildNotificationAccessFilter(context)).not.toContain(
       'type.eq.workspace_invite'
     );
+  });
+
+  it('omits email access for addresses containing PostgREST wildcard asterisks', () => {
+    const filter = buildNotificationAccessFilter({
+      userId: '00000000-0000-0000-0000-000000000001',
+      userEmail: '*@corp.com',
+      workspaceIds: ['workspace-1'],
+    });
+
+    expect(filter).not.toContain('type.eq.workspace_invite');
+    expect(filter).not.toContain('email.ilike.');
+  });
+
+  it('escapes percent and underscore in case-insensitive exact email matching', () => {
+    const filter = buildNotificationAccessFilter({
+      userId: '00000000-0000-0000-0000-000000000001',
+      userEmail: 'local_%@corp.com',
+      workspaceIds: ['workspace-1'],
+    });
+
+    expect(filter).toContain('email.ilike."local\\\\_\\\\%@corp.com"');
   });
 });

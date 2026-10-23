@@ -24,7 +24,11 @@ export const PATCH = withSessionAuth<{ id: string }>(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
       const accessFilter = buildNotificationAccessFilter(accessContext);
 
       // Validate notification ID

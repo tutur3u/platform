@@ -45,7 +45,9 @@ export function buildNotificationAccessFilter(
 ) {
   const branches = [
     `and(scope.in.(user,system),user_id.eq.${context.userId})`,
-    ...(context.userEmail
+    // PostgREST rewrites `*` in LIKE values.
+    // Switch to `email.eq` after #6552 stores emails lowercase.
+    ...(context.userEmail && !context.userEmail.includes('*')
       ? [
           `and(user_id.is.null,type.eq.workspace_invite,email.ilike.${quotePostgrestString(context.userEmail.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_'))})`,
         ]
@@ -61,7 +63,7 @@ export function buildNotificationAccessFilter(
 export async function getNotificationAccessContext(
   supabase: TypedSupabaseClient,
   user: NotificationAuthUser,
-  identityClient: TypedSupabaseClient = supabase
+  identityClient: TypedSupabaseClient
 ): Promise<NotificationAccessContext> {
   const { data: memberships, error } = await supabase
     .from('workspace_members')
