@@ -77,6 +77,19 @@ describe('room codes', () => {
     expect(buildJoinUrl('https://meet.tuturuuu.com/', MEETING)).toBe(
       `https://meet.tuturuuu.com/r/${code}`
     );
+    expect(buildJoinUrl('https://meet.tuturuuu.com///', MEETING)).toBe(
+      `https://meet.tuturuuu.com/r/${code}`
+    );
+  });
+
+  it('trims trailing slashes from long origins in linear time', () => {
+    const origin = `${'/'.repeat(100_000)}a`;
+    const startedAt = performance.now();
+
+    expect(buildJoinUrl(origin, MEETING)).toBe(
+      `${origin}/r/${encodeRoomCode(MEETING)}`
+    );
+    expect(performance.now() - startedAt).toBeLessThan(200);
   });
 
   it('gives different meetings different codes', () => {

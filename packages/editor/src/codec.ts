@@ -3,6 +3,14 @@ import {
   parseCollapsibleBlock,
   parseIndentedCollapsibleBlock,
 } from './collapsible-codec.js';
+import {
+  BLOCK_IMAGE_PATTERN,
+  escapeMarkdownDestination,
+  escapeMarkdownMetadata,
+  INLINE_IMAGE_PATTERN,
+  INLINE_LINK_PATTERN,
+  unescapeMarkdownDestination,
+} from './markdown-link-syntax.js';
 import type { JSONContent } from './types.js';
 import { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
 
@@ -149,7 +157,7 @@ const INLINE_PATTERNS: InlinePattern[] = [
       addMark(parseProtectedInline(match[1] ?? ''), { type: 'underline' }),
   },
   {
-    pattern: /!\[([^\]]*)\]\(((?:\\[()]|[^)\s])+)(?:\s+"((?:\\.|[^"])*)")?\)/u,
+    pattern: INLINE_IMAGE_PATTERN,
     render: (match) => {
       const src = normalizeRichTextImageUrl(
         restoreMarkdownEscapes(match[2] ?? '')
@@ -175,7 +183,7 @@ const INLINE_PATTERNS: InlinePattern[] = [
     },
   },
   {
-    pattern: /\[([^\]]+)\]\(((?:\\[()]|[^)\s])+)(?:\s+"((?:\\.|[^"])*)")?\)/u,
+    pattern: INLINE_LINK_PATTERN,
     render: (match) => {
       const href = normalizeRichTextUrl(restoreMarkdownEscapes(match[2] ?? ''));
       return href
@@ -506,11 +514,9 @@ export function markdownToJSON(markdown: string): JSONContent {
       continue;
     }
 
-    const image = line.match(
-      /^!\[((?:\\.|[^\]])*)\]\(((?:\\[()]|[^)\s])+)(?:\s+"((?:\\.|[^"])*)")?\)$/u
-    );
+    const image = line.match(BLOCK_IMAGE_PATTERN);
     const imageSrc = image
-      ? normalizeRichTextImageUrl(image[2]?.replace(/\\([()])/gu, '$1'))
+      ? normalizeRichTextImageUrl(unescapeMarkdownDestination(image[2] ?? ''))
       : null;
     if (image && imageSrc) {
       content.push({
@@ -546,14 +552,6 @@ export function markdownToJSON(markdown: string): JSONContent {
 
 function escapeMarkdownText(value: string): string {
   return value.replace(/([\\`*_[\]~<>])/gu, '\\$1');
-}
-
-function escapeMarkdownDestination(value: string): string {
-  return value.replace(/([()])/gu, '\\$1');
-}
-
-function escapeMarkdownMetadata(value: string): string {
-  return value.replace(/([\\"])/gu, '\\$1');
 }
 
 function escapeHTMLAttribute(value: string): string {

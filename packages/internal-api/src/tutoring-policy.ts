@@ -376,7 +376,7 @@ export function getTutoringCampus(
   const override = policy.campusByGroupId[groupId];
   if (override) return override;
   const match = groupName?.match(
-    /(?:^|[\s(/-])(?:CS|CƠ SỞ)\s*[-:]?\s*([12])(?=$|[\s)/-])/i
+    /(?:^|[\s(/-])(?:CS|CƠ SỞ)\s*(?:[-:]\s*)?([12])(?=$|[\s)/-])/i
   );
   return match ? `CS${match[1]}` : null;
 }

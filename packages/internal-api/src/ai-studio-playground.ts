@@ -62,8 +62,14 @@ export class AiStudioPlaygroundError extends Error {
   }
 }
 
+function trimTrailingSlashes(value: string) {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
 function publicApiUrl(path: string, baseUrl = 'https://ai.tuturuuu.com') {
-  return `${baseUrl.replace(/\/+$/u, '')}${path}`;
+  return `${trimTrailingSlashes(baseUrl)}${path}`;
 }
 
 async function parsePublicAiResponse<T>(response: Response): Promise<T> {

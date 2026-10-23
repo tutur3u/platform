@@ -33,4 +33,23 @@ describe('buildWorkspaceTaskUrl', () => {
       })
     ).toBe('/en/workspace-1/boards/board-1?task=task-1');
   });
+
+  it('trims slashes around custom route prefixes', () => {
+    expect(buildWorkspaceTaskUrl({ ...task, routePrefix: '//tasks//' })).toBe(
+      '/en/workspace-1/tasks/boards/board-1?task=task-1'
+    );
+    expect(buildWorkspaceTaskUrl({ ...task, routePrefix: '///' })).toBe(
+      '/en/workspace-1//boards/board-1?task=task-1'
+    );
+  });
+
+  it('trims long slash runs in linear time', () => {
+    const routePrefix = `a${'/'.repeat(100_000)}b`;
+    const startedAt = performance.now();
+
+    expect(buildWorkspaceTaskUrl({ ...task, routePrefix })).toBe(
+      `/en/workspace-1/${routePrefix}/boards/board-1?task=task-1`
+    );
+    expect(performance.now() - startedAt).toBeLessThan(200);
+  });
 });

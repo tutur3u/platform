@@ -113,6 +113,12 @@ export function decodeRoomCode(code: string): string | null {
   return UUID_PATTERN.test(uuid) ? uuid : null;
 }
 
+function trimTrailingSlashes(value: string) {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
 export function buildJoinUrl(origin: string, meetingId: string) {
-  return `${origin.replace(/\/+$/u, '')}/r/${encodeRoomCode(meetingId)}`;
+  return `${trimTrailingSlashes(origin)}/r/${encodeRoomCode(meetingId)}`;
 }

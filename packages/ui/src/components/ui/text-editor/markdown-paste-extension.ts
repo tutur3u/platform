@@ -219,7 +219,9 @@ function parseListTree(
     const line = lines[i];
     if (line === undefined || line.trim() === '') break;
 
-    const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
+    // `\S` ends the whitespace run so it cannot be re-split; the former
+    // `\s+(.*)$` backtracked quadratically on long whitespace runs.
+    const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(\S.*)?$/);
     if (!match) break;
 
     const indent = match[1] ? match[1].length : 0;
@@ -231,7 +233,7 @@ function parseListTree(
 
     // Check for task list: - [ ] or - [x]
     let checked: boolean | null = null;
-    const taskMatch = content.match(/^\[([ xX])\]\s+(.*)$/);
+    const taskMatch = content.match(/^\[([ xX])\]\s+(\S.*)?$/);
     if (taskMatch) {
       checked = taskMatch[1] ? taskMatch[1].toLowerCase() === 'x' : false;
       content = taskMatch[2] || '';
@@ -434,7 +436,7 @@ export function markdownToHtml(markdown: string): string {
     }
 
     // Code block
-    const codeBlockMatch = line.match(/^\s*```\s*(\w*)\s*$/);
+    const codeBlockMatch = line.match(/^\s*```\s*(?:(\w+)\s*)?$/);
     if (codeBlockMatch) {
       const lang = codeBlockMatch[1] || '';
       const start = i + 1;
@@ -455,7 +457,11 @@ export function markdownToHtml(markdown: string): string {
     }
 
     // Heading
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    // Linear form of /^(#{1,6})\s+(.+)$/: the text after the whitespace run,
+    // or for a blank heading its final whitespace character.
+    const headingMatch =
+      line.match(/^(#{1,6})\s+(\S.*)$/) ??
+      line.match(/^(#{1,6})\s+(?=\s$)(.)$/);
     if (headingMatch) {
       const level = headingMatch[1]!.length;
       const content = headingMatch[2] || '';
@@ -495,10 +501,14 @@ export function markdownToHtml(markdown: string): string {
     if (listMatch) {
       const indent = listMatch[1] ? listMatch[1].length : 0;
       const { nodes, endIndex } = parseListTree(lines, i, indent);
-      const ordered = /^\d+\.$/.test(nodes[0]?.marker || '');
-      result.push(renderListTree(nodes, ordered));
-      i = endIndex;
-      continue;
+      // A marker line the item parser rejects (its text contains a line
+      // terminator such as `\r`) must not stall the loop; it stays a paragraph.
+      if (endIndex > i) {
+        const ordered = /^\d+\.$/.test(nodes[0]?.marker || '');
+        result.push(renderListTree(nodes, ordered));
+        i = endIndex;
+        continue;
+      }
     }
 
     // Table

@@ -47,6 +47,14 @@ function inferRoutePrefix(
     : '/tasks';
 }
 
+function trimSlashes(value: string) {
+  let start = 0;
+  let end = value.length;
+  while (start < end && value.charCodeAt(start) === 47) start += 1;
+  while (end > start && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(start, end);
+}
+
 export function buildWorkspaceTaskUrl({
   boardId,
   currentPathname,
@@ -68,7 +76,7 @@ export function buildWorkspaceTaskUrl({
     routePrefix ??
     inferRoutePrefix(currentPathname, workspaceSlug, workspaceId);
   const normalizedRoutePrefix = resolvedRoutePrefix
-    ? `/${resolvedRoutePrefix.replace(/^\/+|\/+$/g, '')}`
+    ? `/${trimSlashes(resolvedRoutePrefix)}`
     : '';
   const relativeUrl = `${localePrefix}/${workspaceSlug}${normalizedRoutePrefix}/boards/${boardId}?task=${taskId}`;
 

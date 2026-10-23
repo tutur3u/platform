@@ -121,6 +121,21 @@ describe('Easy Center tutoring shifts', () => {
     ).toBe('CS1');
   });
 
+  it('reads campus suffixes with separators in linear time', () => {
+    const campus = (name: string) =>
+      getTutoringCampus(EASY_CENTER_TUTORING_POLICY, 'group-x', name);
+
+    expect(campus('Kids (cs - 1)')).toBe('CS1');
+    expect(campus('Lớp CƠ SỞ:2')).toBe('CS2');
+    expect(campus('Kids CS  :  2/A')).toBe('CS2');
+    expect(campus('Kids CS -- 1')).toBeNull();
+    expect(campus('Kids CS12')).toBeNull();
+
+    const startedAt = performance.now();
+    expect(campus(`\tcs${'\t'.repeat(100_000)}x`)).toBeNull();
+    expect(performance.now() - startedAt).toBeLessThan(200);
+  });
+
   it('uses configurable group eligibility scopes', () => {
     expect(
       isTutoringGroupExcluded(
