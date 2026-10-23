@@ -24,6 +24,7 @@ import 'package:mobile/features/settings/view/link_browser_settings_tile.dart';
 import 'package:mobile/features/settings/view/product_preference_editors.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
@@ -181,11 +182,9 @@ class _SettingsViewState extends State<_SettingsView> {
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics(),
                   ),
-                  padding: EdgeInsets.fromLTRB(
+                  padding: SettingsRowLayout.scrollPadding(
+                    context,
                     horizontalPadding,
-                    10,
-                    horizontalPadding,
-                    32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: _buildSettingsChildren(
                     context: context,
