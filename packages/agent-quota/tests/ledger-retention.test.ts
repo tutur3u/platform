@@ -104,7 +104,7 @@ it('expires a reservation created more than five minutes in the future and drops
   expect(ledger.lastAdmissions).toEqual({});
 });
 
-it('retains a quarantine past normal retention while its receipt is still far in the future', () => {
+it('expires a quarantine after 30 days even when its receipt timestamp remains far ahead', () => {
   const ledger = emptyLedger();
   ledger.futureQuarantines = {
     'claude:hehe': {
@@ -115,7 +115,7 @@ it('retains a quarantine past normal retention while its receipt is still far in
     },
   };
 
-  pruneLedger(ledger, new Date(now.getTime() + 30 * 86400_000));
+  pruneLedger(ledger, new Date(now.getTime() + 30 * 86400_000 + 1));
 
-  expect(ledger.futureQuarantines?.['claude:hehe']).toBeDefined();
+  expect(ledger.futureQuarantines?.['claude:hehe']).toBeUndefined();
 });

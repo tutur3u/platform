@@ -8,6 +8,8 @@ import type {
 import { SIGNAL_TTL_MS } from './policy';
 import { coversModel } from './window-scope';
 
+export const FUTURE_QUARANTINE_TTL_MS = 30 * 86400_000;
+
 function quarantineRecord(value: FutureQuarantine | string): FutureQuarantine {
   if (typeof value === 'string')
     return {
@@ -30,12 +32,19 @@ export function recordFutureQuarantine(
     ? quarantineRecord(current)
     : { quarantinedAt: now.toISOString(), models: [], accountWide: false };
   if (receipt) {
+    const receiptTime = Date.parse(receipt.observedAt);
+    const trustedTimestamp = Number.isFinite(receiptTime)
+      ? receipt.observedAt
+      : now.toISOString();
     if (
       !quarantine.latestReceiptAt ||
-      Date.parse(receipt.observedAt) > Date.parse(quarantine.latestReceiptAt)
+      !Number.isFinite(Date.parse(quarantine.latestReceiptAt)) ||
+      Date.parse(trustedTimestamp) > Date.parse(quarantine.latestReceiptAt)
     )
-      quarantine.latestReceiptAt = receipt.observedAt;
-    if (receipt.model) {
+      quarantine.latestReceiptAt = trustedTimestamp;
+    if (!Number.isFinite(receiptTime)) {
+      quarantine.accountWide = true;
+    } else if (receipt.model) {
       quarantine.models = [
         ...new Set([...quarantine.models, receipt.model]),
       ].slice(-64);
@@ -104,10 +113,16 @@ export function applyFutureQuarantines(context: AdmissionContext) {
         hasFreshWindowAfter(account, latestRelevantTime, context, model)
       );
     if (
-      Number.isFinite(quarantinedAt) &&
-      !receiptStillTooFarAhead &&
-      (freshAccountWide || freshModelWindows)
+      !Number.isFinite(quarantinedAt) ||
+      context.now.getTime() - quarantinedAt > FUTURE_QUARANTINE_TTL_MS
     ) {
+      delete context.ledger.futureQuarantines?.[key];
+      continue;
+    }
+    const freshWindow = quarantine.accountWide
+      ? freshAccountWide
+      : freshModelWindows;
+    if (!receiptStillTooFarAhead && freshWindow) {
       delete context.ledger.futureQuarantines?.[key];
       continue;
     }

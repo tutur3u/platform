@@ -3,11 +3,14 @@ import {
   MAX_FUTURE_OBSERVATION_SKEW_MS,
   usageLimitReceiptActive,
 } from './failure-receipt';
-import { recordFutureQuarantine } from './future-quarantine';
+import {
+  FUTURE_QUARANTINE_TTL_MS,
+  recordFutureQuarantine,
+} from './future-quarantine';
 import type { HookLedger } from './hooks-types';
 import { processState } from './process-identity';
 
-const RETENTION = 30 * 86400_000;
+const RETENTION = FUTURE_QUARANTINE_TTL_MS;
 export const RESERVATION_TTL = 30 * 60_000;
 export function isReservationActive(
   reservation: HookLedger['reservations'][number],
@@ -43,16 +46,10 @@ export function pruneLedger(
     const quarantinedAt =
       typeof value === 'string' ? value : value.quarantinedAt;
     const timestamp = Date.parse(quarantinedAt);
-    const receiptAt =
-      typeof value === 'string'
-        ? Number.NaN
-        : Date.parse(value.latestReceiptAt ?? '');
     if (
       !Number.isFinite(timestamp) ||
       timestamp > time + MAX_FUTURE_OBSERVATION_SKEW_MS ||
-      (time - timestamp > RETENTION &&
-        (!Number.isFinite(receiptAt) ||
-          receiptAt <= time + MAX_FUTURE_OBSERVATION_SKEW_MS))
+      time - timestamp > RETENTION
     )
       delete ledger.futureQuarantines[accountKey];
   }

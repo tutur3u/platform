@@ -431,8 +431,13 @@ at that timestamp unless a newer receipt supersedes it. Invalid ledger rows more
 ahead are quarantined per account. A persisted receipt more than five minutes
 ahead keeps its pool UNKNOWN even when another window is fresh. The quarantine
 lifts only after a fresh authoritative window observed after the receipt time
-covers its model, or covers the whole account when its scope is unknown. The row
-is never trusted as a quota failure.
+covers its model, or covers the whole account when its scope is unknown. If the
+source receipt is gone or malformed, the quarantine is capped at 30 days from
+its first observation. Once the supported provider cache has a fresh covering
+window, run
+`agent-quota admit <pool> <model>` to recheck eligibility; the command prunes an
+expired quarantine. Do not edit the local hook ledger by hand. An invalid receipt
+timestamp is replaced with the observation time and treated as account-wide.
 
 Cache window IDs, labels and model scopes are preserved. Claude windows are
 model-scoped only when the label names a recognized model family (`Opus`,

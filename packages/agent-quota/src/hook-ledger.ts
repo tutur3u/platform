@@ -92,6 +92,7 @@ export async function transactLedger<T>(
       )
     );
     const result = await operation(ledger);
+    if (!validLedger(ledger)) throw new HookError('ledger-invalid');
     const content = JSON.stringify(ledger);
     if (Buffer.byteLength(content) > 2_000_000)
       throw new HookError('ledger-full');
