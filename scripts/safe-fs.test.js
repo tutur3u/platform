@@ -40,8 +40,13 @@ test('reads validate the opened file and enforce size bounds', async (t) => {
   writeExclusiveFileSync(file, 'abc');
   for (const read of [readRegularFileSync, readRegularFile]) {
     assert.equal(await read(file, { encoding: 'utf8', maxBytes: 3 }), 'abc');
-    await assert.rejects(async () => read(file, { maxBytes: 2 }), /size cap/);
-    await assert.rejects(async () => read(directory), /regular file|EISDIR/);
+    await assert.rejects(async () => read(file, { maxBytes: 2 }), {
+      code: 'ERR_FS_FILE_TOO_LARGE',
+    });
+    await assert.rejects(
+      async () => read(directory),
+      (error) => ['ERR_FS_NOT_REGULAR', 'EISDIR'].includes(error.code)
+    );
   }
   assert.equal(readFileSnapshotSync(file).stat.size, 3);
   assert.equal((await readFileSnapshot(file)).stat.size, 3);
@@ -60,7 +65,10 @@ test('reads refuse a symlink even when its target is regular', async (t) => {
   fs.symlinkSync(file, link);
   assert.throws(() => readRegularFileSync(link), { code: 'ELOOP' });
   await assert.rejects(readRegularFile(link), { code: 'ELOOP' });
-  assert.throws(() => atomicWriteFileSync(link, 'changed'), /regular output/);
+  for (const options of [{}, { mode: 0o600 }])
+    assert.throws(() => atomicWriteFileSync(link, 'changed', options), {
+      code: 'ERR_FS_NOT_REGULAR',
+    });
   assert.equal(fs.readFileSync(file, 'utf8'), 'original');
 });
 
