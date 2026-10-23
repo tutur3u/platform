@@ -329,6 +329,19 @@ owns provisioning, HMAC/token rotation, finite counts and the stop procedure.
 Hosted credential scope, private runtime acceptance and actual serving state remain
 separate release evidence. Production publication stays held for all four apps.
 
+### Turbo remote cache: R2 operation envelope
+
+`apps/turbo-cache` ships with `TURBO_CACHE_MODE=off`, which performs no R2
+operations. Once enabled, each request makes exactly one Durable Object admission
+call and at most one R2 operation per readable scope; it never retries. Daily
+class A, class B and write-byte caps pause the corresponding operations until the
+next UTC day. Crossing the monthly class A fence trips a durable stop that
+survives restarts until an operator resets it. An unavailable budget object is a
+pause, and a denied read is a cache miss. `apps/turbo-cache/src/worker.test.ts`
+pins the per-request operation counts, the fence restart behavior and the
+fail-closed defaults. The [runbook](../devops/turbo-remote-cache.mdx) owns
+provisioning, the cost estimate, cutover and the stop procedure.
+
 ## Incident evidence
 
 Correlate scoped failing requests with authenticated Worker tail exceptions and

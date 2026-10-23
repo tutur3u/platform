@@ -1,0 +1,22 @@
+{
+  "name": "@tuturuuu/turbo-cache",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.3",
+  "scripts": {
+    "dev": "vp dev --host 127.0.0.1 --port 8797",
+    "build": "vp build",
+    "test": "vp test",
+    "type-check": "tsc --project tsconfig.json",
+    "lint": "vp lint --config .oxlintrc.json src vite.config.ts cloudflare.config.ts --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts cloudflare.config.ts --check"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.64.0",
+    "@types/node": "^26.6.5",
+    "cf": "1.0.0-beta.20",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "vite-plus": "1.3.0"
+  }
+}
