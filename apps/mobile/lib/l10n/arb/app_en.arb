@@ -4639,5 +4639,69 @@
   "feedbackSubjectRequired": "Enter a subject of 1–160 characters.",
   "feedbackDetailsRequired": "Enter details of 1–8000 characters.",
   "profileMediaNetworkError": "Could not connect. Check your connection and try again.",
-  "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again."
+  "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again.",
+  "settingsAppsGroup": "Apps",
+  "settingsSearchPlaceholder": "Search settings",
+  "settingsSearchNoResults": "No settings match “{query}”.",
+  "@settingsSearchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSearchResults": "{count, plural, =1{1 result} other{{count} results}}",
+  "@settingsSearchResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppOfflineData": "Offline data",
+  "settingsAppOfflineDataDescription": "Prepare and review what this device keeps offline",
+  "settingsAppBoardsGroup": "Boards",
+  "settingsAppWeekGroup": "Week",
+  "settingsAppConnectionsGroup": "Connected calendars",
+  "settingsAppPrivacyGroup": "Privacy",
+  "settingsAppFocusGroup": "Focus",
+  "settingsAppRequestsGroup": "Requests",
+  "settingsPomodoroSummary": "{focus} min focus · {shortBreak} min break",
+  "@settingsPomodoroSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "shortBreak": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRequestThresholdSummary": "{days, plural, =0{Every missed entry needs approval} =1{Entries older than 1 day need approval} other{Entries older than {days} days need approval}}",
+  "@settingsRequestThresholdSummary": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsFirstDaySummary": "First day: {day}",
+  "@settingsFirstDaySummary": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailSummary": "Mailboxes, reading and swipe actions",
+  "settingsAssistantSummary": "Personality, memory and on-device models",
+  "settingsTimeZoneGroup": "Time zone",
+  "settingsAppSettingsFor": "{app} settings",
+  "@settingsAppSettingsFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  }
 }

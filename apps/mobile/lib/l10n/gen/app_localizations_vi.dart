@@ -10805,4 +10805,79 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileMediaUploadExpired => 'Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.';
+
+  @override
+  String get settingsAppsGroup => 'Ứng dụng';
+
+  @override
+  String get settingsSearchPlaceholder => 'Tìm trong cài đặt';
+
+  @override
+  String settingsSearchNoResults(String query) {
+    return 'Không có cài đặt nào khớp với “$query”.';
+  }
+
+  @override
+  String settingsSearchResults(int count) {
+    return '$count kết quả';
+  }
+
+  @override
+  String get settingsAppOfflineData => 'Dữ liệu ngoại tuyến';
+
+  @override
+  String get settingsAppOfflineDataDescription => 'Chuẩn bị và xem dữ liệu thiết bị này lưu ngoại tuyến';
+
+  @override
+  String get settingsAppBoardsGroup => 'Bảng';
+
+  @override
+  String get settingsAppWeekGroup => 'Tuần';
+
+  @override
+  String get settingsAppConnectionsGroup => 'Lịch đã kết nối';
+
+  @override
+  String get settingsAppPrivacyGroup => 'Quyền riêng tư';
+
+  @override
+  String get settingsAppFocusGroup => 'Tập trung';
+
+  @override
+  String get settingsAppRequestsGroup => 'Yêu cầu';
+
+  @override
+  String settingsPomodoroSummary(int focus, int shortBreak) {
+    return 'Tập trung $focus phút · nghỉ $shortBreak phút';
+  }
+
+  @override
+  String settingsRequestThresholdSummary(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Mục cũ hơn $days ngày cần phê duyệt',
+      zero: 'Mọi mục bị bỏ lỡ đều cần phê duyệt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsFirstDaySummary(String day) {
+    return 'Ngày đầu tuần: $day';
+  }
+
+  @override
+  String get settingsMailSummary => 'Hộp thư, cách đọc và thao tác vuốt';
+
+  @override
+  String get settingsAssistantSummary => 'Tính cách, bộ nhớ và mô hình trên thiết bị';
+
+  @override
+  String get settingsTimeZoneGroup => 'Múi giờ';
+
+  @override
+  String settingsAppSettingsFor(String app) {
+    return 'Cài đặt $app';
+  }
 }

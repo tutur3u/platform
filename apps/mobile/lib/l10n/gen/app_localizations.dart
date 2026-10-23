@@ -20724,6 +20724,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The upload link expired or is invalid. Select the image again.'**
   String get profileMediaUploadExpired;
+
+  /// No description provided for @settingsAppsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get settingsAppsGroup;
+
+  /// No description provided for @settingsSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search settings'**
+  String get settingsSearchPlaceholder;
+
+  /// No description provided for @settingsSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No settings match “{query}”.'**
+  String settingsSearchNoResults(String query);
+
+  /// No description provided for @settingsSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 result} other{{count} results}}'**
+  String settingsSearchResults(int count);
+
+  /// No description provided for @settingsAppOfflineData.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline data'**
+  String get settingsAppOfflineData;
+
+  /// No description provided for @settingsAppOfflineDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare and review what this device keeps offline'**
+  String get settingsAppOfflineDataDescription;
+
+  /// No description provided for @settingsAppBoardsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Boards'**
+  String get settingsAppBoardsGroup;
+
+  /// No description provided for @settingsAppWeekGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get settingsAppWeekGroup;
+
+  /// No description provided for @settingsAppConnectionsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected calendars'**
+  String get settingsAppConnectionsGroup;
+
+  /// No description provided for @settingsAppPrivacyGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settingsAppPrivacyGroup;
+
+  /// No description provided for @settingsAppFocusGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get settingsAppFocusGroup;
+
+  /// No description provided for @settingsAppRequestsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get settingsAppRequestsGroup;
+
+  /// No description provided for @settingsPomodoroSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{focus} min focus · {shortBreak} min break'**
+  String settingsPomodoroSummary(int focus, int shortBreak);
+
+  /// No description provided for @settingsRequestThresholdSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{Every missed entry needs approval} =1{Entries older than 1 day need approval} other{Entries older than {days} days need approval}}'**
+  String settingsRequestThresholdSummary(int days);
+
+  /// No description provided for @settingsFirstDaySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'First day: {day}'**
+  String settingsFirstDaySummary(String day);
+
+  /// No description provided for @settingsMailSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailboxes, reading and swipe actions'**
+  String get settingsMailSummary;
+
+  /// No description provided for @settingsAssistantSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Personality, memory and on-device models'**
+  String get settingsAssistantSummary;
+
+  /// No description provided for @settingsTimeZoneGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Time zone'**
+  String get settingsTimeZoneGroup;
+
+  /// No description provided for @settingsAppSettingsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} settings'**
+  String settingsAppSettingsFor(String app);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

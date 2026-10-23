@@ -1,15 +1,20 @@
 part of 'settings_page.dart';
 
 class _SettingsOverviewSection extends StatelessWidget {
-  const _SettingsOverviewSection({required this.showInfrastructure});
+  const _SettingsOverviewSection({
+    required this.showInfrastructure,
+    required this.anchors,
+  });
 
   final bool showInfrastructure;
+  final GlobalKey Function(String id) anchors;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
     final general = SettingsCompactSection(
+      key: anchors('general'),
       title: l10n.settingsGeneralGroup,
       children: [
         SettingsTile(
@@ -28,13 +33,14 @@ class _SettingsOverviewSection extends StatelessWidget {
           key: ValueKey('settings-hidden-workspaces-row'),
           grouped: true,
         ),
+        // Profile editing is reached from the header's Edit profile.
         SettingsTile(
-          key: const ValueKey('settings-you-row'),
+          key: const ValueKey('settings-accounts-row'),
           grouped: true,
-          icon: shad.LucideIcons.userRound,
-          title: l10n.settingsNavYou,
+          icon: shad.LucideIcons.userCog,
+          title: l10n.authManageAccounts,
           value: context.watch<AuthCubit?>()?.state.user?.email,
-          onTap: () => context.push(Routes.settingsProfile),
+          onTap: () => context.push(Routes.settingsAccounts),
         ),
         SettingsTile(
           grouped: true,
@@ -59,6 +65,7 @@ class _SettingsOverviewSection extends StatelessWidget {
       ],
     );
     final support = SettingsCompactSection(
+      key: anchors('support'),
       title: l10n.settingsSupportGroup,
       children: [
         SettingsTile(

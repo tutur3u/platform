@@ -1,0 +1,121 @@
+part of 'settings_compact_navigation_test.dart';
+
+/// Settings > Apps rows, the routed app sub-screens and quick-jump search.
+void registerSettingsAppsChecks() {
+  testWidgets('Apps rows summarize values and open central sub-screens', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(390, 844));
+    final h = _SettingsHarness();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await h.dispose();
+    });
+    await h.pump(tester);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('tasks')),
+      160,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await _settle(tester);
+    String? summary(String id) =>
+        tester.widget<SettingsTile>(find.byKey(ValueKey(id))).value;
+    expect(find.text('Apps'), findsOneWidget);
+    expect(summary('tasks'), 'Tasks board');
+    expect(summary('calendar'), 'First day: Auto');
+    expect(summary('finance'), 'Hide amounts');
+    // Timer is opt-in; without the experiment its row stays hidden.
+    expect(find.byKey(const ValueKey('timer')), findsNothing);
+    // One source of truth: the root no longer repeats per-app editors.
+    expect(find.byKey(const ValueKey('settings-finance-row')), findsNothing);
+    expect(find.byKey(const ValueKey('settings-task-board-row')), findsNothing);
+    expect(find.byKey(const ValueKey('settings-you-row')), findsNothing);
+    await _capture(tester, 'settings-root-apps');
+
+    await _tapRow(tester, const ValueKey('tasks'));
+    expect(h.router.state.matchedLocation, Routes.settingsAppPath('tasks'));
+    expect(find.byKey(const ValueKey('settings-task-board-row')), findsOne);
+    expect(
+      find.byKey(const ValueKey('app-settings-tasks-offline')),
+      findsOneWidget,
+    );
+    // The shell owns the single top title; the body adds no app bar.
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    await _capture(tester, 'settings-app-tasks');
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await _settle(tester);
+    expect(h.router.state.matchedLocation, Routes.settings);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final app in ['calendar', 'finance', 'timer']) {
+    testWidgets('$app sub-screen renders its single editor', (tester) async {
+      _viewport(tester, const Size(390, 844));
+      final h = _SettingsHarness(initial: Routes.settingsAppPath(app));
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await h.dispose();
+      });
+      await h.pump(tester);
+      final row = switch (app) {
+        'calendar' => 'settings-first-day-row',
+        'finance' => 'settings-finance-row',
+        _ => 'settings-pomodoro-row',
+      };
+      expect(find.byKey(ValueKey(row)), findsOneWidget);
+      // Timer keeps no offline module; the others link to theirs.
+      expect(
+        find.byKey(ValueKey('app-settings-$app-offline')),
+        app == 'timer' ? findsNothing : findsOne,
+      );
+      await _capture(tester, 'settings-app-$app');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('search opens app settings and jumps to inline rows', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(390, 844));
+    final h = _SettingsHarness();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await h.dispose();
+    });
+    await h.pump(tester);
+    final field = find.descendant(
+      of: find.byKey(const ValueKey('settings-search-field')),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(field, 'amounts');
+    await _settle(tester);
+    final result = find.byKey(const ValueKey('settings-search-app-finance-0'));
+    expect(tester.widget<SettingsTile>(result).title, 'Finance amounts');
+    expect(tester.widget<SettingsTile>(result).value, 'Apps · Finance');
+    await _capture(tester, 'settings-search-results');
+    await tester.tap(result);
+    await _settle(tester);
+    expect(h.router.state.matchedLocation, Routes.settingsAppPath('finance'));
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await _settle(tester);
+
+    await tester.enterText(field, 'nothing matches this');
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('settings-search-empty')), findsOne);
+
+    await tester.enterText(field, 'personal time');
+    await _settle(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-search-timezone')));
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('settings-search-results')), findsNothing);
+    final zone = tester.getRect(find.text('Personal timezone'));
+    expect(zone.top, greaterThanOrEqualTo(0));
+    expect(zone.bottom, lessThanOrEqualTo(844));
+    expect(h.router.state.matchedLocation, Routes.settings);
+    expect(tester.takeException(), isNull);
+  });
+}

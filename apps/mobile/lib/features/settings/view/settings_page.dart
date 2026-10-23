@@ -18,16 +18,15 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
-import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/link_browser_settings_tile.dart';
-import 'package:mobile/features/settings/view/product_preference_editors.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_profile_header.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_search.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
@@ -43,6 +42,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'settings_page_actions.dart';
+part 'settings_page_search.dart';
 part 'settings_page_widgets.dart';
 part 'settings_preferences_section.dart';
 
@@ -85,7 +85,7 @@ class _SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<_SettingsView>
-    with _SettingsPageActions {
+    with _SettingsPageActions, _SettingsPageSearch {
   Future<PackageInfo>? _packageInfoFuture;
   late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   String? _loadedWorkspaceId;
@@ -114,7 +114,6 @@ class _SettingsViewState extends State<_SettingsView>
     }
     if (widget.section == SettingsSectionDestination.preferences ||
         widget.section == SettingsSectionDestination.overview) {
-      unawaited(_loadDefaultTaskBoardNavigationPreference());
       unawaited(_loadAppearanceIntro());
     }
     if (widget.section == SettingsSectionDestination.overview) {
@@ -165,11 +164,6 @@ class _SettingsViewState extends State<_SettingsView>
           future: _packageInfoFuture,
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
-            final financePreferencesCubit =
-                (widget.section == SettingsSectionDestination.preferences ||
-                    widget.section == SettingsSectionDestination.overview)
-                ? context.watch<FinancePreferencesCubit?>()
-                : null;
             final experimentalAppsState =
                 widget.section == SettingsSectionDestination.experiments
                 ? context.watch<ExperimentalAppsCubit?>()?.state ??
@@ -193,7 +187,6 @@ class _SettingsViewState extends State<_SettingsView>
                   children: _buildSettingsChildren(
                     context: context,
                     packageInfo: packageInfo,
-                    financePreferencesCubit: financePreferencesCubit,
                     experimentalAppsState: experimentalAppsState,
                   ),
                 ),
@@ -208,36 +201,59 @@ class _SettingsViewState extends State<_SettingsView>
   List<Widget> _buildSettingsChildren({
     required BuildContext context,
     required PackageInfo? packageInfo,
-    required FinancePreferencesCubit? financePreferencesCubit,
     required ExperimentalAppsState experimentalAppsState,
   }) {
     switch (widget.section) {
       case SettingsSectionDestination.overview:
+        final searching = _searchQuery.trim().isNotEmpty;
         return [
           const SettingsProfileHeader(),
           const SizedBox(height: SettingsRowLayout.groupGap),
-          StaggeredEntry(
-            index: 0,
-            playOnceKey: 'settings-root-preferences',
-            child: _buildPreferencesSection(context, financePreferencesCubit),
+          SettingsSearchField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
           ),
           const SizedBox(height: SettingsRowLayout.groupGap),
-          StaggeredEntry(
-            index: 1,
-            playOnceKey: 'settings-section-overview',
-            child: _SettingsOverviewSection(
-              showInfrastructure: _canManageMobileVersions,
+          if (searching)
+            SettingsSearchResults(
+              query: _searchQuery,
+              results: filterSettingsSearch(
+                _searchEntries(
+                  context,
+                  showInfrastructure: _canManageMobileVersions,
+                ),
+                _searchQuery,
+              ),
+            )
+          else ...[
+            StaggeredEntry(
+              index: 0,
+              playOnceKey: 'settings-root-preferences',
+              child: _buildPreferencesSection(context),
             ),
-          ),
-          const SizedBox(height: SettingsRowLayout.groupGap),
-          const ProductSettingsSection(),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+            StaggeredEntry(
+              index: 1,
+              playOnceKey: 'settings-root-apps',
+              child: ProductSettingsSection(key: _anchor('apps')),
+            ),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+            StaggeredEntry(
+              index: 2,
+              playOnceKey: 'settings-section-overview',
+              child: _SettingsOverviewSection(
+                showInfrastructure: _canManageMobileVersions,
+                anchors: _anchor,
+              ),
+            ),
+          ],
         ];
       case SettingsSectionDestination.preferences:
         return [
           StaggeredEntry(
             index: 0,
             playOnceKey: 'settings-preferences',
-            child: _buildPreferencesSection(context, financePreferencesCubit),
+            child: _buildPreferencesSection(context),
           ),
         ];
       case SettingsSectionDestination.experiments:
@@ -280,10 +296,7 @@ class _SettingsViewState extends State<_SettingsView>
     }
   }
 
-  Widget _buildPreferencesSection(
-    BuildContext context,
-    FinancePreferencesCubit? financePreferencesCubit,
-  ) {
+  Widget _buildPreferencesSection(BuildContext context) {
     final themeState = context.watch<ThemeCubit>().state;
     return _PreferencesSection(
       permissionsRepository: _workspacePermissionsRepository,
@@ -292,30 +305,16 @@ class _SettingsViewState extends State<_SettingsView>
         themeState.appearance.theme,
       ),
       appearanceIsNew: !_appearanceIntroSeen,
-      showFinanceAmounts: financePreferencesCubit?.state.showAmounts ?? false,
       languageLabel: _localeDisplayName(
         Localizations.localeOf(context),
         context.read<LocaleCubit>().state.locale,
         context.l10n,
       ),
-      calendarLabel: _calendarDisplayName(
-        context.watch<CalendarSettingsCubit>().state,
-        context.l10n,
-      ),
       onChangeLanguage: () => unawaited(_showLanguageDialog()),
-      onToggleFinanceAmounts: () {
-        if (financePreferencesCubit == null) {
-          return;
-        }
-        unawaited(_showFinanceAmountsDialog(financePreferencesCubit));
-      },
-      disableDefaultTaskBoardNavigation: _disableDefaultTaskBoardNavigation,
-      onToggleDefaultTaskBoardNavigation: () =>
-          unawaited(_showDefaultTaskBoardDialog()),
       onOpenAppearance: _openAppearance,
-      onChangeFirstDayOfWeek: () => unawaited(_showCalendarDialog()),
       hapticsEnabled: AppHaptics.enabled,
       onToggleHaptics: () => unawaited(_showHapticsDialog()),
+      anchors: _anchor,
     );
   }
 

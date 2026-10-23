@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
@@ -35,6 +36,7 @@ List<RouteBase> settingsRoutes() => [
     path: Routes.settingsPreferences,
     redirect: (context, state) => Routes.settings,
   ),
+  ...appSettingsRoutes(),
   GoRoute(
     path: Routes.settingsAppearance,
     builder: (context, state) => AppearancePage(
