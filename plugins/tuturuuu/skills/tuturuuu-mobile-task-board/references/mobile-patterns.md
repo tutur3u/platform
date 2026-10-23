@@ -54,6 +54,12 @@ localization changes.
 - Use `AppPageBody.fullBleed` only for listed screen types: calendar views,
   kanban/board and planner canvases, chat/Assistant threads and Live, Meet call
   stages, and media/map viewers or full-canvas editors.
+- Pick the page kind per screen (`root` grids and multi-pane, `detail` lists,
+  `form` data entry, `reading` long text); the design-system page lists current
+  assignments. Size grids and cards from `LayoutBuilder` constraints, not the
+  window width, and drop widget-level 16dp side margins once the page pads.
+  Sheets and dialogs keep their own padding. For `ListView.separated` or grids,
+  pass `AppPageInsets.of(context, width: constraints.maxWidth)` as padding.
 - Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
   the owning feature. Expanded tablet/desktop windows use the leading
   `ShellNavigationRail`, which must keep the mini-app Back item. Switching
