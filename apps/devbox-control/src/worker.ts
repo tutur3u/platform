@@ -148,6 +148,28 @@ async function boundedJson(request: Request): Promise<unknown> {
   }
 }
 
+const isPercentBucket = (value: unknown) =>
+  typeof value === 'number' &&
+  Number.isInteger(value) &&
+  value >= 0 &&
+  value <= 100 &&
+  value % 5 === 0;
+// Same contract as the web heartbeat schema: typeof checks, never coercion.
+function isDiskCapability(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const disk = value as Record<string, unknown>;
+  return (
+    Object.keys(disk).every((key) =>
+      ['freeGiB', 'freePct', 'inodeFreePct'].includes(key)
+    ) &&
+    typeof disk.freeGiB === 'number' &&
+    Number.isInteger(disk.freeGiB) &&
+    disk.freeGiB >= 0 &&
+    disk.freeGiB <= 1_000_000 &&
+    isPercentBucket(disk.freePct) &&
+    (disk.inodeFreePct === undefined || isPercentBucket(disk.inodeFreePct))
+  );
+}
 function isCapabilities(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const data = value as Record<string, unknown>;
@@ -167,6 +189,13 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
     )
   )
     return false;
+  const resources = data.resources;
+  if (resources !== undefined) {
+    if (!resources || typeof resources !== 'object' || Array.isArray(resources))
+      return false;
+    const disk = (resources as Record<string, unknown>).disk;
+    if (disk !== undefined && !isDiskCapability(disk)) return false;
+  }
   const judge = data.judge;
   if (judge !== undefined) {
     if (!judge || typeof judge !== 'object' || Array.isArray(judge))

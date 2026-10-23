@@ -9,7 +9,7 @@ export function getGlobalHelp() {
     '  logout',
     '  upgrade',
     '  resources <setup|status|monitor|run|enable|disable|uninstall>  bound local validation load',
-    '  storage <status|analyze|suggest|prune>  disk headroom, ranked consumers and safe cleanup',
+    '  storage <status|analyze|suggest|prune|fleet>  disk headroom, ranked consumers and safe cleanup',
     '  whoami',
     '  host [current|list|use]',
     '  config set-base-url <url>',

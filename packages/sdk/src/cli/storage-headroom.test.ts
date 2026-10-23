@@ -85,14 +85,15 @@ describe('heartbeat disk capability', () => {
     );
   });
 
-  it('accepts only exact bucket numbers and known keys', () => {
+  it('accepts only integer GiB, 5% buckets and known keys', () => {
     expect(
       parseDiskCapability({ freeGiB: 50, freePct: 10, inodeFreePct: 95 })
     ).toEqual({ freeGiB: 50, freePct: 10, inodeFreePct: 95 });
     for (const value of [
       { freeGiB: '50', freePct: 10 },
       { freeGiB: [50], freePct: 10 },
-      { freeGiB: 51, freePct: 10 },
+      { freeGiB: 1.5, freePct: 10 },
+      { freeGiB: -1, freePct: 10 },
       { freeGiB: 50, freePct: 12 },
       { freeGiB: 50, freePct: 10, extra: true },
       { freeGiB: 50, freePct: 10, inodeFreePct: '95' },

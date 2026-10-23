@@ -24,6 +24,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
+import { diskAdmission } from './resources-disk-admission';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -61,6 +62,10 @@ Setup options:
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
+Heavy commands exit 75 when the disk holding their cwd is critical (below
+TTR_STORAGE_MIN_FREE 15G, 5% free or 5% inodes) and print the top
+\`ttr storage suggest\` actions; --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1
+overrides once, and --offload auto then prefers a devbox runner.
 Run option: --offload auto|<runner-id> runs the exact pushed commit on a fresh,
 attested trusted-development devbox runner (ttr box) when local lanes are
 saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
@@ -106,7 +111,7 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   const allowed: Record<string, string[]> = {
-    run: ['--ignore-pressure', '--offload', '--timeout'],
+    run: ['--ignore-pressure', '--ignore-disk', '--offload', '--timeout'],
     offload: ['--json', '--runner'],
     shim: [],
     status: ['--json'],
@@ -169,6 +174,14 @@ export async function runResourcesCommand(argv: string[]) {
       enabled &&
       (shim ? isHeavyCommand(name, command) : !isTrivialCommand(name, command));
     const offload = optionValue(options, '--offload');
+    // Disk headroom gate for heavy work; nested jobs were admitted already.
+    let diskCritical = false;
+    if (queued && !parent && !(!shim && options.includes('--ignore-disk'))) {
+      const disk = await diskAdmission({ cwd: commandCwd(command) });
+      if (disk.message)
+        process.stderr.write(`[ttr resources] ${disk.message}\n`);
+      diskCritical = disk.refuse;
+    }
     if (!shim && queued && offload && !parent) {
       const code = await offloadRun({
         home,
@@ -176,11 +189,16 @@ export async function runResourcesCommand(argv: string[]) {
         target: offload,
         argv: [name, ...command],
         timeout: optionValue(options, '--timeout'),
+        saturated: diskCritical,
       });
       if (code !== undefined) {
         process.exitCode = code;
         return;
       }
+    }
+    if (diskCritical) {
+      process.exitCode = 75;
+      return;
     }
     if (enabled && !shim) {
       const bin = await installedResourceShims(home);
@@ -364,6 +382,7 @@ export async function offloadRun({
   argv,
   timeout,
   cwd = process.cwd(),
+  saturated = false,
   loadBox = () => import('./resources-box-offload.js'),
   queueStatus = resourceQueueStatus,
 }: {
@@ -373,13 +392,15 @@ export async function offloadRun({
   argv: string[];
   timeout?: string;
   cwd?: string;
+  /** Treat local capacity as exhausted (critical disk) for `auto`. */
+  saturated?: boolean;
   loadBox?: () => Promise<typeof import('./resources-box-offload.js')>;
   queueStatus?: typeof resourceQueueStatus;
 }) {
   const log = (text: string) =>
     process.stderr.write(`[ttr resources] ${text}\n`);
   const explicit = target !== 'auto';
-  if (!explicit) {
+  if (!explicit && !saturated) {
     const state = await queueStatus(home, lanes);
     if (state.occupied < state.effectiveLanes && !state.waiting.length)
       return undefined;

@@ -222,7 +222,6 @@ export function diskCapability(probe: VolumeProbe): DiskCapability {
   };
 }
 
-const BUCKET_SET = new Set<number>(DISK_FREE_GIB_BUCKETS);
 const isPercentBucket = (value: unknown): value is number =>
   typeof value === 'number' &&
   Number.isInteger(value) &&
@@ -231,8 +230,9 @@ const isPercentBucket = (value: unknown): value is number =>
   value % 5 === 0;
 
 /**
- * Strict reader for reported capabilities: every field is type-checked rather
- * than coerced, so `["50"]` or `"50"` never passes as a bucket.
+ * Strict reader for reported capabilities, matching the web and Worker
+ * heartbeat schemas: every field is type-checked rather than coerced, so
+ * `["50"]` or `"50"` never passes.
  */
 export function parseDiskCapability(value: unknown): DiskCapability | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -243,7 +243,12 @@ export function parseDiskCapability(value: unknown): DiskCapability | null {
     )
   )
     return null;
-  if (typeof data.freeGiB !== 'number' || !BUCKET_SET.has(data.freeGiB))
+  if (
+    typeof data.freeGiB !== 'number' ||
+    !Number.isInteger(data.freeGiB) ||
+    data.freeGiB < 0 ||
+    data.freeGiB > 1_000_000
+  )
     return null;
   if (!isPercentBucket(data.freePct)) return null;
   if (data.inodeFreePct !== undefined && !isPercentBucket(data.inodeFreePct))
