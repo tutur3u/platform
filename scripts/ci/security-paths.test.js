@@ -49,12 +49,18 @@ test('security-sensitive paths require review by category', () => {
     ['packages/payment-core/src/index.ts', 'payments'],
     [
       'apps/inventory/src/app/api/v1/webhooks/sepay/[token]/route.ts',
-      'payments',
+      'inbound-webhooks',
     ],
     [
       'apps/infrastructure/src/lib/inventory/commerce/square/webhooks.ts',
-      'payments',
+      'inbound-webhooks',
     ],
+    ['apps/web/src/lib/sepay-client.ts', 'payments'],
+    ['apps/calendar/src/app/api/cron/sync/route.ts', 'scheduled-jobs'],
+    ['apps/infrastructure/src/lib/post-email-queue-cron.ts', 'scheduled-jobs'],
+    ['apps/mail/src/lib/mail/inbound/parse.ts', 'inbound-webhooks'],
+    ['packages/utils/src/required-mfa-policy.ts', 'auth'],
+    ['apps/web/src/lib/oidc-provider.ts', 'auth'],
     // Paths #6491 adds to CODEOWNERS stay classified as well.
     ['apps/web/src/app/api/auth/session/route.ts', 'auth'],
     ['packages/satellite/src/auth.ts', 'auth'],

@@ -28,8 +28,9 @@ const reviewCategories = [
     patterns: [
       /^packages\/(?:auth|sso|satellite|turnstile)\//u,
       /(?:^|\/)(?:auth|sso|oauth2?|sessions?|login|logout|sign-?in|sign-?up|mfa|otp|2fa|passkeys?|webauthn)(?:\/|[._-][^/]*$|$)/iu,
-      /(?:^|\/)(?:proxy|middleware)\.(?:c|m)?[jt]s$/u,
-      /^packages\/utils\/src\/(?:user-helper|workspace-user-link)/u,
+      /(?:^|\/)(?:proxy|middleware|api-middleware|authorization)\.(?:c|m)?[jt]s$/u,
+      /(?:^|\/)(?:oidc|external-apps)[^/]*\.(?:c|m)?[jt]sx?$/iu,
+      /^packages\/utils\/src\/(?:user-helper|workspace-user-link|api-proxy-guard|required-mfa)/u,
     ],
   },
   {
@@ -47,6 +48,8 @@ const reviewCategories = [
     patterns: [
       /(?:^|\/)[^/]*(?:tenant|permission|rbac|workspace-(?:user|member|role|access))[^/]*$/iu,
       /^packages\/utils\/src\/workspace-helper/u,
+      /^apps\/calendar\/src\/app\/api\/v1\/workspaces\/[^/]+\/calendar\/(?:sync|schedule)\//u,
+      /^apps\/web\/src\/app\/api\/notifications\/send-immediate\//u,
     ],
   },
   {
@@ -65,18 +68,38 @@ const reviewCategories = [
     patterns: [
       /(?:^|\/)[^/]*(?:token|secret|credential|crypto|encrypt|decrypt|signing|signature|hmac|jwt|api-?keys?)[^/]*$/iu,
       /(?:^|\/)\.env(?:\.[\w.-]+)?$/u,
+      /(?:^|\/)email-unsubscribe\.(?:c|m)?[jt]s$/u,
       /(?:^|\/)\.dev\.vars/u,
     ],
   },
   {
-    // Payment flows and every inbound webhook (signature checks, replay and
-    // amount handling), including apps/pay/src/app/api/payment/webhooks.
+    // Jobs authenticated by the cron secret, their gateways and run-now hooks.
+    category: 'scheduled-jobs',
+    owner: 'runtime',
+    patterns: [
+      /^apps\/[^/]+\/src\/app\/api\/cron\//u,
+      /^apps\/web\/src\/legacy-api-routes\/cron\//u,
+      /(?:^|\/)(?:[^/]*[-_])?cron(?:[-_][^/]*)?\.(?:c|m)?[jt]s$/u,
+      /^apps\/infrastructure\/src\/app\/api\/v1\/infrastructure\/post-email-queue\//u,
+    ],
+  },
+  {
+    // Payment flows, including apps/pay/src/app/api/payment/webhooks.
     category: 'payments',
     owner: 'payments',
     patterns: [
       /^packages\/payment(?:-core)?\//u,
       /^apps\/pay\/src\/app\/api\/(?:payment|billing|cron\/payment)\//u,
+      /(?:^|\/)sepay[^/]*\.(?:c|m)?[jt]s$/u,
+    ],
+  },
+  {
+    // Every inbound webhook and mail ingress (signature checks, replay).
+    category: 'inbound-webhooks',
+    owner: 'platform',
+    patterns: [
       /(?:^|\/)webhooks?(?:\/|[._-][^/]*$|$)/iu,
+      /^apps\/mail\/src\/lib\/mail\/inbound\//u,
     ],
   },
   {
