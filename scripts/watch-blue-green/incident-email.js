@@ -1,6 +1,7 @@
 const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const BUILD_FAILURE_ALERT_RECIPIENTS_ENV =
   'PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS';
@@ -8,6 +9,17 @@ const DOCKER_RECOVERY_SETTINGS_FILE =
   'blue-green-docker-recovery-settings.json';
 const DOCKER_RECOVERY_ALERT_STATE_FILE =
   'blue-green-docker-recovery-alert-state.json';
+// Import the workspace source directly. A root package.json dependency would
+// put email-service and its workspace closure into Turbo's global hash.
+const EMAIL_SERVICE_ENTRY = path.join(
+  __dirname,
+  '..',
+  '..',
+  'packages',
+  'email-service',
+  'src',
+  'index.ts'
+);
 const SYSTEM_EMAIL_SOURCE = {
   email: 'notifications@tuturuuu.com',
   name: 'Tuturuuu',
@@ -373,7 +385,7 @@ async function resolveSendSystemEmail({ importEmailService, sendSystemEmail }) {
   const importer =
     importEmailService ??
     (() => {
-      return import('@tuturuuu/email-service');
+      return import(pathToFileURL(EMAIL_SERVICE_ENTRY).href);
     });
   const emailService = await importer();
 
