@@ -24,6 +24,26 @@ merge, or production evidence only when that delivery is authorized.
 
 For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
 
+Operating model ([details](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget), [docs](apps/docs/build/development-tools/agent-operating-model.mdx)):
+
+- Roles: the user/Mastermind is director with cross-project and admin custody.
+  The project integration owner is the only writer of main, integration and
+  release. Team leads own disjoint worksets, and workers execute.
+- Budget: `agent-allocation: 10` active subagents per thread tree, counting
+  every descendant. This supersedes the older five-child ceiling. A lead gets
+  an explicit remaining budget from its parent, never a fresh allocation.
+- The T3 runtime does not enforce this cap. It is a contract, checked by
+  `scripts/ci/check-agent-budget.js`.
+- Lower ttr, disk, CPU and RAM limits still apply. Reduce active WIP when
+  resources or queues are under pressure, and never add busywork to fill
+  slots.
+- Isolated workers commit, push and open PRs for their own verified branches.
+  The root checkout's index never blocks branch publication.
+- Reviewers are never the author. Leads return compact receipts: PR, head SHA,
+  tests, residual risk, blocker and resume event. The parent retires a child
+  worktree once its result is on a pushed branch.
+- Add no permanent controller, timer or retired wake.
+
 ## 2. Hard Prohibitions
 
 - Start long-lived development servers only when requested or needed for an
@@ -91,6 +111,20 @@ For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skill
 
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.
+- Treat security as a default; Tuturuuu is open source and a high-value target.
+  See the [security default](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/security-default.md).
+  - Code, dependency, runtime and workflow changes get focused secret,
+    dependency, SAST and trust-boundary checks.
+  - Auth, RLS, tenant, runner, CI, token and storage changes get an
+    independent security review before integration.
+  - Never run untrusted fork code with secrets or write permissions. Pin
+    actions and artifacts, and enforce actor and head/branch trust, least
+    privilege, and duplicate/replay/UNKNOWN fences.
+  - Track every finding with a stable ID, severity, owner, source, status and
+    remediation receipts. Confirmed critical or high findings block release.
+  - Preserve existing negative assertions. Never claim an all-clear from a
+    scan. Never put raw secrets or customer logs in public PRs, issues or
+    artifacts.
 - When assigned ongoing program ownership, capture new and amended requests in
   the durable private backlog before dispatch. Recover that backlog alongside
   current ownership and exact-head evidence on each wake; do not infer completion

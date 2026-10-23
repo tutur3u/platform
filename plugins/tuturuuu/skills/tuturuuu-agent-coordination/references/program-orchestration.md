@@ -22,6 +22,75 @@ with the coordinator as its sole writer. Retain append-only decisions/checkpoint
 for history, but report current counts from the board. Workers return receipts;
 they do not concurrently rewrite it. Keep credentials and private payloads out.
 
+## Operating model and budget
+
+Run work as a bounded company hierarchy:
+
+| Role | Holder | Owns |
+| --- | --- | --- |
+| Director | The user or Mastermind | Cross-project priorities, admin custody, user-local shared skills |
+| Project integration owner | One orchestrator per project | The only writer of main/integration/release, the program board, budget grants, final acceptance |
+| Team lead | A delegated child | One disjoint workset, its workers, its receipts |
+| Worker | A delegated child | Execution on an isolated branch/worktree |
+| Reviewer | A child that did not author the change | An independent review receipt |
+
+The project allocation is `agent-allocation: 10` active subagents per thread
+tree, counting every descendant. It supersedes the older five-child ceiling.
+
+- **Live agents:** `active` and `blocked` agents occupy a slot. `done` and
+  `retired` agents release theirs.
+- **Grants:** the owner grants each lead an explicit remaining budget out of
+  that allocation. A lead's children, including nested leads with their own
+  grants, must fit inside the grant. A nested lead never receives ten new
+  slots.
+- **Hierarchy depth:** at most three subagent levels below the owner. Only
+  leads delegate.
+- **Enforcement:** the T3 runtime does not enforce this cap. It is a contract.
+  Declare live allocations in the program's ignored `allocation.json` (shape:
+  [example](agent-allocation.example.json)) and check it:
+
+  ```bash
+  node scripts/ci/check-agent-budget.js tmp/agent-coordination/<program>/allocation.json
+  ```
+
+  The checker rejects:
+  - more live agents than the allocation, so 11 is rejected;
+  - an allocation above the AGENTS.md value;
+  - grants that oversubscribe the owner or a lead;
+  - unbounded nesting;
+  - live orphans under finished leads;
+  - a reviewer that is, or descends from, its author;
+  - any subagent that claims integration writes.
+
+  With no arguments it checks that AGENTS.md, this reference and the docs page
+  declare the same allocation. The docs audit (`node scripts/docs-audit.js`, run by
+  the Documentation and SEO contracts workflow) runs it, and the root script test
+  suite runs its tests.
+
+  Passing proves only the declared structure. It does not prove what a live
+  thread tree actually ran.
+- **Resource admission is separate from agent count.** ttr validation lanes,
+  disk, CPU and RAM decide how much heavy WIP may run. `validationLanes` and
+  `heavyValidation` record that limit, and the checker rejects heavy work
+  beyond the lanes.
+  - Shrink active WIP when the queue is long or free disk is low.
+  - Admit agents only for real ready work. Never spawn busywork to fill slots.
+- **Publication:**
+  - Isolated workers and leads commit, push and open PRs for their own verified
+    branches under the completion contract below.
+  - Only the integration owner writes main, integration or release.
+  - Publish from the worker's own worktree, so the root checkout's index never
+    blocks branch publication.
+- **Receipts:** leads return compact receipts with PR, full head SHA, tests run
+  with results, residual risk, an explicit blocker (or `none`), and the resume
+  event. The reviewer must not be the author.
+- **Worktree retirement:** once a child's result is on a pushed branch, the
+  parent removes that child's worktree. For recovery, keep the pushed branch
+  and a receipt rather than the worktree.
+- **No new standing machinery:** create no new permanent controller, timer or
+  retired wake. Use native result/PR watches and the existing authorized
+  cadence.
+
 ## Worker contract
 
 Every new assignment or substantive continuation contains:
@@ -71,14 +140,15 @@ Native PR watches and the authorized schedule provide the next wake.
 ## Autonomy and asynchronous waits
 
 Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
-when available. Its useful-delegation, five-child ceiling and inheritance rules
-apply within the current task's authority, not as permission to restart retired
-controllers or broaden release access. Give every child the accessible policy,
+when available. Its useful-delegation and inheritance rules apply within the
+current task's authority, not as permission to restart retired controllers or
+broaden release access. The project allocation above replaces its older
+five-child ceiling for Tuturuuu. Give every child the accessible policy,
 project instructions, latest custody override and remaining task-tree budget;
 relay permitted pinned bytes when paths are unavailable across machines/providers.
 
 Portable fallback: use useful children whenever separable ready work exists,
-within the smaller of five concurrent children and actual runtime/resource limits.
+within the smaller of the remaining granted budget and actual runtime/resource limits.
 Assign disjoint paths and keep one integration writer. Drain results and admit
 independent real backlog before arming a native PR watch; then end the turn as
 required. A queued heavy gate still allows independent reading, diagnosis,
