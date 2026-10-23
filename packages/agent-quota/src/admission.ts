@@ -210,6 +210,8 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
             reason.code === 'reserve'
         )
         .map((reason) => reason.code);
+      if (ranking.reasons.some((reason) => reason.code === 'near-limit-stale'))
+        reasons.push('pool-near-limit');
       if (candidates.length && !unblockedCandidates.length)
         reasons.push('observed-block-ledger');
       const quotaFresh = ranking.state !== 'UNKNOWN';

@@ -144,8 +144,10 @@ describe('one-shot quota admission', () => {
     const context = setup();
     const worker = context.accounts[1];
     if (!worker) throw Error('fixture');
+    const window = worker.windows[0];
+    if (!window) throw Error('window fixture');
     worker.windows[0] = {
-      ...worker.windows[0],
+      ...window,
       kind: 'short',
       source: 'fixture',
       authoritative: true,
@@ -168,6 +170,27 @@ describe('one-shot quota admission', () => {
       reasons: ['unknown-reservation-cap'],
     });
   });
+
+  it('blocks stale over-limit usage until its reported reset', () => {
+    const context = setup();
+    const worker = context.accounts[1];
+    if (!worker) throw Error('fixture');
+    const window = worker.windows[0];
+    if (!window) throw Error('window fixture');
+    worker.windows[0] = {
+      ...window,
+      usedPercent: 100,
+      observedAt: '2026-10-23T00:30:00Z',
+      resetsAt: '2026-10-23T02:00:00Z',
+    };
+    const result = admit(request(context.accounts), context);
+    expect(result.status).toBe('block');
+    expect(result.pools.find((pool) => pool.pool === 'worker')).toMatchObject({
+      state: 'STALE',
+      reasons: expect.arrayContaining(['pool-near-limit']),
+    });
+  });
+
   it('deduplicates aliases for native and pending reservation counting', () => {
     const context = setup({ ...account('a'), windows: [] });
     context.accounts.push({
