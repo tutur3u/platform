@@ -64,7 +64,7 @@ export async function probeVolume(
   } catch {
     device = null;
   }
-  return {
+  const probe: VolumeProbe = {
     path,
     device,
     totalBytes,
@@ -75,6 +75,26 @@ export async function probeVolume(
     inodesFree: inodesKnown ? ffree : null,
     inodeFreePercent: inodesKnown ? (ffree / files) * 100 : null,
   };
+  // A reading that is not a real volume is UNKNOWN, never "plenty free".
+  const finite = [
+    bsize,
+    probe.totalBytes,
+    probe.freeBytes,
+    probe.usedBytes,
+    probe.freePercent,
+    ...(inodesKnown ? [ffree, probe.inodeFreePercent ?? Number.NaN] : []),
+  ].every((value) => Number.isFinite(value));
+  if (
+    !finite ||
+    !(probe.totalBytes > 0) ||
+    probe.freeBytes < 0 ||
+    probe.freeBytes > probe.totalBytes ||
+    (inodesKnown && (ffree < 0 || ffree > files))
+  )
+    throw new Error(
+      `unusable volume reading for ${path} (total ${info.blocks} x ${info.bsize}, available ${info.bavail})`
+    );
+  return probe;
 }
 
 const UNITS: Record<string, number> = {
