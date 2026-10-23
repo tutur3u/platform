@@ -126,6 +126,7 @@ class AssistantRepository
     Object error,
   ) => _classifyCacheFailure(origin, error);
 
+  int _chatSettingsRevision = 0;
   int _creationGenerationVersion = 0;
   ({
     String scope,
