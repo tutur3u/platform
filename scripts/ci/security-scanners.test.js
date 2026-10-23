@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const {
   findings,
   highSeverity,
+  main: codeqlGate,
   newHighFindings,
 } = require('./codeql-new-alerts.js');
 const severityCases = require('./fixtures/codeql-severity-cases.js');
@@ -128,4 +129,56 @@ test('gitleaks output never keeps secret material', () => {
     /REDACTED|API_KEY|Secret|Match/u
   );
   assert.equal(register[0].id, pr[0].id);
+});
+
+test('CodeQL gate logs counts only, never rule IDs, paths or messages', async (t) => {
+  // The repository is public, so findings stay in code scanning.
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-gate-'));
+  t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
+  const sarif = JSON.parse(fs.readFileSync(severityCases.fixture, 'utf8'));
+  sarif.runs[0].results = sarif.runs[0].results.map((result, index) => ({
+    ...result,
+    locations: [
+      {
+        physicalLocation: {
+          artifactLocation: { uri: `secret/path-${index}.py` },
+          region: { startLine: index + 1 },
+        },
+      },
+    ],
+    message: { text: `exploit detail ${index}` },
+  }));
+  fs.writeFileSync(path.join(dir, 'python.sarif'), JSON.stringify(sarif));
+  const saved = { ...process.env };
+  t.after(() => {
+    process.env = saved;
+    process.exitCode = undefined;
+  });
+  Object.assign(process.env, {
+    BASELINE_REF: 'refs/heads/main',
+    GITHUB_REPOSITORY: 'example/platform',
+    GITHUB_TOKEN: 'synthetic',
+  });
+  t.mock.method(global, 'fetch', async (url) => ({
+    json: async () =>
+      String(url).includes('/analyses?')
+        ? [{ category: '/language:python', id: 1 }]
+        : { runs: [] },
+    ok: true,
+    status: 200,
+  }));
+  const lines = [];
+  t.mock.method(console, 'log', (line) => lines.push(String(line)));
+  t.mock.method(console, 'error', (line) => lines.push(String(line)));
+  await codeqlGate([dir, '/language:python']);
+  const output = lines.join('\n');
+  assert.equal(process.exitCode, 1);
+  assert.match(
+    output,
+    /new high\/critical CodeQL result\(s\) \(\d+ critical, \d+ high\)/u
+  );
+  assert.doesNotMatch(output, /js\/|secret\/path|exploit detail|file=/u);
 });

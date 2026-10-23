@@ -168,9 +168,9 @@ jobs:
             shopt -s nullglob
             sarif=("$RUNNER_TEMP"/codeql-sarif/*.sarif)
             [ "${#sarif[@]}" -gt 0 ] || { echo "::error::No SARIF output to gate."; exit 1; }
-            # One line per blocking result (rule, severity, location, message),
-            # with workflow-command characters neutralised, then the count.
-            jq -rs '[.[] | .runs[]? as $run
+            # Public logs show counts only; results live in the maintainer-only
+            # code-scanning view (Security tab), never in logs or artifacts.
+            levels="$(jq -rs '[.[] | .runs[]? as $run
               | ([$run.tool.driver.rules[]?, ($run.tool.extensions[]?.rules[]?)]
                  | map({key: .id, value: (.properties["security-severity"]
                      | if type == "number" then .
@@ -178,29 +178,14 @@ jobs:
                        else 10 end)})
                  | from_entries) as $severity
               | $run.results[]?
-              | . as $result
-              | ($severity[(.ruleId // .rule.id // "")] // 10) as $level
-              | select($level >= 7)
-              | ($result.locations[0].physicalLocation // {}) as $where
-              | [($result.ruleId // $result.rule.id // "unknown"), ($level | tostring),
-                 ($where.artifactLocation.uri // "unknown"),
-                 (($where.region.startLine // 0) | tostring),
-                 (($result.message.text // "") | .[0:300])]
-              | map(gsub("[\\r\\n]"; " ") | gsub("::"; ": :") | gsub("%"; "%25"))]
-              | (.[] | "::error file=\(.[2]),line=\(.[3])::CodeQL \(.[0]) (severity \(.[1])): \(.[4])"),
-                "\(length) high/critical CodeQL result(s); the trusted gate is unavailable, so every one fails."' \
-              "${sarif[@]}" | tee "$RUNNER_TEMP/codeql-gate.txt"
-            count="$(tail -n 1 "$RUNNER_TEMP/codeql-gate.txt" | cut -d ' ' -f 1)"
+              | ($severity[(.ruleId // .rule.id // "")] // 10)
+              | select(. >= 7)]
+              | "\(length) \(map(select(. >= 9)) | length) \(map(select(. < 9)) | length)"' "${sarif[@]}")"
+            read -r count critical high <<< "$levels"
+            echo "$count high/critical CodeQL result(s) ($critical critical, $high high); the trusted gate is unavailable, so every one fails."
+            if [ "$count" -ne 0 ]; then
+              echo "::error::Review the results in the repository's Security tab (code scanning, category $CATEGORY)."
+            fi
             [ "$count" -eq 0 ]
           fi
 
-      # Short-lived triage copy of the analyzed results (no secrets; CodeQL
-      # SARIF carries rule IDs, locations and messages only).
-      - name: Keep CodeQL SARIF for triage
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: codeql-sarif-${{ matrix.language }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/codeql-sarif
-          retention-days: 2
-          if-no-files-found: ignore

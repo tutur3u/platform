@@ -105,8 +105,8 @@ async function baselineSarif({ category, ref, repo }) {
   );
 }
 
-async function main() {
-  const [sarifDir, category] = process.argv.slice(2);
+async function main(argv = process.argv.slice(2)) {
+  const [sarifDir, category] = argv;
   const files = fs
     .readdirSync(sarifDir)
     .filter((file) => file.endsWith('.sarif'))
@@ -133,12 +133,17 @@ async function main() {
   console.log(
     `${category}: ${headHigh.length} high/critical result(s) at head, ${fresh.length} not in the ${env.BASELINE_REF} baseline.`
   );
-  for (const finding of fresh) {
+  // The repository is public: logs carry counts only. Rule IDs, paths and
+  // messages stay in the maintainer-only code-scanning view.
+  if (fresh.length > 0) {
+    const critical = fresh.filter(
+      ({ severity }) => label(severity) === 'critical'
+    ).length;
     console.log(
-      `::error file=${finding.uri},line=${finding.line}::New ${label(finding.severity)} CodeQL result ${finding.ruleId}`
+      `::error::${fresh.length} new high/critical CodeQL result(s) (${critical} critical, ${fresh.length - critical} high); review them in the repository's Security tab (code scanning, category ${category}).`
     );
+    process.exitCode = 1;
   }
-  if (fresh.length > 0) process.exitCode = 1;
 }
 
 if (require.main === module) {
@@ -150,6 +155,7 @@ if (require.main === module) {
 
 module.exports = {
   findings,
+  main,
   highSeverity,
   newHighFindings,
   unresolvedSeverity,

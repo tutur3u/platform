@@ -237,6 +237,13 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
     );
   }
   assert.notEqual(gate(null).status, 0, 'missing SARIF output fails');
+  // Public logs carry counts only, never rule IDs, paths or messages.
+  const all = gate('js/string-high');
+  assert.match(
+    all.stdout,
+    /1 high\/critical CodeQL result\(s\) \(0 critical, 1 high\)/u
+  );
+  assert.doesNotMatch(all.stdout + all.stderr, /js\/|file=|\.sarif/u);
 });
 
 function outputs(temp) {
