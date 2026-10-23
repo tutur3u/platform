@@ -149,7 +149,7 @@ const INLINE_PATTERNS: InlinePattern[] = [
       addMark(parseProtectedInline(match[1] ?? ''), { type: 'underline' }),
   },
   {
-    pattern: /!\[([^\]]*)\]\(((?:\\[()]|[^)\s])+)(?:\s+"((?:\\.|[^"])*)")?\)/u,
+    pattern: /!\[([^\]]*)\]\(((?:\\.|[^)\s\\])+)(?:\s+"((?:\\.|[^"\\])*)")?\)/u,
     render: (match) => {
       const src = normalizeRichTextImageUrl(
         restoreMarkdownEscapes(match[2] ?? '')
@@ -175,7 +175,7 @@ const INLINE_PATTERNS: InlinePattern[] = [
     },
   },
   {
-    pattern: /\[([^\]]+)\]\(((?:\\[()]|[^)\s])+)(?:\s+"((?:\\.|[^"])*)")?\)/u,
+    pattern: /\[([^\]]+)\]\(((?:\\.|[^)\s\\])+)(?:\s+"((?:\\.|[^"\\])*)")?\)/u,
     render: (match) => {
       const href = normalizeRichTextUrl(restoreMarkdownEscapes(match[2] ?? ''));
       return href
@@ -507,10 +507,10 @@ export function markdownToJSON(markdown: string): JSONContent {
     }
 
     const image = line.match(
-      /^!\[((?:\\.|[^\]])*)\]\(((?:\\[()]|[^)\s])+)(?:\s+"((?:\\.|[^"])*)")?\)$/u
+      /^!\[((?:\\.|[^\]\\])*)\]\(((?:\\.|[^)\s\\])+)(?:\s+"((?:\\.|[^"\\])*)")?\)$/u
     );
     const imageSrc = image
-      ? normalizeRichTextImageUrl(image[2]?.replace(/\\([()])/gu, '$1'))
+      ? normalizeRichTextImageUrl(image[2]?.replace(/\\([\\()])/gu, '$1'))
       : null;
     if (image && imageSrc) {
       content.push({
@@ -549,7 +549,7 @@ function escapeMarkdownText(value: string): string {
 }
 
 function escapeMarkdownDestination(value: string): string {
-  return value.replace(/([()])/gu, '\\$1');
+  return value.replace(/([\\()])/gu, '\\$1');
 }
 
 function escapeMarkdownMetadata(value: string): string {
