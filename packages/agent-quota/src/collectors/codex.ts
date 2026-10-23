@@ -1,6 +1,10 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { AccountUsage, UsageWindow, WindowKind } from "../types";
+import {
+	type CodexAppServerOptions,
+	readCodexAppServerLimits,
+} from "./codex-app-server";
 import { listJsonlFiles } from "./files";
 import { allowedSessionFile, codexRoot, codexRoots } from "./paths";
 
@@ -102,9 +106,18 @@ export async function collectCodex(
 	instanceId: string,
 	label: string,
 	roots?: string[],
+	appServerOptions?: CodexAppServerOptions,
 ): Promise<AccountUsage> {
 	const defaultRoot = codexRoot(instanceId);
 	const sourceRoots = roots ?? (defaultRoot ? [defaultRoot] : codexRoots());
+	const appServerHome = appServerOptions
+		? (roots?.[0] ?? defaultRoot ?? sourceRoots[0])
+		: roots
+			? undefined
+			: (defaultRoot ?? sourceRoots[0]);
+	const appServerWindows = appServerHome
+		? await readCodexAppServerLimits(appServerHome, appServerOptions)
+		: [];
 	const samples: LimitSample[] = [];
 	let tokens = {
 		input: 0,
@@ -151,7 +164,7 @@ export async function collectCodex(
 		)
 			latest.set(kind, sample);
 	}
-	const windows: UsageWindow[] = [...latest.entries()].map(
+	const sessionWindows: UsageWindow[] = [...latest.entries()].map(
 		([kind, sample]) => ({
 			kind,
 			usedPercent: sample.usedPercent,
@@ -161,6 +174,7 @@ export async function collectCodex(
 			authoritative: true,
 		}),
 	);
+	const windows = appServerWindows.length ? appServerWindows : sessionWindows;
 	const observedAt = lastMtime
 		? new Date(lastMtime).toISOString()
 		: new Date().toISOString();

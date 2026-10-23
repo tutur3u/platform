@@ -1,5 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
-import type { AccountUsage, UsageWindow } from "../types";
+import type { AccountUsage, UsageWindow, WindowKind } from "../types";
 import { listJsonlFiles } from "./files";
 import { claudeProjectsRoot } from "./paths";
 
@@ -43,31 +43,63 @@ function readUsage(
 	}
 }
 
-function readPlanLimit(line: string): string | undefined {
+interface ClaudeRateLimitSample {
+	id: string;
+	kind: WindowKind;
+	usedPercent: number;
+	resetsAt?: string;
+	observedAt: string;
+}
+
+function readRateLimitEvent(
+	line: string,
+	fallbackObservedAt: string,
+): ClaudeRateLimitSample | undefined {
 	try {
 		const row: unknown = JSON.parse(line);
 		if (!row || typeof row !== "object") return;
 		const root = row as Record<string, unknown>;
-		if (root.type !== "assistant" && root.type !== "system") return;
-		const message =
-			root.message && typeof root.message === "object"
-				? (root.message as Record<string, unknown>)
+		if (root.type !== "rate_limit_event") return;
+		const info =
+			root.rate_limit_info && typeof root.rate_limit_info === "object"
+				? (root.rate_limit_info as Record<string, unknown>)
 				: {};
-		const content = message.content;
-		const text =
-			typeof content === "string" ? content : JSON.stringify(content ?? "");
-		const searchable = text.toLowerCase();
+		const rateLimitType = info.rateLimitType;
+		const utilization = info.utilization;
 		if (
-			!searchable.includes("usage limit reached") &&
-			!searchable.includes("you've hit your limit")
+			typeof rateLimitType !== "string" ||
+			typeof utilization !== "number" ||
+			!Number.isFinite(utilization)
 		)
 			return;
-		const resetIndex = searchable.indexOf("reset");
-		const resetText =
-			resetIndex >= 0 ? text.slice(resetIndex, resetIndex + 140) : "";
-		return resetText.match(
-			/20\d{2}-\d{2}-\d{2}t\d{2}:\d{2}:\d{2}(?:\.\d+)?z/i,
-		)?.[0];
+		const type = rateLimitType.toLowerCase();
+		const kind: WindowKind = type === "five_hour" ? "short" : "long";
+		let resetsAt: string | undefined;
+		if (typeof info.resetsAt === "number" && Number.isFinite(info.resetsAt)) {
+			const date = new Date(info.resetsAt * 1000);
+			if (!Number.isNaN(date.getTime())) resetsAt = date.toISOString();
+		}
+		const observedAt =
+			typeof root.timestamp === "string" ? root.timestamp : fallbackObservedAt;
+		const observedMs = Date.parse(observedAt);
+		const resetMs = resetsAt ? Date.parse(resetsAt) : Number.NaN;
+		const durationMs =
+			type === "five_hour" ? 5 * 60 * 60_000 : 7 * 24 * 60 * 60_000;
+		const now = Date.now();
+		if (
+			!Number.isFinite(observedMs) ||
+			observedMs > now + 5 * 60_000 ||
+			(Number.isFinite(resetMs) && resetMs <= now) ||
+			(!Number.isFinite(resetMs) && now - observedMs > durationMs)
+		)
+			return;
+		return {
+			id: rateLimitType,
+			kind,
+			usedPercent: Math.max(0, Math.min(100, utilization * 100)),
+			resetsAt,
+			observedAt,
+		};
 	} catch {
 		return;
 	}
@@ -91,9 +123,8 @@ export async function collectClaude(
 	let latestUsageAt = 0;
 	const now = Date.now();
 	const cutoff = now - 24 * 60 * 60 * 1000;
+	const limits = new Map<string, ClaudeRateLimitSample>();
 	const windows: UsageWindow[] = [];
-	let limitReset: string | undefined;
-	let planLimitReached = false;
 	for (const file of await listJsonlFiles(projectsRoot)) {
 		try {
 			const info = await stat(file);
@@ -114,32 +145,14 @@ export async function collectClaude(
 					tokens.output += usage.output;
 					latestUsageAt = Math.max(latestUsageAt, timestamp);
 				}
-				const reset = readPlanLimit(line);
-				if (reset !== undefined) {
-					planLimitReached = true;
-					limitReset = reset;
-				} else {
-					try {
-						const row = JSON.parse(line) as Record<string, unknown>;
-						const message =
-							row.message && typeof row.message === "object"
-								? (row.message as Record<string, unknown>)
-								: {};
-						const content = message.content;
-						const text = (
-							typeof content === "string"
-								? content
-								: JSON.stringify(content ?? "")
-						).toLowerCase();
-						if (
-							(row.type === "assistant" || row.type === "system") &&
-							(text.includes("usage limit reached") ||
-								text.includes("you've hit your limit"))
-						)
-							planLimitReached = true;
-					} catch {
-						/* Ignore malformed lines. */
-					}
+				const limit = readRateLimitEvent(line, info.mtime.toISOString());
+				if (limit) {
+					const previous = limits.get(limit.id);
+					if (
+						!previous ||
+						Date.parse(limit.observedAt) > Date.parse(previous.observedAt)
+					)
+						limits.set(limit.id, limit);
 				}
 			}
 		} catch {
@@ -160,19 +173,16 @@ export async function collectClaude(
 			authoritative: false,
 		});
 	}
-	const resetTime = limitReset ? Date.parse(limitReset) : Number.NaN;
-	const limitStillActive =
-		planLimitReached &&
-		(!limitReset || !Number.isFinite(resetTime) || resetTime > Date.now());
-	if (limitStillActive)
-		windows.push({
-			kind: "weekly",
-			usedPercent: 100,
-			resetsAt: limitReset,
-			source: "Claude Code local plan-limit event",
-			observedAt,
+	windows.push(
+		...[...limits.values()].map((limit) => ({
+			kind: limit.kind,
+			usedPercent: limit.usedPercent,
+			resetsAt: limit.resetsAt,
+			source: `Claude Code rate_limit_event (${limit.id})`,
+			observedAt: limit.observedAt,
 			authoritative: true,
-		});
+		})),
+	);
 	return {
 		instanceId,
 		provider: "claude",

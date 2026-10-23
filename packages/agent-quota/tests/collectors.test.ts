@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -70,6 +70,33 @@ describe("local collectors", () => {
 		).toHaveLength(2);
 	});
 
+	it("prefers the bounded Codex app-server rate limit snapshot", async () => {
+		const root = await tempDir();
+		const command = join(root, "codex-app-server-fixture");
+		await writeFile(
+			command,
+			`#!/bin/sh\nwhile IFS= read -r line; do\n  case "$line" in\n    *'"id":1'*) printf '%s\\n' '{"jsonrpc":"2.0","id":1,"result":{}}' ;;\n    *'account/rateLimits/read'*) printf '%s\\n' '{"jsonrpc":"2.0","id":2,"result":{"rateLimits":{"primary":{"usedPercent":31,"windowDurationMins":300,"resetsAt":1900000000},"secondary":{"usedPercent":62,"windowDurationMins":10080,"resetsAt":1900600000}}}}'; break ;;\n  esac\ndone\n`,
+		);
+		await chmod(command, 0o755);
+		const result = await collectCodex("codex", "test-account", [root], {
+			command,
+			timeoutMs: 1000,
+			now: () => new Date("2026-10-23T00:00:00.000Z"),
+		});
+		expect(result.windows.filter((window) => window.authoritative)).toEqual([
+			expect.objectContaining({
+				kind: "short",
+				usedPercent: 31,
+				source: "Codex app-server account/rateLimits/read",
+			}),
+			expect.objectContaining({
+				kind: "long",
+				usedPercent: 62,
+				source: "Codex app-server account/rateLimits/read",
+			}),
+		]);
+	});
+
 	it("estimates Claude token totals without fabricating a quota percentage", async () => {
 		const root = await tempDir();
 		const project = join(root, "project");
@@ -96,32 +123,68 @@ describe("local collectors", () => {
 		expect(result.windows[0]?.usedPercent).toBeUndefined();
 	});
 
-	it("treats a Claude plan-limit event as exhausted quota and records a visible reset time", async () => {
+	it("collects a Claude rate-limit event's reported utilization and reset", async () => {
 		const root = await tempDir();
 		const observedAt = new Date().toISOString();
-		const resetsAt = new Date(Date.now() + 10 * 60_000).toISOString();
+		const resetsAt = Math.floor(Date.now() / 1000) + 10 * 60;
 		await writeFile(
 			join(root, "fixture.jsonl"),
 			`${JSON.stringify({
-				type: "assistant",
+				type: "rate_limit_event",
 				timestamp: observedAt,
-				message: {
-					content: [
-						{
-							type: "text",
-							text: `Usage limit reached. Reset at ${resetsAt}.`,
-						},
-					],
+				rate_limit_info: {
+					rateLimitType: "five_hour",
+					utilization: 0.74,
+					resetsAt,
 				},
 			})}\n`,
 		);
 		const result = await collectClaude("claudeAgent", "test-account", root);
 		expect(result.windows[0]).toMatchObject({
-			kind: "weekly",
-			usedPercent: 100,
-			resetsAt,
+			kind: "short",
+			usedPercent: 74,
+			resetsAt: new Date(resetsAt * 1000).toISOString(),
 			authoritative: true,
 		});
+	});
+
+	it("ignores expired and old resetless Claude rate-limit events", async () => {
+		const root = await tempDir();
+		const old = new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString();
+		const expired = Math.floor(Date.now() / 1000) - 60;
+		await writeFile(
+			join(root, "fixture.jsonl"),
+			[
+				{
+					type: "rate_limit_event",
+					timestamp: new Date().toISOString(),
+					rate_limit_info: {
+						rateLimitType: "five_hour",
+						utilization: 1,
+						resetsAt: expired,
+					},
+				},
+				{
+					type: "rate_limit_event",
+					timestamp: old,
+					rate_limit_info: {
+						rateLimitType: "seven_day",
+						utilization: 1,
+					},
+				},
+				{
+					type: "assistant",
+					timestamp: new Date().toISOString(),
+					message: { content: "Usage limit reached" },
+				},
+			]
+				.map((event) => JSON.stringify(event))
+				.join("\n"),
+		);
+		const result = await collectClaude("claudeAgent", "test-account", root);
+		expect(
+			result.windows.some((window) => window.usedPercent !== undefined),
+		).toBe(false);
 	});
 
 	it("reads only safe T3 assignment metadata in read-only mode", async () => {
