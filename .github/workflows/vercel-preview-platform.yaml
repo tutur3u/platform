@@ -41,7 +41,7 @@ jobs:
       - name: Use Node.js 24
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.22.1
 
       - name: Compute changed files
         id: changed_files

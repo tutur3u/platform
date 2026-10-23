@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       [
+        '.node-version',
         'apps/apps/**',
         'packages/ai/**',
         'packages/apis/**',
@@ -52,6 +53,7 @@ on:
     branches: [main]
     paths:
       [
+        '.node-version',
         'apps/apps/**',
         'packages/ai/**',
         'packages/apis/**',

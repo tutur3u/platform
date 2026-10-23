@@ -7,12 +7,14 @@ on:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-linux.yaml"
       - "scripts/desktop-deployment/**"
+      - ".node-version"
   pull_request:
     branches: [main]
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-linux.yaml"
       - "scripts/desktop-deployment/**"
+      - ".node-version"
 
 permissions:
   contents: read

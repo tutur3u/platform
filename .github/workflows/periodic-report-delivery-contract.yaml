@@ -16,6 +16,7 @@ on:
       - 'scripts/ci/supabase-image-cache*'
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
+      - '.node-version'
   push:
     branches: [main, production]
     paths:
@@ -30,6 +31,7 @@ on:
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
       - 'tuturuuu.ci.ts'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read

@@ -12,6 +12,7 @@ on:
     paths:
       - "scripts/desktop-deployment/**"
       - ".github/workflows/desktop-beta.yaml"
+      - ".node-version"
   workflow_dispatch:
     inputs:
       dry_run:

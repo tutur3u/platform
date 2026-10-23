@@ -10,6 +10,7 @@ on:
       - 'scripts/ci/supabase-image-cache*'
       - .github/actions/setup-supabase-baseline/**
       - .github/workflows/supabase-baseline.yaml
+      - .node-version
   workflow_dispatch:
     inputs:
       seed_images_only:

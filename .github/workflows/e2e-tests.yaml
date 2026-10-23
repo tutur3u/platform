@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - production
     paths:
+      - '.node-version'
       # Unknown future runtime inputs must reach the conservative planner too.
       - "**"
       - ".github/actions/**"

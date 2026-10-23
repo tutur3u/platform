@@ -19,6 +19,7 @@ on:
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/mail-calendar-tasks-builds.yaml'
+      - '.node-version'
   push:
     branches: [main]
     paths:
@@ -39,6 +40,7 @@ on:
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/mail-calendar-tasks-builds.yaml'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read

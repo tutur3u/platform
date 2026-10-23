@@ -15,6 +15,7 @@ on:
       - "packages/types/src/supabase.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/connected-mail-accounts-contract.yaml"
+      - ".node-version"
   push:
     branches: [main, production]
     paths:
@@ -29,6 +30,7 @@ on:
       - "packages/types/src/supabase.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/connected-mail-accounts-contract.yaml"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read

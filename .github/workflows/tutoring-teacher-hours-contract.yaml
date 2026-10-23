@@ -17,6 +17,7 @@ on:
       - ".github/workflows/tutoring-teacher-hours-contract.yaml"
       - "packages/utils/src/tutoring-teacher-hours.ts"
       - "packages/utils/src/__tests__/tutoring-teacher-hours.test.ts"
+      - ".node-version"
   push:
     branches: [main, production]
     paths:
@@ -33,6 +34,7 @@ on:
       - ".github/workflows/tutoring-teacher-hours-contract.yaml"
       - "packages/utils/src/tutoring-teacher-hours.ts"
       - "packages/utils/src/__tests__/tutoring-teacher-hours.test.ts"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read

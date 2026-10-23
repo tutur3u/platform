@@ -116,6 +116,19 @@ manifest metadata. Preserve historical observations, intentional version fixture
 and paused runtime source. Repository pins do not establish installed host or
 fleet versions; verify those separately before claiming runtime acceptance.
 
+## Node runtime pins and validation selection
+
+Use `.node-version` for supported setup-node jobs. After rebasing workflow changes,
+run `node scripts/ci/node-version-pin.js --write`, then the pin, selection and
+production-migration-target tests with the exact private Node binary. The planner
+and guard share checkout identity, job-scoped Vercel and byte-pinned staging
+exceptions. Keep pin consumers' validation event filters and the Cloudflare
+affected-path set aligned; a file input needs both selection layers. Negative
+fixtures must reject quoted command text, foreign checkouts and mismatched
+conditions. Production-only publication filters retain their release scope.
+See [Node runtime policy](../../../../../apps/docs/build/development-tools/node-runtime.mdx)
+for activation, host custody and separate source, CI and deployed-runtime proof.
+
 ## Commands And Formatting
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.

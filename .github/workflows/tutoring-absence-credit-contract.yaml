@@ -16,6 +16,7 @@ on:
       - "apps/database/scripts/tutoring-absence-credit-contract.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/tutoring-absence-credit-contract.yaml"
+      - ".node-version"
   push:
     branches: [main, production]
     paths:
@@ -31,6 +32,7 @@ on:
       - "apps/database/scripts/tutoring-absence-credit-contract.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/tutoring-absence-credit-contract.yaml"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read

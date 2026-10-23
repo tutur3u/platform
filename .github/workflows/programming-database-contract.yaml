@@ -17,6 +17,7 @@ on:
       - "apps/database/tests/programming-disposable/session.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/programming-database-contract.yaml"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read

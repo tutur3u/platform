@@ -15,6 +15,7 @@ on:
       - 'tuturuuu.ci.ts'
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
+      - '.node-version'
   pull_request:
     paths:
       - 'apps/colab/**'
@@ -28,6 +29,7 @@ on:
       - 'tuturuuu.ci.ts'
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
+      - '.node-version'
   workflow_dispatch:
   workflow_call:
 

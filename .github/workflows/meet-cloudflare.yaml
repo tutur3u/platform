@@ -38,6 +38,7 @@ on:
       - '.github/workflows/ci-check.yml'
       - '.github/actions/**'
       - '.github/workflows/meet-cloudflare.yaml'
+      - '.node-version'
   push:
     branches: [main]
     paths:
@@ -76,6 +77,7 @@ on:
       - '.github/workflows/ci-check.yml'
       - '.github/actions/**'
       - '.github/workflows/meet-cloudflare.yaml'
+      - '.node-version'
   workflow_dispatch:
   workflow_call:
 

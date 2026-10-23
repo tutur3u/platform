@@ -15,6 +15,7 @@ on:
       - "apps/database/scripts/topic-delivery-foundation-contract.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/topic-delivery-foundation-contract.yaml"
+      - ".node-version"
   push:
     branches: [main, production]
     paths:
@@ -29,6 +30,7 @@ on:
       - "apps/database/scripts/topic-delivery-foundation-contract.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/topic-delivery-foundation-contract.yaml"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read

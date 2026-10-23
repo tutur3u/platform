@@ -9,6 +9,7 @@ on:
       - '.github/actions/cache-supabase-images/**'
       - 'scripts/ci/supabase-image-cache*'
       - '.github/workflows/security-egress-contract.yaml'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read

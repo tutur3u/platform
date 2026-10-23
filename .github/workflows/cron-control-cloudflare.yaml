@@ -8,6 +8,7 @@ on:
       - 'bun.lock'
       - 'package.json'
       - 'tuturuuu.ts'
+      - '.node-version'
   push:
     branches: [main]
     paths:
@@ -17,6 +18,7 @@ on:
       - 'bun.lock'
       - 'package.json'
       - 'tuturuuu.ts'
+      - '.node-version'
   workflow_dispatch:
   workflow_call:
 permissions:

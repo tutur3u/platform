@@ -16,6 +16,7 @@ on:
       - "apps/database/scripts/report-review-receipts-types.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/report-review-receipts-contract.yaml"
+      - ".node-version"
   push:
     branches: [main, production]
     paths:
@@ -31,6 +32,7 @@ on:
       - "apps/database/scripts/report-review-receipts-types.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/report-review-receipts-contract.yaml"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read

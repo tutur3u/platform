@@ -12,6 +12,7 @@ on:
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/sso-persistence-contract.yaml'
+      - '.node-version'
   push:
     branches: [main, production]
     paths:
@@ -23,6 +24,7 @@ on:
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/sso-persistence-contract.yaml'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read

@@ -18,6 +18,7 @@ on:
       - 'apps/backend/src/contact.rs'
       - 'apps/web/src/app/api/v1/users/me/profile/**'
       - 'apps/web/src/app/api/v1/users/me/avatar/upload-url/**'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read
