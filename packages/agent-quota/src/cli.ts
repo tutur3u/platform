@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 import { collectAll } from "./collectors";
 import { recommend, recommendAssignments } from "./policy";
-import type { AccountReserve, Provider } from "./types";
+import { parseReserves } from "./reserves";
+import type { Provider } from "./types";
 
 function arg(flag: string): string | undefined {
 	const index = process.argv.indexOf(flag);
@@ -10,16 +11,6 @@ function arg(flag: string): string | undefined {
 
 function outputJson(): boolean {
 	return process.argv.includes("--json");
-}
-
-function parseReserves(): Record<string, AccountReserve> {
-	const configured = process.env.AGENT_QUOTA_RESERVES;
-	if (!configured) return {};
-	try {
-		return JSON.parse(configured) as Record<string, AccountReserve>;
-	} catch {
-		throw new Error("AGENT_QUOTA_RESERVES must contain valid JSON.");
-	}
 }
 
 function percent(
@@ -42,7 +33,7 @@ async function main(): Promise<void> {
 	const provider = arg("--provider");
 	if (provider && provider !== "codex" && provider !== "claude")
 		throw new Error("--provider must be codex or claude.");
-	const { accounts, active, t3ObservedAt } = await collectAll();
+	const { accounts, active, t3ObservedAt, t3Error } = await collectAll();
 	const filtered = accounts.filter(
 		(account) => !provider || account.provider === provider,
 	);
@@ -50,9 +41,10 @@ async function main(): Promise<void> {
 	if (command === "status") {
 		const result = filtered.map((account) => ({
 			...account,
-			activeCount:
-				active.find((item) => item.instanceId === account.instanceId)?.count ??
-				0,
+			activeCount: active
+				? (active.find((item) => item.instanceId === account.instanceId)
+						?.count ?? 0)
+				: "unknown",
 			...(reserves[account.instanceId]
 				? { reserve: reserves[account.instanceId] }
 				: {}),
@@ -63,6 +55,7 @@ async function main(): Promise<void> {
 					{
 						observedAt: new Date().toISOString(),
 						t3ObservedAt,
+						t3Error,
 						accounts: result,
 					},
 					null,
@@ -73,6 +66,7 @@ async function main(): Promise<void> {
 			console.log(
 				"ACCOUNT        PROVIDER  SHORT  LONG  ESTIMATED TOKENS  ACTIVE  OBSERVED",
 			);
+			if (t3Error) console.log(`T3 activity unavailable: ${t3Error}`);
 			for (const account of result) {
 				const estimated = account.windows.find(
 					(window) => window.estimated !== undefined,
@@ -90,6 +84,8 @@ async function main(): Promise<void> {
 		}
 		return;
 	}
+	if (!active)
+		throw new Error("Cannot recommend while T3 activity state is unknown.");
 	const count = Number(arg("--count") ?? "1");
 	if (!Number.isInteger(count) || count < 1 || count > 50)
 		throw new Error("--count must be an integer from 1 to 50.");

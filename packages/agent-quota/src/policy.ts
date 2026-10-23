@@ -163,6 +163,24 @@ function rankOne(
 
 	if (staleWindows.length) {
 		score = Math.min(score, freshWindows.length ? 60 : 18);
+		if (
+			staleWindows.some((window) => {
+				const resetAt = window.resetsAt
+					? Date.parse(window.resetsAt)
+					: Number.NaN;
+				return (
+					window.usedPercent > hardLimitPercent &&
+					Number.isFinite(resetAt) &&
+					resetAt > now.getTime()
+				);
+			})
+		) {
+			eligible = false;
+			reasons.push({
+				code: "near-limit-stale",
+				message: `Excluded because a stale window above ${hardLimitPercent}% used has not reset yet.`,
+			});
+		}
 		reasons.push({
 			code: "stale",
 			message: freshWindows.length

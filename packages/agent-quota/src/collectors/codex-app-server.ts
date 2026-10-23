@@ -104,40 +104,55 @@ export function readCodexAppServerLimits(
 		const stdoutStream = child.stdout;
 		child.on("error", () => finish([]));
 		stdoutStream.setEncoding("utf8");
+		const handleLine = (line: string) => {
+			let message: JsonRpcMessage;
+			try {
+				message = JSON.parse(line) as JsonRpcMessage;
+			} catch {
+				return;
+			}
+			if (message.id === 1 && !requested) {
+				requested = true;
+				stdin.write('{"jsonrpc":"2.0","method":"initialized","params":{}}\n');
+				stdin.write(
+					'{"jsonrpc":"2.0","id":2,"method":"account/rateLimits/read","params":null}\n',
+				);
+				return;
+			}
+			if (message.id === 2)
+				finish(
+					message.error
+						? []
+						: toWindows(message.result?.rateLimits ?? {}, now()),
+				);
+		};
+		const consumeStdout = (flush = false) => {
+			let newline = stdout.indexOf("\n");
+			while (newline >= 0) {
+				const line = stdout.slice(0, newline).trim();
+				stdout = stdout.slice(newline + 1);
+				handleLine(line);
+				if (settled) return;
+				newline = stdout.indexOf("\n");
+			}
+			if (flush && stdout.trim()) {
+				const line = stdout.trim();
+				stdout = "";
+				handleLine(line);
+			}
+		};
+		stdin.on("error", () => finish([]));
 		stdoutStream.on("data", (chunk: string) => {
 			stdout += chunk;
 			if (stdout.length > 1_000_000) {
 				finish([]);
 				return;
 			}
-			let newline = stdout.indexOf("\n");
-			while (newline >= 0) {
-				const line = stdout.slice(0, newline).trim();
-				stdout = stdout.slice(newline + 1);
-				newline = stdout.indexOf("\n");
-				let message: JsonRpcMessage;
-				try {
-					message = JSON.parse(line) as JsonRpcMessage;
-				} catch {
-					continue;
-				}
-				if (message.id === 1 && !requested) {
-					requested = true;
-					stdin.write('{"jsonrpc":"2.0","method":"initialized","params":{}}\n');
-					stdin.write(
-						'{"jsonrpc":"2.0","id":2,"method":"account/rateLimits/read","params":null}\n',
-					);
-					continue;
-				}
-				if (message.id === 2) {
-					finish(
-						message.error
-							? []
-							: toWindows(message.result?.rateLimits ?? {}, now()),
-					);
-					return;
-				}
-			}
+			consumeStdout();
+		});
+		child.on("close", () => {
+			consumeStdout(true);
+			finish([]);
 		});
 		stdin.write(
 			'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"agent-quota","version":"1"},"capabilities":{}}}\n',

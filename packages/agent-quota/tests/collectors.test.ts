@@ -3,8 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
+import { collectAllWith } from "../src/collectors";
 import { collectClaude } from "../src/collectors/claude";
 import { collectCodex } from "../src/collectors/codex";
+import { readCodexAppServerLimits } from "../src/collectors/codex-app-server";
 import { collectT3State } from "../src/collectors/t3";
 
 const temporary: string[] = [];
@@ -95,6 +97,38 @@ describe("local collectors", () => {
 				source: "Codex app-server account/rateLimits/read",
 			}),
 		]);
+	});
+
+	it("parses the final app-server response when close flushes a partial line", async () => {
+		const root = await tempDir();
+		const command = join(root, "codex-app-server-final-line");
+		await writeFile(
+			command,
+			`#!/bin/sh\nwhile IFS= read -r line; do\n  case "$line" in\n    *'"id":1'*) printf '%s\\n' '{"jsonrpc":"2.0","id":1,"result":{}}' ;;\n    *'account/rateLimits/read'*) printf '%s' '{"jsonrpc":"2.0","id":2,"result":{"rateLimits":{"primary":{"usedPercent":73,"windowDurationMins":300,"resetsAt":1900000000}}}}'; exit 0 ;;\n  esac\ndone\n`,
+		);
+		await chmod(command, 0o755);
+		const startedAt = Date.now();
+		const result = await readCodexAppServerLimits(root, {
+			command,
+			timeoutMs: 3000,
+			now: () => new Date("2026-10-23T00:00:00.000Z"),
+		});
+		expect(Date.now() - startedAt).toBeLessThan(1000);
+		expect(result).toMatchObject([{ kind: "short", usedPercent: 73 }]);
+	});
+
+	it("settles promptly when the app-server closes its pipes without a response", async () => {
+		const root = await tempDir();
+		const command = join(root, "codex-app-server-early-close");
+		await writeFile(command, "#!/bin/sh\nexit 0\n");
+		await chmod(command, 0o755);
+		const startedAt = Date.now();
+		const result = await readCodexAppServerLimits(root, {
+			command,
+			timeoutMs: 3000,
+		});
+		expect(Date.now() - startedAt).toBeLessThan(1000);
+		expect(result).toEqual([]);
 	});
 
 	it("estimates Claude token totals without fabricating a quota percentage", async () => {
@@ -207,5 +241,26 @@ describe("local collectors", () => {
 				"CREATE TABLE should_not_exist (id INTEGER)",
 			),
 		).toThrow();
+	});
+
+	it("returns provider data but leaves T3 activity unknown when its read fails", async () => {
+		const providerAccount = {
+			instanceId: "codex",
+			provider: "codex" as const,
+			label: "fixture",
+			windows: [],
+		};
+		const result = await collectAllWith({
+			collectT3State: () => Promise.reject(new Error("fixture failure")),
+			collectCodex: async () => providerAccount,
+			collectClaude: async () => ({
+				...providerAccount,
+				instanceId: "claudeAgent",
+				provider: "claude" as const,
+			}),
+		});
+		expect(result.accounts).toHaveLength(7);
+		expect(result.active).toBeUndefined();
+		expect(result.t3Error).toBe("T3 activity state is unavailable.");
 	});
 });

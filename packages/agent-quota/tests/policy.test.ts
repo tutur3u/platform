@@ -76,6 +76,28 @@ describe("routing policy", () => {
 		).toBe(true);
 	});
 
+	it("excludes stale over-limit usage while its reported reset is future", () => {
+		const staleExhaustion = account(
+			"claude_dd",
+			100,
+			"2026-10-22T20:00:00.000Z",
+		);
+		staleExhaustion.windows[0]!.resetsAt = "2026-10-23T01:00:00.000Z";
+		const result = recommend({
+			task: { provider: "claude" },
+			active: [],
+			accounts: [staleExhaustion],
+			now,
+		});
+		expect(result.ranked[0]?.eligible).toBe(false);
+		expect(result.selected).toHaveLength(0);
+		expect(
+			result.ranked[0]?.reasons.some(
+				(reason) => reason.code === "near-limit-stale",
+			),
+		).toBe(true);
+	});
+
 	it("treats a passed reset timestamp as stale instead of imminent", () => {
 		const expired = account("codex", 10, now.toISOString());
 		const window = expired.windows[0];
