@@ -6,10 +6,31 @@
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "e8912e2867beecc673d171907bf09649",
   "workers_dev": true,
-  "observability": { "enabled": true, "head_sampling_rate": 0.05 },
-  "durable_objects": {
-    "bindings": [{ "name": "COORDINATION", "class_name": "CoordinationObject" }]
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 0.05,
+      "invocation_logs": true
+    }
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CoordinationObject"] }],
-  "secrets": { "required": ["COORDINATION_TOKEN"] }
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "COORDINATION",
+        "class_name": "CoordinationObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CoordinationObject"]
+    }
+  ],
+  "secrets": {
+    "required": ["COORDINATION_TOKEN"]
+  },
+  "preview_urls": true
 }

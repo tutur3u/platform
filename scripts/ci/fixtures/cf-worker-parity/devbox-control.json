@@ -1,0 +1,38 @@
+{
+  "source": "apps/devbox-control/wrangler.jsonc@948f9fdf2f",
+  "identity": {
+    "name": "tuturuuu-devbox-control",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-09-28",
+    "compatibilityFlags": [],
+    "workersDev": true,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": true
+      }
+    },
+    "crons": [],
+    "routes": [],
+    "vars": {},
+    "secrets": [
+      "DEVBOX_CONTROL_INTERNAL_TOKEN",
+      "SUPABASE_SECRET_KEY",
+      "SUPABASE_URL"
+    ],
+    "durableObjects": {
+      "RUNNER_WAKE": {
+        "className": "RunnerWake"
+      }
+    },
+    "durableObjectClasses": {
+      "RunnerWake": "sqlite"
+    },
+    "unmapped": {},
+    "previewUrls": true
+  },
+  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
+}

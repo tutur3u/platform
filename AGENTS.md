@@ -56,6 +56,7 @@ for roles, independent review, publication, receipts and retirement.
   emitted artifacts and rollback parity are established; retain Wrangler for gaps.
   Do not run global configuration migration or infer production authorization from
   CLI adoption. See the adoption guidance linked above.
+  The target toolchain is cf + Void (Vite+), adopted operation by operation.
 - For Cloudflare work that adds or amplifies billable operations, require bounded
   work/retries, idempotent progress, terminal-state scheduling and a tested durable
   stop fence. Verify operation-count and failure/restart regressions; ingress rate
