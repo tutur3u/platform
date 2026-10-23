@@ -103,9 +103,8 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
 
             return NovaRefreshIndicator(
               onRefresh: _reload,
-              child: ListView(
+              child: AppPageListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   TaskSurfaceHero(
                     icon: Icons.folder_open_outlined,

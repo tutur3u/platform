@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -129,9 +130,8 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
           if (_loading && _sessions.isEmpty)
             const Center(child: NovaLoadingIndicator())
           else if (_error != null && _sessions.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+            AppPageBody(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -154,79 +154,66 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
           else
             NovaRefreshIndicator(
               onRefresh: () => _load(forceRefresh: true),
-              child: ListView(
-                padding: const EdgeInsets.only(top: 16, bottom: 96),
+              child: AppPageListView(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _ManagementPeriodSelector(
-                      period: _period,
-                      onChanged: (period) {
-                        if (_period == period) {
-                          return;
-                        }
-                        setState(() => _period = period);
-                        unawaited(_load(forceRefresh: true));
-                      },
-                    ),
+                  _ManagementPeriodSelector(
+                    period: _period,
+                    onChanged: (period) {
+                      if (_period == period) {
+                        return;
+                      }
+                      setState(() => _period = period);
+                      unawaited(_load(forceRefresh: true));
+                    },
                   ),
                   const shad.Gap(12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _RangeHeroCard(
-                      title: _periodLabel(l10n, _period),
-                      rangeLabel: _rangeLabel(),
-                      sessionCount: _sessions.length,
-                      searchQuery: hasActiveSearch
-                          ? _searchCtrl.text.trim()
-                          : null,
-                    ),
+                  _RangeHeroCard(
+                    title: _periodLabel(l10n, _period),
+                    rangeLabel: _rangeLabel(),
+                    sessionCount: _sessions.length,
+                    searchQuery: hasActiveSearch
+                        ? _searchCtrl.text.trim()
+                        : null,
                   ),
                   const shad.Gap(12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _MetricCard(
-                          label: l10n.timerTotalSessions,
-                          value: '${_sessions.length}',
-                          icon: shad.LucideIcons.timer,
-                          color: theme.colorScheme.primary,
-                        ),
-                        _MetricCard(
-                          label: l10n.timerActiveUsers,
-                          value: '${_uniqueUsers()}',
-                          icon: shad.LucideIcons.users,
-                          color: const Color(0xFF22C55E),
-                        ),
-                        _MetricCard(
-                          label: l10n.timerHistoryTotalTime,
-                          value: _formatDuration(_totalTrackedDuration),
-                          icon: shad.LucideIcons.clock3,
-                          color: const Color(0xFFF59E0B),
-                        ),
-                        _MetricCard(
-                          label: l10n.timerRunning,
-                          value: '$_runningSessions',
-                          icon: shad.LucideIcons.play,
-                          color: const Color(0xFF8B5CF6),
-                        ),
-                      ],
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _MetricCard(
+                        label: l10n.timerTotalSessions,
+                        value: '${_sessions.length}',
+                        icon: shad.LucideIcons.timer,
+                        color: theme.colorScheme.primary,
+                      ),
+                      _MetricCard(
+                        label: l10n.timerActiveUsers,
+                        value: '${_uniqueUsers()}',
+                        icon: shad.LucideIcons.users,
+                        color: const Color(0xFF22C55E),
+                      ),
+                      _MetricCard(
+                        label: l10n.timerHistoryTotalTime,
+                        value: _formatDuration(_totalTrackedDuration),
+                        icon: shad.LucideIcons.clock3,
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      _MetricCard(
+                        label: l10n.timerRunning,
+                        value: '$_runningSessions',
+                        icon: shad.LucideIcons.play,
+                        color: const Color(0xFF8B5CF6),
+                      ),
+                    ],
                   ),
                   if (_isRefreshing) ...[
                     const shad.Gap(12),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: NovaLoadingIndicator(size: 20),
-                    ),
+                    const NovaLoadingIndicator(size: 20),
                   ],
                   const shad.Gap(16),
                   if (_sessions.isEmpty)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                      padding: const EdgeInsets.fromLTRB(8, 28, 8, 0),
                       child: Column(
                         children: [
                           Icon(
@@ -461,7 +448,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
       widgets
         ..add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               headerFormat.format(key),
               style: theme.typography.small.copyWith(
@@ -473,7 +460,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
         )
         ..add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.only(bottom: 12),
             child: Column(
               children: [
                 for (var index = 0; index < daySessions.length; index++) ...[
@@ -689,51 +676,54 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final availableWidth = MediaQuery.sizeOf(context).width - 40;
-    final width = (availableWidth - 8) / 2;
 
-    return SizedBox(
-      width: width > 0 ? width : 160,
-      child: shad.Card(
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
+    // Two cards per row of the width the enclosing Wrap actually receives.
+    return LayoutBuilder(
+      builder: (context, constraints) => SizedBox(
+        width: constraints.maxWidth.isFinite && constraints.maxWidth > 8
+            ? ((constraints.maxWidth - 8) / 2).floorToDouble()
+            : 160,
+        child: shad.Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 18, color: color),
                 ),
-                child: Icon(icon, size: 18, color: color),
-              ),
-              const shad.Gap(10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w800,
+                const shad.Gap(10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.small.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const shad.Gap(2),
-                    Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.xSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
+                      const shad.Gap(2),
+                      Text(
+                        label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.xSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
