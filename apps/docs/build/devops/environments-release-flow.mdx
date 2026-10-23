@@ -96,16 +96,21 @@ No package version, dependency resolution or published changelog is rewritten.
     `identical` against `refs/heads/<branch>`. The base is fully qualified
     because GitHub resolves a bare name to a same-named tag first, and a tag
     push reports the tag name as `head_branch`. Tag pushes also ignore `paths`
-    filters. Deploy consumers (Discord Modal deploy, Supabase Staging) set
-    `REQUIRE_BRANCH_TIP` and accept only `identical`, the live branch tip.
-    Discord also sets `TIP_TREE_PATH: apps/discord`. Its CI runs only for
+    filters. The Discord Modal deploy sets `REQUIRE_BRANCH_TIP` and accepts
+    only `identical`, the live branch tip. It also sets
+    `TIP_TREE_PATH: apps/discord`. Its CI runs only for
     Discord changes, so unrelated commits often land on `main` while it runs.
     A `behind` head is therefore accepted only when the `apps/discord` tree at
     that head equals the tree at the tip of `refs/heads/main`, read with
     `git/ref` and contents GETs. The gate runs again as the first step of every
     job that checks out code. Re-running an old run, or only its failed deploy
     job, is therefore rejected once the deployed code has changed on the
-    branch;
+    branch. Supabase Staging deliberately accepts any SHA reachable from
+    `refs/heads/main`. Production sync may promote a `main` SHA that is no
+    longer the tip, and that SHA's production migration needs its staging
+    marker. Re-applying an older `main` checkout is idempotent for
+    `db push --include-all`, and the marker binds the trust step's verified
+    SHA, never the raw event;
   - manual runs start from exactly `TRUSTED_DISPATCH_REF`.
 
   Checkouts use the step's verified `head_sha`, and secret-bearing steps and jobs
@@ -115,8 +120,8 @@ No package version, dependency resolution or published changelog is rewritten.
   closed. `scripts/ci/workflow-run-trigger-gate.test.js` runs the real step against
   case variants, tag sources, spoofed producers and head-repository mismatches.
 - A pinned production sync must use a SHA whose Supabase Staging Migration
-  succeeded. Staging now migrates only the live `main` tip, so an intermediate
-  SHA may have no staging marker, and the production migration waits for one.
+  succeeded. Otherwise the production migration finds no staging marker for
+  that SHA and waits.
 - Supabase Production accepts a staging migration marker only when the
   producer's `supabase-staging.yaml` blob is allowlisted. Keep the list to the
   current blob plus blobs from `main`'s history; drop blobs from rejected or
