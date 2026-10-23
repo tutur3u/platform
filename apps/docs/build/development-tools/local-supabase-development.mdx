@@ -1,7 +1,7 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
-updatedAt: '2026-10-22'
+updatedAt: '2026-10-23'
 ---
 
 <Info>
@@ -16,6 +16,45 @@ Contract startup and type generation retry registry throttling and transient ima
 The E2E baseline keeps its existing service set, excluding only Edge Runtime and Functions. SQL-only contracts keep their existing narrower service sets. CI uses `public.ecr.aws`; no image archive cache is introduced.
 
 Regression coverage: `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`. Real cold/warm/corrupt baseline and contract acceptance runs in exact-commit CI.
+
+## CLI upgrade type drift
+
+Regenerate `packages/types/src/supabase.ts` from the complete applied migration
+snapshot with the upgraded workspace CLI, using `public,private,storage`, then
+format with the pinned Biome version. The isolated contract lifecycle uses those
+same schemas. Do not regenerate only the first failing table or hand-edit the
+generated declarations.
+
+To distinguish generator behavior from database changes, run both CLI generators
+against the same disposable database. The 2.117.0 to 2.121.0 upgrade changes
+postgres-meta from v0.99.0 to v0.100.0: the newer generator adds `ComputedFields`
+and computed row fields, excludes generated columns from writes, narrows non-null
+JSON columns, and emits `Record<PropertyKey, never>` for no-argument RPCs. The
+same-database comparison also distinguishes these changes from the newer service
+baseline's Storage lifecycle columns and version-aware function signatures.
+
+Check every active workspace after regeneration: Turbo can stop at the first
+failure. Use queued per-workspace type checks; when cold `dist` declarations are
+missing, use a temporary no-emit config mapping package exports to source while
+preserving the workspace's file exclusions. Do not build locally to fill `dist`.
+Narrow object-only JSON producers and validated write inputs to `NonNullable<Json>`;
+keep genuinely nullable columns and sanitized delivery values nullable. Include
+computed relationships in row fixtures, but never insert computed fields. Run
+focused tests and require the exact pushed commit's TypeScript CI to pass.
+
+The Connected Mail drift check compares three private tables with the committed
+types. Their upgrade delta is `ComputedFields: never`; their row columns,
+optionality and relationships are unchanged. The new generator also quotes
+property names, which Biome may unquote. Normalize these equivalent AST property
+keys without discarding actual contract differences. Regression coverage is
+`apps/database/scripts/connected-mail-types-drift.test.mjs`, including rejection
+of semantic changes in quoted output.
+
+On a disposable Linux devbox, keep Bun and the clone local to the task. Docker 29
+may require command-scoped `DOCKER_API_VERSION=1.41`; the CLI's volume prune can
+then fail because `--all` requires API 1.42. Verify the owned project has no
+containers, remove only its exact named volume and network, and verify absence
+before removing its retained disposable directory. Never run a global prune.
 
 ## Basic Commands
 

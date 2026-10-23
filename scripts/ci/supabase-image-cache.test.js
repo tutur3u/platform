@@ -12,27 +12,30 @@ const {
   MAX_ARCHIVE_BYTES,
 } = require('./supabase-image-cache.js');
 const services = [
-  ['supabase/postgres', '17.6.1.167'],
-  ['supabase/postgres-meta', 'v0.99.0'],
-  ['postgrest/postgrest', 'v16.2'],
-  ['supabase/gotrue', 'v2.196.0'],
-  ['supabase/realtime', 'v2.130.0'],
-  ['supabase/storage-api', 'v1.72.1'],
-  ['supabase/studio', '2026.08.24-sha-8ec45b2'],
+  ['supabase/postgres', '17.11.0.004'],
+  ['supabase/postgres-meta', 'v0.100.0'],
+  ['postgrest/postgrest', 'v16.4'],
+  ['supabase/gotrue', 'v2.197.0'],
+  ['supabase/realtime', 'v2.143.4'],
+  ['supabase/storage-api', 'v1.82.1'],
+  ['supabase/studio', '2026.10.12-sha-3699278'],
+  ['supabase/edge-runtime', 'v1.77.4'],
+  ['supabase/logflare', '1.53.0'],
+  ['supabase/supavisor', '2.9.13'],
 ].map(([name, local]) => ({ name, local }));
 const identity = {
   services,
-  cliVersion: '2.117.0',
+  cliVersion: '2.121.0',
   registry: 'public.ecr.aws',
   profile: 'contract',
 };
 test('contract images derive versions from CLI metadata including temporary overrides', () => {
   assert.deepEqual(imageList(identity), [
-    'public.ecr.aws/supabase/gotrue:v2.196.0',
-    'public.ecr.aws/supabase/postgres:17.6.1.167',
-    'public.ecr.aws/supabase/postgres-meta:v0.99.0',
-    'public.ecr.aws/supabase/realtime:v2.130.0',
-    'public.ecr.aws/supabase/storage-api:v1.72.1',
+    'public.ecr.aws/supabase/gotrue:v2.197.0',
+    'public.ecr.aws/supabase/postgres:17.11.0.004',
+    'public.ecr.aws/supabase/postgres-meta:v0.100.0',
+    'public.ecr.aws/supabase/realtime:v2.143.4',
+    'public.ecr.aws/supabase/storage-api:v1.82.1',
   ]);
   assert.ok(
     imageList({
@@ -43,20 +46,20 @@ test('contract images derive versions from CLI metadata including temporary over
     }).includes('public.ecr.aws/supabase/postgres:17.6.1.168')
   );
   assert.deepEqual(imageList({ ...identity, profile: 'contract-http' }), [
-    'public.ecr.aws/supabase/gotrue:v2.196.0',
+    'public.ecr.aws/supabase/gotrue:v2.197.0',
     'public.ecr.aws/supabase/kong:2.8.1',
-    'public.ecr.aws/supabase/postgres:17.6.1.167',
-    'public.ecr.aws/supabase/postgres-meta:v0.99.0',
-    'public.ecr.aws/supabase/postgrest:v16.2',
-    'public.ecr.aws/supabase/realtime:v2.130.0',
-    'public.ecr.aws/supabase/storage-api:v1.72.1',
+    'public.ecr.aws/supabase/postgres:17.11.0.004',
+    'public.ecr.aws/supabase/postgres-meta:v0.100.0',
+    'public.ecr.aws/supabase/postgrest:v16.4',
+    'public.ecr.aws/supabase/realtime:v2.143.4',
+    'public.ecr.aws/supabase/storage-api:v1.82.1',
   ]);
 });
 test('full stack includes pinned supplemental images and omits disabled services', () => {
   const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
   const images = imageList({ ...identity, profile: 'full', config });
   assert.equal(images.length, 10);
-  for (const image of ['kong:2.8.1', 'mailpit:v1.30.2', 'imgproxy:v3.8.0'])
+  for (const image of ['kong:2.8.1', 'mailpit:v1.31.3', 'imgproxy:v3.26.0'])
     assert.ok(images.includes(`public.ecr.aws/supabase/${image}`));
   assert.ok(
     images.every(
@@ -76,6 +79,34 @@ test('full stack includes pinned supplemental images and omits disabled services
     /Uncached service/
   );
   assert.equal(MAX_ARCHIVE_BYTES, 6 * 1024 ** 3);
+});
+test('catalog overlap uses CLI local tags once and rejects duplicate catalog names', () => {
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  const overlap = [
+    { name: 'library/kong', local: '2.8.1' },
+    { name: 'axllent/mailpit', local: 'v1.31.3' },
+    { name: 'darthsim/imgproxy', local: 'v3.26.0' },
+  ];
+  const options = { ...identity, profile: 'full', config };
+  assert.deepEqual(
+    imageList({ ...options, services: [...services, ...overlap] }),
+    imageList(options)
+  );
+  const images = imageList({
+    ...options,
+    services: [...services, { ...overlap[1], local: 'v1.31.4' }],
+  });
+  assert.equal(images.length, 10);
+  assert.ok(images.includes('public.ecr.aws/supabase/mailpit:v1.31.4'));
+  assert.ok(!images.includes('public.ecr.aws/supabase/mailpit:v1.31.3'));
+  assert.throws(
+    () =>
+      imageList({
+        ...options,
+        services: [...services, ...overlap, overlap[0]],
+      }),
+    /Duplicate CLI image metadata/
+  );
 });
 test('unknown versions, profiles, registry and malformed metadata fail closed', () => {
   for (const patch of [
@@ -158,7 +189,7 @@ test('real cache helper pulls only on miss, saves only trusted archives, and loa
   fs.writeFileSync(path.join(database, 'supabase/config.toml'), '');
   fs.writeFileSync(
     path.join(database, 'scripts/run-supabase.js'),
-    `console.log(process.argv.includes('--version') ? '2.117.0' : ${JSON.stringify(JSON.stringify(services))});`
+    `console.log(process.argv.includes('--version') ? '2.121.0' : ${JSON.stringify(JSON.stringify(services))});`
   );
   const docker = path.join(root, 'docker');
   fs.writeFileSync(

@@ -522,9 +522,11 @@ failure, timeout, or output-buffer exhaustion. Other failures retain the generic
 diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
 Active Supabase-starting jobs run `.github/actions/cache-supabase-images` after
 the owning dependency install. Image versions come from the installed pinned CLI's
-`services -o json`, which includes local version overrides. The CLI omits Kong,
-Mailpit and imgproxy there; the helper carries their reviewed 2.117.0 Dockerfile
-pins and rejects a different CLI until those pins are reviewed. Registry rewriting
+`services -o json`, which includes local version overrides. CLI 2.121.0 omits Kong,
+Mailpit and imgproxy there; the helper carries their reviewed Dockerfile pins
+(2.8.1, v1.31.3 and v3.26.0) and rejects a different CLI until those pins are
+reviewed. Catalog entries take precedence over fallback pins, including local
+overrides; repeated catalog image names fail rather than silently choosing a tag. Registry rewriting
 matches the CLI, including `postgrest/postgrest` becoming `supabase/postgrest`.
 
 The exact image list, registry, OS and architecture form the SHA256 cache key;

@@ -20,6 +20,18 @@ review prove baseline equivalence. Existing migration history stays immutable.
   the live local schema, not unapplied SQL.
 - Never hand-edit generated type files. Prefer shared DB row aliases from
   `@tuturuuu/types/db`.
+- CLI image upgrades can change generated declarations without an application
+  migration. Regenerate `public,private,storage` from a complete disposable replay
+  and compare old/new generators against the same database to separate generator
+  changes from service-supplied schema changes. Keep AST drift checks insensitive
+  to equivalent quoted property names while retaining optionality, nullability,
+  computed-field and relationship checks. See
+  [CLI upgrade type drift](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#cli-upgrade-type-drift).
+- After generator upgrades, check all active workspace consumers, not only the
+  first Turbo failure. Narrow object-only JSON producers at their source; retain
+  nullable delivery contracts and complete computed-row fixtures. Cold no-emit
+  source-resolution configs must preserve the owning workspace's exclusions;
+  they do not replace exact-commit CI. See the CLI upgrade type drift guide above.
 - If a migration adds or changes PostgREST-exposed RPC signatures, drop legacy
   overloads that would make named arguments ambiguous.
 - Call typed `.rpc(name, args)` directly. Binding the full generic RPC method can
