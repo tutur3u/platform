@@ -60,7 +60,6 @@ for (const pkg of [
   'hooks',
   'icons',
   'internal-api',
-  'sdk',
   'supabase',
   'types',
   'typescript-config',
