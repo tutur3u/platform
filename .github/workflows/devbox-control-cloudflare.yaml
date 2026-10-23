@@ -11,6 +11,7 @@ on:
       - 'scripts/ci/cf-vite-worker.mjs'
       - 'scripts/ci/cf-worker-parity.mjs'
       - 'scripts/ci/cf-wrangler-publication.mjs'
+      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
       - 'scripts/ci/fixtures/cf-worker-parity/devbox-control.json'
       - 'bun.lock'
       - 'package.json'
@@ -27,6 +28,7 @@ on:
       - 'scripts/ci/cf-vite-worker.mjs'
       - 'scripts/ci/cf-worker-parity.mjs'
       - 'scripts/ci/cf-wrangler-publication.mjs'
+      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
       - 'scripts/ci/fixtures/cf-worker-parity/devbox-control.json'
       - 'bun.lock'
       - 'package.json'
@@ -97,6 +99,10 @@ jobs:
         working-directory: apps/devbox-control
         env:
           CF_SEND_TELEMETRY: 'false'
+      - name: Verify publication against real Vite output
+        env:
+          CF_PUBLICATION_TEST_APP: devbox-control
+        run: node --test scripts/ci/cf-wrangler-publication.runtime.mjs
       - name: Prepare the retained Wrangler publication profile
         run: node scripts/ci/cf-wrangler-publication.mjs apps/devbox-control scripts/ci/fixtures/cf-worker-parity/devbox-control.json apps/devbox-control/wrangler.publish.jsonc
       - name: Check Wrangler publication without credentials

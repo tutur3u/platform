@@ -74,6 +74,21 @@ for (const { app, runtimeEnv } of WORKERS) {
     );
     assert.ok(prepare > recheck && prepare < publishIndex);
     assert.match(deployment[prepare].run, /"\$CLOUDFLARE_ACCOUNT_ID"$/);
+    const realPublication = steps.findIndex(
+      (step) =>
+        step.run ===
+        'node --test scripts/ci/cf-wrangler-publication.runtime.mjs'
+    );
+    assert.ok(realPublication > build && realPublication < upload);
+    assert.equal(steps[realPublication].env.CF_PUBLICATION_TEST_APP, app);
+    assert.equal(steps[realPublication]['continue-on-error'], undefined);
+    for (const event of ['pull_request', 'push']) {
+      assert.ok(
+        workflow.on[event].paths.includes(
+          'scripts/ci/cf-wrangler-publication.runtime.mjs'
+        )
+      );
+    }
     const retainedCheck = steps.findIndex((step) =>
       step.run?.includes('wrangler deploy --dry-run --no-bundle')
     );

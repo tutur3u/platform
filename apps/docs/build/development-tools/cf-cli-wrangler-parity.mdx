@@ -105,6 +105,15 @@ Applied to Cron Control, Devbox Control and Coordination. Each migrated Worker h
 `@cloudflare/vite-plugin` 1.x still depends on the Wrangler library internally. That is a
 library dependency, not CLI usage; it disappears with plugin 2.x.
 
+The DO publication adapter excludes exactly `bundle/.vite/manifest.json` from
+module inventory. This Vite metadata is not a Worker module. Other undeclared
+files and symlinked metadata still fail qualification. After building in CI, run
+`CF_PUBLICATION_TEST_APP=coordination node --test scripts/ci/cf-wrangler-publication.runtime.mjs`
+(and select `devbox-control` for that app) against the real emitted output. The
+test requires Vite's manifest, preserves module bytes and applied `v1` migrations,
+and rejects unexpected metadata and symlinks. `CF_PUBLICATION_TEST_ROOT` can select
+an extracted exact-commit CI artifact tree; never commit the built bundles.
+
 ## Rollback
 
 ```bash

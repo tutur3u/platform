@@ -1015,3 +1015,8 @@ replay after deleting emitted files; replayed logs alone do not qualify an artif
 Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
 Renovate until an owner qualifies a scoped upgrade. Production jobs require the
 Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.
+
+For retained DO publication, allow only Vite's exact `.vite/manifest.json`
+metadata path outside the qualified module inventory. Test the adapter on real
+emitted output with `cf-wrangler-publication.runtime.mjs`; synthetic bundles miss
+Vite metadata. Keep migration tags and symlink/extra-file refusal checks.

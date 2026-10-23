@@ -1,6 +1,8 @@
 // Preserve production DO migration tags until the cf exports transition is rehearsed.
 import assert from 'node:assert/strict';
 import {
+  existsSync,
+  lstatSync,
   readdirSync,
   readFileSync,
   realpathSync,
@@ -51,9 +53,27 @@ export function prepareWranglerPublication(
     modules.includes(worker.manifest.mainModule),
     'main module must be declared'
   );
+  const metadata = '.vite/manifest.json';
+  for (const name of ['.vite', metadata]) {
+    const path = join(bundle, name);
+    if (existsSync(path)) {
+      assert.ok(
+        !lstatSync(path).isSymbolicLink(),
+        'Vite metadata is symlinked'
+      );
+    }
+  }
+  if (existsSync(join(bundle, metadata))) {
+    assert.ok(
+      lstatSync(join(bundle, metadata)).isFile(),
+      'Vite manifest is not a file'
+    );
+  }
   assert.deepEqual(
     readdirSync(bundle, { recursive: true })
-      .filter((name) => statSync(join(bundle, name)).isFile())
+      .filter(
+        (name) => name !== metadata && statSync(join(bundle, name)).isFile()
+      )
       .sort(),
     [...modules].sort(),
     'bundle must contain exactly the qualified modules'

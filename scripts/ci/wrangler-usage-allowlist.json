@@ -59,24 +59,24 @@
       "digest": "9db1107ae358039a4c0a1c925f33da6740c0d9c3a1f85351e26b8f512a18e73b"
     },
     ".github/workflows/coordination-cloudflare.yaml": {
-      "lines": 11,
-      "uses": 17,
+      "lines": 14,
+      "uses": 20,
       "gap": "do-publication-rehearsal",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
       },
-      "digest": "cda370de0795e6d339192563769f721fcaf47ca860c907bee53e51740207981a"
+      "digest": "432917c334a10df4f54b39b09d86237638b0b3262568345f46a89319545fdd21"
     },
     ".github/workflows/devbox-control-cloudflare.yaml": {
-      "lines": 10,
-      "uses": 15,
+      "lines": 13,
+      "uses": 18,
       "gap": "do-publication-rehearsal",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
       },
-      "digest": "eaa716587d5500de08060b2452b6a80b63a14a380e6b2a3387701617bfc84a4a"
+      "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
     },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
@@ -978,6 +978,16 @@
       "uses": 5,
       "digest": "c3df53888002b532177d7c3af0e8db99492c0e23969954db092377c7ab8cb420"
     },
+    "scripts/ci/cf-wrangler-publication.runtime.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "lines": 3,
+      "uses": 4,
+      "digest": "2cd8b2315cd469259b44907dd24ee29cc37186483e65b1fc4128da5a52a16080"
+    },
     "scripts/ci/cf-wrangler-publication.test.mjs": {
       "gap": "do-publication-rehearsal",
       "admitted": {
@@ -1232,11 +1242,11 @@
       "gap": "do-publication-rehearsal",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
       },
-      "lines": 5,
-      "uses": 6,
-      "digest": "65aa35437cb0a70f00b0b7294e553d68771c3e79a5d9fdf05e4d86d7d3e50567"
+      "lines": 7,
+      "uses": 8,
+      "digest": "c91cade7b1b459a859749acb3467f583f2a9299bb5ce49594e152fad4f4ecad7"
     },
     "scripts/ci/native-wrangler-evidence.mjs": {
       "lines": 17,
