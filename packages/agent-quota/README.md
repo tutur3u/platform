@@ -1,15 +1,29 @@
 # Agent quota routing
 
-Read-only quota snapshots and deterministic routing recommendations for local T3 Code, Codex, and Claude Code accounts.
+T3 quota snapshots, shared-pool routing and single-shot safeguards for Codex,
+Claude and Antigravity. Read the [routing runbook](../../apps/docs/build/development-tools/agent-quota-routing.mdx)
+for JSON contracts, telemetry coverage, limitations and activation gates.
 
 ```sh
-bun packages/agent-quota/src/cli.ts status
-bun packages/agent-quota/src/cli.ts recommend --provider claude --count 3 --json
-bun packages/agent-quota/src/cli.ts recommend --provider codex --count 2 --json
+bun packages/agent-quota/src/cli.ts status --snapshots-only --json
+bun packages/agent-quota/src/cli.ts recommend --provider antigravity --snapshots-only --json
+bun packages/agent-quota/src/cli.ts admit < approved-admission.json
+bun packages/agent-quota/src/cli.ts observe < provider-outcome.json
+bun packages/agent-quota/src/cli.ts switch-lease acquire < transition-owner.json
+bun packages/agent-quota/src/cli.ts switch-check < fresh-owner-evidence.json
+bun packages/agent-quota/src/cli.ts handover-check < accepted-handover-evidence.json
+bun packages/agent-quota/src/cli.ts reconcile-children --parent THREAD_ID --timezone Asia/Ho_Chi_Minh
 ```
 
-Set `AGENT_QUOTA_RESERVES` to a JSON object keyed by instance id to configure `minRemainingPercent`, `maxConcurrent`, or `excluded`. Local source directories are allowlisted in `src/collectors/paths.ts`; credential and authentication files are never opened.
+The hooks use only existing non-credential caches and read-only T3 projections.
+Admission, observations and transition leases write the tool's own host-wide
+ledger. Accounts remain shared; transitions are leased by owner thread only.
+`switch-check`, `handover-check` and `reconcile-children` never mutate threads.
+There is no automatic recovery, failover, reset-credit spending, timer or daemon.
 
-Codex usage comes first from `codex app-server`'s `account/rateLimits/read`, with `CODEX_HOME` set to that instance's home directory and a bounded probe timeout. Codex reads its own stored authentication. Session `token_count` rate limits are used only when the app-server has no current snapshot.
+The older `status`/`recommend` commands retain optional transcript/app-server
+collection; use `--snapshots-only` to exclude it. Stale or missing quota never
+becomes measured headroom. Only `admit` supports explicitly bounded UNKNOWN
+admission. Preference weights reflect user planning, not telemetry.
 
-Claude usage falls back to structured `rate_limit_event` utilization in local transcripts. Expired windows, resetless events older than their known window, and plain “usage limit reached” text are ignored. The T3 Limits tab's server-memory snapshot is the intended common authority, but is not available through this package's current read-scoped MCP surface; until T3 exposes it, transcript windows show their observation time and remain subject to the stale-data policy. Transcript token totals are estimates and are never converted to percentages without a configured provider budget.
+`reroute-plan --parent THREAD_ID` reads admission JSON plus per-thread `rerouteEvidence` from stdin. It simulates admission without writing, lists queue cancellation and safe continuation operations, and distinguishes configured from resumed-on-provider. See the routing docs for the evidence schema and native reset-continuation gap.

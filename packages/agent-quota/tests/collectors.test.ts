@@ -323,7 +323,7 @@ describe('local collectors', () => {
     expect(result.quotaSnapshotsFound).toBe(false);
     expect(result.providerByInstance).toEqual({ codex: 'codex' });
     expect(result.activeAssignments).toEqual([
-      { instanceId: 'codex', count: 1 },
+      { instanceId: 'codex', count: 1, reservationIds: ['child'] },
     ]);
     expect(() =>
       new DatabaseSync(path, { readOnly: true }).exec(

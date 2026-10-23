@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
 import { argumentValue } from './cli-args';
 import { collectAll } from './collectors';
+import { runHook } from './hook-cli';
 import { recommend, recommendAssignments } from './policy';
+import { runReconcile } from './reconcile-cli';
+import { runReroute } from './reroute-cli';
 import { parseReserves } from './reserves';
 import type { Provider, TaskRequest } from './types';
 
@@ -25,6 +28,27 @@ function percent(
 
 async function main(): Promise<void> {
   const command = process.argv[2];
+  if (command === 'reroute-plan') {
+    await runReroute(process.argv.slice(3));
+    return;
+  }
+  if (command === 'reconcile-children') {
+    runReconcile(process.argv.slice(3));
+    return;
+  }
+  if (
+    command &&
+    [
+      'admit',
+      'observe',
+      'switch-check',
+      'switch-lease',
+      'handover-check',
+    ].includes(command)
+  ) {
+    await runHook(command, process.argv[3]);
+    return;
+  }
   if (command !== 'status' && command !== 'recommend') {
     throw new Error(
       'Usage: bun packages/agent-quota/src/cli.ts status|recommend [--provider codex|claude|antigravity] [--count N] [--json]'
@@ -118,8 +142,10 @@ async function main(): Promise<void> {
   if (!Number.isInteger(count) || count < 1 || count > 50)
     throw new Error('--count must be an integer from 1 to 50.');
   const kind = arg('--task-kind') ?? 'implementation';
-  if (!['implementation', 'review', 'research'].includes(kind))
-    throw new Error('--task-kind must be implementation, review, or research.');
+  if (!['implementation', 'analysis', 'review', 'research'].includes(kind))
+    throw new Error(
+      '--task-kind must be implementation, analysis, review, or research.'
+    );
   const task = {
     kind: kind as TaskRequest['kind'],
     provider: (provider ?? 'any') as Provider | 'any',

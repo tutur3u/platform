@@ -122,3 +122,287 @@ pool with combined reservations and the strictest configured reserve. Otherwise
 they remain separate and carry an `alias` explanation. Hashes are not printed
 in CLI output. Regression coverage lives in `tests/signals.test.ts` and the
 existing collector/policy suites under `packages/agent-quota`.
+
+## Single-shot safeguards for every orchestrator
+
+`admit`, `observe`, `switch-lease acquire|release`, `switch-check`, and
+`handover-check` are opt-in, single-shot JSON hooks. They serve Tuturuuu, Upskii,
+Mastermind, and other owner threads on the same host. They do not install a
+controller, daemon, timer, scheduler, automatic switch, or automatic failover.
+Each reads one JSON object from stdin and writes one JSON result. Invalid input,
+unreadable state, or contention returns `status: "block"` with a fixed reason;
+callers must inspect `status`, not just the process exit code. Errors never echo
+raw input. These commands always use non-credential provider status caches;
+they never invoke provider probes or read transcripts.
+
+Use the installed shared guidance:
+
+- [Account balancing and safe continuation](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation).
+- [Shared accounts and replacement-thread handover](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover).
+- [Capacity-aware provider preference](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+
+### Admission and outcome protocol
+
+`admit` accepts a stable `requestId`, the requesting `threadId`, its
+`currentInstanceId`, a fresh `catalog` from `orchestrator_capabilities`, and:
+
+```json
+{
+  "requirements": {
+    "capability": "implementation",
+    "taskClass": "mechanical",
+    "authorizedInstanceIds": ["codex_ai4ed", "antigravity"],
+    "privacyApprovedInstanceIds": ["codex_ai4ed", "antigravity"],
+    "candidates": [
+      {"instanceId": "codex_ai4ed", "model": "catalog-model-id", "capabilities": ["implementation"]}
+    ]
+  },
+  "policy": {
+    "orchestratorReservePercent": 30,
+    "nearUsedPercent": 90,
+    "unknownMaxConcurrent": 1,
+    "preferenceWeights": {"codex_ai4ed": 4, "antigravity": 1}
+  }
+}
+```
+
+The numbers above are example policy inputs, not observed quota. Capabilities
+are `implementation`, `analysis`, `review`, and `research`; reviewers also require
+`requirements.authorInstanceId`. Candidate task capability and privacy/authorization
+approval come from the owner, since the live catalog does not establish those
+permissions. Every selected model must exist in the supplied catalog and its
+instance must support delegation. Missing approval blocks rather than broadening
+scope. An author and every verified alias of that account are excluded from
+review. Same-provider account identity uncertainty blocks bypassing an author's
+account or the owner's reserve.
+
+Output includes the chosen `providerInstanceId` and model, reasons, a durable
+reservation ID, and each pool's `FRESH`, `STALE`, `UNKNOWN`, or `EXHAUSTED` state,
+observation age, reset timestamp (or null), and shared reservation count. STALE
+has `quotaState: "UNKNOWN"`; it never supplies current headroom. Unlike the
+strict `recommend` command, `admit` permits STALE/UNKNOWN pools below the explicit
+`unknownMaxConcurrent` bound. The owner's own pool requires fresh headroom
+strictly above its reserve. Fresh near-limit/exhausted usage and existing
+per-pool reserve/concurrency gates always win. No eligible pool yields
+`no-eligible-pool` plus the exact blockers for each pool, with no exhausted fallback.
+
+Accounts are shared: multiple threads consume one pool's usage and reservations.
+Verified aliases collapse once; neither thread count nor alias count multiplies
+capacity. A file transaction serializes each admission decision and its pending
+reservation. Reusing a reserved/completed request ID blocks duplicate dispatch;
+reconcile its original result instead. Pending reservations persist until a
+terminal observation; they do not silently expire while dispatch may be unknown.
+A heartbeat can reconcile a reservation with its native child-thread/provider-thread
+ID so native and local records count once. Until that mapping is supplied,
+counting is conservatively additive.
+
+`observe` accepts `eventId`, `instanceId`, `observedAt`, and `outcome` (`success`,
+`usage-limit`, or `capacity-error`), optionally `resetsAt` and `requestId`.
+`terminal` defaults to true and releases that matching request reservation.
+An existing heartbeat must send `terminal: false`; it can also provide
+`nativeReservationId` to link the admission to a native reservation. No heartbeat
+is created by this tool. Event IDs are idempotent; conflicting reuse, account
+mismatch, and outcomes older than the admission are rejected. A usage-limit
+outcome fences the entire shared account until its reported reset, even without
+a usage API. Without a reset it remains exhausted; success does not clear it or
+invent recovery. A capacity error imposes a 60-second local pacing cooldown,
+not a quota percentage. After a reported reset, normal fresh/unknown admission
+gates apply again; reset is not proof of fresh capacity.
+
+### Planning preference and model sizing
+
+Default planning weights are Codex 4, Claude 1, and Antigravity 1, configurable
+per instance through `policy.preferenceWeights`. They reflect the user's report
+that the ChatGPT allowance is about four times one Claude allowance. **These
+weights are user planning inputs, not telemetry or measured capacity.** Each
+shared account gets one weight (the maximum configured member weight), never
+the sum of aliases. Ordering uses the existing reservation-adjusted score plus
+that weight, after separating FRESH pools from unknown telemetry and applying
+all eligibility gates. Claude and Antigravity remain available for task fit,
+parallel work, and reviewer independence.
+
+The reported extra ChatGPT reset credit appears only as an unverified planning
+note. No command triggers, spends, activates, or counts reset credit as capacity.
+For a selected live-catalog model, `taskClass` suggests low effort for `mechanical`,
+medium for `standard`, and high for `security-review`, only if the model advertises
+the matching `effort` or `reasoningEffort` option. The recommendation is not
+runtime enforcement and never substitutes a weaker model outside the approved
+candidate list.
+
+### Thread transition and successor gates
+
+`switch-lease acquire` takes `instanceId` (target), `threadId`, `attemptId`, owner
+`pid`, `processStartedAt`, and `ttlMs` (1,000–300,000). **The lease is keyed only
+by owner thread.** Different targets competing for the same thread cannot both
+win. Different threads may hold transitions to the same account simultaneously;
+shared-pool admission governs their capacity. The target is metadata, not an
+exclusive account lock. Acquisition is atomic, records expired takeovers, and
+rejects retired attempt IDs to prevent a delayed old release from removing a
+replacement. Release takes the target instance, thread, and attempt; it is
+idempotent and cannot release a different attempt.
+
+`switch-check` never acquires or renews a lease. It requires the matching live
+thread lease and fresh owner-supplied evidence (at most five seconds old):
+`observedAt`, `threadIdle`, `queue: {threadId, complete, items}`, empty
+`unfinishedWriterIds` and `backgroundJobIds`, `children: {preserved, ids}`,
+`watches: {preserved, ids}`, and empty `uncertainMutationIds`. The queue must be a
+complete, freshly drained `t3_queue_list` result. A queued old model selection
+blocks with `queued-model-rollback-risk`. Caller attestations are not a native
+atomic switch fence; recheck at the safe boundary. Only the owner calls
+`t3_thread_configure(modelSelection)` after the gates pass.
+
+`handover-check` additionally takes `currentInstanceId` and a `handover` packet
+of booleans: `inThreadSwitchSupported`, `oldWriterDrainedOrStopped`,
+`sourcePreserved`, `dirtyFilesPreserved`, `indexPreserved`, `jobsPreserved`,
+`childParentsPreserved`, `questionsPreserved`, `watchesPreserved`,
+`unknownWritesPreserved`, `bindingVerified`, `successorIndependentlyAccepted`,
+and `acceptanceRecorded`, plus `successorCount`. A healthy current account reports
+`path: "stay"` with no successor recommendation. Otherwise a safe supported
+switch reports `in-thread`; an unsafe/unsupported switch reports `successor`
+and lists missing handover gates. At most one top-level successor is permitted.
+The old writer must drain or stop, the successor must independently read and
+accept the packet and supported workspace binding before writing, and acceptance
+must be recorded before the predecessor settles. True child parents, questions,
+watches, jobs, index, dirty source and unknown writes remain preserved. The check
+never launches a thread, reparents a child, replays work, or creates a writer.
+
+### Persistence and native integration limits
+
+The host-wide tool ledger is `~/.t3/caches/agent-quota/hooks.json`, separate from
+T3-owned provider snapshots and its database. A short exclusive transaction file
+protects atomic write/fsync/rename operations; it is not an account lock. There
+is no daemon. Symlink ledger files and malformed data fail closed; the ledger
+has a 2 MB bound and does not discard outcomes or live reservations. A crashed
+transaction can leave `transaction.lock`: inspect ownership and process drainage
+before an operator removes that tool-owned lock. No automatic lock stealing or
+history pruning is installed. Lease expiry is handled inside a valid transaction.
+
+Current telemetry coverage, verified from non-credential caches on 2026-10-23:
+
+| Pool | Supported cached usage/reset | Account identity hash exposed |
+| --- | --- | --- |
+| `codex_ai4ed` | Yes: one reported window with reset | No |
+| `codex` | Yes: one reported window with reset | No |
+| `claudeAgent` | Yes: two reported windows with resets | No |
+| `claude_mira` | Yes: two reported windows with resets | No |
+| `claude_kv` | Yes: two reported windows with resets | No |
+| `claude_hehe` | Yes: two reported windows with resets | No |
+| `claude_dd` | Yes: two reported windows with resets | No |
+| `antigravity` | Yes: two reported windows with resets | Yes |
+
+None of these eight pools lacked a supported usage/reset surface in that
+observation. This is coverage evidence, not a claim that each cache is fresh or
+healthy now. Cursor, Grok, OpenCode, Muse and Pi were disabled in the catalog;
+this adapter has no verified quota collector for them. Missing individual
+snapshots still yield UNKNOWN, and provider identity gaps remain explicit.
+
+Native T3 currently exposes no pre-delegation hook parameter on `delegate_task`,
+no atomic quota reservation/dispatch transaction, no atomic queue-drain-and-switch
+operation, and no automatic failover API. The owner must wire these one-shot
+commands into its existing dispatch/completion/heartbeat boundaries, supply live
+catalog and safety evidence, map native reservation IDs, and retain custody.
+Cross-host coordination is not provided by this host-local ledger. Independent
+security review, exact-commit CI, and an owner-driven integration exercise remain
+activation gates. Offline tests exercise policy, observation, shared reservations,
+concurrent leases, expiry, queued rollback and handover; they do not claim native
+hook activation or actual failover.
+
+### Reconcile descendant failures after task completion
+
+```sh
+bun packages/agent-quota/src/cli.ts reconcile-children --parent THREAD_ID --timezone Asia/Ho_Chi_Minh
+```
+
+This read-only command traverses the existing T3 lineage and task projections,
+including nested descendants and provider-native subagents. It projects only
+run/task status, model/account selection, pending request metadata, delivery
+receipts and structured terminal error fields. It never reads transcript bodies,
+authentication files or credentials, and never mutates T3 state.
+
+Each entry distinguishes an app-owned original task, provider-native subagent,
+or unbound thread-send follow-up. It shows original task status separately from
+the latest terminal turn; snooze deadline; queued runs with their own model and
+account selections (including held queues); pending questions/approvals; failure
+class; the provider's redacted terminal receipt; reported reset; delivery evidence;
+and the next resume boundary. Repeated root error items collapse to one entry
+per terminal run/failure. Authentication error text is withheld and recognizable
+credential syntax is additionally redacted. Other terminal receipt text is
+preserved; missing receipts remain explicitly unavailable.
+
+ISO reset timestamps are used directly. A human reset such as `resets 11:20am`
+requires the caller's explicit `--timezone`; it is interpreted relative to the
+receipt time, not the time reconciliation runs. Without a timezone, the reset
+stays unknown. A snoozed descendant with an unheld queued run reports
+`auto-resume-already-queued-do-not-duplicate`. All queued runs block switching,
+because their stored selection can restore the old account. No queue is removed
+or replayed. With no queued work, `safe-to-switch-account` requires idle run
+state and fresh owner-attested writer drainage in `--evidence-stdin`, keyed by
+thread ID as `{ "observedAt": "ISO timestamp", "drained": true }`; without it,
+`writer-drain-unverified` requires parent action. This disposition is only the
+run/drain prerequisite: `switch-check` still enforces the lease and custody gates.
+
+Delivery is `delivered` when a notification delivery or consumption receipt exists.
+A delivered event without parent observation reports unknown parent drain;
+an unbound follow-up without a matching transfer reports `missing-event`. Pending
+or ambiguous delivery remains `unknown`. Original task acknowledgment is never
+reused to claim delivery of a later turn. These records survive restarts; they
+prove recorded observation, not completed recovery.
+
+The observed native gap is that queued `t3_thread_send` turns are not bound to a
+new delegated task, so their later failures do not use the original task's parent
+notification path. The 2026-10-23 incident was an original task completing, then
+an unbound follow-up failing on the old account while another old-account run
+remained queued. An original-task failure did notify its parent. This command
+is a reconciliation aid, not automatic recovery or failover. The recommended
+native fix is to deliver **every terminal failure of every descendant turn** to
+its creating parent, deduplicated by run/failure, carrying account and reset
+evidence regardless of whether the original task already completed.
+
+Every failure has a stable `recoveryAdmissionKey`. To admit recovery, send
+`admit` a `recovery: {threadId, runId, failure}` object along with the usual task
+requirements and owner thread ID. The router derives the key itself, ignoring
+alternate caller request IDs, and atomically records it in the same ledger.
+Duplicate admission blocks both while reserved and after terminal observation.
+The CLI rechecks descendants, refuses already queued/superseded recovery and
+pending input, and requires fresh `recoveryEvidence: {observedAt, drained}` before
+admission. This is exactly-once local **admission**, not an exactly-once external
+mutation or automatic task replay. Dispatch outcomes remain the owner's custody;
+unknown results must be reconciled under the original operation identity.
+
+### Read-only reset reroute planning
+
+`agent-quota reroute-plan --parent THREAD_ID` consumes the same JSON admission
+requirements and policy on stdin, plus `rerouteEvidence` keyed by descendant thread.
+Evidence includes `observedAt`, `onlyResetBlocked`, a complete `writerPids` list
+(with `pid` and `state`: `idle-stream-json`, `active`, or `unknown`),
+`writersComplete`, `dirtyFiles`, `dirtyFilesPreserved`, `custodyPreserved`, and
+`uncertainMutations`. Evidence expires after five seconds. Idle stream-json is
+acceptable only with confirmed idle run and drained writer/job custody; an idle
+process name alone is insufficient. Optional `configured` and `resumed` readbacks
+carry provider/model; resumed additionally requires task ID, run ID and running status.
+
+The planner simulates existing admission on a copy of the ledger, applying the
+verified limit receipt before selection. It does not reserve capacity. The parent
+must commit admission and revalidate gates immediately before acting. The recovery
+key is stable per thread and failed run; repeated admission blocks once reserved
+or completed. Planning never claims exactly-once external execution: preserve a
+returned task ID and reconcile unknown send outcomes before retrying.
+
+The supported sequence preserves queued resume text, cancels old-account queued
+runs, verifies an empty queue, commits admission, acquires the thread transition
+lease, checks switch safety, configures the model, sends saved resume text plus
+state readback with `t3_thread_send(mode: auto)`, and verifies the returned task via
+`task_status`. Configuration is reported as `configured`; only a matching running
+task is `resumed-on-provider`. Preserve dirty files and index throughout. Unsafe
+switches report the full successor handover gates; exhausted pools never become a
+fallback. These are instructions for the owner, not automatic tool execution.
+
+A native reset-time continuation may remain armed after rerouting. It queues
+behind a running turn, but may become redundant. Reconciliation identifies
+server-created `limit-resume:<thread>:<failedRun>:...` message identities without
+reading message bodies and recommends preserving text then `t3_queue_cancel` when
+another provider continuation has started. An armed snooze alone is not evidence
+that a continuation has queued. No controller, timer, automatic failover, or native
+pre-delegation hook is installed by this package.
+
+See the maintained [reset-wait rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation).

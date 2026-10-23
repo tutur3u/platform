@@ -18,6 +18,14 @@ export async function collectSnapshot(
     if (value.instanceId !== account.instanceId || value.driver !== driver)
       return account;
     const limits = value.usageLimits;
+    account = {
+      ...account,
+      accountIdentityHash:
+        typeof limits?.credentialFingerprint === 'string' &&
+        /^[a-f0-9]{64}$/i.test(limits.credentialFingerprint)
+          ? limits.credentialFingerprint
+          : undefined,
+    };
     if (
       !limits ||
       typeof limits.checkedAt !== 'string' ||

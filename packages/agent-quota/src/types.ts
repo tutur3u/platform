@@ -17,6 +17,7 @@ export interface AccountUsage {
   label: string;
   windows: UsageWindow[];
   models?: string[];
+  modelOptions?: Record<string, { id: string; values: (string | boolean)[] }[]>;
   accountIdentityHash?: string;
   alias?: string;
   instanceIds?: string[];
@@ -28,10 +29,11 @@ export interface AccountUsage {
 export interface ActiveAssignment {
   instanceId: string;
   count: number;
+  reservationIds?: string[];
 }
 
 export interface TaskRequest {
-  kind?: 'implementation' | 'review' | 'research';
+  kind?: 'implementation' | 'analysis' | 'review' | 'research';
   provider?: Provider | 'any';
   model?: string;
   weight?: number;
