@@ -78,6 +78,10 @@ describe("local collectors", () => {
 			join(project, "fixture.jsonl"),
 			`${JSON.stringify({
 				type: "assistant",
+				timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+				message: { usage: { input_tokens: 1000, output_tokens: 1000 } },
+			})}\n${JSON.stringify({
+				type: "assistant",
 				timestamp: new Date().toISOString(),
 				message: { usage: { input_tokens: 12, output_tokens: 8 } },
 			})}\n`,

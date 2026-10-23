@@ -9,7 +9,10 @@ interface TokenTotals {
 	observedAt: string;
 }
 
-function readUsage(line: string): TokenTotals | undefined {
+function readUsage(
+	line: string,
+	fallbackObservedAt: string,
+): TokenTotals | undefined {
 	try {
 		const row: unknown = JSON.parse(line);
 		if (!row || typeof row !== "object") return;
@@ -33,7 +36,7 @@ function readUsage(line: string): TokenTotals | undefined {
 			observedAt:
 				typeof root.timestamp === "string"
 					? root.timestamp
-					: new Date().toISOString(),
+					: fallbackObservedAt,
 		};
 	} catch {
 		return;
@@ -85,6 +88,9 @@ export async function collectClaude(
 		};
 	const tokens = { input: 0, output: 0 };
 	let lastMtime = 0;
+	let latestUsageAt = 0;
+	const now = Date.now();
+	const cutoff = now - 24 * 60 * 60 * 1000;
 	const windows: UsageWindow[] = [];
 	let limitReset: string | undefined;
 	let planLimitReached = false;
@@ -95,10 +101,18 @@ export async function collectClaude(
 			lastMtime = Math.max(lastMtime, info.mtimeMs);
 			const content = await readFile(file, "utf8");
 			for (const line of content.split("\n")) {
-				const usage = readUsage(line);
+				const usage = readUsage(line, info.mtime.toISOString());
 				if (usage) {
+					const timestamp = Date.parse(usage.observedAt);
+					if (
+						!Number.isFinite(timestamp) ||
+						timestamp < cutoff ||
+						timestamp > now + 5 * 60_000
+					)
+						continue;
 					tokens.input += usage.input;
 					tokens.output += usage.output;
+					latestUsageAt = Math.max(latestUsageAt, timestamp);
 				}
 				const reset = readPlanLimit(line);
 				if (reset !== undefined) {
@@ -132,9 +146,11 @@ export async function collectClaude(
 			/* Missing or unreadable transcripts remain unknown. */
 		}
 	}
-	const observedAt = lastMtime
-		? new Date(lastMtime).toISOString()
-		: new Date().toISOString();
+	const observedAt = latestUsageAt
+		? new Date(latestUsageAt).toISOString()
+		: lastMtime
+			? new Date(lastMtime).toISOString()
+			: new Date().toISOString();
 	if (tokens.input || tokens.output) {
 		windows.push({
 			kind: "session",
