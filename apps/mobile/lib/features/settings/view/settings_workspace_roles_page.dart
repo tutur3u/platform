@@ -469,9 +469,9 @@ class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
                             l10n.settingsWorkspaceRolesMembersEmpty,
                             style: shad.Theme.of(context).typography.textSmall
                                 .copyWith(
-                                  color: shad.Theme.of(context)
-                                      .colorScheme
-                                      .mutedForeground,
+                                  color: shad.Theme.of(
+                                    context,
+                                  ).colorScheme.mutedForeground,
                                 ),
                           )
                         : Column(
