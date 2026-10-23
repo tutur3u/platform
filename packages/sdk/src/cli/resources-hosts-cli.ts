@@ -15,6 +15,7 @@ import {
 import type { HostDispatchDeps } from './resources-hosts-dispatch';
 import { hostLedger } from './resources-hosts-ledger';
 import { compareWithCurrent, renderSimulation } from './resources-hosts-sim';
+import { UntrustedRegistryError } from './resources-hosts-trust';
 import { queuedResourceCommand, spawnResourceCommand } from './resources-queue';
 
 // Production wiring for `ttr resources run --hosts`: local work goes through
@@ -123,8 +124,17 @@ export async function runHostsAction(home: string, options: string[]) {
     );
     return;
   }
-  const registry = await readHostRegistry(home);
-  const ledger = await hostLedger(home);
+  let registry: Awaited<ReturnType<typeof readHostRegistry>>;
+  let ignored: string | undefined;
+  try {
+    registry = await readHostRegistry(home);
+  } catch (error) {
+    if (!(error instanceof UntrustedRegistryError)) throw error;
+    ignored = error.message;
+  }
+  const ledger = registry
+    ? await hostLedger(home)
+    : { reservations: [], tickets: [] };
   const result = {
     configured: Boolean(registry),
     hosts: (registry ?? proposedHostRegistry()).hosts.map((host) => ({
@@ -138,7 +148,9 @@ export async function runHostsAction(home: string, options: string[]) {
     ...(registry
       ? {}
       : {
-          note: 'hosts.json is not configured: showing the proposed registry. Multi-host admission stays off until an operator installs it.',
+          note:
+            ignored ??
+            'hosts.json is not configured: showing the proposed registry. Multi-host admission stays off until an operator installs it.',
         }),
   };
   if (json) {

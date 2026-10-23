@@ -1,7 +1,9 @@
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { errno } from './resources-slots';
+import {
+  type RegistryTrustOptions,
+  readTrustedRegistryText,
+} from './resources-hosts-trust';
 
 // Multi-host weighted admission is opt-in: without `hosts.json` in the
 // resources home, admission stays the single-host lane FIFO.
@@ -78,14 +80,13 @@ export type HostSpec = z.infer<typeof hostSchema>;
 export type HostRegistry = z.infer<typeof hostRegistrySchema>;
 
 export const hostRegistryPath = (home: string) => join(home, 'hosts.json');
-export async function readHostRegistry(home: string) {
-  let text: string;
-  try {
-    text = await readFile(hostRegistryPath(home), 'utf8');
-  } catch (error) {
-    if (errno(error, 'ENOENT')) return undefined;
-    throw error;
-  }
+// Throws UntrustedRegistryError when hosts.json exists but is not trusted.
+export async function readHostRegistry(
+  home: string,
+  trust?: RegistryTrustOptions
+) {
+  const text = await readTrustedRegistryText(home, trust);
+  if (text === undefined) return undefined;
   let raw: unknown;
   try {
     raw = JSON.parse(text);
