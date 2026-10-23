@@ -211,6 +211,8 @@ commit. Run the verifier against the complete migration chain rather than a redu
 schema. Role fixtures must preserve existing table grants: notification access
 is server-owned, so authenticated direct reads and writes must assert SQLSTATE
 `42501`, while helper and sync RPC checks run as their supported caller roles.
+Clear JWT claims before privileged signup setup: `RESET ROLE` alone preserves
+`request.jwt.claims`, so signup triggers can inherit an earlier test caller.
 CI must pass before merging; production migration application and
 activation remain separate from merging this change. Public asset metadata also
 rewrites nested Supabase provenance URLs to the asset API path to avoid exposing

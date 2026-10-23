@@ -72,6 +72,8 @@ select ok(
 );
 
 -- Fixtures.
+select set_config('request.jwt.claims', '{}', true);
+
 insert into auth.users (id, email, email_confirmed_at) values
   ('e2000000-0000-0000-0000-000000000001', 'notif-owner@example.test', now()),
   ('e2000000-0000-0000-0000-000000000002', 'notif-other@example.test', now());
@@ -114,6 +116,8 @@ select is(
 );
 
 -- An unconfirmed account does not claim invitations for its address.
+select set_config('request.jwt.claims', '{}', true);
+
 insert into auth.users (id, email, email_confirmed_at) values
   ('e2000000-0000-0000-0000-000000000003', 'pending-invitee@example.test', null);
 
@@ -238,6 +242,9 @@ select is(
 );
 
 -- Unconfirmed sessions resolve to no address and claim nothing.
+-- RESET ROLE retains JWT claims; signup setup must not inherit the last caller.
+select set_config('request.jwt.claims', '{}', true);
+
 insert into auth.users (id, email, email_confirmed_at) values
   ('e2000000-0000-0000-0000-000000000004', 'notif-unconfirmed@example.test', null);
 
@@ -360,6 +367,8 @@ values (
 
 alter table public.notifications enable trigger normalize_notification_email;
 
+select set_config('request.jwt.claims', '{}', true);
+
 insert into auth.users (id, email, email_confirmed_at) values
   ('e2000000-0000-0000-0000-000000000005', 'notif-recycled@example.test', null);
 
@@ -424,6 +433,8 @@ values (
   'workspace_invite',
   'Invite before an OAuth signup'
 );
+
+select set_config('request.jwt.claims', '{}', true);
 
 insert into auth.users (id, email, email_confirmed_at) values
   ('e2000000-0000-0000-0000-000000000006', 'Notif-OAuth@example.test', now());
