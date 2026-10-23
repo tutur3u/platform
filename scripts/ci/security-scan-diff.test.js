@@ -60,7 +60,7 @@ test('the audit diff logs counts only and fails closed on new advisories', (t) =
   const output = lines.join('\n');
   assert.match(
     output,
-    /1 new high\/critical dependency advisory\(ies\) \(1 critical, 0 high\)/u
+    /1 new high\/critical dependency advisory\(ies\) \(1 critical, 0 high, 0 unresolved severity\)/u
   );
   assert.doesNotMatch(output, /pkg-new|GHSA-new/u);
 
@@ -97,4 +97,67 @@ test('gitleaks findings never keep secret material', () => {
     Object.keys(redactGitleaks(report, { locations: false })[0]).sort(),
     ['id', 'rule']
   );
+});
+
+function auditRun(t, { base, head }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scan-diff-audit-'));
+  t.after(() => {
+    fs.rmSync(dir, { force: true, recursive: true });
+    process.exitCode = undefined;
+  });
+  const file = (name, content) => {
+    const target = path.join(dir, name);
+    if (content !== undefined) fs.writeFileSync(target, content);
+    return target;
+  };
+  const lines = [];
+  t.mock.method(console, 'log', (line) => lines.push(String(line)));
+  process.exitCode = undefined;
+  main(['bun-audit-diff', file('head.json', head), file('base.json', base)]);
+  return { exitCode: process.exitCode, output: lines.join('\n') };
+}
+
+test('a missing, empty or malformed head report never passes', (t) => {
+  for (const [label, head] of [
+    ['missing', undefined],
+    ['empty', ''],
+    ['whitespace', '  \n'],
+    ['malformed', '{"pkg": ['],
+    ['array', '[]'],
+    ['error object', '{"error": "registry unavailable"}'],
+    ['null', 'null'],
+  ]) {
+    const run = auditRun(t, { base: '{}', head });
+    assert.equal(run.exitCode, 1, label);
+    assert.match(run.output, /Dependency audit output unavailable/u, label);
+  }
+  // A genuinely clean report (no advisories) passes.
+  assert.equal(auditRun(t, { base: '{}', head: '{}' }).exitCode, undefined);
+});
+
+test('an unknown or missing severity blocks', (t) => {
+  for (const severity of ['unknown', 'severe', undefined, '']) {
+    const head = JSON.stringify({
+      pkg: [{ ...advisory('https://x.invalid/GHSA-unk', 'x'), severity }],
+    });
+    const run = auditRun(t, { base: '{}', head });
+    assert.equal(run.exitCode, 1, String(severity));
+    assert.match(run.output, /1 unresolved severity/u);
+    assert.doesNotMatch(run.output, /pkg|GHSA-unk/u);
+  }
+  for (const severity of ['moderate', 'low', 'info', 'MEDIUM']) {
+    const head = JSON.stringify({
+      pkg: [advisory('https://x.invalid/GHSA-low', severity)],
+    });
+    assert.equal(auditRun(t, { base: '{}', head }).exitCode, undefined);
+  }
+});
+
+test('a missing base report makes every high head advisory new', (t) => {
+  const head = JSON.stringify({
+    pkg: [advisory('https://x.invalid/GHSA-high', 'high')],
+  });
+  const run = auditRun(t, { base: undefined, head });
+  assert.equal(run.exitCode, 1);
+  assert.match(run.output, /1 new high\/critical/u);
 });

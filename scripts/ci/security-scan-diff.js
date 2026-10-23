@@ -8,7 +8,9 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 
-const blockingSeverities = new Set(['critical', 'high']);
+// Only these severities pass; anything else, including a missing or
+// unrecognised severity, blocks (as an unresolved CodeQL severity does).
+const nonBlockingSeverities = new Set(['moderate', 'medium', 'low', 'info']);
 
 function readJson(file, fallback) {
   try {
@@ -18,6 +20,35 @@ function readJson(file, fallback) {
     if (error.code === 'ENOENT') return fallback;
     throw error;
   }
+}
+
+// The head report must be real `bun audit --json` output: an object mapping
+// package names to advisory lists. A missing, empty, unparseable or otherwise
+// shaped report means the audit did not run, so it never reads as clean.
+function readAuditReport(file) {
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8').trim();
+  } catch {
+    return null;
+  }
+  if (!text) return null;
+  let report;
+  try {
+    report = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const valid =
+    report !== null &&
+    typeof report === 'object' &&
+    !Array.isArray(report) &&
+    Object.values(report).every(
+      (advisories) =>
+        Array.isArray(advisories) &&
+        advisories.every((item) => item && typeof item === 'object')
+    );
+  return valid ? report : null;
 }
 
 // `bun audit --json` maps package names to advisory lists.
@@ -39,7 +70,8 @@ function auditAdvisories(report) {
 function newBlockingAdvisories(head, base) {
   const known = new Set(auditAdvisories(base).map(({ key }) => key));
   return auditAdvisories(head).filter(
-    ({ key, severity }) => blockingSeverities.has(severity) && !known.has(key)
+    ({ key, severity }) =>
+      !nonBlockingSeverities.has(severity) && !known.has(key)
   );
 }
 
@@ -71,17 +103,24 @@ function redactGitleaks(report, { locations = true } = {}) {
 function main(argv = process.argv.slice(2)) {
   const [command, first, second] = argv;
   if (command === 'bun-audit-diff') {
-    const fresh = newBlockingAdvisories(
-      readJson(first, {}),
-      readJson(second, {})
-    );
+    const head = readAuditReport(first);
+    if (!head) {
+      console.log(
+        '::error::Dependency audit output unavailable; refusing to pass without a valid head report.'
+      );
+      process.exitCode = 1;
+      return;
+    }
+    // A missing base only makes every head advisory count as new.
+    const fresh = newBlockingAdvisories(head, readJson(second, {}));
     // Public logs carry counts only; `bun audit` locally (or Dependabot)
     // names the advisories for maintainers.
     const critical = fresh.filter(
       ({ severity }) => severity === 'critical'
     ).length;
+    const high = fresh.filter(({ severity }) => severity === 'high').length;
     console.log(
-      `${fresh.length} new high/critical dependency advisory(ies) (${critical} critical, ${fresh.length - critical} high).`
+      `${fresh.length} new high/critical dependency advisory(ies) (${critical} critical, ${high} high, ${fresh.length - critical - high} unresolved severity).`
     );
     if (fresh.length > 0) {
       console.log(
@@ -122,5 +161,6 @@ module.exports = {
   fingerprintId,
   main,
   newBlockingAdvisories,
+  readAuditReport,
   redactGitleaks,
 };
