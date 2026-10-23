@@ -131,52 +131,69 @@ const readOnly = new Set([
   'tail',
   'wc',
 ]);
-// Canonical locations of system coreutils: SIP (macOS) or root ownership
-// (Linux) protects them. Ubuntu 25.10+ links /usr/bin/cat and friends to
-// rust-coreutils under /usr/lib/cargo/bin/coreutils.
-const trustedDirectories = [
-  '/bin/',
-  '/usr/bin/',
-  '/usr/lib/cargo/bin/coreutils/',
-];
+// Canonical directories of system coreutils, matched exactly (no nested
+// subdirectories): SIP (macOS) or root ownership (Linux) protects them.
+// Ubuntu 25.10+ links /usr/bin/cat and friends to rust-coreutils under
+// /usr/lib/cargo/bin/coreutils.
+const trustedDirectories = new Set([
+  '/bin',
+  '/usr/bin',
+  '/usr/lib/cargo/bin/coreutils',
+]);
 // Dynamic-loader and glibc module variables run code inside any binary.
 const loaderVariable = /^(LD_|DYLD_)|^(GCONV_PATH|LOCPATH)$/u;
-// Root-owned and not writable by group/others, so no other user can replace it.
-function rootLocked(path: string) {
-  const info = statSync(path);
-  return info.uid === 0 && (info.mode & 0o022) === 0;
+// Filesystem lookups, injectable so Linux and macOS layouts are testable on
+// either host.
+export interface ExecutableFs {
+  executable: (path: string) => boolean;
+  realpath: (path: string) => string;
+  stat: (path: string) => { uid: number; mode: number; isFile: () => boolean };
 }
+const hostFs: ExecutableFs = {
+  executable: (path) => {
+    try {
+      accessSync(path, constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  realpath: (path) => realpathSync(path),
+  stat: (path) => statSync(path),
+};
 // Classify by the executable that would actually run, not by its basename: an
 // arbitrary script named `cat` (or `/any/path/node`) must queue. Returns the
 // canonical path, and callers must spawn exactly that path: the original name
-// or symlink can be swapped between classification and spawn.
+// or symlink can be swapped between classification and spawn. The canonical
+// basename must equal the tool name, so a multicall binary (rust-coreutils)
+// still sees the intended applet in argv[0] and a differently named one
+// (busybox) queues.
 export function trustedSystemExecutable(
   name: string,
-  path = process.env.PATH || ''
+  path = process.env.PATH || '',
+  fs: ExecutableFs = hostFs
 ) {
   const candidates =
     name.includes('/') || name.includes('\\')
       ? [resolve(name)]
       : path.split(delimiter).map((directory) => join(directory, name));
   for (const candidate of candidates) {
-    try {
-      accessSync(candidate, constants.X_OK);
-    } catch {
-      continue;
-    }
+    if (!fs.executable(candidate)) continue;
     // The first executable match is what PATH lookup would spawn; decide on
     // it alone rather than searching on for a trusted one.
     try {
-      const real = realpathSync(candidate);
+      const real = fs.realpath(candidate);
       if (
-        !trustedDirectories.some((directory) => real.startsWith(directory)) ||
+        !trustedDirectories.has(dirname(real)) ||
         basename(real) !== basename(name) ||
-        !statSync(real).isFile()
+        !fs.stat(real).isFile()
       )
         return undefined;
-      // Every component of the canonical path must be locked too.
+      // Root-owned and not group/other writable on every component, so no
+      // other user can replace the file or any directory above it.
       for (let part = real; ; part = dirname(part)) {
-        if (!rootLocked(part)) return undefined;
+        const info = fs.stat(part);
+        if (info.uid !== 0 || (info.mode & 0o022) !== 0) return undefined;
         if (part === dirname(part)) break;
       }
       return real;
