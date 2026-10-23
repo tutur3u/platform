@@ -5,7 +5,7 @@ class _PreferencesSection extends StatelessWidget {
     required this.permissionsRepository,
     required this.permissionsRevision,
     required this.appearanceTheme,
-    required this.appearanceSummary,
+    required this.appearanceIsNew,
     required this.showFinanceAmounts,
     required this.languageLabel,
     required this.calendarLabel,
@@ -22,7 +22,7 @@ class _PreferencesSection extends StatelessWidget {
   final WorkspacePermissionsRepository permissionsRepository;
   final int permissionsRevision;
   final String appearanceTheme;
-  final String appearanceSummary;
+  final bool appearanceIsNew;
   final bool showFinanceAmounts;
   final String languageLabel;
   final String calendarLabel;
@@ -52,15 +52,15 @@ class _PreferencesSection extends StatelessWidget {
     final appearance = SettingsTile(
       key: const ValueKey('settings-appearance-row'),
       grouped: true,
-      icon: Icons.palette_outlined,
+      icon: shad.LucideIcons.palette,
       title: l10n.settingsAppearance,
-      value: appearanceSummary,
       trailingValue: appearanceTheme,
+      badge: appearanceIsNew ? l10n.appearanceNew : null,
       onTap: onOpenAppearance,
     );
     final language = SettingsTile(
       grouped: true,
-      icon: Icons.language_rounded,
+      icon: shad.LucideIcons.globe,
       title: l10n.settingsLanguage,
       value: languageLabel,
       onTap: onChangeLanguage,
@@ -68,7 +68,7 @@ class _PreferencesSection extends StatelessWidget {
     final finance = SettingsTile(
       key: const ValueKey('settings-finance-row'),
       grouped: true,
-      icon: Icons.visibility_outlined,
+      icon: shad.LucideIcons.eye,
       title: l10n.settingsFinanceAmounts,
       value: showFinanceAmounts
           ? l10n.financeShowAmounts
@@ -77,21 +77,21 @@ class _PreferencesSection extends StatelessWidget {
     );
     final calendar = SettingsTile(
       grouped: true,
-      icon: Icons.calendar_today_outlined,
+      icon: shad.LucideIcons.calendar,
       title: l10n.settingsFirstDayOfWeek,
       value: calendarLabel,
       onTap: onChangeFirstDayOfWeek,
     );
     final notifications = SettingsTile(
       grouped: true,
-      icon: Icons.notifications_active_outlined,
+      icon: shad.LucideIcons.bellRing,
       title: l10n.remindersTitle,
       onTap: () => context.push(Routes.settingsReminders),
     );
     final interaction = SettingsTile(
       key: const ValueKey('settings-haptics-row'),
       grouped: true,
-      icon: Icons.vibration_rounded,
+      icon: shad.LucideIcons.vibrate,
       title: l10n.settingsHaptics,
       value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
       onTap: onToggleHaptics,
@@ -99,7 +99,7 @@ class _PreferencesSection extends StatelessWidget {
     final tasks = SettingsTile(
       key: const ValueKey('settings-task-board-row'),
       grouped: true,
-      icon: Icons.view_kanban_outlined,
+      icon: shad.LucideIcons.squareKanban,
       title: l10n.taskBoardsTitle,
       value: disableDefaultTaskBoardNavigation
           ? l10n.settingsDefaultTaskBoardNavigationBoardPicker

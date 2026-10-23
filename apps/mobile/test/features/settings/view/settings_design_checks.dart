@@ -24,7 +24,7 @@ void registerSettingsDesignChecks() {
     final title = tester.widget<SettingsTile>(first).title;
     final icon = find.descendant(
       of: first,
-      matching: find.byIcon(Icons.palette_outlined),
+      matching: find.byIcon(shad.LucideIcons.palette),
     );
     // Captions sit just inside the rounded card; icons and titles keep a
     // fixed grid inside it.
@@ -57,7 +57,7 @@ void registerSettingsDesignChecks() {
     }
     final chevron = find.descendant(
       of: first,
-      matching: find.byIcon(Icons.chevron_right),
+      matching: find.byIcon(shad.LucideIcons.chevronRight),
     );
     h.accounts.add(
       const AuthState.authenticated(
@@ -177,14 +177,15 @@ void registerSettingsDesignChecks() {
         await h.theme.setThemeMode(mode);
         await h.pump(tester, scale: 2);
         final rows = find.byType(SettingsTile);
-        expect(
-          find.byKey(const ValueKey('settings-haptics-row')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('settings-finance-row')),
-          findsOneWidget,
-        );
+        // The profile header precedes Preferences; scroll each row in.
+        for (final key in ['settings-haptics-row', 'settings-finance-row']) {
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey(key)),
+            160,
+            scrollable: find.byType(Scrollable).first,
+          );
+          expect(find.byKey(ValueKey(key)), findsOneWidget);
+        }
         expect(
           Localizations.localeOf(tester.element(rows.first)).languageCode,
           locale,

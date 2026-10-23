@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -114,6 +115,7 @@ class _SettingsViewState extends State<_SettingsView>
     if (widget.section == SettingsSectionDestination.preferences ||
         widget.section == SettingsSectionDestination.overview) {
       unawaited(_loadDefaultTaskBoardNavigationPreference());
+      unawaited(_loadAppearanceIntro());
     }
     if (widget.section == SettingsSectionDestination.overview) {
       unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
@@ -289,10 +291,7 @@ class _SettingsViewState extends State<_SettingsView>
       appearanceTheme: context.l10n.appearanceTheme(
         themeState.appearance.theme,
       ),
-      appearanceSummary: context.l10n.appearanceSummary(
-        themeState.themeMode,
-        themeState.appearance,
-      ),
+      appearanceIsNew: !_appearanceIntroSeen,
       showFinanceAmounts: financePreferencesCubit?.state.showAmounts ?? false,
       languageLabel: _localeDisplayName(
         Localizations.localeOf(context),
@@ -313,7 +312,7 @@ class _SettingsViewState extends State<_SettingsView>
       disableDefaultTaskBoardNavigation: _disableDefaultTaskBoardNavigation,
       onToggleDefaultTaskBoardNavigation: () =>
           unawaited(_showDefaultTaskBoardDialog()),
-      onOpenAppearance: () => context.push(Routes.settingsAppearance),
+      onOpenAppearance: _openAppearance,
       onChangeFirstDayOfWeek: () => unawaited(_showCalendarDialog()),
       hapticsEnabled: AppHaptics.enabled,
       onToggleHaptics: () => unawaited(_showHapticsDialog()),

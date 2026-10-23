@@ -80,6 +80,9 @@ class _AppearanceBackdropState extends State<AppearanceBackdrop>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final foreground = state == AppLifecycleState.resumed;
     if (foreground == _foreground) return;
+    // Frames are disabled while backgrounded, so stop the timer here rather
+    // than waiting for a rebuild.
+    if (!foreground) _clock.stop();
     setState(() => _foreground = foreground);
   }
 

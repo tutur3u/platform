@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
-import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -57,10 +57,10 @@ class AppearanceAccentPicker extends StatelessWidget {
                     ),
                   ),
                   child: _AccentDot(
-                    color: AppearancePalettes.accentColor(
+                    color: AppearanceTheme.colorScheme(
                       settings.copyWith(accent: id),
                       brightness,
-                    ),
+                    ).primary,
                     followsTheme: id == AppearanceAccentId.theme,
                     border: scheme.border,
                   ),
@@ -94,7 +94,7 @@ class _AccentDot extends StatelessWidget {
       ),
       child: followsTheme
           ? Icon(
-              Icons.auto_awesome_rounded,
+              shad.LucideIcons.sparkles,
               size: 16,
               color: AppearanceContrast.readableOn(
                 color,

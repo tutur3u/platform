@@ -286,7 +286,10 @@ Future<void> _capture(WidgetTester tester, String name) async {
     final boundary = tester.renderObject<RenderRepaintBoundary>(
       find.byKey(const ValueKey('synthetic-settings-render')),
     );
-    final image = await boundary.toImage();
+    final ratio = double.tryParse(
+      Platform.environment['SETTINGS_RENDER_PIXEL_RATIO'] ?? '',
+    );
+    final image = await boundary.toImage(pixelRatio: ratio ?? 1);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     await Directory(output).create(recursive: true);
     await File('$output/$name.png').writeAsBytes(bytes!.buffer.asUint8List());

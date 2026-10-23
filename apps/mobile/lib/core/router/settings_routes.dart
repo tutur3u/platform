@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/product_feedback/product_feedback_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
@@ -36,7 +37,11 @@ List<RouteBase> settingsRoutes() => [
   ),
   GoRoute(
     path: Routes.settingsAppearance,
-    builder: (context, state) => const AppearancePage(),
+    builder: (context, state) => AppearancePage(
+      highlight: AppearanceThemeId.values
+          .where((id) => id.name == state.uri.queryParameters['highlight'])
+          .firstOrNull,
+    ),
   ),
   GoRoute(
     path: Routes.settingsExperiments,

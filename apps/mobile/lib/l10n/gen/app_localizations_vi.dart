@@ -6883,13 +6883,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceModeTitle => 'Chế độ';
 
   @override
-  String get appearancePreviewAction => 'Hành động chính';
-
-  @override
-  String get appearancePreviewRowSubtitle => 'Văn bản tóm tắt vẫn dễ đọc';
-
-  @override
-  String get appearancePreviewRowTitle => 'Cài đặt mẫu';
+  String get appearanceNew => 'Mới';
 
   @override
   String get appearancePreviewTitle => 'Xem trước';

@@ -15,6 +15,8 @@ class SettingsTile extends StatelessWidget {
     this.trailing,
     this.grouped = false,
     this.wrapSupportingText = false,
+    this.trailingWidth,
+    this.badge,
     super.key,
   });
 
@@ -33,6 +35,13 @@ class SettingsTile extends StatelessWidget {
   final Widget? trailing;
   final bool grouped;
   final bool wrapSupportingText;
+
+  /// Wider trailing column for full-size controls such as switches. The
+  /// control is centred vertically against the text.
+  final double? trailingWidth;
+
+  /// Short accent pill beside the title, such as "New".
+  final String? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +73,7 @@ class SettingsTile extends StatelessWidget {
               8,
             ),
             child: Row(
-              crossAxisAlignment: hasSupportingLine
+              crossAxisAlignment: hasSupportingLine && trailingWidth == null
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.center,
               children: [
@@ -73,7 +82,7 @@ class SettingsTile extends StatelessWidget {
                   height: SettingsRowLayout.actionWidth,
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Icon(icon, size: 22, color: iconColor),
+                    child: Icon(icon, size: 21, color: iconColor),
                   ),
                 ),
                 const shad.Gap(SettingsRowLayout.textGap),
@@ -83,12 +92,39 @@ class SettingsTile extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: theme.typography.base.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
+                        Wrap(
+                          spacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              title,
+                              style: theme.typography.base.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: textColor,
+                              ),
+                            ),
+                            if (badge case final label?)
+                              DecoratedBox(
+                                decoration: ShapeDecoration(
+                                  color: theme.colorScheme.primary,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  child: Text(
+                                    label,
+                                    style: theme.typography.xSmall.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          theme.colorScheme.primaryForeground,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         if (value?.trim().isNotEmpty ?? false) ...[
                           const shad.Gap(2),
@@ -146,7 +182,7 @@ class SettingsTile extends StatelessWidget {
                 else
                   const shad.Gap(8),
                 SizedBox(
-                  width: SettingsRowLayout.actionWidth,
+                  width: trailingWidth ?? SettingsRowLayout.actionWidth,
                   child: IconButtonTheme(
                     data: IconButtonThemeData(
                       style: IconButton.styleFrom(
@@ -155,18 +191,19 @@ class SettingsTile extends StatelessWidget {
                         padding: EdgeInsets.zero,
                       ),
                     ),
-                    child:
-                        trailing ??
-                        (showChevron
-                            ? SizedBox(
-                                height: 44,
-                                child: Icon(
-                                  Icons.chevron_right,
-                                  size: 22,
-                                  color: muted,
-                                ),
-                              )
-                            : const SizedBox.shrink()),
+                    child: trailingWidth != null && trailing != null
+                        ? Center(heightFactor: 1, child: trailing)
+                        : trailing ??
+                              (showChevron
+                                  ? SizedBox(
+                                      height: 44,
+                                      child: Icon(
+                                        shad.LucideIcons.chevronRight,
+                                        size: 17,
+                                        color: muted,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink()),
                   ),
                 ),
               ],

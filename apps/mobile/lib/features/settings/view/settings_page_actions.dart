@@ -6,6 +6,31 @@ mixin _SettingsPageActions on State<_SettingsView> {
   final SettingsRepository _settingsRepository = SettingsRepository();
   bool _disableDefaultTaskBoardNavigation = false;
 
+  /// Hides the "New" chip until the stored flag says otherwise.
+  bool _appearanceIntroSeen = true;
+
+  Future<void> _loadAppearanceIntro() async {
+    final seen = await _settingsRepository.getAppearanceIntroSeen();
+    if (mounted && seen != _appearanceIntroSeen) {
+      setState(() => _appearanceIntroSeen = seen);
+    }
+  }
+
+  /// The first visit highlights the featured Aurora theme once.
+  void _openAppearance() {
+    final highlight = !_appearanceIntroSeen;
+    if (highlight) setState(() => _appearanceIntroSeen = true);
+    unawaited(_settingsRepository.setAppearanceIntroSeen());
+    unawaited(
+      context.push(
+        highlight
+            ? '${Routes.settingsAppearance}?highlight='
+                  '${AppearanceThemeId.aurora.name}'
+            : Routes.settingsAppearance,
+      ),
+    );
+  }
+
   String _calendarDisplayName(
     CalendarSettingsState state,
     AppLocalizations l10n,
@@ -69,12 +94,12 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: false,
           label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-          icon: Icons.view_kanban_outlined,
+          icon: shad.LucideIcons.squareKanban,
         ),
         SettingsChoiceOption(
           value: true,
           label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
-          icon: Icons.dashboard_outlined,
+          icon: shad.LucideIcons.layoutDashboard,
         ),
       ],
     );
@@ -102,12 +127,12 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: true,
           label: l10n.commonOn,
-          icon: Icons.vibration_rounded,
+          icon: shad.LucideIcons.vibrate,
         ),
         SettingsChoiceOption(
           value: false,
           label: l10n.commonOff,
-          icon: Icons.notifications_off_outlined,
+          icon: shad.LucideIcons.bellOff,
         ),
       ],
     );
@@ -133,18 +158,18 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: 'system',
           label: l10n.settingsLanguageSystem,
-          icon: Icons.settings_suggest_rounded,
+          icon: shad.LucideIcons.monitorSmartphone,
           description: l10n.settingsLanguageSystemDescription,
         ),
         SettingsChoiceOption(
           value: 'en',
           label: l10n.settingsLanguageEnglish,
-          icon: Icons.translate_rounded,
+          icon: shad.LucideIcons.languages,
         ),
         SettingsChoiceOption(
           value: 'vi',
           label: l10n.settingsLanguageVietnamese,
-          icon: Icons.translate_rounded,
+          icon: shad.LucideIcons.languages,
         ),
       ],
     );

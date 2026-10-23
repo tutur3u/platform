@@ -3,12 +3,13 @@ import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Live light and dark previews of the current appearance. The app already
-/// applies changes instantly; this shows how the other mode will look too.
+/// Live light and dark previews: the real Appearance row as it will render
+/// in each mode. Long or enlarged labels wrap instead of truncating.
 class AppearancePreview extends StatelessWidget {
   const AppearancePreview({required this.settings, super.key});
 
@@ -18,31 +19,22 @@ class AppearancePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final current = shad.Theme.of(context).brightness;
-    return Semantics(
-      container: true,
-      label: l10n.appearancePreviewTitle,
-      child: Row(
-        children: [
-          for (final brightness in const [Brightness.light, Brightness.dark])
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: brightness == Brightness.light ? 6 : 0,
-                  left: brightness == Brightness.dark ? 6 : 0,
-                ),
-                child: _PreviewPane(
-                  key: ValueKey('appearance-preview-${brightness.name}'),
-                  settings: settings,
-                  brightness: brightness,
-                  active: brightness == current,
-                  title: brightness == Brightness.light
-                      ? l10n.settingsThemeLight
-                      : l10n.settingsThemeDark,
-                ),
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final brightness in const [Brightness.light, Brightness.dark]) ...[
+          if (brightness == Brightness.dark) const shad.Gap(10),
+          _PreviewPane(
+            key: ValueKey('appearance-preview-${brightness.name}'),
+            settings: settings,
+            brightness: brightness,
+            active: brightness == current,
+            mode: brightness == Brightness.light
+                ? l10n.settingsThemeLight
+                : l10n.settingsThemeDark,
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -52,14 +44,14 @@ class _PreviewPane extends StatelessWidget {
     required this.settings,
     required this.brightness,
     required this.active,
-    required this.title,
+    required this.mode,
     super.key,
   });
 
   final AppearanceSettings settings;
   final Brightness brightness;
   final bool active;
-  final String title;
+  final String mode;
 
   @override
   Widget build(BuildContext context) {
@@ -70,127 +62,99 @@ class _PreviewPane extends StatelessWidget {
     final card = settings.hasAmbientBackground
         ? scheme.card.withValues(alpha: settings.surfaceOpacity)
         : SettingsRowLayout.solidGroupFill(scheme);
-    final radius = BorderRadius.circular(22);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        border: Border.all(
-          color: active ? ring : scheme.border,
-          width: active ? 2 : 0.5,
+    final radius = BorderRadius.circular(SettingsRowLayout.cardRadius);
+    final theme = l10n.appearanceTheme(settings.theme);
+    return Semantics(
+      container: true,
+      label: '$mode: ${l10n.settingsAppearance}, $theme',
+      excludeSemantics: true,
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          border: Border.all(
+            color: active ? ring : scheme.border,
+            width: active ? 2 : 0.5,
+          ),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: AmbientBackground(
-                settings: settings,
-                brightness: brightness,
-                motion: AppearanceScope.maybeOf(context)?.motion,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: AmbientBackground(
+                  settings: settings,
+                  brightness: brightness,
+                  motion: AppearanceScope.maybeOf(context)?.motion,
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: typography.large.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.foreground,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      mode,
+                      style: typography.small.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: scheme.mutedForeground,
+                      ),
                     ),
-                  ),
-                  const shad.Gap(10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: card,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.appearancePreviewRowTitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: typography.small.copyWith(
-                                  fontWeight: FontWeight.w600,
+                    const shad.Gap(8),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: card,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              shad.LucideIcons.palette,
+                              size: 20,
+                              color: scheme.foreground,
+                            ),
+                            const shad.Gap(12),
+                            Expanded(
+                              child: Text(
+                                l10n.settingsAppearance,
+                                style: typography.base.copyWith(
+                                  fontWeight: FontWeight.w500,
                                   color: scheme.foreground,
                                 ),
                               ),
-                              Text(
-                                l10n.appearancePreviewRowSubtitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: typography.xSmall.copyWith(
+                            ),
+                            const shad.Gap(8),
+                            Flexible(
+                              child: Text(
+                                theme,
+                                textAlign: TextAlign.end,
+                                style: typography.base.copyWith(
                                   color: scheme.mutedForeground,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const shad.Gap(6),
-                        _MiniSwitch(track: scheme.primary, knob: card),
-                      ],
-                    ),
-                  ),
-                  const shad.Gap(10),
-                  DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: scheme.primary,
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: Text(
-                        l10n.appearancePreviewAction,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: typography.xSmall.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: scheme.primaryForeground,
+                            ),
+                            const shad.Gap(4),
+                            Icon(
+                              shad.LucideIcons.chevronRight,
+                              size: 17,
+                              color: scheme.mutedForeground,
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class _MiniSwitch extends StatelessWidget {
-  const _MiniSwitch({required this.track, required this.knob});
-
-  final Color track;
-  final Color knob;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 30,
-    height: 18,
-    padding: const EdgeInsets.all(2),
-    alignment: Alignment.centerRight,
-    decoration: ShapeDecoration(color: track, shape: const StadiumBorder()),
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: knob.withValues(alpha: 1),
-        shape: BoxShape.circle,
-      ),
-      child: const SizedBox.square(dimension: 14),
-    ),
-  );
 }

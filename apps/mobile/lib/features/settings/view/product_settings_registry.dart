@@ -15,6 +15,7 @@ import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Register only products with real configurable native settings. Each entry
 /// resolves its current scope and reuses the product's quick-settings editor.
@@ -44,7 +45,7 @@ bool _assistantSettingsReady(BuildContext context) {
 final productSettingsRegistry = <ProductSettingsEntry>[
   ProductSettingsEntry(
     id: 'assistant',
-    icon: Icons.auto_awesome_outlined,
+    icon: shad.LucideIcons.sparkles,
     title: (context) => context.l10n.navAssistant,
     visible: _assistantSettingsReady,
     open: (context) async {
@@ -69,14 +70,14 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'calendar',
-    icon: Icons.calendar_today_outlined,
+    icon: shad.LucideIcons.calendar,
     title: (context) => context.l10n.navCalendar,
     visible: (context) => context.read<CalendarSettingsCubit?>() != null,
     open: openCalendarProductSettings,
   ),
   ProductSettingsEntry(
     id: 'finance',
-    icon: Icons.account_balance_wallet_outlined,
+    icon: shad.LucideIcons.wallet,
     title: (context) => context.l10n.navFinance,
     visible: (context) => context.read<FinancePreferencesCubit?>() != null,
     open: (context) => openFinanceProductSettings(
@@ -86,7 +87,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'mail',
-    icon: Icons.mail_outline,
+    icon: shad.LucideIcons.mail,
     title: (context) => context.l10n.mailTitle,
     visible: (context) {
       final user = context.read<AuthCubit>().state.user;

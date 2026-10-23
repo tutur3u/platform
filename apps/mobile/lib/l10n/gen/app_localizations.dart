@@ -13285,23 +13285,11 @@ abstract class AppLocalizations {
   /// **'Mode'**
   String get appearanceModeTitle;
 
-  /// No description provided for @appearancePreviewAction.
+  /// No description provided for @appearanceNew.
   ///
   /// In en, this message translates to:
-  /// **'Primary action'**
-  String get appearancePreviewAction;
-
-  /// No description provided for @appearancePreviewRowSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Muted summary text stays readable'**
-  String get appearancePreviewRowSubtitle;
-
-  /// No description provided for @appearancePreviewRowTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sample setting'**
-  String get appearancePreviewRowTitle;
+  /// **'New'**
+  String get appearanceNew;
 
   /// No description provided for @appearancePreviewTitle.
   ///

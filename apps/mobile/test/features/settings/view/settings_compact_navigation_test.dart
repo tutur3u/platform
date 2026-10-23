@@ -112,6 +112,8 @@ void main() {
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
+      'packages/shadcn_flutter/LucideIcons':
+          'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -251,5 +252,49 @@ void main() {
         });
       }
     }
+  });
+
+  testWidgets('animated blobs pause in the background and resume', (
+    tester,
+  ) async {
+    const settings = AppearanceSettings(
+      theme: AppearanceThemeId.aurora,
+      backgroundStyle: AppearanceBackgroundStyle.blobs,
+      animate: true,
+    );
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: shad.Theme(
+          data: AppearanceTheme.shadTheme(settings, Brightness.dark),
+          child: const AppearanceBackdrop(
+            settings: settings,
+            child: SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+    ValueListenable<double>? motion() =>
+        tester.widget<AmbientBackground>(find.byType(AmbientBackground)).motion;
+    expect(motion(), isNotNull);
+    final clock = motion()!;
+    await tester.pump(const Duration(milliseconds: 300));
+    final drifted = clock.value;
+    expect(drifted, greaterThan(0));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    expect((clock as AmbientMotionClock).isRunning, isFalse);
+    await tester.pump(const Duration(seconds: 2));
+    // The paused clock schedules no ticks and keeps its phase.
+    expect(clock.value, drifted);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(motion(), same(clock));
+    expect(clock.isRunning, isTrue);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(clock.value, greaterThan(drifted));
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

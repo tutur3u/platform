@@ -273,4 +273,44 @@ void registerSettingsAppearanceShellChecks() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('New chip features Aurora once, then retires', (tester) async {
+    final h = await _pumpAppearance(tester, const AppearanceSettings());
+    SettingsTile row() => tester.widget<SettingsTile>(
+      find.byKey(const ValueKey('settings-appearance-row')),
+    );
+    expect(row().badge, 'New');
+    await _tapRow(tester, const ValueKey('settings-appearance-row'));
+    expect(h.router.state.matchedLocation, Routes.settingsAppearance);
+    expect(h.router.state.uri.queryParameters['highlight'], 'aurora');
+    expect(find.bySemanticsLabel('Aurora, New'), findsOneWidget);
+    expect(
+      (await SharedPreferences.getInstance()).getBool('appearance-intro-seen'),
+      isTrue,
+    );
+    await tester.binding.handlePopRoute();
+    await _settle(tester);
+    expect(row().badge, isNull);
+    await _tapRow(tester, const ValueKey('settings-appearance-row'));
+    expect(h.router.state.uri.queryParameters, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('workspace stat stays on one line beside the name', (
+    tester,
+  ) async {
+    await _pumpAppearance(tester, const AppearanceSettings());
+    final stat = find.byKey(const ValueKey('settings-profile-workspaces'));
+    final header = find.byKey(const ValueKey('settings-profile-header'));
+    expect(stat, findsOneWidget);
+    // Beside the identity, not wrapped under it.
+    expect(
+      tester.getRect(stat).left,
+      greaterThan(tester.getRect(header).right),
+    );
+    final label = find.descendant(of: stat, matching: find.text('workspace'));
+    final line = tester.getSize(label).height;
+    expect(line, lessThan(tester.getSize(find.text('1')).height));
+    expect(tester.takeException(), isNull);
+  });
 }

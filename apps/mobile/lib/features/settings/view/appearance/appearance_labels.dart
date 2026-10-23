@@ -40,9 +40,4 @@ extension AppearanceLabels on AppLocalizations {
     shad.ThemeMode.light => settingsThemeLight,
     shad.ThemeMode.dark => settingsThemeDark,
   };
-
-  /// Row summary such as "Dark · Blobs".
-  String appearanceSummary(shad.ThemeMode mode, AppearanceSettings settings) =>
-      '${appearanceMode(mode)} · '
-      '${appearanceBackground(settings.backgroundStyle)}';
 }

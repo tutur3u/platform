@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_accent_picker.dart';
@@ -15,6 +16,7 @@ import 'package:mobile/features/settings/view/appearance/appearance_controls.dar
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_pickers.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_preview.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_theme_gallery.dart';
 import 'package:mobile/features/settings/view/settings_profile_header.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
@@ -23,8 +25,23 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Settings → Appearance: mode, curated themes, accent, background style and
 /// surface tuning. Every choice applies instantly and persists.
-class AppearancePage extends StatelessWidget {
-  const AppearancePage({super.key});
+class AppearancePage extends StatefulWidget {
+  const AppearancePage({this.highlight, super.key});
+
+  /// Theme to feature with a "New" chip, from `?highlight=` on first visit.
+  final AppearanceThemeId? highlight;
+
+  @override
+  State<AppearancePage> createState() => _AppearancePageState();
+}
+
+class _AppearancePageState extends State<AppearancePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Any visit, including a deep link, retires the Settings "New" chip.
+    unawaited(SettingsRepository().setAppearanceIntroSeen());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +63,10 @@ class AppearancePage extends StatelessWidget {
         Row(
           children: [
             Expanded(child: SettingsCaption(caption)),
-            if (trailing != null) Flexible(child: SettingsCaption(trailing)),
+            if (trailing != null)
+              Flexible(
+                child: SettingsCaption(trailing, textAlign: TextAlign.end),
+              ),
           ],
         ),
         const shad.Gap(8),
@@ -62,8 +82,10 @@ class AppearancePage extends StatelessWidget {
           key: const ValueKey('appearance-page'),
           padding: SettingsRowLayout.scrollPadding(context, horizontal),
           children: [
-            AppearancePreview(settings: settings),
-            const shad.Gap(SettingsRowLayout.groupGap),
+            section(
+              l10n.appearancePreviewTitle,
+              AppearancePreview(settings: settings),
+            ),
             section(
               l10n.appearanceModeTitle,
               AppearanceSegmented<shad.ThemeMode>(
@@ -72,9 +94,9 @@ class AppearancePage extends StatelessWidget {
                 selected: state.themeMode,
                 label: l10n.appearanceMode,
                 icon: (mode) => switch (mode) {
-                  shad.ThemeMode.system => Icons.brightness_auto_rounded,
-                  shad.ThemeMode.light => Icons.light_mode_rounded,
-                  shad.ThemeMode.dark => Icons.dark_mode_rounded,
+                  shad.ThemeMode.system => shad.LucideIcons.sunMoon,
+                  shad.ThemeMode.light => shad.LucideIcons.sun,
+                  shad.ThemeMode.dark => shad.LucideIcons.moon,
                 },
                 onSelected: (mode) => choose(() => cubit.setThemeMode(mode)),
               ),
@@ -84,6 +106,7 @@ class AppearancePage extends StatelessWidget {
               AppearanceThemeGallery(
                 settings: settings,
                 brightness: brightness,
+                highlight: widget.highlight,
                 onSelected: (id) => choose(() => cubit.selectTheme(id)),
               ),
             ),
@@ -108,10 +131,10 @@ class AppearancePage extends StatelessWidget {
                 selected: settings.backgroundStyle,
                 label: l10n.appearanceBackground,
                 icon: (style) => switch (style) {
-                  AppearanceBackgroundStyle.solid => Icons.crop_square_rounded,
-                  AppearanceBackgroundStyle.gradient => Icons.gradient_rounded,
-                  AppearanceBackgroundStyle.blobs =>
-                    Icons.bubble_chart_outlined,
+                  AppearanceBackgroundStyle.solid => shad.LucideIcons.square,
+                  AppearanceBackgroundStyle.gradient =>
+                    shad.LucideIcons.rainbow,
+                  AppearanceBackgroundStyle.blobs => shad.LucideIcons.blend,
                 },
                 onSelected: (style) => choose(
                   () => cubit.setAppearance(

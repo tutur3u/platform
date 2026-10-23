@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -162,6 +164,36 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     return false;
   }
 
+  /// Over an ambient appearance the gradient reaches the status bar: the
+  /// header is clear where content starts below it, and frosted where root
+  /// content scrolls underneath. Solid appearances keep the opaque surface.
+  Widget _headerSurface(BuildContext context, Color color, Widget child) {
+    if (!AppearanceScope.hasAmbientBackground(context)) {
+      return ColoredBox(
+        key: const ValueKey('floating-shell-header-surface'),
+        color: color,
+        child: child,
+      );
+    }
+    if (!widget.scrollableHeader) {
+      return ColoredBox(
+        key: const ValueKey('floating-shell-header-surface'),
+        color: color.withValues(alpha: 0),
+        child: child,
+      );
+    }
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: ColoredBox(
+          key: const ValueKey('floating-shell-header-surface'),
+          color: color.withValues(alpha: 0.55),
+          child: child,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -219,10 +251,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                         ? Duration.zero
                         : const Duration(milliseconds: 180),
                     opacity: headerHidden ? 0 : 1,
-                    child: ColoredBox(
-                      key: const ValueKey('floating-shell-header-surface'),
-                      color: headerColor,
-                      child: SafeArea(bottom: false, child: widget.header!),
+                    child: _headerSurface(
+                      context,
+                      headerColor,
+                      SafeArea(bottom: false, child: widget.header!),
                     ),
                   ),
                 ),

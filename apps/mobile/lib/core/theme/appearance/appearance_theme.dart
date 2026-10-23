@@ -10,17 +10,19 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Derives app-wide shad and Material themes from [AppearanceSettings].
 ///
-/// The default appearance returns the original [MobileShadTheme] and
-/// [AppTheme] instances, so users who never customise see no change.
+/// Classic dark with the neutral accent and a solid background returns the
+/// original [MobileShadTheme] and [AppTheme] instances. Every other choice,
+/// including the default Classic light (an iOS-style grouped page with white
+/// cards), derives a scheme whose text and role colours meet WCAG AA against
+/// the theme's worst-case background blend.
 abstract final class AppearanceTheme {
   static final _shadCache =
       <(AppearanceSettings, Brightness), shad.ThemeData>{};
   static final _materialCache =
       <(AppearanceSettings, Brightness), material.ThemeData>{};
 
-  /// Classic, neutral and solid is the original look. Ambient styles derive
-  /// a scheme even for Classic so muted text stays AA over the gradient.
-  static bool _usesBaseScheme(AppearanceSettings settings) =>
+  static bool _usesBaseScheme(AppearanceSettings settings, Brightness b) =>
+      b == Brightness.dark &&
       settings.theme == AppearanceThemeId.classic &&
       !settings.hasAmbientBackground &&
       AppearancePalettes.effectiveAccentId(settings) ==
@@ -30,7 +32,7 @@ abstract final class AppearanceTheme {
     final base = b == Brightness.dark
         ? MobileShadTheme.dark
         : MobileShadTheme.light;
-    if (_usesBaseScheme(settings)) return base;
+    if (_usesBaseScheme(settings, b)) return base;
     final key = (_colorKey(settings), b);
     return _remember(
       _shadCache,
@@ -44,7 +46,7 @@ abstract final class AppearanceTheme {
     Brightness b,
   ) {
     final base = b == Brightness.dark ? AppTheme.dark : AppTheme.light;
-    if (_usesBaseScheme(settings)) return base;
+    if (_usesBaseScheme(settings, b)) return base;
     final key = (_colorKey(settings), b);
     return _remember(_materialCache, key, () {
       final scheme = colorScheme(settings, b);
@@ -54,14 +56,33 @@ abstract final class AppearanceTheme {
       final neutral =
           AppearancePalettes.effectiveAccentId(settings) ==
           AppearanceAccentId.neutral;
+      Color tint(double t) => Color.lerp(scheme.background, scheme.primary, t)!;
+      // Chips, FABs, indicators and tinted surfaces follow the accent.
+      final accentRoles = neutral
+          ? base.colorScheme
+          : base.colorScheme.copyWith(
+              primary: scheme.primary,
+              onPrimary: scheme.primaryForeground,
+              primaryContainer: tint(0.18),
+              onPrimaryContainer: scheme.foreground,
+              secondary: scheme.primary,
+              onSecondary: scheme.primaryForeground,
+              secondaryContainer: tint(0.12),
+              onSecondaryContainer: scheme.foreground,
+              tertiary: scheme.primary,
+              onTertiary: scheme.primaryForeground,
+              tertiaryContainer: tint(0.12),
+              onTertiaryContainer: scheme.foreground,
+              surfaceTint: scheme.primary,
+            );
       return base.copyWith(
         scaffoldBackgroundColor: page,
-        colorScheme: base.colorScheme.copyWith(
-          primary: neutral ? null : scheme.primary,
-          onPrimary: neutral ? null : scheme.primaryForeground,
+        colorScheme: accentRoles.copyWith(
           surface: scheme.background,
           onSurface: scheme.foreground,
           onSurfaceVariant: scheme.mutedForeground,
+          error: scheme.destructive,
+          onError: labelOn(scheme.destructive),
           surfaceContainerLowest: scheme.card,
           surfaceContainerLow: scheme.card,
           surfaceContainer: scheme.muted,
@@ -75,7 +96,7 @@ abstract final class AppearanceTheme {
     });
   }
 
-  /// The resolved shad colour scheme for a non-default appearance.
+  /// The resolved shad colour scheme for an appearance.
   static shad.ColorScheme colorScheme(
     AppearanceSettings settings,
     Brightness b,
@@ -83,17 +104,30 @@ abstract final class AppearanceTheme {
     final base =
         (b == Brightness.dark ? MobileShadTheme.dark : MobileShadTheme.light)
             .colorScheme;
-    if (_usesBaseScheme(settings)) return base;
+    if (_usesBaseScheme(settings, b)) return base;
     final dark = b == Brightness.dark;
     final tones = AppearancePalettes.of(settings.theme).tones(b);
-    final accent = AppearancePalettes.accentColor(settings, b);
     const white = Color(0xFFFFFFFF);
     Color mix(Color a, Color c, double t) => Color.lerp(a, c, t)!;
-    final card = dark
-        ? mix(tones.base, white, 0.05)
-        : mix(tones.base, white, 0.7);
+    // Light cards are white over a tinted page; dark cards lift the page.
+    final card = dark ? mix(tones.base, white, 0.08) : white;
     final subtle = mix(tones.base, tones.foreground, dark ? 0.1 : 0.05);
     final line = mix(tones.base, tones.foreground, dark ? 0.16 : 0.12);
+    // Text may sit on any blend of these; the channel bound covers them all.
+    final worst = AppearanceContrast.channelBound([
+      tones.base,
+      ...tones.gradient,
+      ...tones.blobs,
+      card,
+      subtle,
+    ], lightest: dark);
+    Color readable(Color color) => AppearanceContrast.ensureContrast(
+      color,
+      against: worst,
+      target: AppearanceContrast.aaText,
+    );
+    final accent = readable(AppearancePalettes.accentColor(settings, b));
+    final destructive = readable(base.destructive);
     return base.copyWith(
       background: () => tones.base,
       foreground: () => tones.foreground,
@@ -102,22 +136,26 @@ abstract final class AppearanceTheme {
       popover: () => card,
       popoverForeground: () => tones.foreground,
       primary: () => accent,
-      primaryForeground: () => AppearanceContrast.readableOn(
-        accent,
-        light: AppColors.textPrimaryDark,
-        dark: AppColors.textPrimaryLight,
-      ),
+      primaryForeground: () => labelOn(accent),
       secondary: () => subtle,
       secondaryForeground: () => tones.foreground,
       muted: () => subtle,
       mutedForeground: () => tones.muted,
       accent: () => subtle,
       accentForeground: () => tones.foreground,
+      destructive: () => destructive,
       border: () => line,
       input: () => line,
       ring: () => accent,
     );
   }
+
+  /// Near-white or near-black label, whichever reads better on [fill].
+  static Color labelOn(Color fill) => AppearanceContrast.readableOn(
+    fill,
+    light: AppColors.textPrimaryDark,
+    dark: AppColors.textPrimaryLight,
+  );
 
   /// Colour-affecting fields only; sliders and motion do not change the
   /// theme objects, which keeps theme identity stable while they move.

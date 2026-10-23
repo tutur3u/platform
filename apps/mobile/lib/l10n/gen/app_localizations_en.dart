@@ -6980,13 +6980,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceModeTitle => 'Mode';
 
   @override
-  String get appearancePreviewAction => 'Primary action';
-
-  @override
-  String get appearancePreviewRowSubtitle => 'Muted summary text stays readable';
-
-  @override
-  String get appearancePreviewRowTitle => 'Sample setting';
+  String get appearanceNew => 'New';
 
   @override
   String get appearancePreviewTitle => 'Preview';

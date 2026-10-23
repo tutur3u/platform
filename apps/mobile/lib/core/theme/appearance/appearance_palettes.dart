@@ -70,15 +70,16 @@ abstract final class AppearancePalettes {
   static const Color _paper = AppColors.textPrimaryDark;
   static const _inkMuted = Color(0xFF52525B);
   static const _paperMuted = Color(0xFFC4C4CC);
+  static const _classicMuted = Color(0xFF5E5E66);
 
   static const classic = AppearancePalette(
     id: AppearanceThemeId.classic,
     preferredStyle: AppearanceBackgroundStyle.solid,
     accent: AppearanceAccentId.neutral,
     light: AppearanceTones(
-      base: Color(0xFFFFFFFF),
+      base: Color(0xFFF2F2F7),
       foreground: _ink,
-      muted: _inkMuted,
+      muted: _classicMuted,
       gradient: [Color(0xFFFCFAF6), Color(0xFFF4EFE7), Color(0xFFEEEAF4)],
       blobs: [Color(0xFFE9E3F7), Color(0xFFE3EFEA), Color(0xFFF6E7DA)],
     ),
@@ -86,8 +87,8 @@ abstract final class AppearancePalettes {
       base: Color(0xFF09090B),
       foreground: _paper,
       muted: AppColors.textSecondaryDark,
-      gradient: [Color(0xFF0D0E10), Color(0xFF16181C), Color(0xFF1B1A22)],
-      blobs: [Color(0xFF24213A), Color(0xFF17282A), Color(0xFF2A2018)],
+      gradient: [Color(0xFF14141C), Color(0xFF0B0B0E), Color(0xFF1C1828)],
+      blobs: [Color(0xFF2B2650), Color(0xFF173036), Color(0xFF33261C)],
     ),
   );
 
@@ -186,8 +187,8 @@ abstract final class AppearancePalettes {
       base: Color(0xFF0E0C0B),
       foreground: _paper,
       muted: _paperMuted,
-      gradient: [Color(0xFF2E251B), Color(0xFF17130F), Color(0xFF0E0C0B)],
-      blobs: [Color(0xFF3E2F20), Color(0xFF2B231D), Color(0xFF33251A)],
+      gradient: [Color(0xFF3A2A18), Color(0xFF1E1610), Color(0xFF120E0B)],
+      blobs: [Color(0xFF4E3620), Color(0xFF3A2416), Color(0xFF2E2A24)],
     ),
   );
 
@@ -226,14 +227,15 @@ abstract final class AppearancePalettes {
       base: Color(0xFF0B0B0C),
       foreground: _paper,
       muted: _paperMuted,
-      gradient: [Color(0xFF0B0B0C), Color(0xFF18181B), Color(0xFF222226)],
-      blobs: [Color(0xFF2A2A30), Color(0xFF1E1E22), Color(0xFF323238)],
+      gradient: [Color(0xFF26262B), Color(0xFF111113), Color(0xFF2E2E34)],
+      blobs: [Color(0xFF3C3C44), Color(0xFF2A2A30), Color(0xFF34343C)],
     ),
   );
 
+  /// Gallery order: the featured Aurora first, then Classic.
   static const List<AppearancePalette> all = [
-    classic,
     aurora,
+    classic,
     sunset,
     ocean,
     forest,

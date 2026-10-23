@@ -28,7 +28,7 @@ class AppearanceAdjustments extends StatelessWidget {
       children: [
         _SliderRow(
           key: const ValueKey('appearance-intensity'),
-          icon: Icons.tonality_rounded,
+          icon: shad.LucideIcons.sunDim,
           label: l10n.appearanceIntensity,
           value: settings.intensity,
           onChanged: (v) => onPreview(settings.copyWith(intensity: v)),
@@ -37,7 +37,7 @@ class AppearanceAdjustments extends StatelessWidget {
         if (blobs)
           _SliderRow(
             key: const ValueKey('appearance-softness'),
-            icon: Icons.blur_on_rounded,
+            icon: shad.LucideIcons.droplets,
             label: l10n.appearanceSoftness,
             value: settings.softness,
             onChanged: (v) => onPreview(settings.copyWith(softness: v)),
@@ -45,7 +45,7 @@ class AppearanceAdjustments extends StatelessWidget {
           ),
         _SliderRow(
           key: const ValueKey('appearance-surface-opacity'),
-          icon: Icons.layers_outlined,
+          icon: shad.LucideIcons.layers,
           label: l10n.appearanceSurfaceOpacity,
           min: AppearanceSettings.minSurfaceOpacity,
           value: settings.surfaceOpacity,
@@ -53,26 +53,28 @@ class AppearanceAdjustments extends StatelessWidget {
           onChangeEnd: (v) => onCommit(settings.copyWith(surfaceOpacity: v)),
         ),
         if (blobs)
-          SettingsTile(
-            key: const ValueKey('appearance-animate'),
-            grouped: true,
-            wrapSupportingText: true,
-            icon: Icons.motion_photos_on_outlined,
-            title: l10n.appearanceAnimate,
-            subtitle: reducedMotion
-                ? l10n.appearanceAnimateReducedMotion
-                : l10n.appearanceAnimateDescription,
-            showChevron: false,
-            onTap: () =>
-                onCommit(settings.copyWith(animate: !settings.animate)),
-            // The switch is slightly wider than the 44px action column.
-            trailing: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ExcludeSemantics(
-                child: IgnorePointer(
-                  child: shad.Switch(
-                    value: settings.animate,
-                    onChanged: (_) {},
+          MergeSemantics(
+            child: Semantics(
+              toggled: settings.animate,
+              child: SettingsTile(
+                key: const ValueKey('appearance-animate'),
+                grouped: true,
+                wrapSupportingText: true,
+                icon: shad.LucideIcons.wind,
+                title: l10n.appearanceAnimate,
+                subtitle: reducedMotion
+                    ? l10n.appearanceAnimateReducedMotion
+                    : l10n.appearanceAnimateDescription,
+                showChevron: false,
+                onTap: () =>
+                    onCommit(settings.copyWith(animate: !settings.animate)),
+                trailingWidth: 60,
+                trailing: ExcludeSemantics(
+                  child: IgnorePointer(
+                    child: shad.Switch(
+                      value: settings.animate,
+                      onChanged: (_) {},
+                    ),
                   ),
                 ),
               ),

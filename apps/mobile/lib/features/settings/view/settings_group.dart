@@ -47,9 +47,10 @@ class SettingsGroup extends StatelessWidget {
 
 /// Muted caption above a grouped card.
 class SettingsCaption extends StatelessWidget {
-  const SettingsCaption(this.text, {super.key});
+  const SettingsCaption(this.text, {this.textAlign, super.key});
 
   final String text;
+  final TextAlign? textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +61,7 @@ class SettingsCaption extends StatelessWidget {
       ),
       child: Text(
         text,
+        textAlign: textAlign,
         style: theme.typography.small.copyWith(
           fontWeight: FontWeight.w500,
           color: theme.colorScheme.mutedForeground,

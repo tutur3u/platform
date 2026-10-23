@@ -30,6 +30,27 @@ abstract final class AppearanceContrast {
     required Color dark,
   }) => ratio(light, background) >= ratio(dark, background) ? light : dark;
 
+  /// Moves [color] toward black (light backgrounds) or white (dark ones) in
+  /// small steps until it reaches [target] against [against], keeping hue.
+  static Color ensureContrast(
+    Color color, {
+    required Color against,
+    required double target,
+  }) {
+    final toward = relativeLuminance(against) > 0.18
+        ? const Color(0xFF000000)
+        : const Color(0xFFFFFFFF);
+    var candidate = color;
+    for (
+      var step = 1;
+      step <= 25 && ratio(candidate, against) < target;
+      step++
+    ) {
+      candidate = Color.lerp(color, toward, step * 0.04)!;
+    }
+    return candidate;
+  }
+
   /// Composites a translucent [top] over an opaque [bottom].
   static Color over(Color top, Color bottom) => Color.from(
     alpha: 1,

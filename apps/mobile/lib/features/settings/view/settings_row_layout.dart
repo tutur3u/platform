@@ -26,8 +26,9 @@ abstract final class SettingsRowLayout {
         32 + MediaQuery.paddingOf(context).bottom,
       );
 
-  /// Fill for grouped settings cards. Solid pages get a quiet tonal step that
-  /// keeps muted text AA; ambient pages get the translucent appearance card.
+  /// Fill for grouped settings cards. Solid pages use the theme card (white
+  /// over the grouped page in light themes); ambient pages get the
+  /// translucent appearance card.
   static Color groupFill(BuildContext context) {
     final scheme = shad.Theme.of(context).colorScheme;
     if (AppearanceScope.hasAmbientBackground(context)) {
@@ -36,9 +37,13 @@ abstract final class SettingsRowLayout {
     return solidGroupFill(scheme);
   }
 
-  static Color solidGroupFill(shad.ColorScheme scheme) => Color.lerp(
-    scheme.background,
-    scheme.foreground,
-    scheme.brightness == Brightness.dark ? 0.06 : 0.025,
-  )!;
+  /// The theme card, or a quiet tonal lift when the card matches the page.
+  static Color solidGroupFill(shad.ColorScheme scheme) =>
+      scheme.card != scheme.background
+      ? scheme.card
+      : Color.lerp(
+          scheme.background,
+          scheme.foreground,
+          scheme.brightness == Brightness.dark ? 0.08 : 0.04,
+        )!;
 }
