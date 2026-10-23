@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/meet/view/meet_review_transcript.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -31,8 +32,7 @@ class MeetEndedReview extends StatelessWidget {
         ? review['costs'] as Map<String, dynamic>
         : null;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+    return AppPageListView(
       children: [
         Icon(
           Icons.call_end_outlined,
