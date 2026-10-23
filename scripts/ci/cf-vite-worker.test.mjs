@@ -1,6 +1,13 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: disposable harness environment fixtures.
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -16,6 +23,7 @@ const ENV_KEYS = [
   'CF_HARNESS_TEST_SECRET',
   'CF_HARNESS_OTHER_SECRET',
   'WEB_ORIGIN',
+  'CF_VITE_TEST_PERSIST_PATH',
   ...Object.keys(CONTROL_ENV),
 ];
 const FIXTURE_SECRETS = { CF_HARNESS_TEST_SECRET: 'disposable' };
@@ -407,3 +415,46 @@ test('build-output reads emitted bindings instead of source config or loader', a
   assert.equal(calls[0].name, 'preview');
   assert.deepEqual({ ...process.env }, before);
 });
+
+for (const mode of ['source', 'build-output']) {
+  test(`${mode} isolates persistence per run and retains it across restart`, async (t) => {
+    const { root } = fixture(t);
+    await fakeVite(root);
+    const before = { ...process.env };
+    const first = await startCfViteWorker({
+      root,
+      mode,
+      secrets: FIXTURE_SECRETS,
+    });
+    const firstPath = process.env.CF_VITE_TEST_PERSIST_PATH;
+    assert.ok(existsSync(firstPath));
+    assert.ok(!firstPath.startsWith(root));
+    writeFileSync(join(firstPath, 'state-fixture'), 'retained');
+    await first.restart();
+    assert.equal(process.env.CF_VITE_TEST_PERSIST_PATH, firstPath);
+    assert.ok(existsSync(join(firstPath, 'state-fixture')));
+    await first.close();
+    assert.equal(existsSync(firstPath), false);
+    assert.deepEqual({ ...process.env }, before);
+    const second = await startCfViteWorker({
+      root,
+      mode,
+      secrets: FIXTURE_SECRETS,
+    });
+    assert.notEqual(process.env.CF_VITE_TEST_PERSIST_PATH, firstPath);
+    await second.close();
+  });
+  test(`${mode} removes temporary persistence after startup failure`, async (t) => {
+    const { root } = fixture(t);
+    const prior = new Set(
+      readdirSync(tmpdir()).filter((name) => name.startsWith('cf-vite-worker-'))
+    );
+    await assert.rejects(
+      startCfViteWorker({ root, mode, secrets: FIXTURE_SECRETS })
+    );
+    const after = new Set(
+      readdirSync(tmpdir()).filter((name) => name.startsWith('cf-vite-worker-'))
+    );
+    assert.deepEqual(after, prior);
+  });
+}
