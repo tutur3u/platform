@@ -142,6 +142,24 @@ const runnerDisk = (capabilities: Record<string, unknown> | null) => {
     ? disk.freeGiB
     : undefined;
 };
+// 1-minute load per CPU from the runner agent's `resources` telemetry.
+export function runnerLoadPerCpu(capabilities: Record<string, unknown> | null) {
+  const resources = capabilities?.resources as
+    | { loadAverage?: unknown; cpu?: { cores?: unknown } }
+    | undefined;
+  const load = Array.isArray(resources?.loadAverage)
+    ? resources.loadAverage[0]
+    : undefined;
+  const cores = resources?.cpu?.cores;
+  return typeof load === 'number' &&
+    Number.isFinite(load) &&
+    load >= 0 &&
+    typeof cores === 'number' &&
+    Number.isInteger(cores) &&
+    cores > 0
+    ? load / cores
+    : undefined;
+}
 // Pure derivation of per-host state from telemetry plus the lane system.
 export function hostStates(
   registry: HostRegistry,
@@ -205,6 +223,20 @@ export function hostStates(
       states[host.id] = {
         healthy: false,
         reason: 'runner reports no activity telemetry',
+      };
+      continue;
+    }
+    // A loaded runner is degraded and never admitted, preferred or not.
+    // Missing load telemetry fails closed like missing activity.
+    const load = runnerLoadPerCpu(runner.capabilities);
+    const ceiling = host.maxLoadPerCpu ?? 1;
+    if (load === undefined || load >= ceiling) {
+      states[host.id] = {
+        healthy: false,
+        reason:
+          load === undefined
+            ? 'runner reports no load telemetry'
+            : `runner is degraded (load ${load.toFixed(2)} per CPU, ceiling ${ceiling})`,
       };
       continue;
     }

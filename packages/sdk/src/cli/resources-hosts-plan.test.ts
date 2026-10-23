@@ -114,7 +114,11 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
       heartbeat_enabled: true,
       enabled_features: { run: true },
       resource_limits: null,
-      capabilities: { executionMode: 'trusted', disk: { freeGiB: 400 } },
+      capabilities: {
+        executionMode: 'trusted',
+        disk: { freeGiB: 400 },
+        resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+      },
       drain_requested_at: null,
       activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
       ...extra,
@@ -173,7 +177,12 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
   it('fails closed on unknown or low disk, local or remote', () => {
     const unknownRemote = remoteState({
       snapshot: snapshot([
-        runner(5_000, { capabilities: { executionMode: 'trusted' } }),
+        runner(5_000, {
+          capabilities: {
+            executionMode: 'trusted',
+            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+          },
+        }),
       ]),
     });
     expect(unknownRemote.diskFreeGiB).toBeUndefined();

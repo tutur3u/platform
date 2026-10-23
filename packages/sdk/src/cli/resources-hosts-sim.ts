@@ -183,6 +183,45 @@ export function compareWithCurrent(jobs = measuredWorkload()) {
   const proposed = simulateHosts(proposedHostRegistry(), jobs);
   return { current, proposed };
 }
+// The operator's offload order (skr-studio > skr-sonha > Linux > M4) as a
+// registry. skr-studio and skr-sonha are not registered yet, so their
+// capacity here is illustrative (Linux-shaped); only their health is real:
+// skr-studio was offline and skr-sonha degraded (load 27 to 32) when the
+// order was set. Simulation input only, never written or activated.
+export function preferenceRegistry(): HostRegistry {
+  const proposed = proposedHostRegistry();
+  const linux = proposed.hosts.find((host) => host.id === 'skr-linux-lan')!;
+  return {
+    ...proposed,
+    hosts: [
+      ...proposed.hosts,
+      { ...linux, id: 'skr-studio', runnerId: 'skr-studio', preference: 1 },
+      { ...linux, id: 'skr-sonha', runnerId: 'skr-sonha', preference: 2 },
+    ],
+  };
+}
+export function preferenceScenarios(jobs = measuredWorkload()) {
+  const registry = preferenceRegistry();
+  const healthy: HostState = { healthy: true, diskFreeGiB: 1e6 };
+  const all = Object.fromEntries(
+    registry.hosts.map((host) => [host.id, healthy])
+  );
+  const today: Record<string, HostState> = {
+    ...all,
+    'skr-studio': { healthy: false, reason: 'runner is offline' },
+    'skr-sonha': {
+      healthy: false,
+      reason: 'runner is degraded (load 1.40 per CPU, ceiling 1)',
+    },
+  };
+  return {
+    order: [...registry.hosts]
+      .sort((a, b) => (a.preference ?? 100) - (b.preference ?? 100))
+      .map((host) => host.id),
+    today: simulateHosts(registry, jobs, () => today),
+    allHealthy: simulateHosts(registry, jobs, () => all),
+  };
+}
 export function renderSimulation(label: string, result: SimResult) {
   const lines = [
     `${label}: makespan ${Math.round(result.makespan / 60)} min, mean wait ${Math.round(result.meanWait / 60)} min, max wait ${Math.round(result.maxWait / 60)} min`,

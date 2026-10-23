@@ -15,7 +15,11 @@ import {
 } from './resources-hosts-config';
 import type { HostDispatchDeps } from './resources-hosts-dispatch';
 import { hostLedger } from './resources-hosts-ledger';
-import { compareWithCurrent, renderSimulation } from './resources-hosts-sim';
+import {
+  compareWithCurrent,
+  preferenceScenarios,
+  renderSimulation,
+} from './resources-hosts-sim';
 import { UntrustedRegistryError } from './resources-hosts-trust';
 import { queuedResourceCommand, spawnResourceCommand } from './resources-queue';
 
@@ -126,10 +130,26 @@ export async function runHostsAction(home: string, options: string[]) {
   const json = options.includes('--json');
   if (options.includes('--simulate')) {
     const { current, proposed } = compareWithCurrent();
+    const preference = preferenceScenarios();
     process.stdout.write(
       json
-        ? `${JSON.stringify({ current, proposed }, null, 2)}\n`
-        : `${renderSimulation('current (M4 only, 2 lanes)', current)}${renderSimulation('proposed (M4 + skr-linux-lan, weighted)', proposed)}`
+        ? `${JSON.stringify({ current, proposed, preference }, null, 2)}\n`
+        : [
+            renderSimulation('current (M4 only, 2 lanes)', current),
+            renderSimulation(
+              'proposed (M4 + skr-linux-lan, weighted)',
+              proposed
+            ),
+            `preference order: ${preference.order.join(' > ')} (skr-studio and skr-sonha capacity illustrative)\n`,
+            renderSimulation(
+              'preference, today (skr-studio offline, skr-sonha degraded: skipped)',
+              preference.today
+            ),
+            renderSimulation(
+              'preference, every host healthy',
+              preference.allHealthy
+            ),
+          ].join('')
     );
     return;
   }
@@ -173,7 +193,7 @@ export async function runHostsAction(home: string, options: string[]) {
   ];
   for (const host of result.hosts)
     lines.push(
-      `${host.id} (${host.kind}${host.runnerId ? ` ${host.runnerId}` : ''}): heavy ${host.reservations.filter((entry) => entry.jobClass === 'heavy').length}/${host.slots.heavy}, light ${host.reservations.filter((entry) => entry.jobClass === 'light').length}/${host.slots.light}; budget ${host.budget.cpus} CPU, ${host.budget.memoryGiB} GiB after reserving ${host.reserved.cpus} CPU, ${host.reserved.memoryGiB} GiB, ${host.reserved.diskGiB} GiB disk`
+      `${host.id} (${host.kind}${host.runnerId ? ` ${host.runnerId}` : ''}${host.preference ? `, preference ${host.preference}` : ''}): heavy ${host.reservations.filter((entry) => entry.jobClass === 'heavy').length}/${host.slots.heavy}, light ${host.reservations.filter((entry) => entry.jobClass === 'light').length}/${host.slots.light}; budget ${host.budget.cpus} CPU, ${host.budget.memoryGiB} GiB after reserving ${host.reserved.cpus} CPU, ${host.reserved.memoryGiB} GiB, ${host.reserved.diskGiB} GiB disk`
     );
   lines.push(`waiting: ${result.waiting.length}`);
   process.stdout.write(`${lines.join('\n')}\n`);
