@@ -20,7 +20,7 @@ test('only E2E image warming is optional; contract image-cache setup stays stric
         if (step.uses !== './.github/actions/cache-supabase-images') continue;
         if (name === 'e2e-tests.yaml') {
           assert.equal(step['continue-on-error'], true);
-          assert.deepEqual(step.with, { profile: 'full' });
+          assert.equal(step.with.profile, 'full');
           optional++;
         } else {
           assert.ok(

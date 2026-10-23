@@ -38,16 +38,25 @@ test('E2E reuses shared exact Supabase images without changing its paused cohort
     (step) => step.name === 'Restore shared Supabase images'
   );
   assert.equal(cache.uses, './.github/actions/cache-supabase-images');
-  assert.deepEqual(cache.with, { profile: 'full' });
+  assert.deepEqual(cache.with, {
+    profile: 'full',
+    save: `\${{ matrix.mode == 'shard' && matrix.shard == 1 }}`,
+  });
   assert.equal(cache.if, "env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'");
   assert.equal(workflow.env.SUPABASE_INTERNAL_IMAGE_REGISTRY, 'public.ecr.aws');
   assert.equal(
     job.steps.some((step) => step.id === 'prepare-supabase-docker-cache'),
     false
   );
-  const eligible = DEFAULT_MATRIX.filter(
-    (entry) => entry.mode === 'shard' && entry.shard === 1
+  const save = Function(
+    'matrix',
+    `return ${cache.with.save.replace(/^\$\{\{\s*|\s*\}\}$/g, '')}`
   );
+  const eligible = DEFAULT_MATRIX.filter((entry) => save(entry));
+  const inventory = workflow.jobs['inventory-storefront-cache-e2e'].steps.find(
+    (step) => step.name === 'Restore shared Supabase images'
+  );
+  assert.equal(inventory.with.save, 'false');
   assert.equal(eligible.length, 1);
   assert.equal(eligible[0].id, 1);
   assert.equal(DEFAULT_MATRIX.length, 10, 'Do not remove test cohorts');

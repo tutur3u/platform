@@ -328,6 +328,7 @@ jobs:
         uses: ./.github/actions/cache-supabase-images
         with:
           profile: full
+          save: ${{ matrix.mode == 'shard' && matrix.shard == 1 }}
 
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline
@@ -455,6 +456,7 @@ jobs:
         uses: ./.github/actions/cache-supabase-images
         with:
           profile: full
+          save: "false"
 
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline

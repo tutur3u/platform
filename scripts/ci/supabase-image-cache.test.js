@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const test = require('node:test');
 const {
   cacheKey,
+  configurationDiagnostic,
   subsetImages,
   missingImages,
   imageList,
@@ -26,6 +27,22 @@ const identity = {
   registry: 'public.ecr.aws',
   profile: 'contract',
 };
+
+test('configuration diagnostics allow only fixed public messages and service identifiers', () => {
+  for (const message of [
+    'Uncached service enabled: edge_runtime',
+    'Missing explicit service configuration: storage',
+    'Review supplemental image pins for the installed Supabase CLI',
+  ])
+    assert.equal(configurationDiagnostic(new Error(message)), message);
+  for (const message of [
+    'Uncached service enabled: secret-token',
+    'Missing CLI image metadata: private-project',
+    'child failed: password=secret',
+  ])
+    assert.equal(configurationDiagnostic(new Error(message)), undefined);
+});
+
 test('contract images derive versions from CLI metadata including temporary overrides', () => {
   assert.deepEqual(imageList(identity), [
     'public.ecr.aws/supabase/gotrue:v2.196.0',
@@ -147,7 +164,7 @@ test('extended seed budget is main-only and normal misses retain two minutes', (
 });
 
 test('real cache helper pulls only on miss, saves only trusted archives, and loads without pulls', async (t) => {
-  const { execFileSync } = require('node:child_process');
+  const { execFileSync, spawnSync } = require('node:child_process');
   const os = require('node:os');
   const path = require('node:path');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'image-cache-helper-'));
@@ -197,6 +214,7 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     IMAGE_PROFILE: 'contract',
     SUPABASE_INTERNAL_IMAGE_REGISTRY: 'public.ecr.aws',
     GITHUB_OUTPUT: path.join(root, 'output'),
+    GITHUB_STEP_SUMMARY: path.join(root, 'summary'),
     GITHUB_EVENT_NAME: 'pull_request',
     GITHUB_REF: 'refs/pull/6409/merge',
   };
@@ -226,6 +244,9 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   env.GITHUB_REF = 'refs/heads/main';
   run('key');
   assert.match(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'), /save=true/);
+  env.IMAGE_SAVE = 'false';
+  run('pull');
+  assert.equal(calls().filter((args) => args[0] === 'save').length, 0);
   env.IMAGE_SAVE = 'true';
   run('pull');
   assert.equal(calls().filter((args) => args[0] === 'save').length, 1);
@@ -253,6 +274,29 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   assert.match(run('load'), /Loaded and verified 5 cached Supabase images/);
   assert.equal(calls().filter((args) => args[0] === 'pull').length, pulls);
   assert.equal(calls().filter((args) => args[0] === 'load').length, 2);
+  env.IMAGE_PROFILE = 'full';
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  const unsupported = config.replace(
+    '[edge_runtime]\nenabled = false',
+    '[edge_runtime]\nenabled = true'
+  );
+  assert.notEqual(unsupported, config);
+  fs.writeFileSync(path.join(database, 'supabase/config.toml'), unsupported);
+  const failure = spawnSync(
+    process.execPath,
+    ['scripts/ci/supabase-image-cache.js', 'key'],
+    { env, encoding: 'utf8' }
+  );
+  assert.equal(failure.status, 1);
+  assert.match(
+    failure.stderr,
+    /::warning::Supabase image cache configuration: Uncached service enabled: edge_runtime/
+  );
+  assert.match(
+    fs.readFileSync(env.GITHUB_STEP_SUMMARY, 'utf8'),
+    /Uncached service enabled: edge_runtime/
+  );
+  env.IMAGE_PROFILE = 'contract';
   // A fixed catalog must never invoke installed CLI or PR code.
   fs.writeFileSync(
     path.join(database, 'scripts/run-supabase.js'),
@@ -280,6 +324,10 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     futureCalls.find((args) => args[0] === 'save').slice(3),
     seedCatalog('cli-2.121.0', futureContext)
   );
+  const saved = calls().filter((args) => args[0] === 'save').length;
+  env.IMAGE_SAVE = 'false';
+  run('pull');
+  assert.equal(calls().filter((args) => args[0] === 'save').length, saved);
 });
 
 test('deadline exhaustion retains the last registry classification and bootstrap instruction', async () => {
