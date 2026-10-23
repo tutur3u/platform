@@ -15,6 +15,10 @@ import {
   MAX_ID_LENGTH,
   MAX_WORKSPACE_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import {
+  isWorkspaceAvatarPath,
+  ownedWorkspaceAvatarPath,
+} from '@tuturuuu/utils/workspace-avatar';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { getSatelliteAppSessionUser } from '../auth';
@@ -176,17 +180,6 @@ export function createSatelliteWorkspaceRouteHandlers(
   };
 }
 
-function extractWorkspaceAvatarPath(avatarUrl: string | null | undefined) {
-  if (!avatarUrl) return null;
-
-  try {
-    const url = new URL(avatarUrl);
-    return url.pathname.split('/avatars/')[1] || null;
-  } catch {
-    return null;
-  }
-}
-
 function hasWorkspaceSettingsPermission(
   authorization: Awaited<ReturnType<typeof authorizeWorkspaceRequest>>
 ) {
@@ -214,9 +207,8 @@ export function createSatelliteWorkspaceAvatarRouteHandlers(
 
       const payload = await request.json().catch(() => null);
       const filePath =
-        typeof payload?.filePath === 'string' ? payload.filePath.trim() : '';
-      const workspacePath = `workspaces/${authorization.permissions.wsId}/`;
-      if (!filePath?.startsWith(workspacePath)) {
+        typeof payload?.filePath === 'string' ? payload.filePath : '';
+      if (!isWorkspaceAvatarPath(filePath, authorization.permissions.wsId)) {
         return NextResponse.json(
           { message: 'Invalid file path' },
           { status: 400 }
@@ -288,7 +280,11 @@ export function createSatelliteWorkspaceAvatarRouteHandlers(
         );
       }
 
-      const existingPath = extractWorkspaceAvatarPath(workspace.avatar_url);
+      const existingPath = ownedWorkspaceAvatarPath(
+        workspace.avatar_url,
+        authorization.permissions.wsId,
+        [process.env.SUPABASE_SERVER_URL, process.env.NEXT_PUBLIC_SUPABASE_URL]
+      );
       if (existingPath) {
         const { error: storageError } = await sbAdmin.storage
           .from('avatars')

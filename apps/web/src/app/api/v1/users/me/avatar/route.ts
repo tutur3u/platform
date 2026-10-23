@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { ownedAvatarPath } from '@/lib/profile-avatar-url';
-import { bannerStorageOrigin } from '@/lib/profile-banner-lifecycle';
+import { ownedProfileAvatarPath } from '@/lib/profile-avatar-url';
 
 export const DELETE = withSessionAuth(
   async (_req, { user, supabase }) => {
@@ -31,11 +30,7 @@ export const DELETE = withSessionAuth(
         try {
           // Cookie clients retain RLS; app-session clients are admin-backed.
           // Validate the original URL immediately before either storage delete.
-          const filePath = ownedAvatarPath(
-            userData.avatar_url,
-            user.id,
-            bannerStorageOrigin()
-          );
+          const filePath = ownedProfileAvatarPath(userData.avatar_url, user.id);
           if (filePath) {
             await supabase.storage.from('avatars').remove([filePath]);
           }
