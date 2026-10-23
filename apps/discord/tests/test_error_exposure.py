@@ -28,22 +28,18 @@ def test_ticket_form_failure_returns_generic_message(monkeypatch) -> None:
 def returned_exception_formats(path: Path) -> list[int]:
     """Lines where a `return` inside `except ... as name` formats `name`."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
-    offending: list[int] = []
-    for handler in ast.walk(tree):
-        if not isinstance(handler, ast.ExceptHandler) or not handler.name:
-            continue
-        for statement in handler.body:
-            for node in ast.walk(statement):
-                if not isinstance(node, ast.Return) or node.value is None:
-                    continue
-                for value in ast.walk(node.value):
-                    if (
-                        isinstance(value, ast.FormattedValue)
-                        and isinstance(value.value, ast.Name)
-                        and value.value.id == handler.name
-                    ):
-                        offending.append(value.lineno)
-    return offending
+    return [
+        value.lineno
+        for handler in ast.walk(tree)
+        if isinstance(handler, ast.ExceptHandler) and handler.name
+        for statement in handler.body
+        for node in ast.walk(statement)
+        if isinstance(node, ast.Return) and node.value is not None
+        for value in ast.walk(node.value)
+        if isinstance(value, ast.FormattedValue)
+        and isinstance(value.value, ast.Name)
+        and value.value.id == handler.name
+    ]
 
 
 def test_interaction_handlers_do_not_return_exception_text() -> None:
