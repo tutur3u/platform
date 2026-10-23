@@ -47,13 +47,50 @@ export async function probeDisk(path: string): Promise<DiskProbe> {
   return { freeBytes, totalBytes };
 }
 
+// statfs on a hung volume (stale NFS, failing disk) can block indefinitely
+// and pin a libuv thread. Bound each probe, and never stack a second probe on
+// a path whose previous one is still pending: both count as unknown.
+const pending = new Set<string>();
+export function probeDiskWithTimeout(
+  path: string,
+  timeoutMs = 2_000,
+  probe: (path: string) => Promise<DiskProbe> = probeDisk
+) {
+  if (pending.has(path))
+    return Promise.reject(
+      Object.assign(new Error('probe pending'), { code: 'EBUSY' })
+    );
+  pending.add(path);
+  const running = probe(path).finally(() => pending.delete(path));
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          Object.assign(new Error('probe timed out'), { code: 'ETIMEDOUT' })
+        ),
+      timeoutMs
+    );
+    timer.unref?.();
+  });
+  return Promise.race([running, timeout]).finally(() => clearTimeout(timer));
+}
+const errnoCode = (error: unknown) => {
+  const code =
+    error && typeof error === 'object' && 'code' in error
+      ? String(error.code)
+      : '';
+  return /^E[A-Z0-9]{1,20}$/u.test(code) ? code : 'EUNKNOWN';
+};
+
 export type DiskGate =
   | { admit: true; freeGiB: number | undefined }
   | { admit: false; unknown: boolean; reason: string };
 export async function diskGate(
   path: string,
   env: NodeJS.ProcessEnv = process.env,
-  probe: (path: string) => Promise<DiskProbe> = probeDisk
+  probe: (path: string) => Promise<DiskProbe> = (path) =>
+    probeDiskWithTimeout(path)
 ): Promise<DiskGate> {
   if (env.TTR_RESOURCES_IGNORE_DISK === '1')
     return { admit: true, freeGiB: undefined };
@@ -75,12 +112,11 @@ export async function diskGate(
   let volume: DiskProbe;
   try {
     volume = await probe(path);
-  } catch {
+  } catch (error) {
     return {
       admit: false,
       unknown: true,
-      reason:
-        'free disk on the job volume is unknown, so the job does not start',
+      reason: `free disk on the job volume is unknown (${errnoCode(error)}), so the job does not start`,
     };
   }
   const freeGiB = volume.freeBytes / GiB;

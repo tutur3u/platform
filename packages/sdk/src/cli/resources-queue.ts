@@ -277,6 +277,14 @@ export async function queuedResourceCommand(
       }
       let pressureBlocked = false;
       pressureReason = null;
+      let diskReason: string | null = null;
+      // Dequeue-time disk check, bounded and taken outside the admission
+      // mutex so a hung volume cannot stall other admissions. Only the FIFO
+      // head probes; a round without a fresh result never claims.
+      const disk =
+        (await tickets(home))[0]?.path === ticket
+          ? await diskCheck(process.cwd(), env)
+          : undefined;
       slot = await withAdmission(
         home,
         async () => {
@@ -333,13 +341,12 @@ export async function queuedResourceCommand(
             (current.occupied.length >= lanes && !burst?.eligible)
           )
             return undefined;
-          // Dequeue-time disk check, immediately before the claim and spawn:
-          // headroom seen at enqueue may be gone after a long wait, and an
+          // Headroom seen at enqueue may be gone after a long wait, and an
           // unreadable volume fails closed.
-          const disk = await diskCheck(process.cwd(), env);
+          if (!disk) return undefined;
           if (!disk.admit) {
             pressureBlocked = true;
-            pressureReason = `disk: ${disk.reason}`;
+            diskReason = disk.reason;
             return undefined;
           }
           if (cancelled) return undefined;
@@ -371,9 +378,11 @@ export async function queuedResourceCommand(
       if (!slot) {
         if (Date.now() - announced > 30_000) {
           process.stderr.write(
-            pressureReason
-              ? `[ttr resources] queued PID ${process.pid}; blockedBy=pressure: ${pressureReason}\n`
-              : `[ttr resources] queued PID ${process.pid}; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.\n`
+            diskReason
+              ? `[ttr resources] queued PID ${process.pid}; blockedBy=disk: ${diskReason}\n`
+              : pressureReason
+                ? `[ttr resources] queued PID ${process.pid}; blockedBy=pressure: ${pressureReason}\n`
+                : `[ttr resources] queued PID ${process.pid}; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.\n`
           );
           announced = Date.now();
         }
