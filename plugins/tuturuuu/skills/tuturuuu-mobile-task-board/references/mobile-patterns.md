@@ -142,3 +142,14 @@ is not installed-device or provider delivery evidence.
 - Use `mail_notification_privacy_test.dart` and existing push/dismissal tests.
   Device arrival and timing require separately authorized device fixtures; see
   [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
+
+### Profile banner capability uploads
+
+Reuse the existing profile repository and signed banner receipt flow; retain the
+operation UUID through upload/finalize retries. Crop banners at 3:1 before the
+shared optimizer, keep placeholder/loading/error geometry stable, and reload the
+actor-owned profile after mutations. Classify optimizer size exceptions separately
+from invalid images and signed PUT ticket failures separately from API permission
+denials. See the mobile profile banner section in
+`apps/docs/platform/features/user-management.mdx` and the focused banner lifecycle,
+picker, image-state and repository failure-contract tests.

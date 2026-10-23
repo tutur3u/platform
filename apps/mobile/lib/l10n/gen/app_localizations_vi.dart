@@ -10650,4 +10650,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get feedbackDetailsRequired => 'Nhập chi tiết từ 1–8000 ký tự.';
+
+  @override
+  String get profileMediaNetworkError => 'Không thể kết nối. Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get profileMediaUploadExpired => 'Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.';
 }

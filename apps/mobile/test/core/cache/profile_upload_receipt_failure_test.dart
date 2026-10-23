@@ -136,7 +136,12 @@ void main() {
   for (final banner in [false, true]) {
     for (final (status, code) in [
       (400, 'PROFILE_UPLOAD_IMAGE_INVALID'),
-      (401, 'PROFILE_UPLOAD_AUTHORIZATION'),
+      (
+        401,
+        banner
+            ? 'PROFILE_UPLOAD_TICKET_EXPIRED'
+            : 'PROFILE_UPLOAD_AUTHORIZATION',
+      ),
       (403, 'PROFILE_UPLOAD_AUTHORIZATION'),
       (409, 'PROFILE_UPLOAD_CONFLICT'),
       (413, 'PROFILE_UPLOAD_IMAGE_TOO_LARGE'),

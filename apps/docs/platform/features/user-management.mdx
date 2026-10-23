@@ -248,6 +248,24 @@ parity, bounded results and oversized-input rejection. Actor-race and failure
 contract tests cover the surrounding repository path.
 
 
+### Mobile profile banners
+
+Mobile profile headers reserve a 3:1 banner area, including an empty placeholder,
+image loading indicator and image-error fallback. Banner selection uses the native
+camera/gallery chooser and a locked 3:1 crop, then the shared optimizer. Upload
+and replacement reuse `POST /api/v1/users/me/banner/upload-url`, the signed PUT,
+and `POST /api/v1/users/me/banner` with `action: finalize`; removal uses the latter
+with `action: remove`. Each mutation retains its operation UUID and reloads the
+actor's profile. These controls do not change shell navigation or account access.
+
+Permission denial, size rejection, connection failure and invalid/expired upload
+tickets have scoped English and Vietnamese guidance. Ticket failure asks for a
+new selection; it does not bypass signature checks. Avatar upload authorization
+continues to use its existing error mapping. Regression coverage lives in
+`profile_banner_lifecycle_test.dart`, `profile_banner_states_test.dart`,
+`profile_banner_picker_test.dart` and `profile_media_failure_contract_test.dart`.
+
+
 ### Browser profile capability uploads
 
 The central avatar and banner upload endpoints expose credential-free CORS for
