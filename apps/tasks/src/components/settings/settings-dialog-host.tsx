@@ -4,8 +4,9 @@ import { claimSettingsDialogIntent } from '@tuturuuu/satellite/settings-dialog-i
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
-import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useCallback, useEffect } from 'react';
 import { SettingsDialog } from './settings-dialog';
 
@@ -20,37 +21,27 @@ type SettingsOpenIntent = {
   settingsTab?: string;
 };
 
-const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
-  'tuturuuu:settings-dialog-open-intent';
+const SETTINGS_EXTRA_KEYS = ['settingsBoardId'] as const;
 
 export function SettingsDialogHost({
   wsId,
   user,
   workspace,
 }: SettingsDialogHostProps) {
-  const [settingsQuery, setSettingsQuery] = useQueryStates(
-    {
-      settingsDialog: parseAsStringLiteral(['open']),
-      settingsTab: parseAsString,
-      settingsBoardId: parseAsString,
-    },
-    {
-      history: 'replace',
-      shallow: true,
-      scroll: false,
-    }
-  );
+  const {
+    closeSettings,
+    extras,
+    open: settingsOpen,
+    openSettings,
+    tab,
+  } = useSettingsDialogUrlState(SETTINGS_EXTRA_KEYS);
 
-  const openSettings = useCallback(() => {
-    void setSettingsQuery({
-      settingsDialog: 'open',
-      settingsTab: null,
-      settingsBoardId: null,
-    });
-  }, [setSettingsQuery]);
+  const openDefaultSettings = useCallback(() => {
+    openSettings(null);
+  }, [openSettings]);
   useSettingsDialogShortcut({
     enabled: Boolean(user),
-    onOpen: openSettings,
+    onOpen: openDefaultSettings,
   });
 
   useEffect(() => {
@@ -64,15 +55,15 @@ export function SettingsDialogHost({
           ? (event.detail as SettingsOpenIntent)
           : {};
 
-      void setSettingsQuery({
-        settingsDialog: 'open',
-        settingsBoardId:
-          typeof detail.settingsBoardId === 'string'
-            ? detail.settingsBoardId
-            : null,
-        settingsTab:
-          typeof detail.settingsTab === 'string' ? detail.settingsTab : null,
-      });
+      openSettings(
+        typeof detail.settingsTab === 'string' ? detail.settingsTab : null,
+        {
+          settingsBoardId:
+            typeof detail.settingsBoardId === 'string'
+              ? detail.settingsBoardId
+              : null,
+        }
+      );
     };
 
     window.addEventListener(
@@ -86,36 +77,25 @@ export function SettingsDialogHost({
         handleSettingsIntent
       );
     };
-  }, [setSettingsQuery]);
+  }, [openSettings]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) return;
-
-    void setSettingsQuery({
-      settingsDialog: null,
-      settingsTab: null,
-      settingsBoardId: null,
-    });
+    closeSettings();
   };
 
   const handleBoardSettingsOpen = (boardId: string) => {
-    void setSettingsQuery({
-      settingsBoardId: boardId,
-      settingsDialog: 'open',
-      settingsTab: 'task_board',
-    });
+    openSettings('task_board', { settingsBoardId: boardId });
   };
 
   if (!user) return null;
-
-  const settingsOpen = settingsQuery.settingsDialog === 'open';
 
   return (
     <Dialog open={settingsOpen} onOpenChange={handleOpenChange}>
       {settingsOpen && (
         <SettingsDialog
-          boardId={settingsQuery.settingsBoardId ?? undefined}
-          defaultTab={settingsQuery.settingsTab ?? undefined}
+          boardId={extras.settingsBoardId ?? undefined}
+          defaultTab={tab ?? undefined}
           onBoardSettingsOpen={handleBoardSettingsOpen}
           user={user}
           workspace={workspace}

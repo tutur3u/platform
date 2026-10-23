@@ -253,7 +253,7 @@ function expectSettingsQueryOpened() {
       settingsTab: null,
     },
     {
-      history: 'replace',
+      history: 'push',
       scroll: false,
       shallow: true,
     }
@@ -340,7 +340,7 @@ describe('settings dialog shortcut', () => {
         settingsTab: 'task_board',
       },
       {
-        history: 'replace',
+        history: 'push',
         scroll: false,
         shallow: true,
       }
@@ -423,6 +423,53 @@ describe('settings dialog shortcut', () => {
         })
       );
     });
+  });
+
+  it('opens the dashboard settings dialog from a bare settingsTab deep link', async () => {
+    settingsQueryState.settingsTab = 'security';
+
+    const { getByTestId } = render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={{ id: 'personal' } as any}
+        wsId="personal"
+      />
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('settings-dialog')).toBeInTheDocument();
+      expect(settingsDialogMock).toHaveBeenCalledWith(
+        expect.objectContaining({ defaultTab: 'security', wsId: 'personal' })
+      );
+    });
+  });
+
+  it('writes the URL when a settings open intent arrives', () => {
+    render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={{ id: 'workspace-1' } as any}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent(
+      window,
+      new CustomEvent('tuturuuu:settings-dialog-open-intent', {
+        detail: { settingsTab: 'workspace_members' },
+      })
+    );
+
+    expect(setSettingsQueryMock).toHaveBeenCalledTimes(1);
+    expect(setSettingsQueryMock).toHaveBeenCalledWith(
+      {
+        settingsBoardId: null,
+        settingsDialog: 'open',
+        settingsLinkedProvider: null,
+        settingsTab: 'workspace_members',
+      },
+      { history: 'push', scroll: false, shallow: true }
+    );
   });
 
   it('opens the query-backed user nav settings dialog', () => {

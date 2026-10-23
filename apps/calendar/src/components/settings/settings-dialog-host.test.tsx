@@ -110,10 +110,18 @@ describe('Calendar dedicated settings host', () => {
       'resolved-workspace:calendar_integrations'
     );
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(mocks.setQuery).toHaveBeenCalledWith({
-      settingsDialog: null,
-      settingsTab: null,
-    });
+    expect(mocks.setQuery).toHaveBeenCalledWith(
+      { settingsDialog: null, settingsTab: null },
+      expect.objectContaining({ history: 'replace', shallow: true })
+    );
+  });
+  it('opens a bare settingsTab deep link without the legacy open flag', () => {
+    mocks.query = { settingsDialog: null, settingsTab: 'calendar_hours' };
+    render(<SettingsDialogHost user={user} wsId="resolved-workspace" />);
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByTestId('settings-content').textContent).toBe(
+      'resolved-workspace:calendar_hours'
+    );
   });
   it('resets tab-local state when an open intent or workspace identity changes', () => {
     mocks.query = {
@@ -142,10 +150,10 @@ describe('Calendar dedicated settings host', () => {
     window.dispatchEvent(intent);
     expect(intent.defaultPrevented).toBe(true);
     expect(mocks.setQuery).toHaveBeenCalledTimes(1);
-    expect(mocks.setQuery).toHaveBeenCalledWith({
-      settingsDialog: 'open',
-      settingsTab: 'calendar_hours',
-    });
+    expect(mocks.setQuery).toHaveBeenCalledWith(
+      { settingsDialog: 'open', settingsTab: 'calendar_hours' },
+      expect.objectContaining({ history: 'push', shallow: true })
+    );
     view.unmount();
     window.dispatchEvent(new CustomEvent(eventName, { cancelable: true }));
     expect(mocks.setQuery).toHaveBeenCalledTimes(1);
@@ -155,10 +163,10 @@ describe('Calendar dedicated settings host', () => {
       <SettingsDialogHost user={user} wsId="resolved-workspace" />
     );
     mocks.shortcut.mock.lastCall?.[0].onOpen();
-    expect(mocks.setQuery).toHaveBeenCalledWith({
-      settingsDialog: 'open',
-      settingsTab: null,
-    });
+    expect(mocks.setQuery).toHaveBeenCalledWith(
+      { settingsDialog: 'open', settingsTab: null },
+      expect.objectContaining({ history: 'push', shallow: true })
+    );
     mocks.setQuery.mockClear();
     view.rerender(<SettingsDialogHost user={null} wsId="resolved-workspace" />);
     expect(mocks.shortcut.mock.lastCall?.[0].enabled).toBe(false);

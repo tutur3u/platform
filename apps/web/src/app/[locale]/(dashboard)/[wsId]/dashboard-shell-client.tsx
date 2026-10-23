@@ -3,6 +3,10 @@
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import {
+  parseSettingsDialogQuery,
+  SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+} from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { useSearchParams } from 'next/navigation';
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
@@ -78,8 +82,6 @@ function loadStructure(): Promise<ComponentType<StructureProps>> {
 let dashboardSettingsDialogHostPromise: Promise<DashboardSettingsDialogHostComponent> | null =
   null;
 const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
-const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
-  'tuturuuu:settings-dialog-open-intent';
 
 function loadDashboardSettingsDialogHost(): Promise<DashboardSettingsDialogHostComponent> {
   const importDashboardSettingsDialogHost = () =>
@@ -117,7 +119,10 @@ function DashboardSettingsDialogSkeletonGate({
 }) {
   const searchParams = useSearchParams();
   const [intentOpen, setIntentOpen] = useState(false);
-  const settingsRequested = searchParams.get('settingsDialog') === 'open';
+  const settingsRequested = parseSettingsDialogQuery({
+    settingsDialog: searchParams.get('settingsDialog'),
+    settingsTab: searchParams.get('settingsTab'),
+  }).open;
 
   useEffect(() => {
     if (!enabled) return;

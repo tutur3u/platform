@@ -9,6 +9,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { copySettingsDialogParams } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import {
   extractIPFromRequest,
   isIPBlockedEdge,
@@ -1376,6 +1377,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           );
 
           const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
+          // Other root query params are intentionally dropped, but settings
+          // deep links (e.g. /?settingsTab=security) must survive.
+          copySettingsDialogParams(
+            req.nextUrl.searchParams,
+            redirectUrl.searchParams
+          );
           const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;

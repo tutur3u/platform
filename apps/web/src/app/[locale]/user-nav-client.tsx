@@ -36,6 +36,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { SETTINGS_DIALOG_CLOSE_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
@@ -43,7 +45,6 @@ import { getPublicProfilePath } from '@tuturuuu/utils/public-profile-url';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { ComponentType } from 'react';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
@@ -80,6 +81,11 @@ const UserNavCommandLauncher = dynamic(
     ),
   { ssr: false }
 );
+const SETTINGS_EXTRA_KEYS = [
+  'settingsBoardId',
+  'settingsLinkedProvider',
+] as const;
+
 function useUserNavSettingsDialogComponent(enabled: boolean) {
   const [UserNavSettingsDialog, setUserNavSettingsDialog] =
     useState<ComponentType<UserNavSettingsDialogProps> | null>(null);
@@ -130,22 +136,15 @@ export default function UserNavClient({
     settingsDialogEnabled
   );
   const wsIdParam = typeof params?.wsId === 'string' ? params.wsId : undefined;
-  const [settingsQuery, setSettingsQuery] = useQueryStates(
-    {
-      settingsDialog: parseAsStringLiteral(['open']),
-      settingsTab: parseAsString,
-      settingsBoardId: parseAsString,
-      settingsLinkedProvider: parseAsString,
-    },
-    {
-      history: 'replace',
-      shallow: true,
-      scroll: false,
-    }
-  );
-  const requestedSettingsOpen = settingsQuery.settingsDialog === 'open';
-  const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
-  const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
+  const {
+    closeSettings,
+    extras: settingsExtras,
+    open: requestedSettingsOpen,
+    openSettings,
+    tab: settingsTab,
+  } = useSettingsDialogUrlState(SETTINGS_EXTRA_KEYS);
+  const requestedSettingsTab = settingsTab ?? undefined;
+  const linkedProvider = settingsExtras.settingsLinkedProvider ?? undefined;
 
   const { data: resolvedWorkspace } = useQuery({
     queryKey: ['user-nav-workspace', wsIdParam],
@@ -166,61 +165,24 @@ export default function UserNavClient({
   });
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      void setSettingsQuery(
-        {
-          settingsDialog: null,
-          settingsTab: null,
-          settingsBoardId: null,
-          settingsLinkedProvider: null,
-        },
-        {
-          history: 'replace',
-          shallow: true,
-          scroll: false,
-        }
-      );
-    }
+    if (!nextOpen) closeSettings();
   };
 
   const openSettingsDialog = useCallback(
     (tab?: string) => {
-      void setSettingsQuery(
-        {
-          settingsDialog: 'open',
-          settingsTab: tab ?? null,
-          settingsBoardId: null,
-          settingsLinkedProvider: null,
-        },
-        {
-          history: 'replace',
-          shallow: true,
-          scroll: false,
-        }
-      );
+      openSettings(tab ?? null);
     },
-    [setSettingsQuery]
+    [openSettings]
   );
 
   useEffect(() => {
-    const closeFromGuidance = () =>
-      void setSettingsQuery({
-        settingsDialog: null,
-        settingsTab: null,
-        settingsBoardId: null,
-        settingsLinkedProvider: null,
-      });
-
-    window.addEventListener(
-      'tuturuuu:settings-dialog-close-intent',
-      closeFromGuidance
-    );
+    window.addEventListener(SETTINGS_DIALOG_CLOSE_INTENT_EVENT, closeSettings);
     return () =>
       window.removeEventListener(
-        'tuturuuu:settings-dialog-close-intent',
-        closeFromGuidance
+        SETTINGS_DIALOG_CLOSE_INTENT_EVENT,
+        closeSettings
       );
-  }, [setSettingsQuery]);
+  }, [closeSettings]);
 
   const openCommandLauncher = useCallback(() => {
     void import('@tuturuuu/satellite/command-launcher').then((module) => {

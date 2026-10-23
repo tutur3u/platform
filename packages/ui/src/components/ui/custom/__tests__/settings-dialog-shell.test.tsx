@@ -229,6 +229,37 @@ describe('SettingsDialogShell keyboard navigation', () => {
     });
   });
 
+  it('falls back to the first enabled tab for an unknown deep-linked tab', async () => {
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+
+    function UnknownTabHarness() {
+      const [activeTab, setActiveTab] = useState('not_a_tab');
+      return (
+        <Dialog open>
+          <SettingsDialogShell
+            activeTab={activeTab}
+            navItems={navItems}
+            onActiveTabChange={setActiveTab}
+          >
+            <div data-testid="active-tab">{activeTab}</div>
+          </SettingsDialogShell>
+        </Dialog>
+      );
+    }
+
+    render(<UnknownTabHarness />, {
+      wrapper: withNuqsTestingAdapter({
+        onUrlUpdate,
+        searchParams: '?settingsTab=not_a_tab',
+      }),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('active-tab')).toHaveTextContent('profile')
+    );
+    expect(onUrlUpdate).not.toHaveBeenCalled();
+  });
+
   it('does not handle navigation shortcuts outside the dialog content', () => {
     renderShell();
 
