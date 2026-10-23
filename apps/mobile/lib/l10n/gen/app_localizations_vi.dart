@@ -841,6 +841,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
 
   @override
+  String get assistantMessageDelivered => 'Đã gửi';
+
+  @override
+  String get assistantMessageRead => 'Đã đọc';
+
+  @override
   String get assistantMessageActionsTitle => 'Thao tác tin nhắn';
 
   @override
@@ -949,7 +955,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSendAction => 'Gửi tin nhắn';
 
   @override
-  String get assistantSettingsTitle => 'Cài đặt Mira';
+  String get assistantSettingsTitle => 'Cài đặt Trợ lý';
 
   @override
   String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';
@@ -7193,6 +7199,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
 
   @override
+  String settingsTimezoneRateLimitedDetails(Object details) {
+    return 'Chi tiết giới hạn: $details';
+  }
+
+  @override
+  String get settingsTimezoneRateLimitedChallenge => 'Phản hồi cho biết có thử thách bảo mật của Vercel. Vui lòng liên hệ hỗ trợ nếu tình trạng này tiếp diễn.';
+
+  @override
+  String get settingsTimezoneRateLimitedUpstream => 'Phản hồi này không xác định giới hạn của ứng dụng. Phản hồi có thể đến từ dịch vụ thượng nguồn hoặc lớp biên mạng; chưa rõ nguồn chính xác.';
+
+  @override
+  String settingsTimezoneRateLimitedRetryAfter(int seconds) {
+    return 'Máy chủ yêu cầu chờ $seconds giây trước khi thử lại.';
+  }
+
+  @override
   String get settingsTimezoneRetry => 'Thử lại múi giờ';
 
   @override
@@ -10650,4 +10672,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get feedbackDetailsRequired => 'Nhập chi tiết từ 1–8000 ký tự.';
+
+  @override
+  String get profileMediaNetworkError => 'Không thể kết nối. Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get profileMediaUploadExpired => 'Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.';
 }

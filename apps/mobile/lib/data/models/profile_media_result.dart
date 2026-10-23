@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+import 'package:mobile/core/media/profile_media_optimizer.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 
@@ -12,6 +14,8 @@ enum ProfileMediaFailureKind {
   unavailable,
   receipt,
   file,
+  network,
+  expired,
   unknown,
 }
 
@@ -21,6 +25,18 @@ enum ProfileMediaTarget { avatar, banner, removeAvatar, removeBanner }
 class ProfileMediaFailure {
   ProfileMediaFailure.capture(Object error)
     : kind = switch (error) {
+        PlatformException(
+          code: 'camera_access_denied' ||
+              'photo_access_denied' ||
+              'camera_access_restricted' ||
+              'photo_access_restricted',
+        ) =>
+          ProfileMediaFailureKind.authorization,
+        ProfileMediaSizeException() => ProfileMediaFailureKind.size,
+        ApiException(failureKind: ApiFailureKind.transport) =>
+          ProfileMediaFailureKind.network,
+        ApiException(code: 'PROFILE_UPLOAD_TICKET_EXPIRED') =>
+          ProfileMediaFailureKind.expired,
         ApiException(code: 'PROFILE_UPLOAD_RECEIPT_INVALID') =>
           ProfileMediaFailureKind.receipt,
         ApiException(statusCode: 413) => ProfileMediaFailureKind.size,

@@ -40,6 +40,7 @@ class _SettingsHarness {
     GoRouterWidgetBuilder? workspaceSecretsBuilder,
   }) {
     whenListen(auth, accounts.stream, initialState: _account('user'));
+    when(() => auth.isClosed).thenReturn(false);
     whenListen(workspaces, scopes.stream, initialState: _workspace('ws'));
     whenListen(
       timezone,

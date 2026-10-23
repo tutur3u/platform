@@ -50,7 +50,7 @@ function fixture(t, overrides = {}) {
   const contracts = [
     [
       '.github/workflows/supabase-staging.yaml',
-      '70937258932e55cf611c2896b788da0392c09717',
+      'd880c279f37b63628706b195e5397be1cf25acd5',
     ],
     [
       'scripts/ci/record-deployment-marker.ts',
@@ -415,11 +415,14 @@ for (const [label, event] of [
     'production planner',
     {
       event_name: 'workflow_run',
+      repository: 'example/platform',
       event: {
         workflow_run: {
           conclusion: 'success',
           name: 'Production Deployment Planner',
           head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
         },
       },
     },
@@ -428,11 +431,14 @@ for (const [label, event] of [
     'main staging',
     {
       event_name: 'workflow_run',
+      repository: 'example/platform',
       event: {
         workflow_run: {
           conclusion: 'success',
           name: 'Supabase Staging Migration',
           head_branch: 'main',
+          event: 'workflow_run',
+          head_repository: { full_name: 'example/platform' },
         },
       },
     },
@@ -454,11 +460,14 @@ for (const [label, event] of [
     'staging on production',
     {
       event_name: 'workflow_run',
+      repository: 'example/platform',
       event: {
         workflow_run: {
           conclusion: 'success',
           name: 'Supabase Staging Migration',
           head_branch: 'production',
+          event: 'workflow_run',
+          head_repository: { full_name: 'example/platform' },
         },
       },
     },
@@ -467,11 +476,14 @@ for (const [label, event] of [
     'planner on main',
     {
       event_name: 'workflow_run',
+      repository: 'example/platform',
       event: {
         workflow_run: {
           conclusion: 'success',
           name: 'Production Deployment Planner',
           head_branch: 'main',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
         },
       },
     },
@@ -480,11 +492,110 @@ for (const [label, event] of [
     'unexpected successful workflow',
     {
       event_name: 'workflow_run',
+      repository: 'example/platform',
       event: {
         workflow_run: {
           conclusion: 'success',
           name: 'Other workflow',
           head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
+        },
+      },
+    },
+  ],
+  [
+    'fork planner named after the producer',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Production Deployment Planner',
+          head_branch: 'production',
+          event: 'pull_request',
+          head_repository: { full_name: 'attacker/platform' },
+        },
+      },
+    },
+  ],
+  [
+    'fork head repository planner',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Production Deployment Planner',
+          head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'attacker/platform' },
+        },
+      },
+    },
+  ],
+  [
+    'same-repository pull request planner',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Production Deployment Planner',
+          head_branch: 'production',
+          event: 'pull_request',
+          head_repository: { full_name: 'example/platform' },
+        },
+      },
+    },
+  ],
+  [
+    'fork staging named after the producer',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Supabase Staging Migration',
+          head_branch: 'main',
+          event: 'pull_request',
+          head_repository: { full_name: 'attacker/platform' },
+        },
+      },
+    },
+  ],
+  [
+    'fork head repository staging',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Supabase Staging Migration',
+          head_branch: 'main',
+          event: 'workflow_run',
+          head_repository: { full_name: 'attacker/platform' },
+        },
+      },
+    },
+  ],
+  [
+    'same-repository pull request staging',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Supabase Staging Migration',
+          head_branch: 'main',
+          event: 'pull_request',
+          head_repository: { full_name: 'example/platform' },
         },
       },
     },

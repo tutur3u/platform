@@ -44,6 +44,25 @@ localization changes.
   mobile satellite origin. It verifies canonical route ownership and ensures
   each satellite proxy preserves bearer-authenticated mobile API access.
 
+## Layout And Spacing
+
+- Build page bodies with the `core/layout/layout.dart` primitives
+  (`AppPageListView`, `AppPageScrollView`, `SliverAppPage`, `AppPageBody`) and
+  `AppSpacing`/`AppLayout` tokens. Do not hand-write page gutters, wrap a
+  scrollable in `ResponsiveWrapper`, or add ad-hoc scroll-end constants to
+  `MediaQuery.paddingOf(context).bottom`.
+- Use `AppPageBody.fullBleed` only for listed screen types: calendar views,
+  kanban/board and planner canvases, chat/Assistant threads and Live, Meet call
+  stages, and media/map viewers or full-canvas editors.
+- Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
+  the owning feature. Expanded tablet/desktop windows use the leading
+  `ShellNavigationRail`, which must keep the mini-app Back item. Switching
+  dock and rail must not change the shell body's tree shape; regressions
+  assert a visited root tab is not remounted, because routed pages survive
+  through the navigator key.
+- See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
+  and its layout/rail regression tests.
+
 ## Overlays And Shell
 
 - Do not call `shad.openDrawer`, `shad.showDialog` for full-screen content, or
@@ -54,6 +73,14 @@ localization changes.
   or refresh on mount instead of blocking the tap on pre-open network work.
 - Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
   variants are for compact inline affordances.
+
+- Settings rows use `SettingsRowLayout` and `SettingsTile` (re-exported from
+  `settings_widgets.dart`) for consistent heading/icon insets, text slots and
+  trailing controls. Stack multiple actions in the fixed 44px trailing column;
+  keep each action's localized tooltip and touch target. Consume inherited dock
+  padding inside scroll content. Verify geometry and scroll-end clearance with
+  `settings_compact_navigation_test.dart`; presentation changes must not alter
+  timezone cubits or repositories.
 
 ## Task Board
 
@@ -112,6 +139,15 @@ localization changes.
   shapes, shell publication and subscription handshakes. Fixture success does
   not establish installed-device, provider or customer delivery.
 
+- Assistant receipt labels are presentation evidence: only a saved-user identity
+  transition permits Delivered; following response content permits Read. Never
+  infer delivery from a spinner ending, a local timestamp, or restored history
+  without acknowledgement provenance. Keep dock geometry tests on the actual
+  persistent shell dock, and exercise streaming follow with large output chunks
+  and a reader scrolled into history. Coalesced post-frame followers must request
+  a visual update when scheduled while idle; adding a post-frame callback alone
+  does not request a frame. Cover idle resume as well as content-driven rebuilds.
+
 ### Calendar description display
 
 Calendar descriptions are arbitrary provider HTML, Markdown or plain text, not
@@ -134,3 +170,14 @@ is not installed-device or provider delivery evidence.
 - Use `mail_notification_privacy_test.dart` and existing push/dismissal tests.
   Device arrival and timing require separately authorized device fixtures; see
   [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
+
+### Profile banner capability uploads
+
+Reuse the existing profile repository and signed banner receipt flow; retain the
+operation UUID through upload/finalize retries. Crop banners at 3:1 before the
+shared optimizer, keep placeholder/loading/error geometry stable, and reload the
+actor-owned profile after mutations. Classify optimizer size exceptions separately
+from invalid images and signed PUT ticket failures separately from API permission
+denials. See the mobile profile banner section in
+`apps/docs/platform/features/user-management.mdx` and the focused banner lifecycle,
+picker, image-state and repository failure-contract tests.

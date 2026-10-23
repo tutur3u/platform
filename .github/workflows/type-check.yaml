@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
+permissions:
+  contents: read
+
 jobs:
   type-check:
     name: Type Check
@@ -75,7 +78,7 @@ jobs:
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Test inline Type Check preflight
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
@@ -91,6 +94,27 @@ jobs:
       - name: Install dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      # --frozen-lockfile accepts orphan entries that a plain install prunes,
+      # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
+      - name: Verify bun.lock is canonical
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        shell: bash
+        run: |
+          # A missing lockfile would be regenerated as an untracked file that
+          # `git diff` ignores, so require a tracked one before comparing.
+          if [ ! -f bun.lock ] || ! git ls-files --error-unmatch bun.lock >/dev/null 2>&1; then
+            echo "::error file=bun.lock::bun.lock must be committed."
+            exit 1
+          fi
+          bun install --lockfile-only
+          # Assign separately so a failing `git status` aborts under `-e`.
+          lock_status="$(git status --porcelain -- bun.lock)"
+          if [ -n "$lock_status" ]; then
+            git diff --stat HEAD -- bun.lock
+            echo "::error file=bun.lock::bun.lock is not canonical. Run 'bun install' locally and commit the resulting bun.lock."
+            exit 1
+          fi
 
       - name: Build workspace dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'

@@ -14,7 +14,9 @@ export async function GET(
   const { runId } = await context.params;
 
   try {
-    return NextResponse.json(await listDevboxRunLogs(runId));
+    return NextResponse.json(
+      await listDevboxRunLogs({ actorId: authorization.user.id, runId })
+    );
   } catch (error) {
     return createDevboxRouteErrorResponse(error, 'Failed to list run logs');
   }

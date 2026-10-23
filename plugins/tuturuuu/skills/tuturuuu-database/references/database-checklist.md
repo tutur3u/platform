@@ -29,5 +29,10 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 ## Verification
 
 - Run local migration checks or focused pgTAP tests where available.
+- Verify role contracts against the full migration chain, including existing
+  grants. Assert intended permission denials with SQLSTATE `42501` and exercise
+  supported RPCs as their caller roles; reduced schemas cannot prove this boundary.
+- Clear transaction-local JWT claims before privileged signup fixture inserts.
+  `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
 - Run focused API/helper tests for affected code.
 - Run `bun check` for TypeScript changes.

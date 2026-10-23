@@ -112,7 +112,7 @@ class AssistantComposerDock extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               style: const TextStyle(fontSize: 16, height: 1.25),
-              minLines: focusNode.hasFocus ? 3 : 1,
+              minLines: 1,
               maxLines: 5,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,

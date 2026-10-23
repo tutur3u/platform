@@ -1,0 +1,184 @@
+---
+title: 'Mobile design system'
+description: 'Spacing tokens, page primitives, the full-bleed allowlist, breakpoints, and the adaptive shell for apps/mobile.'
+---
+
+The Flutter app uses one layout foundation so every screen shares the same
+gutters, section rhythm, dock clearance, and wide-screen behavior. Import it
+from `package:mobile/core/layout/layout.dart`.
+
+## Rule
+
+Build page bodies with the page primitives. Use the full-bleed variant only for
+the screen types in the [allowlist](#full-bleed-allowlist). Do not hand-write
+page gutters (`EdgeInsets.fromLTRB(16, …)`), wrap a scrollable in
+`ResponsiveWrapper`, or add `N + MediaQuery.paddingOf(context).bottom` for the
+scroll end in new or substantially edited screens.
+
+## Breakpoints
+
+`DeviceClass` follows the Material 3 window-size classes
+(`core/responsive/breakpoints.dart`):
+
+| Class | Width | Typical devices |
+| --- | --- | --- |
+| compact | < 600dp | phones (portrait and most landscape) |
+| medium | 600–839dp | portrait tablets, foldables |
+| expanded | >= 840dp | landscape tablets, laptops, desktops |
+
+Page primitives resolve the class from the width the page actually receives,
+so a page beside the shell rail uses the gutters for its own available width.
+
+## Tokens
+
+`layout_tokens.dart` defines the only spacing values a page should need.
+
+| Token | Value |
+| --- | --- |
+| `AppSpacing` | 2, 4, 8, 12, 16, 20, 24, 32, 40 (`xxs` … `huge`) |
+| `AppLayout.gutter` | 16 compact, 24 medium, 32 expanded |
+| `AppLayout.pageTop` | 8 below the shell header |
+| `AppLayout.scrollEndGap` / `boxEndGap` | 24 / 16 after dock clearance |
+| `AppLayout.sectionGap` | 24 between grouped sections |
+| `AppLayout.sectionCaptionGap` / `sectionCaptionInset` | 8 / 16 |
+| `AppLayout.itemGap` | 12 between stacked cards |
+| `AppLayout.rowMinHeight` / `rowCompactMinHeight` | 56 / 48 |
+| `AppLayout.rowHorizontalPadding`, `rowLeadingSize`, `rowLeadingGap` | 16, 32, 12 |
+| `AppLayout.rowDividerInset` | 60 (aligns dividers with row text) |
+| `AppRadius` | 8, 12, 16, card 22, sheet 24, dock 26, pill |
+
+Max content width (gutters included) per `AppPageKind`:
+
+| Kind | Use | medium | expanded |
+| --- | --- | --- | --- |
+| `root` | root destinations and dashboards | 1120 | 1440 |
+| `detail` (default) | mini-app lists and detail screens | 600 | 720 |
+| `form` | auth, create and edit forms | 480 | 480 |
+| `reading` | documents, notes, long text | 640 | 680 |
+
+Compact screens never constrain width. `ResponsivePadding` is a compatibility
+layer that derives from these tokens; its names and values are unchanged.
+
+## Page primitives
+
+| Widget | Use |
+| --- | --- |
+| `AppPageListView(children:)` / `.builder` | Standard scrolling page. |
+| `AppPageScrollView(slivers:)` | Sliver page; all slivers share one set of insets. |
+| `SliverAppPage(sliver:)` | One padded sliver inside a hand-built `CustomScrollView` (pinned headers, `SliverFillRemaining`). Use `includeTop` / `includeBottom` for middle slivers. |
+| `AppPageBody(child:)` | Non-scrolling body, such as an editor or a pane layout. |
+| `AppPageBody.fullBleed(child:)` | Allowlisted canvases only. |
+| `AppPageInsets.resolve` / `.of` | Pure resolver behind all of the above. |
+
+Every primitive:
+
+- applies the device-class gutter plus horizontal safe areas;
+- centers content at the page kind's max width by **padding**, so the
+  scrollable, scrollbar, and drag area stay full width;
+- adds `AppLayout.pageTop` plus an optional `topInset`. Root pages pass
+  `floatingShellHeaderInset(context)`;
+- reserves the shell's dock clearance (`MediaQuery.padding.bottom`, published
+  by `FloatingShellDock`) plus the end gap. Pass
+  `consumeBottomClearance: false` when an inner scrollable should run beneath
+  the dock and read the clearance itself.
+
+Every primitive also removes the insets it consumes (horizontal safe areas,
+and the bottom clearance when consumed) from its children's `MediaQuery`. A
+legacy `SafeArea` or `MediaQuery.paddingOf(context).bottom` inside a migrated
+page therefore adds nothing instead of counting the dock clearance twice.
+`SliverAppPage(includeBottom: false)` leaves the bottom clearance for the
+sliver that consumes it.
+
+## Grouped sections
+
+`AppGroupedSection(caption:, footer:, children:)` renders a muted caption, a
+heavily rounded translucent `AppGroupedCard`, inset hairline dividers, and an
+optional muted footer. Use `AppGroupedSection.spaced` in a list to add
+`AppLayout.sectionGap` after the section. The card only groups and divides
+rows. Row layout belongs to the owning feature (for example `SettingsTile`).
+Cards use theme `surface` / `outlineVariant` and become solid in high-contrast
+mode.
+
+## Full-bleed allowlist
+
+Only these screen types may use `AppPageBody.fullBleed` or skip the gutters:
+
+- calendar timelines, month, and year grids;
+- task board kanban, board timeline, and planner/gantt canvases;
+- chat and Assistant conversation threads, composers, and Assistant Live;
+- Meet call stages and other live video surfaces;
+- media, document-page, and map viewers, plus full-canvas editors.
+
+Full-bleed still honors horizontal safe areas. Unless the canvas reads the
+dock clearance itself (`consumeBottomClearance: false`), it also stops above
+the dock. Headers, toolbars, and empty/error states inside a full-bleed screen
+should still use the gutter token.
+
+## Adaptive shell
+
+`shellNavigationModeFor(size)` in
+`features/shell/view/shell_navigation_rail.dart` picks the navigation mode:
+
+- **Dock**: phones, including landscape phones, and portrait tablets. The
+  floating bottom dock owns destinations and in-app Back.
+- **Rail**: width >= 840dp and shortest side >= 600dp (landscape tablets,
+  laptops, desktops). `ShellNavigationRail` shows the same destinations on
+  the leading edge, including the mini-app Back item. The dock keeps only
+  the Assistant/Notes composer and page actions; an idle dock paints no
+  surface. Scroll content reserves dock clearance only while the dock shows a
+  composer slot or dock actions for the current route. Rail destinations show
+  their existing localized label as a hover-only tooltip on pointer devices.
+
+Both modes keep a single top navbar title with no Back button, system Back
+and deep links (handled by `ShellPage` independently of the layout), and
+scroll clearance.
+
+`AdaptiveShellFrame` builds the same tree in both modes: a `Stack` whose
+first, keyed child holds the body. Rotation (for example an iPad going from
+820x1180 to 1180x820), a window resize across either threshold, or an
+immersive/fullscreen toggle only adds or removes the rail, so the dock and
+every root tab keep their state. Routed pages survive through GoRouter's
+navigator key, but offstage root tabs do not, so regressions must assert on a
+visited root tab. The rail paints after the body because routed pages can
+contain `BlockSemantics`, which would otherwise drop the rail from the
+accessibility tree.
+
+## Layout audit (October 2026)
+
+Before this foundation:
+
+- 179 feature files hard-coded 16/20/24dp page insets. 103 of them set
+  horizontal gutters without `ResponsivePadding`, so tablets and desktops got
+  phone gutters. Phones mixed 16 and 20dp (for example the Documents list
+  versus the document editor).
+- Scroll ends used at least eight different constants (16, 20, 24, 28, 32,
+  40, 96, 108) on top of `MediaQuery.paddingOf(context).bottom`.
+- 38 files wrapped scrollables in `ResponsiveWrapper`, which narrowed the
+  scroll and drag area on wide screens.
+- Device classes came from the window width, which is wrong beside a rail.
+- `ShellPage` documented a rail and sidebar, but it always rendered the
+  floating dock.
+- Root pages added `floatingShellHeaderInset` with ad-hoc +8/+10 offsets.
+
+Migrated so far: Documents list (`AppPageListView`), document editor
+(`AppPageBody`, reading), and Calendar (`AppPageBody.fullBleed`). The
+remaining screens move to the primitives in a later sweep.
+
+## Regression coverage
+
+- `test/core/layout/layout_tokens_test.dart`: token derivation,
+  `ResponsivePadding` compatibility, and the inset resolver.
+- `test/core/layout/app_page_test.dart`: gutters per device class, max-width
+  centering, dock clearance, full-bleed opt-out, slivers, and grouped
+  sections. `app_page_media_query_test.dart` covers the consumed-inset
+  removal.
+- `test/features/documents/view/documents_layout_test.dart`: the migrated
+  Documents list and editor.
+- `test/features/shell/view/shell_navigation_rail_test.dart` and
+  `shell_rail_navigation_test.dart`: rail geometry, RTL, Back reachability,
+  system Back, deep links, landscape phones, and body-width gutters.
+  Set `DESIGN_RENDER_DIR` to write phone, tablet, and desktop PNG captures.
+- `shell_rail_layout_test.dart`: no remount across rotation, resize, or
+  immersive toggles, rail-mode clearance, RTL through `ShellPage`, and
+  hover-only tooltips.
+- `shell_viewport_checks.dart`: the dock/rail viewport matrix.

@@ -22,6 +22,106 @@ with the coordinator as its sole writer. Retain append-only decisions/checkpoint
 for history, but report current counts from the board. Workers return receipts;
 they do not concurrently rewrite it. Keep credentials and private payloads out.
 
+## Operating model and budget
+
+This in-repository reference is canonical for Tuturuuu's operating model and
+checker. The user-local shared
+[team operating contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#team-operating-contract)
+is an optional convenience link; the rules below stand on their own.
+
+Run work as a bounded company hierarchy:
+
+| Role | Holder | Owns |
+| --- | --- | --- |
+| Director | The user or Mastermind | Cross-project priorities, admin custody, user-local shared skills |
+| Project integration owner | One orchestrator per project | The only writer of main and release (and other shared refs), the program board, admission and budget reservations, final acceptance |
+| Team lead | A delegated child | One disjoint workset, its workers, its receipts |
+| Worker | A delegated child | Its own work branch and PR only, on an isolated worktree |
+| Reviewer | A child that did not author the change | An independent review receipt |
+
+The ceiling is `agent-allocation: 10` subagents per thread tree, counting every
+descendant. It supersedes the older five-child ceiling. Ten is a ceiling, not a
+target.
+
+- **Declared allocation:** each project declares its allocation as the lowest
+  of:
+  - ten;
+  - the observed runtime/provider limit when its scope is `per-thread-tree`;
+  - resource admission;
+  - any explicit lower allocation.
+
+  `observedRuntimeLimit.unit` must be `per-thread-tree` or `per-parent`.
+  A tree limit caps the allocation. A per-parent limit caps each parent's live
+  direct children, including reserved children, independently of the tree-wide
+  allocation and descendant grants. Record the actual observed scope; do not
+  relabel an ambiguous session limit without evidence.
+
+  Changing a runtime limit is a separate, user-authorized configuration change.
+- **Live agents:** `reserved`, `queued`, `active`, `waiting` (for children) and
+  `blocked` agents occupy a slot. Only drained `done` and `retired` agents
+  release theirs. The owner reserves capacity before a launch, so
+  simultaneous leads cannot oversubscribe the next free slot.
+- **Grants:** the owner grants each lead an explicit remaining budget out of
+  that allocation. A lead's children, including nested leads with their own
+  grants, must fit inside the grant. A nested lead never receives ten new
+  slots.
+- **Hierarchy depth:** at most three subagent levels below the owner. Only
+  leads delegate.
+- **Enforcement:** the T3 runtime does not enforce ten, and no live session is
+  claimed to support ten. The budget is a contract plus this checker; a local
+  checker cannot configure or enforce T3's runtime limit. Declare live
+  allocations, including `observedRuntimeLimit: { limit, unit }`, in the
+  program's ignored `allocation.json` (shape: [example](agent-allocation.example.json))
+  and check it:
+
+  ```bash
+  node scripts/ci/check-agent-budget.js tmp/agent-coordination/<program>/allocation.json
+  ```
+
+  The checker rejects:
+  - more live agents than the allocation, so 11 is rejected;
+  - an allocation above AGENTS.md or an observed tree limit, direct children
+    above an observed per-parent limit, or a missing/unknown runtime scope;
+  - grants that oversubscribe the owner or a lead;
+  - unbounded nesting;
+  - live orphans under finished leads;
+  - a reviewer that is, or descends from, its author;
+  - any subagent that claims integration writes.
+
+  With no arguments it checks that AGENTS.md, this reference and the docs page
+  declare the same allocation. The docs audit (`node scripts/docs-audit.js`, run by
+  the Documentation and SEO contracts workflow) runs it, and the root script test
+  suite runs its tests.
+
+  Passing proves only the declared structure. It does not prove what a live
+  thread tree actually ran.
+- **Resource admission is separate from agent count.** ttr validation lanes,
+  disk, CPU and RAM decide how much heavy WIP may run. `validationLanes` and
+  `heavyValidation` record that limit, and the checker rejects heavy work
+  beyond the lanes.
+  - Shrink active WIP when the queue is long or free disk is low.
+  - Admit agents only for real ready work. Never spawn busywork to fill slots.
+- **Publication:**
+  - Isolated workers and leads commit and push only their own verified work
+    branch, or open a PR, under the completion contract below.
+  - Main, release and other shared refs move only through the project
+    integration owner as sole writer.
+  - Shared-checkout workers hand patches to that owner rather than racing its
+    index.
+  - Publish from the worker's own worktree, so the root checkout's index never
+    blocks branch publication.
+- **Receipts:** leads return compact receipts with PR, full head SHA, tests run
+  with results, residual risk, an explicit blocker (or `none`), and the resume
+  event. The reviewer must not be the author.
+- **Worktree retirement:** once a child's result is on a pushed branch, the
+  parent removes that child's worktree. For recovery, keep the pushed branch
+  and a receipt rather than the worktree.
+- **No new standing machinery:** create no new permanent controller, timer or
+  wake, and never revive a retired one. Use native result/PR watches and the
+  existing authorized cadence.
+- **Security:** follow [the security default](security-default.md).
+  Security-sensitive changes need an independent review before integration.
+
 ## Worker contract
 
 Every new assignment or substantive continuation contains:
@@ -68,17 +168,30 @@ concrete next assignment. A queued validation is not a pass; never duplicate it
 or edit its frozen source. One bounded remote snapshot per wake replaces polling.
 Native PR watches and the authorized schedule provide the next wake.
 
+Send scope, priority, collision and safety corrections to an active child with
+`t3_thread_send(mode="steer")`, and confirm `delivery: "steered"`; `auto` can queue
+behind the running turn. On each wake, list child queues: keep queued text in the
+ledger, cancel only proven-redundant items, and steer still-relevant corrections
+once. Hold one coalesced correction for a child that is not yet steerable. Follow
+the [steering contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#steering-active-children).
+
+Completion notifications can be lost. On every substantive wake, audit child
+results and persist processed receipts per the shared
+[child-result audit](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#audit-child-results-on-every-substantive-wake);
+relay it in briefs for children that delegate.
+
 ## Autonomy and asynchronous waits
 
 Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
-when available. Its useful-delegation, five-child ceiling and inheritance rules
-apply within the current task's authority, not as permission to restart retired
-controllers or broaden release access. Give every child the accessible policy,
+when available. Its useful-delegation and inheritance rules apply within the
+current task's authority, not as permission to restart retired controllers or
+broaden release access. Its ceiling of ten applies through the declared project
+allocation and checker above. Give every child the accessible policy,
 project instructions, latest custody override and remaining task-tree budget;
 relay permitted pinned bytes when paths are unavailable across machines/providers.
 
 Portable fallback: use useful children whenever separable ready work exists,
-within the smaller of five concurrent children and actual runtime/resource limits.
+within the smaller of the remaining granted budget and actual runtime/resource limits.
 Assign disjoint paths and keep one integration writer. Drain results and admit
 independent real backlog before arming a native PR watch; then end the turn as
 required. A queued heavy gate still allows independent reading, diagnosis,
@@ -109,6 +222,34 @@ independent review, following the
 Treat relative plan size and reset credit as planning inputs, not measured
 headroom. Keep Claude and Antigravity for task fit, parallel capacity and
 reviewer independence, and do not migrate healthy running writers.
+
+Give each lane a bounded end-to-end chunk under the shared
+[decision rights](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#autonomous-ownership-and-decision-rights),
+and record reusable lessons through
+[shared learning](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-learning-and-supervisory-support).
+Tuturuuu procedures that follow from them:
+
+- Send follow-up scope as a task-bound message (one that returns a task id) or a
+  fresh delegated round. A queued follow-up turn without a task id can fail, for
+  example on a usage limit, without notifying the parent, so reconcile such turns
+  explicitly.
+- To move a child that waits only on a usage reset: save and cancel its queued
+  old-account runs, confirm the native session is idle and preserve uncommitted
+  files, configure the new account, send a task-bound resume with a state
+  readback, then confirm the run is running on the new provider. A configured
+  account alone is not a resumed child.
+- Early merge needs an independent review accept plus an exact-head local or
+  admitted-Linux equivalent of every job the change triggers, recorded with
+  commands, versions and exit codes, then a head-checked merge. App builds run on
+  an admitted Linux host, never this Mac. Database-contract jobs wait for CI unless
+  an isolated database daemon is admitted. Never forge or skip a required check.
+- Stage toolchains for validation in project-private paths and call them by
+  absolute path. Installing under an nvm major alias silently changes the default
+  runtime for every shell on the host.
+- A failed-jobs-only rerun cannot reuse artifacts that its successful producer
+  uploaded in an earlier attempt. `scripts/ci/workflow-failed-rerun-artifacts.test.js`
+  requires every workflow that reruns another run to declare its target and mode;
+  partial reruns may only target workflows without artifact handoff.
 
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
@@ -288,3 +429,33 @@ credential handling and production gates. Do not import Cursor-only Task/Graphit
 commands, a cloud-first policy, mandatory cross-model review, an absolute ban on
 coordinator implementation or third-party scripts. Managed plugin caches remain
 installer-owned; this reference ships through the canonical Tuturuuu plugin.
+
+## Quota-aware delegation
+
+Use the existing `packages/agent-quota` router and its
+[runbook](../../../../../apps/docs/build/development-tools/agent-quota-routing.mdx)
+for provider headroom. Pass the current `orchestrator_capabilities` response via
+`--catalog-stdin` when ACP transport is unavailable. Prefer `--snapshots-only`
+for cached provider usage plus active T3 reservations without transcript reads.
+Availability is not quota: stale or missing usage/reset evidence is UNKNOWN.
+Near/exhausted pools drain; never infer recovery from an elapsed reset. Keep
+provider instance IDs distinct from display aliases and deduplicate only with
+exposed opaque account identity. These read-only recommendations are not atomic
+reservation locks; the dispatch owner still coordinates concurrent launches.
+
+The same router now offers opt-in single-shot `admit`, `observe`, thread-scoped
+`switch-lease`, read-only `switch-check`, and `handover-check` commands for every
+orchestrator on the host. Follow the runbook's JSON contract and the installed
+[shared-account handover guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover)
+and [planning preference guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+Accounts are shared; only a thread's transition is leased. Preference is planning
+input, never quota. These hooks require owner integration and independent review;
+they do not install automatic failover, spend reset credits, or create successors.
+
+For unbound `thread_send` follow-up failures, use read-only `reconcile-children
+--parent <threadId>` and preserve original-task versus latest-turn evidence.
+Never duplicate an already queued resume. Pass the reported run/failure identity
+to `admit` recovery input for idempotent admission; provider-native delivery of
+all descendant terminal failures remains a separate T3 integration gap.
+
+Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only child waits under the [shared rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation). Preserve queued text and dirty files, cancel old queued selections, require fresh admission and the thread lease, and verify a task-bound running continuation. Configuration alone is not successful resumption.

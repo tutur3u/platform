@@ -5,6 +5,7 @@ const {
   claimNextDevboxRunMock,
   completeDevboxRunMock,
   heartbeatDevboxRunnerMock,
+  readDevboxRunControlMock,
   recordDevboxRunEventsMock,
   shutdownDevboxRunnerMock,
 } = vi.hoisted(() => ({
@@ -12,6 +13,7 @@ const {
   claimNextDevboxRunMock: vi.fn(),
   completeDevboxRunMock: vi.fn(),
   heartbeatDevboxRunnerMock: vi.fn(),
+  readDevboxRunControlMock: vi.fn(),
   recordDevboxRunEventsMock: vi.fn(),
   shutdownDevboxRunnerMock: vi.fn(),
 }));
@@ -24,6 +26,7 @@ vi.mock('@/lib/devboxes/agent-store', () => ({
   claimNextDevboxRun: claimNextDevboxRunMock,
   completeDevboxRun: completeDevboxRunMock,
   heartbeatDevboxRunner: heartbeatDevboxRunnerMock,
+  readDevboxRunControl: readDevboxRunControlMock,
   recordDevboxRunEvents: recordDevboxRunEventsMock,
   shutdownDevboxRunner: shutdownDevboxRunnerMock,
 }));
@@ -207,6 +210,46 @@ describe('devbox agent routes', () => {
       capabilities
     );
   });
+  it('accepts an optional advisory execution mode and isolation summary', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    const capabilities = {
+      executionMode: 'judge-only',
+      isolation: {
+        checkedAt: '2026-10-23T00:00:00.000Z',
+        dedicatedUser: true,
+        privateTokenDirectory: true,
+        protectedService: true,
+        dedicatedDockerSocket: true,
+        gvisorDefault: true,
+        noGeneralDockerGroup: true,
+      },
+    };
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
+  it.each([
+    { executionMode: 'root' },
+    { executionMode: true },
+    { isolation: { dedicatedUser: 'yes' } },
+    { isolation: { tokenValue: true } },
+    { isolation: { checkedAt: 'x'.repeat(101) } },
+    { isolation: [] },
+  ])(
+    'rejects malformed execution mode or isolation reports: %j',
+    async (capabilities) => {
+      enableDevboxAgentApi();
+      mockAuthorizedRunner(true);
+      expect((await heartbeat(createRequest({ capabilities }))).status).toBe(
+        400
+      );
+      expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    }
+  );
   it.each([
     { ready: 'true', languages: ['python'], environments: 0 },
     { ready: true, languages: ['unknown'], environments: 0 },
@@ -304,8 +347,28 @@ describe('devbox agent routes', () => {
       status: 'succeeded',
     });
     await expect(response.json()).resolves.toMatchObject({
+      cancelRequested: false,
       events: 1,
       message: 'events accepted',
+    });
+    // A completed run needs no stop check.
+    expect(readDevboxRunControlMock).not.toHaveBeenCalled();
+  });
+
+  it('reports a remote stop request to the claiming runner', async () => {
+    readDevboxRunControlMock.mockResolvedValue({ cancelRequested: true });
+
+    const response = await events(createRequest({ runId: 'run-1' }));
+
+    expect(response.status).toBe(200);
+    expect(recordDevboxRunEventsMock).not.toHaveBeenCalled();
+    expect(readDevboxRunControlMock).toHaveBeenCalledWith({
+      runId: 'run-1',
+      runnerId: 'runner-1',
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      cancelRequested: true,
+      events: 0,
     });
   });
 });

@@ -3,6 +3,7 @@ import {
   readdir,
   readFile,
   rm,
+  symlink,
   utimes,
   writeFile,
 } from 'node:fs/promises';
@@ -14,7 +15,6 @@ import {
   defaultResourceConfig,
   laneResourceConfig,
   readResourceConfig,
-  resourceLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
 import { setupResources } from './resources-setup';
@@ -30,6 +30,7 @@ import {
   bunRunSeparatorExpected,
   entry,
   exists,
+  jsLiteral,
   privateFixtures,
   until,
 } from './resources-test-fixtures';
@@ -51,6 +52,12 @@ afterEach(async () => {
   host.cpus = 10;
 });
 describe('lane policy', () => {
+  it('serializes generated source literals without HTML or separator characters', () => {
+    expect(jsLiteral('</script>\u2028\u2029')).toBe(
+      '"\\u003c\\u002fscript\\u003e\\u2028\\u2029"'
+    );
+  });
+
   it('preserves Bun run separators when clamping the underlying Turbo command', () => {
     expect(
       limitCommand(
@@ -59,36 +66,6 @@ describe('lane policy', () => {
         defaultResourceConfig()
       )
     ).toEqual(bunRunSeparatorExpected);
-  });
-  it('reads legacy configs as one lane and rejects invalid counts', async () => {
-    const path = await home();
-    const old = defaultResourceConfig();
-    delete old.validationLanes;
-    await atomicJson(join(path, 'config.json'), old);
-    expect(resourceLanes((await readResourceConfig(path))!)).toBe(1);
-    for (const lanes of [0, 3, 1.5, '2', null]) {
-      await atomicJson(join(path, 'config.json'), {
-        ...old,
-        validationLanes: lanes,
-      });
-      await expect(readResourceConfig(path)).rejects.toThrow(
-        'Invalid resource configuration.'
-      );
-    }
-    for (const raw of [
-      '{"private-sentinel":',
-      JSON.stringify({ ...old, validationLanes: 'private-sentinel' }),
-    ]) {
-      await writeFile(join(path, 'config.json'), raw);
-      const result = await launch(path, ['status', '--json']).done;
-      expect(result.code).toBe(1);
-      expect(result.err.trim()).toBe(
-        'Invalid resource configuration. Inspect config.json and correct its JSON and supported field values.'
-      );
-      expect(result.err).not.toContain('private-sentinel');
-    }
-    await rm(join(path, 'config.json'));
-    expect(await readResourceConfig(path)).toBeUndefined();
   });
   it('splits the aggregate worker budget and clamps explicit tool flags', () => {
     const config = {
@@ -108,12 +85,13 @@ describe('lane policy', () => {
       'test',
       '--jobs=1',
     ]);
-    expect(() => laneResourceConfig({ ...config, vitestWorkers: 1 })).toThrow(
-      'budget'
-    );
-    expect(() => laneResourceConfig({ ...config, vitestWorkers: 64 })).toThrow(
-      'budget'
-    );
+    // Lanes never receive zero workers, and oversized totals clamp to the host.
+    expect(
+      laneResourceConfig({ ...config, vitestWorkers: 1 }).vitestWorkers
+    ).toBe(1);
+    expect(
+      laneResourceConfig({ ...config, vitestWorkers: 64 }).vitestWorkers
+    ).toBe(1);
   });
   it('preserves private shell contents and backups across lane setup and dry-run', async () => {
     const path = await home(1);
@@ -155,6 +133,26 @@ describe('lane policy', () => {
         original
       );
   });
+  it('refuses a shell configuration symlink without modifying its target', async () => {
+    const path = await home(1);
+    const shells = join(path, 'shells');
+    await mkdir(shells);
+    const target = join(path, 'custom-shell');
+    const original = 'export CUSTOM=private-fixture\n';
+    await writeFile(target, original);
+    await symlink(target, join(shells, '.zshrc'));
+    const previous = process.env.ZDOTDIR;
+    process.env.ZDOTDIR = shells;
+    try {
+      await expect(
+        setupResources({ home: path, roots: [], shell: 'zsh' })
+      ).rejects.toThrow();
+      expect(await readFile(target, 'utf8')).toBe(original);
+    } finally {
+      if (previous === undefined) delete process.env.ZDOTDIR;
+      else process.env.ZDOTDIR = previous;
+    }
+  });
   it('dry-runs without writes, preserves old roots/workers, and rejects bad CLI options', async () => {
     const path = await home(1);
     const before = await readFile(join(path, 'config.json'), 'utf8');
@@ -171,7 +169,7 @@ describe('lane policy', () => {
     expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
     expect(await readdir(path)).toEqual(names);
     for (const args of [
-      ['setup', '--lanes', '3'],
+      ['setup', '--lanes', '9'],
       ['run', '--surprise', '--', 'node', '-e', '0'],
       ['status', '--surprise'],
     ])
@@ -279,7 +277,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     const nested = join(path, 'nested.cjs');
     await writeFile(
       nested,
-      `const fs=require('fs');const cp=require('child_process');const out=cp.execFileSync(${JSON.stringify(join(path, 'bin', 'node'))},['-e','console.log(process.env.VITEST_MAX_WORKERS+":"+process.env.CARGO_BUILD_JOBS)'],{env:{PATH:process.env.PATH},timeout:10000});fs.writeFileSync(${JSON.stringify(join(path, 'nested.result'))},out);`
+      `const fs=require('fs');const cp=require('child_process');const out=cp.execFileSync(${jsLiteral(join(path, 'bin', 'node'))},['-e','console.log(process.env.VITEST_MAX_WORKERS+":"+process.env.CARGO_BUILD_JOBS)'],{env:{PATH:process.env.PATH},timeout:10000});fs.writeFileSync(${jsLiteral(join(path, 'nested.result'))},out);`
     );
     const b = run(path, nested);
     const result = await b.done;
@@ -322,7 +320,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     await held(path, 'c');
     await writeFile(
       runner,
-      `import {mock} from 'bun:test';import * as timers from 'node:timers/promises';import {existsSync,writeFileSync,appendFileSync} from 'node:fs';const base=${JSON.stringify(path)};const name=process.argv[2];const sleep=timers.setTimeout;mock.module('node:timers/promises',()=>({...timers,setTimeout:(ms,...args)=>{if(ms===5000)writeFileSync(base+'/'+name+'.backoff','');return sleep(ms,...args)}}));const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});process.exitCode=await queuedResourceCommand(base,'node',[base+'/'+name+'.cjs'],process.env,false,2,async()=>{appendFileSync(base+'/'+name+'.checked','probe\\n');return {blocked:!existsSync(base+'/pressure.release'),reason:'fixture pressure'}});`
+      `import {mock} from 'bun:test';import * as timers from 'node:timers/promises';import {existsSync,writeFileSync,appendFileSync} from 'node:fs';const base=${jsLiteral(path)};const name=process.argv[2];const sleep=timers.setTimeout;mock.module('node:timers/promises',()=>({...timers,setTimeout:(ms,...args)=>{if(ms===5000)writeFileSync(base+'/'+name+'.backoff','');return sleep(ms,...args)}}));const {queuedResourceCommand}=await import(${jsLiteral(queueModule)});process.exitCode=await queuedResourceCommand(base,'node',[base+'/'+name+'.cjs'],process.env,false,2,async()=>{appendFileSync(base+'/'+name+'.checked','probe\\n');return {blocked:!existsSync(base+'/pressure.release'),reason:'fixture pressure'}});`
     );
     const b = launch(path, ['b'], runner);
     await until(() => exists(join(path, 'b.backoff')));
@@ -450,7 +448,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       const runner = join(path, 'gate.ts');
       await writeFile(
         runner,
-        `import {spawnResourceCommand} from ${JSON.stringify(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';process.exitCode=await spawnResourceCommand('node',[${JSON.stringify(child)}],process.env,true,async(pid)=>{writeFileSync(${JSON.stringify(join(path, 'receipt'))},String(pid));while(!existsSync(${JSON.stringify(join(path, 'receipt.release'))}))await setTimeout(10);});`
+        `import {spawnResourceCommand} from ${jsLiteral(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';process.exitCode=await spawnResourceCommand('node',[${jsLiteral(child)}],process.env,true,async(pid)=>{writeFileSync(${jsLiteral(join(path, 'receipt'))},String(pid));while(!existsSync(${jsLiteral(join(path, 'receipt.release'))}))await setTimeout(10);});`
       );
       const broker = launch(path, [], runner);
       await until(() => exists(join(path, 'receipt')));
@@ -506,7 +504,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     const source = join(path, 'parent.cjs');
     await writeFile(
       source,
-      `const cp=require('child_process');const fs=require('fs');cp.spawn('node',[${JSON.stringify(grandchild)}],{stdio:'ignore'}).unref();const t=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(path, 'parent.release'))})){clearInterval(t);process.exit(0)}},10);fs.writeFileSync(${JSON.stringify(join(path, 'parent.ready'))},'');`
+      `const cp=require('child_process');const fs=require('fs');cp.spawn('node',[${jsLiteral(grandchild)}],{stdio:'ignore'}).unref();const t=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(path, 'parent.release'))})){clearInterval(t);process.exit(0)}},10);fs.writeFileSync(${jsLiteral(join(path, 'parent.ready'))},'');`
     );
     const a = run(path, source);
     await until(() => exists(join(path, 'grandchild.ready')));
@@ -570,14 +568,14 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     const brokerRunner = join(path, 'broker-wait.ts');
     await writeFile(
       brokerRunner,
-      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const job=queuedResourceCommand(${JSON.stringify(path)},'node',[${JSON.stringify(child)}],process.env,true,2);while(process.listenerCount('SIGTERM')<1)await setTimeout(10);writeFileSync(${JSON.stringify(join(path, 'broker.ready'))},'');process.exitCode=await job;`
+      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const job=queuedResourceCommand(${jsLiteral(path)},'node',[${jsLiteral(child)}],process.env,true,2);while(process.listenerCount('SIGTERM')<1)await setTimeout(10);writeFileSync(${jsLiteral(join(path, 'broker.ready'))},'');process.exitCode=await job;`
     );
     const broker = launch(path, [], brokerRunner);
     await until(() => exists(join(path, 'broker.ready')));
     const runner = join(path, 'mutex-wait.ts');
     await writeFile(
       runner,
-      `import {withAdmission} from ${JSON.stringify(resolve('src/cli/resources-slots.ts'))};import {writeFileSync} from 'node:fs';let cancel=false;process.on('SIGTERM',()=>cancel=true);writeFileSync(${JSON.stringify(join(path, 'mutex.ready'))},'');await withAdmission(${JSON.stringify(path)},async()=>{throw new Error('must not enter')},()=>cancel);`
+      `import {withAdmission} from ${jsLiteral(resolve('src/cli/resources-slots.ts'))};import {writeFileSync} from 'node:fs';let cancel=false;process.on('SIGTERM',()=>cancel=true);writeFileSync(${jsLiteral(join(path, 'mutex.ready'))},'');await withAdmission(${jsLiteral(path)},async()=>{throw new Error('must not enter')},()=>cancel);`
     );
     const waiter = launch(path, [], runner);
     await until(() => exists(join(path, 'mutex.ready')));
@@ -641,8 +639,8 @@ it('stalled admission publication cannot recreate a lost directory or overwrite 
   for (const mode of ['lost', 'successor', 'initializing']) {
     const path = await home();
     const runner = join(path, 'stalled.ts');
-    const slots = JSON.stringify(resolve('src/cli/resources-slots.ts'));
-    const base = JSON.stringify(path);
+    const slots = jsLiteral(resolve('src/cli/resources-slots.ts'));
+    const base = jsLiteral(path);
     await writeFile(
       runner,
       `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const base=${base};const original=fs.open;const make=fs.mkdir;let paused=false;let count=0;mock.module('node:fs/promises',()=>({...fs,mkdir:async(path,...args)=>{if(String(path)===base+'/admission'&&!args[0]?.recursive)count++;return make(path,...args)},open:async(path,...args)=>{if(String(path)===base+'/admission/reclaim'&&!paused){paused=true;writeFileSync(base+'/stalled.ready','');while(!existsSync(base+'/stalled.release'))await setTimeout(10)}return original(path,...args)}}));const {withAdmission}=await import(${slots});await withAdmission(base,async()=>{writeFileSync(base+'/entered',String(count));while(!existsSync(base+'/action.release'))await setTimeout(10)},()=>{if(paused&&existsSync(base+'/stalled.release'))writeFileSync(base+'/retry.ready','');return false});`

@@ -13,6 +13,9 @@ concurrency:
   cancel-in-progress: false
   queue: max
 
+permissions:
+  contents: read
+
 jobs:
   reject-non-production-ref:
     if: github.ref != 'refs/heads/production'
@@ -25,6 +28,9 @@ jobs:
           exit 1
 
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     if: github.ref == 'refs/heads/production'
     uses: ./.github/workflows/ci-check.yml
     with:
@@ -55,6 +61,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -79,7 +87,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - uses: actions/setup-node@v7
         with:
@@ -110,7 +118,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - uses: actions/setup-node@v7
         with:

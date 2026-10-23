@@ -137,9 +137,19 @@ See `apps/docs/build/devops/active-runtime.mdx`.
   <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
   `apps/backend/AGENTS.md` for the extraction pattern.
 
+## Workflow token permissions
+
+The repository default `GITHUB_TOKEN` is write-all, so every workflow declares
+a workflow-level `permissions:` default of `contents: read` (or `{}`) and grants
+write scopes only on the jobs that use them. `check-ci` callers grant exactly
+`{contents: read, deployments: read}`, because GitHub refuses to start a run
+whose reusable workflow requests more than its caller grants.
+`scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
+workflow-level write allowlist, and caller and callee grants in both directions.
+
 ## Bun runtime pins
 
-The maintained toolchain uses Bun `1.4.3`. Keep active workspace `packageManager`
+The maintained toolchain uses Bun `1.4.4`. Keep active workspace `packageManager`
 metadata, CI setup/action defaults, bootstrap fallback and SDK qualification
 expectations aligned when changing the stable runtime. Use `bun pm pkg set` for
 manifest metadata. Preserve historical observations, intentional version fixtures
@@ -150,6 +160,8 @@ fleet versions; verify those separately before claiming runtime acceptance.
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun check`.
+- Run `bun check:changed` before every push. It maps changed paths to Biome, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
+- tsrs (Rust TypeScript port) is advisory only: the gate defaults to tsc until seeded-error qualification, and explicit tsrs runs always retain tsc confirmation. Gate each project through TSRS_PROJECTS and print exact diagnostic-key differences as advisory output even when tsc passes. Resolve tsrs only for plans including a qualified project, disable npm lifecycle scripts, and use only an existing TSRS_BIN in hook mode, and `tsrs-shadow.yaml` records main-push parity. Keep `tsc` as the required gate until the [promotion criteria](../../../../../apps/docs/build/development-tools/tsrs-shadow-type-check.mdx#promotion-criteria) hold; tsrs currently tracks TypeScript 7.1 semantics and lacks `--showConfig`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
 - Standalone chat qualification uses verified Node 24.21.0 plus the source Vitest entry directly. Preserve original exit/signal/timeout/group and report gates; passing Web reports or an optional diagnostic comparison never override failure. Require fresh exact-source SQL197/Web9/Dart9 with fixture/database cleanup; see the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx).
 - Normally run the applicable check, lint, test, and build workflows in CI for the exact authored commit, then inspect their terminal results. A demonstrably stuck queue can defer this proof; record pending jobs and local evidence, and finish exact-commit CI before calling the change release-ready.
@@ -571,6 +583,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   lock. Guard Modal deployment before its job lock; cancelled validation
   completions must never cancel active provider work. Discover `workflow_run`
   consumers in regression tests rather than protecting producers in isolation.
+- Never trust expression `==` for protected refs; it ignores case (`Main`).
+  Every `workflow_run` consumer starts with the canonical inline "Verify trusted
+  trigger" step: it checks the exact producer path, ID, branch and head
+  repository, and confirms `head_sha` is reachable from the branch. It binds
+  checkouts to the verified SHA and gates secrets on its output. Keep the step
+  byte-identical across consumers (`workflow-run-trigger-gate.test.js`), and
+  re-allowlist the staging blob in Supabase Production after editing staging.
 - Keep the PR exception list in `scripts/ci/protected-workflow-concurrency.test.js`
   explicit. Desktop Beta and the seven mixed Cloudflare workflows retain their deployment locks;
   gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are
@@ -1020,3 +1039,14 @@ For retained DO publication, allow only Vite's exact `.vite/manifest.json`
 metadata path outside the qualified module inventory. Test the adapter on real
 emitted output with `cf-wrangler-publication.runtime.mjs`; synthetic bundles miss
 Vite metadata. Keep migration tags and symlink/extra-file refusal checks.
+
+## Canonical bun.lock
+
+`bun install --frozen-lockfile` accepts orphan entries that a plain `bun install`
+prunes. When main carries them, every fresh worktree's setup rewrites `bun.lock`,
+leaving orphan worktrees that differ only in the lockfile. Type Check therefore
+requires a tracked `bun.lock`, runs `bun install --lockfile-only` after the frozen
+install, and fails if `git status` reports any `bun.lock` change (an untracked
+regenerated file would slip past `git diff`). Fix a failure by running `bun install` locally and committing the result.
+Worktree setup scripts should install with `--frozen-lockfile` or `--no-save` so
+they never write the lockfile.
