@@ -13,10 +13,12 @@ afterEach(async () => {
     dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
   );
 });
-const volume = (freeGiB: number, totalGiB = 460) => async () => ({
-  freeBytes: freeGiB * GiB,
-  totalBytes: totalGiB * GiB,
-});
+const volume =
+  (freeGiB: number, totalGiB = 460) =>
+  async () => ({
+    freeBytes: freeGiB * GiB,
+    totalBytes: totalGiB * GiB,
+  });
 
 describe('disk gate (REV-6480-2)', () => {
   it('reads the real volume', async () => {
@@ -50,19 +52,27 @@ describe('disk gate (REV-6480-2)', () => {
       admit: false,
     });
     expect(
-      await diskGate(
-        '/work',
-        { TTR_STORAGE_MIN_FREE: '25g' },
-        volume(21, 300)
-      )
+      await diskGate('/work', { TTR_STORAGE_MIN_FREE: '25g' }, volume(21, 300))
     ).toMatchObject({ admit: false });
     expect(
-      await diskGate(
-        '/work',
-        { TTR_STORAGE_MIN_FREE: 'lots' },
-        volume(400)
-      )
+      await diskGate('/work', { TTR_STORAGE_MIN_FREE: 'lots' }, volume(400))
     ).toMatchObject({ admit: false, unknown: true });
+  });
+
+  it('never leaks the working path or raw filesystem errors (REV-6503-2)', async () => {
+    const path = '/Users/someone/secret-project/worktree';
+    const failed = await diskGate(path, {}, async () => {
+      throw new Error(`EACCES: permission denied, statfs '${path}'`);
+    });
+    const low = await diskGate(path, {}, volume(1));
+    for (const gate of [failed, low]) {
+      expect(gate.admit).toBe(false);
+      if (gate.admit) continue;
+      expect(gate.reason).not.toContain('secret-project');
+      expect(gate.reason).not.toContain('/Users');
+      expect(gate.reason).not.toMatch(/EACCES|statfs|permission denied/u);
+      expect(gate.reason).toContain('job volume');
+    }
   });
 
   it('honours the explicit one-command override', async () => {
@@ -97,7 +107,10 @@ describe('dequeue-time disk re-check (REV-6480-1)', { timeout: 40_000 }, () => {
       const job = queuedResourceCommand(
         home,
         process.execPath,
-        ['-e', `require('node:fs').writeFileSync(${JSON.stringify(marker)},'')`],
+        [
+          '-e',
+          `require('node:fs').writeFileSync(${JSON.stringify(marker)},'')`,
+        ],
         { ...process.env, TTR_RESOURCES_IGNORE_DISK: undefined },
         true,
         1,
@@ -106,7 +119,11 @@ describe('dequeue-time disk re-check (REV-6480-1)', { timeout: 40_000 }, () => {
         check
       );
       while (!calls.length) await sleep(20);
-      const started = () => readFile(marker).then(() => true, () => false);
+      const started = () =>
+        readFile(marker).then(
+          () => true,
+          () => false
+        );
       // Unknown disk at dequeue: the job is not started and stays queued.
       expect(await started()).toBe(false);
       expect((await resourceQueueStatus(home)).waiting).toHaveLength(1);

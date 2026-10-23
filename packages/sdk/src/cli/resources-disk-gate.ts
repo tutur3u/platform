@@ -63,20 +63,24 @@ export async function diskGate(
     minBytes = bytes(env.TTR_STORAGE_MIN_FREE, 15 * GiB);
     minPercent = percent(env.TTR_STORAGE_MIN_FREE_PERCENT, 5);
   } catch (error) {
+    // Our own fixed messages; they name only the variable, never its value.
     return {
       admit: false,
       unknown: true,
-      reason: error instanceof Error ? error.message : String(error),
+      reason: error instanceof Error ? error.message : 'invalid disk floor',
     };
   }
+  // Block reasons reach queue status and logs, so they never include the
+  // working path or raw filesystem error text.
   let volume: DiskProbe;
   try {
     volume = await probe(path);
-  } catch (error) {
+  } catch {
     return {
       admit: false,
       unknown: true,
-      reason: `free disk on the volume holding ${path} is unknown (${error instanceof Error ? error.message : String(error)}); refusing to start`,
+      reason:
+        'free disk on the job volume is unknown, so the job does not start',
     };
   }
   const freeGiB = volume.freeBytes / GiB;
@@ -85,7 +89,7 @@ export async function diskGate(
     return {
       admit: false,
       unknown: false,
-      reason: `${freeGiB.toFixed(1)} GiB (${freePercent.toFixed(1)}%) free on the volume holding ${path} is below ${(minBytes / GiB).toFixed(1)} GiB / ${minPercent}%; run ttr storage suggest`,
+      reason: `${freeGiB.toFixed(1)} GiB (${freePercent.toFixed(1)}%) free on the job volume is below ${(minBytes / GiB).toFixed(1)} GiB / ${minPercent}%; run ttr storage suggest`,
     };
   return { admit: true, freeGiB };
 }
