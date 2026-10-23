@@ -149,9 +149,17 @@ test('trusted producers name every workflow_run upstream by path and ID', () => 
   }
 });
 
+// Deploy consumers accept only the live branch tip (REV-6459-5).
+const tipRequired = new Set([
+  'discord-modal-deploy.yml',
+  'supabase-staging.yaml',
+]);
+const accepted = (file) =>
+  tipRequired.has(file) ? ['identical'] : ['identical', 'behind'];
+
 test('trusted completions pass both layers and bind the verified SHA', () => {
   for (const { file, producer, workflow } of cases) {
-    for (const status of ['identical', 'behind']) {
+    for (const status of accepted(file)) {
       const github = trustedCompletion(producer);
       const running = runningJobs(workflow, github, {
         compareDefault: status,
@@ -161,7 +169,9 @@ test('trusted completions pass both layers and bind the verified SHA', () => {
     }
     const job = Object.values(workflow.jobs).find((item) => triggerStep(item));
     const run = runGate(triggerStep(job), trustedCompletion(producer), {
-      compare: { [`${producer.branch}...${headSha}`]: 'behind' },
+      compare: {
+        [`refs/heads/${producer.branch}...${headSha}`]: accepted(file).at(-1),
+      },
     });
     assert.ok(run.ok, run.stdout + run.stderr);
     assert.deepEqual(run.outputs, {
@@ -234,7 +244,9 @@ test('tag sources and unreachable heads are rejected', () => {
         assert.equal(runGate(step, dispatch(ref), reachable).ok, false, ref);
       }
       assert.equal(
-        runGate(step, dispatch(`refs/heads/${branch}`), reachable).ok,
+        runGate(step, dispatch(`refs/heads/${branch}`), {
+          compareDefault: 'identical',
+        }).ok,
         allowed !== undefined,
         `${file} manual dispatch`
       );
@@ -291,4 +303,54 @@ test('a gate rejection skips every dependent secret-bearing job', () => {
     production.jobs.deploy.if,
     /needs\.evaluate-prerequisites\.outputs\.trusted_trigger == 'true'/u
   );
+});
+
+test('reachability compares against refs/heads, never a same-named tag', () => {
+  // REV-6459-4: for a tag push, head_branch is the tag name, and GitHub
+  // resolves a bare compare base to refs/tags/<name> before refs/heads/<name>.
+  for (const { file, producer, workflow } of cases) {
+    const github = trustedCompletion(producer);
+    const compare = {
+      [`${producer.branch}...${headSha}`]: 'identical',
+      [`refs/heads/${producer.branch}...${headSha}`]: 'diverged',
+    };
+    const job = Object.values(workflow.jobs).find((item) => triggerStep(item));
+    const run = runGate(triggerStep(job), github, { compare });
+    assert.equal(run.ok, false, `${file} accepted a tag-resolved compare`);
+    assert.match(run.stdout + run.stderr, /Untrusted trigger/u);
+    assertRejected(workflow, github, `${file} tag`, { compare });
+  }
+});
+
+test('deploy consumers accept only the live branch tip', () => {
+  // REV-6459-5: re-running an old completion must not redeploy an old commit.
+  const flagged = consumerFiles.filter((file) =>
+    Object.values(workflowOf(file).jobs).some(
+      (job) => triggerStep(job)?.env?.REQUIRE_BRANCH_TIP === 'true'
+    )
+  );
+  assert.deepEqual(flagged.sort(), [...tipRequired].sort());
+  for (const { file, producer, workflow } of cases) {
+    const github = trustedCompletion(producer);
+    const behind = runningJobs(workflow, github, {
+      compareDefault: 'behind',
+      gate: 'run',
+    });
+    if (tipRequired.has(file)) {
+      assert.deepEqual(behind, [], `${file} accepted a stale SHA`);
+    } else {
+      assert.ok(behind.length > 0, `${file} must accept a reachable SHA`);
+    }
+  }
+  for (const file of tipRequired) {
+    const step = Object.values(workflowOf(file).jobs)
+      .map(triggerStep)
+      .find(Boolean);
+    assert.equal(
+      runGate(step, dispatch('refs/heads/main'), { compareDefault: 'behind' })
+        .ok,
+      false,
+      `${file} manual re-run of an old main commit`
+    );
+  }
 });

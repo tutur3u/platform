@@ -115,10 +115,17 @@ jobs:
           esac
 
           [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || reject "head SHA is not a full commit SHA"
-          # behind/identical: the head SHA is reachable from (or equal to) the branch.
-          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/$branch...$head_sha" --jq .status)"
-          [ "$status" = identical ] || [ "$status" = behind ] ||
-            reject "head SHA is not reachable from $branch"
+          # Compare against the fully qualified branch ref: a bare name resolves a
+          # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
+          # live branch tip; behind: it is reachable from the branch. Deploy
+          # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
+          if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
+            [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+          else
+            [ "$status" = identical ] || [ "$status" = behind ] ||
+              reject "head SHA is not reachable from $branch"
+          fi
           {
             echo "trusted=true"
             echo "head_sha=$head_sha"
@@ -466,7 +473,7 @@ jobs:
           }
 
           const contracts = [
-            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', '8123f16d927bcac4075f4e01b520b7d8f5eec0b2', '9a3488316e0d13eccf7c5978791c04e5c0e07235']],
+            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', '7510bb52a80d475f768698aa47acdb34114956d7']],
             ['scripts/ci/record-deployment-marker.ts', ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c']],
           ];
           async function checkContracts(producerHead) {
@@ -590,6 +597,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
+          persist-credentials: false
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry

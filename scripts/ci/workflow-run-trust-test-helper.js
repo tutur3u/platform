@@ -96,7 +96,10 @@ function gateSandbox() {
   process.on('exit', () =>
     fs.rmSync(sandbox, { force: true, recursive: true })
   );
-  // Only the compare API is reachable; anything else fails the gate.
+  // Only the compare API is reachable; anything else fails the gate. The
+  // default status answers only fully qualified refs/heads/ bases, so a gate
+  // that compares against a bare branch name (which GitHub resolves to a
+  // same-named tag first) gets no answer unless a test maps it explicitly.
   fs.writeFileSync(
     path.join(sandbox, 'gh'),
     `#!${process.execPath}
@@ -104,7 +107,8 @@ const [command, route] = process.argv.slice(2);
 const match = /^repos\\/[^/]+\\/[^/]+\\/compare\\/([^.]+)\\.\\.\\.([0-9a-f]{40})$/.exec(route ?? '');
 if (command !== 'api' || !match || process.argv[4] !== '--jq' || process.argv[5] !== '.status') process.exit(7);
 const statuses = JSON.parse(process.env.FAKE_COMPARE || '{}');
-const status = statuses[match[1] + '...' + match[2]] ?? process.env.FAKE_COMPARE_DEFAULT;
+const key = match[1] + '...' + match[2];
+const status = statuses[key] ?? (match[1].startsWith('refs/heads/') ? process.env.FAKE_COMPARE_DEFAULT : undefined);
 if (!status) process.exit(8);
 process.stdout.write(status + '\\n');
 `,

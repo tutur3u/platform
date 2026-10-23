@@ -121,10 +121,17 @@ jobs:
           esac
 
           [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || reject "head SHA is not a full commit SHA"
-          # behind/identical: the head SHA is reachable from (or equal to) the branch.
-          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/$branch...$head_sha" --jq .status)"
-          [ "$status" = identical ] || [ "$status" = behind ] ||
-            reject "head SHA is not reachable from $branch"
+          # Compare against the fully qualified branch ref: a bare name resolves a
+          # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
+          # live branch tip; behind: it is reachable from the branch. Deploy
+          # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
+          if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
+            [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+          else
+            [ "$status" = identical ] || [ "$status" = behind ] ||
+              reject "head SHA is not reachable from $branch"
+          fi
           {
             echo "trusted=true"
             echo "head_sha=$head_sha"
