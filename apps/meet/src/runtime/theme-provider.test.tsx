@@ -1,5 +1,4 @@
 import { runInNewContext } from 'node:vm';
-import { transformSync } from 'esbuild';
 import { ThemeProvider } from 'next-themes';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -49,12 +48,24 @@ describe('Meet theme startup', () => {
     expect(script).toBeTruthy();
     const parts = script!.match(/^\(([\s\S]*)\)\(([\s\S]*)\)$/)!;
     expect(parts).toBeTruthy();
-    const transformed = transformSync(
-      `const initialize = ${parts[1]}; globalThis.serialized = initialize.toString();`,
-      { keepNames: true }
-    ).code;
-    const context: { serialized?: string } = {};
-    runInNewContext(transformed, context);
+    const initializer = parts[1]!;
+    const nestedName = initializer.match(/\bfunction\s+([\w$]+)\s*\(/)?.[1];
+    expect(nestedName).toBeTruthy();
+    // keepNames names hoisted inner functions via an external __name helper.
+    // Reproduce that boundary without depending on a particular bundler package.
+    const transformed = initializer.replace(
+      '{',
+      `{__name(${nestedName}, ${JSON.stringify(nestedName)});`
+    );
+    const context = { ...browser('dark'), serialized: '' };
+    runInNewContext(
+      `const __name = (fn, name) => Object.defineProperty(fn, "name", { value: name, configurable: true });
+       const initialize = ${transformed};
+       initialize(${parts[2]});
+       globalThis.serialized = initialize.toString();`,
+      context
+    );
+    expect(context.classes).toEqual(new Set(['unrelated', 'dark']));
     expect(context.serialized).toContain('__name');
     expect(() =>
       runInNewContext(`(${context.serialized})(${parts[2]})`, browser())
