@@ -12,7 +12,10 @@ import {
 // Hold files: one absolute path or glob per line, `#` comments. A held path,
 // everything beneath it and everything above it is never removed. This is
 // the same contract the machine-cleanup owner tooling reads, so one hold
-// protects a path from every cleanup tool on the machine.
+// protects a path from every cleanup tool on the machine. Every regular file
+// in a holds directory counts (tuturuuu.txt, upskii.txt, mastermind.txt and
+// any other project's), whatever its extension: an unexpected name must widen
+// protection, never silently drop it.
 export const defaultHoldsDir = join(homedir(), '.t3', 'cleanup', 'holds.d');
 
 export interface Hold {
@@ -45,8 +48,9 @@ export function readHolds(dirs: string[]): Hold[] {
   for (const dir of dirs) {
     let names: string[];
     try {
-      names = readdirSync(dir)
-        .filter((name) => name.endsWith('.txt'))
+      names = readdirSync(dir, { withFileTypes: true })
+        .filter((entry) => !entry.isDirectory())
+        .map((entry) => entry.name)
         .sort();
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
@@ -55,7 +59,7 @@ export function readHolds(dirs: string[]): Hold[] {
       );
     }
     for (const name of names) {
-      const owner = basename(name, '.txt');
+      const owner = basename(name).replace(/\.[^.]*$/u, '') || name;
       const file = join(dir, name);
       readFileSync(file, 'utf8')
         .split('\n')

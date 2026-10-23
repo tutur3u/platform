@@ -1,6 +1,9 @@
 import { pollDevboxAgentJobs } from '../platform-devbox';
 import { normalizeBaseUrl } from './config';
-import { createDevboxAgentCapabilities } from './devbox-agent-capabilities';
+import {
+  createDevboxAgentCapabilities,
+  heartbeatStorageTrigger,
+} from './devbox-agent-capabilities';
 import {
   DEVBOX_UPGRADE_BUSY_RETRY_MS,
   DEVBOX_UPGRADE_CHECK_INTERVAL_MS,
@@ -135,6 +138,8 @@ export async function runDevboxAgentLoop({
     }
 
     nextHeartbeatAt = Date.now() + 20_000;
+    // Low disk on this host starts one detached, lease-guarded reclaim.
+    void heartbeatStorageTrigger().catch(() => undefined);
   };
   try {
     while (running) {

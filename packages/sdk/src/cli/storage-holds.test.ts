@@ -31,17 +31,22 @@ async function temp() {
 }
 
 describe('hold files', () => {
-  it('reads every *.txt with owners, comments and globs', async () => {
+  it("reads every project's hold file with owners, comments and globs", async () => {
     const dir = await temp();
     await writeFile(
       join(dir, 'mastermind.txt'),
       '# header\n/a/held # reason\n\n   # indented comment\n'
     );
     await writeFile(join(dir, 'tuturuuu.txt'), '/b/glob-*\n');
-    await writeFile(join(dir, 'notes.md'), '/c/not-a-hold\n');
+    await writeFile(join(dir, 'upskii.txt'), '/d/upskii-evidence\n');
+    // Any extension still protects: an unexpected name widens, never drops.
+    await writeFile(join(dir, 'notes.md'), '/c/also-held\n');
+    await mkdir(join(dir, 'nested'));
     expect(readHolds([dir])).toEqual([
       { path: '/a/held', owner: 'mastermind', glob: false },
+      { path: '/c/also-held', owner: 'notes', glob: false },
       { path: '/b/glob-*', owner: 'tuturuuu', glob: true },
+      { path: '/d/upskii-evidence', owner: 'upskii', glob: false },
     ]);
   });
 

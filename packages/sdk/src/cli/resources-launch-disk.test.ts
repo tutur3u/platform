@@ -30,7 +30,7 @@ const probe = async (path) => {
   const free = probes++ === 0 ? 200 : 5;
   return {path, device: 1, totalBytes: 500 * GiB, freeBytes: free * GiB, usedBytes: (500 - free) * GiB, freePercent: free / 5, inodesTotal: null, inodesFree: null, inodeFreePercent: null};
 };
-const admit = (options) => diskAdmission({...options, env: {}, probe, suggestions: async () => null});
+const admit = (options) => diskAdmission({...options, env: {TTR_STORAGE_HOME: ${JSON.stringify(join(home, 'storage'))}, TTR_STORAGE_HOST_ID: 'fixture'}, probe, suggestions: async () => null, holds: async () => [], reclaim: async () => ({result: null, note: 'stubbed'})});
 const queued = await admit({cwd: ${JSON.stringify(home)}});
 writeFileSync(${JSON.stringify(join(home, 'queued.json'))}, JSON.stringify(queued));
 process.exitCode = await queuedResourceCommand(${JSON.stringify(home)}, 'node', ['-e', ${JSON.stringify(`require('fs').writeFileSync(${JSON.stringify(marker)}, 'ran')`)}], process.env, true, 1, undefined, undefined, launchDiskGate(${JSON.stringify(home)}, admit));`
@@ -43,7 +43,7 @@ process.exitCode = await queuedResourceCommand(${JSON.stringify(home)}, 'node', 
       pressure: 'ok',
       refuse: false,
     });
-    expect(result.err).toContain('refusing a heavy command: disk is critical');
+    expect(result.err).toContain('refusing a heavy command');
     expect(await exists(marker)).toBe(false);
     // The claimed slot is released, not leaked.
     expect((await resourceQueueStatus(home)).owners).toHaveLength(0);

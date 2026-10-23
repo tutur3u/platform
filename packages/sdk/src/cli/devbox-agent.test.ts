@@ -17,6 +17,7 @@ vi.mock('./devbox-agent-capabilities', () => ({
   createDevboxAgentCapabilities: vi
     .fn()
     .mockResolvedValue({ cli: { version: '1.0' } }),
+  heartbeatStorageTrigger: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { runDevboxAgentLoop } from './devbox-agent';
