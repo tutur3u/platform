@@ -33,6 +33,8 @@ export type MeetRequestMessage = WithoutRequestId<MeetRealtimeClientMessage>;
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const READINESS_TIMEOUT_MS = 10_000;
+const STABLE_CONNECTION_MS = 30_000;
+const PENDING_RECONNECT_INTERVAL_MS = 60_000;
 
 /**
  * Typed WebSocket wrapper for the meet realtime protocol.
@@ -57,6 +59,9 @@ export class MeetSignaling {
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private readinessTimer: ReturnType<typeof setTimeout> | null = null;
   private connectionAttempt: AbortController | null = null;
+  private stableTimer: ReturnType<typeof setTimeout> | null = null;
+  private waitingForAdmission = false;
+  private lastAdmissionAttemptAt = 0;
   private lastPing = 0;
   private pingPending = false;
   private socketWatch: ReturnType<typeof setInterval> | null = null;
@@ -68,6 +73,7 @@ export class MeetSignaling {
   connect() {
     if (this.connectionAttempt || this.socket || this.retryTimer) return;
     this.closedByUs = false;
+    if (this.waitingForAdmission) this.lastAdmissionAttemptAt = Date.now();
     const attempt = new AbortController();
     this.connectionAttempt = attempt;
     this.options.onStatusChange?.('connecting');
@@ -119,8 +125,10 @@ export class MeetSignaling {
         this.flushTitle();
       });
       socket.addEventListener('error', () => {
-        if (this.socket === socket && !this.closedByUs)
+        if (this.socket === socket && !this.closedByUs) {
+          this.clearStability();
           this.options.onStatusChange?.('error');
+        }
       });
       socket.addEventListener('close', (event) => {
         this.finishSocket(socket, (event as CloseEvent).code);
@@ -139,7 +147,13 @@ export class MeetSignaling {
     this.connectionAttempt = null;
   }
 
+  private clearStability() {
+    if (this.stableTimer) clearTimeout(this.stableTimer);
+    this.stableTimer = null;
+  }
+
   private clearSocketWatch() {
+    this.clearStability();
     if (this.socketWatch) clearInterval(this.socketWatch);
     this.socketWatch = null;
   }
@@ -199,7 +213,16 @@ export class MeetSignaling {
       return;
     }
 
-    const delay = computeBackoffMs(this.attempt);
+    // The server re-announces pending admission on every connection. Bound
+    // those notifications even when a socket repeatedly reaches ready and drops.
+    const admissionDelay = this.waitingForAdmission
+      ? Math.max(
+          0,
+          PENDING_RECONNECT_INTERVAL_MS -
+            (Date.now() - this.lastAdmissionAttemptAt)
+        )
+      : 0;
+    const delay = Math.max(computeBackoffMs(this.attempt), admissionDelay);
     this.attempt += 1;
     this.retryTimer = setTimeout(() => {
       this.retryTimer = null;
@@ -244,9 +267,24 @@ export class MeetSignaling {
 
     if (message.type === 'ready') {
       this.clearReadiness();
-      this.attempt = 0;
+      if (!this.stableTimer) {
+        const socket = this.socket;
+        this.stableTimer = setTimeout(() => {
+          this.stableTimer = null;
+          if (
+            this.socket === socket &&
+            socket?.readyState === WebSocket.OPEN &&
+            !this.closedByUs
+          )
+            this.attempt = 0;
+        }, STABLE_CONNECTION_MS);
+      }
+      this.waitingForAdmission = message.admission === 'waiting';
+      if (this.waitingForAdmission) this.lastAdmissionAttemptAt = Date.now();
       this.selfUserId = message.userId;
     }
+    if (message.type === 'admission.result' && message.admitted)
+      this.waitingForAdmission = false;
     // The server sends these decisions before its 4403 close. Preserve them
     // immediately: Chrome may withhold the close event past our recovery grace.
     const terminal =

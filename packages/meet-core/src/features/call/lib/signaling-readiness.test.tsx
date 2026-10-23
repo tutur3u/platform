@@ -1,4 +1,9 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
+import en from '../../../../../../apps/meet/messages/en.json';
+import { Lobby } from '../components/lobby';
 import { MeetSignaling } from './signaling';
 
 class Socket extends EventTarget {
@@ -41,6 +46,7 @@ function fixture(
   return { signaling, onStatusChange, onMessage };
 }
 afterEach(() => {
+  cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -144,4 +150,83 @@ it('ignores ready from an expired socket and preserves a terminal decision', asy
   expect(signaling.isClosed).toBe(true);
   await vi.advanceTimersByTimeAsync(60_000);
   expect(Socket.instances).toHaveLength(2);
+});
+
+function drop(socket: Socket) {
+  socket.readyState = 3;
+  socket.dispatchEvent(new Event('close'));
+}
+
+it.each(['waiting', 'admitted'])(
+  'exhausts retries across repeated %s ready then disconnect cycles',
+  async (admission) => {
+    const { signaling, onStatusChange } = fixture();
+    await Promise.resolve();
+    for (let index = 0; index < 13; index++) {
+      expect(Socket.instances).toHaveLength(index + 1);
+      const socket = Socket.instances.at(-1)!;
+      socket.open();
+      socket.message({ type: 'ready', userId: 'self', admission });
+      drop(socket);
+      if (index < 12) {
+        await vi.advanceTimersByTimeAsync(admission === 'waiting' ? 60_000 : 1);
+      }
+    }
+    expect(onStatusChange).toHaveBeenLastCalledWith('error');
+    const onRetry = vi.fn();
+    const view = render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
+        <Lobby
+          defaultDisplayName="Test participant"
+          meetingName="Test room"
+          connectionStatus={onStatusChange.mock.lastCall![0]}
+          error={null}
+          isJoining={false}
+          waiting={admission === 'waiting'}
+          onJoin={vi.fn()}
+          onLeave={() => signaling.close()}
+          onRetry={onRetry}
+        />
+      </NextIntlClientProvider>
+    );
+    expect(screen.getByText(en.meet.call.join_error_title)).toBeTruthy();
+    expect(view.container.querySelector('[class*="animate-spin"]')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: en.meet.call.connection_refresh })
+    );
+    expect(onRetry).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(Socket.instances).toHaveLength(13);
+    signaling.close();
+  }
+);
+
+it('rate limits pending reconnects and cancels the delayed attempt on leave', async () => {
+  const { signaling } = fixture();
+  await Promise.resolve();
+  const socket = Socket.instances[0]!;
+  socket.open();
+  socket.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+  drop(socket);
+  await vi.advanceTimersByTimeAsync(59_999);
+  expect(Socket.instances).toHaveLength(1);
+  signaling.close();
+  await vi.advanceTimersByTimeAsync(120_000);
+  expect(Socket.instances).toHaveLength(1);
+});
+
+it('renews the retry budget only after thirty seconds of stable ready', async () => {
+  const { signaling, onStatusChange } = fixture();
+  await Promise.resolve();
+  for (let index = 0; index < 13; index++) {
+    const socket = Socket.instances.at(-1)!;
+    socket.open();
+    socket.message({ type: 'ready', userId: 'self', admission: 'admitted' });
+    if (index === 12) await vi.advanceTimersByTimeAsync(30_000);
+    drop(socket);
+    await vi.advanceTimersByTimeAsync(1);
+  }
+  expect(Socket.instances).toHaveLength(14);
+  expect(onStatusChange).toHaveBeenLastCalledWith('connecting');
+  signaling.close();
 });

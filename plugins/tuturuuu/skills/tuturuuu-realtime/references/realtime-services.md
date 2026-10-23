@@ -367,7 +367,11 @@ status. `ready` with `admission: waiting` is a host decision still pending; do n
 retry the join automatically or report it as a transport error. Socket OPEN alone
 is not protocol readiness. Bound token resolution and the ready handshake, abort
 expired requests, and ignore their late results. Preserve denial/removal/ended
-messages before a delayed close event; terminal UI must retain the reason.
+messages before a delayed close event; terminal UI must retain the reason. Reset
+the retry budget only after 30 seconds of stable protocol-ready transport, not on
+each ready message. Pending reconnect attempts are limited to once per minute:
+the server currently re-notifies managers even for an existing waiting entry.
+This client bound is not cross-tab or cross-reload server deduplication.
 
 Run the Meet core `signaling-readiness`, `signaling-transport`, `join-flow` and
 `call-state` suites through resource admission. Capture an authorized signed-in

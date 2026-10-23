@@ -224,7 +224,12 @@ absence of a presence snapshot in a waiting response.
 
 The signaling readiness deadline is 10 seconds per attempt, including refreshed
 token resolution and the server's `ready` response. Automatic recovery is limited
-to 12 retries and only a protocol-ready response resets that budget. Late responses
+to 12 retries. The budget resets only after the socket stays open for 30 seconds
+after protocol-ready; repeated ready/disconnect cycles still exhaust it. Pending
+admission reconnects are limited to one attempt per minute, including failed token
+refreshes. The server currently re-announces pending admission on every connection,
+even for an existing waiting entry; this client limit bounds those notifications
+but does not provide server-side deduplication across tabs or page reloads. Late responses
 from expired attempts cannot revive them. Connection errors offer retry and leave;
 room-capacity refusals cannot leave a disabled Connecting spinner. Preparing the
 page or controls for more than 30 seconds replaces its spinner with an explanation
@@ -240,7 +245,7 @@ English and Vietnamese copy; admission and workspace access rules are unchanged.
 
 Regression coverage: `join-flow.test.tsx` exercises pending-to-admitted,
 pending-to-denied, prolonged waiting, removal, recovery, and loading deadlines.
-`signaling-readiness.test.ts` covers hung token resolution, missing protocol-ready,
+`signaling-readiness.test.tsx` covers hung token resolution, missing protocol-ready,
 bounded retries, cancellation and late-event fences. `room-route-feedback.test.tsx`
 covers the native route's bilingual missing/error feedback. These fixtures do not
 establish successful hosted SFU/TURN connectivity or reproduce a specific user's
