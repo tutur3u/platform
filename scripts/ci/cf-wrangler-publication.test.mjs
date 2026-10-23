@@ -115,6 +115,16 @@ test('undeclared modules and escaped module symlinks fail closed', (t) => {
   assert.throws(() => run(), /module escapes bundle/);
 });
 
+test('dangling Vite metadata symlinks fail closed', (t) => {
+  const { root, bundle, run } = fixture(t);
+  mkdirSync(join(bundle, '.vite'), { recursive: true });
+  symlinkSync(
+    join(root, 'missing-manifest.json'),
+    join(bundle, '.vite/manifest.json')
+  );
+  assert.throws(() => run(), /metadata is symlinked/);
+});
+
 test('unsupported module formats cannot silently change the publisher', (t) => {
   const { worker, workerFile, run } = fixture(t);
   worker.manifest.modules['index.js'].type = 'wasm';

@@ -106,6 +106,7 @@ jobs:
           path: ${{ runner.temp }}/coordination-build-output
           retention-days: 7
           if-no-files-found: error
+          include-hidden-files: true
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
