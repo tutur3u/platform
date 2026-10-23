@@ -67,7 +67,10 @@ export function validLedger(value: unknown): value is HookLedger {
             (scope.kind !== 'models' ||
               (Array.isArray(scope.modelPrefixes) &&
                 scope.modelPrefixes.length > 0 &&
-                scope.modelPrefixes.every(text)))
+                scope.modelPrefixes.every(text)) ||
+              (Array.isArray(scope.modelFamilies) &&
+                scope.modelFamilies.length > 0 &&
+                scope.modelFamilies.every(text)))
         ) &&
         optional(item.clearedAt, date) &&
         optional(item.resetsAt, date) &&

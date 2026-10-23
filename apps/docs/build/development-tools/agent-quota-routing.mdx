@@ -276,9 +276,11 @@ T3-owned provider snapshots and its database. A short exclusive transaction file
 protects atomic write/fsync/rename operations; it is not an account lock. There
 is no daemon. Symlink ledger files and malformed data fail closed; the ledger
 has a 2 MB bound. Expired outcomes and inactive reservations are compacted under
-the retention rules below. A crashed transaction lock can be reclaimed only after
-its recorded PID/start identity is confirmed dead or replaced and its inode is
-unchanged. Live or uncertain owners block takeover.
+the retention rules below. A transaction lock with a recorded owner can be
+reclaimed only after its PID/start identity is confirmed dead or replaced and
+its inode is unchanged. An empty or partial owner record is retryable for ten
+seconds, then may be reclaimed under the separate reclamation lock after an
+inode check.
 
 Current telemetry coverage, verified from non-credential caches on 2026-10-23:
 
@@ -419,14 +421,19 @@ message reports a limit. This reflects shared accounts across orchestrators.
 This catches Antigravity's `Usage Limit Reached` result even when T3 labels the run
 completed. Relative resets (for example, `6 days, 23 hours`) use the observation
 time and round duration up to whole seconds. A limit without a reset remains
-exhausted until a later fresh covering-window check shows usage below 100%. A
-receipt with a reset expires at that timestamp unless a newer receipt supersedes it.
+exhausted until a later fresh covering-window check shows usage below 100%, or
+for at most seven days when no reset is reported. A receipt with a reset expires
+at that timestamp unless a newer receipt supersedes it.
 
-Cache window IDs, labels and model scopes are preserved. Antigravity `3p-*`
-windows cover Claude/GPT, not Gemini; `gemini-*` windows cover Gemini. Claude's
-`Weekly · Fable` window applies only to that model family. Models with no covering
-window are UNKNOWN and subject to bounded admission. Availability and a zero in
-an unrelated window never establish headroom.
+Cache window IDs, labels and model scopes are preserved. Claude windows are
+model-scoped only when the label names a recognized model family (`Opus`,
+`Sonnet`, `Haiku`, or `Fable`); generic labels such as `Weekly limit`, `Weekly
+usage`, `Weekly total`, and `Current week` apply account-wide. `Current week
+(Opus)` and `Current week (Sonnet only)` cover only the named family.
+Antigravity `3p-*` windows cover Claude/GPT, not Gemini; `gemini-*` windows cover
+Gemini. Models with no covering window are UNKNOWN and subject to bounded
+admission. Availability and a zero in an unrelated window never establish
+headroom.
 
 When provider identity hashes are missing, distinct per-instance Claude homes or
 an explicit owner mapping may establish separate accounts. The home identity is
@@ -444,7 +451,8 @@ owners remain protected until release or confirmed death. Lease
 history and request tombstones have 30-day retention, so callers must reconcile
 older recovery operations rather than relying on indefinite idempotency. The
 transaction mutex records its PID and process start time; takeover requires a
-confirmed dead or replaced process and an unchanged lock inode. Unknown liveness
+confirmed dead or replaced process and an unchanged lock inode, except for an
+empty or partial record older than the ten-second grace period. Unknown liveness
 fails closed. Switch lease release also requires the original PID/start identity;
 an expired lease held by a live or unverified process cannot be taken over.
 
@@ -632,8 +640,12 @@ expiry does not assert quota headroom; normal admission checks still apply.
 ### Turn-boundary warning and safe same-thread switch
 
 The optional, bounded `watch` command is read-only and is intended to run at an
-orchestrator turn boundary. It uses cache-reported, fresh session/short-window
-remaining percentage and never probes a provider. Defaults are `warn` at 25%
+orchestrator turn boundary. It uses the minimum remaining percentage across all
+fresh authoritative windows covering the owner's model, including weekly and
+monthly windows, and never probes a provider. Pass `--model` when known; without
+it, model-scoped windows are included conservatively. An active block or
+usage-limit receipt forces `switch-now`; stale or missing data returns `warn`.
+Defaults are `warn` at 25%
 remaining, `switch-now` at 12%, and a 3-point hysteresis band. Supply the previous
 verdict to preserve hysteresis across invocations; callers own that small piece
 of turn state, so the command needs no timer or writable watch ledger:
@@ -648,8 +660,9 @@ It emits one JSON line with the verdict, signal state, remaining percent and an
 optional successor. Exit codes are 0 for `ok`, 3 for `warn`, and 4 for
 `switch-now`. Missing or stale data is `warn`; a successor is selected only from
 fresh healthy headroom and excludes the owner account, blocked pools, active
-loads and outstanding reservations. No successor means the caller must stop and
-escalate rather than choose a fallback.
+loads, outstanding reservations, active usage-limit receipts, and model capacity
+cooldowns. `successorReason` appears only for a non-`ok` verdict. No successor
+means the caller must stop and escalate rather than choose a fallback.
 
 Before a supported same-thread account change, the owner runs a read-only
 checkpoint against its thread ID and a newline-separated file of watcher PIDs:
@@ -660,7 +673,9 @@ bun packages/agent-quota/src/cli.ts checkpoint-ready \
 ```
 
 It reports `go` or `no-go`, including queue/writer counts, missing watcher
-process metadata and any in-flight `gh pr merge` process. A non-empty queue,
+process metadata and any in-flight `gh pr merge` process. Writer nodes count
+only while their associated T3 run is active; the count query is capped at 1,001
+nodes and SQLite lock waiting is bounded to one second. A non-empty queue,
 active T3 writer/run, unknown watcher PID, or merge
 blocks the configure boundary. The supported operation sequence is exactly:
 

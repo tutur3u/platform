@@ -1,14 +1,31 @@
 import { describe, expect, it } from 'vitest';
+import { accountKey } from '../src/accounts';
 import { checkpointDecision } from '../src/checkpoint-ready';
 import type { ChildSnapshot } from '../src/reconcile-children';
-import type { RankedInstance } from '../src/types';
+import type { AccountUsage, RankedInstance } from '../src/types';
 import {
   freshRemainingPercent,
+  ownerWatchStatus,
   selectSuccessor,
+  watchSuccessorReason,
   watchVerdict,
 } from '../src/watch';
 
 const at = new Date('2026-10-23T08:00:00Z');
+const pool = (
+  instanceId: string,
+  provider: AccountUsage['provider'] = 'claude'
+): AccountUsage => ({
+  instanceId,
+  provider,
+  label: instanceId,
+  available: true,
+  models:
+    provider === 'claude'
+      ? ['claude-opus-4-6', 'claude-sonnet-4-5']
+      : ['gpt-6.1-sol'],
+  windows: [],
+});
 
 describe('quota turn-boundary watch', () => {
   it('crosses warning and critical thresholds, with hysteresis on recovery', () => {
@@ -41,7 +58,133 @@ describe('quota turn-boundary watch', () => {
     expect(watchVerdict(remaining)).toBe('warn');
   });
 
-  it('never chooses the owner, blocked, active or reserved successor', () => {
+  it('uses the minimum remaining percentage across fresh session and weekly windows', () => {
+    const remaining = freshRemainingPercent(
+      [
+        {
+          kind: 'session',
+          usedPercent: 90,
+          source: 'fixture',
+          observedAt: at.toISOString(),
+          authoritative: true,
+        },
+        {
+          kind: 'weekly',
+          usedPercent: 100,
+          source: 'fixture',
+          observedAt: at.toISOString(),
+          authoritative: true,
+        },
+      ],
+      at,
+      15 * 60_000,
+      'claude-opus-4-6'
+    );
+    expect(remaining).toBe(0);
+    expect(watchVerdict(remaining)).toBe('switch-now');
+  });
+
+  it('watches Codex monthly-only usage and immediately switches on an exhausted window', () => {
+    const status = ownerWatchStatus(
+      {
+        ...pool('codex', 'codex'),
+        models: ['gpt-6.1-sol'],
+        windows: [
+          {
+            kind: 'long',
+            usedPercent: 100,
+            source: 'fixture',
+            observedAt: at.toISOString(),
+            authoritative: true,
+          },
+        ],
+      },
+      [],
+      [],
+      at,
+      { model: 'gpt-6.1-sol' }
+    );
+    expect(status).toMatchObject({ remaining: 0, verdict: 'switch-now' });
+  });
+
+  it.each(['claude_kv', 'claude_mira'])(
+    'switches immediately when %s has an active block despite healthy cache data',
+    (instanceId) => {
+      const account = {
+        ...pool(instanceId),
+        windows: [
+          {
+            kind: 'session' as const,
+            usedPercent: 10,
+            source: 'fixture',
+            observedAt: at.toISOString(),
+            authoritative: true,
+          },
+        ],
+      };
+      const status = ownerWatchStatus(
+        account,
+        [
+          {
+            pool: instanceId,
+            modelScope: '*',
+            reason: 'observed limit',
+            observedAt: at.toISOString(),
+            resetAt: new Date(at.getTime() + 60_000).toISOString(),
+          },
+        ],
+        [],
+        at,
+        { model: 'claude-opus-4-6' }
+      );
+      expect(status).toMatchObject({
+        verdict: 'switch-now',
+        reason: 'active-block',
+      });
+    }
+  );
+
+  it('switches immediately on an active usage-limit receipt', () => {
+    const account = {
+      ...pool('claude_kv'),
+      windows: [
+        {
+          kind: 'session' as const,
+          usedPercent: 10,
+          source: 'fixture',
+          observedAt: at.toISOString(),
+          authoritative: true,
+        },
+      ],
+    };
+    const status = ownerWatchStatus(
+      account,
+      [],
+      [
+        {
+          eventId: 'usage-limit',
+          instanceId: account.instanceId,
+          accountKey: accountKey(account),
+          outcome: 'usage-limit',
+          observedAt: at.toISOString(),
+          resetsAt: new Date(at.getTime() + 60_000).toISOString(),
+          model: 'claude-opus-4-6',
+        },
+      ],
+      at,
+      { model: 'claude-opus-4-6' }
+    );
+    expect(status).toMatchObject({
+      verdict: 'switch-now',
+      reason: 'active-ledger-receipt',
+    });
+  });
+
+  it('hides main-role successor reasons on healthy owner verdicts', () => {
+    expect(watchSuccessorReason('ok', 'main', undefined, [])).toBeUndefined();
+  });
+
+  it('never chooses owner, blocked, active, reserved, receipt-fenced or cooled successors', () => {
     const rank = (
       instanceId: string,
       state: RankedInstance['state'],
@@ -67,6 +210,8 @@ describe('quota turn-boundary watch', () => {
         rank('owner', 'healthy'),
         rank('blocked', 'healthy'),
         rank('reserved', 'healthy'),
+        rank('limit-receipt', 'healthy'),
+        rank('capacity-cooldown', 'healthy'),
         rank('unknown', 'UNKNOWN'),
         rank('good', 'healthy'),
       ],
@@ -80,7 +225,31 @@ describe('quota turn-boundary watch', () => {
         },
       ],
       ['reserved'],
-      at
+      at,
+      {},
+      {},
+      [],
+      {},
+      'child',
+      false,
+      [
+        {
+          eventId: 'limit',
+          instanceId: 'limit-receipt',
+          accountKey: 'claude:instance:limit-receipt',
+          outcome: 'usage-limit',
+          observedAt: at.toISOString(),
+          resetsAt: new Date(at.getTime() + 60_000).toISOString(),
+        },
+        {
+          eventId: 'capacity',
+          instanceId: 'capacity-cooldown',
+          accountKey: 'codex:instance:capacity-cooldown',
+          outcome: 'capacity-error',
+          observedAt: at.toISOString(),
+          model: 'gpt-6.1-sol',
+        },
+      ]
     );
     expect(chosen).toBe('good');
   });

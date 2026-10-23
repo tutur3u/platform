@@ -1,4 +1,4 @@
-import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
@@ -27,6 +27,22 @@ import {
   acquireTransactionLock,
   releaseTransactionLock,
 } from '../src/transaction-lock';
+
+it('reclaims an empty incomplete lock after the bounded grace period', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'quota-lock-empty-aged-'));
+  const path = join(dir, 'transaction.lock');
+  try {
+    await writeFile(path, '');
+    const stale = new Date(Date.now() - 11_000);
+    await utimes(path, stale, stale);
+    const acquired = await acquireTransactionLock(path);
+    await expect(access(path)).resolves.toBeUndefined();
+    await releaseTransactionLock(path, acquired);
+    await expect(access(path)).rejects.toMatchObject({ code: 'ENOENT' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
 
 it('does not reclaim a mutex owned by a live process', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'quota-lock-live-'));

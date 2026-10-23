@@ -20,21 +20,10 @@ export function windowScope(
       return { kind: 'models', modelPrefixes: ['gpt-'] };
     return { kind: 'unknown' };
   }
-  if (
-    provider === 'claude' &&
-    !/all\s+models|all[_-]models|generic|account-wide/i.test(label) &&
-    (label.includes('·') ||
-      (id.startsWith('seven_day_') &&
-        !/^(default|weekly|all|generic|account)$/i.test(
-          id.slice('seven_day_'.length)
-        )))
-  ) {
-    const model =
-      label.split('·')[1]?.trim().toLowerCase() ??
-      id.slice('seven_day_'.length).replaceAll('_', '-');
-    return model
-      ? { kind: 'models', modelPrefixes: [model, `claude-${model}`] }
-      : { kind: 'unknown' };
+  if (provider === 'claude') {
+    const family = label.match(/\b(opus|sonnet|haiku|fable)\b/i)?.[1];
+    if (family)
+      return { kind: 'models', modelFamilies: [family.toLowerCase()] };
   }
   return { kind: 'account' };
 }
@@ -44,9 +33,12 @@ export function coversModel(window: UsageWindow, model?: string): boolean {
     window.scope.kind === 'models' &&
     Boolean(
       model &&
-        window.scope.modelPrefixes?.some((prefix) =>
+        (window.scope.modelPrefixes?.some((prefix) =>
           model.toLowerCase().startsWith(prefix.toLowerCase())
-        )
+        ) ||
+          window.scope.modelFamilies?.some((family) =>
+            new RegExp(`(?:^|[-_/])${family}(?:$|[-_/])`, 'i').test(model)
+          ))
     )
   );
 }

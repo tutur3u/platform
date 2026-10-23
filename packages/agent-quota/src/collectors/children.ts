@@ -45,6 +45,7 @@ const receiptPrefixes = [
 ];
 const terminalPrefixPredicate = (expression: string) =>
   `(${receiptPrefixes.map((prefix) => `${expression} ${prefix}`).join(' OR ')})`;
+const ACTIVE_WRITER_NODE_SCAN_LIMIT = 1001;
 export function collectChildren(
   parentId: string,
   databasePath = t3StateDatabase(),
@@ -52,6 +53,7 @@ export function collectChildren(
 ): ChildSnapshot {
   const db = new DatabaseSync(databasePath, { readOnly: true });
   try {
+    db.exec('PRAGMA busy_timeout=1000');
     db.exec('BEGIN');
     const since = new Date(
       (poolScan?.now ?? new Date()).getTime() - 30 * 86400_000
@@ -106,7 +108,13 @@ export function collectChildren(
    json_extract(t.payload_json,'$.snoozedUntil') AS snoozedUntil,
    EXISTS(SELECT 1 FROM orchestration_v2_projection_runtime_requests q WHERE q.thread_id=t.thread_id AND q.status='pending' AND q.kind='user_input') AS pendingQuestion,
    EXISTS(SELECT 1 FROM orchestration_v2_projection_runtime_requests q WHERE q.thread_id=t.thread_id AND q.status='pending' AND q.kind IN ('command','file-read','file-change','mcp-elicitation','permission')) AS pendingApproval,
-   (SELECT COUNT(*) FROM orchestration_v2_projection_nodes n WHERE n.thread_id=t.thread_id AND n.status IN ('running','pending','waiting')) AS activeWriterNodes
+   (SELECT COUNT(*) FROM (
+     SELECT 1 FROM orchestration_v2_projection_nodes n
+     JOIN orchestration_v2_projection_runs active_run ON active_run.run_id=n.run_id AND active_run.thread_id=n.thread_id
+     WHERE n.thread_id=t.thread_id AND n.status IN ('running','pending','waiting')
+       AND active_run.status IN ('running','starting','preparing','waiting')
+     LIMIT ${ACTIVE_WRITER_NODE_SCAN_LIMIT}
+   )) AS activeWriterNodes
    FROM orchestration_v2_projection_threads t JOIN descendants d ON d.thread_id=t.thread_id`);
     if (!poolScan && !threads.some((thread) => thread.id === parentId))
       throw new HookError('parent-thread-not-found');

@@ -77,6 +77,7 @@ async function main(): Promise<void> {
         allowNonClaudeFallback: process.argv.includes(
           '--allow-non-claude-fallback'
         ),
+        model: arg('--model'),
       });
       console.log(JSON.stringify(result));
       process.exitCode =

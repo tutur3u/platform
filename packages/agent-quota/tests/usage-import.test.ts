@@ -17,6 +17,7 @@ import {
   mergeUsageImport,
 } from '../src/usage-import';
 import {
+  coversModel,
   receiptCovers,
   receiptWindowScope,
   windowScope,
@@ -268,23 +269,39 @@ describe('Usage UI and typed manual observations', () => {
     };
     expect(receiptCovers(fable, 'claude', 'claude-opus')).toBe(false);
   });
-  it('keeps generic weekly Claude windows account-scoped without a model label', () => {
-    expect(windowScope('claude', 'seven_day', 'Weekly')).toEqual({
-      kind: 'account',
-    });
-    expect(windowScope('claude', 'seven_day_default', 'Weekly')).toEqual({
-      kind: 'account',
-    });
-    expect(
-      windowScope('claude', 'seven_day_all_models', 'Weekly (all models)')
-    ).toEqual({ kind: 'account' });
-    expect(
-      windowScope('claude', 'seven_day_fable', 'Weekly · Fable')
-    ).toMatchObject({
-      kind: 'models',
-      modelPrefixes: ['fable', 'claude-fable'],
-    });
-  });
+  it.each([
+    'Weekly limit',
+    'Weekly usage',
+    'Weekly total',
+    'Current week',
+    'Current week (Opus)',
+    'Current week (Sonnet only)',
+  ])(
+    'scopes Claude window label %s only when a model family is named',
+    (label) => {
+      const scope = windowScope('claude', 'arbitrary_weekly_id', label);
+      const window = {
+        kind: 'weekly' as const,
+        source: 'fixture',
+        observedAt: now.toISOString(),
+        authoritative: true,
+        scope,
+      };
+      if (label.includes('Opus')) {
+        expect(scope).toEqual({ kind: 'models', modelFamilies: ['opus'] });
+        expect(coversModel(window, 'claude-opus-4-6')).toBe(true);
+        expect(coversModel(window, 'claude-sonnet-4-5')).toBe(false);
+      } else if (label.includes('Sonnet')) {
+        expect(scope).toEqual({ kind: 'models', modelFamilies: ['sonnet'] });
+        expect(coversModel(window, 'claude-sonnet-4-5')).toBe(true);
+        expect(coversModel(window, 'claude-opus-4-6')).toBe(false);
+      } else {
+        expect(scope).toEqual({ kind: 'account' });
+        expect(coversModel(window, 'claude-opus-4-6')).toBe(true);
+        expect(coversModel(window, 'claude-sonnet-4-5')).toBe(true);
+      }
+    }
+  );
   it('clears a no-reset receipt on a newer fresh partial window and ages it out conservatively', () => {
     const observedAt = '2026-10-23T05:00:00Z';
     const event: Observation = {

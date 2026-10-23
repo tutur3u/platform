@@ -5,7 +5,11 @@ export interface UsageWindow {
   kind: WindowKind;
   id?: string;
   label?: string;
-  scope?: { kind: 'account' | 'models' | 'unknown'; modelPrefixes?: string[] };
+  scope?: {
+    kind: 'account' | 'models' | 'unknown';
+    modelPrefixes?: string[];
+    modelFamilies?: string[];
+  };
   usedPercent?: number;
   estimated?: number;
   resetsAt?: string | null;

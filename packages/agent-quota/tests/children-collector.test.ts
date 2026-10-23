@@ -1,8 +1,10 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
+import { checkpointDecision } from '../src/checkpoint-ready';
 import {
   collectChildren,
   collectPoolReceipts,
@@ -19,7 +21,7 @@ it('projects descendant metadata and structured errors without reading message c
  CREATE TABLE orchestration_v2_projection_subagents(subagent_id TEXT,thread_id TEXT,child_thread_id TEXT,status TEXT,origin TEXT,provider_instance_id TEXT,payload_json TEXT);
  CREATE TABLE orchestration_v2_projection_runs(run_id TEXT,thread_id TEXT,ordinal INTEGER,status TEXT,completed_at TEXT,provider_instance_id TEXT,payload_json TEXT);
  CREATE TABLE orchestration_v2_projection_runtime_requests(thread_id TEXT,status TEXT,kind TEXT);
- CREATE TABLE orchestration_v2_projection_nodes(thread_id TEXT,status TEXT);
+ CREATE TABLE orchestration_v2_projection_nodes(node_id TEXT,thread_id TEXT,run_id TEXT,status TEXT);
  CREATE TABLE orchestration_v2_projection_messages(message_id TEXT,payload_json TEXT);
  CREATE TABLE orchestration_v2_projection_turn_items(thread_id TEXT,run_id TEXT,node_id TEXT,type TEXT,status TEXT,updated_at TEXT,payload_json TEXT);
  CREATE TABLE orchestration_v2_projection_context_transfers(source_thread_id TEXT,target_thread_id TEXT,type TEXT,payload_json TEXT);
@@ -91,6 +93,12 @@ it('projects descendant metadata and structured errors without reading message c
       'claude_dd',
       JSON.stringify({ modelSelection: { model: 'opus' }, queueHeld: false })
     );
+    const node = db.prepare(
+      'INSERT INTO orchestration_v2_projection_nodes VALUES (?,?,?,?)'
+    );
+    node.run('stale2', 'child', 'run2', 'running');
+    node.run('stale4', 'child', 'run4', 'pending');
+    node.run('queued5', 'child', 'run5', 'waiting');
     db.prepare(
       'INSERT INTO orchestration_v2_projection_messages VALUES (?,?)'
     ).run(
@@ -115,7 +123,42 @@ it('projects descendant metadata and structured errors without reading message c
       })
     );
     db.close();
+    const queryStarted = performance.now();
     const snapshot = collectChildren('root', path);
+    expect(performance.now() - queryStarted).toBeLessThan(1000);
+    expect(
+      snapshot.threads.find((item) => item.id === 'child')?.activeWriterNodes
+    ).toBe(0);
+    expect(checkpointDecision('child', snapshot, [], []).reasons).not.toContain(
+      'writer-not-drained'
+    );
+    const activeDb = new DatabaseSync(path);
+    activeDb
+      .prepare(
+        'INSERT INTO orchestration_v2_projection_runs VALUES (?,?,?,?,?,?,?)'
+      )
+      .run(
+        'active-writer',
+        'child',
+        6,
+        'running',
+        null,
+        'claude_dd',
+        JSON.stringify({ rootNodeId: 'active-node' })
+      );
+    activeDb
+      .prepare('INSERT INTO orchestration_v2_projection_nodes VALUES (?,?,?,?)')
+      .run('active-node', 'child', 'active-writer', 'running');
+    expect(
+      collectChildren('root', path).threads.find((item) => item.id === 'child')
+        ?.activeWriterNodes
+    ).toBe(1);
+    activeDb
+      .prepare(
+        "UPDATE orchestration_v2_projection_runs SET status='completed' WHERE run_id='active-writer'"
+      )
+      .run();
+    activeDb.close();
     expect(JSON.stringify(snapshot)).not.toContain('PRIVATE USER CONTENT');
     const result = reconcileChildren(
       snapshot,
