@@ -177,13 +177,12 @@ jobs:
       # exit 127 and the merge never reaches the push. Keep the version pin in
       # step with mobile.yaml.
       - name: Setup Flutter
+        id: flutter
         if: steps.plan.outputs.should_merge == 'true'
-        uses: subosito/flutter-action@v2
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       # `generate: true` in pubspec.yaml means this also runs gen-l10n, which
       # flutter-analyze needs before it can resolve lib/l10n/gen.
@@ -191,6 +190,13 @@ jobs:
         if: steps.plan.outputs.should_merge == 'true'
         working-directory: apps/mobile
         run: flutter pub get
+      - name: Save pub cache
+        if: steps.plan.outputs.should_merge == 'true'
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
 
       - name: Configure git identity
         if: steps.plan.outputs.should_merge == 'true'

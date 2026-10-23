@@ -36,12 +36,12 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+      - name: Setup Flutter
+        id: flutter
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
       - name: Validate public configuration and packaging helpers
         env:
           DESKTOP_PUBLIC_CONFIG: ${{ vars.DESKTOP_PUBLIC_CONFIG }}
@@ -62,6 +62,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           flutter build windows --release --target lib/main_production.dart --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Save pub cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
       - name: Audit and create unsigned Store submission package
         env:
           DESKTOP_STORE_RUN_NUMBER: ${{ github.run_number }}

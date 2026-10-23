@@ -12,6 +12,8 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-deploy-stores.yaml"
+      - ".github/actions/setup-flutter-cached/**"
+      - ".github/actions/save-trusted-cache/**"
       - ".github/workflows/ci-check.yml"
       - "scripts/mobile-deployment/**"
       - "scripts/ci/normalize-release-notes.js"
@@ -171,18 +173,25 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
-          cache-dependency-path: |
-            apps/mobile/android/**/*.gradle*
-            apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
+
+      # Restore the default-branch Gradle cache; only main may save it.
+      - name: Restore Gradle cache
+        id: gradle
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-v1-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        id: flutter
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Fetch Android deployment bundle from Tuturuuu
         shell: bash
@@ -215,6 +224,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Save pub cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
+
       - name: Validate Android deployment identity
         shell: bash
         run: |
@@ -233,6 +249,15 @@ jobs:
           MOBILE_DART_DEFINE_FILE: .env.github
         with:
           command: bun build:android --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
+
+      - name: Save Gradle cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          cache-hit: ${{ steps.gradle.outputs.cache-hit }}
 
       - name: Upload Android App Bundle artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -298,15 +323,16 @@ jobs:
           path: apps/mobile/assets
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        id: flutter
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
-      - name: Cache CocoaPods downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      # Production pushes restore main's entry; saving here would create a
+      # production-scoped copy that no other ref can reuse.
+      - name: Restore CocoaPods downloads
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             /Users/runner/Library/Caches/CocoaPods
@@ -348,6 +374,13 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Save pub cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
 
       - name: Import Apple signing assets
         shell: bash

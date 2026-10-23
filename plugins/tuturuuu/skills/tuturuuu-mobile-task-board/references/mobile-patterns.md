@@ -31,6 +31,14 @@ localization changes.
   Local verification must prove the Android AAB build, while iOS IPA
   verification requires full Xcode before it can be claimed.
 
+- In CI, set up Flutter with `.github/actions/setup-flutter-cached`. It
+  installs the SDK without the Actions cache, because 1.6-2 GB SDK archives
+  evicted the shared Turbo, Bun and Supabase caches, and it restores the pub
+  cache. Save pub, Gradle and CocoaPods caches only through
+  `.github/actions/save-trusted-cache` after dependency resolution. Never use
+  `cache: true` on `subosito/flutter-action` or `cache: gradle` on
+  `actions/setup-java`. `scripts/ci/ci-cache-scope.test.js` enforces this.
+
 ## API Origins And Authentication
 
 - Mobile uses Supabase access-token Bearer authentication against both the

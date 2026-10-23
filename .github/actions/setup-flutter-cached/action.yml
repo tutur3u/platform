@@ -1,0 +1,53 @@
+name: Setup Flutter with trusted pub cache
+description: >-
+  Install Flutter without caching the 1.6-2 GB SDK and restore the pub cache.
+  Pull requests and branches only restore; save with save-trusted-cache after
+  `flutter pub get` so only the default branch writes the shared entry.
+inputs:
+  flutter-version:
+    description: Flutter version or pattern passed to subosito/flutter-action.
+    required: true
+  channel:
+    description: Flutter release channel.
+    required: false
+    default: stable
+outputs:
+  pub-cache-path:
+    description: Pub cache directory to save after dependency resolution.
+    value: ${{ steps.meta.outputs.PUB-CACHE-PATH }}
+  pub-cache-key:
+    description: Exact pub cache key for this lockfile generation.
+    value: flutter-pub-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.meta.outputs.VERSION }}-${{ hashFiles('**/pubspec.lock') }}
+  pub-cache-hit:
+    description: Whether the exact pub cache key was restored.
+    value: ${{ steps.pub.outputs.cache-hit }}
+runs:
+  using: composite
+  steps:
+    - name: Resolve Flutter release and cache paths
+      id: meta
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: ${{ inputs.channel }}
+        dry-run: "true"
+
+    - name: Restore pub cache
+      id: pub
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.meta.outputs.PUB-CACHE-PATH }}
+        key: flutter-pub-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.meta.outputs.VERSION }}-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          flutter-pub-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.meta.outputs.VERSION }}-
+
+    # The SDK download is faster than restoring a multi-GB archive and would
+    # evict the Turbo, Bun and Supabase caches from the 10 GB repository budget.
+    - name: Install Flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: ${{ inputs.channel }}
+        cache: "false"
+        pub-cache: "false"
+        pub-cache-path: ${{ steps.meta.outputs.PUB-CACHE-PATH }}

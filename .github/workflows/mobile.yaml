@@ -14,6 +14,8 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - ".github/actions/setup-flutter-cached/**"
+      - ".github/actions/save-trusted-cache/**"
   pull_request:
     paths:
       - "apps/mobile/**"
@@ -21,6 +23,8 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - ".github/actions/setup-flutter-cached/**"
+      - ".github/actions/save-trusted-cache/**"
 
 permissions:
   contents: read
@@ -53,16 +57,21 @@ jobs:
         uses: actions/checkout@v7
 
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        id: flutter
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
-          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
 
       - name: 📦 Install Dependencies
         run: flutter pub get --enforce-lockfile
+
+      - name: Save pub cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
 
       - name: ✨ Check Formatting
         id: format
@@ -370,15 +379,20 @@ jobs:
         working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        id: flutter
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
-          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
       - name: Install dependencies
         run: flutter pub get
+      - name: Save pub cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
       - name: Run test shard
         run: flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded
 
@@ -422,14 +436,21 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        id: flutter
+        uses: ./.github/actions/setup-flutter-cached
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
       - run: bun install --frozen-lockfile
       - run: flutter pub get
         working-directory: apps/mobile
+      - name: Save pub cache
+        uses: ./.github/actions/save-trusted-cache
+        with:
+          path: ${{ steps.flutter.outputs.pub-cache-path }}
+          key: ${{ steps.flutter.outputs.pub-cache-key }}
+          cache-hit: ${{ steps.flutter.outputs.pub-cache-hit }}
       - name: Verify native/web room protocol against local Cloudflare
         run: bun apps/meet-realtime/tests/mobile-local-check.ts
 

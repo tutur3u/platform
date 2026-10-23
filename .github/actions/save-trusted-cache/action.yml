@@ -1,0 +1,24 @@
+name: Save trusted cache
+description: >-
+  Save a dependency cache only from default-branch pushes and dispatches, never
+  from pull requests, other branches or Dependabot, and only after an exact miss.
+inputs:
+  path:
+    description: Cache paths, one per line.
+    required: true
+  key:
+    description: Exact cache key restored earlier in the job.
+    required: true
+  cache-hit:
+    description: The restore step's cache-hit output.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Save cache from the default branch
+      if: ${{ inputs.cache-hit != 'true' && github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
