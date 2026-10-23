@@ -38,6 +38,38 @@ describe('Node runtime option admission', () => {
   ])('admits ambiguous or script-running runtime arguments %j', (...args) => {
     expect(isHeavyCommand('node', args)).toBe(true);
   });
+  it.each([
+    '--experimental-specifier-resolution',
+    '--experimental-config-file',
+  ])(
+    'admits the bare %s form instead of consuming a possible program',
+    (flag) => {
+      const args = [flag, program, 'run', '--maxWorkers=24'];
+      expect(commandTool('node', args).tool).toBe('ambiguous');
+      expect(isHeavyCommand('node', args)).toBe(true);
+      const attached = [`${flag}=fixture`, program, 'run', '--maxWorkers=24'];
+      expect(commandTool('node', attached).tool).toBe('vitest');
+      expect(limitCommand('node', attached, defaultResourceConfig())).toContain(
+        `--maxWorkers=${defaultResourceConfig().vitestWorkers}`
+      );
+    }
+  );
+  it.each([
+    ['node', '--diagnostic-dir', program],
+    ['node', '--require', 'vitest'],
+    ['node', '--title', 'resources-entry.js'],
+    ['node', '--cpu-prof-dir', 'scripts/check.js'],
+    ['node', '--env-file', 'run-script-tests.js'],
+    ['bun', '--preload', 'playwright'],
+    ['npx', '--package', 'vitest'],
+  ])(
+    'admits a potentially executable value in %s %s %s',
+    (name, flag, value) => {
+      const args = [flag, value, 'ordinary.js'];
+      expect(commandTool(name, args).tool).toBe('ambiguous');
+      expect(isHeavyCommand(name, args)).toBe(true);
+    }
+  );
   it('preserves runtime separators while capping the selected program', () => {
     expect(
       limitCommand(

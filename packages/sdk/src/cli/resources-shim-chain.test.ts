@@ -43,7 +43,7 @@ describe('the program is the first positional argument', () => {
       false,
     ],
     ['node', ['script.js', 'vitest', 'run'], 'node', false],
-    ['node', ['-r', 'vitest', 'script.js'], 'node', false],
+    ['node', ['-r', 'vitest', 'script.js'], 'ambiguous', true],
     // Real tool entries stay heavy.
     [
       'node',
