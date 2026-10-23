@@ -33,6 +33,45 @@ export function commandCwd(args: string[], cwd = process.cwd()) {
   return cwd;
 }
 
+// Flags that consume the next argument, so it is not mistaken for the program.
+const valueFlags: Record<string, readonly string[]> = {
+  node: [
+    '-r',
+    '--require',
+    '--import',
+    '--loader',
+    '--experimental-loader',
+    '-C',
+    '--conditions',
+    '--input-type',
+    '--env-file',
+    '--title',
+  ],
+  bun: [
+    '--cwd',
+    '-F',
+    '--filter',
+    '--env-file',
+    '-r',
+    '--preload',
+    '--config',
+    '-c',
+    '--tsconfig-override',
+    '-d',
+    '--define',
+  ],
+  bunx: ['-p', '--package'],
+  npx: ['-p', '--package', '-c', '--call'],
+};
+// The ttr CLI (`#!/usr/bin/env bun`) starts through the bun shim whenever the
+// shims are on PATH. It does its own admission, so a shim must never admit it.
+const ttrLaunchers = new Set([
+  'ttr',
+  'tuturuuu',
+  'tutur3u',
+  'resources-entry.ts',
+  'resources-entry.js',
+]);
 export function commandTool(name: string, args: string[]) {
   if (['node', 'bun', 'bunx', 'npx'].includes(name)) {
     for (let i = 0; i < args.length; i++) {
@@ -40,10 +79,21 @@ export function commandTool(name: string, args: string[]) {
       if (
         ['-e', '-p', '--eval', '--print'].some(
           (flag) => arg === flag || arg.startsWith(`${flag}=`)
-        )
+        ) &&
+        (name === 'node' || name === 'bun')
       )
         break;
+      if (arg.startsWith('-')) {
+        if (valueFlags[name]?.includes(arg)) i++;
+        continue;
+      }
+      if (name === 'bun' && ['run', 'x', 'exec'].includes(arg)) continue;
+      // The first positional is the program; everything after it is that
+      // program's own argv (`bun /path/ttr resources run -- bunx vitest` runs
+      // ttr, not vitest).
       const file = basename(arg);
+      if (ttrLaunchers.has(file))
+        return { tool: 'ttr', tail: args.slice(i + 1), offset: i + 1 };
       for (const tool of tools) {
         if (
           [tool, `${tool}.js`, `${tool}.mjs`].includes(file) ||
@@ -55,6 +105,7 @@ export function commandTool(name: string, args: string[]) {
           return { tool, tail: args.slice(offset), offset };
         }
       }
+      break;
     }
   }
   return { tool: name, tail: args, offset: 0 };

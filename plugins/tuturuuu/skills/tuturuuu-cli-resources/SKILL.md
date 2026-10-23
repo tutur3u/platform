@@ -90,7 +90,9 @@ to a root-locked binary under `/bin` or `/usr/bin` (every path component
 root-owned, not group/other writable) and no `LD_*`/`DYLD_*` loader variable is
 set. The CLI spawns that canonical path, never the original symlink. Runtimes and package managers (even `--version`, since
 `NODE_OPTIONS` can preload code) and every git command (fsmonitor, hooks,
-pager, textconv) always queue. Cancellation releases only its own slot after the
+pager, textconv) always queue. Shims classify only the program (first positional), never later arguments,
+and never admit the `ttr` launcher itself (it starts through the bun shim
+when shims are on PATH, e.g. from `~/.zshenv`). Cancellation releases only its own slot after the
 owned child group drains. Do not use separate
 `TTR_RESOURCES_HOME` values across projects: that creates independent queues.
 
