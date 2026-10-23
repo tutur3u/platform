@@ -3,7 +3,8 @@
   "extends": ["//"],
   "tasks": {
     "type-check": {
-      "inputs": ["$TURBO_EXTENDS$", ".dev.vars*", ".env*"]
+      "inputs": ["$TURBO_EXTENDS$", ".dev.vars*", ".env*"],
+      "outputs": ["$TURBO_EXTENDS$", "worker-configuration.d.ts"]
     }
   }
 }

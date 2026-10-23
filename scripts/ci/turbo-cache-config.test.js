@@ -69,7 +69,7 @@ const graphOnlyTasks = new Set(['transit']);
 test('root package has no runtime workspace dependencies (global hash)', () => {
   // Turbo folds the root package's workspace dependency closure into
   // hashOfInternalDependencies. A root dependency on email-service invalidated
-  // every task on 12 of 40 main commits (any utils/types/internal-api edit).
+  // every task on 11 of 40 main commits (any utils/types/internal-api edit).
   const rootPackage = readJson('package.json');
   for (const field of [
     'dependencies',
@@ -223,6 +223,9 @@ test('gitignored env files that change results are hashed', () => {
         `${configPath} type-check lacks ${glob}`
       );
     }
+    // Restore the generated declarations on a cache hit for editors and tsc.
+    const outputs = readJson(configPath).tasks['type-check'].outputs ?? [];
+    assert.ok(outputs.includes('worker-configuration.d.ts'), configPath);
   }
 });
 
@@ -244,6 +247,25 @@ test('package Turbo configs extend the root and only widen inputs', () => {
         false,
         `${configPath} ${name} disables cache`
       );
+      assert.equal(
+        task.dependsOn,
+        undefined,
+        `${configPath} ${name} overrides upstream invalidation links`
+      );
+      for (const variable of task.env ?? []) {
+        assert.ok(!remoteCacheCredentials.includes(variable), configPath);
+        for (const pattern of volatileEnv) {
+          assert.doesNotMatch(variable, pattern, `${configPath} ${variable}`);
+        }
+      }
+      if (task.outputs && !task.outputs.includes('$TURBO_EXTENDS$')) {
+        for (const output of tasks[name]?.outputs ?? []) {
+          assert.ok(
+            task.outputs.includes(output),
+            `${configPath} ${name} drops inherited output ${output}`
+          );
+        }
+      }
     }
   }
 });

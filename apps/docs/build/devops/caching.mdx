@@ -15,7 +15,7 @@ its own and is out of scope here.
 | --- | --- | --- | --- |
 | Turbo local cache | `.turbo/cache` per checkout, or `TURBO_CACHE_DIR` | Turbo task hash | Any local run |
 | Turbo remote cache | Vercel today; self-hosted Cloudflare R2 Worker planned | Turbo task hash, team-scoped | Trusted `main`/`production` jobs and trusted machines |
-| Turbo fallback archive | GitHub Actions cache (`setup-turbo-fallback-cache`) | Family + `turbo.json` + `bun.lock` + SHA | Default-branch jobs only |
+| Turbo fallback archive | GitHub Actions cache (`setup-turbo-fallback-cache`) | OS + arch + family + `turbo.json` + `bun.lock` + SHA | Default-branch jobs only |
 | Bun runtime and packages | GitHub Actions cache (`setup-bun-with-retry`) | Bun version + `bun.lock` | Trusted `main` only |
 | Supabase images and baseline | GitHub Actions cache (`cache-supabase-images`, `setup-supabase-baseline`) | Image pins / migration fingerprint | Trusted `main` only |
 | Tool incremental state | `*.tsbuildinfo`, `.turbo/tsc-build-cache-key.json` | Stored as Turbo outputs | Follows the Turbo cache |
@@ -62,7 +62,12 @@ not exclude upstream `__tests__` folders from them:
    timestamps, `GITHUB_*`/`RUNNER_*`, or machine paths (`PUB_CACHE`,
    `LOCALAPPDATA`, `USERPROFILE`). Put machine paths in
    `globalPassThroughEnv`. Only deploy builds hash `PLATFORM_BUILD_*`, because
-   the emitted app embeds that identity.
+   the emitted app embeds that identity. `globalEnv` still hashes runtime
+   secrets such as `OPENAI_API_KEY` and `SUPABASE_SECRET_KEY` into every
+   task, so a shell that exports them gets no hits from CI. Keep them in
+   app `.env` files, not the shell profile. Moving them to task env does not
+   help today, because no-script placeholder `build` tasks would still carry
+   them into every type-check hash.
 3. **No remote-cache credentials in any env list.** `TURBO_TOKEN`, `TURBO_TEAM`,
    `TURBO_API` and `TURBO_REMOTE_CACHE_SIGNATURE_KEY` stay step-scoped (see
    `ci-cache-policy.test.js`).
