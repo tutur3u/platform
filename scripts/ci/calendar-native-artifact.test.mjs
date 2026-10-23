@@ -170,7 +170,6 @@ test('source-only discovery excludes mandatory artifact runtime suites', async (
   );
   assertCalendarActors(readWorkflow('mail-calendar-tasks-builds.yaml').jobs);
 });
-
 test('accept the owning Cloudflare Vite 1.64 prebundled ESModule output shape', () =>
   fixture(({ app }) => {
     const { config } = validateOutput(app);
@@ -217,7 +216,7 @@ test('both native workflow triggers select Web-only changes and keep Web consume
       `${event} must select Web-only changes`
     );
   }
-  assert.ok(workflow.jobs.build.strategy.matrix.app.includes('web'));
+  assert.equal(workflow.jobs['build-web'].name, 'build (web)');
   const steps = workflow.jobs['calendar-native'].steps;
   const webTests = steps.find((step) =>
     step.run?.includes('bun run --cwd apps/web test')
@@ -460,7 +459,8 @@ test('Calendar actor guards reject missing, moved, duplicate and forged source e
     'build-deploy',
   ]) {
     const copy = structuredClone(jobs),
-      job = copy['calendar-native'];
+      job = copy['calendar-native'],
+      build = copy['build-web'];
     const seal = calendarActor(
       job,
       'Seal source and emitted artifact identity'
@@ -483,11 +483,11 @@ test('Calendar actor guards reject missing, moved, duplicate and forged source e
       debug.run = debug.run.replace('"$GITHUB_EVENT_NAME"', '"$GITHUB_SHA"');
     if (kind === 'receipt') debug.run = debug.run.replace('cmp ', 'echo ');
     if (kind === 'hash') debug.run = debug.run.replace('sha256sum', 'echo');
-    if (kind === 'build-continue') copy.build['continue-on-error'] = true;
+    if (kind === 'build-continue') build['continue-on-error'] = true;
     if (kind === 'build-step-continue')
-      copy.build.steps[0]['continue-on-error'] = true;
+      build.steps[0]['continue-on-error'] = true;
     if (kind === 'build-deploy')
-      copy.build.steps.push({ run: 'bun x wrangler deploy' });
+      build.steps.push({ run: 'bun x wrangler deploy' });
     assert.throws(() => assertCalendarActors(copy));
   }
 });
