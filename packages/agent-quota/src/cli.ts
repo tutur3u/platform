@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
+import { argumentValue } from './cli-args';
 import { collectAll } from './collectors';
 import { recommend, recommendAssignments } from './policy';
 import { parseReserves } from './reserves';
 import type { Provider } from './types';
-import { argumentValue } from './cli-args';
 
 const arg = (flag: string) => argumentValue(flag);
 
