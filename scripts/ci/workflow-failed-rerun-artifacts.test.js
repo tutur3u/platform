@@ -15,8 +15,10 @@ const FAILED_RERUN_TARGETS = {
   'release-please-transient-retry.yaml': 'release-please.yaml',
 };
 
+// Spans shell line continuations and YAML folded blocks. A false positive only
+// requires a mapping entry, so the window errs on the broad side.
 const FAILED_RERUN =
-  /gh\s+run\s+rerun\b[^\n]*--failed|rerun-failed-jobs|reRunWorkflowFailedJobs/;
+  /gh\s+run\s+rerun\b[\s\S]{0,300}?--failed|rerun-failed-jobs|reRunWorkflowFailedJobs/;
 const ARTIFACT_HANDOFF = /actions\/(upload|download)-artifact@/;
 
 function workflowFiles() {
@@ -71,4 +73,25 @@ test('the artifact check recognises an artifact producer and ignores comments', 
 
   assert.match(uncommented(producer), ARTIFACT_HANDOFF);
   assert.doesNotMatch(uncommented(`# ${producer.trim()}`), ARTIFACT_HANDOFF);
+});
+
+test('failed-only reruns are detected across continued and folded lines', () => {
+  const continued = [
+    '      - run: |',
+    '          gh run rerun "$RUN_ID" \\',
+    '            --failed',
+  ].join('\n');
+  const folded = [
+    '      - run: >',
+    '          gh run rerun',
+    '          "$RUN_ID"',
+    '          --failed',
+  ].join('\n');
+
+  assert.match(uncommented(continued), FAILED_RERUN);
+  assert.match(uncommented(folded), FAILED_RERUN);
+  assert.doesNotMatch(
+    uncommented('      - run: gh run rerun "$RUN_ID"'),
+    FAILED_RERUN
+  );
 });
