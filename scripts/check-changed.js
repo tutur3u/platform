@@ -37,7 +37,11 @@ const {
   resolveTsrs,
 } = require('./check-changed/tsrs.js');
 const { createChildEnv } = require('./pre-commit.js');
-const { diagnosticKey, runChecker } = require('./ts-diagnostics.js');
+const {
+  compareDiagnostics,
+  diagnosticKey,
+  runChecker,
+} = require('./ts-diagnostics.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const ZERO_SHA = /^0+$/;
@@ -226,6 +230,7 @@ function runTypeCheck(step, context) {
   const totals = { blocking: [], advisory: 0, ignored: 0 };
   const used = { tsc: 0, tsrs: 0 };
   let shadowCount = 0;
+  const parityOutput = [];
   const check = (name, project) => {
     const result = runChecker(context.checkers[name], project, {
       cwd: context.root,
@@ -237,15 +242,34 @@ function runTypeCheck(step, context) {
   };
   for (const project of projects) {
     let name =
-      context.checkers.tsrs && prefersTsrs(context.checker, project)
+      context.checkers.tsrs &&
+      TSRS_PROJECTS.has(project) &&
+      prefersTsrs(context.checker)
         ? 'tsrs'
         : 'tsc';
     let { result, groups } = check(name, project);
     // Positive and negative tsrs outcomes are advisory; tsc alone decides.
     if (name === 'tsrs') {
       shadowCount++;
+      const shadow = result;
       name = 'tsc';
       ({ result, groups } = check(name, project));
+      const parity = compareDiagnostics(result.diagnostics, shadow.diagnostics);
+      if (shadow.crashed || !parity.equal) {
+        parityOutput.push(
+          `advisory tsrs parity ${project}: ${parity.onlyActual.length} tsrs-only, ${parity.onlyExpected.length} tsc-only${shadow.crashed ? ', tsrs crashed' : ''}`
+        );
+        for (const [label, diagnostics] of [
+          ['tsrs-only', parity.onlyActual],
+          ['tsc-only', parity.onlyExpected],
+        ]) {
+          parityOutput.push(
+            ...diagnostics
+              .slice(0, MAX_PRINTED_DIAGNOSTICS)
+              .map((diagnostic) => `[${label}] ${diagnosticKey(diagnostic)}`)
+          );
+        }
+      }
     }
     used[name]++;
     if (result.crashed) {
@@ -253,6 +277,7 @@ function runTypeCheck(step, context) {
         status: 'fail',
         detail: `${project} crashed`,
         output: result.output,
+        parityOutput: parityOutput.join('\n'),
       };
     }
     totals.blocking.push(...groups.blocking);
@@ -272,6 +297,7 @@ function runTypeCheck(step, context) {
   return {
     status: totals.blocking.length ? 'fail' : 'pass',
     detail: notes.join(', '),
+    parityOutput: parityOutput.join('\n'),
     output: totals.blocking
       .slice(0, MAX_PRINTED_DIAGNOSTICS)
       .map(diagnosticKey)
@@ -310,6 +336,7 @@ function runChecks(steps, context, log = console.log) {
     log(
       `${ICONS[result.status]} ${step.label} (${seconds}s)${result.detail ? ` - ${result.detail}` : ''}`
     );
+    if (result.parityOutput) log(result.parityOutput.replace(/^/gm, '     '));
     if (result.status === 'fail' || result.status === 'advisory') {
       if (result.output) log(result.output.replace(/^/gm, '     '));
       for (const hint of [step.failureHint, step.fixHint].filter(Boolean)) {

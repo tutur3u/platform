@@ -513,6 +513,7 @@ test('tsrs resolution is lazy, qualified-project-only and offline in hooks', (t)
       'git config': '',
       'git rev-parse HEAD': head,
       'git status': '',
+      'git ls-files': '',
     }),
     resolveTsrs: (value) => {
       options.push(value);
@@ -554,7 +555,7 @@ test('tsrs resolution is lazy, qualified-project-only and offline in hooks', (t)
   assert.ok(calls[1].endsWith('/tsc'));
 });
 
-test('forced tsrs cannot hide errors in an unqualified project', (t) => {
+test('forced tsrs uses only tsc in an unqualified project', (t) => {
   const root = fs.mkdtempSync(
     path.join(os.tmpdir(), 'changed-tsrs-unqualified-')
   );
@@ -587,8 +588,7 @@ test('forced tsrs cannot hide errors in an unqualified project', (t) => {
       },
     }
   );
-  assert.deepEqual(calls, ['tsrs', 'tsc']);
+  assert.deepEqual(calls, ['tsc']);
   assert.equal(result.status, 'fail');
   assert.match(result.output, /real error/);
-
 });

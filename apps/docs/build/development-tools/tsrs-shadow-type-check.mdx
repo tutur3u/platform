@@ -86,6 +86,12 @@ the job only when the shadow tooling changes; `workflow_dispatch` runs it on dem
 node scripts/ci/tsrs-shadow.js --tsrs <path-to-tsrs> --project apps/web/tsconfig.json
 ```
 
+The local flag runs tsrs only for projects in `TSRS_PROJECTS`, even when one
+workspace has both qualified and unqualified configs. Tsc still checks every
+project. Exact diagnostic-key multiset differences are printed as advisory
+`tsrs-only` / `tsc-only` output, including when tsc passes; a shadow mismatch
+never changes the authoritative tsc result.
+
 ## Promotion criteria
 
 Do not replace `tsc` as the required gate until **all** of these hold:
