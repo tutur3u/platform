@@ -43,15 +43,9 @@ extension _EducationLazyList on _EducationPageState {
     final rows = _tab == _EducationTab.overview ? 0 : _visibleCount;
     return NovaRefreshIndicator(
       onRefresh: () => _reloadCurrentTab(force: true),
-      child: ListView.builder(
+      child: AppPageListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          40 + MediaQuery.paddingOf(context).bottom,
-        ),
         itemCount: headers.length + rows + 1,
         itemBuilder: (context, index) {
           if (index < headers.length) return headers[index];
