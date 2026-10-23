@@ -20,7 +20,7 @@ sources at one commit.
 | Dependency audit (`bun audit`) | `security-checks.yaml` → **Dependency audit** | PRs and pushes that change a manifest or lockfile | High/critical advisory present at head but not at base |
 | Workflow trust boundaries | `security-checks.yaml` → **Workflow trust boundaries** | Changes under `.github/` or `scripts/ci/` | Any failing workflow security suite (`scripts/ci/workflow-*.test.js`, `security-*.test.js`, protected concurrency, workflow config) |
 | CodeQL (`security-extended`) | `codeql.yml` → **Analyze (language)** | PRs and `main` pushes; only languages the diff touches (`javascript-typescript`, `python`, `actions`) | High/critical result absent from the latest `main` analysis |
-| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label; recomputed by `security-review-reclassify.yaml` | Every PR event (no path filter) and every review submission or dismissal | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
+| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label; recomputed by `security-review-reclassify.yaml` and `security-review-sweep.yaml` | Every PR event (no path filter), auto-merge or merge-queue entry, every review submission or dismissal, and a trusted sweep every 30 minutes | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
 
 Path gating uses the same changed-file resolution as the `ci-check` switchboard
 (`tuturuuu.ci.ts` keys `security-checks.yaml` and `codeql.yml`). Unknown change
@@ -38,7 +38,21 @@ findings are tracked in the findings register instead of blocking unrelated work
 
 - `security-checks.yaml` and `codeql.yml` use `pull_request`, so fork runs get a
   read-only token and no secrets. Jobs install no packages and run no package
-  scripts. `bun audit` reads only manifests and the lockfile.
+  scripts.
+- Pull request code never decides a gate. The scan summarizer, the audit differ
+  and the CodeQL new-alert gate come only from the base commit. Without them, for
+  example while the PR that introduces them is open, the gate fails closed with
+  an inline `jq` check: any gitleaks finding, any high/critical advisory, or any
+  high/critical (or unresolvable) CodeQL result fails. The register refuses to
+  build. The checkout's copy is never executed. The scope scripts that choose
+  which scans run (`resolve-changed-files.ts`, `security-paths.js`) are also read
+  from the base commit. Without them, every scan runs.
+- **Dependency audit** runs nothing from the checkout before the audit: no local
+  action, setup script or `GITHUB_PATH` change. bun is a checksum-verified
+  release (`BUN_VERSION`/`BUN_SHA256`) called by absolute path, and head and base
+  manifests are copied out of git into empty directories with the registry pinned
+  to `registry.npmjs.org`. A checkout-local `bunfig.toml` or `.npmrc` cannot
+  redirect the advisory lookup.
 - Gitleaks configuration (`.github/security/gitleaks.toml`), the ignore list
   (`.gitleaksignore`) and the scan summarizers are read from the base commit, so
   a PR cannot allowlist or hide its own finding. The scan passes
@@ -48,8 +62,11 @@ findings are tracked in the findings register instead of blocking unrelated work
   are given. To accept a finding, merge its fingerprint into `.gitleaksignore`
   through a reviewed PR; it applies to later scans. Allowlists are path-scoped
   with a reason; never allowlist by value. `scripts/ci/security-gitleaks-suppression.test.js`
-  proves this with a synthetic token, and the **Secret scan** job runs it against
-  the installed gitleaks release before scanning.
+  proves this with a synthetic token. The **Secret scan** job runs it against the
+  installed gitleaks release as its last step, after the scan is final, because
+  it is checkout code. `scripts/ci/security-trusted-helpers.test.js` runs the real
+  scan, audit and CodeQL gate steps against a base without the trusted helpers
+  and a hostile checkout copy.
 - Fork CodeQL results are not uploaded. They feed only the new-alert gate.
 - Do not enable GitHub CodeQL default setup while `codeql.yml` exists. Code
   scanning rejects advanced-setup uploads when default setup is on.
@@ -104,10 +121,38 @@ default-branch file) then checks out only the default-branch classifier. It find
 the open PR whose live head matches the signal through the API, and recomputes
 the check from the current file list and reviews. The latest submitted review per
 reviewer decides, so a dismissed approval (`DISMISSED`) withdraws the success.
-Comments and draft reviews are ignored. Event fields serve only as lookup keys, so
+Comments and draft reviews are ignored. At most 1,000 reviews are read. GitHub
+lists them oldest first, so a later change request could sit beyond that bound.
+A history that does not end inside the bound reports `action_required`. A file
+or review listing that cannot be read records `action_required` ("could not be
+evaluated") instead of leaving an earlier success standing. Event fields serve only as lookup keys, so
 a spoofed signal can only cause an honest recomputation. A fork contributor's
 first workflow runs may wait for maintainer approval. Until then, re-run the
 latest classifier run or remove the label to recompute.
+
+### Revocation does not depend on the relay
+
+The relay is defined by the pull request itself, so a PR can delete or rename it.
+A later dismissal would then never be signalled, and an earlier success would go
+stale. Revocation is therefore enforced in layers that the PR does not own:
+
+1. **Native code-owner review (primary).** The `main` ruleset requires code-owner
+   review and dismisses stale approvals on push. With `.github/CODEOWNERS`
+   naming the security reviewer on sensitive paths (#6491), GitHub itself
+   withholds the merge when an approval is dismissed or a new commit lands. Until
+   `CODEOWNERS` merges, that setting has no effect, and the layers below are the
+   only revocation controls.
+2. **Trusted recomputes.** The classifier (`pull_request_target`, default-branch
+   file) also runs when auto-merge is enabled or the PR enters a merge queue.
+   `security-review-sweep.yaml` runs every 30 minutes on a schedule from the
+   default branch. It recomputes every open PR labeled `security-review-required`
+   from its live reviews and posts a check only when the decision changed, so a
+   stale success lasts at most one sweep interval.
+3. **The relay** remains the fast path for honest PRs.
+
+The **Security review** check is therefore stricter, but it is not the only
+control for revocation. `scripts/ci/security-review-recheck.test.js` fails if
+removing the relay would leave no trusted recompute path.
 
 The control cannot be bypassed by the PR author:
 
@@ -131,7 +176,7 @@ check. Before merging, re-derive the decision from `main`:
 
 ## Daily audit and findings register
 
-The daily `security-checks.yaml` schedule (`17 2 * * *`, the only security timer)
+The daily `security-checks.yaml` schedule (`17 2 * * *`, the only security scan timer)
 runs CodeQL on `main` through `codeql.yml`, gitleaks over the last three days of
 history, `bun audit` on the lockfile, and the workflow trust suites. It then
 builds the findings register (`scripts/ci/security-findings-register.js`) from
