@@ -110,6 +110,32 @@ Once a remote run exists, a failure stops it and exits non-zero; even
 `--offload auto` never reruns it locally. Never offload to Judge or playground
 runners; selection excludes them.
 
+## Multi-host weighted admission
+
+`ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off
+until an operator installs that file after a reviewed release; never write or
+activate it from an agent session.
+- Hosts have separate light and heavy slots, per-class CPU/memory weights, and
+  reserved CPU/memory/disk headroom.
+- Local heavy work keeps the lane FIFO. Runners use the devbox offload
+  transport. Stale or unreachable runners and unknown disk are never admitted.
+- Reservations are created only inside the admission mutex and released on
+  cancel or owner death. Project-only locks never count as host admission.
+- Fairness is by repository share with a bypass bound (`maxBypass`), so no
+  waiter starves.
+- Every lane-queued job re-checks disk at dequeue: `TTR_STORAGE_MIN_FREE`
+  (15 GiB) and `TTR_STORAGE_MIN_FREE_PERCENT` (5%), fail closed;
+  `TTR_RESOURCES_IGNORE_DISK=1` overrides it for one command.
+
+Use `ttr resources hosts --simulate` for the offline dry run. The SDK reference
+has the measured old to new limits table.
+
+| Host | Old | New |
+| --- | --- | --- |
+| M4 | 2 lanes for every class | heavy 2 (2 CPU/5 GiB), light 1 (1 CPU/1 GiB), reserve 4 CPU/8 GiB/15 GiB |
+| skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
+| Sonha, ThanhStudio | none | not registered |
+
 ## Diagnose and recover
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
 ages. It warns when an owner has been idle at 0% CPU for more than 10 minutes.
