@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(92);
+select plan(94);
 
 create temp table definer_service_only(fn regprocedure) on commit drop;
 insert into definer_service_only values
@@ -113,7 +113,12 @@ select is((select proconfig::text from pg_proc where oid = 'public.get_challenge
 select is((select proconfig::text from pg_proc where oid = 'public.get_transaction_creators(uuid)'::regprocedure), '{"search_path=private, public, pg_temp"}', 'existing transaction creator pin preserved');
 
 -- Disposable actors: member A, non-member B.
-insert into public.users(id) values ('00000000-0000-4000-8000-00000000a201'), ('00000000-0000-4000-8000-00000000a202');
+-- Real Auth identities keep the unrelated MFA restriction healthy.
+select set_config('request.jwt.claims', '{}', true);
+insert into auth.users(id,email,email_confirmed_at) values
+  ('00000000-0000-4000-8000-00000000a201','definer-member@example.test',now()),
+  ('00000000-0000-4000-8000-00000000a202','definer-nonmember@example.test',now());
+insert into public.users(id) values ('00000000-0000-4000-8000-00000000a201'), ('00000000-0000-4000-8000-00000000a202') on conflict do nothing;
 insert into public.workspaces(id, name, personal, creator_id)
 values ('00000000-0000-4000-8000-00000000a211', 'Definer grant contract', false, '00000000-0000-4000-8000-00000000a201');
 insert into public.workspace_members(ws_id, user_id)
@@ -133,11 +138,13 @@ select ok(public.is_task_board_member('00000000-0000-4000-8000-00000000a201', '0
 select ok(not public.is_task_board_member('00000000-0000-4000-8000-00000000a202', '00000000-0000-4000-8000-00000000a221'), 'helper rejects a non-member');
 set local role authenticated;
 select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000a202"}', true);
+select ok(public.account_required_mfa_satisfied(), 'non-member session satisfies the independent MFA prerequisite');
 select is((select count(*)::int from public.task_lists where id = '00000000-0000-4000-8000-00000000a231'), 0, 'non-member cannot read the task list');
 select throws_ok($$insert into public.task_lists(id, board_id, name) values ('00000000-0000-4000-8000-00000000a232', '00000000-0000-4000-8000-00000000a221', 'Intruder')$$,
   '42501', null, 'non-member cannot create a list on the board');
 select ok(not public.is_task_board_member((select auth.uid()), '00000000-0000-4000-8000-00000000a221'), 'policy helper denies the signed-in non-member');
 select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000a201"}', true);
+select ok(public.account_required_mfa_satisfied(), 'member session satisfies the independent MFA prerequisite');
 select is((select count(*)::int from public.task_lists where id = '00000000-0000-4000-8000-00000000a231'), 1, 'member reads the task list');
 select lives_ok($$insert into public.task_lists(id, board_id, name) values ('00000000-0000-4000-8000-00000000a233', '00000000-0000-4000-8000-00000000a221', 'Member list')$$,
   'member creates a list on the board');
