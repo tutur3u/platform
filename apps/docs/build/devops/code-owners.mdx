@@ -12,7 +12,12 @@ radius:
   `packages/sso`, `packages/turnstile`, `packages/supabase`, the satellite session
   validator, web's auth and SSO API routes, every app's `proxy.ts`, and the API
   proxy guard and required-MFA runtime in `packages/utils`)
-- scheduled job routes authenticated by the cron secret (`apps/*/src/app/api/cron/`)
+- the libraries those routes call to decide: web's `lib/auth` and `lib/sso`, the
+  API-key middleware, realtime and app-coordination token signers, and Discord auth
+- scheduled jobs authenticated by the cron secret: every app's `api/cron` routes,
+  web's legacy cron implementations, Infrastructure's cron gateways and
+  `apps/cron-control`
+- inbound webhooks and their verifiers (SePay, Polar, Square, mail inbound)
 - database migrations and RLS (`apps/database/supabase/migrations/`)
 - code-execution infrastructure (`apps/devbox-control`, `packages/devbox`)
 - payments (`packages/payment`, `packages/payment-core`, and the payment API and
@@ -32,6 +37,14 @@ collect a code-owner approval until agents author pull requests as the
 an authorized administrator bypass after an independent agent security review,
 and GitHub records that bypass. Once `tuturuuu-bot` authors agent pull requests,
 the reviewer's approval satisfies the rule normally.
+
+## Release pull requests
+
+Release Please opens release pull requests against `production`, where the same
+ruleset applies. While the release author is the security reviewer's account, a
+release pull request that touches owned paths cannot collect a code-owner
+approval, so release merges go through the release script or the recorded
+administrator bypass.
 
 ## Changing ownership
 

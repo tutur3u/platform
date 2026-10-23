@@ -19,10 +19,33 @@
 /apps/web/src/app/api/auth/        @vhpx
 /apps/web/src/legacy-api-routes/auth/ @vhpx
 /apps/web/src/app/api/v1/sso/      @vhpx
+/apps/web/src/app/api/v1/auth/     @vhpx
+/apps/web/src/legacy-api-routes/v1/auth/ @vhpx
+/apps/web/src/lib/auth/            @vhpx
+/apps/web/src/lib/sso/             @vhpx
+
+# Credential, API-key and token verifiers called by many routes
+/apps/web/src/lib/api-middleware.ts @vhpx
+/apps/tasks/src/lib/api-middleware.ts @vhpx
+/packages/realtime/src/core/token.ts @vhpx
+/packages/utils/src/app-coordination-token.ts @vhpx
+/apps/discord/auth.py              @vhpx
 /apps/*/src/proxy.ts               @vhpx
 
 # Scheduled jobs authenticated by the cron secret
 /apps/*/src/app/api/cron/          @vhpx
+/apps/web/src/legacy-api-routes/cron/ @vhpx
+/apps/infrastructure/src/lib/mobile-calendar/cron-gateway.ts @vhpx
+/apps/infrastructure/src/lib/post-email-queue-cron.ts @vhpx
+/apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/run-now/ @vhpx
+/apps/cron-control/                @vhpx
+
+# Inbound webhooks and their verifiers
+/apps/*/src/app/api/v1/webhooks/   @vhpx
+/apps/web/src/legacy-api-routes/v1/webhooks/ @vhpx
+/apps/inventory/src/app/api/v1/inventory/polar/webhook/ @vhpx
+/apps/inventory/src/app/api/v1/inventory/square/webhook/ @vhpx
+/packages/inventory-core/src/lib/inventory/commerce/square/webhooks.ts @vhpx
 
 # Database schema, migrations and RLS
 /apps/database/supabase/migrations/ @vhpx
@@ -35,6 +58,8 @@
 /packages/payment/                 @vhpx
 /packages/payment-core/            @vhpx
 /apps/pay/src/app/api/payment/     @vhpx
+/apps/web/src/lib/sepay.ts         @vhpx
+/apps/web/src/lib/sepay-oauth.ts   @vhpx
 
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
