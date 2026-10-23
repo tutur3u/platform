@@ -331,7 +331,59 @@ test('recompute-only workflow_run consumers never trust the completion', () => {
           `${file}:${id} checks out the default branch only`
         );
         assert.equal(step.with?.['persist-credentials'], false);
+        // Only the default-branch classifier scripts, never the whole tree.
+        const sparse = String(step.with?.['sparse-checkout'] ?? '')
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean);
+        assert.ok(sparse.length > 0, `${file}:${id} sparse checkout only`);
+        assert.ok(
+          sparse.every((entry) => /^scripts\/ci\/[\w.-]+\.js$/u.test(entry)),
+          `${file}:${id} checks out default-branch scripts only`
+        );
       }
     }
   }
+});
+
+test('the recompute-only exemption is narrow, named and signal-only', () => {
+  // Only the Security review reclassifier may consume a fork-reachable
+  // completion (its upstream relay runs on pull_request_review).
+  assert.deepEqual([...recomputeOnlyConsumers], [
+    'security-review-reclassify.yaml',
+  ]);
+  const workflow = readWorkflow('security-review-reclassify.yaml');
+  const serialized = JSON.stringify(workflow);
+  // No PR ref or event head is ever checked out or used as a ref.
+  assert.doesNotMatch(
+    serialized,
+    /"ref":"[^"]*(?:pull_request|workflow_run\.head|refs\/pull)/u
+  );
+  assert.doesNotMatch(serialized, /secrets\./u);
+  const { reclassify, resolve } = workflow.jobs;
+  assert.equal(
+    resolve.if,
+    "github.event.workflow_run.event == 'pull_request_review'"
+  );
+  // Event fields are lookup keys only, and only in the resolve job: the PR
+  // identity that the posting job uses comes from API-derived outputs.
+  for (const [key, value] of Object.entries(resolve.outputs)) {
+    assert.match(
+      String(value),
+      /^\$\{\{ steps\.resolve\.outputs\.[\w]+ \}\}$/u,
+      `resolve output ${key}`
+    );
+  }
+  const post = reclassify.steps.at(-1);
+  for (const key of ['HEAD_SHA', 'PR_AUTHOR', 'PR_NUMBER']) {
+    assert.match(
+      String(post.env[key]),
+      /^\$\{\{ needs\.resolve\.outputs\.[\w]+ \}\}$/u,
+      key
+    );
+  }
+  assert.doesNotMatch(
+    JSON.stringify(reclassify),
+    /github\.event\.(?:workflow_run|pull_request)/u
+  );
 });
