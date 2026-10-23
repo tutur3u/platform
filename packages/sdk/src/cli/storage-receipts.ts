@@ -37,6 +37,8 @@ export interface ReceiptItem {
   bytes: number;
   /** Checks that passed right before acting, in order. */
   checks: string[];
+  /** Process-visibility evidence the removal relied on. */
+  evidence: 'full-visibility' | 'private-tree';
 }
 
 export type ReceiptLine = ReceiptContext &

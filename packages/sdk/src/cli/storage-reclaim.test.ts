@@ -1,9 +1,9 @@
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { autoReclaim } from './storage-auto-reclaim';
+import { autoReclaim, autoReclaimEnabled } from './storage-auto-reclaim';
 import { GiB, type VolumeProbe } from './storage-headroom';
 import type { Hold } from './storage-holds';
 import { hysteresisThresholds } from './storage-hysteresis';
@@ -16,6 +16,7 @@ import {
 } from './storage-receipts';
 import { type ReclaimDeps, runReclaim } from './storage-reclaim';
 import type { ReclaimCandidate } from './storage-reclaim-plan';
+import { reclaimSentinel } from './storage-reclaim-switch';
 
 // The SDK test env sets the kill switch; these engine tests lift it and use
 // only temp fixtures and injected liveness.
@@ -27,9 +28,11 @@ afterEach(() => {
 });
 
 const thresholds = hysteresisThresholds({});
+// Fixtures live under the temp dir, so its device is the "low volume".
+const DEVICE = lstatSync(tmpdir()).dev;
 const volume = (freeGiB: number): VolumeProbe => ({
   path: '/',
-  device: 1,
+  device: DEVICE,
   totalBytes: 500 * GiB,
   freeBytes: freeGiB * GiB,
   usedBytes: (500 - freeGiB) * GiB,
@@ -58,7 +61,7 @@ async function fixture() {
   await mkdir(cache, { recursive: true });
   const item = async (name: string, bytes = 30 * GiB) => {
     const path = join(cache, name);
-    await mkdir(path);
+    await mkdir(path, { mode: 0o755 });
     await writeFile(join(path, 'data'), 'x');
     const candidate: ReclaimCandidate = {
       rule: 'xcode-derived-data-idle',
@@ -113,12 +116,16 @@ describe('automatic reclaim engine', () => {
       fence: result.fence,
       checks: [
         'identity',
+        'same-volume',
         'holds',
         'rule-recheck',
         'cwd-scan',
         'open-files',
+        'full-visibility',
         'lease-fence',
+        'kill-switch',
       ],
+      evidence: 'full-visibility',
     });
     expect(Date.parse(receipts[1]!.at)).not.toBeNaN();
     // The lease is released afterwards.
@@ -274,22 +281,46 @@ describe('automatic reclaim engine', () => {
     }
   });
 
-  it('honours TTR_STORAGE_AUTO_RECLAIM=0 as a hard kill switch', async () => {
-    const { item, deps } = await fixture();
+  it('is off by default and needs an explicit opt-in for the triggers', async () => {
+    const sandbox = await realpath(await mkdtemp(join(tmpdir(), 'ttr-optin-')));
+    vi.stubEnv('HOME', sandbox);
+    expect(autoReclaimEnabled({})).toBe(false);
+    const home = join(sandbox, 'storage');
+    await mkdir(home, { recursive: true });
+    const env = { TTR_STORAGE_HOME: home };
+    expect(autoReclaimEnabled(env)).toBe(false);
+    expect(
+      autoReclaimEnabled({ ...env, TTR_STORAGE_AUTO_RECLAIM: 'yes' })
+    ).toBe(true);
+    await writeFile(reclaimSentinel(home), 'on\n');
+    expect(autoReclaimEnabled(env)).toBe(true);
+    // The admission trigger without opt-in reports and does nothing.
+    await writeFile(reclaimSentinel(home), '');
+    const outcome = await autoReclaim({
+      trigger: 'admission',
+      volumePath: sandbox,
+      thresholds,
+      env,
+    });
+    expect(outcome.result).toBeNull();
+    expect(outcome.note).toMatch(/kill switch|off by default/u);
+  });
+
+  it('honours every kill switch: env false values and the sentinel, before the lease, per item and inside the guard', async () => {
+    const { home, item, deps } = await fixture();
     const candidate = await item('AppA');
     const plan = vi.fn(() => [candidate]);
     const removeTree = vi.fn();
-    // From an explicit env object...
-    expect(
-      (
-        await runReclaim(
-          deps({ plan, removeTree, env: { TTR_STORAGE_AUTO_RECLAIM: '0' } })
-        )
-      ).status
-    ).toBe('disabled');
-    // ...and from the process, even when the caller passes an env that
-    // enables it and forces the run.
-    vi.stubEnv('TTR_STORAGE_AUTO_RECLAIM', '0');
+    for (const value of ['0', 'false', 'OFF', 'no'])
+      expect(
+        (
+          await runReclaim(
+            deps({ plan, removeTree, env: { TTR_STORAGE_AUTO_RECLAIM: value } })
+          )
+        ).status
+      ).toBe('disabled');
+    // The process env wins over a passed env that enables it.
+    vi.stubEnv('TTR_STORAGE_AUTO_RECLAIM', 'off');
     expect(
       (
         await runReclaim(
@@ -297,17 +328,113 @@ describe('automatic reclaim engine', () => {
         )
       ).status
     ).toBe('disabled');
+    vi.stubEnv('TTR_STORAGE_AUTO_RECLAIM', '');
+    // The sentinel: a false value, unknown content or an unreadable file.
+    await mkdir(home, { recursive: true });
+    for (const content of ['no\n', 'maybe']) {
+      await writeFile(reclaimSentinel(home), content);
+      expect((await runReclaim(deps({ plan, removeTree }))).status).toBe(
+        'disabled'
+      );
+    }
+    // Written while the run is already going: checked inside the guard.
+    await writeFile(reclaimSentinel(home), '1');
+    const sandbox = await realpath(await mkdtemp(join(tmpdir(), 'ttr-ks-')));
+    vi.stubEnv('HOME', sandbox);
+    const late = await runReclaim(
+      deps({
+        plan,
+        removeTree,
+        holds: () => {
+          void writeFileSync(reclaimSentinel(home), 'off');
+          return [];
+        },
+      })
+    );
+    expect(late.items[0]).toMatchObject({
+      status: 'failed',
+      reason: 'automatic reclaim kill switch is on',
+    });
+    // A human's forced run still stops at the kill switch.
+    await writeFile(reclaimSentinel(home), '0');
     expect(
       await autoReclaim({
         trigger: 'manual',
-        volumePath: '/',
+        volumePath: sandbox,
         thresholds,
-        env: { TTR_STORAGE_AUTO_RECLAIM: '1' },
+        env: { TTR_STORAGE_HOME: home },
         force: true,
       })
-    ).toEqual({ result: null, note: 'disabled by TTR_STORAGE_AUTO_RECLAIM=0' });
-    expect(plan).not.toHaveBeenCalled();
+    ).toEqual({
+      result: null,
+      note: 'the automatic reclaim kill switch is on',
+    });
+    expect(plan).toHaveBeenCalledTimes(1);
     expect(removeTree).not.toHaveBeenCalled();
     expect(existsSync(candidate.path)).toBe(true);
+  });
+
+  it('acts only on the low volume and never on an unusable reading', async () => {
+    const { item, deps } = await fixture();
+    const here = await item('Here');
+    const elsewhere = await item('Elsewhere');
+    const removeTree = vi.fn();
+    const result = await runReclaim(
+      deps({
+        plan: () => [elsewhere, here],
+        removeTree,
+        deviceOf: (path) => (path === elsewhere.path ? DEVICE + 1 : DEVICE),
+        probe: probes(10, 10, 60),
+      })
+    );
+    expect(result.items.map((entry) => entry.path)).toEqual([here.path]);
+    expect(removeTree).toHaveBeenCalledTimes(1);
+    for (const bad of [
+      { ...volume(10), device: null },
+      { ...volume(10), totalBytes: 0 },
+      { ...volume(10), freeBytes: Number.NaN },
+    ]) {
+      const skipped = await runReclaim(
+        deps({ plan: () => [here], removeTree, probe: async () => bad })
+      );
+      expect(skipped).toMatchObject({
+        status: 'error',
+        reason: expect.stringMatching(/unusable volume reading/u),
+      });
+    }
+    expect(removeTree).toHaveBeenCalledTimes(1);
+  });
+
+  it('records private-tree evidence when foreign processes are hidden', async () => {
+    const { home, item, deps } = await fixture();
+    const candidate = await item('AppA');
+    const privacy = vi.fn(() => ({
+      ok: true as const,
+      anchor: candidate.root,
+      evidence: 'private-tree' as const,
+    }));
+    const openFiles = vi.fn(() => 'none' as const);
+    const result = await runReclaim(
+      deps({
+        plan: () => [candidate],
+        probe: probes(10, 10, 60),
+        liveness: {
+          cwds: () => {
+            throw new Error('strict scan would fail');
+          },
+          scan: () => ({ cwds: [], hidden: [{ pid: 1, uid: 0 }] }),
+          privacy,
+          openFiles,
+        },
+      })
+    );
+    expect(result.status).toBe('recovered');
+    expect(privacy).toHaveBeenCalledWith(candidate.path, candidate.root);
+    expect(openFiles).toHaveBeenCalledWith(candidate.path, { userOnly: true });
+    const outcome = readReceipts(home, 'host-a').find(
+      (line) => line.phase === 'outcome'
+    );
+    expect(outcome).toMatchObject({ evidence: 'private-tree', status: 'done' });
+    expect(outcome?.checks).toContain('private-tree');
   });
 });

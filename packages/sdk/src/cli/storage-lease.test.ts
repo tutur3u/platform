@@ -1,3 +1,4 @@
+import { lstatSync } from 'node:fs';
 import {
   mkdir,
   mkdtemp,
@@ -30,7 +31,7 @@ const home = async () => realpath(await mkdtemp(join(tmpdir(), 'ttr-lease-')));
 const alive = () => true;
 const low: VolumeProbe = {
   path: '/',
-  device: 1,
+  device: lstatSync(tmpdir()).dev,
   totalBytes: 500 * GiB,
   freeBytes: 5 * GiB,
   usedBytes: 495 * GiB,
@@ -283,6 +284,72 @@ describe('storage-authority cleanup lease', () => {
     });
     expect(busy).toMatchObject({ acquired: false });
     expect(JSON.parse(await readFile(lock, 'utf8')).token).toBe('u');
+  });
+
+  it('treats a reused pid (different start time) as a dead holder', async () => {
+    const dir = await home();
+    const file = leaseFile(dir, 'mac-1');
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(
+      file,
+      JSON.stringify({
+        token: 'old',
+        fence: 3,
+        pid: 4321,
+        pidStart: 1_000_000,
+        host: 'mac-1',
+        startedAt: new Date().toISOString(),
+        renewedAt: new Date().toISOString(),
+        ttlMs: 15 * 60_000,
+        trigger: 'admission',
+        orchestrator: 'upskii',
+      })
+    );
+    const startOf = (pid: number) => (pid === 4321 ? 9_000_000 : 1);
+    // The pid answers, but it is another process now.
+    expect(
+      take(
+        acquireLease({ home: dir, host: 'mac-1', trigger: 'x', alive, startOf })
+      ).record.fence
+    ).toBe(4);
+  });
+
+  it('serializes lock breaking behind its own lock', async () => {
+    const dir = await home();
+    const lock = join(dir, 'reclaim', 'mac-1', 'mutation.lock');
+    await mkdir(dirname(lock), { recursive: true });
+    const dead = { token: 'dead', pid: 999_999, host: 'mac-1', at: '' };
+    await writeFile(lock, JSON.stringify(dead));
+    // A live breaker is already at work: nobody else breaks the lock.
+    await writeFile(
+      `${lock}.break`,
+      JSON.stringify({ token: 'b', pid: process.pid, host: 'mac-1', at: '' })
+    );
+    const deadAlive = (pid: number) => pid !== 999_999;
+    expect(
+      acquireLease({
+        home: dir,
+        host: 'mac-1',
+        trigger: 'x',
+        alive: deadAlive,
+        lockWaitMs: 50,
+      }).acquired
+    ).toBe(false);
+    expect(JSON.parse(await readFile(lock, 'utf8')).token).toBe('dead');
+    // A breaker that died is cleared, then the dead lock is broken.
+    await writeFile(
+      `${lock}.break`,
+      JSON.stringify({ token: 'b2', pid: 999_999, host: 'mac-1', at: '' })
+    );
+    expect(
+      acquireLease({
+        home: dir,
+        host: 'mac-1',
+        trigger: 'x',
+        alive: deadAlive,
+        lockWaitMs: 500,
+      }).acquired
+    ).toBe(true);
   });
 
   it('runs exactly one reclaim when two orchestrators trigger together', async () => {

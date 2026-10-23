@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { findArtifacts } from './storage-analyze';
 import { canonicalPath, type Hold, isInside } from './storage-holds';
-import type { Liveness } from './storage-liveness';
+import { commandRunning, type Liveness } from './storage-liveness';
 import type { Measurer } from './storage-measure';
 import { newestMtime } from './storage-targets';
 import {
@@ -56,7 +56,13 @@ export interface PlanDeps {
   home?: string;
   platform?: NodeJS.Platform;
   rules?: readonly ReclaimRule[];
+  /** Device of the low volume: candidates elsewhere free nothing there. */
+  device?: number | null;
+  deviceOf?: (path: string) => number;
 }
+
+/** Xcode or xcodebuild may be writing DerivedData. */
+export const XCODE_BUSY = /\bxcodebuild\b|Xcode\.app\/Contents\/MacOS\/Xcode/u;
 
 export function enabledRules(env: NodeJS.ProcessEnv = process.env) {
   const raw = env.TTR_STORAGE_AUTO_RECLAIM_RULES?.trim();
@@ -82,14 +88,24 @@ const children = (path: string) => {
 };
 
 /** Candidates in the order they are tried: cheapest to rebuild first. */
-export function planReclaim(deps: PlanDeps): ReclaimCandidate[] {
+export function planReclaim(input: PlanDeps): ReclaimCandidate[] {
+  // PR facts are fetched once per repo per run, then reused by re-checks.
+  const facts = new Map<string, ReturnType<PlanDeps['prs']>>();
+  const deps: PlanDeps = {
+    ...input,
+    prs: (repo) => {
+      if (!facts.has(repo)) facts.set(repo, input.prs(repo));
+      return facts.get(repo) ?? null;
+    },
+  };
   const home = deps.home ?? homedir();
   const rules = new Set(deps.rules ?? AUTO_RECLAIM_RULES);
   const cutoff = deps.now - deps.olderThanDays * 86_400_000;
   const mac = (deps.platform ?? process.platform) === 'darwin';
   const candidates: ReclaimCandidate[] = [];
 
-  if (mac && rules.has('xcode-derived-data-idle')) {
+  const xcodeRunning = () => commandRunning(deps.liveness, XCODE_BUSY);
+  if (mac && rules.has('xcode-derived-data-idle') && !xcodeRunning()) {
     const root = join(home, 'Library', 'Developer', 'Xcode', 'DerivedData');
     for (const child of children(root)) {
       if (newestMtime(child) > cutoff) continue;
@@ -101,7 +117,11 @@ export function planReclaim(deps: PlanDeps): ReclaimCandidate[] {
         owner: 'machine user (Xcode build cache)',
         scopePaths: [child],
         recheck: () =>
-          newestMtime(child) > cutoff ? 'written since planning' : null,
+          xcodeRunning()
+            ? 'Xcode or xcodebuild is running'
+            : newestMtime(child) > cutoff
+              ? 'written since planning'
+              : null,
       });
     }
   }
@@ -110,7 +130,11 @@ export function planReclaim(deps: PlanDeps): ReclaimCandidate[] {
     for (const repo of deps.repos ?? discoverRepos({ git: deps.git })) {
       let cwds: ReturnType<Liveness['cwds']>;
       try {
-        cwds = deps.liveness.cwds();
+        // Hidden foreign processes are handled by the private-tree proof at
+        // removal time; this user's processes must all be visible.
+        cwds = deps.liveness.scan
+          ? deps.liveness.scan().cwds
+          : deps.liveness.cwds();
       } catch {
         break; // Without a cwd scan no worktree is provably unowned.
       }
@@ -142,7 +166,9 @@ export function planReclaim(deps: PlanDeps): ReclaimCandidate[] {
               const fresh = classifyWorktrees({
                 repo,
                 holds: deps.holds(),
-                cwds: deps.liveness.cwds(),
+                cwds: deps.liveness.scan
+                  ? deps.liveness.scan().cwds
+                  : deps.liveness.cwds(),
                 git: deps.git,
                 prs: deps.prs(repo),
                 now: Date.now(),
@@ -169,8 +195,16 @@ export function planReclaim(deps: PlanDeps): ReclaimCandidate[] {
       }
     }
 
-  // Never act outside the rule's root, whatever a path resolved to.
-  return candidates.filter((candidate) =>
-    isInside(canonicalPath(candidate.path), canonicalPath(candidate.root))
-  );
+  // Never act outside the rule's root or off the low volume.
+  const deviceOf = deps.deviceOf ?? ((path: string) => lstatSync(path).dev);
+  return candidates.filter((candidate) => {
+    if (!isInside(canonicalPath(candidate.path), canonicalPath(candidate.root)))
+      return false;
+    if (deps.device === undefined) return true;
+    try {
+      return deps.device !== null && deviceOf(candidate.path) === deps.device;
+    } catch {
+      return false;
+    }
+  });
 }

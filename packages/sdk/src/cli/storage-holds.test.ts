@@ -50,6 +50,26 @@ describe('hold files', () => {
     ]);
   });
 
+  it('skips dotfiles and editor swap or backup files with a warning', async () => {
+    const dir = await temp();
+    await writeFile(join(dir, 'tuturuuu.txt'), '/a/held\n');
+    for (const name of [
+      '.DS_Store',
+      'tuturuuu.txt~',
+      '.tuturuuu.txt.swp',
+      'notes.swo',
+    ])
+      await writeFile(join(dir, name), 'binary or stale\n');
+    const warnings: string[] = [];
+    expect(readHolds([dir], (message) => warnings.push(message))).toEqual([
+      { path: '/a/held', owner: 'tuturuuu', glob: false },
+    ]);
+    expect(warnings).toHaveLength(4);
+    expect(warnings[0]).toMatch(
+      /ignoring .* \(dotfile or editor swap\/backup\)/u
+    );
+  });
+
   it('stops on a malformed or relative hold, naming the file and line', async () => {
     const dir = await temp();
     await writeFile(

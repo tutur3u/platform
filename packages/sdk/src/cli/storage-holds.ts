@@ -43,7 +43,15 @@ export function holdsDirs(
  * and line: destructive callers stop instead of guessing what a malformed
  * hold meant.
  */
-export function readHolds(dirs: string[]): Hold[] {
+/** Editor and OS scratch files in a holds directory, never read as holds. */
+export const ignoredHoldFile = (name: string) =>
+  name.startsWith('.') || name.endsWith('~') || /\.sw[a-p]$/u.test(name);
+
+export function readHolds(
+  dirs: string[],
+  warn: (message: string) => void = (message) =>
+    process.stderr.write(`[ttr storage] ${message}\n`)
+): Hold[] {
   const holds: Hold[] = [];
   for (const dir of dirs) {
     let names: string[];
@@ -59,6 +67,12 @@ export function readHolds(dirs: string[]): Hold[] {
       );
     }
     for (const name of names) {
+      if (ignoredHoldFile(name)) {
+        warn(
+          `ignoring ${join(dir, name)} (dotfile or editor swap/backup); move real holds into a project file`
+        );
+        continue;
+      }
       const owner = basename(name).replace(/\.[^.]*$/u, '') || name;
       const file = join(dir, name);
       readFileSync(file, 'utf8')

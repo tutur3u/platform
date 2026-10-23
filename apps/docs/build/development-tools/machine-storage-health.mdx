@@ -127,8 +127,13 @@ admission triggers its own reclaim.
 
 ## Automatic reclaim
 
-When a trigger finds a volume `low`, reclaim removes explicitly regenerable
-space on its own. There are two triggers, and neither is a schedule:
+Automatic reclaim is **off by default**. It runs only after an explicit
+opt-in for this storage authority: `TTR_STORAGE_AUTO_RECLAIM=1` (or `true`,
+`on`, `yes`), or the sentinel file `~/.tuturuuu/storage/auto-reclaim`
+containing one of those values. Once opted in, when a trigger finds a volume
+`low`, reclaim removes explicitly regenerable space on its own. A human can
+always run `ttr storage reclaim --apply` without opting in. There are two
+triggers, and neither is a schedule:
 
 - heavy `ttr resources` admission;
 - a devbox agent heartbeat, which starts one detached
@@ -158,7 +163,10 @@ OS users, so this is not a host-wide guarantee.
   Acquisition, takeover, renewal and release all run under an O_EXCL mutation
   lock, so they are serialized. A second caller does not reclaim in parallel;
   its admission refusal names the holder. An expired or dead-pid lease is taken
-  over with a larger fence.
+  over with a larger fence. Holders record their process start time, so a
+  reused pid counts as a dead holder. Breaking a dead holder's mutation lock
+  is itself serialized behind a separate O_EXCL break lock, and the lock is
+  re-read under it before removal, so a fresh lock is never broken.
 - **Fenced at the destructive boundary.** Each removal runs inside the lease's
   guard: under the mutation lock, the holder's token, fence and expiry are
   re-validated, and the removal runs while the lock is still held. A holder
@@ -166,7 +174,7 @@ OS users, so this is not a host-wide guarantee.
   takeover can overlap a removal.
 - **Eligible items only.** Only path-bounded rules, removed as one verified
   directory tree, so the deleted set is exactly the checked set:
-  - idle Xcode DerivedData folders;
+  - idle Xcode DerivedData folders, never while Xcode or `xcodebuild` runs;
   - ignored, untracked build artifacts inside merged, clean, unheld worktrees
     idle at least a day.
 
@@ -174,20 +182,24 @@ OS users, so this is not a host-wide guarantee.
   automatic; they stay manual suggestions. `TTR_STORAGE_AUTO_RECLAIM_RULES`
   narrows the list (comma-separated rule ids). The idle age is
   `TTR_STORAGE_RECLAIM_OLDER_THAN_DAYS` (7), measured over the whole tree.
+  Only candidates on the low volume's device count, checked when planning and
+  again right before each item. A volume reading that is not usable (no
+  device, non-positive total, non-finite or inconsistent values) stops the
+  run with nothing removed.
 - **Re-checked right before each item, fail closed.** In this order:
   1. the directory identity (device and inode chain from the rule root, no
      symlinks, same device) is captured;
   2. holds from every file in every holds directory (an invalid line stops);
   3. the rule's own re-check (for worktree artifacts, a fresh merged-clean
      classification at the same `HEAD`);
-  4. a strict process `cwd` scan covering every live process;
+  4. a process `cwd` scan covering every live process of this user;
   5. `lsof +D` open files.
 
-  A check that fails or errors skips the item. In particular, a live process
-  this user cannot inspect (another user's or root's) means use is not proven
-  absent. As a non-root user on macOS, root's processes are never
-  inspectable, so in practice every item is skipped there and admission
-  reports the blocker instead.
+  A check that fails or errors skips the item. Hidden processes of other
+  users (including root) are tolerated only with
+  [private-tree evidence](#process-visibility-on-macos-private-tree-evidence)
+  for the item, proven at or above its rule root. Receipts record the
+  evidence level (`full-visibility` or `private-tree`).
 - **Durable pre-receipt.** Before acting, an `intent` line is appended and
   fsynced (new directories and the new file's directory entry are fsynced
   too) to `~/.tuturuuu/storage/reclaim/<host>/receipts/*.jsonl` (mode 0600).
@@ -203,10 +215,13 @@ OS users, so this is not a host-wide guarantee.
   unsuccessful run, triggers wait `TTR_STORAGE_RECLAIM_COOLDOWN_MINUTES` (30)
   before planning again. `ttr storage reclaim --apply` ignores only the
   cooldown.
-- **Hard kill switch.** `TTR_STORAGE_AUTO_RECLAIM=0`, in the process
-  environment or a passed environment, disables both triggers and the manual
-  `ttr storage reclaim --apply`. The engine checks it itself, before the lease
-  and before every item, so no caller or flag bypasses it.
+- **Hard kill switch.** A false value (`0`, `false`, `off`, `no`) in
+  `TTR_STORAGE_AUTO_RECLAIM` (process or passed environment) or in the
+  `auto-reclaim` sentinel file disables both triggers and the manual
+  `ttr storage reclaim --apply`, and wins over any opt-in. A sentinel with
+  any other content, or one that cannot be read, also kills. The engine
+  checks it itself before the lease, before every item and inside the lease
+  guard right before each removal, so no caller or flag bypasses it.
 - **Trusted re-exec.** The heartbeat starts the child only through a verified
   absolute path: the absolute runtime plus the real path of an existing script
   entry, or a packaged executable named `ttr`. It never resolves `ttr`
@@ -268,7 +283,8 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
   and the primary checkout.
 - Worktrees active in the last 24 hours.
 - Any path covered by a hold file. Every file in `~/.t3/cleanup/holds.d`
-  counts. That includes each project's file (`tuturuuu.txt`, `upskii.txt`,
+  counts, except dotfiles and editor swap or backup files (`~`, `.swp`), which
+  are skipped with a warning. That includes each project's file (`tuturuuu.txt`, `upskii.txt`,
   `mastermind.txt`, …) whatever its extension. `--holds-dir` and
   `TTR_STORAGE_HOLDS_DIRS` add directories; the shared default is always
   read. Each file holds one absolute path or glob per line, with `#`
@@ -342,7 +358,9 @@ is 0700; ttr never changes permissions to make something qualify.
 
 Regression coverage: `packages/sdk/src/cli/storage-privacy.test.ts` (scan
 rules per platform and uid, the proof's failure modes, scoped `lsof`, manual
-prune wiring) and `storage-liveness.test.ts` (strict scan parsing).
+prune wiring), `storage-liveness.test.ts` (strict scan parsing) and
+`storage-reclaim.test.ts` (automatic reclaim records `private-tree`
+evidence in its receipts).
 
 ## Stale `node_modules`
 

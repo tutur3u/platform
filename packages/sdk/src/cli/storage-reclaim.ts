@@ -1,3 +1,4 @@
+import { lstatSync } from 'node:fs';
 import {
   formatBytes,
   type StorageThresholds,
@@ -11,13 +12,14 @@ import {
   type LeaseDeps,
   type LeaseRecord,
 } from './storage-lease';
-import { checkPathIdle, type Liveness } from './storage-liveness';
+import { checkPathIdle, type IdleLiveness } from './storage-liveness';
 import {
   openManifest,
   type ReceiptFs,
   type ReceiptItem,
 } from './storage-receipts';
 import type { ReclaimCandidate } from './storage-reclaim-plan';
+import { killSwitchOn } from './storage-reclaim-switch';
 import {
   captureIdentity,
   removeVerifiedTree,
@@ -81,9 +83,12 @@ export interface ReclaimDeps {
   trigger: string;
   probe: () => Promise<VolumeProbe>;
   thresholds: { low: StorageThresholds; recover: StorageThresholds };
-  plan: () => ReclaimCandidate[];
+  /** Candidates for the low volume (the engine also filters by device). */
+  plan: (volume: VolumeProbe) => ReclaimCandidate[];
   holds: () => Hold[];
-  liveness: Pick<Liveness, 'cwds' | 'openFiles'>;
+  liveness: IdleLiveness;
+  /** Device of a path (lstat), for the same-volume check. */
+  deviceOf?: (path: string) => number;
   /** Extra environment for the kill switch (process.env is always read). */
   env?: NodeJS.ProcessEnv;
   removeTree?: (identity: TreeIdentity) => void;
@@ -93,14 +98,25 @@ export interface ReclaimDeps {
   lease?: Omit<LeaseDeps, 'now'>;
 }
 
-export const killSwitchOn = (env?: NodeJS.ProcessEnv) =>
-  process.env.TTR_STORAGE_AUTO_RECLAIM?.trim() === '0' ||
-  env?.TTR_STORAGE_AUTO_RECLAIM?.trim() === '0';
+export { killSwitchOn } from './storage-reclaim-switch';
 
-/** Identity first, then every hold, rule, cwd and open-file check. */
+/** A probe that is not a real volume reading: never act on it. */
+const usable = (probe: VolumeProbe | null): probe is VolumeProbe =>
+  !!probe &&
+  probe.device !== null &&
+  Number.isFinite(probe.device) &&
+  Number.isFinite(probe.totalBytes) &&
+  probe.totalBytes > 0 &&
+  Number.isFinite(probe.freeBytes) &&
+  probe.freeBytes >= 0 &&
+  probe.freeBytes <= probe.totalBytes &&
+  Number.isFinite(probe.freePercent);
+
+/** Identity first, then device, holds, rule, cwd and open-file checks. */
 function verify(
   candidate: ReclaimCandidate,
-  deps: Pick<ReclaimDeps, 'holds' | 'liveness'>
+  deps: Pick<ReclaimDeps, 'holds' | 'liveness'>,
+  device: number
 ):
   | { ok: true; identity: TreeIdentity; checks: string[] }
   | { ok: false; reason: string } {
@@ -113,7 +129,13 @@ function verify(
       reason: `identity check failed: ${(error as Error).message}`,
     };
   }
-  const checks = ['identity'];
+  // Only space on the low volume counts; another device frees nothing there.
+  if (identity.chain.at(-1)?.dev !== device)
+    return {
+      ok: false,
+      reason: `on device ${identity.chain.at(-1)?.dev}, not the low volume (device ${device})`,
+    };
+  const checks = ['identity', 'same-volume'];
   try {
     const holds = deps.holds();
     for (const path of [candidate.path, ...candidate.scopePaths]) {
@@ -140,7 +162,8 @@ function verify(
   }
   const idle = checkPathIdle(
     [...new Set([candidate.path, ...candidate.scopePaths])],
-    deps.liveness
+    deps.liveness,
+    () => candidate.root
   );
   if (!idle.ok) return idle;
   checks.push(...idle.checks);
@@ -160,7 +183,7 @@ export async function runReclaim(deps: ReclaimDeps): Promise<ReclaimResult> {
     freedBytes: 0,
     items: [] as ReclaimItemResult[],
   };
-  if (killSwitchOn(deps.env))
+  if (killSwitchOn(deps.env, deps.home))
     return {
       ...base,
       status: 'disabled',
@@ -215,25 +238,39 @@ export async function runReclaim(deps: ReclaimDeps): Promise<ReclaimResult> {
   });
   try {
     // Re-measure under the lease: the trigger's reading may be stale.
-    before = await deps.probe();
+    const first = await deps.probe();
+    if (!usable(first))
+      return stop('error', 'unusable volume reading; nothing removed');
+    before = first;
     after = before;
+    const device = before.device as number;
     if (!belowRecover(before, deps.thresholds.recover))
       return { ...base, status: 'not-needed', before, after, fence };
     let candidates: ReclaimCandidate[];
+    const deviceOf = deps.deviceOf ?? ((path: string) => lstatSync(path).dev);
     try {
-      candidates = deps.plan();
+      candidates = deps.plan(before).filter((candidate) => {
+        try {
+          return deviceOf(candidate.path) === device;
+        } catch {
+          return false;
+        }
+      });
     } catch (error) {
       return stop('error', `planning failed: ${(error as Error).message}`);
     }
     for (const candidate of candidates) {
-      if (killSwitchOn(deps.env))
-        return stop('disabled', 'disabled by TTR_STORAGE_AUTO_RECLAIM=0');
+      if (killSwitchOn(deps.env, deps.home))
+        return stop('disabled', 'automatic reclaim kill switch is on');
       if (!lease.renew())
         return stop(
           'lease-lost',
           'the cleanup lease was lost or expired; stopped before the next item'
         );
-      after = await deps.probe();
+      const fresh = await deps.probe();
+      if (!usable(fresh) || fresh.device !== device)
+        return stop('error', 'unusable volume reading; stopped');
+      after = fresh;
       if (!belowRecover(after, deps.thresholds.recover)) break;
       const entry: ReclaimItemResult = {
         rule: candidate.rule,
@@ -243,7 +280,7 @@ export async function runReclaim(deps: ReclaimDeps): Promise<ReclaimResult> {
         status: 'skipped',
       };
       base.items.push(entry);
-      const verdict = verify(candidate, deps);
+      const verdict = verify(candidate, deps, device);
       if (!verdict.ok) {
         entry.reason = verdict.reason;
         continue;
@@ -253,7 +290,10 @@ export async function runReclaim(deps: ReclaimDeps): Promise<ReclaimResult> {
         rule: candidate.rule,
         owner: candidate.owner,
         bytes: candidate.bytes,
-        checks: [...verdict.checks, 'lease-fence'],
+        checks: [...verdict.checks, 'lease-fence', 'kill-switch'],
+        evidence: verdict.checks.includes('private-tree')
+          ? 'private-tree'
+          : 'full-visibility',
       };
       try {
         manifest ??= openManifest(
@@ -280,6 +320,11 @@ export async function runReclaim(deps: ReclaimDeps): Promise<ReclaimResult> {
       let error: string | undefined;
       let removed = false;
       const guarded = lease.guard(() => {
+        // Last look at the kill switch, under the lock, right before acting.
+        if (killSwitchOn(deps.env, deps.home)) {
+          error = 'automatic reclaim kill switch is on';
+          return;
+        }
         try {
           removeTree(verdict.identity);
           removed = true;
@@ -315,7 +360,10 @@ export async function runReclaim(deps: ReclaimDeps): Promise<ReclaimResult> {
         // The intent line already records the attempt.
       }
     }
-    after = await deps.probe();
+    const last = await deps.probe();
+    if (!usable(last))
+      return stop('error', 'unusable volume reading after reclaim');
+    after = last;
     const state = nextVolumeState('low', after, deps.thresholds).state;
     return {
       ...base,

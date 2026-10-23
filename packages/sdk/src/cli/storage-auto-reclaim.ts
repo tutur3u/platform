@@ -12,12 +12,12 @@ import { leaseExpired, readLeaseRecord } from './storage-lease';
 import { realLiveness } from './storage-liveness';
 import { measureTrees } from './storage-measure';
 import { readLastReclaim, writeLastReclaim } from './storage-receipts';
+import { type ReclaimResult, runReclaim } from './storage-reclaim';
+import { enabledRules, planReclaim } from './storage-reclaim-plan';
 import {
   killSwitchOn,
-  type ReclaimResult,
-  runReclaim,
-} from './storage-reclaim';
-import { enabledRules, planReclaim } from './storage-reclaim-plan';
+  autoReclaimEnabled as switchEnabled,
+} from './storage-reclaim-switch';
 import { ghPullRequests, realGit } from './storage-worktrees';
 
 // Real dependencies for the automatic reclaim engine, plus the event-gated
@@ -29,11 +29,12 @@ import { ghPullRequests, realGit } from './storage-worktrees';
 export type ReclaimTrigger = 'admission' | 'heartbeat' | 'manual';
 
 /**
- * Default on; TTR_STORAGE_AUTO_RECLAIM=0 (in the process or `env`) turns
- * every trigger off, and runReclaim re-checks it so nothing bypasses it.
+ * OFF by default: the triggers run only with TTR_STORAGE_AUTO_RECLAIM=1 or
+ * the `<storage home>/auto-reclaim` sentinel set to a true value, and never
+ * while the kill switch is on (see storage-reclaim-switch).
  */
 export const autoReclaimEnabled = (env: NodeJS.ProcessEnv = process.env) =>
-  !killSwitchOn(env);
+  switchEnabled(env, storageHome(env));
 
 /** Minutes before an unsuccessful run may be retried by a trigger (30). */
 export function reclaimCooldownMs(env: NodeJS.ProcessEnv = process.env) {
@@ -70,10 +71,16 @@ export async function autoReclaim({
   force?: boolean;
   now?: () => number;
 }): Promise<AutoReclaimOutcome> {
-  // `force` (a human's `ttr storage reclaim --apply`) skips only the cooldown.
-  if (!autoReclaimEnabled(env))
-    return { result: null, note: 'disabled by TTR_STORAGE_AUTO_RECLAIM=0' };
   const home = storageHome(env);
+  // A human's `ttr storage reclaim --apply` (force) needs no opt-in and skips
+  // the cooldown; the kill switch still stops it.
+  if (killSwitchOn(env, home))
+    return { result: null, note: 'the automatic reclaim kill switch is on' };
+  if (!force && !autoReclaimEnabled(env))
+    return {
+      result: null,
+      note: 'automatic reclaim is off by default; set TTR_STORAGE_AUTO_RECLAIM=1 or write 1 to the auto-reclaim file in the storage home to opt in',
+    };
   const host = hostId(env);
   const last = readLastReclaim(home, host);
   const cooldown = reclaimCooldownMs(env);
@@ -100,8 +107,9 @@ export async function autoReclaim({
     liveness: realLiveness,
     env,
     now,
-    plan: () =>
+    plan: (volume) =>
       planReclaim({
+        device: volume.device,
         holds: () => readHolds(dirs),
         liveness: realLiveness,
         measure: (jobs) => measureTrees(jobs),

@@ -83,8 +83,10 @@ Thresholds: TTR_STORAGE_MIN_FREE (default 15G), TTR_STORAGE_MIN_FREE_PERCENT
 critical; below twice a threshold it is low. Heavy ttr resources admission
 closes below the minimum and reopens at TTR_STORAGE_RECOVER_FREE,
 TTR_STORAGE_RECOVER_FREE_PERCENT and TTR_STORAGE_RECOVER_FREE_INODE_PERCENT
-(default twice each). Automatic reclaim: TTR_STORAGE_AUTO_RECLAIM=0 disables
-it; TTR_STORAGE_AUTO_RECLAIM_RULES narrows its rules;
+(default twice each). Automatic reclaim is off by default: opt in with
+TTR_STORAGE_AUTO_RECLAIM=1 or a "1" in <storage home>/auto-reclaim; a false
+value (0/false/off/no) in either is a kill switch, manual --apply included;
+TTR_STORAGE_AUTO_RECLAIM_RULES narrows its rules;
 TTR_STORAGE_RECLAIM_COOLDOWN_MINUTES (30) and
 TTR_STORAGE_RECLAIM_OLDER_THAN_DAYS (7). Set TTR_ORCHESTRATOR_ID so leases and
 receipts name the calling orchestrator.

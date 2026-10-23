@@ -95,16 +95,17 @@ Disk admission uses hysteresis. A volume turns `low` below `TTR_STORAGE_MIN_FREE
 (15G), 5% free or 5% inodes. It recovers only at `TTR_STORAGE_RECOVER_FREE*`
 (default twice each).
 
-While a volume is `low`, admission first runs automatic reclaim under the
-cleanup lease of this storage authority (one OS user's
+While a volume is `low` and automatic reclaim is opted in, admission first
+runs it under the cleanup lease of this storage authority (one OS user's
 `~/.tuturuuu/storage` on one host; not host-wide across OS users):
 
 - It removes only path-bounded trees: idle DerivedData and merged-clean
   worktree build artifacts. Homebrew, npm, Docker and simulator cleanups are
   manual only.
 - Right before each item it captures the directory identity, re-checks holds
-  from every project's holds file, a strict cwd scan (any uninspectable
-  process, such as root's for a non-root user, skips the item) and `lsof`.
+  from every project's holds file, a cwd scan of every live process of this
+  user, and `lsof`. Hidden processes of other users (root included) are
+  tolerated only with macOS `private-tree` evidence for the item.
 - It fsyncs an intent receipt before acting and removes only inside the
   lease guard, which re-validates the lease's fence under the mutation lock.
 - It stops at the recover thresholds.
@@ -117,8 +118,10 @@ free space needed to resume. A second orchestrator on the same host gets the
 holder's name instead of a parallel run.
 
 Alerts print once per level. Set `TTR_ORCHESTRATOR_ID` so leases and receipts
-name your orchestrator. `TTR_STORAGE_AUTO_RECLAIM=0` is a hard kill switch for both
-triggers and manual `ttr storage reclaim --apply`.
+name your orchestrator. Automatic reclaim is off by default: opt in per storage authority with
+`TTR_STORAGE_AUTO_RECLAIM=1` or `1` in `~/.tuturuuu/storage/auto-reclaim`.
+A false value (`0`, `false`, `off`, `no`) in either is a hard kill switch
+for both triggers and manual `ttr storage reclaim --apply`.
 
 `ttr storage reclaim` shows the plan, the lease holder and the last run. A human
 still decides worktrees, `node_modules`, the Bun and pub caches, tmp, evidence,
