@@ -32,6 +32,10 @@ import {
   uninstallResources,
 } from './resources-setup';
 import { nestedOwner, withAdmission } from './resources-slots';
+import {
+  planTurboSummary,
+  reportTurboSummary,
+} from './resources-turbo-summary';
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
@@ -106,10 +110,12 @@ export async function runResourcesCommand(argv: string[]) {
   }
   const home = resourceHome();
   if (action === 'run' || action === 'shim') {
-    const command = divider < 0 ? [] : argv.slice(divider + 1);
+    const requested = divider < 0 ? [] : argv.slice(divider + 1);
     const shim = action === 'shim';
-    const name = shim ? options[1] : command.shift();
+    const name = shim ? options[1] : requested.shift();
     if (!name) throw new Error('Use ttr resources run -- COMMAND [ARGS...].');
+    const summary = planTurboSummary(name, requested, commandCwd(requested));
+    const command = summary.args;
     const config = await readResourceConfig(home);
     const real = realExecutable(name, join(home, 'bin'));
     const enabled =
@@ -140,6 +146,7 @@ export async function runResourcesCommand(argv: string[]) {
             resourceLanes(total)
           )
         : await spawnResourceCommand(real, args, env);
+    await reportTurboSummary(summary);
     return;
   }
   if (action === 'setup') {
