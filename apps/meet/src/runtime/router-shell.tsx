@@ -11,6 +11,11 @@ import type { ReactElement } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import { AppProviders } from './app-providers';
+import {
+  isRoomPath,
+  RoomRouteError,
+  RoomRouteFeedback,
+} from './room-route-feedback';
 import { reportMeetSsr } from './ssr-diagnostics';
 import '../app/[locale]/meet.css';
 import './typography.css';
@@ -44,6 +49,8 @@ export function Document(): ReactElement {
 
 export function Pending(): ReactElement {
   const pathname = useLocation({ select: (location) => location.pathname });
+  if (isRoomPath(pathname))
+    return <RoomRouteFeedback pathname={pathname} state="loading" />;
   const labels = (pathname.startsWith('/vi') ? vi : en).meet.loading;
   return (
     <main className="grid min-h-dvh place-items-center bg-background p-6 text-foreground">
@@ -75,6 +82,8 @@ export function Pending(): ReactElement {
 export function ErrorPage({ error, reset }: ErrorComponentProps) {
   reportMeetSsr(error, 'render-boundary', 'threw');
   const pathname = useLocation({ select: (location) => location.pathname });
+  if (isRoomPath(pathname))
+    return <RoomRouteError pathname={pathname} reset={reset} />;
   return (
     <AppProviders
       locale={pathname.startsWith('/vi') ? 'vi' : 'en'}
@@ -91,5 +100,16 @@ export function ErrorPage({ error, reset }: ErrorComponentProps) {
         reset={reset}
       />
     </AppProviders>
+  );
+}
+
+export function NotFoundPage() {
+  const pathname = useLocation({ select: (location) => location.pathname });
+  return isRoomPath(pathname) ? (
+    <RoomRouteFeedback pathname={pathname} state="missing" />
+  ) : (
+    <main className="grid min-h-dvh place-items-center">
+      <h1>404</h1>
+    </main>
   );
 }

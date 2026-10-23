@@ -43,6 +43,7 @@ export interface CallState {
     createdAt: string;
   }>;
   admission: CallAdmission;
+  admissionReason?: 'denied' | 'removed';
   chat: CallChatMessage[];
   /** Set when the room rejects something, cleared on the next success. */
   error: string | null;
@@ -123,6 +124,7 @@ export function reduceCallState(
         ...state,
         liveAssistant: undefined,
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
+        admissionReason: undefined,
         roomExpiresAt: message.roomExpiresAt,
         error: null,
         remoteTracks: message.tracks
@@ -185,6 +187,7 @@ export function reduceCallState(
       return {
         ...state,
         admission: message.admitted ? 'admitted' : 'denied',
+        admissionReason: message.admitted ? undefined : 'denied',
         roomExpiresAt: message.roomExpiresAt ?? state.roomExpiresAt,
         error: message.admitted ? null : state.error,
       };
@@ -226,7 +229,7 @@ export function reduceCallState(
 
     case 'participant.removed': {
       if (message.userId === state.selfUserId) {
-        return { ...state, admission: 'denied' };
+        return { ...state, admission: 'denied', admissionReason: 'removed' };
       }
       const participants = { ...state.participants };
       delete participants[message.userId];

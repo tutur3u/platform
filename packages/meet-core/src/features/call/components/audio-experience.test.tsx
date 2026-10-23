@@ -24,10 +24,10 @@ it('shows host admission status ahead of a simultaneous reconnect state', () => 
     </NextIntlClientProvider>
   );
   expect(screen.getByRole('status').textContent).toContain(
-    'Waiting for the host'
+    messages.meet.call.waiting_for_host
   );
   expect(screen.getByRole('status').textContent).toContain(
-    'The host has been notified'
+    messages.meet.call.waiting_explanation
   );
   expect(screen.queryByText('Connecting')).toBeNull();
 });

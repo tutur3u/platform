@@ -18,7 +18,7 @@ export interface MeetSignalingOptions {
    * Resolved per attempt rather than passed once, so a reconnect can fetch a
    * fresh join token. Tokens are short-lived and calls are not.
    */
-  resolveUrl: () => Promise<string> | string;
+  resolveUrl: (signal?: AbortSignal) => Promise<string> | string;
 }
 
 export type MeetSignalingStatus = 'connecting' | 'open' | 'closed' | 'error';
@@ -32,6 +32,7 @@ type WithoutRequestId<T> = T extends unknown ? Omit<T, 'requestId'> : never;
 export type MeetRequestMessage = WithoutRequestId<MeetRealtimeClientMessage>;
 
 const REQUEST_TIMEOUT_MS = 15_000;
+const READINESS_TIMEOUT_MS = 10_000;
 
 /**
  * Typed WebSocket wrapper for the meet realtime protocol.
@@ -54,6 +55,8 @@ export class MeetSignaling {
   private attempt = 0;
   private hasConnected = false;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private readinessTimer: ReturnType<typeof setTimeout> | null = null;
+  private connectionAttempt: AbortController | null = null;
   private lastPing = 0;
   private pingPending = false;
   private socketWatch: ReturnType<typeof setInterval> | null = null;
@@ -63,28 +66,51 @@ export class MeetSignaling {
   }
 
   connect() {
+    if (this.connectionAttempt || this.socket || this.retryTimer) return;
     this.closedByUs = false;
+    const attempt = new AbortController();
+    this.connectionAttempt = attempt;
     this.options.onStatusChange?.('connecting');
+    this.readinessTimer = setTimeout(() => {
+      if (this.connectionAttempt !== attempt || this.closedByUs) return;
+      const socket = this.socket;
+      this.clearReadiness();
+      this.clearSocketWatch();
+      this.socket = null;
+      socket?.close();
+      this.failAllPending(new Error('signaling_timeout'));
+      this.options.onStatusChange?.('error');
+      this.scheduleReconnect();
+    }, READINESS_TIMEOUT_MS);
 
     void (async () => {
       let url: string;
       try {
-        url = await this.options.resolveUrl();
+        url = await this.options.resolveUrl(attempt.signal);
       } catch {
-        // A failed token refresh is itself a retryable condition.
+        if (this.connectionAttempt !== attempt || this.closedByUs) return;
+        this.clearReadiness();
+        this.options.onStatusChange?.('error');
         this.scheduleReconnect();
         return;
       }
-      if (this.closedByUs) return;
+      if (this.connectionAttempt !== attempt || this.closedByUs) return;
 
-      const socket = new WebSocket(url);
+      let socket: WebSocket;
+      try {
+        socket = new WebSocket(url);
+      } catch {
+        this.clearReadiness();
+        this.options.onStatusChange?.('error');
+        this.scheduleReconnect();
+        return;
+      }
       this.socket = socket;
       this.watchClosingSocket(socket);
 
       socket.addEventListener('open', () => {
         if (this.socket !== socket || this.closedByUs) return;
         const reconnected = this.hasConnected;
-        this.attempt = 0;
         this.hasConnected = true;
         this.lastPing = Date.now();
         this.pingPending = false;
@@ -106,6 +132,13 @@ export class MeetSignaling {
     })();
   }
 
+  private clearReadiness() {
+    if (this.readinessTimer) clearTimeout(this.readinessTimer);
+    this.readinessTimer = null;
+    this.connectionAttempt?.abort();
+    this.connectionAttempt = null;
+  }
+
   private clearSocketWatch() {
     if (this.socketWatch) clearInterval(this.socketWatch);
     this.socketWatch = null;
@@ -113,6 +146,7 @@ export class MeetSignaling {
 
   private finishSocket(socket: WebSocket, code?: number) {
     if (this.socket !== socket) return;
+    this.clearReadiness();
     this.clearSocketWatch();
     this.socket = null;
     this.failAllPending(new Error('signaling_closed'));
@@ -159,7 +193,11 @@ export class MeetSignaling {
 
   private scheduleReconnect(closeCode?: number) {
     if (this.closedByUs) return;
-    if (!shouldReconnect(this.attempt, closeCode)) return;
+    if (!shouldReconnect(this.attempt, closeCode)) {
+      if (closeCode !== 1000 && closeCode !== 4403)
+        this.options.onStatusChange?.('error');
+      return;
+    }
 
     const delay = computeBackoffMs(this.attempt);
     this.attempt += 1;
@@ -204,7 +242,11 @@ export class MeetSignaling {
       this.pending.delete(message.requestId);
     }
 
-    if (message.type === 'ready') this.selfUserId = message.userId;
+    if (message.type === 'ready') {
+      this.clearReadiness();
+      this.attempt = 0;
+      this.selfUserId = message.userId;
+    }
     // The server sends these decisions before its 4403 close. Preserve them
     // immediately: Chrome may withhold the close event past our recovery grace.
     const terminal =
@@ -315,6 +357,7 @@ export class MeetSignaling {
 
   close() {
     this.closedByUs = true;
+    this.clearReadiness();
     this.clearSocketWatch();
     this.pendingTitle = null;
     if (this.titleRetry) clearTimeout(this.titleRetry);

@@ -5,12 +5,12 @@ import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { getPlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
 import { NextIntlClientProvider } from 'next-intl';
-import { ThemeProvider } from 'next-themes';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import type { ReactNode } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import { MeetParamsContext } from './next-navigation';
+import { MeetThemeProvider as ThemeProvider } from './theme-provider';
 
 export function AppProviders({
   locale,

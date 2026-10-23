@@ -135,7 +135,7 @@ export function useMeetRoom({
   useEffect(() => {
     activeRef.current = true;
     let usedInitialToken = false;
-    const resolveUrl = async () => {
+    const resolveUrl = async (signal?: AbortSignal) => {
       if (!usedInitialToken) {
         usedInitialToken = true;
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
@@ -143,7 +143,8 @@ export function useMeetRoom({
       const refreshed = await createMeetCallRealtimeToken(
         meetingId,
         undefined,
-        deviceId ? { deviceId, joinMode: 'additional' } : undefined
+        deviceId ? { deviceId, joinMode: 'additional' } : undefined,
+        signal
       );
       if (refreshed.requiresDeviceChoice)
         throw new Error('Device confirmation required');
