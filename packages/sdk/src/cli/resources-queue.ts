@@ -23,6 +23,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { memoryPressure } from './resources-diagnostics';
+import { diskGate } from './resources-disk-gate';
 import {
   admittedMarker,
   nestedOwner,
@@ -210,7 +211,8 @@ export async function queuedResourceCommand(
   ignorePressure = false,
   lanes: ValidationLanes = 1,
   pressureProbe: typeof memoryPressure = memoryPressure,
-  burstProbe: typeof burstEligibility = burstEligibility
+  burstProbe: typeof burstEligibility = burstEligibility,
+  diskCheck: typeof diskGate = diskGate
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
@@ -331,6 +333,16 @@ export async function queuedResourceCommand(
             (current.occupied.length >= lanes && !burst?.eligible)
           )
             return undefined;
+          // Dequeue-time disk check, immediately before the claim and spawn:
+          // headroom seen at enqueue may be gone after a long wait, and an
+          // unreadable volume fails closed.
+          const disk = await diskCheck(process.cwd(), env);
+          if (!disk.admit) {
+            pressureBlocked = true;
+            pressureReason = `disk: ${disk.reason}`;
+            return undefined;
+          }
+          if (cancelled) return undefined;
           const caps =
             maxLanes > lanes
               ? admissionResourceConfig(config, current.owners)
