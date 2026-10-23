@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Unified Check Runner
- *
- * Runs repository quality checks, including path-sensitive validation.
- *
+ * Repository quality checks, including path-sensitive validation.
  * Usage:
  *   node scripts/check.js [--table] [--timing] [--details] [--run-all] [--force-now]
- *   bun check [--table] [--timing] [--details] [--run-all] [--force-now]
- * Exit codes: 0 for success, 1 for failed checks.
+ *   bun validate [--table] [--timing] [--details] [--run-all] [--force-now]
+ *
+ * Exit codes:
+ *   0 - All checks passed
+ *   1 - One or more checks failed
  */
 
 const crypto = require('node:crypto');

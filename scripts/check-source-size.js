@@ -333,7 +333,10 @@ function evaluateChangedFiles(changes, base, options = {}) {
     try {
       currentContent = readRegularFileSync(absolutePath, { fsImpl });
     } catch (error) {
-      if (error.code === 'ENOENT') continue;
+      if (
+        ['ENOENT', 'ELOOP', 'EISDIR', 'ERR_FS_NOT_REGULAR'].includes(error.code)
+      )
+        continue;
       throw error;
     }
     if (isBinaryContent(currentContent)) {

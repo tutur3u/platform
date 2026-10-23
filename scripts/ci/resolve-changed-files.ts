@@ -1,7 +1,12 @@
-import { appendFileSync, mkdirSync } from 'node:fs';
+import {
+  appendFileSync,
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { privateTempDirSync, writeExclusiveFileSync } from '../safe-fs.js';
 import {
   type ChangedFilesResult,
   resolveChangedFiles,
@@ -99,9 +104,13 @@ function writeChangedFiles({
 
   mkdirSync(outputDir, { recursive: true });
 
-  const directory = privateTempDirSync('changed-files-', outputDir);
+  const directory = mkdtempSync(join(outputDir, 'changed-files-'));
+  chmodSync(directory, 0o700);
   const filePath = join(directory, 'paths.txt');
-  writeExclusiveFileSync(filePath, `${result.files.join('\n')}\n`);
+  writeFileSync(filePath, `${result.files.join('\n')}\n`, {
+    flag: 'wx',
+    mode: 0o600,
+  });
 
   return filePath;
 }

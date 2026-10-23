@@ -237,10 +237,7 @@ export async function inventoryApps(root, ignored) {
         const bytes = await readRegularFile(path, {
           maxBytes: name === VITE_MANIFEST ? MAX_MANIFEST_BYTES : Infinity,
         }).catch((error) => {
-          if (
-            name === VITE_MANIFEST &&
-            error.message === 'Input size cap exceeded'
-          )
+          if (name === VITE_MANIFEST && error.code === 'ERR_FS_FILE_TOO_LARGE')
             assert.fail('Apps Vite manifest byte bound');
           throw error;
         });

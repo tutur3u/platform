@@ -5,7 +5,7 @@ const { runProcess, drainGroup } = require('./sdk-package-process');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
-const { readRegularFileSync } = require('../safe-fs');
+const { readPackage } = require('./qualify-sdk-file');
 const os = require('node:os');
 const path = require('node:path');
 const {
@@ -56,7 +56,7 @@ function inventory(root) {
           fail('UNSAFE_PACKAGE_PATH', 'Nonregular package file');
         if (files.length >= MAX_FILES)
           fail('PACKAGE_LIMIT', 'Package bounds exceeded');
-        const data = readRegularFileSync(file, { maxBytes: MAX_BYTES - bytes });
+        const data = readPackage(file, MAX_BYTES - bytes, 'PACKAGE_LIMIT');
         bytes += data.length;
         files.push({
           path: safeMember(path.relative(root, file).split(path.sep).join('/')),
@@ -374,7 +374,7 @@ async function qualify({
     const pack = checkPack(packed, stagedFiles);
     receipt.identities.pack = checkIdentity(identity, pack, 'pack');
     const archive = path.join(output, pack.filename);
-    const archiveBytes = readRegularFileSync(archive, { maxBytes: MAX_BYTES });
+    const archiveBytes = readPackage(archive, MAX_BYTES, 'PACK_FAILED');
     const tarList = await command('tar', ['-tzf', archive]);
     if (tarList.status !== 0)
       fail('PACK_FAILED', 'Unreadable archive inventory');
