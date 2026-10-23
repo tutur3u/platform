@@ -6,7 +6,8 @@
  *
  * Usage:
  *   bun check:changed [--base <ref>] [--committed] [--only <id>] [--skip <id>]
- *     [--fail-fast] [--dry-run] [--no-ttr] [--files <path>...]
+ *     [--checker auto|tsc|tsrs] [--fail-fast] [--dry-run] [--no-ttr]
+ *     [--files <path>...]
  *
  * The optional pre-push hook runs this with --hook once opted in:
  *   git config tuturuuu.prePush true
@@ -29,6 +30,11 @@ const {
   missingDistPackages,
   typeCheckProjects,
 } = require('./check-changed/type-check.js');
+const {
+  CHECKERS,
+  prefersTsrs,
+  resolveTsrs,
+} = require('./check-changed/tsrs.js');
 const { createChildEnv } = require('./pre-commit.js');
 const { diagnosticKey, runChecker } = require('./ts-diagnostics.js');
 
@@ -39,6 +45,7 @@ const MAX_PRINTED_DIAGNOSTICS = 40;
 function parseArgs(argv) {
   const options = {
     base: null,
+    checker: 'auto',
     committed: false,
     dryRun: false,
     failFast: false,
@@ -58,6 +65,7 @@ function parseArgs(argv) {
       return value;
     };
     if (arg === '--base') options.base = next();
+    else if (arg === '--checker') options.checker = next();
     else if (arg === '--committed') options.committed = true;
     else if (arg === '--dry-run') options.dryRun = true;
     else if (arg === '--fail-fast') options.failFast = true;
@@ -70,6 +78,9 @@ function parseArgs(argv) {
     if (options.files) break;
   }
   if (options.files) assertSafePaths(options.files);
+  if (!CHECKERS.has(options.checker)) {
+    throw new Error(`--checker must be one of ${[...CHECKERS].join(', ')}`);
+  }
   return options;
 }
 
@@ -212,14 +223,28 @@ function runTypeCheck(step, context) {
   if (!projects.length)
     return { status: 'skip', detail: 'no tsc type-check script' };
   const totals = { blocking: [], advisory: 0, ignored: 0 };
-  for (const project of projects) {
-    const checker = context.checkerFor(project);
-    const result = runChecker(checker, project, {
+  const used = { tsc: 0, tsrs: 0 };
+  const check = (name, project) => {
+    const result = runChecker(context.checkers[name], project, {
       cwd: context.root,
       env: context.env,
       spawn: context.spawn,
       timer: null,
     });
+    return { result, groups: classifyDiagnostics(result.diagnostics, context) };
+  };
+  for (const project of projects) {
+    let name =
+      context.checkers.tsrs && prefersTsrs(context.checker, project)
+        ? 'tsrs'
+        : 'tsc';
+    let { result, groups } = check(name, project);
+    // tsrs is experimental: confirm any failure with tsc before blocking.
+    if (name === 'tsrs' && (result.crashed || groups.blocking.length)) {
+      name = 'tsc';
+      ({ result, groups } = check(name, project));
+    }
+    used[name]++;
     if (result.crashed) {
       return {
         status: 'fail',
@@ -227,12 +252,16 @@ function runTypeCheck(step, context) {
         output: result.output,
       };
     }
-    const groups = classifyDiagnostics(result.diagnostics, context);
     totals.blocking.push(...groups.blocking);
     totals.advisory += groups.advisory.length;
     totals.ignored += groups.ignored.length;
   }
-  const notes = [`${projects.length} project(s)`];
+  const notes = [
+    Object.entries(used)
+      .filter(([, count]) => count)
+      .map(([name, count]) => `${name} x${count}`)
+      .join(', '),
+  ];
   if (totals.ignored) notes.push(`${totals.ignored} missing-dist ignored`);
   if (totals.advisory)
     notes.push(`${totals.advisory} advisory outside changed files`);
@@ -379,7 +408,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
   if (options.dryRun) {
     for (const step of steps) {
       const command = step.typeCheck
-        ? `tsc -p <projects of ${step.typeCheck.workspace}>`
+        ? `${options.checker === 'tsc' ? 'tsc' : 'tsrs|tsc'} -p <projects of ${step.typeCheck.workspace}>`
         : step.inline
           ? '(inline)'
           : [step.command, ...step.args].join(' ');
@@ -388,12 +417,20 @@ function main(argv = process.argv.slice(2), deps = {}) {
     return 0;
   }
   const ttr = ttrPrefix(options.ttr, execFile);
+  const tsrs =
+    options.checker !== 'tsc' && steps.some((step) => step.typeCheck)
+      ? (deps.resolveTsrs ?? resolveTsrs)({ env: deps.env ?? process.env })
+      : null;
+  if (options.checker === 'tsrs' && !tsrs) {
+    log('  tsrs unavailable; type-checking with tsc.');
+  }
   const context = {
     changedFiles: new Set(changes.map((change) => change.file)),
-    checkerFor: () => [
-      ...(ttr ?? []),
-      path.join(root, 'node_modules/.bin/tsc'),
-    ],
+    checker: options.checker,
+    checkers: {
+      tsc: [...(ttr ?? []), path.join(root, 'node_modules/.bin/tsc')],
+      tsrs: tsrs ? [...(ttr ?? []), tsrs] : null,
+    },
     env: createChildEnv(deps.env ?? process.env),
     failFast: options.failFast,
     missing,

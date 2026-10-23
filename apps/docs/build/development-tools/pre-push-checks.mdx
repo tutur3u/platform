@@ -51,7 +51,7 @@ remains the blocking formatter and linter. Paused runtimes are excluded.
 CI builds `@tuturuuu/types`, `supabase`, `internal-api` and `masonry` before
 type-checking. Local checkouts usually lack those `dist` declarations, which
 produces thousands of missing-module errors and implicit-`any` cascades. The
-gate runs `tsc -p <project> --noEmit --incremental false --composite false` per
+gate runs `-p <project> --noEmit --incremental false --composite false` per
 project and classifies diagnostics:
 
 - With every workspace declaration present, all diagnostics block.
@@ -69,6 +69,16 @@ root `vitest.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json`, and
 `packages/typescript-config`)
 print **not covered; CI only** because this focused gate cannot prove their full
 repository effect. CI type-checking remains authoritative.
+
+### tsrs acceleration
+
+With the default `--checker auto`, projects with recorded
+[tsrs parity](/build/development-tools/tsrs-shadow-type-check) are checked with
+the pinned tsrs binary first (about 3-6x faster with a third of the memory). If
+tsrs reports a blocking diagnostic or crashes, the gate reruns `tsc` and only
+`tsc`'s result can block. Other projects use `tsc`. `--checker tsc` disables
+tsrs; `--checker tsrs` tries it for every project with the same `tsc`
+confirmation. The step detail shows which checker produced each result.
 
 ## Optional pre-push hook
 
@@ -106,6 +116,7 @@ a passing frozen install alone does not prove a normal install leaves it stable.
 ## Regression coverage
 
 `scripts/check-changed.test.js`, `scripts/check-changed/plan.test.js`,
-`scripts/check-changed/type-check.test.js` and `scripts/ts-diagnostics.test.js`
-cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
-ttr queueing and cold-declaration classification.
+`scripts/check-changed/type-check.test.js`, `scripts/check-changed/tsrs.test.js`
+and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
+ttr queueing, cold-declaration classification and tsc confirmation of tsrs
+failures.

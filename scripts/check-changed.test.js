@@ -51,6 +51,9 @@ test('parseArgs handles flags, hooks and trailing file lists', () => {
   const hook = parseArgs(['--hook']);
   assert.equal(hook.hook, true);
   assert.equal(hook.committed, true);
+  assert.equal(parseArgs([]).checker, 'auto');
+  assert.equal(parseArgs(['--checker', 'tsc']).checker, 'tsc');
+  assert.throws(() => parseArgs(['--checker', 'tsgo']), /--checker must be/);
   assert.throws(() => parseArgs(['--base']), /Missing value/);
   assert.throws(() => parseArgs(['--wat']), /Unknown argument/);
 });
@@ -230,7 +233,8 @@ test('runTypeCheck blocks only on changed-file errors while declarations are col
     env: {},
     changedFiles: new Set(['apps/web/src/b.ts']),
     missing: new Map([['@tuturuuu/types', 'packages/types']]),
-    checkerFor: () => ['tsc'],
+    checker: 'tsc',
+    checkers: { tsc: ['tsc'], tsrs: null },
     spawn: (command, args) => {
       calls.push([command, ...args]);
       return { status: 2, stdout: output, stderr: '' };
@@ -250,6 +254,51 @@ test('runTypeCheck blocks only on changed-file errors while declarations are col
     runTypeCheck({ typeCheck: { workspace: 'apps/web' } }, context).status,
     'pass'
   );
+});
+
+test('runTypeCheck prefers tsrs for qualified projects and confirms failures with tsc', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-changed-tsrs-'));
+  fs.mkdirSync(path.join(root, 'apps/tasks'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'apps/tasks/package.json'),
+    JSON.stringify({ scripts: { 'type-check': 'tsc -p tsconfig.json' } })
+  );
+  fs.writeFileSync(path.join(root, 'apps/tasks/tsconfig.json'), '{}');
+  const outputs = { tsrs: '', tsc: '' };
+  const calls = [];
+  const context = {
+    root,
+    env: {},
+    checker: 'auto',
+    checkers: { tsc: ['tsc'], tsrs: ['tsrs'] },
+    changedFiles: new Set(['apps/tasks/src/a.ts']),
+    missing: new Map(),
+    spawn: (command) => {
+      calls.push(command);
+      return { status: outputs[command] ? 2 : 0, stdout: outputs[command] };
+    },
+  };
+  const step = { typeCheck: { workspace: 'apps/tasks' } };
+
+  let result = runTypeCheck(step, context);
+  assert.deepEqual(calls, ['tsrs']);
+  assert.equal(result.status, 'pass');
+  assert.match(result.detail, /^tsrs x1/);
+
+  // A tsrs-only error must not block: tsc decides.
+  calls.length = 0;
+  outputs.tsrs = 'apps/tasks/src/a.ts(1,1): error TS2322: tsrs only.';
+  result = runTypeCheck(step, context);
+  assert.deepEqual(calls, ['tsrs', 'tsc']);
+  assert.equal(result.status, 'pass');
+  assert.match(result.detail, /^tsc x1/);
+
+  // An error both checkers report blocks with tsc's diagnostics.
+  calls.length = 0;
+  outputs.tsc = 'apps/tasks/src/a.ts(1,1): error TS2322: shared.';
+  result = runTypeCheck(step, context);
+  assert.equal(result.status, 'fail');
+  assert.equal(result.output, outputs.tsc);
 });
 
 test('main prints the plan in dry-run mode and exits cleanly without changes', () => {

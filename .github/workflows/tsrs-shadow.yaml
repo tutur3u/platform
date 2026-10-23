@@ -1,0 +1,97 @@
+name: tsrs Shadow Type Check
+
+# Non-blocking evidence for promoting tsrs (the Rust TypeScript port). tsc in
+# type-check.yaml stays the required gate. Main pushes record parity over time;
+# pull requests run only when the shadow tooling itself changes.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/calendar/**'
+      - 'apps/tasks/**'
+      - 'packages/internal-api/**'
+      - 'packages/supabase/**'
+      - 'packages/types/**'
+      - 'packages/typescript-config/**'
+      - 'packages/utils/**'
+      - 'bun.lock'
+      - 'scripts/ts-diagnostics.js'
+      - 'scripts/ci/tsrs-shadow.js'
+      - '.github/workflows/tsrs-shadow.yaml'
+  pull_request:
+    paths:
+      - 'scripts/ts-diagnostics.js'
+      - 'scripts/ts-diagnostics.test.js'
+      - 'scripts/ci/tsrs-shadow.js'
+      - 'scripts/ci/tsrs-shadow.test.js'
+      - '.github/workflows/tsrs-shadow.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+
+env:
+  TSRS_VERSION: 0.18.0-ts7.1.0-dev.20260929
+
+jobs:
+  shadow:
+    name: tsrs shadow (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Shadow evidence must never block a merge.
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Test shadow tooling
+        run: node --test scripts/ts-diagnostics.test.js scripts/ci/tsrs-shadow.test.js
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.3
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      - name: Build workspace declarations
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
+          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+      # Pinned outside the workspace so the shadow never changes bun.lock.
+      - name: Install pinned tsrs
+        run: bash scripts/ci/run-with-backoff.sh npm install --no-save --no-package-lock --ignore-scripts --prefix "$RUNNER_TEMP/tsrs" "tsrs@${TSRS_VERSION}"
+
+      - name: Compare tsrs with tsc
+        run: >-
+          node scripts/ci/tsrs-shadow.js
+          --tsrs "$RUNNER_TEMP/tsrs/node_modules/.bin/tsrs"
+          --annotate
+          --json "$RUNNER_TEMP/tsrs-shadow/report.json"
+          --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain parity report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: tsrs-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tsrs-shadow/report.json
+          if-no-files-found: warn
+          retention-days: 30
