@@ -237,7 +237,7 @@ test('unavailable registry dependency blocks before pack/install and preserves p
     commands.push([command, args]);
     if (command === 'git') return result(`${sourceSha}\n`);
     if (command === process.execPath) return result('v24.21.0\n');
-    if (command === 'bun') return result('1.4.3\n');
+    if (command === 'bun') return result('1.4.4\n');
     if (command === 'npm' && args[0] === 'view') return result('', 1);
     assert.fail('pack/install must never run after missing registry tuple');
   };
@@ -378,7 +378,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
       return result(sourceSha);
     }
     if (args[0] === '--version')
-      return result(command === 'bun' ? '1.4.3' : 'v24.21.0');
+      return result(command === 'bun' ? '1.4.4' : 'v24.21.0');
     if (command === 'npm' && args[0] === 'view')
       return changes.registryTuple
         ? result(changes.registryTuple)
@@ -569,7 +569,7 @@ test('workflow admits only raw-head build/test qualification and preserves other
     /pull_request_target|secrets\.|id-token:|npm publish|production\]/
   );
   assert.match(workflow, /node-version: 24\.21\.0/);
-  assert.match(workflow, /bun-version: 1\.4\.3/);
+  assert.match(workflow, /bun-version: 1\.4\.4/);
   const config = fs.readFileSync(path.join(repo, 'tuturuuu.ci.ts'), 'utf8');
   assert.match(config, /'sdk-package-qualification.yaml': true/);
   assert.match(config, /'vercel-production-tanstack-web.yaml': false/);
