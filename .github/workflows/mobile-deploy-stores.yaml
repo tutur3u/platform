@@ -33,15 +33,22 @@ permissions:
   actions: read
   contents: read
   deployments: read
-  id-token: write
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mobile-deploy-stores.yaml
 
   mobile-credentials-preflight:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Check mobile deployment credentials
     needs: [check-ci]
     if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true'
@@ -142,6 +149,11 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-metadata-oidc.json"
 
   publish-android-internal:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Publish Android to Google Play internal
     needs: [check-ci, mobile-credentials-preflight]
     if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
@@ -278,6 +290,11 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
   publish-ios-testflight:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Upload iOS to TestFlight
     needs: [check-ci, mobile-credentials-preflight]
     if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
@@ -540,6 +557,11 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
   retry-ios-testflight-review:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Retry latest eligible TestFlight review
     needs: [check-ci]
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'retry_ios_review' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'

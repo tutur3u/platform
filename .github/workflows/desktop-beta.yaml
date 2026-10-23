@@ -30,6 +30,9 @@ permissions:
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: desktop-beta.yaml
