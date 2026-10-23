@@ -3,13 +3,16 @@
 import asyncio
 import logging
 import os
+import re
 import tempfile
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlsplit
 
 import aiohttp
+import requests
 from fastapi import HTTPException
 from markitdown import MarkItDown
+from yarl import URL
 
 MAX_MARKITDOWN_BYTES = 50 * 1024 * 1024
 YOUTUBE_HOSTS = {
@@ -22,10 +25,48 @@ YOUTUBE_HOSTS = {
     "youtu.be",
     "www.youtu.be",
 }
+SUPPORTED_SUFFIXES = frozenset(
+    {
+        ".bin",
+        ".bmp",
+        ".csv",
+        ".docx",
+        ".epub",
+        ".flac",
+        ".gif",
+        ".htm",
+        ".html",
+        ".ipynb",
+        ".jpeg",
+        ".jpg",
+        ".json",
+        ".jsonl",
+        ".m4a",
+        ".markdown",
+        ".md",
+        ".mp3",
+        ".mp4",
+        ".msg",
+        ".ogg",
+        ".pdf",
+        ".png",
+        ".pptx",
+        ".text",
+        ".tiff",
+        ".txt",
+        ".wav",
+        ".webp",
+        ".xls",
+        ".xlsx",
+        ".xml",
+        ".zip",
+    }
+)
+LOCAL_SUPABASE_HOSTS = {"127.0.0.1", "::1", "localhost", "host.docker.internal"}
 logger = logging.getLogger(__name__)
 
 
-def _resolve_supabase_hostname() -> str | None:
+def _require_supabase_url() -> str:
     supabase_url = (
         os.getenv("SUPABASE_URL")
         or os.getenv("SUPABASE_SERVER_URL")
@@ -34,77 +75,79 @@ def _resolve_supabase_hostname() -> str | None:
         or ""
     ).strip()
     if not supabase_url:
-        return None
-
-    parsed = urlparse(supabase_url)
-    if parsed.hostname:
-        return parsed.hostname.lower()
-
-    parsed_with_scheme = (
-        urlparse(f"https://{supabase_url}") if "://" not in supabase_url else parsed
-    )
-    if parsed_with_scheme.hostname:
-        return parsed_with_scheme.hostname.lower()
-
-    return None
+        raise HTTPException(status_code=500, detail="Supabase host is not configured")
+    return supabase_url if "://" in supabase_url else f"https://{supabase_url}"
 
 
-def _require_supabase_hostname() -> str:
-    configured_supabase_host = _resolve_supabase_hostname()
-    if configured_supabase_host:
-        return configured_supabase_host
-    raise HTTPException(status_code=500, detail="Supabase host is not configured")
+def _parse_url(value: str) -> URL:
+    if "\\" in value or any(ord(char) <= 32 or ord(char) == 127 for char in value):
+        raise HTTPException(status_code=400, detail="Invalid URL")
+    try:
+        if "@" in urlsplit(value).netloc:
+            raise ValueError("Userinfo is not allowed")
+        parsed = URL(value)
+        # Force validation of IDNA and port before opening a network session.
+        if not parsed.raw_host or parsed.user is not None or parsed.password is not None:
+            raise ValueError("Invalid authority")
+        _ = parsed.port
+    except (ValueError, UnicodeError) as error:
+        raise HTTPException(status_code=400, detail="Invalid URL authority") from error
+    return parsed
 
 
-def _validate_signed_url(signed_url: str, configured_supabase_host: str) -> None:
-    parsed = urlparse(signed_url)
+def _validate_signed_url(signed_url: str, configured_supabase_url: str) -> URL:
+    try:
+        configured = _parse_url(configured_supabase_url)
+        if configured.scheme != "https" and not (
+            configured.scheme == "http" and configured.raw_host in LOCAL_SUPABASE_HOSTS
+        ):
+            raise ValueError("Invalid configured scheme")
+    except (HTTPException, ValueError) as error:
+        raise HTTPException(status_code=500, detail="Invalid Supabase URL configuration") from error
 
-    is_local_host = configured_supabase_host in (
-        "127.0.0.1",
-        "localhost",
-        "host.docker.internal",
-    )
-    allowed_schemes = ("http", "https") if is_local_host else ("https",)
-
-    if parsed.scheme not in allowed_schemes:
+    parsed = _parse_url(signed_url)
+    if parsed.scheme != configured.scheme:
         raise HTTPException(status_code=400, detail="Invalid signed URL scheme")
-    if parsed.hostname is None or parsed.hostname.lower() != configured_supabase_host:
-        raise HTTPException(status_code=400, detail="Invalid signed URL host")
+    if parsed.raw_host != configured.raw_host or parsed.port != configured.port:
+        raise HTTPException(status_code=400, detail="Invalid signed URL host or port")
     if not parsed.path.startswith("/storage/v1/object/sign/"):
         raise HTTPException(status_code=400, detail="Invalid Supabase signed URL")
-    token = next(
-        (value.strip() for value in parse_qs(parsed.query).get("token", []) if value),
-        "",
-    )
-    if not token:
+    if not any(token.strip() for token in parsed.query.getall("token", [])):
         raise HTTPException(status_code=400, detail="Invalid signed URL token")
+
+    # Construct the request authority solely from trusted configuration.
+    return URL.build(
+        scheme=configured.scheme,
+        authority=configured.raw_authority,
+        path=parsed.raw_path,
+        query_string=parsed.raw_query_string,
+        encoded=True,
+    )
 
 
 def _validate_direct_youtube_url(url: str) -> str:
-    parsed = urlparse(url)
-    host = parsed.hostname.lower() if parsed.hostname else ""
-
+    parsed = _parse_url(url)
     if parsed.scheme != "https":
         raise HTTPException(status_code=400, detail="Invalid YouTube URL scheme")
-    if host not in YOUTUBE_HOSTS:
+    if parsed.raw_host not in YOUTUBE_HOSTS or parsed.port != 443:
         raise HTTPException(status_code=400, detail="Unsupported direct URL host")
-    if host in {"youtu.be", "www.youtu.be"}:
-        if parsed.path.strip("/") == "":
-            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
-        return url
 
-    is_known_youtube_path = (
-        parsed.path == "/watch"
-        or parsed.path.startswith("/shorts/")
-        or parsed.path.startswith("/embed/")
-        or parsed.path.startswith("/live/")
-    )
-    if not is_known_youtube_path:
+    if parsed.raw_host in {"youtu.be", "www.youtu.be"}:
+        video_id = parsed.path.removeprefix("/")
+    elif parsed.path == "/watch":
+        video_id = parsed.query.get("v", "")
+    elif parsed.path.startswith(("/shorts/", "/embed/", "/live/")):
+        video_id = parsed.path.split("/", 2)[2]
+    else:
+        video_id = ""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
-    if parsed.path == "/watch" and not parse_qs(parsed.query).get("v"):
-        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+    return f"https://www.youtube.com/watch?v={video_id}"
 
-    return url
+
+def _safe_temp_suffix(suffix: str) -> str:
+    normalized = suffix.lower()
+    return next((extension for extension in SUPPORTED_SUFFIXES if extension == normalized), "")
 
 
 def _normalize_original_name(filename: str | None) -> str:
@@ -125,43 +168,31 @@ def _validate_content_length(content_length_raw: str | None) -> None:
         raise HTTPException(status_code=413, detail="File exceeds 50MB limit")
 
 
-def _validate_resolved_response_host(
-    response_host: str | None,
-    allowed_hosts: set[str],
-) -> None:
-    normalized_host = response_host.lower() if response_host else None
-    if normalized_host is None or normalized_host not in allowed_hosts:
-        raise HTTPException(status_code=400, detail="Invalid signed URL host")
-
-
 async def _download_signed_url_to_temp(
     signed_url: str,
     suffix: str,
-    configured_supabase_host: str,
+    configured_supabase_url: str,
 ) -> tuple[str, int]:
+    request_url = _validate_signed_url(signed_url, configured_supabase_url)
+    safe_suffix = _safe_temp_suffix(suffix)
     timeout = aiohttp.ClientTimeout(total=60)
     downloaded_bytes = 0
     temp_path = ""
-    signed_url_host = urlparse(signed_url).hostname
-    allowed_hosts = {configured_supabase_host}
-    if signed_url_host:
-        allowed_hosts.add(signed_url_host.lower())
 
     try:
         async with (
             aiohttp.ClientSession(timeout=timeout) as session,
-            session.get(signed_url) as response,
+            session.get(request_url, allow_redirects=False) as response,
         ):
-            if response.status >= 400:
+            if response.status >= 300:
                 raise HTTPException(
                     status_code=400,
                     detail=(f"Failed to download from signed URL ({response.status})"),
                 )
 
-            _validate_resolved_response_host(response.url.host, allowed_hosts)
             _validate_content_length(response.headers.get("Content-Length"))
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=safe_suffix) as tmp:
                 temp_path = tmp.name
                 async for chunk in response.content.iter_chunked(1024 * 256):
                     if not chunk:
@@ -192,8 +223,13 @@ def _convert_url_sync(
     url: str,
     enable_plugins: bool,
 ) -> tuple[str, str | None]:
-    converter = MarkItDown(enable_plugins=enable_plugins)
-    result = converter.convert_uri(url)
+    source_url = _validate_direct_youtube_url(url)
+    # Fetch only the canonical video page; never let convert_uri follow redirects.
+    with requests.get(source_url, stream=True, timeout=60, allow_redirects=False) as response:
+        if response.status_code >= 300:
+            raise HTTPException(status_code=400, detail="Failed to download YouTube page")
+        converter = MarkItDown(enable_plugins=enable_plugins)
+        result = converter.convert_response(response)
     markdown = (getattr(result, "text_content", "") or "").strip()
     title = getattr(result, "title", None)
     return markdown, title
@@ -261,13 +297,12 @@ async def handle_markitdown(
                 "url": source_url,
             }
 
-        configured_supabase_host = _require_supabase_hostname()
-        _validate_signed_url(signed_url, configured_supabase_host)
+        configured_supabase_url = _require_supabase_url()
 
         temp_path, downloaded_bytes = await _download_signed_url_to_temp(
             signed_url,
             suffix,
-            configured_supabase_host,
+            configured_supabase_url,
         )
 
         if downloaded_bytes == 0:

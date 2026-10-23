@@ -48,6 +48,30 @@ Tools that read those attachments, such as `convert_file_to_markdown`, should
 resolve bare filenames and stale same-workspace attachment paths against the
 current chat folder. They must still reject full paths from another workspace.
 
+### Attachment conversion URL policy
+
+Both MarkItDown `/markitdown` endpoints in `apps/discord` accept signed Storage
+URLs only at the configured Supabase origin. Host comparison is case-insensitive
+and IDNA-normalized; userinfo, other hosts, unconfigured ports, and redirects are
+rejected before content is downloaded. HTTPS is the default. Local development
+may use HTTP only when the selected Supabase URL explicitly configures HTTP on
+`localhost`, `127.0.0.1`, `::1`, or `host.docker.internal`, with its matching port.
+The existing Supabase environment-variable precedence remains unchanged.
+
+This policy trusts the operator-configured hostname and its DNS; it does not
+resolve and filter private addresses. Keep that configuration and DNS under
+operator control. Signed downloads retain the 60-second timeout, Content-Length
+check, 50 MiB streaming cap, and temporary-file cleanup. Temporary-file suffixes
+come from supported extension constants; unknown or unsafe suffixes are omitted.
+
+The retained direct YouTube conversion path accepts video links on the existing
+YouTube host allowlist, extracts an 11-character video ID, and fetches a canonical
+HTTPS watch page on `www.youtube.com` without redirects. The response URL returned
+to callers is canonical. Transcript retrieval remains owned by MarkItDown's
+YouTube integration. This does not change Mira's Gemini-native YouTube routing.
+Regression coverage: `apps/discord/tests/test_markitdown_service.py` and
+`apps/discord/tests/test_markitdown_security.py`.
+
 ### Mira Dashboard Chat Agent Loop
 
 The dashboard Mira chat keeps the main assistant in fast mode by default. New
