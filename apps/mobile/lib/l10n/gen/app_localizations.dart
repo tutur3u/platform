@@ -13909,6 +13909,30 @@ abstract class AppLocalizations {
   /// **'Too many requests. Please wait before retrying.'**
   String get settingsTimezoneRateLimited;
 
+  /// No description provided for @settingsTimezoneRateLimitedDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit details: {details}'**
+  String settingsTimezoneRateLimitedDetails(Object details);
+
+  /// No description provided for @settingsTimezoneRateLimitedChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'The response indicates a Vercel security challenge. Please contact support if this continues.'**
+  String get settingsTimezoneRateLimitedChallenge;
+
+  /// No description provided for @settingsTimezoneRateLimitedUpstream.
+  ///
+  /// In en, this message translates to:
+  /// **'This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.'**
+  String get settingsTimezoneRateLimitedUpstream;
+
+  /// No description provided for @settingsTimezoneRateLimitedRetryAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'The server asks you to wait {seconds} seconds before retrying.'**
+  String settingsTimezoneRateLimitedRetryAfter(int seconds);
+
   /// No description provided for @settingsTimezoneRetry.
   ///
   /// In en, this message translates to:

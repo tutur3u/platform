@@ -7199,6 +7199,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
 
   @override
+  String settingsTimezoneRateLimitedDetails(Object details) {
+    return 'Chi tiết giới hạn: $details';
+  }
+
+  @override
+  String get settingsTimezoneRateLimitedChallenge => 'Phản hồi cho biết có thử thách bảo mật của Vercel. Vui lòng liên hệ hỗ trợ nếu tình trạng này tiếp diễn.';
+
+  @override
+  String get settingsTimezoneRateLimitedUpstream => 'Phản hồi này không xác định giới hạn của ứng dụng. Phản hồi có thể đến từ dịch vụ thượng nguồn hoặc lớp biên mạng; chưa rõ nguồn chính xác.';
+
+  @override
+  String settingsTimezoneRateLimitedRetryAfter(int seconds) {
+    return 'Máy chủ yêu cầu chờ $seconds giây trước khi thử lại.';
+  }
+
+  @override
   String get settingsTimezoneRetry => 'Thử lại múi giờ';
 
   @override

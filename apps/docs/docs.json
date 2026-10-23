@@ -347,6 +347,7 @@
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",
                   "build/devops/mobile-store-deployment",
+                  "build/devops/calendar-native-api-protection",
                   "build/devops/desktop-beta-distribution",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide",

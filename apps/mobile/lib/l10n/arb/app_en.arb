@@ -3478,6 +3478,15 @@
   "settingsTimezoneError": "Could not load or save timezone. Retry or edit a loaded preference.",
   "settingsTimezoneLoading": "Resolving timezone…",
   "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
+  "settingsTimezoneRateLimitedDetails": "Limit details: {details}",
+  "settingsTimezoneRateLimitedChallenge": "The response indicates a Vercel security challenge. Please contact support if this continues.",
+  "settingsTimezoneRateLimitedUpstream": "This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.",
+  "settingsTimezoneRateLimitedRetryAfter": "The server asks you to wait {seconds} seconds before retrying.",
+  "@settingsTimezoneRateLimitedRetryAfter": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
   "settingsTimezoneRetry": "Retry timezone",
   "settingsTimezoneSearch": "Search timezones",
   "settingsTimezoneUnknown": "Unknown",
