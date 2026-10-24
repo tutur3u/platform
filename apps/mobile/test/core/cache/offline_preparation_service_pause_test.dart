@@ -260,11 +260,14 @@ void main() {
           userId: 'actor',
           workspaceId: 'workspace',
         );
-        await coordinator.run(userId: 'actor', workspaceId: 'workspace');
+        await coordinator.run(
+          userId: 'actor', workspaceId: 'workspace',
+          requestedProducts: {'calendar'}, wifiOnly: false, automatic: true,
+        );
         expect(
           calls,
           1,
-          reason: 'Neither manual nor lifecycle events bypass cooldown',
+          reason: 'Automatic and lifecycle events do not bypass cooldown',
         );
         now = now.add(const Duration(seconds: 74));
         await coordinator.resumePending(
