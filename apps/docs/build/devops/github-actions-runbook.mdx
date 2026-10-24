@@ -2145,12 +2145,23 @@ policy. Rerunning an older workflow revision does not backport the policy. If th
 candidate has no run with this protection, stop promotion and obtain an authorized
 qualification path for that exact source; do not substitute newer-head evidence.
 
-The explicit PR exceptions are `desktop-beta.yaml`, `colab-cloudflare.yaml`,
-`coordination-cloudflare.yaml`, `cron-control-cloudflare.yaml`,
-`devbox-control-cloudflare.yaml`, `lettin-cloudflare.yaml`, `meet-cloudflare.yaml`
-and `parley-cloudflare.yaml`, which combine validation with production deployment;
-`playground-runtime-acceptance.yaml`, which must finish real sandbox cleanup; and
-the paused `docker-setup-check.yaml` and `rust-backend.yml`. The paused
+The explicit PR exceptions are `desktop-beta.yaml`, whose production build and
+publication share the workflow lock; `calendar-cloudflare.yaml` and
+`mail-cloudflare.yaml`, whose staging publication consumes the durable attempt
+ledger; `playground-runtime-acceptance.yaml`, which must finish real sandbox
+cleanup; and the paused `docker-setup-check.yaml` and `rust-backend.yml`.
+
+The Colab, Coordination, Cron Control, Devbox Control, Lettin, Meet and Parley
+Cloudflare workflows are not exceptions. Their workflow-level group uses the
+standard validation policy with a literal per-workflow prefix, so PR and `main`
+validation supersede older revisions. The prefix matters because a
+`workflow_call` run inherits the caller's `github.workflow`; without it, the
+workflows one production planner run calls would share a group and replace each
+other's pending runs. Only the production-gated `deploy` job holds the
+serialized lock: a static `<workflow>-production-deploy` job group with
+cancellation disabled and `queue: max`. Production and manual runs keep unique
+workflow groups. `scripts/ci/protected-workflow-concurrency.test.js` pins this
+split. The paused
 `tanstack-route-manifest.yaml` retains its existing PR supersession and protected
 main policy. Resuming a paused runtime requires a separate policy review.
 

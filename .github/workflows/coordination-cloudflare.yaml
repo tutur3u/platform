@@ -32,10 +32,12 @@ on:
 permissions:
   contents: read
   deployments: read
+# Validation runs supersede per PR or branch; production and manual runs stay
+# unique. The literal prefix keeps workflow_call runs from one planner apart.
+# Only the deploy job serializes production with a non-cancelling queue.
 concurrency:
-  group: coordination-cloudflare-${{ github.ref }}
-  cancel-in-progress: false
-  queue: max
+  group: coordination-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
@@ -117,6 +119,10 @@ jobs:
     environment: coordination-production
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    concurrency:
+      group: coordination-cloudflare-production-deploy
+      cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
