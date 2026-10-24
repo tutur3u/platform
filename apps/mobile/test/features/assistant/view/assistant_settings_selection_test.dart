@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -146,9 +145,7 @@ void main() {
       final h = RepairHarness(api: api);
       addTearDown(() => h.dispose(tester));
       await h.mount(tester);
-      await h.startNew(tester);
-      await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
-      await tester.pumpAndSettle();
+      expect(h.chat.state.creationOutcomeUnknown, isFalse);
       final shell = h.pageContext.read<AssistantShellCubit>();
       await tester.runAsync(() async {
         expect(await shell.setSelectedModel(_model), isTrue);

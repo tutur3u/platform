@@ -231,8 +231,12 @@ class BackgroundReplyHarness {
   final dock = ShellDockSlotController();
   late AssistantChatCubit chat;
   late BuildContext pageContext;
-  Future<void> mount(WidgetTester tester, {VoidCallback? onFirstFrame}) async {
-    SharedPreferences.setMockInitialValues({});
+  Future<void> mount(
+    WidgetTester tester, {
+    VoidCallback? onFirstFrame,
+    Map<String, Object> initialPreferences = const {},
+  }) async {
+    SharedPreferences.setMockInitialValues(initialPreferences);
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('flutter_timezone'),
       (call) async => 'UTC',

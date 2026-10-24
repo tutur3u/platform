@@ -233,9 +233,9 @@ void main() {
           ..throwClear = false
           ..failSelected = false;
         expect(await fresh().hasUnknownChatCreation(ws), isTrue);
-        expect(await fresh().hasUnknownChatCreation(chat), isTrue);
+        expect(await fresh().hasUnknownChatCreation(chat), isFalse);
         actor = '44444444-4444-4444-8444-444444444444';
-        expect(await fresh().hasUnknownChatCreation(ws), isTrue);
+        expect(await fresh().hasUnknownChatCreation(ws), isFalse);
         actor = '33333333-3333-4333-8333-333333333333';
         SharedPreferences.resetStatic(); // Keep the actual backing store.
         expect(await fresh().hasUnknownChatCreation(ws), isTrue);
@@ -297,8 +297,10 @@ void main() {
     },
   );
   test(
-    'missing creation marker fails closed and is isolated by actor/workspace',
+    'untouched creation scopes initialize independently by actor/workspace',
     () async {
+      const ws = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001';
+      const chat = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002';
       SharedPreferences.setMockInitialValues({});
       var actor = '33333333-3333-4333-8333-333333333333';
       final scoped = AssistantRepository(
@@ -306,12 +308,12 @@ void main() {
         tasksApiClient: api,
         currentUserId: () => actor,
       );
-      expect(await scoped.hasUnknownChatCreation(ws), isTrue);
+      expect(await scoped.hasUnknownChatCreation(ws), isFalse);
       await informedReset(scoped, ws);
       expect(await scoped.hasUnknownChatCreation(ws), isFalse);
-      expect(await scoped.hasUnknownChatCreation(chat), isTrue);
+      expect(await scoped.hasUnknownChatCreation(chat), isFalse);
       actor = '44444444-4444-4444-8444-444444444444';
-      expect(await scoped.hasUnknownChatCreation(ws), isTrue);
+      expect(await scoped.hasUnknownChatCreation(ws), isFalse);
       actor = '33333333-3333-4333-8333-333333333333';
       expect(await scoped.hasUnknownChatCreation(ws), isFalse);
     },
