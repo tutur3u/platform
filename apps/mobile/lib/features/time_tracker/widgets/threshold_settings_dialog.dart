@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -41,14 +42,14 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final muted = theme.typography.small.copyWith(
       color: theme.colorScheme.mutedForeground,
     );
     return AppDialogScaffold(
       title: l10n.settingsApprovalThreshold,
       description: l10n.timerRequestsThresholdDescription,
-      icon: shad.LucideIcons.clipboardCheck,
+      icon: LucideIcons.clipboardCheck,
       maxWidth: 520,
       actions: [
         shad.OutlineButton(
@@ -107,7 +108,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
               ),
             ],
           ),
-          const shad.Gap(8),
+          const AppGap(8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -119,7 +120,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
             ),
           ),
           if (_error != null) ...[
-            const shad.Gap(8),
+            const AppGap(8),
             Text(
               _error!,
               style: theme.typography.small.copyWith(

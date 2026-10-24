@@ -2,16 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/utils/supported_timezones.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/timezone_picker_sheet.dart';
 import 'package:mobile/features/settings/view/timezone_rate_limit_message.dart';
 import 'package:mobile/features/settings/view/timezone_row_value.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimezoneSettingsTile extends StatefulWidget {
   const TimezoneSettingsTile({
@@ -106,12 +106,22 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
     final generation = ++_editorGeneration;
     final userId = widget.userId;
     final workspaceId = widget.workspaceId;
+    final state = _cubit.state;
     final selected = await showScopedSettingsSheet<String>(
       context: context,
       maxDialogWidth: 480,
+      sheetSize: AppSheetSize.large,
       builder: (sheetContext) {
         _editorRoute = ModalRoute.of(sheetContext);
-        return _TimezoneChooser(workspace: widget.workspace);
+        return TimezonePickerSheet(
+          workspace: widget.workspace,
+          selected: widget.workspace ? state.workspace : state.personal,
+          automaticZone: widget.workspace
+              ? state.device
+              : state.workspace != 'auto'
+              ? state.workspace
+              : state.device,
+        );
       },
     );
     _editorRoute = null;
@@ -143,7 +153,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
           );
           return SettingsTile(
             grouped: widget.grouped,
-            icon: shad.LucideIcons.earth,
+            icon: LucideIcons.earth,
             title: widget.workspace
                 ? context.l10n.settingsWorkspaceTimezone
                 : context.l10n.settingsTimezone,
@@ -182,7 +192,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
                         onPressed: _coolingDown || state.loading || state.saving
                             ? null
                             : () => unawaited(_retry()),
-                        icon: const Icon(shad.LucideIcons.rotateCw),
+                        icon: const Icon(LucideIcons.rotateCw),
                       ),
                       if (state.diagnostics case final diagnostics?)
                         InternalDiagnosticsCopy(
@@ -214,73 +224,4 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
           );
         },
       );
-}
-
-class _TimezoneChooser extends StatefulWidget {
-  const _TimezoneChooser({required this.workspace});
-  final bool workspace;
-  @override
-  State<_TimezoneChooser> createState() => _TimezoneChooserState();
-}
-
-class _TimezoneChooserState extends State<_TimezoneChooser> {
-  String _query = '';
-  @override
-  Widget build(BuildContext context) {
-    final zones = supportedTimezones
-        .where(
-          (zone) => zone.toLowerCase().replaceAll('_', ' ').contains(_query),
-        )
-        .toList();
-    return AppDialogScaffold(
-      title: widget.workspace
-          ? context.l10n.settingsWorkspaceTimezone
-          : context.l10n.settingsTimezone,
-      slivers: [
-        SliverToBoxAdapter(
-          child: Material(
-            type: MaterialType.transparency,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: context.l10n.settingsTimezoneSearch,
-                  ),
-                  onChanged: (value) => setState(
-                    () => _query = value.trim().toLowerCase().replaceAll(
-                      '_',
-                      ' ',
-                    ),
-                  ),
-                ),
-                if (!widget.workspace)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(context.l10n.settingsTimezoneDescription),
-                  ),
-                ListTile(
-                  title: Text(context.l10n.settingsTimezoneAuto),
-                  onTap: () => Navigator.of(context).pop('auto'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        SliverList.builder(
-          itemCount: zones.length,
-          itemBuilder: (context, index) {
-            final zone = zones[index];
-            return Material(
-              type: MaterialType.transparency,
-              child: ListTile(
-                title: Text(zone),
-                onTap: () => Navigator.of(context).pop(zone),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
 }

@@ -265,8 +265,8 @@ void main() {
           expect(find.text('Unknown'), findsNWidgets(2));
         }
         final expectedRequests = [
-          'GET /api/v1/mobile-calendar/api/v1/users/calendar-settings',
-          'GET /api/v1/mobile-calendar/api/v1/workspaces/ws/calendar-settings',
+          'GET /api/v1/users/calendar-settings',
+          'GET /api/v1/workspaces/ws/calendar-settings',
         ];
         expect(
           h.requests.map((r) => '${r.method} ${r.url.path}'),

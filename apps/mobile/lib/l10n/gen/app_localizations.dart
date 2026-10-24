@@ -20731,6 +20731,48 @@ abstract class AppLocalizations {
   /// **'The upload link expired or is invalid. Select the image again.'**
   String get profileMediaUploadExpired;
 
+  /// No description provided for @settingsTimezonePickerAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All timezones'**
+  String get settingsTimezonePickerAll;
+
+  /// No description provided for @settingsTimezonePickerAutoPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the workspace timezone, or this device\'s when the workspace has none.'**
+  String get settingsTimezonePickerAutoPersonal;
+
+  /// No description provided for @settingsTimezonePickerAutoWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Members without a personal timezone use their own device\'s.'**
+  String get settingsTimezonePickerAutoWorkspace;
+
+  /// No description provided for @settingsTimezonePickerAutoResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently {timezone}.'**
+  String settingsTimezonePickerAutoResolved(String timezone);
+
+  /// No description provided for @settingsTimezonePickerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get settingsTimezonePickerCurrent;
+
+  /// No description provided for @settingsTimezonePickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No timezones match “{query}”.'**
+  String settingsTimezonePickerEmpty(String query);
+
+  /// No description provided for @settingsTimezonePickerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search city, region or GMT offset'**
+  String get settingsTimezonePickerSearchHint;
+
   /// No description provided for @settingsAppsGroup.
   ///
   /// In en, this message translates to:

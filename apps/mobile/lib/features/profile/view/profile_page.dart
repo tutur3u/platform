@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
@@ -116,7 +117,7 @@ class _ProfileView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const NovaLoadingIndicator(),
-                    const shad.Gap(16),
+                    const AppGap(16),
                     Text(l10n.profileLoading),
                   ],
                 ),
@@ -134,7 +135,7 @@ class _ProfileView extends StatelessWidget {
                         state.error ?? l10n.profileUpdateError,
                         textAlign: TextAlign.center,
                       ),
-                      const shad.Gap(16),
+                      const AppGap(16),
                       shad.PrimaryButton(
                         onPressed: () => context
                             .read<ProfileCubit>()
@@ -174,7 +175,7 @@ class _ProfileView extends StatelessWidget {
                     playOnceKey: 'profile-hero',
                     child: _ProfileHeroCard(profile: profile, state: state),
                   ),
-                  const shad.Gap(SettingsRowLayout.groupGap),
+                  const AppGap(SettingsRowLayout.groupGap),
                   _ProfileSettingsGroups(
                     profile: profile,
                     editField: _showEditFieldSheet,
@@ -298,7 +299,7 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return AppDialogScaffold(
       title: widget.title,
@@ -333,7 +334,7 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
             autofocus: true,
           ),
           if (_error != null) ...[
-            const shad.Gap(8),
+            const AppGap(8),
             Text(
               _error!,
               style: theme.typography.small.copyWith(

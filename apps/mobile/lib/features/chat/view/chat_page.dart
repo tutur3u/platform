@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
@@ -209,21 +210,21 @@ class _ChatPageState extends State<_ChatActorHost> {
         ),
         ShellMiniNavItemSpec(
           id: 'workspace',
-          icon: shad.LucideIcons.building2,
+          icon: LucideIcons.building2,
           label: l10n.chatWorkspace,
           selected: state.scope == ChatScope.workspaces,
           onPressed: _selectWorkspace,
         ),
         ShellMiniNavItemSpec(
           id: 'personal',
-          icon: shad.LucideIcons.user,
+          icon: LucideIcons.user,
           label: l10n.chatPersonal,
           selected: state.scope == ChatScope.personal,
           onPressed: _selectPersonal,
         ),
         ShellMiniNavItemSpec(
           id: 'filters',
-          icon: shad.LucideIcons.listFilter,
+          icon: LucideIcons.listFilter,
           label: l10n.commonFilters,
           dropdown: true,
           onPressed: _openFilters,
@@ -291,7 +292,7 @@ class _ChatPageState extends State<_ChatActorHost> {
       actions: [
         ShellActionSpec(
           id: 'chat-new',
-          icon: shad.LucideIcons.messageSquarePlus,
+          icon: LucideIcons.messageSquarePlus,
           tooltip: l10n.chatNew,
           onPressed: () => unawaited(
             showChatCreateConversationSheet(
@@ -302,7 +303,7 @@ class _ChatPageState extends State<_ChatActorHost> {
         ),
         ShellActionSpec(
           id: 'chat-search',
-          icon: _searchVisible ? Icons.close_rounded : shad.LucideIcons.search,
+          icon: _searchVisible ? Icons.close_rounded : LucideIcons.search,
           tooltip: l10n.chatSearch,
           searchController: _searchVisible ? _searchController : null,
           searchHint: l10n.chatSearch,
@@ -319,7 +320,7 @@ class _ChatPageState extends State<_ChatActorHost> {
         ),
         ShellActionSpec(
           id: 'chat-directory',
-          icon: shad.LucideIcons.contact,
+          icon: LucideIcons.contact,
           tooltip: l10n.chatDirectory,
           onPressed: () => unawaited(
             showChatDirectorySheet(context: context, cubit: _chatCubit),
@@ -328,7 +329,7 @@ class _ChatPageState extends State<_ChatActorHost> {
         if (state.selectedConversationId != null)
           ShellActionSpec(
             id: 'chat-details',
-            icon: shad.LucideIcons.panelRight,
+            icon: LucideIcons.panelRight,
             tooltip: l10n.chatDetails,
             onPressed: () => unawaited(
               showChatDetailsSheet(context: context, cubit: _chatCubit),

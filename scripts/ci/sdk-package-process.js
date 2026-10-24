@@ -35,21 +35,36 @@ async function drainGroup(
     }
   );
 }
-/** @param {{ cwd?: string, env?: NodeJS.ProcessEnv, timeoutMs?: number }} [options] */
+/** @param {{ cwd?: string, env?: NodeJS.ProcessEnv, timeoutMs?: number, onSpawn?: (pid: number) => void | Promise<void> }} [options] */
 function runProcess(command, args, options = {}) {
-  const { cwd, env, timeoutMs = 30000 } = options;
+  const { cwd, env, timeoutMs = 30000, onSpawn } = options;
   return new Promise((resolve, reject) => {
     let stdout = '',
       stderr = '',
       bytes = 0,
       stopped,
       killTimer;
-    const child = spawn(command, args, {
-      cwd,
-      env,
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const gated = Boolean(onSpawn);
+    const child = spawn(
+      gated ? '/bin/sh' : command,
+      gated
+        ? [
+            '-c',
+            'IFS= read -r gate <&3 || exit 125; [ "$gate" = go ] || exit 125; exec 3<&-; exec "$@"',
+            'sdk-gated-process',
+            command,
+            ...args,
+          ]
+        : args,
+      {
+        cwd,
+        env,
+        detached: true,
+        stdio: gated
+          ? ['ignore', 'pipe', 'pipe', 'pipe']
+          : ['ignore', 'pipe', 'pipe'],
+      }
+    );
     const signal = (value, phase = 'terminate') => {
       if (!child.pid) return;
       try {
@@ -79,6 +94,20 @@ function runProcess(command, args, options = {}) {
         }
         if (name === 'stdout') stdout += chunk.toString();
         else stderr += chunk.toString();
+      });
+    }
+    if (gated) {
+      const gate = child.stdio[3];
+      gate.on('error', () => {});
+      child.once('spawn', async () => {
+        try {
+          await onSpawn(child.pid);
+          if (!stopped) gate.end('go\n');
+          else gate.destroy();
+        } catch {
+          gate.destroy();
+          stop('PROCESS_SPAWN_PUBLICATION_FAILED');
+        }
       });
     }
     child.on('error', (error) => {

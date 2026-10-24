@@ -39,6 +39,7 @@ async function fixture() {
   homes.push(home);
   vi.stubEnv('TTR_RESOURCES_HOME', home);
   vi.stubEnv('TTR_RESOURCES_BYPASS', '');
+  vi.stubEnv('TTR_RESOURCES_IGNORE_DISK', '1');
   await atomicJson(join(home, 'config.json'), {
     ...defaultResourceConfig(),
     validationLanes: 1,
@@ -140,6 +141,7 @@ it('cold caller must explicitly setup before admission, and later run never prov
   homes.push(home);
   vi.stubEnv('TTR_RESOURCES_HOME', home);
   vi.stubEnv('TTR_RESOURCES_BYPASS', '');
+  vi.stubEnv('TTR_RESOURCES_IGNORE_DISK', '1');
   const marker = join(home, 'marker');
   const command = [
     'run',

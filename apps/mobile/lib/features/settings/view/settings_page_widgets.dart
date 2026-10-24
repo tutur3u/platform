@@ -20,7 +20,7 @@ class _SettingsOverviewSection extends StatelessWidget {
         SettingsTile(
           key: const ValueKey('settings-workspace-row'),
           grouped: true,
-          icon: shad.LucideIcons.building2,
+          icon: LucideIcons.building2,
           title: l10n.settingsNavWorkspace,
           value:
               context.select<WorkspaceCubit, String?>(
@@ -36,21 +36,21 @@ class _SettingsOverviewSection extends StatelessWidget {
         // Profile and account management live under the header's Edit profile.
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.flaskConical,
+          icon: LucideIcons.flaskConical,
           title: l10n.settingsExperimentalAppsSectionTitle,
           onTap: () => context.push(Routes.settingsExperiments),
         ),
         SettingsTile(
           key: const ValueKey('settings-offline-row'),
           grouped: true,
-          icon: shad.LucideIcons.hardDriveDownload,
+          icon: LucideIcons.hardDriveDownload,
           title: l10n.offlineSectionTitle,
           onTap: () => context.push(Routes.settingsOffline),
         ),
         if (showInfrastructure)
           SettingsTile(
             grouped: true,
-            icon: shad.LucideIcons.server,
+            icon: LucideIcons.server,
             title: l10n.settingsInfrastructureSectionTitle,
             onTap: () => context.push(Routes.settingsInfrastructure),
           ),
@@ -62,19 +62,19 @@ class _SettingsOverviewSection extends StatelessWidget {
       children: [
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.messageSquareText,
+          icon: LucideIcons.messageSquareText,
           title: l10n.feedbackTitle,
           onTap: () => context.push(Routes.settingsFeedback),
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.sparkles,
+          icon: LucideIcons.sparkles,
           title: l10n.settingsWhatsNew,
           onTap: () => context.push(Routes.settingsWhatsNew),
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.compass,
+          icon: LucideIcons.compass,
           title: l10n.connectedOnboardingSettingsTitle,
           onTap: () => Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute<void>(
@@ -84,19 +84,19 @@ class _SettingsOverviewSection extends StatelessWidget {
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.fileText,
+          icon: LucideIcons.fileText,
           title: l10n.settingsLicensesSectionTitle,
           onTap: () => showSettingsLicensePage(context: context),
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.info,
+          icon: LucideIcons.info,
           title: l10n.settingsAboutSectionTitle,
           onTap: () => context.push(Routes.settingsAbout),
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.logOut,
+          icon: LucideIcons.logOut,
           title: l10n.settingsDangerSectionTitle,
           onTap: () => context.push(Routes.settingsSession),
         ),
@@ -109,7 +109,7 @@ class _SettingsOverviewSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               general,
-              const shad.Gap(SettingsRowLayout.groupGap),
+              const AppGap(SettingsRowLayout.groupGap),
               support,
             ],
           );

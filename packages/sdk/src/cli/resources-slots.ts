@@ -1,7 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { constants, existsSync, readFileSync } from 'node:fs';
 import {
   link,
+  lstat,
   mkdir,
   open,
   readdir,
@@ -13,7 +15,12 @@ import {
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
-import { readResourceConfig, resourceMaxLanes } from './resources-config';
+import { assertBudgetLaunchers } from './resources-compatibility';
+import {
+  type ResourceConfig,
+  readResourceConfig,
+  resourceMaxLanes,
+} from './resources-config';
 
 const ownerSchema = z.object({
   scheduler: z.literal(2).optional(),
@@ -29,6 +36,15 @@ const ownerSchema = z.object({
     .object({
       vitestWorkers: z.number().int().positive(),
       buildJobs: z.number().int().positive(),
+    })
+    .optional(),
+  // Declared budget demand (project share, worker tokens, memory). Older
+  // schedulers strip it; owners without it retain their recorded worker cost.
+  demand: z
+    .object({
+      project: z.string().min(1),
+      tokens: z.number().int().positive(),
+      memoryGiB: z.number().nonnegative(),
     })
     .optional(),
 });
@@ -51,6 +67,22 @@ export function processAlive(pid?: number) {
     return !errno(error, 'ESRCH');
   }
 }
+// Process liveness and ancestry decide admission, so ps must never be resolved
+// through the caller's PATH (a fake ps could fabricate ancestry) or inherit
+// loader variables such as LD_PRELOAD. Without a trusted ps there is no
+// evidence, and callers fail closed.
+const psCandidates = ['/bin/ps', '/usr/bin/ps'];
+export function trustedPs(args: string[], timeout: number) {
+  const ps = psCandidates.find((path) => existsSync(path));
+  if (!ps)
+    throw new Error('No trusted ps executable at /bin/ps or /usr/bin/ps.');
+  return execFileSync(ps, args, {
+    encoding: 'utf8',
+    timeout,
+    maxBuffer: 16 * 1024 * 1024,
+    env: { LC_ALL: 'C' },
+  });
+}
 export function processGroupAlive(pid: number) {
   try {
     process.kill(-pid, 0);
@@ -58,10 +90,7 @@ export function processGroupAlive(pid: number) {
     return !errno(error, 'ESRCH');
   }
   try {
-    return execFileSync('ps', ['-axo', 'pgid=,stat='], {
-      encoding: 'utf8',
-      timeout: 3000,
-    })
+    return trustedPs(['-axo', 'pgid=,stat='], 3000)
       .split('\n')
       .some((row) => {
         const [group, state] = row.trim().split(/\s+/);
@@ -106,11 +135,7 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
   if (lineage && !refresh) return lineage;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const rows = execFileSync('ps', ['-axo', 'pid=,ppid=,pgid='], {
-        encoding: 'utf8',
-        timeout: 5000,
-        maxBuffer: 16 * 1024 * 1024,
-      })
+      const rows = trustedPs(['-axo', 'pid=,ppid=,pgid='], 5000)
         .trim()
         .split('\n');
       const table = new Map<number, { parent: number; group: number }>();
@@ -130,7 +155,40 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
       /* Retry once; missing evidence never permits nesting by itself. */
     }
   }
-  return undefined;
+  // Linux without a trusted ps: the kernel's /proc is not PATH-controlled.
+  const fallback = procLineage();
+  if (fallback) lineage = fallback;
+  return fallback;
+}
+// Parent and process group from /proc/<pid>/stat. The command name (field 2)
+// may contain spaces and parentheses, so fields are read after its last ')'.
+function procStat(pid: number | 'self') {
+  const text = readFileSync(`/proc/${pid}/stat`, 'utf8');
+  const fields = text.slice(text.lastIndexOf(')') + 2).split(' ');
+  const parent = Number(fields[1]);
+  const group = Number(fields[2]);
+  if (!Number.isInteger(parent) || !Number.isInteger(group))
+    throw new Error('unreadable /proc stat');
+  return { parent, group };
+}
+export function procLineage(): ProcessLineage | undefined {
+  if (process.platform !== 'linux') return undefined;
+  try {
+    const pids = new Set<number>();
+    let parent = process.ppid;
+    while (parent > 1 && !pids.has(parent)) {
+      pids.add(parent);
+      try {
+        parent = procStat(parent).parent || 1;
+      } catch {
+        // The ancestor exited between reads; the chain above it is gone.
+        break;
+      }
+    }
+    return { pids, group: procStat('self').group || undefined };
+  } catch {
+    return undefined;
+  }
 }
 export function isAncestor(pid: number) {
   return processLineage()?.pids.has(pid) ?? false;
@@ -176,6 +234,18 @@ async function reclaimMutex(path: string) {
   if (before.kind === 'invalid')
     throw new Error('Malformed admission mutex; admission is closed.');
   if (before.kind === 'owner' && ownerAlive(before.owner)) return;
+  if (before.kind === 'owner' && before.owner.tool === 'rollout') {
+    const mutated = await lstat(join(path, 'mutation.json'))
+      .then(() => true)
+      .catch((error) => {
+        if (errno(error, 'ENOENT')) return false;
+        throw error;
+      });
+    if (mutated)
+      throw new Error(
+        'Interrupted SDK rollout; admission remains closed. Run its backed-up rollback.sh before admitting work.'
+      );
+  }
   if (
     before.kind === 'missing' &&
     Date.now() - (await stat(path)).mtimeMs <= initializationGrace
@@ -205,10 +275,75 @@ async function reclaimMutex(path: string) {
   }
   await rm(path, { recursive: true });
 }
+// Legacy schedulers reject unknown slot names, even after all owners drain.
+// Keep this marker across config changes; downgrades require an idle migration.
+export const budgetFence = 'budget-v3';
+async function validBudgetFence(path: string) {
+  let file: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    file = await open(
+      path,
+      constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW
+    );
+    const stat = await file.stat();
+    if (
+      !stat.isFile() ||
+      stat.size !== 2 ||
+      (await file.readFile('utf8')) !== '3\n'
+    )
+      throw new Error(
+        'Malformed budget compatibility fence; admission is closed.'
+      );
+    return true;
+  } catch (error) {
+    if (errno(error, 'ENOENT')) return false;
+    throw error;
+  } finally {
+    await file?.close();
+  }
+}
+async function publishBudgetFence(home: string) {
+  // The admission lock is held: no live publisher can own one of these stages.
+  for (const name of await readdir(home)) {
+    if (/^budget-fence\..+\.tmp$/u.test(name))
+      await rm(join(home, name), { force: true });
+  }
+  const slots = join(home, 'slots');
+  const target = join(slots, budgetFence);
+  if (await validBudgetFence(target)) return;
+  await assertBudgetLaunchers(home);
+  await mkdir(slots, { recursive: true, mode: 0o700 });
+  const staged = join(home, `budget-fence.${randomUUID()}.tmp`);
+  try {
+    const file = await open(staged, 'wx', 0o600);
+    try {
+      await file.writeFile('3\n');
+      await file.sync();
+    } finally {
+      await file.close();
+    }
+    try {
+      await link(staged, target);
+      process.stderr.write(
+        '[ttr resources] Published budget protocol 3. ttr 0.28.0 and old shims are now incompatible ("Unknown resource slot"). Upgrade every global CLI and refresh shims with setup using the existing roots. Idle rollback requires stopping all new clients and removing slots/budget-v3 per the runbook.\n'
+      );
+    } catch (error) {
+      if (!errno(error, 'EEXIST')) throw error;
+      if (!(await validBudgetFence(target)))
+        throw new Error(
+          'Budget compatibility fence disappeared; admission is closed.'
+        );
+    }
+  } finally {
+    await rm(staged, { force: true });
+  }
+}
+
 export async function withAdmission<T>(
   home: string,
   action: () => Promise<T>,
-  cancelled = () => false
+  cancelled = () => false,
+  purpose: 'admission' | 'setup' = 'admission'
 ): Promise<T | undefined> {
   await mkdir(home, { recursive: true, mode: 0o700 });
   const path = join(home, 'admission');
@@ -271,11 +406,30 @@ export async function withAdmission<T>(
         await directory.close();
       }
     }
+    if (purpose === 'admission') await publishBudgetFence(home);
     return await action();
   } finally {
     if (acquired) await releaseMutex(path, owner.token);
     await rm(staged, { force: true });
   }
+}
+
+// Only setup may reenter an operator-held maintenance mutex. Queue admission
+// deliberately never consults this capability.
+export async function hasSetupMaintenanceLease(
+  home: string,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const token = env.TTR_RESOURCES_MAINTENANCE;
+  if (!token) return false;
+  const owner = await readOwner(join(home, 'admission', 'owner.json'));
+  return Boolean(
+    owner?.tool === 'rollout' &&
+      owner.scheduler === 2 &&
+      owner.token === token &&
+      processAlive(owner.pid) &&
+      processLineage(true)?.pids.has(owner.pid)
+  );
 }
 
 async function releaseMutex(path: string, token: string) {
@@ -295,18 +449,35 @@ async function releaseMutex(path: string, token: string) {
   if (current?.token === token) await rm(path, { recursive: true });
   else await rm(join(path, 'reclaim'), { force: true });
 }
-export async function occupancy(home: string, reclaim = false) {
-  const config = await readResourceConfig(home);
+export async function occupancy(
+  home: string,
+  reclaim = false,
+  configured?: ResourceConfig
+) {
+  const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
-  const names = await readdir(slots).catch((error) => {
+  const names: string[] = await readdir(slots).catch((error) => {
     if (errno(error, 'ENOENT')) return [];
     throw error;
   });
   if (
-    names.some((name) => !/^(0|[1-7])$/.test(name) || Number(name) >= maxLanes)
+    names.includes(budgetFence) &&
+    (await readFile(join(slots, budgetFence), 'utf8')) !== '3\n'
   )
-    throw new Error('Unknown resource slot; admission is closed.');
+    throw new Error(
+      'Malformed budget compatibility fence; admission is closed.'
+    );
+  if (
+    names
+      .filter((name) => name !== budgetFence)
+      .some(
+        (name) => !/^(0|[1-9]|1[0-5])$/.test(name) || Number(name) >= maxLanes
+      )
+  )
+    throw new Error(
+      'Unknown resource slot; admission is closed. A slots/budget-v3 marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
+    );
   const owners: ResourceOwner[] = [];
   const ownerSlots: string[] = [];
   const occupied: string[] = [];
@@ -374,9 +545,10 @@ export async function tickets(home: string, prune = false) {
 }
 const ignoredMarkers = new Set<string>();
 // An admitted job exports its owner token. A marker counts only while it names
-// a live owner, and, when ancestry evidence exists, only inside that owner's
-// process tree, so stale or copied markers cannot bypass admission. Ancestry
-// alone still covers children whose environment was filtered (Turbo strict).
+// a live owner inside that owner's process tree, so stale or copied markers
+// cannot bypass admission. Without process-tree evidence the marker is not
+// trusted and the command queues. Ancestry alone still covers children whose
+// environment was filtered (Turbo strict).
 export async function nestedOwner(
   home: string,
   env: NodeJS.ProcessEnv = process.env,
@@ -389,9 +561,7 @@ export async function nestedOwner(
     : undefined;
   if (!state.owners.length && !marker) return undefined;
   const evidence = state.owners.length ? processLineage(refresh) : undefined;
-  if (!evidence) {
-    if (marked) return marked;
-  } else {
+  if (evidence) {
     if (marked && descendsFrom(marked, evidence)) return marked;
     const related = state.owners.find((owner) => descendsFrom(owner, evidence));
     if (related) return related;
@@ -399,7 +569,9 @@ export async function nestedOwner(
   if (marker && !ignoredMarkers.has(marker)) {
     ignoredMarkers.add(marker);
     process.stderr.write(
-      `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+      evidence || !marked
+        ? `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+        : `[ttr resources] ignoring ${admittedMarker}: the process tree could not be read (ps failed), so the marker cannot be verified; queueing normally.\n`
     );
   }
   return undefined;

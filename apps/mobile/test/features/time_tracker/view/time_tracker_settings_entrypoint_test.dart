@@ -4,8 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_settings.dart';
@@ -18,10 +16,10 @@ import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dar
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+import '../../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements ITimeTrackerRepository {}
 
@@ -109,23 +107,15 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(
-      MultiBlocProvider(
+    await tester.pumpAppRouter(
+      router,
+      wrap: (app) => MultiBlocProvider(
         providers: [
           BlocProvider<AuthCubit>.value(value: auth),
           BlocProvider<WorkspaceCubit>.value(value: workspaces),
           BlocProvider.value(value: actions),
         ],
-        child: shad.ShadcnApp.router(
-          theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
-          localizationsDelegates: const [
-            ...AppLocalizations.localizationsDelegates,
-            AppShadcnLocalizationsDelegate(),
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: router,
-          builder: ShadcnMaterialBridge.appBuilder,
-        ),
+        child: app,
       ),
     );
     await tester.pumpAndSettle();

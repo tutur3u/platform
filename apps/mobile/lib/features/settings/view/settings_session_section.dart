@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_sheet.dart';
@@ -139,19 +140,19 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
       title: '',
       children: [
         SettingsTile(
-          icon: shad.LucideIcons.smartphone,
+          icon: LucideIcons.smartphone,
           title: l10n.deviceMfaTitle,
           subtitle: l10n.deviceMfaDescription,
           onTap: () => unawaited(showDeviceMfaSheet(context)),
         ),
         SettingsTile(
-          icon: shad.LucideIcons.monitorSmartphone,
+          icon: LucideIcons.monitorSmartphone,
           title: l10n.securitySessionsTitle,
           subtitle: l10n.securitySessionsDescription,
           onTap: () => context.push(Routes.settingsAccountSecurity),
         ),
         SettingsTile(
-          icon: shad.LucideIcons.lock,
+          icon: LucideIcons.lock,
           title: l10n.appLockSettingsTitle,
           subtitle: appLockState.status == AppLockStatus.unavailable
               ? l10n.appLockUnavailableDescription
@@ -177,7 +178,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
         ),
         if (appLockEnabled)
           SettingsTile(
-            icon: shad.LucideIcons.timer,
+            icon: LucideIcons.timer,
             title: l10n.appLockDelayTitle,
             subtitle: l10n.appLockDelayDescription,
             value: _appLockDelayLabel(context, appLockState.delay),
@@ -195,7 +196,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
                         ListTile(
                           title: Text(_appLockDelayLabel(context, delay)),
                           trailing: delay == appLockState.delay
-                              ? const Icon(shad.LucideIcons.check)
+                              ? const Icon(LucideIcons.check)
                               : null,
                           onTap: () => Navigator.of(sheetContext).pop(delay),
                         ),
@@ -207,13 +208,13 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
             },
           ),
         SettingsTile(
-          icon: shad.LucideIcons.scanQrCode,
+          icon: LucideIcons.scanQrCode,
           title: l10n.qrLoginSettingsTitle,
           subtitle: l10n.qrLoginSettingsDescription,
           onTap: () => context.push(Routes.settingsQrLoginScan),
         ),
         SettingsTile(
-          icon: shad.LucideIcons.shieldCheck,
+          icon: LucideIcons.shieldCheck,
           title: l10n.mfaApprovalSettingsTitle,
           subtitle: pendingApproval != null
               ? l10n.deviceMfaReview
@@ -233,7 +234,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
                           height: 16,
                           child: NovaLoadingIndicator(size: 20),
                         )
-                      : const Icon(shad.LucideIcons.shieldCheck),
+                      : const Icon(LucideIcons.shieldCheck),
                 )
               : (_approvalLoading || _approvalRefreshing)
               ? const SizedBox(
@@ -247,7 +248,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
               : null,
         ),
         SettingsTile(
-          icon: shad.LucideIcons.logOut,
+          icon: LucideIcons.logOut,
           title: l10n.authLogOutCurrent,
           subtitle: l10n.authLogOutCurrentDescription,
           isDestructive: true,

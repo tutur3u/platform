@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsTile extends StatelessWidget {
   const SettingsTile({
@@ -45,7 +45,7 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final muted = theme.colorScheme.mutedForeground;
     final iconColor = isDestructive
         ? theme.colorScheme.destructive
@@ -121,7 +121,7 @@ class SettingsTile extends StatelessWidget {
                         child: Icon(icon, size: 21, color: iconColor),
                       ),
                     ),
-                    const shad.Gap(SettingsRowLayout.textGap),
+                    const AppGap(SettingsRowLayout.textGap),
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(top: supporting ? 2 : 0),
@@ -154,7 +154,7 @@ class SettingsTile extends StatelessWidget {
                               ),
                             ),
                             if (endBelow) ...[
-                              const shad.Gap(2),
+                              const AppGap(2),
                               Text(
                                 end,
                                 style: theme.typography.small.copyWith(
@@ -163,7 +163,7 @@ class SettingsTile extends StatelessWidget {
                               ),
                             ],
                             if (value?.trim().isNotEmpty ?? false) ...[
-                              const shad.Gap(2),
+                              const AppGap(2),
                               Text(
                                 value!,
                                 maxLines: 2,
@@ -175,7 +175,7 @@ class SettingsTile extends StatelessWidget {
                               ),
                             ],
                             if (subtitle?.trim().isNotEmpty ?? false) ...[
-                              const shad.Gap(2),
+                              const AppGap(2),
                               Text(
                                 subtitle!,
                                 maxLines: onTap != null && !wrapSupportingText
@@ -206,7 +206,7 @@ class SettingsTile extends StatelessWidget {
                         ),
                       )
                     else
-                      const shad.Gap(8),
+                      const AppGap(8),
                     SizedBox(
                       width: trailingWidth ?? SettingsRowLayout.actionWidth,
                       child: IconButtonTheme(
@@ -224,7 +224,7 @@ class SettingsTile extends StatelessWidget {
                                       ? SizedBox(
                                           height: 44,
                                           child: Icon(
-                                            shad.LucideIcons.chevronRight,
+                                            LucideIcons.chevronRight,
                                             size: 17,
                                             color: muted,
                                           ),

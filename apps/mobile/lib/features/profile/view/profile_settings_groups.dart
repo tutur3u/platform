@@ -38,7 +38,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
         SettingsTile(
           key: const ValueKey('profile-avatar-row'),
           grouped: true,
-          icon: shad.LucideIcons.imageUp,
+          icon: LucideIcons.imageUp,
           title: l10n.profilePhoto,
           value: hasAvatar ? l10n.profileMediaSet : l10n.profileMissingValue,
           onTap: () =>
@@ -49,7 +49,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
             key: const ValueKey('profile-avatar-remove-row'),
             grouped: true,
             isDestructive: true,
-            icon: shad.LucideIcons.trash2,
+            icon: LucideIcons.trash2,
             title: l10n.profileRemoveAvatar,
             onTap: () => confirmRemoveProfileAvatar(context),
           ),
@@ -67,7 +67,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
         SettingsTile(
           key: const ValueKey('profile-accounts-row'),
           grouped: true,
-          icon: shad.LucideIcons.userCog,
+          icon: LucideIcons.userCog,
           title: l10n.authManageAccounts,
           value: profile.email,
           onTap: () => context.push(Routes.settingsAccounts),
@@ -75,7 +75,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
         SettingsTile(
           key: const ValueKey('profile-sessions-row'),
           grouped: true,
-          icon: shad.LucideIcons.monitorSmartphone,
+          icon: LucideIcons.monitorSmartphone,
           title: l10n.securitySessionsTitle,
           onTap: () => context.push(Routes.settingsAccountSecurity),
         ),
@@ -86,20 +86,16 @@ class _ProfileSettingsGroups extends StatelessWidget {
       title: l10n.profileAccountStatus,
       children: [
         for (final (icon, label, value) in [
+          (LucideIcons.shieldCheck, l10n.profileStatus, l10n.profileActive),
           (
-            shad.LucideIcons.shieldCheck,
-            l10n.profileStatus,
-            l10n.profileActive,
-          ),
-          (
-            shad.LucideIcons.badgeCheck,
+            LucideIcons.badgeCheck,
             l10n.profileVerification,
             l10n.profileVerified,
           ),
           // An unknown join date is omitted rather than shown as "Unknown".
           if (joined != null)
             (
-              shad.LucideIcons.calendarDays,
+              LucideIcons.calendarDays,
               l10n.profileMemberSince,
               DateFormat.yMMMd(
                 Localizations.localeOf(context).toString(),
@@ -131,7 +127,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final (index, widget) in widgets.indexed) ...[
-              if (index > 0) const shad.Gap(SettingsRowLayout.groupGap),
+              if (index > 0) const AppGap(SettingsRowLayout.groupGap),
               widget,
             ],
           ],
@@ -141,7 +137,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: column(groups.take(2))),
-            const shad.Gap(SettingsRowLayout.groupGap),
+            const AppGap(SettingsRowLayout.groupGap),
             Expanded(child: column(groups.skip(2))),
           ],
         );

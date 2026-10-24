@@ -174,7 +174,13 @@ class _SettingsHarness {
   late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   late final GoRouter router;
 
-  Future<void> pump(WidgetTester tester, {double scale = 1}) async {
+  /// [shellChrome] provides the chrome actions registry, as the app does, so
+  /// sheets register dynamic search and modal Back with the shell.
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    bool shellChrome = false,
+  }) async {
     await apps.recordAppOrigin(Routes.apps);
     if (assistantPageBuilder != null) await experiments.load();
     await tester.pumpWidget(
@@ -189,10 +195,10 @@ class _SettingsHarness {
           BlocProvider.value(value: finance),
           BlocProvider.value(value: theme),
           BlocProvider.value(value: locale),
-          if (assistantPageBuilder != null) ...[
+          if (assistantPageBuilder != null || shellChrome)
             BlocProvider.value(value: actions),
+          if (assistantPageBuilder != null)
             BlocProvider.value(value: experiments),
-          ],
           BlocProvider(create: (_) => ShellMiniNavCubit()),
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
           BlocProvider(create: (_) => AssistantChromeCubit()),

@@ -22,7 +22,7 @@ class _ProfileIdentityGroup extends StatelessWidget {
           SettingsTile(
             key: const ValueKey('profile-display-name-row'),
             grouped: true,
-            icon: shad.LucideIcons.userRound,
+            icon: LucideIcons.userRound,
             title: l10n.profileDisplayName,
             value: profile.displayName ?? l10n.profileMissingValue,
             onTap: () => editField(
@@ -39,7 +39,7 @@ class _ProfileIdentityGroup extends StatelessWidget {
           SettingsTile(
             key: const ValueKey('profile-full-name-row'),
             grouped: true,
-            icon: shad.LucideIcons.idCard,
+            icon: LucideIcons.idCard,
             title: l10n.profileFullName,
             value: profile.fullName ?? l10n.profileMissingValue,
             onTap: () => editField(
@@ -57,7 +57,7 @@ class _ProfileIdentityGroup extends StatelessWidget {
             key: const ValueKey('profile-email-row'),
             grouped: true,
             wrapSupportingText: true,
-            icon: shad.LucideIcons.atSign,
+            icon: LucideIcons.atSign,
             title: l10n.profileEmail,
             value: profile.email ?? l10n.profileMissingValue,
             subtitle: pendingEmail.isEmpty

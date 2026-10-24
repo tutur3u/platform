@@ -10808,6 +10808,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileMediaUploadExpired => 'Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.';
 
   @override
+  String get settingsTimezonePickerAll => 'Tất cả múi giờ';
+
+  @override
+  String get settingsTimezonePickerAutoPersonal => 'Dùng múi giờ của không gian làm việc, hoặc của thiết bị này nếu không gian làm việc chưa đặt.';
+
+  @override
+  String get settingsTimezonePickerAutoWorkspace => 'Thành viên chưa đặt múi giờ cá nhân sẽ dùng múi giờ thiết bị của họ.';
+
+  @override
+  String settingsTimezonePickerAutoResolved(String timezone) {
+    return 'Hiện tại: $timezone.';
+  }
+
+  @override
+  String get settingsTimezonePickerCurrent => 'Đang dùng';
+
+  @override
+  String settingsTimezonePickerEmpty(String query) {
+    return 'Không có múi giờ nào khớp với “$query”.';
+  }
+
+  @override
+  String get settingsTimezonePickerSearchHint => 'Tìm thành phố, khu vực hoặc độ lệch GMT';
+
+  @override
   String get settingsAppsGroup => 'Ứng dụng';
 
   @override

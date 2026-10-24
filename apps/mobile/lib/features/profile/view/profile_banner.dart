@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
@@ -49,7 +50,7 @@ class ProfileBanner extends StatelessWidget {
 
   Widget _placeholder(BuildContext context, {bool loading = false}) =>
       ColoredBox(
-        color: shad.Theme.of(context).colorScheme.muted,
+        color: AppTokens.of(context).colorScheme.muted,
         child: Center(
           child: loading
               ? const CircularProgressIndicator()
@@ -82,7 +83,7 @@ class ProfileBannerSettings extends StatelessWidget {
         SettingsTile(
           key: const ValueKey('profile-banner-row'),
           grouped: true,
-          icon: shad.LucideIcons.imagePlus,
+          icon: LucideIcons.imagePlus,
           title: l10n.profileCoverBanner,
           value: exists ? l10n.profileMediaSet : l10n.profileMissingValue,
           onTap: busy
@@ -106,12 +107,12 @@ class ProfileBannerSettings extends StatelessWidget {
         SettingsChoiceOption(
           value: 'change',
           label: l10n.profileChangeBanner,
-          icon: shad.LucideIcons.imagePlus,
+          icon: LucideIcons.imagePlus,
         ),
         SettingsChoiceOption(
           value: 'remove',
           label: l10n.profileRemoveBanner,
-          icon: shad.LucideIcons.trash2,
+          icon: LucideIcons.trash2,
         ),
       ],
     );

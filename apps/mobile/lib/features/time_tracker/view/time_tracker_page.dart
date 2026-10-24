@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -407,11 +408,11 @@ class _ErrorView extends StatelessWidget {
             Icon(
               Icons.error_outline,
               size: 48,
-              color: shad.Theme.of(context).colorScheme.destructive,
+              color: AppTokens.of(context).colorScheme.destructive,
             ),
-            const shad.Gap(16),
+            const AppGap(16),
             Text(error ?? l10n.timerTitle, textAlign: TextAlign.center),
-            const shad.Gap(16),
+            const AppGap(16),
             shad.SecondaryButton(
               onPressed: () async {
                 final wsId =

@@ -10936,6 +10936,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileMediaUploadExpired => 'The upload link expired or is invalid. Select the image again.';
 
   @override
+  String get settingsTimezonePickerAll => 'All timezones';
+
+  @override
+  String get settingsTimezonePickerAutoPersonal => 'Uses the workspace timezone, or this device\'s when the workspace has none.';
+
+  @override
+  String get settingsTimezonePickerAutoWorkspace => 'Members without a personal timezone use their own device\'s.';
+
+  @override
+  String settingsTimezonePickerAutoResolved(String timezone) {
+    return 'Currently $timezone.';
+  }
+
+  @override
+  String get settingsTimezonePickerCurrent => 'Current';
+
+  @override
+  String settingsTimezonePickerEmpty(String query) {
+    return 'No timezones match “$query”.';
+  }
+
+  @override
+  String get settingsTimezonePickerSearchHint => 'Search city, region or GMT offset';
+
+  @override
   String get settingsAppsGroup => 'Apps';
 
   @override

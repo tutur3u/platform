@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_threshold_cache.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -17,7 +18,6 @@ import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.d
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The missed-entry approval threshold. Shown only for a shared workspace
 /// whose member holds both request and workspace-settings rights.
@@ -111,7 +111,6 @@ class _TimerThresholdState extends State<TimerThresholdSettings> {
   Future<void> _edit(_Threshold current) async {
     final scope = _scope();
     final token = _scopeToken;
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
     bool stillCurrent() => mounted && token == _scopeToken && _scope() == scope;
     await showAdaptiveSheet<void>(
       context: context,
@@ -146,15 +145,17 @@ class _TimerThresholdState extends State<TimerThresholdSettings> {
             }
             if (!latest() || !stillCurrent()) return;
             setState(() => _threshold = (days: days, grace: grace));
-            if (!toastContext.mounted) return;
-            _toast(toastContext, (l10n) => l10n.timerRequestsThresholdUpdated);
+            // Toast from this page: it sits under the root overlay and
+            // carries the dock clearance.
+            if (!mounted) return;
+            _toast(context, (l10n) => l10n.timerRequestsThresholdUpdated);
           } on Object catch (error) {
-            if (!latest() || !stillCurrent() || !toastContext.mounted) return;
+            if (!latest() || !stillCurrent() || !mounted) return;
             final message = error is ApiException && error.message.isNotEmpty
                 ? error.message
                 : null;
             _toast(
-              toastContext,
+              context,
               (l10n) => message ?? l10n.commonSomethingWentWrong,
               destructive: true,
             );
@@ -165,15 +166,16 @@ class _TimerThresholdState extends State<TimerThresholdSettings> {
   }
 
   void _toast(
-    BuildContext toastContext,
+    BuildContext context,
     String Function(AppLocalizations) text, {
     bool destructive = false,
   }) {
-    shad.showToast(
-      context: toastContext,
-      builder: (context, _) => destructive
-          ? shad.Alert.destructive(content: Text(text(context.l10n)))
-          : shad.Alert(content: Text(text(context.l10n))),
+    showAppToast(
+      context,
+      message: text(context.l10n),
+      variant: destructive
+          ? AppAlertVariant.destructive
+          : AppAlertVariant.neutral,
     );
   }
 
@@ -206,7 +208,7 @@ class _TimerThresholdState extends State<TimerThresholdSettings> {
                   SettingsTile(
                     key: const ValueKey('settings-request-threshold-row'),
                     grouped: true,
-                    icon: shad.LucideIcons.clipboardCheck,
+                    icon: LucideIcons.clipboardCheck,
                     title: l10n.settingsApprovalThreshold,
                     value: threshold.days == null
                         ? l10n.timerRequestsThresholdNoApproval
