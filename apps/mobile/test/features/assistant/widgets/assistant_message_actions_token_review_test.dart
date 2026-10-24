@@ -25,59 +25,60 @@ void main() {
     final previousEnabled = AppHaptics.enabled;
     final previousPlatform = debugDefaultTargetPlatformOverride;
     final feedback = <Object?>[];
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    AppHaptics.enabled = true;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        if (call.method == 'HapticFeedback.vibrate') {
-          feedback.add(call.arguments);
-        }
-        return null;
-      },
-    );
-    addTearDown(() {
+    try {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      AppHaptics.enabled = true;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'HapticFeedback.vibrate') {
+            feedback.add(call.arguments);
+          }
+          return null;
+        },
+      );
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Center(
+              child: AssistantTranscriptBubble(
+                label: 'Mira',
+                alignEnd: false,
+                text: 'Pick up this message',
+                transcript: '',
+                attachments: [],
+                timestamp: null,
+                toolNames: [],
+              ),
+            ),
+          ),
+        ),
+      );
+      final message = find.text('Pick up this message', findRichText: true);
+      await tester.longPress(message);
+      await tester.pumpAndSettle();
+      expect(find.byType(AssistantMessageActions), findsOneWidget);
+      expect(feedback, ['HapticFeedbackType.mediumImpact']);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      AppHaptics.enabled = false;
+      await tester.longPress(message);
+      await tester.pumpAndSettle();
+      expect(find.byType(AssistantMessageActions), findsOneWidget);
+      expect(feedback, ['HapticFeedbackType.mediumImpact']);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    } finally {
       AppHaptics.enabled = previousEnabled;
       debugDefaultTargetPlatformOverride = previousPlatform;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
         null,
       );
-    });
-    await tester.pumpWidget(
-      const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: Center(
-            child: AssistantTranscriptBubble(
-              label: 'Mira',
-              alignEnd: false,
-              text: 'Pick up this message',
-              transcript: '',
-              attachments: [],
-              timestamp: null,
-              toolNames: [],
-            ),
-          ),
-        ),
-      ),
-    );
-    final message = find.text('Pick up this message', findRichText: true);
-    await tester.longPress(message);
-    await tester.pumpAndSettle();
-    expect(find.byType(AssistantMessageActions), findsOneWidget);
-    expect(feedback, ['HapticFeedbackType.mediumImpact']);
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    AppHaptics.enabled = false;
-    await tester.longPress(message);
-    await tester.pumpAndSettle();
-    expect(find.byType(AssistantMessageActions), findsOneWidget);
-    expect(feedback, ['HapticFeedbackType.mediumImpact']);
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
+    }
   });
 
   for (final brightness in Brightness.values) {
@@ -160,18 +161,11 @@ void main() {
           final selected = find.byKey(const ValueKey('assistant-react-like'));
           await tester.ensureVisible(selected);
           await tester.pumpAndSettle();
-          final selectedNode = tester.getSemantics(
-            find
-                .ancestor(of: selected, matching: find.byType(MergeSemantics))
-                .first,
-          );
+          final selectedNode = tester.getSemantics(selected).getSemanticsData();
           expect(selectedNode.label, l10n.assistantReactionLike);
           expect(selectedNode.flagsCollection.isSelected, ui.Tristate.isTrue);
           expect(selectedNode.flagsCollection.isButton, isTrue);
-          expect(
-            selectedNode.getSemanticsData().hasAction(ui.SemanticsAction.tap),
-            isTrue,
-          );
+          expect(selectedNode.hasAction(ui.SemanticsAction.tap), isTrue);
           expect(tester.getSize(selected).width, greaterThanOrEqualTo(48));
           expect(tester.getSize(selected).height, greaterThanOrEqualTo(48));
           final selectedFill = tester

@@ -101,12 +101,17 @@ void main() {
       });
       await controller.reload();
       fail = true;
-      await controller.setValue(
-        const AssistantThemePreferences(
-          backgroundStyle: AssistantBackgroundStyle.gradient,
-          intensity: 0.8,
+      expect(
+        await controller.setValue(
+          const AssistantThemePreferences(
+            backgroundStyle: AssistantBackgroundStyle.gradient,
+            intensity: 0.8,
+          ),
         ),
+        isFalse,
       );
+      expect(controller.storageFailed, isTrue);
+      expect(prefs.containsKey(AssistantThemeStore.keyFor('a')), isFalse);
       await tester.pumpWidget(
         _app(controller, locale: Locale(language), textScale: 3),
       );
@@ -116,10 +121,23 @@ void main() {
         tester.element(find.byType(AssistantThemeSheet)),
       );
       expect(find.text(l10n.assistantThemeTitle), findsOneWidget);
-      expect(find.text(l10n.assistantThemeStorageError), findsOneWidget);
+      final error = find.text(
+        l10n.assistantThemeStorageError,
+        skipOffstage: false,
+      );
+      expect(error, findsOneWidget);
+      await tester.ensureVisible(error);
+      await tester.pumpAndSettle();
+      expect(error.hitTestable(), findsOneWidget);
+      final viewport = tester.getRect(find.byType(Scaffold).first);
+      final errorRect = tester.getRect(error);
+      expect(errorRect.left, greaterThanOrEqualTo(viewport.left));
+      expect(errorRect.right, lessThanOrEqualTo(viewport.right));
+      expect(errorRect.top, greaterThanOrEqualTo(viewport.top));
+      expect(errorRect.bottom, lessThanOrEqualTo(viewport.bottom));
       expect(tester.takeException(), isNull);
 
-      final retry = find.text(l10n.assistantThemeRetry);
+      final retry = find.text(l10n.assistantThemeRetry, skipOffstage: false);
       await tester.ensureVisible(retry);
       await tester.pumpAndSettle();
       expect(retry.hitTestable(), findsOneWidget);
@@ -129,7 +147,10 @@ void main() {
       expect(controller.storageFailed, isFalse);
       expect(_stored(prefs).intensity, 0.8);
       await _expand(tester);
-      final slider = find.byKey(const ValueKey('assistant-theme-intensity'));
+      final slider = find.byKey(
+        const ValueKey('assistant-theme-intensity'),
+        skipOffstage: false,
+      );
       await tester.ensureVisible(slider);
       await tester.pumpAndSettle();
       expect(slider.hitTestable(), findsOneWidget);
@@ -140,11 +161,10 @@ void main() {
       expect(controller.value.intensity, 0.4);
       expect(tester.takeException(), isNull);
 
-      final reset = find.text(l10n.assistantThemeReset);
+      final reset = find.text(l10n.assistantThemeReset, skipOffstage: false);
       await tester.ensureVisible(reset);
       await tester.pumpAndSettle();
       expect(reset.hitTestable(), findsOneWidget);
-      final viewport = tester.getRect(find.byType(Scaffold).first);
       final resetRect = tester.getRect(reset);
       expect(resetRect.left, greaterThanOrEqualTo(viewport.left));
       expect(resetRect.right, lessThanOrEqualTo(viewport.right));
@@ -163,7 +183,7 @@ Future<void> _expand(WidgetTester tester) async {
   final l10n = AppLocalizations.of(
     tester.element(find.byType(AssistantThemeSheet)),
   );
-  final advanced = find.text(l10n.assistantThemeAdvanced);
+  final advanced = find.text(l10n.assistantThemeAdvanced, skipOffstage: false);
   await tester.ensureVisible(advanced);
   await tester.pumpAndSettle();
   await tester.tap(advanced);
