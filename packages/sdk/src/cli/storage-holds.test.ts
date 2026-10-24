@@ -31,18 +31,43 @@ async function temp() {
 }
 
 describe('hold files', () => {
-  it('reads every *.txt with owners, comments and globs', async () => {
+  it("reads every project's hold file with owners, comments and globs", async () => {
     const dir = await temp();
     await writeFile(
       join(dir, 'mastermind.txt'),
       '# header\n/a/held # reason\n\n   # indented comment\n'
     );
     await writeFile(join(dir, 'tuturuuu.txt'), '/b/glob-*\n');
-    await writeFile(join(dir, 'notes.md'), '/c/not-a-hold\n');
+    await writeFile(join(dir, 'upskii.txt'), '/d/upskii-evidence\n');
+    // Any extension still protects: an unexpected name widens, never drops.
+    await writeFile(join(dir, 'notes.md'), '/c/also-held\n');
+    await mkdir(join(dir, 'nested'));
     expect(readHolds([dir])).toEqual([
       { path: '/a/held', owner: 'mastermind', glob: false },
+      { path: '/c/also-held', owner: 'notes', glob: false },
       { path: '/b/glob-*', owner: 'tuturuuu', glob: true },
+      { path: '/d/upskii-evidence', owner: 'upskii', glob: false },
     ]);
+  });
+
+  it('skips dotfiles and editor swap or backup files with a warning', async () => {
+    const dir = await temp();
+    await writeFile(join(dir, 'tuturuuu.txt'), '/a/held\n');
+    for (const name of [
+      '.DS_Store',
+      'tuturuuu.txt~',
+      '.tuturuuu.txt.swp',
+      'notes.swo',
+    ])
+      await writeFile(join(dir, name), 'binary or stale\n');
+    const warnings: string[] = [];
+    expect(readHolds([dir], (message) => warnings.push(message))).toEqual([
+      { path: '/a/held', owner: 'tuturuuu', glob: false },
+    ]);
+    expect(warnings).toHaveLength(4);
+    expect(warnings[0]).toMatch(
+      /ignoring .* \(dotfile or editor swap\/backup\)/u
+    );
   });
 
   it('stops on a malformed or relative hold, naming the file and line', async () => {

@@ -1,3 +1,6 @@
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type {
   DevboxFleetRunner,
@@ -84,7 +87,8 @@ describe('fleet storage view', () => {
         runner('full', { freeGiB: 10, freePct: 50, inodeFreePct: 90 }),
         runner('gone', { freeGiB: 0, freePct: 0 }, { status: 'revoked' }),
       ]),
-      defaultStorageThresholds
+      defaultStorageThresholds,
+      now
     );
     expect(rows.map((row) => [row.id, row.pressure])).toEqual([
       ['full', 'critical'],
@@ -98,6 +102,12 @@ describe('fleet storage view', () => {
 });
 
 describe('ttr resources disk admission', () => {
+  // Hermetic: a private storage home and no real reclaim.
+  const isolated = async () => ({
+    TTR_STORAGE_HOME: await mkdtemp(join(tmpdir(), 'ttr-admission-')),
+  });
+  const reclaim = async () => ({ result: null, note: 'stubbed' });
+  const holds = async () => [];
   const probe =
     (freeGiB: number, totalGiB = 500) =>
     async (path: string) => ({
@@ -114,9 +124,19 @@ describe('ttr resources disk admission', () => {
 
   it('admits ok volumes silently and warns on low ones', async () => {
     expect(
-      await diskAdmission({ cwd: '/w', env: {}, probe: probe(200) })
+      await diskAdmission({
+        cwd: '/w',
+        env: await isolated(),
+        probe: probe(200),
+        reclaim,
+      })
     ).toEqual({ pressure: 'ok', refuse: false, message: null });
-    const low = await diskAdmission({ cwd: '/w', env: {}, probe: probe(40) });
+    const low = await diskAdmission({
+      cwd: '/w',
+      env: await isolated(),
+      probe: probe(40),
+      reclaim,
+    });
     expect(low).toMatchObject({ pressure: 'low', refuse: false });
     expect(low.message).toMatch(/ttr storage suggest/u);
   });
@@ -124,8 +144,10 @@ describe('ttr resources disk admission', () => {
   it('refuses at critical with the cached non-high suggestions', async () => {
     const result = await diskAdmission({
       cwd: '/w',
-      env: {},
+      env: await isolated(),
       probe: probe(10),
+      reclaim,
+      holds,
       suggestions: async () => [
         {
           category: 'trash',
@@ -158,15 +180,21 @@ describe('ttr resources disk admission', () => {
       (
         await diskAdmission({
           cwd: '/w',
-          env: { TTR_RESOURCES_IGNORE_DISK: '1' },
+          env: { ...(await isolated()), TTR_RESOURCES_IGNORE_DISK: '1' },
           probe: probe(1),
+          reclaim,
         })
       ).refuse
     ).toBe(false);
     const failing = async () => {
       throw new Error('statfs unsupported');
     };
-    const unknown = await diskAdmission({ cwd: '/w', env: {}, probe: failing });
+    const unknown = await diskAdmission({
+      cwd: '/w',
+      env: await isolated(),
+      probe: failing,
+      reclaim,
+    });
     expect(unknown).toMatchObject({ pressure: 'unknown', refuse: true });
     expect(unknown.message).toContain('UNKNOWN');
     expect(unknown.message).toContain('statfs unsupported');
@@ -175,8 +203,9 @@ describe('ttr resources disk admission', () => {
       (
         await diskAdmission({
           cwd: '/w',
-          env: { TTR_RESOURCES_IGNORE_DISK: '1' },
+          env: { ...(await isolated()), TTR_RESOURCES_IGNORE_DISK: '1' },
           probe: failing,
+          reclaim,
         })
       ).refuse
     ).toBe(false);
@@ -185,8 +214,11 @@ describe('ttr resources disk admission', () => {
   it('uses configured thresholds', async () => {
     const result = await diskAdmission({
       cwd: '/w',
-      env: { TTR_STORAGE_MIN_FREE: '250G' },
+      env: { ...(await isolated()), TTR_STORAGE_MIN_FREE: '250G' },
       probe: probe(200),
+      reclaim,
+      holds,
+      suggestions: async () => null,
     });
     expect(result.refuse).toBe(true);
   });

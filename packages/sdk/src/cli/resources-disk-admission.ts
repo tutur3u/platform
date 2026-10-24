@@ -1,10 +1,18 @@
+import type { AutoReclaimOutcome } from './storage-auto-reclaim';
 import {
   formatBytes,
   probeVolume,
   type StoragePressure,
   storagePressure,
-  storageThresholds,
+  type VolumeProbe,
 } from './storage-headroom';
+import type { Hold } from './storage-holds';
+import {
+  hostId,
+  hysteresisThresholds,
+  recordVolumeState,
+  storageHome,
+} from './storage-hysteresis';
 import type { StorageAction } from './storage-suggest';
 
 export interface DiskAdmission {
@@ -13,29 +21,57 @@ export interface DiskAdmission {
   message: string | null;
 }
 
+type Reclaimer = (input: {
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  thresholds: ReturnType<typeof hysteresisThresholds>;
+}) => Promise<AutoReclaimOutcome>;
+
+const realReclaim: Reclaimer = async ({ cwd, env, thresholds }) =>
+  (await import('./storage-auto-reclaim.js')).autoReclaim({
+    trigger: 'admission',
+    volumePath: cwd,
+    thresholds,
+    env,
+  });
+
+const realHolds = async (env: NodeJS.ProcessEnv) => {
+  const { holdsDirs, readHolds } = await import('./storage-holds.js');
+  return readHolds(holdsDirs(env));
+};
+
 /**
- * Heavy commands are refused when the volume holding their working directory
- * is critical (below TTR_STORAGE_MIN_FREE*, default 15 GiB / 5% / 5% inodes):
- * a build or install that fills the disk breaks every lane on the machine.
- * `low` only warns. A failed probe is UNKNOWN and is refused too: only an
- * explicit operator override (--ignore-disk or TTR_RESOURCES_IGNORE_DISK=1)
- * admits a command whose disk headroom could not be measured.
+ * Heavy commands are refused while the volume holding their working directory
+ * is `low`: it entered that state below TTR_STORAGE_MIN_FREE* (default
+ * 15 GiB / 5% / 5% inodes) and leaves it only at TTR_STORAGE_RECOVER_FREE*
+ * (default twice each), so admission does not flap. On entering or staying
+ * low, automatic reclaim runs under this storage authority's cleanup lease;
+ * if it cannot recover the volume, the command is refused with the owners of
+ * what is left and the resume condition. Alerts print once per storage
+ * authority, volume and level. A failed probe is UNKNOWN: it never triggers
+ * reclaim and is refused; only an explicit operator override (--ignore-disk
+ * or TTR_RESOURCES_IGNORE_DISK=1) admits a command whose headroom could not
+ * be measured.
  */
 export async function diskAdmission({
   cwd,
   env = process.env,
   probe = probeVolume,
   suggestions = async () =>
-    (await import('./storage.js')).readSuggestionCache(),
+    (await import('./storage.js')).readSuggestionCache(storageHome(env)),
+  reclaim = realReclaim,
+  holds = realHolds,
 }: {
   cwd: string;
   env?: NodeJS.ProcessEnv;
-  probe?: typeof probeVolume;
+  probe?: (path: string) => Promise<VolumeProbe>;
   suggestions?: () => Promise<StorageAction[] | null>;
+  reclaim?: Reclaimer;
+  holds?: (env: NodeJS.ProcessEnv) => Promise<Hold[]>;
 }): Promise<DiskAdmission> {
   if (env.TTR_RESOURCES_IGNORE_DISK === '1')
     return { pressure: 'unknown', refuse: false, message: null };
-  let volume: Awaited<ReturnType<typeof probeVolume>>;
+  let volume: VolumeProbe;
   try {
     volume = await probe(cwd);
   } catch (error) {
@@ -49,33 +85,65 @@ export async function diskAdmission({
       ].join('\n'),
     };
   }
-  const { thresholds } = storageThresholds(env);
-  const { pressure, reasons } = storagePressure(volume, thresholds);
-  const summary = `${formatBytes(volume.freeBytes)} free (${volume.freePercent.toFixed(1)}%) on the volume holding ${cwd}: ${reasons.join('; ')}`;
-  if (pressure === 'ok') return { pressure, refuse: false, message: null };
-  if (pressure === 'low')
+  const thresholds = hysteresisThresholds(env);
+  const home = storageHome(env);
+  const host = hostId(env);
+  const record = (probed: VolumeProbe) =>
+    recordVolumeState(probed, thresholds, { home, host });
+  let state = record(volume);
+  const summary = (probed: VolumeProbe, reasons: string[]) =>
+    `${formatBytes(probed.freeBytes)} free (${probed.freePercent.toFixed(1)}%) on the volume holding ${cwd}${reasons.length ? `: ${reasons.join('; ')}` : ''}`;
+  const pressureOf = (probed: VolumeProbe) =>
+    storagePressure(probed, thresholds.low).pressure;
+
+  if (state.state === 'ok') {
+    const pressure = pressureOf(volume);
+    if (!state.alert) return { pressure, refuse: false, message: null };
     return {
       pressure,
       refuse: false,
-      message: `disk is low, ${summary}. Run ttr storage suggest.`,
+      message:
+        state.level === 'warn'
+          ? `disk is low, ${summary(volume, storagePressure(volume, thresholds.low).reasons)}. Run ttr storage suggest.`
+          : `disk recovered on ${host}: ${summary(volume, [])}.`,
     };
-  const cached = await suggestions().catch(() => null);
-  const top = (cached ?? [])
-    .filter((action) => action.risk !== 'high')
-    .slice(0, 3)
-    .map(
-      (action) =>
-        `  ${formatBytes(action.reclaimableBytes).padStart(8)} [${action.risk}] ${action.title}\n           ${action.command}`
-    );
+  }
+
+  const outcome = await reclaim({ cwd, env, thresholds }).catch(
+    (error: unknown): AutoReclaimOutcome => ({
+      result: null,
+      note: `reclaim failed to start: ${error instanceof Error ? error.message : String(error)}`,
+    })
+  );
+  const after = outcome.result?.after;
+  if (after && after !== volume) {
+    volume = after;
+    state = record(after);
+    if (state.state === 'ok')
+      return {
+        pressure: pressureOf(after),
+        refuse: false,
+        message: `disk recovered on ${host} by automatic reclaim (freed ${formatBytes(outcome.result?.freedBytes)}): ${summary(after, [])}.`,
+      };
+  }
+  const [cached, held] = await Promise.all([
+    suggestions().catch(() => null),
+    holds(env).catch(() => null),
+  ]);
+  const { blockerReport } = await import('./storage-reclaim-report.js');
   return {
-    pressure,
+    pressure: 'critical',
     refuse: true,
-    message: [
-      `refusing a heavy command: disk is critical, ${summary}.`,
-      top.length
-        ? `Top cleanup actions (from the last ttr storage suggest):\n${top.join('\n')}`
-        : 'Run ttr storage suggest for ranked cleanup actions.',
-      'Override once with --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1; with --offload the command runs on a devbox instead.',
-    ].join('\n'),
+    message: blockerReport({
+      host,
+      cwd,
+      volume,
+      recover: thresholds.recover,
+      reasons: state.reasons,
+      result: outcome.result,
+      note: outcome.note,
+      suggestions: cached,
+      holds: held,
+    }),
   };
 }

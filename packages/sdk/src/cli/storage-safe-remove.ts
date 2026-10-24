@@ -53,11 +53,9 @@ export interface TreeIdentity {
   /** Root first, target last. */
   chain: Link[];
   /**
-   * Refuse the whole removal when the pre-delete walk finds a git checkout
-   * (`.git` directory or worktree file) or bare repository anywhere inside.
-   * The check is part of the scan that defines what is deleted, so a
-   * repository moved in after earlier checks is either seen here or created
-   * after the scan, which only makes its parent's rmdir fail.
+   * Refuse repositories in the pre-delete scan and before every deletion.
+   * Defaults to true; manual prune callers may explicitly opt out for
+   * regenerable caches after their category-specific safety checks.
    */
   refuseRepositories?: boolean;
 }
@@ -153,17 +151,27 @@ export function removeVerifiedTree(
     if (problem) throw new Error(`${problem}; refusing the whole removal`);
   };
   owned(target.path, fs.lstat(target.path));
+  const exists = (path: string) => {
+    try {
+      fs.lstat(path);
+      return true;
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+        return false;
+      throw error;
+    }
+  };
+  const refuseRepository = (path: string, names?: string[]) => {
+    if (identity.refuseRepositories === false) return;
+    const has = (name: string) =>
+      names ? names.includes(name) : exists(join(path, name));
+    if (has('.git') || ['HEAD', 'objects', 'refs'].every(has))
+      throw new Error(`${path} contains a git repository; stopped`);
+  };
   const scan = (link: Link): Node => {
     const node: Node = { ...link, files: [], dirs: [] };
     const names = fs.readdir(link.path);
-    if (
-      identity.refuseRepositories &&
-      (names.includes('.git') ||
-        ['HEAD', 'objects', 'refs'].every((name) => names.includes(name)))
-    )
-      throw new Error(
-        `${link.path} contains a git repository; refusing the whole removal`
-      );
+    refuseRepository(link.path, names);
     for (const name of names) {
       const path = join(link.path, name);
       const info = fs.lstat(path);
@@ -189,12 +197,18 @@ export function removeVerifiedTree(
       ownershipProblem(link.path, info, euid) === null
     );
   };
-  const remove = (node: Node) => {
-    for (const dir of node.dirs) remove(dir);
+  const remove = (node: Node, ancestors: string[] = []) => {
+    const chain = [...ancestors, node.path];
+    const checkRepositories = () => {
+      for (const path of chain) refuseRepository(path);
+    };
+    checkRepositories();
+    for (const dir of node.dirs) remove(dir, chain);
     verifyChain(identity, fs);
     if (!same(node) || fs.lstat(node.path).isSymbolicLink())
       throw new Error(`identity changed at ${node.path}; stopped`);
     for (const file of node.files) {
+      checkRepositories();
       if (!same(node))
         throw new Error(`identity changed at ${node.path}; stopped`);
       if (!same(file))
@@ -202,6 +216,7 @@ export function removeVerifiedTree(
       fs.unlink(file.path);
       removed += 1;
     }
+    checkRepositories();
     fs.rmdir(node.path);
     removed += 1;
   };

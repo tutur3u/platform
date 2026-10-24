@@ -23,6 +23,7 @@ import {
   playgroundEnvironmentCount,
 } from './devbox-playground-sandbox';
 import { diskCapability, probeVolume } from './storage-headroom';
+import { hysteresisThresholds, recordVolumeState } from './storage-hysteresis';
 
 const VERSION_TIMEOUT_MS = 1500;
 let staticCapabilitiesPromise: Promise<{
@@ -215,14 +216,23 @@ export async function createDevboxAgentCapabilities() {
 // offload selection can skip hosts that are about to run out of space.
 async function reportedDisk() {
   try {
-    return {
-      disk: diskCapability(
-        await probeVolume(
-          process.env.TUTURUUU_DEVBOX_STORAGE_PATH || process.cwd()
-        )
-      ),
-    };
+    return { disk: diskCapability(await probeVolume(storagePath())) };
   } catch {
     return {};
   }
+}
+
+// The heartbeat is one of the two automatic reclaim triggers (the other is
+// heavy ttr resources admission). A low volume starts one detached
+// `ttr storage reclaim --auto` unless this user's cleanup lease is held or the last
+// unsuccessful run is inside its cooldown; nothing runs while space is ok.
+const storagePath = () =>
+  process.env.TUTURUUU_DEVBOX_STORAGE_PATH || process.cwd();
+
+export async function heartbeatStorageTrigger() {
+  const volume = await probeVolume(storagePath());
+  const state = recordVolumeState(volume, hysteresisThresholds());
+  if (state.state !== 'low') return;
+  const reclaim = await import('./storage-auto-reclaim.js');
+  if (reclaim.heartbeatReclaimDue()) reclaim.spawnHeartbeatReclaim(volume);
 }

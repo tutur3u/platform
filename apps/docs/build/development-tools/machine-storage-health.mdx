@@ -17,6 +17,7 @@ ttr storage analyze            # ranked consumers by category (add --json)
 ttr storage suggest            # actions: reclaimable bytes, risk, exact command
 ttr storage prune              # dry run of the default safe categories
 ttr storage prune --apply      # re-verifies every fence, then applies the plan
+ttr storage reclaim            # automatic-reclaim plan, lease holder and last run on this host
 ttr storage fleet              # disk headroom reported by every devbox runner
 ```
 
@@ -50,16 +51,42 @@ APFS every volume shares its container's free space and inode tables grow on
 demand, so the inode percentage only matters on ext4/xfs. Invalid threshold
 values fall back to the default with a warning.
 
+Heavy admission uses hysteresis on top of these thresholds. A volume enters
+`low` below the `critical` thresholds above and leaves it only at the separate
+recover thresholds:
+
+- `TTR_STORAGE_RECOVER_FREE`
+- `TTR_STORAGE_RECOVER_FREE_PERCENT`
+- `TTR_STORAGE_RECOVER_FREE_INODE_PERCENT`
+
+Each defaults to twice its low threshold (30 GiB / 10% / 10%). A recover value
+below its low value is raised to the low value. These are configurable
+starting points, not measured fleet values; tune them per host.
+
 ## Disk-aware admission
 
 `ttr resources` checks the volume holding a heavy command's working directory
-before queueing it. At `critical` it refuses with exit code 75 and prints the
-top non-high actions from the last `ttr storage suggest`; at `low` it warns and
-continues. A failed probe is UNKNOWN and is refused too, with the probe error
-and the override. Once queued, the lane queue re-checks free disk at dequeue
-(`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`, and
+before queueing it. Once queued, the lane queue re-checks free disk and inodes
+at dequeue (`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`, and
 `TTR_STORAGE_MIN_FREE_INODE_PERCENT`) and holds the job,
 failing closed, until headroom returns.
+
+- **`low`:** while the volume is in the hysteresis `low` state, automatic
+  reclaim runs first (see below). If that does not bring the volume back to the
+  recover thresholds, the command is refused with exit code 75 and a blocker
+  report. The report gives:
+  - what reclaim removed and its receipt file;
+  - the eligible items it skipped, with their owners and reasons;
+  - the largest non-high manual actions from the last `ttr storage suggest`,
+    with their hold owners;
+  - the exact free space needed to resume.
+- **`ok`:** when the volume is `ok` but below the recover thresholds, the
+  command warns and continues.
+- **Alerts:** warn, low and recovered alerts print once per storage
+  authority (this OS user on this host), volume and level. The state lives in `~/.tuturuuu/storage/pressure-state.json`.
+- **Probe failure:** a failed probe is UNKNOWN. It never triggers reclaim and
+  the command is refused with the probe error; only the override below admits
+  it.
 
 - `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides both checks
   once. Prefer reclaiming space.
@@ -91,6 +118,150 @@ that do not report disk yet (older agents) stay eligible and show as
 `unreported`. No new timer or controller is involved: the heartbeat is the
 transport.
 
+The authenticated heartbeat of a registered runner is the only fleet input.
+`ttr storage fleet` reports a runner as `unknown` when any of these hold:
+
+- it is offline;
+- its heartbeat is disabled;
+- it has never reported;
+- its last heartbeat is older than the 60-second freshness window.
+
+`unknown` is never healthy, and `fleet` exits 2 when any runner is `unknown`.
+Nothing connects to a host to measure or clean it; a host's own heartbeat or
+admission triggers its own reclaim.
+
+## Automatic reclaim
+
+Automatic reclaim is **off by default**. It runs only after an explicit
+opt-in for this storage authority: `TTR_STORAGE_AUTO_RECLAIM=1` (or `true`,
+`on`, `yes`), or the sentinel file `~/.tuturuuu/storage/auto-reclaim`
+containing one of those values. Once opted in, when a trigger finds a volume
+`low`, reclaim removes explicitly regenerable space on its own. A human can
+always run `ttr storage reclaim --apply` without opting in. There are two
+triggers, and neither is a schedule:
+
+- heavy `ttr resources` admission;
+- a devbox agent heartbeat, which starts one detached
+  `ttr storage reclaim --apply --auto --trigger heartbeat`.
+
+This follows the shared
+[cross-orchestrator quota and storage coordination](#cross-orchestrator-contract)
+contract.
+
+**Scope: one storage authority.** Every guarantee below holds for one storage
+authority: one OS user's storage home (`TTR_STORAGE_HOME`, default
+`~/.tuturuuu/storage`) on one host. Every orchestrator and project that user
+runs (Tuturuuu, Upskii, Mastermind) shares it. Another OS user on the same
+host has a separate home, lease and receipts; nothing here coordinates across
+OS users, so this is not a host-wide guarantee.
+
+- **One lease per storage authority.** The lease is
+  `~/.tuturuuu/storage/reclaim/<host>/cleanup.lease`, keyed by host identity
+  (`TTR_STORAGE_HOST_ID`, default the hostname) inside the user's home. It
+  records:
+  - a monotonic fence number (from a durable counter, `fence`);
+  - TTL (15 minutes, renewed before each item);
+  - owner pid and start time;
+  - trigger;
+  - the caller's `TTR_ORCHESTRATOR_ID`.
+
+  Acquisition, takeover, renewal and release all run under an O_EXCL mutation
+  lock, so they are serialized. A second caller does not reclaim in parallel;
+  its admission refusal names the holder. An expired or dead-pid lease is taken
+  over with a larger fence. Holders record their process start time, so a
+  reused pid counts as a dead holder. Breaking a dead holder's mutation lock
+  is itself serialized behind a separate O_EXCL break lock, and the lock is
+  re-read under it before removal, so a fresh lock is never broken.
+- **Fenced at the destructive boundary.** Each removal runs inside the lease's
+  guard: under the mutation lock, the holder's token, fence and expiry are
+  re-validated, and the removal runs while the lock is still held. A holder
+  that paused past its TTL and was taken over never removes anything, and no
+  takeover can overlap a removal.
+- **Eligible items only.** Only path-bounded rules, removed as one verified
+  directory tree, so the deleted set is exactly the checked set:
+  - idle Xcode DerivedData folders, never while Xcode or `xcodebuild` runs;
+  - ignored, untracked build artifacts inside merged, clean, unheld worktrees
+    idle at least a day.
+
+  Command-based cleanups (Homebrew, npm cache, Docker, simulators) are never
+  automatic; they stay manual suggestions. `TTR_STORAGE_AUTO_RECLAIM_RULES`
+  narrows the list (comma-separated rule ids). The idle age is
+  `TTR_STORAGE_RECLAIM_OLDER_THAN_DAYS` (7), measured over the whole tree.
+  Only candidates on the low volume's device count, checked when planning and
+  again right before each item. A volume reading that is not usable (no
+  device, non-positive total, non-finite or inconsistent values) stops the
+  run with nothing removed.
+- **Re-checked right before each item, fail closed.** In this order:
+  1. the directory identity (device and inode chain from the rule root, no
+     symlinks, same device) is captured;
+  2. holds from every file in every holds directory (an invalid line stops);
+  3. the rule's own re-check (for worktree artifacts, a fresh merged-clean
+     classification at the same `HEAD`);
+  4. a process `cwd` scan covering every live process of this user;
+  5. `lsof +D` open files.
+
+  A check that fails or errors skips the item. Hidden processes of other
+  users (including root) are tolerated only with
+  [private-tree evidence](#process-visibility-on-macos-private-tree-evidence)
+  for the item, proven at or above its rule root. Receipts record the
+  evidence level (`full-visibility` or `private-tree`).
+- **Durable pre-receipt.** Before acting, an `intent` line is appended and
+  fsynced (new directories and the new file's directory entry are fsynced
+  too) to `~/.tuturuuu/storage/reclaim/<host>/receipts/*.jsonl` (mode 0600).
+  If the append or any fsync fails, the item is not removed. After acting, an
+  `outcome` line records the result. Each line records path and bytes, rule,
+  the checks that passed, the lease fence, outcome and freed bytes, host,
+  orchestrator, trigger and time.
+- **Bounded by the goal.** Free space is re-measured under the lease before
+  each item, and reclaim stops at the recover thresholds. If space recovered
+  meanwhile, nothing is removed.
+- **Not enough safe reclaim.** Heavy admission stays closed and prints the
+  blocker report. Reclaim never widens its scope to close the gap. After an
+  unsuccessful run, triggers wait `TTR_STORAGE_RECLAIM_COOLDOWN_MINUTES` (30)
+  before planning again. `ttr storage reclaim --apply` ignores only the
+  cooldown.
+- **Hard kill switch.** A false value (`0`, `false`, `off`, `no`) in
+  `TTR_STORAGE_AUTO_RECLAIM` (process or passed environment) or in the
+  `auto-reclaim` sentinel file disables both triggers and the manual
+  `ttr storage reclaim --apply`, and wins over any opt-in. A sentinel with
+  any other content, or one that cannot be read, also kills. The engine
+  checks it itself before the lease, before every item and inside the lease
+  guard right before each removal, so no caller or flag bypasses it.
+- **Trusted re-exec.** The heartbeat starts the child only through a verified
+  absolute path: the absolute runtime plus the real path of an existing script
+  entry, or a packaged executable named `ttr`. It never resolves `ttr`
+  through `PATH`; otherwise it spawns nothing.
+
+Set `TTR_ORCHESTRATOR_ID` in each orchestrator's environment so leases and
+receipts name it. Without it they record an unidentified caller. T3 does not
+inject a thread id into child processes today.
+
+### What stays manual
+
+Automatic reclaim never touches any of these:
+
+- worktrees themselves;
+- Homebrew, npm, Bun and pub caches, Docker and simulators;
+- `node_modules`;
+- tmp, evidence and scratch;
+- held paths;
+- databases and Supabase or Docker volumes;
+- Docker images;
+- VM disks, Trash, archives and AVDs;
+- production assets;
+- files another process has open.
+
+A human owns those decisions: run `ttr storage suggest` and
+`ttr storage prune`, and ask hold owners to release their holds. The blocker
+report names the largest such items and their owners.
+
+### Activation
+
+These hooks ship in the `ttr` CLI. Until a host runs a released CLI that
+contains them, they are not active there. A heartbeat trigger also needs that
+host's devbox agent to be upgraded. Record per-host activation evidence
+(version, a receipt or a refusal) before claiming coverage.
+
 ## Categories
 
 | Category | What | Risk | `prune` |
@@ -116,11 +287,13 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
 - Dirty, unmerged, locked, busy (a process `cwd` inside) or current worktrees,
   and the primary checkout.
 - Worktrees active in the last 24 hours.
-- Any path covered by a hold file. Hold files are `*.txt` in
-  `~/.t3/cleanup/holds.d` (or `--holds-dir`, `TTR_STORAGE_HOLDS_DIRS`); one
-  absolute path or glob per line, `#` comments. `--holds-dir` and
+- Any path covered by a hold file. Every file in `~/.t3/cleanup/holds.d`
+  counts, except dotfiles and editor swap or backup files (`~`, `.swp`), which
+  are skipped with a warning. That includes each project's file (`tuturuuu.txt`, `upskii.txt`,
+  `mastermind.txt`, …) whatever its extension. `--holds-dir` and
   `TTR_STORAGE_HOLDS_DIRS` add directories; the shared default is always
-  read. A hold covers its path,
+  read. Each file holds one absolute path or glob per line, with `#`
+  comments. A hold covers its path,
   everything below it and everything above it. An unreadable holds directory,
   or any non-comment line that is not an absolute path or glob, stops the run
   with the file and line; fix or comment out the line.
@@ -152,6 +325,9 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
   with plain `git worktree remove` (no `--force`) and their branch with
   `git branch -d`; git keeps a squash-merged branch, which is reported for a
   human to delete after checking.
+- Repositories or linked worktrees nested inside a reclaim candidate, including
+  ignored output and bare repositories. Planning rejects the candidate; the
+  deletion walk rechecks repository markers before every unlink and rmdir.
 - Source, Trash, VM disk images, Xcode archives, AVDs and Supabase volumes not
   named explicitly.
 
@@ -197,7 +373,9 @@ is 0700; ttr never changes permissions to make something qualify.
 
 Regression coverage: `packages/sdk/src/cli/storage-privacy.test.ts` (scan
 rules per platform and uid, the proof's failure modes, scoped `lsof`, manual
-prune wiring) and `storage-liveness.test.ts` (strict scan parsing).
+prune wiring), `storage-liveness.test.ts` (strict scan parsing) and
+`storage-reclaim.test.ts` (automatic reclaim records `private-tree`
+evidence in its receipts).
 
 ## Stale `node_modules`
 
@@ -244,4 +422,24 @@ Run `ttr storage prune --apply` only on a machine you own. Devbox VMs and CI
 runner hosts belong to their host owner; report suggestions to that owner
 instead. On the M4 Mac the Mastermind daily cleanup task uses the same hold
 files and busy/PR-state rules, so a hold written for one tool protects the path
-from both.
+from both. Automatic reclaim acts only for the storage authority (OS user and
+host) that triggered it, under that authority's lease.
+
+### Cross-orchestrator contract
+
+Every orchestrator (Tuturuuu, Upskii, Mastermind) follows the shared contract
+in
+`~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination`.
+Under that contract:
+
+- missing telemetry stays UNKNOWN;
+- one cleanup lease owns each host's reclaim (implemented here per storage
+  authority, one OS user's home; a host-wide authority shared across OS users
+  is not implemented yet);
+- automatic reclaim is limited to eligible regenerable caches and completed,
+  unowned outputs, with receipts;
+- insufficient reclaim pauses heavy admission or offloads it rather than
+  deleting more.
+
+The Tuturuuu `ttr storage` lane is the single implementation owner of these
+hooks; other projects supply requirements and receipts.

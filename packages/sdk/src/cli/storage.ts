@@ -1,5 +1,4 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import {
   analyzeStorage,
@@ -14,6 +13,7 @@ import {
   storageThresholds,
 } from './storage-headroom';
 import { holdsDirs, readHolds } from './storage-holds';
+import { storageHome } from './storage-hysteresis';
 import {
   listProcessCwdsStrict,
   listVisibleCwds,
@@ -38,19 +38,22 @@ import { ghPullRequests } from './storage-worktrees';
 export function storageHelp() {
   return `ttr storage — find what fills a machine's disks and reclaim it safely
 
-Usage: ttr storage <status|analyze|suggest|prune|fleet> [options]
+Usage: ttr storage <status|analyze|suggest|prune|reclaim|fleet> [options]
 
   status [--json] [--path P]   free/used space, pressure and inodes per volume
   analyze [--json]             rank consumers by real unique bytes
   suggest [--json]             cleanup actions with reclaimable bytes, risk and command
   prune [--apply]              dry run by default; --apply removes only within bounds
+  reclaim [--apply]            automatic-reclaim plan for this host; --apply runs
+                               it now under this user's cleanup lease (stops at the
+                               recover thresholds; receipts in the storage home)
   fleet [--json]               disk headroom each devbox runner reports (needs ttr login)
 
 Options:
   --repo <path>                repository to inspect (repeat); default: the
                                current repo plus ttr resources project roots
-  --holds-dir <dir>            extra hold files dir (*.txt), added to
-                               ~/.t3/cleanup/holds.d and TTR_STORAGE_HOLDS_DIRS
+  --holds-dir <dir>            extra hold files dir (every file, any project),
+                               added to ~/.t3/cleanup/holds.d and TTR_STORAGE_HOLDS_DIRS
   --older-than <days>          idle age for tmp, DerivedData, caches (default 7;
                                tmp candidates in analyze use 3)
   --offline                    skip GitHub PR lookups (merged = ancestry only)
@@ -77,14 +80,20 @@ and allocated blocks with hard links counted once on Linux; never \`du -L\`.
 
 Thresholds: TTR_STORAGE_MIN_FREE (default 15G), TTR_STORAGE_MIN_FREE_PERCENT
 (5), TTR_STORAGE_MIN_FREE_INODE_PERCENT (5). Below a threshold the volume is
-critical; below twice a threshold it is low.
+critical; below twice a threshold it is low. Heavy ttr resources admission
+closes below the minimum and reopens at TTR_STORAGE_RECOVER_FREE,
+TTR_STORAGE_RECOVER_FREE_PERCENT and TTR_STORAGE_RECOVER_FREE_INODE_PERCENT
+(default twice each). Automatic reclaim is off by default: opt in with
+TTR_STORAGE_AUTO_RECLAIM=1 or a "1" in <storage home>/auto-reclaim; a false
+value (0/false/off/no) in either is a kill switch, manual --apply included;
+TTR_STORAGE_AUTO_RECLAIM_RULES narrows its rules;
+TTR_STORAGE_RECLAIM_COOLDOWN_MINUTES (30) and
+TTR_STORAGE_RECLAIM_OLDER_THAN_DAYS (7). Set TTR_ORCHESTRATOR_ID so leases and
+receipts name the calling orchestrator.
 `;
 }
 
-export const storageHome = () =>
-  resolve(
-    process.env.TTR_STORAGE_HOME || join(homedir(), '.tuturuuu', 'storage')
-  );
+export { storageHome };
 
 interface ParsedOptions {
   action: string;
@@ -100,6 +109,8 @@ interface ParsedOptions {
   olderThanDays: number;
   maxRemoveBytes: number;
   maxEntries: number;
+  auto: boolean;
+  trigger: string | null;
 }
 
 const KNOWN_CATEGORIES = new Set<string>([
@@ -129,6 +140,8 @@ export function parseStorageArgs(argv: string[]): ParsedOptions {
     olderThanDays: 7,
     maxRemoveBytes: defaultMaxRemoveBytes,
     maxEntries: 2_000_000,
+    auto: false,
+    trigger: null,
   };
   const start = argv[0] === options.action ? 1 : 0;
   for (let index = start; index < argv.length; index++) {
@@ -144,6 +157,8 @@ export function parseStorageArgs(argv: string[]): ParsedOptions {
     else if (arg === '--offline') options.offline = true;
     else if (arg === '--no-docker') options.docker = false;
     else if (arg === '--no-update-check') continue;
+    else if (arg === '--auto') options.auto = true;
+    else if (arg === '--trigger') options.trigger = value();
     else if (arg === '--repo') options.repos.push(resolve(value()));
     else if (arg === '--holds-dir') options.holdsDirs.push(resolve(value()));
     else if (arg === '--path') options.paths.push(resolve(value()));
@@ -168,8 +183,8 @@ export function parseStorageArgs(argv: string[]): ParsedOptions {
         throw new Error('--max-entries must be an integer of at least 1000.');
     } else throw new Error(`Unknown storage option: ${arg}`);
   }
-  if (options.apply && options.action !== 'prune')
-    throw new Error('--apply is only valid with prune.');
+  if (options.apply && !['prune', 'reclaim'].includes(options.action))
+    throw new Error('--apply is only valid with prune or reclaim.');
   return options;
 }
 
@@ -298,7 +313,13 @@ export async function runStorageCommand(argv: string[]) {
       thresholds
     );
     out({ thresholds, runners: rows }, () => renderFleetStorage(rows));
-    if (rows.some((row) => row.pressure === 'critical')) process.exitCode = 2;
+    if (rows.some((row) => ['critical', 'unknown'].includes(row.pressure)))
+      process.exitCode = 2;
+    return;
+  }
+  if (options.action === 'reclaim') {
+    const { runReclaimCommand } = await import('./storage-reclaim-command.js');
+    await runReclaimCommand(options);
     return;
   }
   if (!['analyze', 'suggest', 'prune'].includes(options.action))

@@ -36,6 +36,70 @@ async function tree() {
 }
 
 describe('identity-anchored removal', () => {
+  it.each(['directory', 'file', 'bare'])(
+    'preserves a nested %s repository during deletion',
+    async (kind) => {
+      const { cache, target } = await tree();
+      const repo = join(target, 'nested', 'deeper');
+      if (kind === 'directory') await mkdir(join(repo, '.git'));
+      else if (kind === 'file')
+        await writeFile(join(repo, '.git'), 'gitdir: /keep');
+      else {
+        await writeFile(join(repo, 'HEAD'), 'ref: refs/heads/main');
+        await mkdir(join(repo, 'objects'));
+        await mkdir(join(repo, 'refs'));
+      }
+      expect(() => removeVerifiedTree(captureIdentity(cache, target))).toThrow(
+        /repository/u
+      );
+      expect(existsSync(join(repo, 'blob'))).toBe(true);
+    }
+  );
+
+  it('rechecks for a repository planted after the deleting walk starts', async () => {
+    const { cache, target } = await tree();
+    let planted = false;
+    const racing: FsOps = {
+      ...realFsOps,
+      readdir(path) {
+        const names = realFsOps.readdir(path);
+        if (!planted && path === target) {
+          planted = true;
+          writeFileSync(
+            join(target, 'nested', 'deeper', '.git'),
+            'gitdir: /keep'
+          );
+        }
+        return names;
+      },
+    };
+    expect(() =>
+      removeVerifiedTree(captureIdentity(cache, target), racing)
+    ).toThrow(/repository/u);
+    expect(existsSync(join(target, 'nested', 'deeper', 'blob'))).toBe(true);
+  });
+
+  it('checks repository markers during deletion after pre-scan finished', async () => {
+    const { cache, target } = await tree();
+    const repo = join(target, 'nested', 'deeper');
+    const marker = join(repo, '.git');
+    let planted = false;
+    const racing: FsOps = {
+      ...realFsOps,
+      lstat(path) {
+        if (!planted && path === marker) {
+          planted = true;
+          writeFileSync(marker, 'gitdir: /keep');
+        }
+        return realFsOps.lstat(path);
+      },
+    };
+    expect(() =>
+      removeVerifiedTree(captureIdentity(cache, target), racing)
+    ).toThrow(/repository/u);
+    expect(existsSync(join(repo, 'blob'))).toBe(true);
+  });
+
   it('removes exactly the verified tree', async () => {
     const { cache, target, outside } = await tree();
     const removed = removeVerifiedTree(captureIdentity(cache, target));
