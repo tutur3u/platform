@@ -319,6 +319,6 @@ test('symlinked HOME resolves the same trusted global CLI', (t) => {
   fs.symlinkSync(f.home, alias, 'dir');
   assert.equal(
     trustedTtr(alias, f.root),
-    fs.realpathSync(path.dirname(f.cli)) + '/ttr'
+    `${fs.realpathSync(path.dirname(f.cli))}/ttr`
   );
 });

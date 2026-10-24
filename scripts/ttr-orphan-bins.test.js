@@ -75,7 +75,7 @@ test('orphan SDK aliases without a root dependency are refused even inside an ad
   const env = {
     ...process.env,
     HOME: root,
-    PATH: bin + ':' + process.env.PATH,
+    PATH: `${bin}:${process.env.PATH}`,
     TTR_RESOURCES_ADMITTED: '',
     TTR_RESOURCE_OWNER: '',
   };
