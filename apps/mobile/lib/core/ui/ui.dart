@@ -1,5 +1,5 @@
-/// Tuturuuu mobile design system: tokens, components and icons that replace
-/// `shadcn_flutter`.
+/// Tuturuuu mobile design system: tokens, components, icons and the unified
+/// sheet/dialog host that replace `shadcn_flutter`.
 ///
 /// Import this barrel instead of `package:shadcn_flutter`. See
 /// `apps/docs/build/development-tools/mobile-design-system.mdx` and the
@@ -18,10 +18,16 @@ export 'package:mobile/core/ui/components/app_icon_button.dart';
 export 'package:mobile/core/ui/components/app_option_tile.dart';
 export 'package:mobile/core/ui/components/app_scaffold.dart';
 export 'package:mobile/core/ui/components/app_search_field.dart';
+export 'package:mobile/core/ui/components/app_select.dart';
 export 'package:mobile/core/ui/components/app_tap_target.dart';
 export 'package:mobile/core/ui/components/app_text_field.dart';
 export 'package:mobile/core/ui/components/app_toast.dart';
 export 'package:mobile/core/ui/icons/app_icons.dart';
+export 'package:mobile/core/ui/overlays/app_dialog.dart';
+export 'package:mobile/core/ui/overlays/app_modal_scope.dart';
+export 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
+export 'package:mobile/core/ui/overlays/app_sheet_search.dart';
+export 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 export 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 export 'package:mobile/core/ui/tokens/app_tokens.dart';
 export 'package:mobile/core/ui/tokens/app_typography.dart';
