@@ -18,7 +18,7 @@ const trusted = (
   last_heartbeat_at: '2026-10-23T02:00:00.000Z',
   enabled_features: { run: true },
   resource_limits: null,
-  capabilities: { executionMode: 'trusted' },
+  capabilities: { executionMode: 'trusted', protocols: { commitRun: [1] } },
   drain_requested_at: null,
   ...overrides,
 });

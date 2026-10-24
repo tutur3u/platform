@@ -1,3 +1,4 @@
+import { createMeetGuestSession } from '@tuturuuu/utils/meet-guest-session';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
@@ -147,7 +148,7 @@ describe('Meet poll mutation authorization', () => {
 
     const result = await addPollOption('plan-1', {
       guestId: 'guest-1',
-      guestPasswordHash: 'wrong-credential',
+      guestSession: 'wrong-credential',
       pollId: 'poll-1',
       userType: 'GUEST',
       value: 'Cafe',
@@ -341,7 +342,10 @@ describe('Meet poll mutation authorization', () => {
 
     const result = await addPollOption('plan-1', {
       guestId: 'guest-1',
-      guestPasswordHash: 'valid-credential',
+      guestSession: createMeetGuestSession({
+        guestId: 'guest-1',
+        planId: 'plan-1',
+      }).token,
       pollId: 'poll-1',
       userType: 'GUEST',
       value: 'Cafe',

@@ -52,7 +52,7 @@ isolated worktree and run `bun setup` immediately.
 | Focused route | `bun --cwd apps/ai vitest run 'src/app/api/v1/workspaces/[wsId]/ai/policy/route.test.ts'` | auth, genuine absence, both read failures, PATCH validation/upsert cases pass |
 | Internal contract | `bun --cwd packages/internal-api vitest run src/ai-studio.test.ts` | existing request/response behavior remains green |
 | AI app | `bun run --cwd apps/ai type-check && bun run --cwd apps/ai build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

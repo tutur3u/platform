@@ -77,7 +77,7 @@ architecture is present in each selected manifest list.
 | Focused tests | `bun test scripts/ci/production-dockerfile-bases.test.js scripts/ci/release-workflows.test.js` | valid and every negative fixture pass offline |
 | Docker gate | `bun scripts/check-docker-web.js` | production Compose/Dockerfile contract passes |
 | Script fleet | `bun test:scripts` | root-discovered script tests pass |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

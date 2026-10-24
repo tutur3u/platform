@@ -73,7 +73,7 @@ the production source of truth and still exposes the unsafe behavior.
 | Route artifacts | `bun web:api-routes:check && bun migration:tanstack:manifest && bun migration:tanstack:check` | no legacy wrappers regenerate; both manifest source IDs are first-class and accepted-removal remains |
 | Secret/data absence | `rg -n 'cookies\(|getSession\(|createDynamicAdminClient|withApiAuth|sb-' apps/web/src/app/api/auth/me/session apps/web/src/app/api/v2/workspaces/'[wsId]'/migrate/'[module]' --glob '!*.test.ts'` | no matches |
 | Web | `bun --cwd apps/web run type-check && bun --cwd apps/web run build` | typecheck and production build pass |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only the two Web route trees/tests, two migration artifacts, named Rust/OpenAPI files, and plan status changed |
 
 ## Suggested executor toolkit
@@ -152,7 +152,7 @@ schema/description and no response body content.
 ### Step 4: Prove cross-runtime and repository health
 
 Run Rust terminal tests, Web tests/typecheck/build, migration
-check, `bun check`, scope, and whitespace gates. Do not edit Rust to make Web
+check, `bun validate`, scope, and whitespace gates. Do not edit Rust to make Web
 parity pass; any mismatch is a STOP condition for review.
 
 ## Test plan
@@ -171,7 +171,7 @@ parity pass; any mismatch is a STOP condition for review.
 - [ ] Both first-class routes return their exact terminal GET/HEAD contracts before dependencies.
 - [ ] Legacy implementations/tests are gone and wrapper generation does not recreate them.
 - [ ] Both accepted-removal entries and manifest IDs name the first-class sources.
-- [ ] Focused Web/Rust tests, backend/OpenAPI and artifact gates, Web typecheck/build, `bun check`, scope, and whitespace pass.
+- [ ] Focused Web/Rust tests, backend/OpenAPI and artifact gates, Web typecheck/build, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

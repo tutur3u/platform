@@ -116,6 +116,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
       resource_limits: null,
       capabilities: {
         executionMode: 'trusted',
+        protocols: { commitRun: [1] },
         disk: { freeGiB: 400 },
         resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
       },
@@ -164,6 +165,22 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
     expect(plan.assignments).toEqual([]);
   });
 
+  it('refuses a runner without the commit-run protocol even with healthy disk', () => {
+    const state = remoteState({
+      snapshot: snapshot([
+        runner(5_000, {
+          capabilities: {
+            executionMode: 'trusted',
+            protocols: { commitRun: [] },
+            disk: { freeGiB: 400 },
+          },
+        }),
+      ]),
+    });
+    expect(state.healthy).toBe(false);
+    expect(state.reason).toMatch(/commit-run protocol/u);
+  });
+
   it('refuses a runner that reports no activity telemetry (REV-6503-8)', () => {
     const state = remoteState({
       snapshot: snapshot([runner(5_000, { activity: null })]),
@@ -180,11 +197,13 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
         runner(5_000, {
           capabilities: {
             executionMode: 'trusted',
+            protocols: { commitRun: [1] },
             resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
           },
         }),
       ]),
     });
+    expect(unknownRemote.healthy).toBe(true);
     expect(unknownRemote.diskFreeGiB).toBeUndefined();
     const states: Record<string, HostState> = {
       m4: { healthy: true, diskFreeGiB: undefined },

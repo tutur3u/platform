@@ -39,6 +39,7 @@ async function fixture() {
   homes.push(home);
   vi.stubEnv('TTR_RESOURCES_HOME', home);
   vi.stubEnv('TTR_RESOURCES_BYPASS', '');
+  vi.stubEnv('TTR_RESOURCES_IGNORE_DISK', '1');
   await atomicJson(join(home, 'config.json'), {
     ...defaultResourceConfig(),
     validationLanes: 1,
@@ -140,6 +141,7 @@ it('cold caller must explicitly setup before admission, and later run never prov
   homes.push(home);
   vi.stubEnv('TTR_RESOURCES_HOME', home);
   vi.stubEnv('TTR_RESOURCES_BYPASS', '');
+  vi.stubEnv('TTR_RESOURCES_IGNORE_DISK', '1');
   const marker = join(home, 'marker');
   const command = [
     'run',
@@ -172,3 +174,130 @@ it('cold caller must explicitly setup before admission, and later run never prov
   expect((await resourceQueueStatus(home)).occupied).toBe(0);
   expectNoShimWrites(home);
 }, 30_000);
+
+it('refuses a different installation before replacing any launcher', async () => {
+  const home = await fixture();
+  const before = await Promise.all(
+    resourceShims.map((name) => fs.readFile(join(home, 'bin', name), 'utf8'))
+  );
+  const foreign = join(
+    home,
+    'stale-workspace',
+    'packages/sdk/dist/cli/resources-entry.js'
+  );
+  await expect(installResourceShims(home, foreign)).rejects.toThrow(
+    'cross-install'
+  );
+  expect(
+    await Promise.all(
+      resourceShims.map((name) => fs.readFile(join(home, 'bin', name), 'utf8'))
+    )
+  ).toEqual(before);
+  expectNoShimWrites(home);
+});
+
+it('an admitted shim runs without installing or replacing launchers', async () => {
+  const home = await fixture();
+  const config = defaultResourceConfig();
+  config.roots = [process.cwd()];
+  await atomicJson(join(home, 'config.json'), config);
+  const marker = join(home, 'shim-marker');
+  await runResourcesCommand([
+    'shim',
+    'node',
+    '--',
+    '-e',
+    `require('node:fs').writeFileSync(${JSON.stringify(marker)},'ran')`,
+  ]);
+  expect(process.exitCode).toBe(0);
+  expect(await fs.readFile(marker, 'utf8')).toBe('ran');
+  expectNoShimWrites(home);
+});
+
+it('upgrades versioned Bun global cache entries within one installation', async () => {
+  const root = await fs.mkdtemp(join(tmpdir(), 'resource-global-upgrade-'));
+  homes.push(root);
+  const home = join(root, 'resources');
+  const install = join(root, 'user/.bun/install');
+  const packageAt = (version: string) =>
+    join(install, `cache/links/tuturuuu@${version}+hash/node_modules/tuturuuu`);
+  const entryAt = (version: string) =>
+    join(packageAt(version), 'dist/cli/resources-entry.js');
+  for (const version of ['0.28.0', '0.29.0']) {
+    await fs.mkdir(join(packageAt(version), 'dist/cli'), { recursive: true });
+    await fs.writeFile(entryAt(version), '// fixture');
+  }
+  const modules = join(install, 'global/node_modules');
+  await fs.mkdir(modules, { recursive: true });
+  const alias = join(modules, 'tuturuuu');
+  await fs.symlink(packageAt('0.28.0'), alias);
+  const stable = join(alias, 'dist/cli/resources-entry.js');
+  await installResourceShims(home, entryAt('0.28.0'));
+  // Published 0.28.0 used pinned cache paths rather than the stable global link.
+  for (const name of resourceShims) {
+    const file = join(home, 'bin', name);
+    await fs.writeFile(
+      file,
+      (await fs.readFile(file, 'utf8'))
+        .replace(stable, entryAt('0.28.0'))
+        .replace('# Resource scheduler protocol: 3\n', '')
+    );
+  }
+  await fs.unlink(alias);
+  await fs.symlink(packageAt('0.29.0'), alias);
+  await expect(installResourceShims(home, entryAt('0.29.0'))).resolves.toBe(
+    join(home, 'bin')
+  );
+  for (const name of resourceShims) {
+    expect(await fs.readFile(join(home, 'bin', name), 'utf8')).toContain(
+      stable
+    );
+    expect(await fs.readFile(join(home, 'bin', name), 'utf8')).not.toContain(
+      '0.28.0'
+    );
+  }
+});
+
+it('previews forced replacement and requires a drained queue before applying it', async () => {
+  const home = await fixture();
+  const last = join(home, 'bin', resourceShims.at(-1)!);
+  const foreign = (await fs.readFile(last, 'utf8')).replace(
+    'resources-entry',
+    'workspace-resources-entry'
+  );
+  await fs.writeFile(last, foreign);
+  const args = ['setup', '--shell', 'none', '--force', '--dry-run', '--json'];
+  const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
+  const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+  try {
+    await runResourcesCommand(args);
+    expect(
+      JSON.parse(String(stdout.mock.calls.at(-1)![0])).replacements
+    ).toHaveLength(1);
+    expect(stderr.mock.calls.flat().join('')).toContain('Would replace');
+    expect(stderr.mock.calls.flat().join('')).toContain(
+      'workspace-resources-entry'
+    );
+  } finally {
+    stdout.mockRestore();
+    stderr.mockRestore();
+  }
+  expect(await fs.readFile(last, 'utf8')).toBe(foreign);
+  const { newOwner } = await import('./resources-slots');
+  const owner = join(home, 'slots/0/owner.json');
+  await atomicJson(owner, newOwner('fixture'));
+  const { setupResources } = await import('./resources-setup');
+  const options = { home, roots: [], shell: 'none', force: true };
+  await expect(setupResources(options)).rejects.toThrow('drain');
+  expect(await fs.readFile(last, 'utf8')).toBe(foreign);
+  await fs.rm(join(home, 'slots'), { recursive: true });
+  await setupResources(options);
+  expect(await fs.readFile(last, 'utf8')).not.toContain(
+    'workspace-resources-entry'
+  );
+  await fs.writeFile(last, 'unmanaged file');
+  await expect(setupResources(options)).rejects.toThrow(
+    '--force never replaces unmanaged'
+  );
+  expect(await fs.readFile(last, 'utf8')).toBe('unmanaged file');
+});

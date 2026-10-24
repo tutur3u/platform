@@ -25,10 +25,9 @@ class EventLayoutInfo {
 ///
 /// Uses greedy interval-graph coloring: events sorted by start time are
 /// assigned to the first available column that has no time conflict. Timeline
-/// callers include their rendered minimum duration. Singleton temporal
-/// components
-/// cap that minimum at the next disjoint start; genuine overlap clusters keep
-/// their readable physical extent, without changing event timestamps.
+/// callers include their rendered minimum duration only for painting. Real
+/// half-open event intervals determine columns; painted minimums stop at the
+/// next disconnected component so short cards cannot cover its tap targets.
 List<EventLayoutInfo> calculateEventLayout(
   List<CalendarEvent> events, {
   Duration minimumDuration = Duration.zero,
@@ -47,8 +46,7 @@ List<EventLayoutInfo> calculateEventLayout(
       return bDur.compareTo(aDur);
     });
 
-  // Only singleton temporal components may shrink their readable minimum.
-  // Real overlap clusters retain their existing physical tap/readability space.
+  // Keep readable minimums within each real overlap component.
   final paintEnds = <CalendarEvent, DateTime>{};
   var componentStart = 0;
   var componentEnd =
@@ -64,9 +62,7 @@ List<EventLayoutInfo> calculateEventLayout(
       final actualEnd = event.endAt ?? start.add(const Duration(minutes: 30));
       final minimumEnd = start.add(minimumDuration);
       var end = actualEnd.isBefore(minimumEnd) ? minimumEnd : actualEnd;
-      if (exclusiveEnd - componentStart == 1 &&
-          nextStart != null &&
-          nextStart.isBefore(end)) {
+      if (nextStart != null && nextStart.isBefore(end)) {
         end = nextStart;
       }
       paintEnds[event] = end;
@@ -94,13 +90,21 @@ List<EventLayoutInfo> calculateEventLayout(
 
   final result = <EventLayoutInfo>[];
   void flushGroup() {
-    for (final assignment in assignments) {
+    for (var i = 0; i < assignments.length; i++) {
+      final assignment = assignments[i];
+      var paintEnd = paintEnds[assignment.$1]!;
+      for (var j = i + 1; j < assignments.length; j++) {
+        if (assignments[j].$2 != assignment.$2) continue;
+        final nextStart = assignments[j].$1.startAt ?? DateTime(0);
+        if (nextStart.isBefore(paintEnd)) paintEnd = nextStart;
+        break;
+      }
       result.add(
         EventLayoutInfo(
           event: assignment.$1,
           column: assignment.$2,
           totalColumns: columnEnds.length,
-          paintDuration: paintEnds[assignment.$1]!.difference(
+          paintDuration: paintEnd.difference(
             assignment.$1.startAt ?? DateTime(0),
           ),
         ),
@@ -112,7 +116,7 @@ List<EventLayoutInfo> calculateEventLayout(
 
   for (final event in sorted) {
     final start = event.startAt ?? DateTime(0);
-    final end = paintEnds[event]!;
+    final end = event.endAt ?? start.add(const Duration(minutes: 30));
 
     // Half-open intervals that start after every active end form a new
     // connected component. Transitive overlaps retain the same columns.

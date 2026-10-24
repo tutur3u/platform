@@ -76,7 +76,7 @@ Plan 163 in a new worktree with immediate `bun setup`.
 | Type generation | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/task-history-revert.sql` | generated types reflect only the new server boundary |
 | Typechecks | `bun run --cwd apps/tasks type-check && bun run --cwd packages/tasks-ui type-check && bun run --cwd packages/utils type-check` | all exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -148,7 +148,7 @@ not push.
    failure must leave before/after state identical; success must equal the
    selected snapshot while unselected fields remain current.
 6. Run focused/full database validation, typegen, route/hook tests, Tasks typecheck
-   and build, `bun check`, and whitespace.
+   and build, `bun validate`, and whitespace.
 
 ## Done criteria
 

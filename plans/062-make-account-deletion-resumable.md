@@ -64,7 +64,7 @@ foreign-key effects before selecting retry transitions.
 | Cron registry test | `node --test scripts/web-crons.test.js` | cron synchronization contract passes |
 | Localization | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | message files are sorted and parity/namespace checks pass |
 | Typechecks | `bun run --cwd apps/web type-check && bun run --cwd apps/tanstack-web type-check && bun run --cwd packages/internal-api type-check` | all exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | TanStack build | `bun run --cwd apps/tanstack-web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |

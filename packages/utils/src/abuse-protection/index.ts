@@ -8,7 +8,13 @@
 import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
+import { sanitizeLogError, sanitizeLogValue } from '../log-sanitizer';
 import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
+import {
+  type ClientIpConfig,
+  type ClientIpHeaders,
+  resolveClientIp,
+} from './client-ip';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
@@ -26,6 +32,7 @@ import type {
 } from './types';
 
 // Re-export types and constants
+export * from './client-ip';
 export * from './constants';
 export * from './reputation';
 export * from './types';
@@ -48,22 +55,18 @@ let redisClient: RedisClient | null = null;
 let redisInitialized = false;
 
 function markRedisUnavailable(message: string, ...details: unknown[]): void {
-  if (details.length > 0) {
-    console.warn(message, ...details);
-  } else {
-    console.warn(message);
-  }
+  console.warn(message, ...details.map((detail) => sanitizeLogError(detail)));
 
   redisClient = null;
   redisInitialized = true;
 }
 
+function logAbuseError(message: string, error: unknown): void {
+  console.error(message, sanitizeLogError(error));
+}
+
 function markRedisCommandFailed(message: string, ...details: unknown[]): void {
-  if (details.length > 0) {
-    console.warn(message, ...details);
-  } else {
-    console.warn(message);
-  }
+  console.warn(message, ...details.map((detail) => sanitizeLogError(detail)));
 
   redisClient = null;
   redisInitialized = false;
@@ -125,59 +128,17 @@ async function getRedisClient(): Promise<RedisClient | null> {
 }
 
 /**
- * Validate IP address format
- */
-function isValidIP(ip: string): boolean {
-  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
-  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
-}
-
-/**
- * Extract client IP address from request headers
- * Works with Next.js headers() in Server Actions
+ * Extract the client IP address from request headers.
+ *
+ * Only headers set by the proxy this deployment is configured to trust are
+ * read (see `client-ip.ts`). Returns `'unknown'` when no trusted address is
+ * available; callers should still rate-limit and block-check that bucket.
  */
 export function extractIPFromHeaders(
-  headers: Headers | Map<string, string> | Record<string, string | null>
+  headers: ClientIpHeaders,
+  config?: ClientIpConfig
 ): string {
-  const getHeader = (name: string): string | null => {
-    if (headers instanceof Headers) {
-      return headers.get(name);
-    }
-    if (headers instanceof Map) {
-      return headers.get(name) || null;
-    }
-    return headers[name] || null;
-  };
-
-  // Check cf-connecting-ip (Cloudflare)
-  const cfIP = getHeader('cf-connecting-ip');
-  if (cfIP && isValidIP(cfIP)) {
-    return cfIP;
-  }
-
-  // Check true-client-ip (some Cloudflare/enterprise proxy setups)
-  const trueClientIP = getHeader('true-client-ip');
-  if (trueClientIP && isValidIP(trueClientIP)) {
-    return trueClientIP;
-  }
-
-  // Check x-forwarded-for after explicit client IP headers
-  const forwardedFor = getHeader('x-forwarded-for');
-  if (forwardedFor) {
-    const firstIP = forwardedFor.split(',')[0]?.trim();
-    if (firstIP && isValidIP(firstIP)) {
-      return firstIP;
-    }
-  }
-
-  // Check x-real-ip (Nginx)
-  const realIP = getHeader('x-real-ip');
-  if (realIP && isValidIP(realIP)) {
-    return realIP;
-  }
-
-  return 'unknown';
+  return resolveClientIp(headers, config);
 }
 
 /**
@@ -196,8 +157,7 @@ function normalizeAbuseEventEmail(email?: string): string | null {
 }
 
 function sanitizeAbuseLogValue(value: string | null | undefined) {
-  const normalized = value?.trim();
-  return normalized ? normalized.slice(0, 256) : null;
+  return value?.trim() ? sanitizeLogValue(value.trim(), 256) : null;
 }
 
 function createAbuseLogContext(
@@ -310,7 +270,7 @@ async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
     );
     return (await createAdminClient()) as SupabaseClient<Database>;
   } catch (error) {
-    console.error(
+    logAbuseError(
       '[Abuse Protection] Failed to create Supabase client:',
       error
     );
@@ -409,7 +369,7 @@ export async function isIPBlocked(
 
     return blockInfo;
   } catch (error) {
-    console.error('[Abuse Protection] DB error checking block:', error);
+    logAbuseError('[Abuse Protection] DB error checking block:', error);
     return null;
   }
 }
@@ -473,7 +433,7 @@ export async function blockIP(
       .single();
 
     if (error) {
-      console.error('[Abuse Protection] Error creating block:', error);
+      logAbuseError('[Abuse Protection] Error creating block:', error);
       return;
     }
 
@@ -503,10 +463,10 @@ export async function blockIP(
     }
 
     console.log(
-      `[Abuse Protection] Blocked IP ${ipAddress} at level ${newLevel} for ${blockDuration}s due to ${reason}`
+      `[Abuse Protection] Blocked IP ${sanitizeLogValue(ipAddress)} at level ${newLevel} for ${blockDuration}s due to ${sanitizeLogValue(reason)}`
     );
   } catch (error) {
-    console.error('[Abuse Protection] Error blocking IP:', error);
+    logAbuseError('[Abuse Protection] Error blocking IP:', error);
   }
 }
 
@@ -537,7 +497,7 @@ export async function unblockIP(
       .eq('status', 'active');
 
     if (error) {
-      console.error('[Abuse Protection] Error unblocking IP:', error);
+      logAbuseError('[Abuse Protection] Error unblocking IP:', error);
       return false;
     }
 
@@ -550,11 +510,11 @@ export async function unblockIP(
     }
 
     console.log(
-      `[Abuse Protection] Unblocked IP ${ipAddress} by user ${unblockingUserId}`
+      `[Abuse Protection] Unblocked IP ${sanitizeLogValue(ipAddress)} by user ${unblockingUserId}`
     );
     return true;
   } catch (error) {
-    console.error('[Abuse Protection] Error unblocking IP:', error);
+    logAbuseError('[Abuse Protection] Error unblocking IP:', error);
     return false;
   }
 }
@@ -585,7 +545,7 @@ export async function logAbuseEvent(
       },
     ]);
   } catch (error) {
-    console.error('[Abuse Protection] Error logging event:', error);
+    logAbuseError('[Abuse Protection] Error logging event:', error);
   }
 }
 

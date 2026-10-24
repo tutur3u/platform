@@ -81,7 +81,7 @@ Tasks/database/type owners transfer these paths. Read the nearest AGENTS files.
 | Focused database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/task-progress-leaderboard-lifecycle.sql` | fresh migration, ACL, RLS, atomicity, and generated types pass |
 | Full database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP and isolated typegen pass |
 | App typecheck/build | `bun type-check:tasks && bun run --cwd apps/tasks build` | Tasks compiles and builds |
-| Repository | `bun check && git diff --check` | all checks pass; diff is whitespace-clean |
+| Repository | `bun validate && git diff --check` | all checks pass; diff is whitespace-clean |
 
 ## Scope
 
@@ -116,7 +116,7 @@ changes are involved because Tasks owns this API.
    service-role ACL, valid atomic create, foreign actor/metric rejection, and a
    forced creator-member insert failure that leaves no leaderboard.
 5. Run focused routes, focused/full isolated DB+typegen, Tasks typecheck/build,
-   `bun check`, whitespace, and exact-scope review.
+   `bun validate`, whitespace, and exact-scope review.
 
 ## Done criteria
 

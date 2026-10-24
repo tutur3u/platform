@@ -1,8 +1,9 @@
 /* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache release inputs */
 import { createHash } from 'node:crypto';
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { readFileSnapshot } from '../safe-fs.js';
 import { DESKTOP_PLATFORMS, parsePlatforms } from './platforms.mjs';
 
 export const RELEASE_FILES = [
@@ -44,12 +45,9 @@ export async function verifyPublication(directory, source, run, selected) {
   const hashes = {};
   for (const name of expected) {
     const file = join(directory, name);
-    const stat = await lstat(file);
-    if (!stat.isFile() || stat.size <= 0)
-      throw new Error('Invalid release asset');
-    hashes[name] = createHash('sha256')
-      .update(await readFile(file))
-      .digest('hex');
+    const { data, stat } = await readFileSnapshot(file);
+    if (stat.size <= 0) throw new Error('Invalid release asset');
+    hashes[name] = createHash('sha256').update(data).digest('hex');
   }
   const verifications = {};
   for (const platform of platforms.filter((item) => item in RECEIPTS)) {

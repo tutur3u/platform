@@ -55,7 +55,7 @@ not hard-code English UI text.
 | Focused test | `bun --cwd apps/hive vitest run 'src/app/~recover-browser-state/route.test.ts'` | all cases pass |
 | Sort messages | `bun i18n:sort` | message bundles are sorted |
 | Hive typecheck | `bun run --cwd apps/hive type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Hive build | `bun run --cwd apps/hive build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -115,7 +115,7 @@ and cross-origin/malformed/missing evidence cannot clear cookies or site data.
 - [ ] Only same-origin POST performs recovery.
 - [ ] Redirect and no-store behavior remain correct for Hive origins.
 - [ ] English/Vietnamese copy is present and sorted.
-- [ ] Focused tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

@@ -54,7 +54,7 @@ compare at least one dependency-light package workflow.
 | CI cache test | `node --test scripts/ci/ci-cache-policy.test.js` | package workflow count/policy pass |
 | Package tests/build | `bun run --cwd packages/masonry test && bun run --cwd packages/masonry build` | exit 0 |
 | Stale docs check | `rg -n -e '0\.3\.10 \(Stable\)' -e 'zero external dependencies' -e 'current release \(0\.4\.3\)' packages/masonry/README.md apps/docs/reference/packages/masonry.mdx` | no output |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -123,7 +123,7 @@ uses a token publish fallback. Existing package tests/build remain green.
 - [ ] Release validators explicitly cover it.
 - [ ] Manual version/login/publish instructions and stale current-version claims are gone.
 - [ ] No package version, release manifest, changelog, credential, or npm state changed.
-- [ ] Release/cache tests, package tests/build, stale-docs check, `bun check`, and whitespace pass.
+- [ ] Release/cache tests, package tests/build, stale-docs check, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

@@ -57,7 +57,7 @@ facade/test, then run `git status --short`.
 | Tasks UI types | `bun run --cwd packages/tasks-ui type-check` | exit 0 |
 | Internal API types | `bun run --cwd packages/internal-api type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -117,7 +117,7 @@ to array identity. Keep selected values renderable after the menu closes.
 Prove initial personal-view loading no longer scales by three requests per
 workspace: one workspace query plus one current-user board summary is the
 target before an optional selector opens. Run focused tests, both typechecks,
-the real Tasks build, and `bun check`.
+the real Tasks build, and `bun validate`.
 
 ## Test plan
 
@@ -133,7 +133,7 @@ the real Tasks build, and `bun check`.
 - [ ] Initial My Tasks request count no longer grows as `2 + 3W`.
 - [ ] Board pagination fan-out is replaced by the governed summary.
 - [ ] Label/project catalogs are demand-driven without filter regressions.
-- [ ] Focused tests, types, Tasks build, `bun check`, and whitespace pass.
+- [ ] Focused tests, types, Tasks build, `bun validate`, and whitespace pass.
 - [ ] No new endpoint, migration, or unrelated Tasks surface changed.
 
 ## STOP conditions

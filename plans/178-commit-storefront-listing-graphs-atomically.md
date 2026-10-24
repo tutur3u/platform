@@ -55,7 +55,7 @@ contract, route schemas, and root/database/Inventory AGENTS. Use completed Plan
 | Full DB | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Isolated types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/storefront-listing-graph.sql` | generated RPC types match the reviewed contract |
 | Types/build | `bun run --cwd packages/inventory-core type-check && bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

@@ -23,6 +23,16 @@ import {
   writeCache,
 } from './cache';
 
+function jsLiteral(value: unknown) {
+  const serialized = JSON.stringify(value);
+  if (serialized === undefined)
+    throw new TypeError('JavaScript literals must be JSON-serializable.');
+  return serialized.replace(
+    /[<>&/\u2028\u2029]/gu,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
+}
+
 const cache: SearchCache = {
   version: 1,
   projectionVersion: 1,
@@ -127,7 +137,7 @@ it('releases SQLite-derived locks after actual child process death', async () =>
     process.env.TTR_TEST_BUN ?? 'bun',
     [
       '-e',
-      `import {acquirePrivateLock} from ${JSON.stringify(module)}; globalThis.keepLock = acquirePrivateLock(${JSON.stringify(path)}); process.stdout.write('locked'); setInterval(()=>{},1000);`,
+      `import {acquirePrivateLock} from ${jsLiteral(module)}; globalThis.keepLock = acquirePrivateLock(${jsLiteral(path)}); process.stdout.write('locked'); setInterval(()=>{},1000);`,
     ],
     { stdio: ['ignore', 'pipe', 'pipe'] }
   );

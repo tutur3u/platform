@@ -173,20 +173,27 @@ class AuthMethodDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
-    return Row(
-      children: [
-        Expanded(child: Divider(color: theme.colorScheme.border)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            label ?? context.l10n.authContinueWithEmail,
-            style: theme.typography.small.copyWith(
-              color: theme.colorScheme.mutedForeground,
+    // Long labels wrap inside narrow form widths instead of overflowing.
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        children: [
+          Expanded(child: Divider(color: theme.colorScheme.border)),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                label ?? context.l10n.authContinueWithEmail,
+                textAlign: TextAlign.center,
+                style: theme.typography.small.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ),
             ),
           ),
-        ),
-        Expanded(child: Divider(color: theme.colorScheme.border)),
-      ],
+          Expanded(child: Divider(color: theme.colorScheme.border)),
+        ],
+      ),
     );
   }
 }

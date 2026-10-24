@@ -139,19 +139,19 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
       title: '',
       children: [
         SettingsTile(
-          icon: Icons.phonelink_lock_rounded,
+          icon: shad.LucideIcons.smartphone,
           title: l10n.deviceMfaTitle,
           subtitle: l10n.deviceMfaDescription,
           onTap: () => unawaited(showDeviceMfaSheet(context)),
         ),
         SettingsTile(
-          icon: Icons.devices_rounded,
+          icon: shad.LucideIcons.monitorSmartphone,
           title: l10n.securitySessionsTitle,
           subtitle: l10n.securitySessionsDescription,
           onTap: () => context.push(Routes.settingsAccountSecurity),
         ),
         SettingsTile(
-          icon: Icons.lock_outline_rounded,
+          icon: shad.LucideIcons.lock,
           title: l10n.appLockSettingsTitle,
           subtitle: appLockState.status == AppLockStatus.unavailable
               ? l10n.appLockUnavailableDescription
@@ -177,7 +177,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
         ),
         if (appLockEnabled)
           SettingsTile(
-            icon: Icons.timer_outlined,
+            icon: shad.LucideIcons.timer,
             title: l10n.appLockDelayTitle,
             subtitle: l10n.appLockDelayDescription,
             value: _appLockDelayLabel(context, appLockState.delay),
@@ -195,7 +195,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
                         ListTile(
                           title: Text(_appLockDelayLabel(context, delay)),
                           trailing: delay == appLockState.delay
-                              ? const Icon(Icons.check_rounded)
+                              ? const Icon(shad.LucideIcons.check)
                               : null,
                           onTap: () => Navigator.of(sheetContext).pop(delay),
                         ),
@@ -207,13 +207,13 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
             },
           ),
         SettingsTile(
-          icon: Icons.qr_code_scanner_rounded,
+          icon: shad.LucideIcons.scanQrCode,
           title: l10n.qrLoginSettingsTitle,
           subtitle: l10n.qrLoginSettingsDescription,
           onTap: () => context.push(Routes.settingsQrLoginScan),
         ),
         SettingsTile(
-          icon: Icons.verified_user_outlined,
+          icon: shad.LucideIcons.shieldCheck,
           title: l10n.mfaApprovalSettingsTitle,
           subtitle: pendingApproval != null
               ? l10n.deviceMfaReview
@@ -222,18 +222,18 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
               : _approvalError ?? l10n.mfaApprovalSettingsIdle,
           showChevron: false,
           trailing: pendingApproval != null
-              ? shad.PrimaryButton(
-                  enabled: _approvingChallengeId == null,
-                  size: shad.ButtonSize.small,
-                  onPressed: () =>
-                      unawaited(_approveMfaRequest(pendingApproval)),
-                  child: _approvingChallengeId == pendingApproval.id
+              ? IconButton(
+                  tooltip: l10n.deviceMfaReview,
+                  onPressed: _approvingChallengeId == null
+                      ? () => unawaited(_approveMfaRequest(pendingApproval))
+                      : null,
+                  icon: _approvingChallengeId == pendingApproval.id
                       ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: NovaLoadingIndicator(size: 20),
                         )
-                      : Text(l10n.deviceMfaReview),
+                      : const Icon(shad.LucideIcons.shieldCheck),
                 )
               : (_approvalLoading || _approvalRefreshing)
               ? const SizedBox(
@@ -247,7 +247,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
               : null,
         ),
         SettingsTile(
-          icon: Icons.logout_rounded,
+          icon: shad.LucideIcons.logOut,
           title: l10n.authLogOutCurrent,
           subtitle: l10n.authLogOutCurrentDescription,
           isDestructive: true,

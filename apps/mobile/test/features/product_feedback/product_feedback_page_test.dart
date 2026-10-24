@@ -24,6 +24,12 @@ void main() {
     repository = _Repository();
   });
   Future<void> pump(WidgetTester tester) async {
+    // The form uses the 480px form width, so give the whole flow room to
+    // build without depending on lazy off-screen list children.
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(800, 1400);
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

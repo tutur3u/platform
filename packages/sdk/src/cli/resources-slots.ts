@@ -357,7 +357,9 @@ export async function occupancy(
   if (
     names.some((name) => !/^(0|[1-7])$/.test(name) || Number(name) >= maxLanes)
   )
-    throw new Error('Unknown resource slot; admission is closed.');
+    throw new Error(
+      'Unknown resource slot; admission is closed. A slots/budget-v3 marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
+    );
   const owners: ResourceOwner[] = [];
   const ownerSlots: string[] = [];
   const occupied: string[] = [];
