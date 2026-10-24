@@ -36,6 +36,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/topic-announcement-verifications/[token]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/topic-announcement-verifications/%5Btoken%5D/route.ts) |
 | `/api/v1/user/onboarding-progress` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/user/onboarding-progress/route.ts) |
 | `/api/v1/user/profile` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/user/profile/route.ts) |
+| `/api/v1/users/calendar-settings` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/calendar-settings/route.ts) |
 | `/api/v1/users/chatgpt` | DELETE, GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/chatgpt/route.ts) |
 | `/api/v1/users/me/avatar` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/me/avatar/route.ts) |
 | `/api/v1/users/me/avatar/upload` | OPTIONS, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/me/avatar/upload/route.ts) |
@@ -82,6 +83,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/api-keys` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/api-keys/route.ts) |
 | `/api/v1/workspaces/[wsId]/avatar` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/avatar/route.ts) |
 | `/api/v1/workspaces/[wsId]/avatar/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/avatar/upload-url/route.ts) |
+| `/api/v1/workspaces/[wsId]/calendar-settings` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/calendar-settings/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/channels/[channelId]/messages` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/channels/%5BchannelId%5D/messages/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/channels/[channelId]/participants` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/channels/%5BchannelId%5D/participants/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/channels/[channelId]/typing` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/channels/%5BchannelId%5D/typing/route.ts) |
@@ -189,7 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/external-projects/storage-analytics` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/storage-analytics/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/submissions/[entryId]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/submissions/%5BentryId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/submissions` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/submissions/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/summary` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/summary/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/sync/apply` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/sync/apply/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

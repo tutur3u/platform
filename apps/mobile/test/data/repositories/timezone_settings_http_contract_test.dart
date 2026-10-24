@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 
 import '../../helpers/timezone_http_harness.dart';
@@ -20,7 +23,7 @@ void main() {
     h.dispose();
   });
   test(
-    'production gateway 401 refreshes the token and retries timezone reads',
+    'production Web 401 refreshes the token and retries timezone reads',
     () async {
       await cubit.close();
       h.dispose();
@@ -50,10 +53,7 @@ void main() {
         h.requests.last.headers['authorization'],
         'Bearer synthetic-renewed',
       );
-      expect(
-        h.requests.every((r) => r.url.host == 'infrastructure.tuturuuu.com'),
-        true,
-      );
+      expect(h.requests.every((r) => r.url.host == 'tuturuuu.com'), true);
     },
   );
 
@@ -68,20 +68,20 @@ void main() {
   );
 
   test(
-    'production GET/PATCH preference contracts retain Bearer and gateway',
+    'production GET/PATCH preference contracts retain Bearer and direct Web routing',
     () async {
       final values = {
         'users/calendar-settings': 'auto',
         'workspaces/synthetic-ws/calendar-settings': 'UTC',
       };
       h.respond = (req) async {
-        expect(req.url.host, 'infrastructure.tuturuuu.com');
+        expect(req.url.host, 'tuturuuu.com');
         expect(req.headers['authorization'], 'Bearer synthetic-access');
         expect(
           req.url.path,
           isIn(const [
-            '/api/v1/mobile-calendar/api/v1/users/calendar-settings',
-            '/api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+            '/api/v1/users/calendar-settings',
+            '/api/v1/workspaces/synthetic-ws/calendar-settings',
           ]),
         );
         final path = req.url.path.split('/api/v1/').last;
@@ -106,10 +106,10 @@ void main() {
       expect(
         h.requests.map((r) => '${r.method} ${r.url.path}'),
         containsAll(const [
-          'GET /api/v1/mobile-calendar/api/v1/users/calendar-settings',
-          'GET /api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
-          'PATCH /api/v1/mobile-calendar/api/v1/users/calendar-settings',
-          'PATCH /api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+          'GET /api/v1/users/calendar-settings',
+          'GET /api/v1/workspaces/synthetic-ws/calendar-settings',
+          'PATCH /api/v1/users/calendar-settings',
+          'PATCH /api/v1/workspaces/synthetic-ws/calendar-settings',
         ]),
       );
       expect(h.requests.where((r) => r.method == 'PATCH'), hasLength(2));
@@ -228,4 +228,49 @@ void main() {
     expect(cubit.state.failed, true);
     expect(h.requests.where((r) => r.method == 'PATCH'), hasLength(1));
   });
+  test(
+    'personal PATCH denial retains adaptive actor quota diagnostics',
+    () async {
+      h.respond = (request) async {
+        expect(request.method, 'PATCH');
+        expect(request.url.host, 'tuturuuu.com');
+        expect(request.url.path, '/api/v1/users/calendar-settings');
+        expect(request.headers['authorization'], 'Bearer synthetic-access');
+        return http.Response(
+          '{"error":"private upstream body"}',
+          429,
+          headers: {
+            'content-type': 'application/json',
+            'x-proxy-block-reason': 'rate-limit-exceeded',
+            'x-ratelimit-policy': 'calendar-session-user-mutate',
+            'x-ratelimit-caller-class': 'authenticated',
+            'x-ratelimit-window': 'minute',
+            'retry-after': '17',
+            'x-vercel-id': 'private-vercel-id',
+            'authorization': 'Bearer private-header-token',
+          },
+        );
+      };
+      try {
+        await h.repository.savePersonal('UTC');
+        fail('Expected mutation quota rejection');
+      } on ApiException catch (error) {
+        expect(error.statusCode, 429);
+        expect(error.retryAfter, 17);
+        final diagnostics = error.rateLimitDiagnostics!;
+        expect(diagnostics.policy, 'calendar-session-user-mutate');
+        expect(diagnostics.reason, 'rate-limit-exceeded');
+        expect(diagnostics.callerClass, 'authenticated');
+        expect(diagnostics.window, 'minute');
+        final summary = SafeErrorDiagnostics.capture(
+          error,
+          DiagnosticStage.timezoneWrite,
+        ).summary;
+        expect(summary, contains('policy=calendar-session-user-mutate'));
+        expect(summary, isNot(contains('private')));
+      }
+      expect(h.requests, hasLength(1));
+      expect(h.refreshes, 0);
+    },
+  );
 }
