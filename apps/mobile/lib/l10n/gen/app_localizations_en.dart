@@ -10933,4 +10933,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaUploadExpired => 'The upload link expired or is invalid. Select the image again.';
+
+  @override
+  String get settingsNativeVerificationFailed => 'Could not verify this device. Check your connection and try again.';
 }

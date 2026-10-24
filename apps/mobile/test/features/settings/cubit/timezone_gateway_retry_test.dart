@@ -90,7 +90,10 @@ void main() {
       baseUrl: 'https://infra.test',
       authClient: client,
       clock: () => now,
-      httpClient: MockClient((_) async {
+      httpClient: MockClient((request) async {
+        if (request.url.path.endsWith('/native-integrity/challenge')) {
+          return http.Response('{"mode":"off"}', 200);
+        }
         requests++;
         return http.Response(
           '{}',
@@ -129,6 +132,9 @@ void main() {
         baseUrl: 'https://infra.test',
         authClient: client,
         httpClient: MockClient((request) async {
+          if (request.url.path.endsWith('/native-integrity/challenge')) {
+            return http.Response('{"mode":"off"}', 200);
+          }
           requests++;
           final workspace = request.url.path.contains('/workspaces/');
           final succeeds = attempt == 0 ? !workspace : workspace;
@@ -183,6 +189,9 @@ void main() {
       baseUrl: 'https://infra.test/api/v1/mobile-calendar',
       authClient: client,
       httpClient: MockClient((request) async {
+        if (request.url.path.endsWith('/native-integrity/challenge')) {
+          return http.Response('{"mode":"off"}', 200);
+        }
         requests++;
         headers.add(request.headers['authorization']);
         if (blocked) {
@@ -234,7 +243,10 @@ void main() {
       final api = ApiClient(
         baseUrl: 'https://infra.test',
         authClient: client,
-        httpClient: MockClient((_) async {
+        httpClient: MockClient((request) async {
+          if (request.url.path.endsWith('/native-integrity/challenge')) {
+            return http.Response('{"mode":"off"}', 200);
+          }
           requests++;
           return http.Response('{}', 429, headers: {'retry-after': '30'});
         }),
@@ -277,6 +289,9 @@ void main() {
       baseUrl: 'https://infra.test',
       authClient: client,
       httpClient: MockClient((request) async {
+        if (request.url.path.endsWith('/native-integrity/challenge')) {
+          return http.Response('{"mode":"off"}', 200);
+        }
         requests++;
         return accountChanged || request.url.path.contains('/workspaces/')
             ? http.Response('{}', 429, headers: {'retry-after': '30'})

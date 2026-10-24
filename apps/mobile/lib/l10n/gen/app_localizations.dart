@@ -20724,6 +20724,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The upload link expired or is invalid. Select the image again.'**
   String get profileMediaUploadExpired;
+
+  /// No description provided for @settingsNativeVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify this device. Check your connection and try again.'**
+  String get settingsNativeVerificationFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

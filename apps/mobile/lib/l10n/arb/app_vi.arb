@@ -4630,5 +4630,6 @@
   "feedbackSubjectRequired": "Nhập tiêu đề từ 1–160 ký tự.",
   "feedbackDetailsRequired": "Nhập chi tiết từ 1–8000 ký tự.",
   "profileMediaNetworkError": "Không thể kết nối. Kiểm tra kết nối và thử lại.",
-  "profileMediaUploadExpired": "Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh."
+  "profileMediaUploadExpired": "Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.",
+  "settingsNativeVerificationFailed": "Không thể xác minh thiết bị này. Hãy kiểm tra kết nối và thử lại."
 }

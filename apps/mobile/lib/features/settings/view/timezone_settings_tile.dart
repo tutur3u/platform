@@ -150,7 +150,9 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
               coolingDown: _coolingDown,
             )
           : state.failed
-          ? state.errorMessage == null
+          ? state.errorMessage == 'NATIVE_INTEGRITY_REQUIRED'
+                ? context.l10n.settingsNativeVerificationFailed
+                : state.errorMessage == null
                 ? context.l10n.settingsTimezoneError
                 : '${context.l10n.settingsTimezoneError}\n${state.errorMessage}'
           : !state.resolved

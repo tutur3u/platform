@@ -4639,5 +4639,6 @@
   "feedbackSubjectRequired": "Enter a subject of 1–160 characters.",
   "feedbackDetailsRequired": "Enter details of 1–8000 characters.",
   "profileMediaNetworkError": "Could not connect. Check your connection and try again.",
-  "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again."
+  "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again.",
+  "settingsNativeVerificationFailed": "Could not verify this device. Check your connection and try again."
 }

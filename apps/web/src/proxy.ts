@@ -80,7 +80,6 @@ function resolveConfiguredOrigin(value?: string) {
   if (!firstValue) {
     return null;
   }
-
   const normalized = /^[a-z]+:\/\//iu.test(firstValue)
     ? firstValue
     : `https://${firstValue}`;
@@ -1039,8 +1038,9 @@ async function guardGuestWorkspaceRoute({
     return null;
   }
 }
-
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  if (req.nextUrl.pathname === '/native-integrity/turnstile')
+    return NextResponse.next();
   if (req.nextUrl.pathname.startsWith('/api')) {
     const versionedAsset = isVersionedExternalProjectAssetDeliveryRequest(
       req.method,
