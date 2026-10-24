@@ -25,8 +25,22 @@ Intentional exceptions: existing Calendar browser/app-session clients retain
 Calendar's routes, published older mobile builds retain Infrastructure's gateway
 allowlist, and other native Calendar APIs keep their gateway routing. Retaining
 the gateway requires its private-credential hosting exception until those builds
-are retired. New mobile preferences do not require Turnstile or a WebView; native
-attestation is a default-off design follow-up in the protection runbook.
+are retired. New mobile preferences do not require Turnstile or a WebView by default.
+Optional Apple App Attest and Android Play Integrity use a server mode defaulting
+to `off`. `monitor` verifies available proofs and records scalar verdicts without
+blocking existing auth/MFA/quota/permission controls. Turnstile is a bot-abuse
+speed bump, not native attestation; it is separately disabled by default and
+requires operator-owned unsupported-actor eligibility. Live Apple or verified
+Play capability bars that downgrade while native proofs remain valid across an
+actor's devices. Headers and User-Agent claims cannot grant eligibility.
+
+`enforce` stays inactive pending provider/device/fallback and older-client
+acceptance. The guard also covers existing Web browser/server consumers without
+proofs; their proof coverage or a separately reviewed trusted-browser policy is
+mandatory before activation. Missing headers never grant an exemption. Proofs
+never replace workspace authorization or hosting clearance. See the
+[native integrity rollout](/build/devops/calendar-native-api-protection#native-integrity-rollout-default-off)
+for exact configuration, capacity, retention/deletion and rollback gates.
 The [regression inventory](/build/devops/calendar-native-api-protection#regression-evidence)
 links shared-domain, Web auth/guard/header, rewrite ownership and Flutter origin
 coverage for this decision; provider configuration and device acceptance are

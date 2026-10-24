@@ -48,8 +48,8 @@ These rows are the one place a row shows both a value line and a short trailing
 value. When a row has a value line, its trailing value sits on the title line, so
 the value keeps the full text width; at enlarged text it moves under the title.
 The explanation of Automatic and the zone list stay in the picker opened from the
-row. The mobile tz database is the full set (`latest_all`), so legacy aliases
-resolve for labels, Calendar, reminders and inventory pricing.
+row. Offsets resolve through `core/utils/timezone_location.dart`, which loads the
+full tz data when a native alias such as `Asia/Saigon` is missing.
 `timezone_label_test.dart` checks every supported zone,
 `settings_timezone_rows_checks.dart` checks the one-line rows in both languages,
 and `timezone_resolution_scope_test.dart` checks the scoped states.

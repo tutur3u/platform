@@ -1,4 +1,4 @@
-import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 /// Ids whose last segment is not a readable city: renamed zones and POSIX
@@ -27,16 +27,6 @@ const _cityAliases = <String, String>{
 /// Ids that name a time standard rather than a city.
 const _standards = {'UTC', 'Etc/UTC', 'Etc/GMT', 'GMT'};
 
-bool _databaseReady = false;
-
-/// Loads the full tz database once. The full set keeps the legacy aliases
-/// (for example `Asia/Saigon`) that devices and stored preferences still use.
-void ensureTimeZoneDatabase() {
-  if (_databaseReady) return;
-  tz_data.initializeTimeZones();
-  _databaseReady = true;
-}
-
 /// City shown for [zone], such as "Ho Chi Minh City" for `Asia/Saigon`.
 ///
 /// [localizedCities] overrides the English exemplar city for a canonical
@@ -54,13 +44,12 @@ String timezoneCity(
 /// Returns null when the zone is not in the tz database.
 String? timezoneOffset(String zone, {DateTime? at}) {
   if (_standards.contains(zone)) return 'GMT';
-  ensureTimeZoneDatabase();
   final Duration offset;
   try {
-    offset = tz
-        .getLocation(zone)
-        .timeZone((at ?? DateTime.now()).millisecondsSinceEpoch)
-        .offset;
+    // Resolves native aliases such as Asia/Saigon (see timezone_location).
+    offset = timezoneLocation(
+      zone,
+    ).timeZone((at ?? DateTime.now()).millisecondsSinceEpoch).offset;
   } on tz.LocationNotFoundException {
     return null;
   }

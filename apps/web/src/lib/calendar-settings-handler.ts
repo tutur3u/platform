@@ -14,6 +14,7 @@ import { getVerifiedMfaBearerUser } from '@tuturuuu/utils/required-mfa-runtime';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { calendarPersonalSessionControls } from './calendar-personal-mutation-quota';
+import { guardNativeCalendarIntegrity } from './native-integrity/guard';
 
 export async function handleCalendarSettings(
   request: NextRequest,
@@ -59,6 +60,8 @@ export async function handleCalendarSettings(
         : { response: null, headers: {}, finalize };
     finalize = quota.finalize;
     if (quota.response) return finalize(quota.response);
+    const integrity = await guardNativeCalendarIntegrity(request, auth.user.id);
+    if (integrity) return finalize(integrity);
     const context = { supabase: auth.supabase, userId: auth.user.id };
     const operation =
       request.method === 'PATCH'

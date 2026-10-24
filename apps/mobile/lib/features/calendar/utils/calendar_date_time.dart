@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
-import 'package:timezone/data/latest_all.dart' as data;
 import 'package:timezone/timezone.dart' as tz;
 
 /// An immutable date/wall-clock carrier; UTC avoids device DST arithmetic.
@@ -26,21 +26,11 @@ DateTime calendarDate(
   microsecond,
 );
 
-bool _initialized = false;
-tz.Location _location(String zone) {
-  if (zone == 'UTC') return tz.UTC;
-  if (!_initialized) {
-    data.initializeTimeZones();
-    _initialized = true;
-  }
-  return tz.getLocation(zone);
-}
-
 /// Native DateTime values here carry wall-clock fields, never stored instants.
 DateTime calendarWallDate(DateTime instant, String? zone) {
   final local = zone == null
       ? instant.toLocal()
-      : tz.TZDateTime.from(instant, _location(zone));
+      : tz.TZDateTime.from(instant, timezoneLocation(zone));
   return DateTime.utc(
     local.year,
     local.month,
@@ -86,7 +76,7 @@ DateTime calendarWallToUtc(DateTime wall, String? zone) {
           wall.microsecond,
         )
       : tz.TZDateTime(
-          _location(zone),
+          timezoneLocation(zone),
           wall.year,
           wall.month,
           wall.day,

@@ -10808,6 +10808,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileMediaUploadExpired => 'Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.';
 
   @override
+  String get settingsNativeVerificationFailed => 'Không thể xác minh thiết bị này. Hãy kiểm tra kết nối và thử lại.';
+
+  @override
   String get settingsTimezonePickerAll => 'Tất cả múi giờ';
 
   @override
