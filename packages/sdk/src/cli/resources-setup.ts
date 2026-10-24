@@ -23,7 +23,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
-import { withAdmission } from './resources-slots';
+import { hasSetupMaintenanceLease, withAdmission } from './resources-slots';
 
 const start = '# >>> ttr resources >>>';
 const end = '# <<< ttr resources <<<';
@@ -178,7 +178,8 @@ export async function setupResources(options: SetupOptions) {
     )
   );
   const upgrading = await assertBudgetSetupOwner(options.home, entry);
-  if (options.dryRun) return prepareResources(options, upgrading);
+  if (options.dryRun || (await hasSetupMaintenanceLease(options.home)))
+    return prepareResources(options, upgrading);
   return withAdmission(
     options.home,
     async () =>

@@ -10,7 +10,7 @@ describe('CLI package metadata', () => {
     });
   });
 
-  it('uses the trusted global ttr for workspace operations', () => {
+  it('routes the workspace ttr script through the trusted global CLI', () => {
     expect(packageJson.scripts.ttr).toBe('node ../../scripts/trusted-ttr.js');
   });
 });
