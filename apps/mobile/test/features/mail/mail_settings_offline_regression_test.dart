@@ -77,21 +77,42 @@ void main() {
   });
 
   for (final feature in ['mail', 'mail_settings']) {
-    for (final status in [PendingMutationStatus.conflict, PendingMutationStatus.failed]) {
+    for (final status in [
+      PendingMutationStatus.conflict,
+      PendingMutationStatus.failed,
+    ]) {
       test('$feature $status settings do not hold an archive', () async {
-        final held = PendingMutationRecord(id: 'held', feature: feature, method: 'PATCH',
-          path: path, createdAt: DateTime.utc(2026), userId: actor, workspaceId: ws,
-          status: status, payload: const {'senderName': 'Review'},
-          optimisticPatch: {'entityId': mailSettingsEntityId(mailbox)});
+        final held = PendingMutationRecord(
+          id: 'held',
+          feature: feature,
+          method: 'PATCH',
+          path: path,
+          createdAt: DateTime.utc(2026),
+          userId: actor,
+          workspaceId: ws,
+          status: status,
+          payload: const {'senderName': 'Review'},
+          optimisticPatch: {'entityId': mailSettingsEntityId(mailbox)},
+        );
         await queue.enqueue(held);
-        final archivePath = '${MailRepository.mailboxPath(ws, mailbox)}/messages/message/state';
-        when(() => api.patchJson(archivePath, {'action': 'archive'}))
-          .thenAnswer((_) async => {});
-        await queue.enqueueIfOffline(feature: 'mail', method: 'PATCH', path: archivePath,
-          workspaceId: ws, payload: {'action': 'archive'}, entityId: 'message');
+        final archivePath =
+            '${MailRepository.mailboxPath(ws, mailbox)}/messages/message/state';
+        when(
+          () => api.patchJson(archivePath, {'action': 'archive'}),
+        ).thenAnswer((_) async => {});
+        await queue.enqueueIfOffline(
+          feature: 'mail',
+          method: 'PATCH',
+          path: archivePath,
+          workspaceId: ws,
+          payload: {'action': 'archive'},
+          entityId: 'message',
+        );
         online = true;
         await queue.synchronize();
-        verify(() => api.patchJson(archivePath, {'action': 'archive'})).called(1);
+        verify(
+          () => api.patchJson(archivePath, {'action': 'archive'}),
+        ).called(1);
         final retained = (await queue.listPending()).single;
         expect(retained.id, held.id);
         expect(retained.feature, held.feature);
@@ -101,113 +122,201 @@ void main() {
     }
   }
 
-  test('invalidated HTTP success cannot confirm a later cached fallback', () async {
-    when(() => api.getJson(path)).thenAnswer((_) async => {'settings': {'senderName': 'Stored'}});
-    await repository.settings(ws, mailbox);
-    final held = Completer<Map<String, dynamic>>();
-    final entered = Completer<void>();
-    var calls = 0;
-    when(() => api.getJson(path)).thenAnswer((_) {
-      calls++;
-      if (calls == 1) { entered.complete(); return held.future; }
-      throw const ApiException.transport(message: 'Retry offline');
-    });
-    final pending = repository.settings(ws, mailbox);
-    await entered.future;
-    await cache.mutate(ws, () async {});
-    held.complete({'settings': {'senderName': 'Obsolete success'}});
-    final result = await pending;
-    expect(calls, 2);
-    expect(result['settings'], {'senderName': 'Stored'});
-    expect(result['settingsFresh'], isFalse);
-    when(() => api.getJson(path)).thenAnswer((_) async => {'settings': {'senderName': 'Current'}});
-    final current = await repository.settings(ws, mailbox);
-    expect(current['settingsFresh'], isTrue);
-    expect(current['settings'], {'senderName': 'Current'});
-  });
+  test(
+    'invalidated HTTP success cannot confirm a later cached fallback',
+    () async {
+      when(() => api.getJson(path)).thenAnswer(
+        (_) async => {
+          'settings': {'senderName': 'Stored'},
+        },
+      );
+      await repository.settings(ws, mailbox);
+      final held = Completer<Map<String, dynamic>>();
+      final entered = Completer<void>();
+      var calls = 0;
+      when(() => api.getJson(path)).thenAnswer((_) {
+        calls++;
+        if (calls == 1) {
+          entered.complete();
+          return held.future;
+        }
+        throw const ApiException.transport(message: 'Retry offline');
+      });
+      final pending = repository.settings(ws, mailbox);
+      await entered.future;
+      await cache.mutate(ws, () async {});
+      held.complete({
+        'settings': {'senderName': 'Obsolete success'},
+      });
+      final result = await pending;
+      expect(calls, 2);
+      expect(result['settings'], {'senderName': 'Stored'});
+      expect(result['settingsFresh'], isFalse);
+      when(() => api.getJson(path)).thenAnswer(
+        (_) async => {
+          'settings': {'senderName': 'Current'},
+        },
+      );
+      final current = await repository.settings(ws, mailbox);
+      expect(current['settingsFresh'], isTrue);
+      expect(current['settings'], {'senderName': 'Current'});
+    },
+  );
 
-  test('ordinary Mail invalidation retains registered settings refresh', () async {
-    var calls = 0;
-    when(() => api.getJson(path)).thenAnswer((_) async {
-      calls++;
-      return {'settings': {'senderName': 'Read $calls'}};
-    });
-    await repository.settings(ws, mailbox);
-    expect(calls, 1);
-    await cache.mutate(ws, () async {});
-    await store.refreshCachedResources(currentUserId: () => actor);
-    expect(calls, 2);
-    expect((await repository.cachedSettings(ws, mailbox))?['settings'], {'senderName': 'Read 2'});
-  });
+  test(
+    'ordinary Mail invalidation retains registered settings refresh',
+    () async {
+      var calls = 0;
+      when(() => api.getJson(path)).thenAnswer((_) async {
+        calls++;
+        return {
+          'settings': {'senderName': 'Read $calls'},
+        };
+      });
+      await repository.settings(ws, mailbox);
+      expect(calls, 1);
+      await cache.mutate(ws, () async {});
+      await store.refreshCachedResources(currentUserId: () => actor);
+      expect(calls, 2);
+      expect((await repository.cachedSettings(ws, mailbox))?['settings'], {
+        'senderName': 'Read 2',
+      });
+    },
+  );
 
-  test('offline sender delta retains a newer web signature on replay', () async {
-    final confirmed = mailSettingsFormValues({'senderName': 'Before', 'signatureText': 'Old'});
-    final draft = {...confirmed, 'senderName': 'New'};
-    final delta = mailSettingsChanges(confirmed, draft);
-    expect(delta, {'senderName': 'New'});
-    final server = {'senderName': 'Before', 'signatureText': 'New web signature', 'aiInstructions': 'Web instructions'};
-    await repository.updateSettings(ws, mailbox, delta);
-    expect(queue.pending.value.single.feature, 'mail_settings');
-    when(() => api.patchJson(path, any())).thenAnswer((invocation) async {
-      server.addAll(invocation.positionalArguments[1] as Map<String, dynamic>);
-      return {'settings': server};
-    });
-    online = true;
-    await queue.synchronize();
-    expect(server['senderName'], 'New');
-    expect(server['signatureText'], 'New web signature');
-    expect(server['aiInstructions'], 'Web instructions');
-    expect(mailSettingsChanges(confirmed, confirmed), isEmpty);
-    expect(mailSettingsChanges(confirmed, {...confirmed, 'signatureText': ''}),
-      {'signatureText': '', 'signatureHtml': null});
-  });
+  test(
+    'offline sender delta retains a newer web signature on replay',
+    () async {
+      final confirmed = mailSettingsFormValues({
+        'senderName': 'Before',
+        'signatureText': 'Old',
+      });
+      final draft = {...confirmed, 'senderName': 'New'};
+      final delta = mailSettingsChanges(confirmed, draft);
+      expect(delta, {'senderName': 'New'});
+      final server = <String, dynamic>{
+        'senderName': 'Before',
+        'signatureText': 'New web signature',
+        'aiInstructions': 'Web instructions',
+      };
+      await repository.updateSettings(ws, mailbox, delta);
+      expect(queue.pending.value.single.feature, 'mail_settings');
+      when(() => api.patchJson(path, any())).thenAnswer((invocation) async {
+        server.addAll(
+          invocation.positionalArguments[1] as Map<String, dynamic>,
+        );
+        return {'settings': server};
+      });
+      online = true;
+      await queue.synchronize();
+      expect(server['senderName'], 'New');
+      expect(server['signatureText'], 'New web signature');
+      expect(server['aiInstructions'], 'Web instructions');
+      expect(mailSettingsChanges(confirmed, confirmed), isEmpty);
+      expect(
+        mailSettingsChanges(confirmed, {...confirmed, 'signatureText': ''}),
+        {'signatureText': '', 'signatureHtml': null},
+      );
+    },
+  );
 
   for (final status in [403, 404]) {
     test('mailbox $status keeps other mailboxes and inbox snapshots', () async {
       final other = '${MailRepository.mailboxPath(ws, 'other')}/settings';
-      await cache.saveSnapshot(ws, path, {'settings': {'senderName': 'Private'}});
-      await cache.saveSnapshot(ws, other, {'settings': {'senderName': 'Other'}});
+      await cache.saveSnapshot(ws, path, {
+        'settings': {'senderName': 'Private'},
+      });
+      await cache.saveSnapshot(ws, other, {
+        'settings': {'senderName': 'Other'},
+      });
       await cache.saveSnapshot(ws, 'inbox', {'messages': <dynamic>[]});
-      when(() => api.getJson(path)).thenThrow(ApiException(message: 'Mailbox denied', statusCode: status));
-      await expectLater(repository.settings(ws, mailbox), throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', status)));
+      when(
+        () => api.getJson(path),
+      ).thenThrow(ApiException(message: 'Mailbox denied', statusCode: status));
+      await expectLater(
+        repository.settings(ws, mailbox),
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'status', status),
+        ),
+      );
       expect(await repository.cachedSettings(ws, mailbox), isNull);
-      expect((await cache.snapshot(ws, other))?['settings'], {'senderName': 'Other'});
+      expect((await cache.snapshot(ws, other))?['settings'], {
+        'senderName': 'Other',
+      });
       expect(await cache.snapshot(ws, 'inbox'), isNotNull);
       expect(cache.accessRevoked.value, isNull);
     });
   }
 
   for (final status in [403, 404]) {
-    test('storage failure preserves mailbox $status and its notification', () async {
-      final storage = _SecureStorage();
-      when(() => storage.read(key: any(named: 'key'))).thenThrow(StateError('Unavailable'));
-      final unavailable = CacheStore.forTesting(secureStorage: storage,
-        directoryResolver: () async => throw StateError('Storage unavailable'));
-      final fallbackCache = MailCache(store: unavailable, currentUserId: () => actor);
-      final fallback = MailRepository(apiClient: api, cache: fallbackCache,
-        settingsQueue: queue, currentUserId: () => actor);
-      when(() => api.getJson(path)).thenAnswer((_) async => {'settings': {'senderName': 'Initial'}});
-      expect((await fallback.settings(ws, mailbox))['settings'], {'senderName': 'Initial'});
-      final denial = ApiException(message: 'Mailbox denied', statusCode: status);
-      when(() => api.getJson(path)).thenThrow(denial);
-      await expectLater(fallback.settings(ws, mailbox), throwsA(same(denial)));
-      expect(fallbackCache.snapshotRevoked.value, (ws, path));
-      expect(fallbackCache.accessRevoked.value, isNull);
-      fallback.dispose();
-      await unavailable.closeForTesting();
-    });
+    test(
+      'storage failure preserves mailbox $status and its notification',
+      () async {
+        final storage = _SecureStorage();
+        when(
+          () => storage.read(key: any(named: 'key')),
+        ).thenThrow(StateError('Unavailable'));
+        final unavailable = CacheStore.forTesting(
+          secureStorage: storage,
+          directoryResolver: () async =>
+              throw StateError('Storage unavailable'),
+        );
+        final fallbackCache = MailCache(
+          store: unavailable,
+          currentUserId: () => actor,
+        );
+        final fallback = MailRepository(
+          apiClient: api,
+          cache: fallbackCache,
+          settingsQueue: queue,
+          currentUserId: () => actor,
+        );
+        when(() => api.getJson(path)).thenAnswer(
+          (_) async => {
+            'settings': {'senderName': 'Initial'},
+          },
+        );
+        expect((await fallback.settings(ws, mailbox))['settings'], {
+          'senderName': 'Initial',
+        });
+        final denial = ApiException(
+          message: 'Mailbox denied',
+          statusCode: status,
+        );
+        when(() => api.getJson(path)).thenThrow(denial);
+        await expectLater(
+          fallback.settings(ws, mailbox),
+          throwsA(same(denial)),
+        );
+        expect(fallbackCache.snapshotRevoked.value, (ws, path));
+        expect(fallbackCache.accessRevoked.value, isNull);
+        fallback.dispose();
+        await unavailable.closeForTesting();
+      },
+    );
   }
 
   test('failed settings values never overlay confirmed fields', () async {
-    await cache.saveSnapshot(ws, path, {'settings': {'senderName': 'Confirmed'}});
+    await cache.saveSnapshot(ws, path, {
+      'settings': {'senderName': 'Confirmed'},
+    });
     await repository.updateSettings(ws, mailbox, {'senderName': 'Rejected'});
-    when(() => api.patchJson(path, any())).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+    when(
+      () => api.patchJson(path, any()),
+    ).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
     online = true;
     await queue.synchronize();
     final rejected = queue.pending.value.single;
     expect(rejected.status, PendingMutationStatus.failed);
-    final projection = overlayPendingMailSettings(userId: actor, workspaceId: ws, path: path,
-      source: {'settings': {'senderName': 'Confirmed'}}, pending: [rejected]);
+    final projection = overlayPendingMailSettings(
+      userId: actor,
+      workspaceId: ws,
+      path: path,
+      source: {
+        'settings': {'senderName': 'Confirmed'},
+      },
+      pending: [rejected],
+    );
     expect(projection['settings'], {'senderName': 'Confirmed'});
     expect(await repository.cachedSettings(ws, mailbox), isNull);
   });

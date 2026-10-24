@@ -408,14 +408,23 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
       }
     } on ApiException catch (error) {
       if (record.isMailSettings &&
-          !error.isVerificationRequired && error.code != 'MFA_REQUIRED' &&
+          !error.isVerificationRequired &&
+          error.code != 'MFA_REQUIRED' &&
           (error.statusCode == 403 || error.statusCode == 404)) {
         try {
-          await _store.remove(CacheKey(namespace: 'mail.list', userId: record.userId,
-            workspaceId: record.workspaceId, params: {'path': Uri.encodeComponent(record.path)}),
+          await _store.remove(
+            CacheKey(
+              namespace: 'mail.list',
+              userId: record.userId,
+              workspaceId: record.workspaceId,
+              params: {'path': Uri.encodeComponent(record.path)},
+            ),
             checkScope: () {
-              if (_userId() != record.userId) throw StateError('Mail actor changed');
-            });
+              if (_userId() != record.userId) {
+                throw StateError('Mail actor changed');
+              }
+            },
+          );
         } on Object {
           // The failed record still suppresses its overlay and visible editor.
         }

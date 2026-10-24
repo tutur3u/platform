@@ -174,7 +174,9 @@ class _PendingChangeCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                record.isMailSettings ? context.l10n.mailSettingsTitle : record.feature,
+                record.isMailSettings
+                    ? context.l10n.mailSettings
+                    : record.feature,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               Text(status, style: TextStyle(color: color)),

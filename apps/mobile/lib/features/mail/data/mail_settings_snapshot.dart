@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 
 String mailSettingsEntityId(String mailboxId) => 'mail-settings:$mailboxId';
@@ -94,10 +93,9 @@ Map<String, dynamic> mailSettingsChanges(
   Map<String, dynamic> baseline,
   Map<String, dynamic> draft,
 ) {
-  const equality = DeepCollectionEquality();
   final delta = <String, dynamic>{
     for (final field in draft.entries)
-      if (!equality.equals(baseline[field.key], field.value))
+      if (!_sameSettingsValue(baseline[field.key], field.value))
         field.key: field.value,
   };
   if (delta.containsKey('signatureText')) delta['signatureHtml'] = null;
@@ -115,12 +113,26 @@ Map<String, dynamic> mailSettingsFormValues(Map<String, dynamic> settings) {
     'autoDraftEnabled': settings['autoDraftEnabled'] as bool? ?? false,
     'outboundProviderOverride': settings['outboundProviderOverride'],
     if (group != null) 'groupPolicy': Map<String, dynamic>.from(group),
-    if (group == null) 'automation': {
-      'smartLabelsEnabled': automation?['smartLabelsEnabled'] as bool? ?? false,
-      'forwarding': {
-        'mode': forwarding?['mode'] as String? ?? 'off',
-        if (forwarding?['mode'] == 'mailbox') 'address': (forwarding?['address'] as String? ?? '').trim(),
+    if (group == null)
+      'automation': {
+        'smartLabelsEnabled':
+            automation?['smartLabelsEnabled'] as bool? ?? false,
+        'forwarding': {
+          'mode': forwarding?['mode'] as String? ?? 'off',
+          if (forwarding?['mode'] == 'mailbox')
+            'address': (forwarding?['address'] as String? ?? '').trim(),
+        },
       },
-    },
   };
+}
+
+// Settings policy values are scalars or nested objects, with no ordered lists.
+bool _sameSettingsValue(Object? first, Object? second) {
+  if (first is Map<String, dynamic> && second is Map<String, dynamic>) {
+    return first.length == second.length && first.entries.every(
+      (entry) => second.containsKey(entry.key) &&
+          _sameSettingsValue(entry.value, second[entry.key]),
+    );
+  }
+  return first == second;
 }

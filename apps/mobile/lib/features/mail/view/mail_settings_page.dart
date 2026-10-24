@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
-import 'package:mobile/features/mail/data/mail_settings_snapshot.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/data/mail_settings_snapshot.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
@@ -167,7 +167,8 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     }
   }
 
-  bool get _canEdit => widget.canManage && !widget.readOnlySnapshot && !_settingsRejected;
+  bool get _canEdit =>
+      widget.canManage && !widget.readOnlySnapshot && !_settingsRejected;
 
   bool get _scopeCurrent => widget.isScopeCurrent?.call() ?? true;
 
@@ -183,18 +184,34 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
             '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings',
   );
 
-  bool get _hasUnresolvedSettings => OfflineMutationQueue.instance.pending.value.any((edit) =>
-    edit.userId == currentCacheUserId() && edit.workspaceId == widget.workspaceId &&
-    edit.isMailSettings && edit.path == '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings');
-  bool get _canChangeSettings => _canEdit && !_hasUnresolvedSettings && !_awaitingConfirmation;
+  bool
+  get _hasUnresolvedSettings => OfflineMutationQueue.instance.pending.value.any(
+    (edit) =>
+        edit.userId == currentCacheUserId() &&
+        edit.workspaceId == widget.workspaceId &&
+        edit.isMailSettings &&
+        edit.path ==
+            '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings',
+  );
+  bool get _canChangeSettings =>
+      _canEdit && !_hasUnresolvedSettings && !_awaitingConfirmation;
 
   void _mailboxRevoked() {
     if (widget.repository.settingsRevoked?.value !=
-        (widget.workspaceId, '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings')) return;
+        (
+          widget.workspaceId,
+          '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings',
+        )) {
+      return;
+    }
     if (!mounted) return;
     _loadGeneration++;
     _clearSettings();
-    setState(() { _settingsRejected = true; _failed = true; _busy = false; });
+    setState(() {
+      _settingsRejected = true;
+      _failed = true;
+      _busy = false;
+    });
   }
 
   void _pendingSettingsChanged() {
@@ -202,14 +219,23 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     final resolved = _hadPendingSettings && !pending;
     _hadPendingSettings = pending;
     if (pending || resolved) _awaitingConfirmation = true;
-    final rejected = OfflineMutationQueue.instance.pending.value.any((edit) =>
-      edit.userId == currentCacheUserId() && edit.workspaceId == widget.workspaceId &&
-      edit.isMailSettings && edit.path == '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings' &&
-      edit.status == PendingMutationStatus.failed);
+    final rejected = OfflineMutationQueue.instance.pending.value.any(
+      (edit) =>
+          edit.userId == currentCacheUserId() &&
+          edit.workspaceId == widget.workspaceId &&
+          edit.isMailSettings &&
+          edit.path ==
+              '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings' &&
+          edit.status == PendingMutationStatus.failed,
+    );
     if (rejected && mounted) {
       _loadGeneration++;
       _clearSettings();
-      setState(() { _settingsRejected = true; _failed = true; _busy = false; });
+      setState(() {
+        _settingsRejected = true;
+        _failed = true;
+        _busy = false;
+      });
     } else if (resolved) {
       _syncFinished();
     } else if (mounted) {
@@ -240,7 +266,10 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   }
 
   Future<void> _save() async {
-    if (!_canChangeSettings || !_scopeCurrent || _saving || !_hasSnapshot ||
+    if (!_canChangeSettings ||
+        !_scopeCurrent ||
+        _saving ||
+        !_hasSnapshot ||
         mailSettingsChanges(_editBaseline, _formSettings).isEmpty) {
       return;
     }
@@ -273,11 +302,17 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
       }
     } on Object catch (error) {
       if (mounted && _scopeCurrent) {
-        if (error is ApiException && !error.isVerificationRequired &&
+        if (error is ApiException &&
+            !error.isVerificationRequired &&
             error.code != 'MFA_REQUIRED' &&
-            (error.statusCode == 401 || error.statusCode == 403 || error.statusCode == 404)) {
+            (error.statusCode == 401 ||
+                error.statusCode == 403 ||
+                error.statusCode == 404)) {
           _clearSettings();
-          setState(() { _settingsRejected = true; _failed = true; });
+          setState(() {
+            _settingsRejected = true;
+            _failed = true;
+          });
         }
         showAppToast(context, message: context.l10n.commonSomethingWentWrong);
       }
@@ -306,7 +341,9 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
         onBack: _exit,
         saving: _saving,
         backEnabled: !_saving,
-        onSave: _canChangeSettings && _hasSnapshot && !_busy && !_saving ? _save : null,
+        onSave: _canChangeSettings && _hasSnapshot && !_busy && !_saving
+            ? _save
+            : null,
         canManage: _canEdit,
         child: AppScaffold(
           child: _busy

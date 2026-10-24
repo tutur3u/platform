@@ -39,7 +39,9 @@ extension _MailSettingsPageData on _MailSettingsPageState {
       _hasSnapshot = true;
       if (confirmed) _failed = false;
       if (confirmed && !_hasUnresolvedSettings) _awaitingConfirmation = false;
-      if (_awaitingConfirmation && !confirmed && !_hasPendingSettings) _failed = true;
+      if (_awaitingConfirmation && !confirmed && !_hasPendingSettings) {
+        _failed = true;
+      }
       _busy = false;
     });
   }
@@ -57,14 +59,29 @@ extension _MailSettingsPageData on _MailSettingsPageState {
     });
     if (_settingsRejected && !widget.readOnlySnapshot) {
       try {
-        final membership = await widget.repository.settingsBootstrap(widget.workspaceId);
+        final membership = await widget.repository.settingsBootstrap(
+          widget.workspaceId,
+        );
         if (!isCurrent()) return;
-        final allowed = mailRows(membership['mailboxes']).any((box) =>
-          box['id'] == widget.mailboxId && ['owner', 'admin'].contains(box['role']));
-        if (!allowed) throw const ApiException(message: 'Mail access denied', statusCode: 403);
+        final allowed = mailRows(membership['mailboxes']).any(
+          (box) =>
+              box['id'] == widget.mailboxId &&
+              ['owner', 'admin'].contains(box['role']),
+        );
+        if (!allowed) {
+          throw const ApiException(
+            message: 'Mail access denied',
+            statusCode: 403,
+          );
+        }
         _updateSettingsState(() => _settingsRejected = false);
       } on Object {
-        if (isCurrent()) _updateSettingsState(() { _failed = true; _busy = false; });
+        if (isCurrent()) {
+          _updateSettingsState(() {
+            _failed = true;
+            _busy = false;
+          });
+        }
         return;
       }
     }
@@ -130,20 +147,19 @@ extension _MailSettingsPageData on _MailSettingsPageState {
   }
 
   Map<String, dynamic> get _formSettings => {
-          'senderName': _sender.text.trim(),
-          'signatureText': _signature.text,
-          'aiInstructions': _instructions.text,
-          'autoDraftEnabled': _autoDraft,
-          'outboundProviderOverride': _provider,
-          if (_group != null) 'groupPolicy': _group,
-          if (_group == null)
-            'automation': {
-              'smartLabelsEnabled': _smartLabels,
-              'forwarding': {
-                'mode': _forwarding,
-                if (_forwarding == 'mailbox') 'address': _forwardTo.text.trim(),
-              },
-            },
-        };
-
+    'senderName': _sender.text.trim(),
+    'signatureText': _signature.text,
+    'aiInstructions': _instructions.text,
+    'autoDraftEnabled': _autoDraft,
+    'outboundProviderOverride': _provider,
+    if (_group != null) 'groupPolicy': _group,
+    if (_group == null)
+      'automation': {
+        'smartLabelsEnabled': _smartLabels,
+        'forwarding': {
+          'mode': _forwarding,
+          if (_forwarding == 'mailbox') 'address': _forwardTo.text.trim(),
+        },
+      },
+  };
 }
