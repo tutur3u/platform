@@ -158,12 +158,13 @@ extension AssistantReactionOperations on AssistantRepository {
     final actorEpoch = AssistantReactionJournal.actorEpoch(actor);
     var retired = false;
     bool current() {
+      final parentCurrent = isCurrent();
       retired =
           retired ||
           currentActorId != actor ||
           version != _creationGenerationVersion ||
           actorEpoch != AssistantReactionJournal.actorEpoch(actor) ||
-          !isCurrent();
+          !parentCurrent;
       return !retired;
     }
 
