@@ -207,7 +207,10 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
             showChevron: !widget.workspace || widget.canManageWorkspace,
             onTap:
                 _coolingDown ||
-                    (state.loading && !(widget.workspace ? state.workspaceLoaded : state.personalLoaded)) ||
+                    (state.loading &&
+                        !(widget.workspace
+                            ? state.workspaceLoaded
+                            : state.personalLoaded)) ||
                     state.saving ||
                     (!state.resolved &&
                         !state.failed &&

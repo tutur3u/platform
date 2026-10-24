@@ -165,7 +165,14 @@ class CalendarSettingsCubit extends Cubit<CalendarSettingsState> {
     if (isClosed || actor == null || state.saving || !state.userLoaded) return;
     final generation = ++_generation;
     _pendingLoad = null;
-    emit(state.copyWith(saving: true, loading: false, revalidating: false, clearError: true));
+    emit(
+      state.copyWith(
+        saving: true,
+        loading: false,
+        revalidating: false,
+        clearError: true,
+      ),
+    );
     try {
       final saved = await _repository.savePersonal(
         actor,

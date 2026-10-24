@@ -46,20 +46,23 @@ void main() {
     await h.dispose();
   });
 
-  test('a timezone save can supersede a refresh of a known preference', () async {
-    h.api.read = (_) async => {'timezone': 'Europe/Paris'};
-    await cubit.load(userId: 'actor', workspaceId: null);
-    final held = Completer<Map<String, dynamic>>();
-    h.api.read = (_) => held.future;
-    final loading = cubit.load(userId: 'actor', workspaceId: null);
-    expect(cubit.state.loading, isTrue);
-    await cubit.save('Asia/Ho_Chi_Minh');
-    expect(cubit.state.personal, 'Asia/Ho_Chi_Minh');
-    held.complete({'timezone': 'UTC'});
-    await loading;
-    expect(cubit.state.personal, 'Asia/Ho_Chi_Minh');
-    expect(cubit.state.saving, isFalse);
-  });
+  test(
+    'a timezone save can supersede a refresh of a known preference',
+    () async {
+      h.api.read = (_) async => {'timezone': 'Europe/Paris'};
+      await cubit.load(userId: 'actor', workspaceId: null);
+      final held = Completer<Map<String, dynamic>>();
+      h.api.read = (_) => held.future;
+      final loading = cubit.load(userId: 'actor', workspaceId: null);
+      expect(cubit.state.loading, isTrue);
+      await cubit.save('Asia/Ho_Chi_Minh');
+      expect(cubit.state.personal, 'Asia/Ho_Chi_Minh');
+      held.complete({'timezone': 'UTC'});
+      await loading;
+      expect(cubit.state.personal, 'Asia/Ho_Chi_Minh');
+      expect(cubit.state.saving, isFalse);
+    },
+  );
 
   test(
     'an unavailable snapshot cannot discard a successful fresh timezone',
