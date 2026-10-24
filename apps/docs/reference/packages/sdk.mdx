@@ -431,7 +431,11 @@ its same-operation recovery fence so it can resume safely.
 
 The automatic restore after a failed qualification compares the global package
 tree with the installed-state receipt and reports `rollback: "failed"` with the
-drift error instead of reverting a concurrent global install. Launcher and
+drift error instead of reverting a concurrent global install made after that
+receipt. The guard does not cover a global install made before the receipt is
+recorded (during install or setup), a failure before any receipt exists, or a
+change between the check and the restore; those can still be reverted. Keep the
+rollout's exclusive use of the global package manager for the whole run. Launcher and
 configuration writes during qualification are candidate defects and are still
 restored. Report `rollback` describes only
 restore work. Housekeeping failures (retention pruning, report writing) set
