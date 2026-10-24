@@ -266,6 +266,12 @@ test('real SDK admission reclaims only dead preparation, preserving mutation fen
   for (const mutated of [false, true]) {
     const f = fixture(t),
       admission = path.join(f.home, 'admission');
+    // Admission now refuses pre-protocol-3 launchers before publishing the
+    // budget fence; this test covers reclaim, so install a current shim.
+    fs.writeFileSync(
+      path.join(f.home, 'bin/bun'),
+      'scheduler shim\n# Resource scheduler protocol: 3\n'
+    );
     fs.mkdirSync(admission);
     fs.writeFileSync(
       path.join(admission, 'owner.json'),
