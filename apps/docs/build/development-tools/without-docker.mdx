@@ -78,7 +78,7 @@ node --test scripts/docs-audit.test.js scripts/generate-app-seo.test.js
 Focused tests can use explicit worker bounds. Before broad validation, inspect
 `ttr resources status --json` and run heavy commands through
 `ttr resources run -- <command>`. Repository policy prohibits local builds and
-`bun check`, whose graph can build dependencies. Require relevant test,
+`bun validate`, whose graph can build dependencies. Require relevant test,
 type-check, lint, real app builds, and strict Mintlify validation in CI for the
 exact source commit. Neither this local path nor a fixture test waives a required
 integration check.

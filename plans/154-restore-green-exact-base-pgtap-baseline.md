@@ -68,7 +68,7 @@ default developer stack.
 | AI observability | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/ai-studio-credit-observability.sql` | authoritative committed RPC contract passes |
 | Full database | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes on a fresh exact-base stack |
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no type drift unless an approved missing migration is restored |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

@@ -58,7 +58,7 @@ ownership transfers before editing.
 | Backend contract | `bun check:backend` | route/OpenAPI ownership stays valid |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -141,7 +141,7 @@ and a list above 1,000 without silent loss.
 ### Step 5: Run migration-aware gates
 
 Run Web, internal-api, and Rust focused suites; wrapper/manifest/OpenAPI checks;
-backend check; typechecks; Web production build; `bun check`; whitespace. Review
+backend check; typechecks; Web production build; `bun validate`; whitespace. Review
 generated artifact diffs and stage only deterministic route-tracking output.
 
 ## Done criteria

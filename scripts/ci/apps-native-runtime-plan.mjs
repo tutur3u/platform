@@ -22,6 +22,7 @@ import {
 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertNoRuntimeResources } from '../../apps/apps/cloudflare/native-runtime-fence.mjs';
+import { readRegularFile } from '../safe-fs.js';
 import { readNativeRuntimeConfig } from './apps-native-runtime-pointer.mjs';
 import {
   captureDiagnosticSnapshot,
@@ -233,12 +234,13 @@ export async function inventoryApps(root, ignored) {
         await walk(path);
       } else {
         assert.ok(item.isFile(), 'Artifact links/special entries forbidden');
-        if (name === VITE_MANIFEST)
-          assert.ok(
-            (await lstat(path)).size <= MAX_MANIFEST_BYTES,
-            'Apps Vite manifest byte bound'
-          );
-        const bytes = await readFile(path);
+        const bytes = await readRegularFile(path, {
+          maxBytes: name === VITE_MANIFEST ? MAX_MANIFEST_BYTES : Infinity,
+        }).catch((error) => {
+          if (name === VITE_MANIFEST && error.code === 'ERR_FS_FILE_TOO_LARGE')
+            assert.fail('Apps Vite manifest byte bound');
+          throw error;
+        });
         files.push([name, hash(bytes)]);
         if (name === VITE_MANIFEST) manifest = bytes;
       }
@@ -250,10 +252,8 @@ export async function inventoryApps(root, ignored) {
   return seal;
 }
 async function fileHash(path) {
-  const info = await lstat(path);
-  assert.ok(info.isFile(), 'Identity file must be regular');
   assert.equal(await realpath(path), path);
-  return hash(await readFile(path));
+  return hash(await readRegularFile(path));
 }
 export async function inspectAppsPlan(
   { appDirectory, ownerPackage, sourceSHA, artifactReceipt },
@@ -460,7 +460,7 @@ export async function inventoryAppsWorkdir(path) {
     entries.push({
       name,
       type: info.isDirectory() ? 'directory' : 'file',
-      hash: info.isFile() ? hash(await readFile(path)) : null,
+      hash: info.isFile() ? hash(await readRegularFile(path)) : null,
     });
     if (info.isDirectory())
       for (const child of (await readdir(path)).sort())

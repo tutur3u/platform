@@ -27,7 +27,10 @@ import {
 import { Button } from '../../button';
 import { Input } from '../../input';
 import { calendarDraftDate } from './calendar-period';
-import { pastEventTreatment } from './past-event-treatment';
+import {
+  calendarEventDisplayEnd,
+  pastEventTreatment,
+} from './past-event-treatment';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(utc);
@@ -74,7 +77,8 @@ function EventCard({
 }) {
   const { settings } = useCalendarSettings();
   const { preservePastEventOpacity } = useCalendar();
-  const isAllDay = isAllDayEvent(event);
+  const zone = settings?.timezone?.timezone;
+  const isAllDay = isAllDayEvent(event, zone);
 
   return (
     <button
@@ -83,7 +87,13 @@ function EventCard({
       style={calendarEventStyle(event)}
       className={cn(
         'group relative flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-current',
-        pastEventTreatment(event, preservePastEventOpacity)
+        pastEventTreatment(
+          event,
+          preservePastEventOpacity,
+          false,
+          Date.now(),
+          calendarEventDisplayEnd(event, zone)
+        )
       )}
     >
       {/* Time column */}
@@ -305,8 +315,8 @@ export const AgendaView = ({
 
       if (events.length > 0) {
         const sortedEvents = [...events].sort((a, b) => {
-          const aIsAllDay = isAllDayEvent(a);
-          const bIsAllDay = isAllDayEvent(b);
+          const aIsAllDay = isAllDayEvent(a, settings?.timezone?.timezone);
+          const bIsAllDay = isAllDayEvent(b, settings?.timezone?.timezone);
           if (aIsAllDay && !bIsAllDay) return -1;
           if (!aIsAllDay && bIsAllDay) return 1;
           return (
@@ -318,7 +328,14 @@ export const AgendaView = ({
     }
 
     return groups;
-  }, [startDate, daysToShow, getCurrentEvents, query, locale]);
+  }, [
+    startDate,
+    daysToShow,
+    getCurrentEvents,
+    query,
+    locale,
+    settings?.timezone?.timezone,
+  ]);
 
   const uniqueEvents = new Set(
     groupedEvents.flatMap((group) => group.events.map((event) => event.id))

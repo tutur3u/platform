@@ -70,7 +70,7 @@ downloads inside one HTTP request.
 | Localization | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | EN/VI uncertain-state copy is sorted and paired |
 | Typechecks | `bun run --cwd packages/internal-api type-check && bun run --cwd apps/contacts type-check && bun run --cwd apps/web type-check` | all exit 0 |
 | Builds | `bun run --cwd apps/contacts build && bun run --cwd apps/web build` | all production builds exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Suggested executor toolkit
@@ -213,7 +213,7 @@ TanStack component fork.
 
 Update source-embedded overrides for all three moved routes, keep their status
 `legacy-next`/Rust target, regenerate the manifest, and run the wrapper check.
-Then run typechecks, both builds, full isolated pgTAP, `bun check`, and
+Then run typechecks, both builds, full isolated pgTAP, `bun validate`, and
 whitespace.
 
 ## Done criteria

@@ -1,5 +1,6 @@
-import { generateKeyPairSync } from 'node:crypto';
-import forge from 'node-forge';
+// @vitest-environment node
+
+import { generateKeyPairSync, type KeyObject } from 'node:crypto';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
@@ -11,79 +12,105 @@ import {
 
 const now = new Date('2026-10-06T00:00:00Z');
 const password = 'synthetic-test-password';
-let keys: forge.pki.rsa.KeyPair;
-let otherKeys: forge.pki.rsa.KeyPair;
+type TestKeyPair = { privateKey: KeyObject; publicKey: KeyObject };
+type TestPki = {
+  x509: {
+    sign(
+      spec: Record<string, unknown>,
+      issuer: Record<string, unknown>
+    ): Promise<Buffer>;
+    extension(oid: string, value: unknown): Buffer;
+  };
+  asn1: { build: { null(): Buffer } };
+  pkcs12: {
+    build(
+      spec: Record<string, unknown>,
+      options: { password: string; mac?: { algorithm: string; hash: string } }
+    ): Promise<Buffer>;
+  };
+};
+const pki = require('@blamejs/pki') as TestPki;
+let keys: TestKeyPair;
+let otherKeys: TestKeyPair;
 beforeAll(() => {
-  keys = forge.pki.rsa.generateKeyPair({ bits: 2048, workers: 0 });
-  otherKeys = forge.pki.rsa.generateKeyPair({ bits: 2048, workers: 0 });
+  keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  otherKeys = generateKeyPairSync('rsa', { modulusLength: 2048 });
 });
 
-function certificate(
+async function certificate(
   options: {
     developerId?: boolean;
     codeSigning?: boolean;
     notBefore?: Date;
     notAfter?: Date;
-    pair?: forge.pki.rsa.KeyPair;
+    pair?: TestKeyPair;
   } = {}
-) {
-  const cert = forge.pki.createCertificate();
-  cert.publicKey = (options.pair ?? keys).publicKey;
-  cert.serialNumber = '01';
-  cert.validity.notBefore =
-    options.notBefore ?? new Date('2026-01-01T00:00:00Z');
-  cert.validity.notAfter = options.notAfter ?? new Date('2027-01-01T00:00:00Z');
-  const attrs = [
-    {
-      name: 'commonName',
-      value: 'Developer ID Application: Synthetic Fixture (ABCDEFGHIJ)',
-    },
-    { name: 'organizationalUnitName', value: 'ABCDEFGHIJ' },
+): Promise<Buffer> {
+  const pair = options.pair ?? keys;
+  const subject = [
+    { commonName: 'Developer ID Application: Synthetic Fixture (ABCDEFGHIJ)' },
+    { organizationalUnitName: 'ABCDEFGHIJ' },
   ];
-  cert.setSubject(attrs);
-  cert.setIssuer(attrs);
-  cert.setExtensions([
-    { name: 'basicConstraints', cA: false },
-    { name: 'extKeyUsage', codeSigning: options.codeSigning !== false },
-    ...(options.developerId
-      ? [
-          {
-            id: '1.2.840.113635.100.6.1.13',
-            value: forge.asn1
-              .toDer(
-                forge.asn1.create(
-                  forge.asn1.Class.UNIVERSAL,
-                  forge.asn1.Type.NULL,
-                  false,
-                  ''
-                )
-              )
-              .getBytes(),
-          },
-        ]
-      : []),
-  ]);
-  cert.sign((options.pair ?? keys).privateKey, forge.md.sha256.create());
-  return cert;
-}
-function pfx(
-  cert: forge.pki.Certificate | forge.pki.Certificate[],
-  key: forge.pki.rsa.PrivateKey | null = keys.privateKey
-) {
-  return Buffer.from(
-    forge.asn1
-      .toDer(
-        forge.pkcs12.toPkcs12Asn1(key, cert, password, { algorithm: '3des' })
-      )
-      .getBytes(),
-    'binary'
+  return pki.x509.sign(
+    {
+      subject,
+      subjectPublicKey: pair.publicKey.export({ format: 'der', type: 'spki' }),
+      notBefore: options.notBefore ?? new Date('2026-01-01T00:00:00Z'),
+      notAfter: options.notAfter ?? new Date('2027-01-01T00:00:00Z'),
+      extensions: [
+        pki.x509.extension('basicConstraints', { cA: false }),
+        ...(options.codeSigning === false
+          ? []
+          : [pki.x509.extension('extendedKeyUsage', ['codeSigning'])]),
+        ...(options.developerId
+          ? [
+              pki.x509.extension(
+                '1.2.840.113635.100.6.1.13',
+                Buffer.from([0x05, 0x00])
+              ),
+            ]
+          : []),
+      ],
+    },
+    {
+      key: pair.privateKey,
+      name: subject,
+      publicKey: pair.publicKey.export({ format: 'der', type: 'spki' }),
+    }
   );
 }
-function inspect(
+async function pfx(cert: Buffer | Buffer[], key: TestKeyPair | null = keys) {
+  const certs = Array.isArray(cert) ? cert : [cert];
+  return pki.pkcs12.build(
+    {
+      safeContents: [
+        {
+          bags: [
+            ...certs.map((entry) => ({ type: 'cert', cert: entry })),
+            ...(key
+              ? [
+                  {
+                    type: 'shroudedKey',
+                    key: key.privateKey.export({
+                      format: 'der',
+                      type: 'pkcs8',
+                    }),
+                    encrypt: { password },
+                  },
+                ]
+              : []),
+          ],
+        },
+      ],
+    },
+    { password, mac: { algorithm: 'hmac', hash: 'sha256' } }
+  );
+}
+async function inspect(
   bytes: Uint8Array,
   overrides: Partial<Parameters<typeof inspectDesktopCertificate>[0]> = {}
 ) {
-  return inspectDesktopCertificate({
+  return await inspectDesktopCertificate({
     platform: 'windows',
     bytes,
     password,
@@ -93,8 +120,43 @@ function inspect(
 }
 
 describe('portable desktop certificate readiness', () => {
-  it('accepts matching current code-signing material and returns only public metadata', () => {
-    const result = inspect(pfx(certificate()));
+  it('reports and logs a parser load failure without treating it as bad material', async () => {
+    const cause = new Error('synthetic parser load failure');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.doMock('./pki-loader', () => ({
+      loadDesktopPki: () => {
+        throw cause;
+      },
+    }));
+    vi.resetModules();
+
+    try {
+      const { inspectDesktopCertificate: inspectWithoutParser } = await import(
+        './certificate-readiness'
+      );
+      const result = await inspectWithoutParser({
+        platform: 'windows',
+        bytes: Buffer.from('synthetic p12'),
+        password,
+        now,
+      });
+      expect(result, JSON.stringify(result)).toEqual({
+        ok: false,
+        code: 'certificate_inspection_unavailable',
+      });
+      expect(log).toHaveBeenCalledWith(
+        'Desktop certificate parser could not be loaded',
+        cause
+      );
+    } finally {
+      log.mockRestore();
+      vi.doUnmock('./pki-loader');
+      vi.resetModules();
+    }
+  });
+
+  it('accepts matching current code-signing material and returns only public metadata', async () => {
+    const result = await inspect(await pfx(await certificate()));
     expect(result).toMatchObject({
       ok: true,
       certificate: { algorithm: 'rsa', expiresAt: '2027-01-01T00:00:00.000Z' },
@@ -102,84 +164,98 @@ describe('portable desktop certificate readiness', () => {
     expect(JSON.stringify(result)).not.toContain(password);
     expect(JSON.stringify(result)).not.toContain('PRIVATE KEY');
   });
-  it('sanitizes wrong-password rejection', () => {
-    expect(inspect(pfx(certificate()), { password: 'wrong' })).toEqual({
+  it('sanitizes wrong-password rejection', async () => {
+    expect(
+      await inspect(await pfx(await certificate()), { password: 'wrong' })
+    ).toEqual({
       ok: false,
       code: 'certificate_invalid',
     });
   });
   it.each([Buffer.alloc(0), Buffer.from('not a pfx'), Buffer.alloc(2097153)])(
     'rejects invalid/bounded payload %s',
-    (bytes) => {
-      expect(inspect(bytes)).toEqual({
+    async (bytes) => {
+      expect(await inspect(bytes)).toEqual({
         ok: false,
         code: 'certificate_invalid',
       });
     }
   );
-  it('requires a private key', () => {
-    expect(inspect(pfx(certificate(), null))).toEqual({
+  it('requires a private key', async () => {
+    expect(await inspect(await pfx(await certificate(), null))).toEqual({
       ok: false,
       code: 'certificate_key_missing',
     });
   });
-  it('requires certificate to match the private key', () => {
-    expect(inspect(pfx(certificate({ pair: otherKeys })))).toEqual({
+  it('requires certificate to match the private key', async () => {
+    expect(
+      await inspect(await pfx(await certificate({ pair: otherKeys })))
+    ).toEqual({
       ok: false,
       code: 'certificate_key_mismatch',
     });
   });
-  it('rejects multiple matching certificates rather than choosing silently', () => {
-    const cert = certificate();
-    expect(inspect(pfx([cert, cert]))).toEqual({
+  it('rejects multiple matching certificates rather than choosing silently', async () => {
+    const cert = await certificate();
+    expect(await inspect(await pfx([cert, cert]))).toEqual({
       ok: false,
       code: 'certificate_ambiguous',
     });
   });
-  it('rejects expired certificates at the inclusive end', () => {
-    expect(inspect(pfx(certificate({ notAfter: now })))).toEqual({
+  it('rejects expired certificates at the inclusive end', async () => {
+    expect(
+      await inspect(await pfx(await certificate({ notAfter: now })))
+    ).toEqual({
       ok: false,
       code: 'certificate_expired',
     });
   });
-  it('rejects certificates not yet valid', () => {
+  it('rejects certificates not yet valid', async () => {
     expect(
-      inspect(pfx(certificate({ notBefore: new Date('2026-10-07T00:00:00Z') })))
+      await inspect(
+        await pfx(
+          await certificate({ notBefore: new Date('2026-10-07T00:00:00Z') })
+        )
+      )
     ).toEqual({ ok: false, code: 'certificate_not_yet_valid' });
   });
-  it('requires explicit code-signing EKU', () => {
-    expect(inspect(pfx(certificate({ codeSigning: false })))).toEqual({
+  it('requires explicit code-signing EKU', async () => {
+    expect(
+      await inspect(await pfx(await certificate({ codeSigning: false })))
+    ).toEqual({
       ok: false,
       code: 'certificate_codesigning_required',
     });
   });
-  it('does not use mobile/ordinary signing certificates as Developer ID', () => {
-    expect(inspect(pfx(certificate()), { platform: 'macos' })).toEqual({
+  it('does not use mobile/ordinary signing certificates as Developer ID', async () => {
+    expect(
+      await inspect(await pfx(await certificate()), { platform: 'macos' })
+    ).toEqual({
       ok: false,
       code: 'certificate_developer_id_required',
     });
   });
-  it('accepts Developer ID only with matching identity and team', () => {
+  it('accepts Developer ID only with matching identity and team', async () => {
     expect(
-      inspect(pfx(certificate({ developerId: true })), {
+      await inspect(await pfx(await certificate({ developerId: true })), {
         platform: 'macos',
         identity: 'Developer ID Application: Synthetic Fixture (ABCDEFGHIJ)',
         teamId: 'ABCDEFGHIJ',
-      }).ok
-    ).toBe(true);
+      })
+    ).toMatchObject({ ok: true });
   });
-  it('rejects identity mismatch', () => {
+  it('rejects identity mismatch', async () => {
     expect(
-      inspect(pfx(certificate({ developerId: true })), {
+      await inspect(await pfx(await certificate({ developerId: true })), {
         platform: 'macos',
         identity: 'Developer ID Application: Other (ABCDEFGHIJ)',
         teamId: 'ABCDEFGHIJ',
       })
     ).toEqual({ ok: false, code: 'certificate_identity_mismatch' });
   });
-  it('rejects team mismatch', () => {
+  it('rejects team mismatch', async () => {
     expect(
-      inspect(pfx(certificate({ developerId: true })), {
+      await inspect(await pfx(await certificate({ developerId: true })), {
         platform: 'macos',
         identity: 'Developer ID Application: Synthetic Fixture (ABCDEFGHIJ)',
         teamId: 'KLMNOPQRST',

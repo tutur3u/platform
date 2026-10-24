@@ -112,6 +112,54 @@ describe('API-key storage reserved mobile deployment paths', () => {
     expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
   });
 
+  it.each([
+    '../22222222-2222-4222-8222-222222222222/private',
+    '%2e%2e/22222222-2222-4222-8222-222222222222/private',
+    '%2E%2E/22222222-2222-4222-8222-222222222222/private',
+    '%2e./22222222-2222-4222-8222-222222222222/private',
+    '.%2e/22222222-2222-4222-8222-222222222222/private',
+    '%2f..%5c22222222-2222-4222-8222-222222222222/private',
+    'https://storage.test/avatars/private',
+    'avatars\\private',
+  ])(
+    'rejects unsafe signed-upload path %s before admin access',
+    async (path) => {
+      const { POST } = await import('./upload-url/route');
+      const response = await POST(
+        createJsonRequest('POST', '/api/v1/storage/upload-url', {
+          filename: 'image.png',
+          path,
+        }) as Parameters<typeof POST>[0]
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
+    }
+  );
+
+  it('creates a signed upload for a normal relative path', async () => {
+    const createSignedUploadUrl = vi.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.test/upload', token: 'test-token' },
+      error: null,
+    });
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
+    });
+    const { POST } = await import('./upload-url/route');
+    const response = await POST(
+      createJsonRequest('POST', '/api/v1/storage/upload-url', {
+        filename: 'image.png',
+        path: 'whiteboards/board-1',
+      }) as Parameters<typeof POST>[0]
+    );
+
+    expect(response.status).toBe(200);
+    expect(createSignedUploadUrl).toHaveBeenCalledWith(
+      `${ROOT_WORKSPACE_ID}/whiteboards/board-1/image.png`,
+      { upsert: false }
+    );
+  });
+
   it('rejects direct uploads into the mobile deployment vault prefix', async () => {
     const { POST } = await import('./upload/route');
     const file = {

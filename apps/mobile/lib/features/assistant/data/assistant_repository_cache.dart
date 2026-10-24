@@ -14,6 +14,7 @@ extension _AssistantCacheOperations on AssistantRepository {
     final actor = _currentUserId();
     if (actor == null || actor.isEmpty) return null;
     final epoch = _creationGenerationVersion;
+    final settingsRevision = _chatSettingsRevision;
     final key = CacheKey(
       namespace: 'assistant.chat_restore',
       userId: actor,
@@ -28,6 +29,7 @@ extension _AssistantCacheOperations on AssistantRepository {
       revision: revision,
       isCurrent: () =>
           epoch == _creationGenerationVersion &&
+          settingsRevision == _chatSettingsRevision &&
           _currentUserId() == actor &&
           _chatCacheStore.resourceRevisionFor(key) == revision &&
           isCurrent(),

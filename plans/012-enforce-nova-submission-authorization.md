@@ -89,7 +89,7 @@ structure is exemplified by
 | Submission routes | `bun --cwd apps/nova vitest run 'src/app/api/v1/submissions/[submissionId]/route.test.ts' 'src/app/api/v1/submissions/[submissionId]/criteria/route.test.ts' 'src/app/api/v1/submissions/[submissionId]/test-cases/route.test.ts'` | exit 0; unauthorized queries/mutations are never reached |
 | Server actions | `bun --cwd apps/nova vitest run 'src/app/[locale]/(dashboard)/shared/actions.test.ts' 'src/app/[locale]/(dashboard)/challenges/[challengeId]/results/actions.test.ts'` | exit 0; hidden/target-user access is server-authorized |
 | Typecheck | `bun run --cwd apps/nova type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Nova build | `bun run --cwd apps/nova build` | exit 0; changed routes/actions compile |
 | Whitespace | `git diff --check` | no output |
 
@@ -214,7 +214,7 @@ check. Expected: all commands exit 0 and `git diff --check` prints nothing.
 - [ ] Hidden test definitions and expected outputs are disclosed only after a
   server-side manager check.
 - [ ] Cross-user result aggregation requires management of the target challenge.
-- [ ] Focused tests, Nova typecheck, `bun check`, Nova build, and whitespace pass.
+- [ ] Focused tests, Nova typecheck, `bun validate`, Nova build, and whitespace pass.
 - [ ] `git status --short` contains only the listed Nova paths and index update.
 
 ## STOP conditions

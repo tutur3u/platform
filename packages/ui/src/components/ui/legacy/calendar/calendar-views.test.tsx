@@ -312,3 +312,75 @@ describe('calendar view opaque effective colors', () => {
     }
   );
 });
+
+it.each(['month', 'agenda'] as const)(
+  '%s fades ended native and Google events while keeping today and spanning events clear',
+  (view) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2030-01-16T04:00:00Z'));
+    state.zone = 'America/Los_Angeles';
+    state.useZonedLookup = true;
+    state.events = (['tuturuuu', 'google'] as const).flatMap((provider) => [
+      {
+        id: `${provider}-ended`,
+        title: `${provider} ended`,
+        provider,
+        start_at: '2030-01-15T19:00:00Z',
+        end_at: '2030-01-16T04:00:00Z',
+      },
+      {
+        id: `${provider}-today`,
+        title: `${provider} today`,
+        provider,
+        start_at: '2030-01-15T00:00:00Z',
+        end_at: '2030-01-16T00:00:00Z',
+      },
+      {
+        id: `${provider}-spanning`,
+        title: `${provider} spanning`,
+        provider,
+        start_at: '2030-01-14T19:00:00Z',
+        end_at: '2030-01-16T05:00:00Z',
+      },
+    ]);
+    const day = new Date(2030, 0, 15);
+    if (view === 'month') {
+      render(<MonthCalendar date={day} viewedMonth={day} locale="en" />);
+      const region = screen.getByRole('region', {
+        name: day.toLocaleDateString('en', { dateStyle: 'full' }),
+      });
+      fireEvent.click(
+        within(region).getByRole('button', { name: /views.open_day/ })
+      );
+      const dialog = screen.getByRole('dialog');
+      for (const provider of ['tuturuuu', 'google']) {
+        expect(
+          within(dialog).getByRole('button', {
+            name: new RegExp(`${provider} ended`),
+          })
+        ).toHaveClass('after:bg-background/50');
+        for (const title of ['today', 'spanning']) {
+          expect(
+            within(dialog).getByRole('button', {
+              name: new RegExp(`${provider} ${title}`),
+            })
+          ).not.toHaveClass('after:bg-background/50');
+        }
+      }
+    } else {
+      render(<AgendaView startDate={day} daysToShow={1} locale="en" />);
+      for (const provider of ['tuturuuu', 'google']) {
+        expect(
+          screen.getByRole('button', { name: new RegExp(`${provider} ended`) })
+        ).toHaveClass('after:bg-background/50');
+        for (const title of ['today', 'spanning']) {
+          expect(
+            screen.getByRole('button', {
+              name: new RegExp(`${provider} ${title}`),
+            })
+          ).not.toHaveClass('after:bg-background/50');
+        }
+      }
+    }
+  }
+);

@@ -72,7 +72,7 @@ on a 500 after post-delete storage cleanup failure.
 | Manifest | `bun migration:tanstack:manifest` | first-class route remains tracked `legacy-next` with the new source file |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -123,7 +123,7 @@ Use branch `fix/whiteboard-delete-order` and commit
    **Verify:** focused tests prove the exact call order and all failure cases.
 
 4. **Run all gates.** Run `bun web:api-routes:check`, the manifest generator,
-   Web typecheck/build, `bun check`, and whitespace verification.
+   Web typecheck/build, `bun validate`, and whitespace verification.
 
 ## Done criteria
 

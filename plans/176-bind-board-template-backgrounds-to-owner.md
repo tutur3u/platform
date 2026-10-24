@@ -57,7 +57,7 @@ direct writes.
 | Isolated types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/board-template-write-boundary.sql` | no unexpected type drift |
 | Tasks UI | `bun run --cwd packages/tasks-ui type-check && bun run --cwd packages/ui type-check` | exit 0 |
 | Tasks app | `bun run --cwd apps/tasks type-check && bun run --cwd apps/tasks build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

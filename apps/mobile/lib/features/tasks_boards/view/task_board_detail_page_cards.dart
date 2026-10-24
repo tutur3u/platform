@@ -229,10 +229,7 @@ class _BoardTaskTile extends StatelessWidget {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
-                                      shad.LucideIcons.timer,
-                                      size: 12,
-                                    ),
+                                    const Icon(LucideIcons.timer, size: 12),
                                     const shad.Gap(3),
                                     Text(
                                       estimationLabel,

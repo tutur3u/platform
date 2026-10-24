@@ -66,6 +66,12 @@ Wrangler without publication. It seals the output with
 `shortener-native-artifact.py`, which reuses the reviewed Apps seal and restore
 implementation with Shortener's identity and public files.
 
+Like Apps, Shortener's Wrangler use is admitted in
+`scripts/ci/wrangler-usage-allowlist.json` under the `void-wave1-publication`
+gap: Void rebuilds on deploy, so CI qualifies the exact emitted Worker with the
+pinned Wrangler adapter. The entries are removed with the Apps gap once
+`cf deploy --prebuilt` publication of a Void build is proven byte-identical.
+
 `cloudflare/native-built-worker.test.mjs` starts a copy of the emitted artifact
 in workerd. Every subrequest goes to the in-process fence in
 `cloudflare/native-fixture.mjs`, which stands in for Supabase REST and the central

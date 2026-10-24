@@ -11,9 +11,8 @@ class _TaskBoardDetailErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -39,9 +38,8 @@ class _NoListsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -106,7 +106,7 @@ Release Please ownership, or merging a release PR.
 
 7. **Verify without broadening the diff.** Run focused script tests, the
    workspace invariant, `bun install --frozen-lockfile` after refresh, then
-   `bun check`. Do not run an actual release merge in the shared checkout.
+   `bun validate`. Do not run an actual release merge in the shared checkout.
 
 ## Commands you will need
 
@@ -115,7 +115,7 @@ node --test scripts/git-release-please.test.js \
   scripts/check-workspace-lockfile-versions.test.js
 node scripts/check-workspace-lockfile-versions.js
 bun install --frozen-lockfile
-bun check
+bun validate
 git diff --check
 git diff -- bun.lock scripts/git-release-please.js scripts/git-release-please.test.js
 ```
