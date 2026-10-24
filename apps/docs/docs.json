@@ -352,6 +352,7 @@
                   "build/devops/e2e-proof-reuse",
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",
+                  "build/devops/cloudflare-backend-ownership",
                   "build/devops/mobile-store-deployment",
                   "build/devops/calendar-native-api-protection",
                   "build/devops/desktop-beta-distribution",

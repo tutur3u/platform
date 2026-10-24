@@ -90,6 +90,20 @@ Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
 
+## Cloudflare backend ownership guard
+
+New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare
+(Cron Control Cron Triggers, Queues, Workflows, Durable Objects) under the
+runaway-work review above. `scripts/ci/cloudflare-backend-ownership.test.js` fails
+on a new Vercel cron, enabled cron-catalog job, live pg_cron job, post-cutoff
+`cron.schedule`, Supabase Edge Function, Trigger.dev config/dependency/import, Next
+`after()` import or `/api/cron` route. A cadence change counts as a new owner.
+Legacy owners live in the shrink-only allowlist with owner/target/plan; the test
+pins the adopted baseline and fails stale entries, so delete an entry when its
+legacy definition is removed. Retained pg_cron jobs need a written pure-database
+justification; `pg_net` callers are not exceptions. Do not extend the baseline to
+admit new work. See `apps/docs/build/devops/cloudflare-backend-ownership.mdx`.
+
 ## Codex plugin native parallel pilot
 
 `codex-plugin.yaml` has one native `parallel` group containing only the MCP and
