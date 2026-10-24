@@ -1,0 +1,205 @@
+---
+title: 'Machine Storage Health'
+description: 'Measure, triage and safely reclaim disk space on Macs, Linux devboxes and self-hosted runners with ttr storage.'
+updatedAt: '2026-10-23'
+---
+
+Every Tuturuuu machine (the M4 Mac, Linux devboxes and VMs, self-hosted CI
+runners) uses one tool for storage triage: `ttr storage`. It reports headroom,
+ranks consumers by the bytes deleting them would actually free, suggests exact
+cleanup commands, and applies only safe, bounded cleanup on request.
+
+## Daily triage
+
+```bash
+ttr storage status             # free/used/pressure and inodes per volume (exit 2 when critical)
+ttr storage analyze            # ranked consumers by category (add --json)
+ttr storage suggest            # actions: reclaimable bytes, risk, exact command
+ttr storage prune              # dry run of the default safe categories
+ttr storage prune --apply      # re-verifies every fence, then applies the plan
+```
+
+`analyze` and `suggest` walk large trees (Bun cache, stale `node_modules`,
+every worktree) and take a few minutes on a busy Mac; run them through
+`ttr resources run --` when other lanes are validating. `suggest` caches its
+top actions in `~/.tuturuuu/storage/last-suggest.json`.
+
+## Measure real bytes, not apparent bytes
+
+| Platform | Method | Why |
+| --- | --- | --- |
+| macOS (APFS) | `getattrlist` `ATTR_CMNEXT_PRIVATESIZE` per file, through the system Python | Bun's `node_modules` are APFS clones of `~/.bun/install/cache`; `du` counts shared blocks once per clone. |
+| Linux | Allocated blocks (`st_blocks`), hard links counted once per run | Bun's Linux backend hard-links from its cache. |
+
+Never use `du -L`: it follows Bun's workspace symlinks and reported 300 GiB for
+`apps/web` alone. A fresh worktree costs about 0.3 GiB unique (source only)
+and about 250k inodes, not the 4–9 GiB `du` shows. `bun worktree:footprint`
+reports the per-worktree breakdown.
+
+## Thresholds
+
+| Pressure | Rule (any one) |
+| --- | --- |
+| `critical` | free < `TTR_STORAGE_MIN_FREE` (15 GiB), free < `TTR_STORAGE_MIN_FREE_PERCENT` (5%), or free inodes < `TTR_STORAGE_MIN_FREE_INODE_PERCENT` (5%) |
+| `low` | within twice any threshold |
+| `ok` | otherwise |
+
+Free space is what an unprivileged user can allocate (`statfs` `bavail`). On
+APFS every volume shares its container's free space and inode tables grow on
+demand, so the inode percentage only matters on ext4/xfs. Invalid threshold
+values fall back to the default with a warning.
+
+## Categories
+
+| Category | What | Risk | `prune` |
+| --- | --- | --- | --- |
+| `worktrees` | Linked worktrees, classified `dirty`, `unmerged`, `merged-clean`, `orphaned`, with owner and hold status | safe for merged-clean | named only |
+| `node-modules-stale` | Bun stores with far more `.bun` entries than `bun.lock` packages (diverged private clones) | moderate | named, one `--path` |
+| `build-artifacts` | `.turbo`, `.next`, `.open-next`, `dist`, `build`, `.dart_tool` in checkouts | safe | default, via `bun worktree:prune-artifacts` |
+| `rust-target` | `apps/backend/target` | safe | default, via `bun rust-cache prune` |
+| `bun-cache`, `npm-cache`, `pub-cache` | Package manager caches. The npm cache root is resolved once (`npm_config_cache`, then `npm config get cache`, then `~/.npm`); `prune` measures that root's `_cacache` and runs `npm cache clean --force --cache <root>` only on a directory owned by you | moderate / safe | named only |
+| `xcode-derived-data` | DerivedData project folders idle past `--older-than` | safe | default |
+| `xcode-simulators` | Simulators for uninstalled runtimes, each deleted by its own UDID (`xcrun simctl delete <udid>`, never `delete unavailable`) | safe | default |
+| `homebrew-cache` | `brew cleanup --prune=<days>` (also removes old formula versions) | safe | named only |
+| `docker` | Build cache older than the age bound; unused images. Verified local daemon only | safe / moderate | named only |
+| `supabase-volumes` | Supabase CLI local volumes | high | only `--name <volume>`, never attached |
+| `tmp-old` | Identified tool scratch dirs (mktemp, `tmp-*`, Vitest, Turbo, Bun, `ttr-*` and similar) directly under a tmp root, idle past the age bound, at least 25 MiB, with no git checkout, linked worktree or bare repository inside (checked again by the deleting walk itself, which refuses the whole removal if one appears) | moderate | named only |
+| `xcode-device-support`, `gradle`, `playwright` | Rebuildable but costly | moderate | manual command only |
+| `trash`, `xcode-archives`, `android-sdk` AVDs, `vm-disks` | User data, signed builds, emulator state, VM images | high | never |
+
+Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
+
+## What is never removed automatically
+
+- Dirty, unmerged, locked, busy (a process `cwd` inside) or current worktrees,
+  and the primary checkout.
+- Worktrees active in the last 24 hours.
+- Any path covered by a hold file. Hold files are `*.txt` in
+  `~/.t3/cleanup/holds.d` (or `--holds-dir`, `TTR_STORAGE_HOLDS_DIRS`); one
+  absolute path or glob per line, `#` comments. `--holds-dir` and
+  `TTR_STORAGE_HOLDS_DIRS` add directories; the shared default is always
+  read. A hold covers its path,
+  everything below it and everything above it. An unreadable holds directory,
+  or any non-comment line that is not an absolute path or glob, stops the run
+  with the file and line; fix or comment out the line.
+- Any path a process may be using. Right before each removal, every process's
+  working directory (`lsof -d cwd`, checked against the full `ps` table) and
+  every open file under the path (`lsof +D`) are re-checked. A failed scan,
+  any `lsof` diagnostic, or an uninspectable live process of this user means
+  use is not proven absent, and the step is skipped. Uninspectable processes
+  of other users (including root) are tolerated only under the private-tree
+  rule below. `ps` and `lsof` run by absolute path and scripts by the
+  absolute runtime, so a shim directory on `PATH` cannot answer for them.
+- Worktrees whose ignored files are not rebuildable. `git worktree remove`
+  deletes ignored files without `--force`, so a worktree is kept when
+  `git ls-files -o -i --exclude-standard --directory` lists anything outside
+  build artifacts, `node_modules` and `target` (for example `.env.local` or
+  `tmp/agent-coordination/`); the dry run names those paths.
+- Trees with entries this user does not own, or with a group- or
+  world-writable directory (`mode & 0o022`), checked in the pre-scan and
+  again before every unlink. Running as root removes only fully root-owned
+  trees.
+- Anything reached through a symlink or across a mount. Trees are removed by
+  directory identity (device and inode) captured before the checks and
+  re-verified before every unlink; a swapped ancestor or a nested mount stops
+  the removal, and entries created after the pre-scan are left in place.
+- Docker on a remote or unknown engine. Docker steps run only when
+  `DOCKER_HOST` is unset and the current context's endpoint is an existing
+  local unix socket; the command is pinned to that socket with `-H`.
+- `preserve/*` branches and every other ref. Merged-clean worktrees are removed
+  with plain `git worktree remove` (no `--force`) and their branch with
+  `git branch -d`; git keeps a squash-merged branch, which is reported for a
+  human to delete after checking.
+- Source, Trash, VM disk images, Xcode archives, AVDs and Supabase volumes not
+  named explicitly.
+
+"Merged" means the exact local `HEAD` reached the base: either it is an
+ancestor of `origin/main`, or a merged pull request's head is that `HEAD`
+(squash merges). An open PR, a closed-unmerged PR or local commits after the
+merged head keep the worktree. Every apply step re-reads holds, process
+working directories, open files and worktree state immediately before acting.
+Idle ages use the newest modification or change time anywhere in a tree (a
+deep, recently written file keeps the whole tree); trees over 500,000 entries
+or unreadable ones count as recent.
+
+## Process visibility on macOS: private-tree evidence
+
+Decision (orchestrator, 2026-10-23): a non-root user's `lsof` cannot inspect
+other users' or root's processes, so strict visibility would skip every
+removal on macOS. Removal (manual `prune` and automatic reclaim alike) may
+proceed with `private-tree` evidence only when all of these hold:
+
+1. Every live process of the effective user was inspected; only processes of
+   other uids may be hidden.
+2. The item has a private-tree proof: some directory at or above the rule
+   root is owned by the effective user, has `mode & 0o077 == 0` and no ACL;
+   every directory from there down to the item is owned by the effective user
+   and not group- or other-writable; all on one device.
+3. The open-file scan is scoped to the effective user (`lsof -a -u <euid>`).
+4. Never when running as root, and only on macOS. Linux stays fail-closed
+   until a container-mount check exists.
+
+Receipts and step checks record the evidence level (`private-tree` or
+`full-visibility`). Root's processes remain uninspectable under this rule;
+that residual is accepted only for proven-private trees. Idle Xcode
+DerivedData usually qualifies through `~/Library/Developer` (0700, no ACL).
+Its repository-refusal exemption applies only to the literal
+`~/Library/Developer/Xcode/DerivedData` root when its canonical path matches
+and every component through the user's home is a real directory owned by the
+effective user. Symlinked roots or ancestors and nonstandard report roots are
+skipped, and the chain is checked again immediately before removal. This keeps
+checkouts reached through a redirected DerivedData path intact; see
+`packages/sdk/src/cli/storage-derived-data.test.ts`.
+Worktrees and their artifacts under `~/.t3` do not qualify unless that tree
+is 0700; ttr never changes permissions to make something qualify.
+
+Regression coverage: `packages/sdk/src/cli/storage-privacy.test.ts` (scan
+rules per platform and uid, the proof's failure modes, scoped `lsof`, manual
+prune wiring) and `storage-liveness.test.ts` (strict scan parsing).
+
+## Stale `node_modules`
+
+`bun install` never removes old `node_modules/.bun/<pkg@version>` entries. On
+APFS the old entries become private copies once the cache is refreshed; the
+main checkout held about 10 GiB this way. The fix is a reinstall, queued
+through `ttr resources`:
+
+```bash
+ttr storage prune --category node-modules-stale --path <checkout>        # dry run
+ttr storage prune --category node-modules-stale --path <checkout> --apply
+```
+
+This removes `node_modules` and runs `ttr resources run -- bun install
+--frozen-lockfile`. It refuses while another process works inside the
+checkout. A shared primary checkout needs its owner's approval first.
+
+## Per-OS commands
+
+### macOS (APFS)
+
+```bash
+diskutil apfs list | grep -E 'Capacity (In Use|Not Allocated)'
+df -h /System/Volumes/Data      # the Data volume holds user files
+xcrun simctl list devices booted
+xcrun simctl shutdown all       # a booted simulator mounts ~220 GB of phantom DeviceFS size
+tmutil listlocalsnapshots /     # local snapshots pin deleted blocks
+```
+
+### Linux devbox or runner
+
+```bash
+df -h / /var/lib/docker
+df -i /                         # inodes; ext4 tables are fixed at mkfs
+docker system df
+journalctl --disk-usage
+```
+Self-hosted runner jobs remove their own `start-source-<run>-*` checkout in an
+`if: always()` step; sweep leftovers only from completed runs.
+
+## Ownership
+
+Run `ttr storage prune --apply` only on a machine you own. Devbox VMs and CI
+runner hosts belong to their host owner; report suggestions to that owner
+instead. On the M4 Mac the Mastermind daily cleanup task uses the same hold
+files and busy/PR-state rules, so a hold written for one tool protects the path
+from both.

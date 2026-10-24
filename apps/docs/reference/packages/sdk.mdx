@@ -535,6 +535,26 @@ should install detected missing prerequisites through its package manager.
 Use `ttr box repair --dir .` after a CLI upgrade to repair an existing runner
 service without registering a new runner token.
 
+### Machine Storage
+
+`ttr storage` reports disk headroom and ranks what fills a machine by the bytes
+deleting it would actually free (APFS private bytes on macOS, allocated blocks
+with hard links counted once on Linux). `prune` is a dry run until `--apply`.
+
+```bash
+ttr storage status            # free space, pressure and inodes per volume
+ttr storage analyze --json    # ranked consumers by category
+ttr storage suggest           # actions with reclaimable bytes, risk and command
+ttr storage prune             # dry run of the safe, bounded categories
+ttr storage prune --category worktrees --apply
+```
+
+Prune never removes dirty, unmerged, locked, busy, current or held worktrees,
+the primary checkout, `preserve/*` branches, or any path listed in a hold file
+(`~/.t3/cleanup/holds.d/*.txt`). See
+[Machine storage health](/build/development-tools/machine-storage-health) for
+thresholds, categories and per-OS commands.
+
 ### Scoped Help
 
 Use scoped help when you know the area but not the exact flags. Help commands do
