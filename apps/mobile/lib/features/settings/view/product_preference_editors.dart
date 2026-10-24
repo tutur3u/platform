@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 // Product entries and general preferences share the same scoped editors.
 Future<void> openFinanceProductSettings(
@@ -90,12 +90,12 @@ Future<bool?> openTaskBoardNavigationSettings(
       SettingsChoiceOption(
         value: false,
         label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-        icon: shad.LucideIcons.squareKanban,
+        icon: LucideIcons.squareKanban,
       ),
       SettingsChoiceOption(
         value: true,
         label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
-        icon: shad.LucideIcons.layoutDashboard,
+        icon: LucideIcons.layoutDashboard,
       ),
     ],
   );

@@ -208,37 +208,11 @@ auth/session and build-info routes are local as well.
 
 ### Calendar settings authorization
 
-Personal calendar preferences are scoped to the authenticated user. Settings
-updates accept supported IANA timezone names or `auto` inheritance; invalid
-names and fixed-offset strings are rejected before storage. Workspace
-calendar settings are readable by members, but updates require
-`manage_workspace_settings`. Check that permission explicitly on the owning
-PATCH route: a verified signed app session can use an admin-backed database
-client, so membership and table RLS alone do not enforce editing rights.
-
-Native clients reach the Calendar owner through the authenticated mobile gateway.
-The settings allowlist permits only GET and PATCH on
-`/api/v1/users/calendar-settings` and
-`/api/v1/workspaces/:wsId/calendar-settings`; upstream ownership, workspace
-permission checks, credential isolation and response limits remain enforced.
-
-Native preference GETs and PATCHes use the actor already verified by the shared MFA guard, without another authentication request. Their quota must not depend on a warm session
-trust cache: a cold/rotated credential previously fell into the shared anonymous IP bucket
-and could receive 429 before Calendar authenticated it. Actor keys also survive token rotation. The exact preference routes use a dedicated bucket, separate from unrelated gateway traffic. Personal/workspace GETs share 600/minute, 6,000/hour, 40,000/day by default; saves share
-60/minute, 300/hour, 2,000/day. Anonymous IP limits and existing overrides remain unchanged.
-MFA, IP blocks, downstream authentication and workspace permissions remain enforced.
-`api-proxy-calendar-preference-reads.test.ts` covers a cold-cache Settings open after shared-IP
-exhaustion, forged credentials, MFA rejection, actor isolation and rotation; the mutation
-regression covers independent bounded save budgets. Fixtures use the real shared guard/MFA
-adapter with synthetic provider/quota boundaries. `preference-guard.test.ts` checks route
-boundaries; `gateway.test.ts` checks upstream diagnostics. Mobile makes one personal and one
-workspace GET on scope mount; tile rebuilds do not load. `timezone_resolution_scope_test.dart`
-covers request counts, rebuilds and cooldown. English/Vietnamese notices retain Retry-After
-and known safe limiter details, without private bodies or arbitrary headers. Retry is explicit
-and preserves the timezone/endpoint (`timezone_settings_http_widget_test.dart`).
-See [Native Calendar API protection](/build/devops/calendar-native-api-protection) for the full limiter inventory,
-read-only WAF policy audit and scoped hosting correction. An unclassified device 429 does not prove the cold-cache mechanism.
-Correlate owning host/path and safe metadata; never log credentials, bodies, actor/workspace IDs or IPs here.
+Personal/workspace settings use shared validation and explicit workspace edit
+permissions. Native preferences default directly to Web; Calendar browser clients
+and older mobile gateway clients retain their existing adapters. See
+[Native Calendar preferences](/platform/features/native-calendar-preferences)
+for the product decision, quotas, exceptions and regression evidence.
 
 ## OAuth Token Safety
 

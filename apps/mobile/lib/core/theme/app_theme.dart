@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/colors.dart';
+import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Material 3 theme data for light and dark modes.
@@ -134,6 +135,7 @@ abstract final class AppTheme {
     pageTransitionsTheme: _pageTransitions,
     brightness: Brightness.light,
     colorScheme: _lightScheme,
+    extensions: const [AppColorTokens.light],
     scaffoldBackgroundColor: AppColors.backgroundLight,
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surfaceLight,
@@ -169,6 +171,7 @@ abstract final class AppTheme {
     pageTransitionsTheme: _pageTransitions,
     brightness: Brightness.dark,
     colorScheme: _darkScheme,
+    extensions: const [AppColorTokens.dark],
     scaffoldBackgroundColor: AppColors.backgroundDark,
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surfaceDark,

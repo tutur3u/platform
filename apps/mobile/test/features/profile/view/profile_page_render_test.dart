@@ -7,10 +7,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -18,10 +14,10 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+import '../../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements ProfileRepository {}
 
@@ -52,8 +48,7 @@ void main() {
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
-      'packages/shadcn_flutter/LucideIcons':
-          'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
+      'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
@@ -89,28 +84,20 @@ void main() {
       ).thenAnswer((_) async => (profile: _profile, error: null));
       when(() => repository.saveCachedProfile(any())).thenAnswer((_) async {});
       when(repository.dispose).thenReturn(null);
-      const appearance = AppearanceSettings();
-      await tester.pumpWidget(
-        MultiBlocProvider(
+      await tester.pumpThemedHome(
+        RepaintBoundary(
+          key: const ValueKey('profile-render'),
+          child: ProfilePage(profileRepository: repository),
+        ),
+        brightness: brightness,
+        wrap: (app) => MultiBlocProvider(
           providers: [
             BlocProvider<AuthCubit>.value(value: auth),
             BlocProvider(
               create: (_) => ShellProfileCubit(profileRepository: repository),
             ),
           ],
-          child: shad.ShadcnApp(
-            theme: AppearanceTheme.shadTheme(appearance, brightness),
-            localizationsDelegates: const [
-              ...AppLocalizations.localizationsDelegates,
-              AppShadcnLocalizationsDelegate(),
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            builder: ShadcnMaterialBridge.appBuilder,
-            home: RepaintBoundary(
-              key: const ValueKey('profile-render'),
-              child: ProfilePage(profileRepository: repository),
-            ),
-          ),
+          child: app,
         ),
       );
       await tester.pumpAndSettle();

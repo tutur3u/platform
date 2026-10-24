@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
@@ -17,7 +18,6 @@ import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Calendar: week start, a link to the shared time zones and connected
 /// calendar accounts.
@@ -70,7 +70,7 @@ class _CalendarAppSettingsState extends State<CalendarAppSettings> {
                 SettingsTile(
                   key: const ValueKey('settings-first-day-row'),
                   grouped: true,
-                  icon: shad.LucideIcons.calendar,
+                  icon: LucideIcons.calendar,
                   title: l10n.settingsFirstDayOfWeek,
                   value: calendarFirstDayLabel(calendar.state, l10n),
                   onTap: () => unawaited(openCalendarProductSettings(context)),
@@ -78,7 +78,7 @@ class _CalendarAppSettingsState extends State<CalendarAppSettings> {
               SettingsTile(
                 key: const ValueKey('settings-calendar-timezone-row'),
                 grouped: true,
-                icon: shad.LucideIcons.earth,
+                icon: LucideIcons.earth,
                 title: l10n.settingsTimeZoneGroup,
                 value: zone == null || zone == 'auto'
                     ? l10n.settingsFirstDayAuto
@@ -100,7 +100,7 @@ class _CalendarAppSettingsState extends State<CalendarAppSettings> {
                 SettingsTile(
                   key: const ValueKey('settings-calendar-connections-row'),
                   grouped: true,
-                  icon: shad.LucideIcons.link,
+                  icon: LucideIcons.link,
                   title: l10n.calendarConnectionsTitle,
                   onTap: () => unawaited(
                     showCalendarConnectionsSheet(context, wsId: workspaceId),

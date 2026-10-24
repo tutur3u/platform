@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -38,6 +40,44 @@ extension PumpApp on WidgetTester {
         builder: ShadcnMaterialBridge.appBuilder,
       ),
     );
+  }
+
+  /// Pumps the app shell around [router]; [wrap] adds providers above it.
+  Future<void> pumpAppRouter(
+    GoRouter router, {
+    Widget Function(Widget app)? wrap,
+  }) {
+    final app = shad.ShadcnApp.router(
+      theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        AppShadcnLocalizationsDelegate(),
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+      builder: ShadcnMaterialBridge.appBuilder,
+    );
+    return pumpWidget(wrap == null ? app : wrap(app));
+  }
+
+  /// Pumps [home] in the default appearance theme for [brightness];
+  /// [wrap] adds providers above the app.
+  Future<void> pumpThemedHome(
+    Widget home, {
+    Brightness brightness = Brightness.light,
+    Widget Function(Widget app)? wrap,
+  }) {
+    final app = shad.ShadcnApp(
+      theme: AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        AppShadcnLocalizationsDelegate(),
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
+      home: home,
+    );
+    return pumpWidget(wrap == null ? app : wrap(app));
   }
 
   Future<void> drainShadToastTimers() async {

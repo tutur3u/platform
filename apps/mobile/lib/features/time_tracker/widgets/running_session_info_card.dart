@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -163,11 +164,7 @@ class _InfoChip extends StatelessWidget {
             ),
             const shad.Gap(5),
           ] else ...[
-            Icon(
-              shad.LucideIcons.tag,
-              size: 11,
-              color: colorScheme.mutedForeground,
-            ),
+            Icon(LucideIcons.tag, size: 11, color: colorScheme.mutedForeground),
             const shad.Gap(4),
           ],
           Flexible(
@@ -212,11 +209,7 @@ class _TaskChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            shad.LucideIcons.squareCheck,
-            size: 11,
-            color: colorScheme.primary,
-          ),
+          Icon(LucideIcons.squareCheck, size: 11, color: colorScheme.primary),
           const shad.Gap(5),
           if (ticketLabel != null && ticketLabel!.isNotEmpty) ...[
             Text(

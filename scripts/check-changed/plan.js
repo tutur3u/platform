@@ -234,6 +234,28 @@ function planChecks(changes, context) {
       ])
     );
   }
+  if (
+    any(
+      /^(bun\.lock$|apps\/mobile\/(lib\/core\/ui\/icons\/generated|assets\/fonts\/lucide|test\/fixtures\/lucide)\/|scripts\/(mobile-lucide\/|check-mobile-lucide-sync\.js$))/
+    )
+  ) {
+    steps.push(
+      nodeStep('mobile-lucide-sync', 'mobile Lucide icons match web', [
+        'scripts/check-mobile-lucide-sync.js',
+      ])
+    );
+  }
+  if (
+    any(
+      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/(check-mobile-shadcn-imports|dart-directive-uris)\.js$)/
+    )
+  ) {
+    steps.push(
+      nodeStep('mobile-shadcn-ratchet', 'mobile shadcn import ratchet', [
+        'scripts/check-mobile-shadcn-imports.js',
+      ])
+    );
+  }
   if (any(/^(apps\/mobile\/lib|apps\/web\/src\/app\/api)\//)) {
     steps.push(
       nodeStep('mobile-api-mappings', 'mobile API mappings', [

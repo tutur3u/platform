@@ -8,7 +8,7 @@ class _ProfileHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final l10n = context.l10n;
     final displayName = profile.displayName?.trim().isNotEmpty ?? false
         ? profile.displayName!.trim()
@@ -32,7 +32,7 @@ class _ProfileHeroCard extends StatelessWidget {
             Row(
               children: [
                 _LargeProfileAvatar(profile: profile),
-                const shad.Gap(16),
+                const AppGap(16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +45,7 @@ class _ProfileHeroCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const shad.Gap(2),
+                      const AppGap(2),
                       Text(
                         profile.email ?? l10n.profileMissingValue,
                         maxLines: 2,
@@ -78,7 +78,7 @@ class _LargeProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final source =
         profile.displayName ?? profile.fullName ?? profile.email ?? '?';
     final initials = source.trim().isEmpty

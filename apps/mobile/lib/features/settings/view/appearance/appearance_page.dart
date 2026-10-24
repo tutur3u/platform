@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
@@ -95,9 +96,9 @@ class _AppearancePageState extends State<AppearancePage> {
                 selected: state.themeMode,
                 label: l10n.appearanceMode,
                 icon: (mode) => switch (mode) {
-                  shad.ThemeMode.system => shad.LucideIcons.sunMoon,
-                  shad.ThemeMode.light => shad.LucideIcons.sun,
-                  shad.ThemeMode.dark => shad.LucideIcons.moon,
+                  shad.ThemeMode.system => LucideIcons.sunMoon,
+                  shad.ThemeMode.light => LucideIcons.sun,
+                  shad.ThemeMode.dark => LucideIcons.moon,
                 },
                 onSelected: (mode) => choose(() => cubit.setThemeMode(mode)),
               ),
@@ -132,10 +133,9 @@ class _AppearancePageState extends State<AppearancePage> {
                 selected: settings.backgroundStyle,
                 label: l10n.appearanceBackground,
                 icon: (style) => switch (style) {
-                  AppearanceBackgroundStyle.solid => shad.LucideIcons.square,
-                  AppearanceBackgroundStyle.gradient =>
-                    shad.LucideIcons.rainbow,
-                  AppearanceBackgroundStyle.blobs => shad.LucideIcons.blend,
+                  AppearanceBackgroundStyle.solid => LucideIcons.square,
+                  AppearanceBackgroundStyle.gradient => LucideIcons.rainbow,
+                  AppearanceBackgroundStyle.blobs => LucideIcons.blend,
                 },
                 onSelected: (style) => choose(
                   () => cubit.setAppearance(

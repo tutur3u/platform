@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -12,7 +13,6 @@ import 'package:mobile/features/settings/view/apps/timer_threshold_settings.dart
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_settings_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 export 'package:mobile/data/repositories/time_tracker_threshold_cache.dart'
     show timerStatusChangeGracePeriodConfigId;
@@ -85,7 +85,7 @@ class _TimerAppSettingsState extends State<TimerAppSettings> {
             SettingsTile(
               key: const ValueKey('settings-pomodoro-row'),
               grouped: true,
-              icon: shad.LucideIcons.timer,
+              icon: LucideIcons.timer,
               title: l10n.settingsPomodoroTitle,
               value: pomodoro == null
                   ? l10n.commonLoading

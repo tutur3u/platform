@@ -199,6 +199,9 @@ export function privateFixtures(ignorePressure = false) {
       env: {
         ...process.env,
         PATH: fixturePath,
+        // CI volumes can sit below the dequeue disk floor; disk-gate tests
+        // opt back in explicitly.
+        TTR_RESOURCES_IGNORE_DISK: '1',
         ...env,
         TTR_RESOURCES_HOME: home,
       },

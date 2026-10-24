@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// A captioned card with an iOS-style footer saying where its values live:
 /// this device, the account or the whole workspace.
@@ -19,7 +19,7 @@ class AppSettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final note = footer;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
