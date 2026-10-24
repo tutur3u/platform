@@ -266,7 +266,9 @@ jobs:
               pkg.archive !== archives[0] ||
               typeof pkg.archive !== 'string' ||
               pkg.archive.length > 255 ||
-              !/^[a-z0-9][a-z0-9_-]*(?:\.[0-9][a-z0-9_-]*)*\.tgz$/.test(pkg.archive) ||
+              !/^[a-z0-9][a-z0-9_-]*(?:\.[0-9][a-z0-9_-]*)*(?:\.[a-f0-9]{7})?\.tgz$/.test(
+                pkg.archive
+              ) ||
               path.basename(pkg.archive) !== pkg.archive
             ) {
               throw new Error('PUBLIC_QUALIFICATION_RECEIPT_MISMATCH');

@@ -240,6 +240,7 @@ test('publication only accepts unambiguous archive basenames', (t) => {
     'sdk.tgz',
     'tuturuuu-1.2.3.tgz',
     'sdk-1.2.3-beta.1.tgz',
+    'tuturuuu-0.28.0-dev.123.abcdef0.tgz',
   ]) {
     receipt.package.archive = filename;
     save();

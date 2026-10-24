@@ -153,6 +153,13 @@ has the measured old to new limits table.
 | skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
 | Sonha, ThanhStudio | none | not registered |
 
+## SDK supplier updates
+
+For an authorized dev/latest or private-tarball supplier change, use the
+[rollout procedure](references/sdk-rollout.md). It preserves the global Bun
+installation and the existing queue, verifies checksums, records rollback, and
+qualifies each host. Source changes never authorize activation.
+
 ## Diagnose and recover
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
 ages. It warns when an owner has been idle at 0% CPU for more than 10 minutes.
