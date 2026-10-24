@@ -42321,6 +42321,93 @@ export type Database = {
           },
         ];
       };
+      workspace_habit_tracker_entry_receipts: {
+        Row: {
+          created_at: string;
+          entry_id: string | null;
+          idempotency_key: string;
+          request_hash: string;
+          tracker_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          entry_id?: string | null;
+          idempotency_key: string;
+          request_hash: string;
+          tracker_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          entry_id?: string | null;
+          idempotency_key?: string;
+          request_hash?: string;
+          tracker_id?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habit_tracker_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_tracker_id_fkey';
+            columns: ['tracker_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habit_trackers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_habit_trackers: {
         Row: {
           aggregation_strategy: string;
@@ -50379,9 +50466,9 @@ export type Database = {
           p_entry_date: string;
           p_entry_kind: string;
           p_idempotency_key: string;
-          p_note: string | null;
+          p_note: string;
           p_occurred_at: string;
-          p_primary_value: number | null;
+          p_primary_value: number;
           p_request_hash: string;
           p_tags: string[];
           p_tracker_id: string;
@@ -50390,7 +50477,7 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: {
-          entry_id: string | null;
+          entry_id: string;
           replayed: boolean;
         }[];
       };

@@ -135,8 +135,10 @@ export async function createHabitTracker(
 }
 
 type ReceiptOutcome = { entry_id: string | null; replayed: boolean };
-// Typed locally, like the key columns above, so the writer compiles against
-// generated declarations that predate the migration.
+// Typed locally: generated function types mark every argument non-null, but
+// the function accepts NULL note and primary value, which this writer sends.
+// It also keeps the writer compiling against declarations predating the
+// migration, like the key columns above.
 type ReceiptRpc = (
   fn: 'record_habit_tracker_entry_with_receipt',
   args: {
