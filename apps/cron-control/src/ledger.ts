@@ -15,6 +15,11 @@ export interface JobState {
   runs: number;
   stopReason: string | null;
   stopped: boolean;
+  /**
+   * Durable follow-up work a run committed but has not finished (for example
+   * storefront revalidation after checkout expiry); later runs retry it.
+   */
+  pendingWork?: string[];
 }
 
 export type ClaimResult =
@@ -40,7 +45,10 @@ export interface CompleteInput {
 }
 
 export interface Ledger {
+  addPendingWork(jobId: string, items: string[]): Promise<void>;
   checkFence(jobId: string, generation: number): Promise<boolean>;
+  pendingWork(jobId: string): Promise<string[]>;
+  settlePendingWork(jobId: string, items: string[]): Promise<void>;
   claim(input: ClaimInput): Promise<ClaimResult>;
   complete(input: CompleteInput): Promise<JobState>;
   resume(jobId: string): Promise<JobState>;
@@ -53,6 +61,10 @@ export interface LedgerStore {
   read(jobId: string): JobState | null;
   write(jobId: string, state: JobState): void;
 }
+
+// Bounds one job's stored obligations; the oldest are dropped (and logged)
+// only if a backlog ever exceeds it.
+export const MAX_PENDING_WORK = 5_000;
 
 export function initialJobState(): JobState {
   return {
@@ -185,6 +197,36 @@ export class LedgerCore {
   status(): Record<string, JobState> {
     return Object.fromEntries(this.store.list());
   }
+
+  pendingWork(jobId: string): string[] {
+    return this.#read(jobId).pendingWork ?? [];
+  }
+
+  addPendingWork(jobId: string, items: string[]) {
+    const state = this.#read(jobId);
+    const current = state.pendingWork ?? [];
+    const merged = [...new Set([...current, ...items])];
+    if (merged.length === current.length) return;
+    const dropped = merged.length - MAX_PENDING_WORK;
+    if (dropped > 0)
+      console.error('Cron Control dropped pending work over the bound', {
+        dropped,
+        jobId,
+      });
+    this.store.write(jobId, {
+      ...state,
+      pendingWork: merged.slice(Math.max(0, dropped)),
+    });
+  }
+
+  settlePendingWork(jobId: string, items: string[]) {
+    const state = this.#read(jobId);
+    const done = new Set(items);
+    const current = state.pendingWork ?? [];
+    const remaining = current.filter((item) => !done.has(item));
+    if (remaining.length === current.length) return;
+    this.store.write(jobId, { ...state, pendingWork: remaining });
+  }
 }
 
 export function memoryLedgerStore() {
@@ -209,7 +251,11 @@ export function memoryLedgerStore() {
 // Async facade matching the Durable Object RPC surface.
 export function localLedger(core: LedgerCore): Ledger {
   return {
+    addPendingWork: async (jobId, items) => core.addPendingWork(jobId, items),
     checkFence: async (jobId, generation) => core.checkFence(jobId, generation),
+    pendingWork: async (jobId) => core.pendingWork(jobId),
+    settlePendingWork: async (jobId, items) =>
+      core.settlePendingWork(jobId, items),
     claim: async (input) => core.claim(input),
     complete: async (input) => core.complete(input),
     resume: async (jobId) => core.resume(jobId),

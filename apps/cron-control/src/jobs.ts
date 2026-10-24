@@ -198,6 +198,13 @@ export function leaseMs(cronJob: CronJob) {
   return cronJob.timeoutMs * maxAttempts(cronJob) + 30_000;
 }
 
+// Worker processors must finish, and record their outcome, inside the lease
+// so a later slot never claims while a run is still working.
+export const PROCESSOR_LEASE_MARGIN_MS = 30_000;
+export function processorDeadlineMs(cronJob: CronJob) {
+  return leaseMs(cronJob) - PROCESSOR_LEASE_MARGIN_MS;
+}
+
 export function findJob(id: string) {
   return CRON_JOBS.find((cronJob) => cronJob.id === id);
 }

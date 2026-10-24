@@ -6,6 +6,7 @@ import {
   MAX_CONSECUTIVE_FAILURES,
   maxAttempts,
   parseEnabledJobs,
+  processorDeadlineMs,
   scheduleSlot,
   TARGET_ORIGIN_VARS,
   TARGET_SECRET_VARS,
@@ -174,11 +175,12 @@ async function runJob(
     };
   }
   const ledger = deps.ledger();
+  const claimedAt = deps.now();
   const claim = await ledger.claim({
     jobId: cronJob.id,
     leaseMs: leaseMs(cronJob),
     maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
-    now: deps.now(),
+    now: claimedAt,
     slot,
   });
   if (!claim.granted)
@@ -186,12 +188,20 @@ async function runJob(
 
   const processor = workerProcessorFor(cronJob, env);
   if (processor) {
-    // Worker processors run once per slot; the next slot is the retry.
+    // Worker processors run once per slot; the next slot is the retry. Their
+    // requests share one deadline inside the lease, so the outcome is always
+    // recorded before a later slot can claim.
     const result = await processor({
+      deadline: claimedAt + processorDeadlineMs(cronJob),
       env: env as unknown as ProcessorEnv,
       fetch: deps.fetch,
       fence: () => ledger.checkFence(cronJob.id, claim.generation),
       now: deps.now,
+      pending: {
+        add: (items) => ledger.addPendingWork(cronJob.id, items),
+        list: () => ledger.pendingWork(cronJob.id),
+        settle: (items) => ledger.settlePendingWork(cronJob.id, items),
+      },
       userAgent: USER_AGENT,
     });
     await ledger.complete({

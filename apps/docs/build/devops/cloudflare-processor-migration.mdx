@@ -25,13 +25,21 @@ schedule can move first and the processor later. Both vars are empty by default.
 - **Same bounds.** At most 10 batches of 1,000 rows per slot, one shared `p_now`,
   30-second database deadlines and manual redirects. The ledger stop fence is
   checked before every batch after the first.
+- **One deadline inside the lease.** A Worker processor gets an absolute deadline
+  30 seconds before its slot lease expires (240 seconds for checkout expiry's
+  270-second lease). Every request uses its fixed timeout capped by the time left,
+  and none starts with under a second remaining, so the run always finishes and
+  records its outcome before a later slot can claim.
 - **Next-only side effect.** Storefront payloads are cached for a year and
   invalidated by tag inside the Next.js host. When rows expire, the Worker posts
   their workspace ids, 100 per request, to `POST /api/cron/inventory/checkout-expiry`
   with Inventory's cron secret. That handler only revalidates; it accepts at most
   100 UUIDs in an 8 KiB body. Committed expiries are revalidated even if a later
-  batch fails. A failed revalidation fails the slot; storefronts stay stale until
-  the next revalidating write, as when the Next processor's revalidation fails.
+  batch fails. Affected workspace ids are persisted on the job's ledger row as a
+  pending obligation before revalidation, and each accepted chunk settles its
+  ids. A failed or deadline-deferred revalidation fails (or defers) the slot, and
+  every later sweep retries the outstanding obligations first, so a storefront is
+  never left stale after a transient Inventory error.
 - **Outcomes.** A database deadline is `unknown`; HTTP errors, redirects and an
   unexpected RPC shape are `failed`. Worker processors run once per slot: the next
   slot is the retry, and five consecutive failed slots stop the job.

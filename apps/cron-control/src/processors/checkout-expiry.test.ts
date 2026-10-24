@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vite-plus/test';
+import { LedgerCore, memoryLedgerStore } from '../ledger';
 import {
   EXPIRY_BATCH_SIZE,
   EXPIRY_MAX_BATCHES,
@@ -22,7 +23,16 @@ const rows = (count: number, wsCount = 1) =>
 
 function harness(
   batches: (() => Response | Promise<Response>)[],
-  revalidation: () => Response = () => Response.json({ ok: true })
+  revalidation: () => Response = () => Response.json({ ok: true }),
+  {
+    core = new LedgerCore(memoryLedgerStore().store),
+    clock = { now: NOW },
+    deadline = NOW + 240_000,
+  }: {
+    clock?: { now: number };
+    core?: LedgerCore;
+    deadline?: number;
+  } = {}
 ) {
   const calls: {
     body: unknown;
@@ -46,22 +56,29 @@ function harness(
     }
   );
   const fence = vi.fn(async () => true);
+  const job = 'inventory-checkout-expiry';
   const context = {
+    deadline,
     env,
     fence,
     fetch: fetchMock as typeof fetch,
-    now: () => NOW,
+    now: () => clock.now,
+    pending: {
+      add: async (items: string[]) => core.addPendingWork(job, items),
+      list: async () => core.pendingWork(job),
+      settle: async (items: string[]) => core.settlePendingWork(job, items),
+    },
     userAgent: 'Tuturuuu-Cron-Control/1.0',
   };
   const rpc = () => calls.filter((call) => call.path.startsWith('/rest/'));
   const posts = () => calls.filter((call) => call.path.startsWith('/api/'));
-  return { context, fence, posts, rpc };
+  return { calls, context, core, fence, posts, rpc };
 }
 
 it('an idle slot makes one RPC and no revalidation call', async () => {
   const h = harness([() => Response.json([])]);
   expect(await expireCheckouts(h.context)).toEqual({
-    detail: { batches: 1, expired: 0, revalidated: 0 },
+    detail: { batches: 1, expired: 0, pending: 0, revalidated: 0 },
     outcome: 'ok',
   });
   expect(h.rpc()).toHaveLength(1);
@@ -85,7 +102,12 @@ it('drains full batches and revalidates each workspace once', async () => {
     () => Response.json(rows(3, 3)),
   ]);
   expect(await expireCheckouts(h.context)).toEqual({
-    detail: { batches: 2, expired: EXPIRY_BATCH_SIZE + 3, revalidated: 3 },
+    detail: {
+      batches: 2,
+      expired: EXPIRY_BATCH_SIZE + 3,
+      pending: 0,
+      revalidated: 3,
+    },
     outcome: 'ok',
   });
   expect(h.fence).toHaveBeenCalledTimes(1);
@@ -169,7 +191,7 @@ it('chunks revalidation and fails the slot when it is rejected', async () => {
   );
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   expect(await expireCheckouts(h.context)).toEqual({
-    detail: { batches: 1, expired: 250, revalidated: 0 },
+    detail: { batches: 1, expired: 250, pending: 250, revalidated: 0 },
     outcome: 'failed',
   });
   expect(h.posts()).toHaveLength(1);
@@ -185,4 +207,58 @@ it('chunks revalidation and fails the slot when it is rejected', async () => {
             .revalidateWorkspaceIds.length
       )
   ).toEqual([100, 100, 50]);
+});
+
+it('keeps every request inside the deadline and leaves the rest pending', async () => {
+  const clock = { now: NOW };
+  const timeouts: number[] = [];
+  const starts: number[] = [];
+  const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
+    timeouts.push(ms);
+    starts.push(clock.now);
+    return realTimeout(ms);
+  });
+  const deadline = NOW + 240_000;
+  // Each request hangs until its own timeout (the worst case).
+  const slow = (respond: () => Response) => () => {
+    clock.now += timeouts.at(-1) ?? 0;
+    return respond();
+  };
+  const h = harness(
+    [slow(() => Response.json(rows(600, 600)))],
+    slow(() => Response.json({ ok: true })),
+    { clock, deadline }
+  );
+  const result = await expireCheckouts(h.context);
+  expect(result.detail).toMatchObject({ pending: 200, revalidated: 400 });
+  starts.forEach((start, index) => {
+    expect(start + timeouts[index]!).toBeLessThanOrEqual(deadline);
+  });
+  expect(clock.now).toBeLessThanOrEqual(deadline);
+  expect(h.core.pendingWork('inventory-checkout-expiry')).toHaveLength(200);
+});
+
+it('retries a failed revalidation from durable state on a later sweep', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const first = harness(
+    [() => Response.json(rows(3, 3))],
+    () => new Response(null, { status: 503 })
+  );
+  expect(await expireCheckouts(first.context)).toMatchObject({
+    detail: { expired: 3, pending: 3, revalidated: 0 },
+    outcome: 'failed',
+  });
+  // A fresh sweep (new isolate) sees no new expiries but owes the cache work.
+  const second = harness([() => Response.json([])], undefined, {
+    core: first.core,
+  });
+  expect(await expireCheckouts(second.context)).toMatchObject({
+    detail: { expired: 0, pending: 0, revalidated: 3 },
+    outcome: 'ok',
+  });
+  expect(second.posts()[0]?.body).toEqual({
+    revalidateWorkspaceIds: [ws(0), ws(1), ws(2)],
+  });
+  expect(first.core.pendingWork('inventory-checkout-expiry')).toEqual([]);
 });

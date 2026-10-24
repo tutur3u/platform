@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vite-plus/test';
 import { dispatchScheduledJobs, USER_AGENT } from './dispatch';
-import { CRON_JOBS, MAX_CONSECUTIVE_FAILURES } from './jobs';
+import { CRON_JOBS, leaseMs, MAX_CONSECUTIVE_FAILURES } from './jobs';
 import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
 
 const SECRET = 'test-cron-secret-value';
@@ -319,7 +319,7 @@ it('runs the checkout-expiry Worker port only when separately selected', async (
   );
   expect(report).toEqual({
     attempts: 1,
-    detail: { batches: 1, expired: 0, revalidated: 0 },
+    detail: { batches: 1, expired: 0, pending: 0, revalidated: 0 },
     id: 'inventory-checkout-expiry',
     outcome: 'ok',
   });
@@ -327,4 +327,70 @@ it('runs the checkout-expiry Worker port only when separately selected', async (
   expect(h.calls.slice(1).map((call) => call.url.pathname)).toEqual([
     '/rest/v1/rpc/expire_inventory_checkout_sessions',
   ]);
+});
+
+it('a slow Worker processor records its outcome inside the lease before the next slot', async () => {
+  // Worst case: every request hangs until its own timeout.
+  const clock = { now: T0 };
+  const timeouts: number[] = [];
+  const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
+    timeouts.push(ms);
+    return realTimeout(ms);
+  });
+  const workspaces = Array.from(
+    { length: 600 },
+    (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
+  );
+  let expiredOnce = false;
+  const h = harness((url) => {
+    clock.now += timeouts.at(-1) ?? 0;
+    if (url.hostname !== 'db.example.test') return Response.json({ ok: true });
+    const rows = expiredOnce ? [] : workspaces.map((ws_id) => ({ ws_id }));
+    expiredOnce = true;
+    return Response.json(rows);
+  });
+  h.deps.now = () => clock.now;
+  const workerEnv = {
+    ...env,
+    CRON_CONTROL_ENABLED_JOBS: 'inventory-checkout-expiry',
+    CRON_CONTROL_WORKER_PROCESSORS: 'inventory-checkout-expiry',
+    SUPABASE_SECRET_KEY: 'service-key',
+    SUPABASE_URL: 'https://db.example.test',
+  };
+  const job = CRON_JOBS.find(
+    (entry) => entry.id === 'inventory-checkout-expiry'
+  );
+  const lease = leaseMs(job!);
+  const [first] = await dispatchScheduledJobs(
+    '*/5 * * * *',
+    T0,
+    workerEnv,
+    h.deps
+  );
+  // The run stopped at its deadline and recorded the outcome inside the lease.
+  expect(clock.now).toBeLessThanOrEqual(T0 + lease - 30_000);
+  expect(first).toMatchObject({
+    detail: { expired: 600, pending: 200, revalidated: 400 },
+    outcome: 'ok',
+  });
+  expect(h.core.status()['inventory-checkout-expiry']).toMatchObject({
+    lastOutcome: 'ok',
+    leaseUntil: 0,
+  });
+  expect(h.core.pendingWork('inventory-checkout-expiry')).toHaveLength(200);
+
+  // The next slot claims normally and retries the outstanding revalidation.
+  clock.now = T0 + 300_000;
+  const [second] = await dispatchScheduledJobs(
+    '*/5 * * * *',
+    T0 + 300_000,
+    workerEnv,
+    h.deps
+  );
+  expect(second).toMatchObject({
+    detail: { expired: 0, pending: 0, revalidated: 200 },
+    outcome: 'ok',
+  });
+  expect(h.core.pendingWork('inventory-checkout-expiry')).toEqual([]);
 });

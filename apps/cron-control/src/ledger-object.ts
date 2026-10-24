@@ -48,8 +48,20 @@ export class CronLedger extends DurableObject<unknown> {
     this.#core = new LedgerCore(sqlStore(ctx.storage.sql));
   }
 
+  addPendingWork(jobId: string, items: string[]) {
+    this.#core.addPendingWork(jobId, items);
+  }
+
   checkFence(jobId: string, generation: number) {
     return this.#core.checkFence(jobId, generation);
+  }
+
+  pendingWork(jobId: string) {
+    return this.#core.pendingWork(jobId);
+  }
+
+  settlePendingWork(jobId: string, items: string[]) {
+    this.#core.settlePendingWork(jobId, items);
   }
 
   claim(input: ClaimInput) {
