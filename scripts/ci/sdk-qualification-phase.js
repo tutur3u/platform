@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { createRequire } = require('node:module');
+const { devVersion } = require('./sdk-dev-identity');
 
 function stageSdkRuntime(root, stageSdk, inventory) {
   for (const folder of ['dist', 'bin']) {
@@ -12,6 +13,49 @@ function stageSdkRuntime(root, stageSdk, inventory) {
       fs.copyFileSync(path.join(source, file.path), target);
     }
   }
+}
+
+function checkIdentity(expected, value, stage) {
+  if (
+    typeof expected.version !== 'string' ||
+    !value ||
+    value.name !== expected.name ||
+    value.version !== expected.version
+  )
+    throw Object.assign(new Error(`${stage} name/version mismatch`), {
+      code: 'PACKAGE_IDENTITY_MISMATCH',
+    });
+  return { name: value.name, version: value.version };
+}
+function stageBuildIdentity({
+  before,
+  manifestPath,
+  sourceSha,
+  packageVersion,
+}) {
+  const source = JSON.parse(before);
+  const version = packageVersion ?? source.version;
+  const devParts =
+    typeof packageVersion === 'string' &&
+    /-dev\.([1-9][0-9]*)\.[a-f0-9]{7}$/.exec(packageVersion);
+  if (
+    !/^[a-f0-9]{40}$/.test(sourceSha || '') ||
+    !/^\d+\.\d+\.\d+$/.test(source.version) ||
+    (packageVersion !== undefined &&
+      (!devParts ||
+        packageVersion !== devVersion(source.version, devParts[1], sourceSha)))
+  )
+    throw new Error('INVALID_BUILD_IDENTITY');
+  const staged = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  if (staged.name !== 'tuturuuu' || staged.version !== source.version)
+    throw new Error('PACKAGE_IDENTITY_MISMATCH');
+  staged.version = version;
+  staged.tuturuuuBuild = {
+    channel: packageVersion ? 'dev' : 'latest',
+    sourceSha,
+  };
+  fs.writeFileSync(manifestPath, `${JSON.stringify(staged, null, 2)}\n`);
+  return { source, staged };
 }
 
 function registryRewrites(rewrites) {
@@ -124,7 +168,9 @@ function verifyPublishReceipt({ directory, sourceSha, name, version }) {
     pkg.archive !== archives[0] ||
     typeof pkg.archive !== 'string' ||
     pkg.archive.length > 255 ||
-    !/^[a-z0-9][a-z0-9_-]*(?:\.[0-9][a-z0-9_-]*)*\.tgz$/.test(pkg.archive) ||
+    !/^[a-z0-9][a-z0-9_-]*(?:\.[0-9][a-z0-9_-]*)*(?:\.[a-f0-9]{7})?\.tgz$/.test(
+      pkg.archive
+    ) ||
     path.basename(pkg.archive) !== pkg.archive
   ) {
     throw new Error('PUBLIC_QUALIFICATION_RECEIPT_MISMATCH');
@@ -154,6 +200,8 @@ if (require.main === module) {
 }
 module.exports = {
   stageSdkRuntime,
+  stageBuildIdentity,
+  checkIdentity,
   registryRewrites,
   requireInstalledDependencies,
   workflowPhase,
