@@ -10,7 +10,7 @@ import { posix } from 'node:path';
 import { relayStorageDownload } from '@tuturuuu/storage-core/storage-download-relay';
 import { createGuardedSupabaseStorageReadUrl } from '@tuturuuu/storage-core/storage-download-sign';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { encodeStoragePath, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { rejectReservedStoragePath } from '@/legacy-api-routes/v1/storage/reserved-path';
@@ -94,7 +94,10 @@ export const GET = withApiAuth(
         }
         const { data, error } = await supabase.storage
           .from('workspaces')
-          .download(storagePath, transform ? { transform } : undefined);
+          .download(
+            encodeStoragePath(storagePath),
+            transform ? { transform } : undefined
+          );
         if (error || !data) {
           const notFound =
             error &&

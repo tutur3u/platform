@@ -101,7 +101,7 @@ export const POST = withApiAuth(
 
       // Create an empty placeholder file to represent the folder
       // Supabase Storage doesn't support empty folders, so we use a placeholder
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('workspaces')
         .upload(encodeStoragePath(folderPath), new Uint8Array(0), {
           contentType: 'text/plain',
@@ -132,7 +132,7 @@ export const POST = withApiAuth(
         message: 'Folder created successfully',
         data: {
           path: relativePath,
-          fullPath: data.path,
+          fullPath: folderPath,
         },
       });
     } catch (error) {

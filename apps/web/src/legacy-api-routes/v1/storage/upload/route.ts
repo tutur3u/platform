@@ -198,17 +198,13 @@ export const POST = withApiAuth(
         );
       }
 
-      // Strip "[wsId]/" prefix from path to return relative path
-      const prefix = `${wsId}/`;
-      const relativePath = data.path.startsWith(prefix)
-        ? data.path.substring(prefix.length)
-        : data.path;
-
+      // storage-js echoes the encoded transport key, so respond with the
+      // validated logical key that the download and signing routes accept.
       return NextResponse.json({
         message: 'File uploaded successfully',
         data: {
-          path: relativePath,
-          fullPath: data.fullPath ?? storagePath,
+          path: requestedStoragePath,
+          fullPath: data.fullPath ? `workspaces/${storagePath}` : storagePath,
         },
       });
     } catch (error) {

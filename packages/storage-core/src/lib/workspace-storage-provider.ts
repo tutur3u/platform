@@ -1336,12 +1336,11 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
     );
   }
 
-  const prefix = `${wsId}/`;
+  // storage-js echoes the encoded transport key; return the logical key so it
+  // round-trips through the download and signing helpers unchanged.
   return {
-    path: data.path.startsWith(prefix)
-      ? data.path.substring(prefix.length)
-      : relativePath,
-    fullPath: data.fullPath ?? fullPath,
+    path: relativePath,
+    fullPath: data.fullPath ? `workspaces/${fullPath}` : fullPath,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }
@@ -1604,7 +1603,7 @@ export async function createWorkspaceStorageFolderObject(
   }
 
   const supabase = await createDynamicAdminClient();
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('workspaces')
     .upload(encodeStoragePath(folderPath), new Uint8Array(0), {
       contentType: 'text/plain',
@@ -1622,7 +1621,7 @@ export async function createWorkspaceStorageFolderObject(
 
   return {
     path: relativeFolderPath,
-    fullPath: data.path,
+    fullPath: folderPath,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }
