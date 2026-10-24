@@ -8,7 +8,7 @@ import {
   resolve,
 } from 'node:path';
 import { z } from 'zod';
-import { commandTool } from './resources-command';
+import { commandTool, nodeTestWorkers } from './resources-command';
 
 // Cross-project budget for one shared host (for example skr-studio, shared by
 // Tuturuuu and Upskii). It is a layer on the existing lane admission: tickets
@@ -131,6 +131,10 @@ export function inferTokens(
   defaults: { vitestWorkers: number; buildJobs: number }
 ) {
   const { tool, tail } = commandTool(basename(command), args);
+  if (basename(command) === 'node') {
+    const workers = nodeTestWorkers(args, Math.max(2, defaults.vitestWorkers));
+    if (workers !== undefined) return workers;
+  }
   if (tool === 'ambiguous') return Math.max(2, defaults.vitestWorkers);
   const isBuild =
     (tool === 'next' && tail.includes('build')) ||

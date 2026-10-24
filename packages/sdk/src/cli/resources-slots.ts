@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { constants, existsSync, readFileSync } from 'node:fs';
 import {
   link,
   mkdir,
@@ -14,6 +14,7 @@ import {
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
+import { assertBudgetLaunchers } from './resources-compatibility';
 import {
   type ResourceConfig,
   readResourceConfig,
@@ -264,20 +265,60 @@ async function reclaimMutex(path: string) {
 // Legacy schedulers reject unknown slot names, even after all owners drain.
 // Keep this marker across config changes; downgrades require an idle migration.
 export const budgetFence = 'budget-v3';
+async function validBudgetFence(path: string) {
+  let file: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    file = await open(
+      path,
+      constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW
+    );
+    const stat = await file.stat();
+    if (
+      !stat.isFile() ||
+      stat.size !== 2 ||
+      (await file.readFile('utf8')) !== '3\n'
+    )
+      throw new Error(
+        'Malformed budget compatibility fence; admission is closed.'
+      );
+    return true;
+  } catch (error) {
+    if (errno(error, 'ENOENT')) return false;
+    throw error;
+  } finally {
+    await file?.close();
+  }
+}
 async function publishBudgetFence(home: string) {
+  // The admission lock is held: no live publisher can own one of these stages.
+  for (const name of await readdir(home)) {
+    if (/^budget-fence\..+\.tmp$/u.test(name))
+      await rm(join(home, name), { force: true });
+  }
   const slots = join(home, 'slots');
-  await mkdir(slots, { recursive: true, mode: 0o700 });
   const target = join(slots, budgetFence);
+  if (await validBudgetFence(target)) return;
+  await assertBudgetLaunchers(home);
+  await mkdir(slots, { recursive: true, mode: 0o700 });
   const staged = join(home, `budget-fence.${randomUUID()}.tmp`);
   try {
-    await writeFile(staged, '3\n', { flag: 'wx', mode: 0o600 });
+    const file = await open(staged, 'wx', 0o600);
+    try {
+      await file.writeFile('3\n');
+      await file.sync();
+    } finally {
+      await file.close();
+    }
     try {
       await link(staged, target);
+      process.stderr.write(
+        '[ttr resources] Published budget protocol 3. ttr 0.28.0 and old shims are now incompatible ("Unknown resource slot"). Upgrade every global CLI and refresh shims with setup using the existing roots. Idle rollback requires stopping all new clients and removing slots/budget-v3 per the runbook.\n'
+      );
     } catch (error) {
       if (!errno(error, 'EEXIST')) throw error;
-      if ((await readFile(target, 'utf8')) !== '3\n')
+      if (!(await validBudgetFence(target)))
         throw new Error(
-          'Malformed budget compatibility fence; admission is closed.'
+          'Budget compatibility fence disappeared; admission is closed.'
         );
     }
   } finally {
@@ -288,7 +329,8 @@ async function publishBudgetFence(home: string) {
 export async function withAdmission<T>(
   home: string,
   action: () => Promise<T>,
-  cancelled = () => false
+  cancelled = () => false,
+  purpose: 'admission' | 'setup' = 'admission'
 ): Promise<T | undefined> {
   await mkdir(home, { recursive: true, mode: 0o700 });
   const path = join(home, 'admission');
@@ -351,7 +393,7 @@ export async function withAdmission<T>(
         await directory.close();
       }
     }
-    await publishBudgetFence(home);
+    if (purpose === 'admission') await publishBudgetFence(home);
     return await action();
   } finally {
     if (acquired) await releaseMutex(path, owner.token);
@@ -402,7 +444,9 @@ export async function occupancy(
         (name) => !/^(0|[1-9]|1[0-5])$/.test(name) || Number(name) >= maxLanes
       )
   )
-    throw new Error('Unknown resource slot; admission is closed.');
+    throw new Error(
+      'Unknown resource slot; admission is closed. A slots/budget-v3 marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
+    );
   const owners: ResourceOwner[] = [];
   const ownerSlots: string[] = [];
   const occupied: string[] = [];

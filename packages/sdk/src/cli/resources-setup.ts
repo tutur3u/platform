@@ -14,6 +14,10 @@ import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { resourceShims } from './resources-command';
 import {
+  assertBudgetSetupOwner,
+  budgetLauncherProtocol,
+} from './resources-compatibility';
+import {
   assertLaneBudget,
   atomicJson,
   canonical,
@@ -97,10 +101,29 @@ interface SetupOptions {
   dryRun?: boolean;
 }
 export async function setupResources(options: SetupOptions) {
-  if (options.dryRun) return prepareResources(options);
-  return withAdmission(options.home, () => prepareResources(options));
+  const entry = stableResourceEntry(
+    join(
+      __dirname,
+      __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
+    )
+  );
+  const upgrading = await assertBudgetSetupOwner(options.home, entry);
+  if (options.dryRun) return prepareResources(options, upgrading);
+  return withAdmission(
+    options.home,
+    async () =>
+      prepareResources(
+        options,
+        await assertBudgetSetupOwner(options.home, entry)
+      ),
+    () => false,
+    'setup'
+  );
 }
-async function prepareResources(options: SetupOptions) {
+async function prepareResources(
+  options: SetupOptions,
+  launcherUpgrade = false
+) {
   if (!['darwin', 'linux'].includes(process.platform))
     throw new Error('Resource setup currently supports macOS and Linux.');
   const previous = await readResourceConfig(options.home);
@@ -159,7 +182,8 @@ async function prepareResources(options: SetupOptions) {
   const assertIdle = async () => {
     if (
       resourcePolicyKey(previous || defaultResourceConfig()) ===
-      resourcePolicyKey(config)
+        resourcePolicyKey(config) &&
+      !launcherUpgrade
     )
       return;
     const state = await resourceQueueStatus(options.home);
@@ -264,7 +288,7 @@ export async function uninstallResources(home: string) {
 }
 
 function resourceLauncher(home: string, entry: string, name: string) {
-  return `#!/bin/sh\n# Managed by ttr resources\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+  return `#!/bin/sh\n# Managed by ttr resources\n${budgetLauncherProtocol}\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
 }
 
 async function validResourceShim(path: string, expected: string) {

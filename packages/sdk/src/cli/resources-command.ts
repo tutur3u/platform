@@ -133,10 +133,11 @@ const valueFlags: Record<string, readonly string[]> = {
   npx: ['-p', '--package', '-c', '--call'],
 };
 // Bare forms do not consume the following argv in Node 26.4.
-const nodeEqualsOnlyFlags = new Set([
+export const nodeConfigFlags = new Set([
   '--experimental-config-file',
-  '--experimental-specifier-resolution',
+  '--experimental-default-config-file',
 ]);
+const nodeEqualsOnlyFlags = new Set(['--experimental-specifier-resolution']);
 // Only known switches can be skipped without risking a value becoming the program.
 const nodeSwitches = new Set([
   '--help',
@@ -156,7 +157,6 @@ const nodeSwitches = new Set([
   '--trace-deprecation',
   '--trace-warnings',
   '--no-experimental-fetch',
-  '--experimental-default-config-file',
 ]);
 // The ttr CLI (`#!/usr/bin/env bun`) starts through the bun shim whenever the
 // shims are on PATH. It does its own admission, so a shim must never admit it.
@@ -186,7 +186,7 @@ export function commandTool(name: string, args: string[]) {
           continue;
         }
         const flag = arg.split('=')[0]!;
-        if (name === 'node' && flag === '--run')
+        if (name === 'node' && (flag === '--run' || nodeConfigFlags.has(flag)))
           return { tool: 'ambiguous', tail: args, offset: 0 };
         if (name === 'node' && nodeEqualsOnlyFlags.has(flag)) {
           if (!arg.includes('='))
@@ -403,18 +403,38 @@ export function isTrivialCommand(
   return trivialExecutable(name, env) !== undefined;
 }
 
-function limitNodeTests(args: string[], tokens: number) {
+function nodeTestOptions(args: string[]) {
   let testing = false;
+  let workers: number | undefined;
   let end = 0;
   for (; end < args.length; end++) {
     const arg = args[end]!;
     if (arg === '--' || !arg.startsWith('-')) break;
     const flag = arg.split('=')[0]!.replaceAll('_', '-');
     if (['-e', '-p', '--eval', '--print'].includes(flag)) return undefined;
-    if (flag === '--test') testing = true;
+    if (flag === '--test' || nodeConfigFlags.has(flag)) testing = true;
+    if (flag === '--test-concurrency') {
+      const requested = Number(
+        arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : args[end + 1]
+      );
+      workers =
+        Number.isInteger(requested) && requested > 0 ? requested : undefined;
+    }
     if (valueFlags.node?.includes(flag) && !arg.includes('=')) end++;
   }
-  if (!testing) return undefined;
+  return testing ? { end, workers } : undefined;
+}
+
+export function nodeTestWorkers(args: string[], cap: number) {
+  const options = nodeTestOptions(args);
+  return options ? Math.min(options.workers ?? cap, cap) : undefined;
+}
+
+function limitNodeTests(args: string[], tokens: number) {
+  const parsed = nodeTestOptions(args);
+  if (!parsed) return undefined;
+  const { end } = parsed;
+  const workers = Math.min(parsed.workers ?? tokens, tokens);
   const options: string[] = [];
   for (let i = 0; i < end; i++) {
     const arg = args[i]!;
@@ -430,7 +450,7 @@ function limitNodeTests(args: string[], tokens: number) {
       }
     }
   }
-  return [`--test-concurrency=${tokens}`, ...options, ...args.slice(end)];
+  return [`--test-concurrency=${workers}`, ...options, ...args.slice(end)];
 }
 
 export function limitCommand(

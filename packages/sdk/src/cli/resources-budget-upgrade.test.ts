@@ -56,12 +56,12 @@ describe('budget upgrade fence', { timeout: 45_000 }, () => {
 import {mock} from 'bun:test';
 import * as fs from 'node:fs/promises';
 import {writeFileSync} from 'node:fs';
-const original=fs.writeFile;
-mock.module('node:fs/promises',()=>({...fs,writeFile:async(path,...args)=>{
+const original=fs.writeFile;const originalOpen=fs.open;
+const pause=async()=>{writeFileSync(${JSON.stringify(ready)},'');await new Promise(()=>setInterval(()=>{},1000));};
+mock.module('node:fs/promises',()=>({...fs,open:async(path,...args)=>{const file=await originalOpen(path,...args);if(String(path).includes('/budget-fence.')){await file.writeFile('');await pause();}return file;},writeFile:async(path,...args)=>{
   if(String(path)===${JSON.stringify(fence)}||String(path).includes('/budget-fence.')) {
     await original(path,'',args[1]);
-    writeFileSync(${JSON.stringify(ready)},'');
-    await new Promise(()=>setInterval(()=>{},1000));
+    await pause();
   }
   return original(path,...args);
 }}));
@@ -82,6 +82,9 @@ await withAdmission(${JSON.stringify(home)},async()=>{throw new Error('published
       expect(await readFile(fence, 'utf8')).toBe('3\n');
     });
     expect((await occupancy(home)).occupied).toEqual([]);
+    expect(
+      (await readdir(home)).some((name) => name.startsWith('budget-fence.'))
+    ).toBe(false);
   });
 });
 
