@@ -9,7 +9,7 @@ on:
       - "turbo.json"
       - "tuturuuu.ci.ts"
       - "scripts/ci/qualify-sdk-package*"
-      - "scripts/ci/sdk-package-process.js"
+      - "scripts/ci/sdk-package-process*"
       - "scripts/ci/sdk-qualification-*"
       - "scripts/ci/prepare-npm-package-manifest.js"
       - ".github/workflows/sdk-package-qualification.yaml"

@@ -8,6 +8,7 @@ import {
   ownerCpu,
   parseCpuTime,
   parseProcessCpu,
+  processCpuTable,
 } from './resources-activity';
 import { isTrivialCommand } from './resources-command';
 import { atomicJson, readResourceConfig } from './resources-config';
@@ -22,9 +23,11 @@ import {
   crossProcessTimeout,
   entry,
   exists,
+  groupProducer,
   privateFixtures,
   processTimeout,
   realNode,
+  until,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -261,11 +264,19 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
     expect(idleFor(owner, undefined, { percent: 0, seconds: 9 }, now)).toBe(0);
   });
 
-  it('reports owner command, age and sampled CPU without signalling', async () => {
+  it('warns for a genuinely idle owner after its CPU sample settles without signalling', async () => {
     const path = await home(1);
     const slot = join(path, 'slots', '0');
     const idle = spawn('sleep', ['60'], { stdio: 'ignore', detached: true });
     try {
+      if (idle.pid === undefined)
+        throw new Error('Sleep fixture did not start');
+      await until(
+        async () =>
+          (await processCpuTable())?.find((row) => row.pid === idle.pid)
+            ?.percent === 0,
+        [groupProducer(idle.pid)]
+      );
       const started = new Date(Date.now() - 12 * 60_000).toISOString();
       const owner = {
         ...newOwner('python3', 'python3 /tmp/check.py'),
@@ -289,8 +300,11 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
       expect(details.ownerDetails[0]!.elapsedSeconds).toBeGreaterThanOrEqual(
         12 * 60
       );
-      expect(Number.isFinite(details.ownerDetails[0]!.cpuPercent)).toBe(true);
-      expect(details.ownerDetails[0]!.cpuPercent).toBeGreaterThanOrEqual(0);
+      expect(details.ownerDetails[0]!.cpuPercent).toBe(0);
+      expect(details.ownerDetails[0]!.idleSeconds).toBeGreaterThanOrEqual(
+        12 * 60
+      );
+      expect(details.warnings.join('\n')).toContain('idle at 0% CPU');
       const text = renderResourceStatus({
         enabled: true,
         machine: { memoryGiB: 24, cpus: 10 },
@@ -299,9 +313,16 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
         ...details,
       });
       expect(text).toContain('python3 /tmp/check.py');
+      expect(text).toContain(`WARNING: Owner PID ${owner.pid}`);
       expect(idle.exitCode).toBeNull();
     } finally {
-      idle.kill();
+      if (idle.exitCode === null && idle.signalCode === null) {
+        const exited = new Promise<void>((resolve) =>
+          idle.once('exit', () => resolve())
+        );
+        idle.kill();
+        await exited;
+      }
     }
   });
 });

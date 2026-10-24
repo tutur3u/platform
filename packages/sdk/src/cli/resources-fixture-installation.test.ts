@@ -1,5 +1,5 @@
 import type { SpawnOptions } from 'node:child_process';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -33,6 +33,23 @@ afterEach(async () => {
 });
 
 describe('fixture shim preparation', { timeout: crossProcessTimeout }, () => {
+  it.each([
+    { memory: 16 * 1024 ** 3, cpus: 10 },
+    { memory: 24 * 1024 ** 3, cpus: 8 },
+  ])('refuses a changed per-home shim budget: %j', async (budget) => {
+    const home = await fixtures.home();
+    const status = () => fixtures.launch(home, ['status', '--json']);
+    expect((await status().done).code).toBe(0);
+    const shim = join(home, 'fixture-shim.ts');
+    const before = await readFile(shim, 'utf8');
+    expect((await status().done).code).toBe(0);
+    expect(() =>
+      fixtures.launch(home, ['status', '--json'], home, undefined, {}, budget)
+    ).toThrow('Fixture shim host budget changed; use a fresh fixture home');
+    expect(await readFile(shim, 'utf8')).toBe(before);
+    expect(fixtures.children).toHaveLength(2);
+  });
+
   it('starts two concurrent runs after a single per-home shim installation', async () => {
     const home = await fixtures.home();
     preload.path = join(home, 'installation-hook.ts');

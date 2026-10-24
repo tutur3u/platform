@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {
   chmod,
   mkdtemp,
@@ -167,8 +167,14 @@ export function privateFixtures(ignorePressure = false) {
     const setup = resolve('src/cli/resources-setup.ts');
     // Only disposable test loaders mock the host. No production env switch/API.
     const prefix = `import {mock} from 'bun:test';import * as os from 'node:os';import {appendFileSync} from 'node:fs';mock.module('node:os',()=>({...os,totalmem:()=>${budget.memory},availableParallelism:()=>${budget.cpus},loadavg:()=>[1,1,1]}));appendFileSync(${jsLiteral(join(home, 'fixture-host.jsonl'))},JSON.stringify({pid:process.pid,memory:os.totalmem(),cpus:os.availableParallelism(),shim:process.argv[1]===${jsLiteral(shimEntry)}})+'\\n');const actual=await import(${jsLiteral(setup)});const install=actual.installResourceShims;const prepare=actual.setupResources;const validate=actual.installedResourceShims;mock.module(${jsLiteral(setup)},()=>({...actual,installedResourceShims:(home)=>validate(home,${jsLiteral(shimEntry)}),installResourceShims:(home)=>install(home,${jsLiteral(shimEntry)}),setupResources:async(options)=>{const result=await prepare(options);if(!options.dryRun)await install(options.home,${jsLiteral(shimEntry)});return result;}}));`;
-    if (!existsSync(shimEntry))
-      writeFileSync(shimEntry, `${prefix}await import(${jsLiteral(entry)});`, {
+    const shimSource = `${prefix}await import(${jsLiteral(entry)});`;
+    if (existsSync(shimEntry)) {
+      if (readFileSync(shimEntry, 'utf8') !== shimSource)
+        throw new Error(
+          'Fixture shim host budget changed; use a fresh fixture home'
+        );
+    } else
+      writeFileSync(shimEntry, shimSource, {
         mode: 0o600,
       });
     const previous = preparations.get(home);
