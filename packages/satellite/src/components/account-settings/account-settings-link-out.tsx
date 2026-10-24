@@ -6,16 +6,40 @@ import { useTranslations } from 'next-intl';
 import { buildWebAccountSettingsUrl } from './account-settings-links';
 import type { WebManagedAccountTabId } from './account-settings-navigation';
 
-const TAB_FEATURE_KEYS: Record<WebManagedAccountTabId, readonly string[]> = {
-  accounts: ['accounts_switch', 'accounts_add', 'accounts_remove'],
-  security: [
-    'security_password',
-    'security_two_factor',
-    'security_passkeys',
-    'security_linked_identities',
-  ],
-  sessions: ['sessions_devices', 'sessions_revoke'],
-};
+type AccountSettingsTranslator = ReturnType<
+  typeof useTranslations<'satellite-account-settings'>
+>;
+
+// Literal keys keep every rendered string visible to the i18n key inventory.
+function tabLabel(t: AccountSettingsTranslator, tab: WebManagedAccountTabId) {
+  switch (tab) {
+    case 'accounts':
+      return t('accounts');
+    case 'security':
+      return t('security');
+    case 'sessions':
+      return t('sessions');
+  }
+}
+
+function tabFeatures(
+  t: AccountSettingsTranslator,
+  tab: WebManagedAccountTabId
+): readonly string[] {
+  switch (tab) {
+    case 'accounts':
+      return [t('accounts_switch'), t('accounts_add'), t('accounts_remove')];
+    case 'security':
+      return [
+        t('security_password'),
+        t('security_two_factor'),
+        t('security_passkeys'),
+        t('security_linked_identities'),
+      ];
+    case 'sessions':
+      return [t('sessions_devices'), t('sessions_revoke')];
+  }
+}
 
 /**
  * Sensitive account changes (password, 2FA, passkeys, identity linking,
@@ -41,7 +65,7 @@ export function AccountSettingsLinkOut({
         <div className="space-y-1">
           <p className="font-medium">{t('managed_centrally_title')}</p>
           <p className="text-muted-foreground text-sm">
-            {t('managed_centrally_description', { section: t(tab) })}
+            {t('managed_centrally_description', { section: tabLabel(t, tab) })}
           </p>
           {signedInEmail && (
             <p className="text-muted-foreground text-sm">
@@ -51,10 +75,10 @@ export function AccountSettingsLinkOut({
         </div>
       </div>
       <ul className="grid gap-2 text-sm">
-        {TAB_FEATURE_KEYS[tab].map((key) => (
-          <li className="flex items-center gap-2" key={key}>
+        {tabFeatures(t, tab).map((feature) => (
+          <li className="flex items-center gap-2" key={feature}>
             <Check className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span>{t(key)}</span>
+            <span>{feature}</span>
           </li>
         ))}
       </ul>
