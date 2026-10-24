@@ -1222,6 +1222,25 @@ transient checkpoint failures display a delayed-backup warning. Editing continue
 and a successful checkpoint clears the warning. Rejoining restores the current
 backup status. The Worker rejects client-authored backup status notifications.
 
+The room Durable Object posts each checkpoint to the platform API from a Worker
+`fetch`, which carries no `User-Agent`. The web API proxy treats an anonymous
+`/api/*` request without one as scanner traffic (HTTP 400, with an egress IP
+block on repeat), so an unidentified checkpoint never reaches its route and the
+room keeps retrying and re-announcing "backup delayed". Every Worker-to-platform
+call therefore sends the shared service headers from
+`packages/realtime/src/core/service-request.ts`, and the checkpoint route passes
+the private RPC status through (a `40001` conflict is HTTP 409, not 503) so the
+room reports a real conflict instead of an endless delay. Regression coverage:
+`apps/meet-realtime/src/channel-checkpoint-request.test.ts` (request identity and
+status mapping in the Durable Object) and
+`apps/web/src/app/api/v1/realtime/documents/checkpoint/route.test.ts`.
+
+The shared document surface is the panel itself: padding lives on the editable
+area, the writing surface fills the panel height so a click below the last line
+still places the caret, and the surface shows no focus ring (the caret, remote
+cursors and toolbar state convey focus). `document-panel.test.tsx` asserts that
+class contract because jsdom computes no layout.
+
 Native mobile opens the same shared web rich-text and programming editors inside
 an authenticated app-owned WebView. This preserves Yjs, formatting, remote
 cursors, pointers, selections and reconnect behavior across web and mobile.
