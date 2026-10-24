@@ -7,7 +7,7 @@
     "build": "vp build && tsc --noEmit",
     "type-check": "tsc --noEmit",
     "test": "vp test --pool=threads",
-    "preview": "wrangler dev --port 8795",
+    "preview": "vp dev --config vite.worker.config.ts",
     "deploy": "bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
     "lint": "vp lint --config .oxlintrc.json src vite.config.ts vite.worker.config.ts --deny-warnings",
