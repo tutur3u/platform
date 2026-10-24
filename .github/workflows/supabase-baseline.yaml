@@ -77,7 +77,7 @@ jobs:
         with:
           profile: full
       - name: Verify image-pull retry boundaries
-        run: node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
+        run: node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-image-cache-seed.test.js scripts/ci/supabase-image-cache-registry.test.js scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
       - name: Cold baseline from all migrations
         id: cold
         run: node scripts/ci/supabase-baseline.js prepare

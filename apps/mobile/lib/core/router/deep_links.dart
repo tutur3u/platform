@@ -172,6 +172,11 @@ MobileDeepLink? _resolveTasksHostLink(
 
 String? _moduleLocation(Uri uri, List<String> segments) {
   if (segments.isEmpty) return Routes.home;
+  // `<app>/settings` opens the central app settings sub-screen.
+  if (segments.length == 2 && segments[1] == 'settings') {
+    final central = Routes.appSettingsLocation(segments.first);
+    if (central != null) return central;
+  }
 
   return switch (segments.first) {
     'apps' => Routes.apps,
@@ -356,6 +361,10 @@ String _settingsLocation(List<String> segments) {
         return Routes.settingsProfile;
       case 'accounts':
         return Routes.settingsAccounts;
+      case 'apps':
+        return segments.length > 2
+            ? Routes.appSettingsLocation(segments[2]) ?? Routes.settings
+            : Routes.settings;
       case 'offline':
         if (segments.length > 2 &&
             const {

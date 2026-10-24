@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@azure/msal-node": "^6.0.1",
+    "@azure/msal-node": "^7.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "cldr-core": "^48.2.0"
   },

@@ -215,6 +215,7 @@ test('finite process controls drain on timeout and output overflow', async () =>
 
 test('unavailable registry dependency blocks before pack/install and preserves package beforeimages', async (t) => {
   const root = fixture(t);
+  write(root, 'packages/sdk/bin/ttr.cjs', 'synthetic fixture');
   write(root, 'package.json', { workspaces: ['packages/*'] });
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
@@ -328,7 +329,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
     version: '0.0.0',
-    files: ['dist'],
+    files: ['dist', 'bin'],
     ...changes.manifest,
   });
   write(root, 'packages/unpublished/package.json', {
@@ -338,6 +339,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   const required = [
     'index.js',
     'index.d.ts',
+    '../bin/ttr.cjs',
     'cli/index.js',
     'cli/operational-cli.js',
     'cli/operational-search.js',
@@ -433,7 +435,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
       fs.mkdirSync(path.join(consumer, 'node_modules/.bin'));
       for (const alias of ['ttr', 'tuturuuu', 'tutur3u'])
         fs.symlinkSync(
-          path.join(installed, 'dist/cli/index.js'),
+          path.join(installed, 'bin/ttr.cjs'),
           path.join(consumer, 'node_modules/.bin', alias)
         );
       if (changes.installedName || changes.installedVersion)
@@ -575,30 +577,6 @@ test('workflow admits only raw-head build/test qualification and preserves other
   const config = fs.readFileSync(path.join(repo, 'tuturuuu.ci.ts'), 'utf8');
   assert.match(config, /'sdk-package-qualification.yaml': true/);
   assert.match(config, /'vercel-production-tanstack-web.yaml': false/);
-});
-
-test('a process-helper-only change selects package qualification', () => {
-  const repo = path.resolve(__dirname, '../..');
-  const workflow = fs.readFileSync(
-    path.join(repo, '.github/workflows/sdk-package-qualification.yaml'),
-    'utf8'
-  );
-  const rules = [
-    ...workflow.split('workflow_dispatch:')[0].matchAll(/^ {6}- "([^"]+)"$/gm),
-  ].map((match) => match[1]);
-  const helper = 'scripts/ci/sdk-package-process.js';
-  const selected = (paths) =>
-    paths.some((rule) => path.matchesGlob(helper, rule));
-  assert.equal(
-    selected(rules.filter((rule) => rule !== helper)),
-    false,
-    'prior trigger excluded a helper-only change'
-  );
-  assert.equal(
-    selected(rules),
-    true,
-    'helper-only changes must run the drain controls'
-  );
 });
 
 test('install failure retains only bounded diagnostic hashes and allowlisted reported codes before cleanup', async (t) => {

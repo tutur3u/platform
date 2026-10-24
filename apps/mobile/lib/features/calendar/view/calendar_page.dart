@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/app_page.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
@@ -46,10 +47,16 @@ CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     : CalendarViewMode.threeDays;
 
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, this.initialEventId, this.repositoryFactory});
+  const CalendarPage({
+    super.key,
+    this.initialEventId,
+    this.repositoryFactory,
+    this.cacheStore,
+  });
 
   final String? initialEventId;
   final CalendarRepository Function()? repositoryFactory;
+  final CacheStore? cacheStore;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +66,7 @@ class CalendarPage extends StatelessWidget {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
           calendarRepository: repositoryFactory?.call() ?? CalendarRepository(),
+          cacheStore: cacheStore,
           defaultViewMode: defaultMode,
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)

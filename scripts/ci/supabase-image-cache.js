@@ -185,6 +185,14 @@ async function pullImage(
       if (remaining <= 0)
         return { code: 1, signal: 'SIGTERM', stderr: diagnostic };
       attempts++;
+      if (
+        useAlternate &&
+        pin &&
+        (pin.amd64 !== alternate.amd64 || pin.config !== alternate.config)
+      ) {
+        diagnostic = 'Seed alternate differs from canonical image content';
+        return { code: 1, stderr: diagnostic };
+      }
       const activePin = useAlternate ? alternate : pin;
       const source = useAlternate
         ? `${alternate.repository}@${alternate.amd64}`

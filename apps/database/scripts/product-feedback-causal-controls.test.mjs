@@ -41,7 +41,11 @@ const baseline = {
   body,
   owner: '10',
   acl: ['postgres=X/postgres'],
-  settings: ['search_path=""', 'statement_timeout=3s', 'lock_timeout=500ms'],
+  settings: [
+    'search_path=pg_catalog, pg_temp',
+    'statement_timeout=3s',
+    'lock_timeout=500ms',
+  ],
   securityDefiner: true,
   identity: '200',
   language: 'plpgsql',

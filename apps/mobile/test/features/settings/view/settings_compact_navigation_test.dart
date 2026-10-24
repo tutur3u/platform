@@ -16,6 +16,7 @@ import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -52,6 +53,7 @@ import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
+import 'package:mobile/features/settings/view/timezone_picker_sheet.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -85,6 +87,8 @@ part 'settings_assistant_shell_checks.dart';
 part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
 part 'settings_appearance_shell_checks.dart';
+part 'settings_apps_checks.dart';
+part 'settings_timezone_picker_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
@@ -96,6 +100,8 @@ void main() {
   registerSettingsAssistantEntrypointChecks();
   registerSettingsSecretsShellChecks();
   registerSettingsAppearanceShellChecks();
+  registerSettingsAppsChecks();
+  registerTimezonePickerChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(
@@ -116,6 +122,7 @@ void main() {
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
       'packages/shadcn_flutter/LucideIcons':
           'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
+      'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
@@ -183,21 +190,35 @@ void main() {
     },
   );
 
+  // Finance and Tasks rows live on their central app sub-screens.
   for (final sample in [
-    ('settings-finance-row', 'finance-amounts-visible', 'Show amounts', true),
-    ('settings-haptics-row', 'interaction.haptics.enabled', 'Off', false),
+    (
+      'settings-finance-row',
+      'finance-amounts-visible',
+      'Show amounts',
+      true,
+      Routes.settingsAppPath('finance'),
+    ),
+    (
+      'settings-haptics-row',
+      'interaction.haptics.enabled',
+      'Off',
+      false,
+      Routes.settings,
+    ),
     (
       'settings-task-board-row',
       'disable-default-task-board-navigation',
       'Board picker',
       true,
+      Routes.settingsAppPath('tasks'),
     ),
   ]) {
     testWidgets(
       '${sample.$1} opens a child and saves only an explicit choice',
       (tester) async {
         _viewport(tester, const Size(390, 844));
-        final h = _SettingsHarness();
+        final h = _SettingsHarness(initial: sample.$5);
         addTearDown(() async {
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pump();
@@ -225,7 +246,7 @@ void main() {
               'haptics=${AppHaptics.enabled}; selected ${sample.$3}',
         );
         expect(find.text('Cancel'), findsNothing);
-        expect(h.router.state.matchedLocation, Routes.settings);
+        expect(h.router.state.matchedLocation, sample.$5);
         expect(tester.takeException(), isNull);
       },
     );
@@ -235,7 +256,8 @@ void main() {
     testWidgets(
       '${accountSwitch ? 'account' : 'workspace'} switch cancels an editor',
       (tester) async {
-        final h = _SettingsHarness();
+        final finance = Routes.settingsAppPath('finance');
+        final h = _SettingsHarness(initial: finance);
         addTearDown(() async {
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pump();
@@ -258,7 +280,7 @@ void main() {
           ),
           isNull,
         );
-        expect(h.router.state.matchedLocation, Routes.settings);
+        expect(h.router.state.matchedLocation, finance);
         expect(tester.takeException(), isNull);
       },
     );
@@ -391,11 +413,7 @@ void main() {
 
         await h.pump(tester, scale: scale);
         await _capture(tester, 'settings-root-small-$scale');
-        for (final key in [
-          'settings-finance-row',
-          'settings-haptics-row',
-          'settings-task-board-row',
-        ]) {
+        for (final key in ['settings-haptics-row', 'finance', 'tasks']) {
           await tester.scrollUntilVisible(
             find.byKey(ValueKey(key)),
             120,
@@ -440,7 +458,8 @@ void main() {
     'non-sliver Finance editor contains scrolling and dismisses without writes',
     (tester) async {
       _viewport(tester, const Size(320, 568));
-      final h = _SettingsHarness();
+      final finance = Routes.settingsAppPath('finance');
+      final h = _SettingsHarness(initial: finance);
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
@@ -494,7 +513,7 @@ void main() {
       await _settle(tester);
       expect(find.text('Cancel'), findsNothing);
       expect(find.byType(AppDialogScaffold), findsNothing);
-      expect(h.router.state.matchedLocation, Routes.settings);
+      expect(h.router.state.matchedLocation, finance);
       expect(dockOpacity(), 1);
       expect(prefs.get('finance-amounts-visible'), before);
       expect(tester.takeException(), isNull);
@@ -516,24 +535,22 @@ void main() {
     await _settle(tester);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
-    expect(find.byType(ListTile).evaluate().length, lessThan(30));
-    expect(
-      find.widgetWithText(ListTile, supportedTimezones.last),
-      findsNothing,
-    );
-    await tester.enterText(find.byType(TextField), supportedTimezones.last);
+    expect(find.byType(AppOptionTile).evaluate().length, lessThan(30));
+    // Zones sort west to east, so Tongatapu (GMT+13) starts off-screen.
+    const zone = 'Pacific/Tongatapu';
+    expect(supportedTimezones, contains(zone));
+    final last = find.byKey(const ValueKey('timezone-option-$zone'));
+    expect(last, findsNothing);
+    await tester.enterText(find.byType(TextField), 'tongatapu');
     await _settle(tester);
-    expect(
-      find.widgetWithText(ListTile, supportedTimezones.last),
-      findsOneWidget,
-    );
+    expect(last, findsOneWidget);
     await tester.binding.handlePopRoute();
     await _settle(tester);
     verifyNever(() => h.timezone.save(any()));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('expanded Settings preserves four preference categories', (
+  testWidgets('expanded Settings preserves three preference categories', (
     tester,
   ) async {
     _viewport(tester, const Size(1024, 768));
@@ -549,14 +566,13 @@ void main() {
           w is SettingsCompactSection &&
           const {
             'Appearance & language',
-            'Calendar & timezone',
+            'Time zone',
             'Notifications & interaction',
-            'App preferences',
           }.contains(w.title),
     );
     expect(
       find.descendant(of: preferences, matching: find.byType(SettingsGroup)),
-      findsNWidgets(4),
+      findsNWidgets(3),
     );
     expect(
       tester.getRect(find.byKey(const ValueKey('settings-haptics-row'))).left,
@@ -588,7 +604,12 @@ void main() {
 
     await h.pump(tester, scale: 2);
     expect(dockOpacity(), 1);
-    await tester.ensureVisible(find.text('Personal timezone'));
+    // The header and search field put this row below the first screen.
+    await tester.scrollUntilVisible(
+      find.text('Personal timezone'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
     await _settle(tester);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
@@ -596,12 +617,13 @@ void main() {
     addTearDown(tester.view.resetViewInsets);
     await tester.enterText(find.byType(TextField), 'Paris');
     await _settle(tester);
+    final paris = find.byKey(const ValueKey('timezone-option-Europe/Paris'));
     await tester.scrollUntilVisible(
-      find.widgetWithText(ListTile, 'Europe/Paris'),
+      paris,
       60,
       scrollable: find
           .descendant(
-            of: find.byType(CustomScrollView),
+            of: find.byType(TimezonePickerSheet),
             matching: find.byType(Scrollable),
           )
           .first,
@@ -609,7 +631,7 @@ void main() {
     await _settle(tester);
     expect(find.byType(MorphingNavigationBar), findsNothing);
     await _capture(tester, 'settings-timezone-keyboard-large');
-    await tester.tap(find.widgetWithText(ListTile, 'Europe/Paris'));
+    await tester.tap(paris);
     await _settle(tester);
     verify(() => h.timezone.save('Europe/Paris')).called(1);
     expect(h.router.state.matchedLocation, Routes.settings);

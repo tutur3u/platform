@@ -3,6 +3,7 @@ import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -153,8 +154,8 @@ class _PreviewRow extends StatelessWidget {
       color: foreground,
     );
     final valueStyle = typography.base.copyWith(color: muted);
-    final icon = Icon(shad.LucideIcons.palette, size: 20, color: foreground);
-    final chevron = Icon(shad.LucideIcons.chevronRight, size: 17, color: muted);
+    final icon = Icon(LucideIcons.palette, size: 20, color: foreground);
+    final chevron = Icon(LucideIcons.chevronRight, size: 17, color: muted);
     return LayoutBuilder(
       builder: (context, constraints) {
         double width(String text, TextStyle style) =>

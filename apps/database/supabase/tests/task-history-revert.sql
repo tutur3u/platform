@@ -5,7 +5,7 @@ select plan(3);
 select ok(
   (
     select coalesce(p.proconfig, array[]::text[])
-      @> array['search_path=public']
+      @> array['search_path=public, pg_temp']
     from pg_proc p
     where p.oid =
       'public.get_task_snapshot_at_history(uuid,uuid,uuid)'::regprocedure
@@ -16,7 +16,7 @@ select ok(
 select ok(
   (
     select coalesce(p.proconfig, array[]::text[])
-      @> array['search_path=public']
+      @> array['search_path=public, pg_temp']
     from pg_proc p
     where p.oid =
       'public.get_task_relationships_at_snapshot(uuid,uuid,uuid)'::regprocedure
@@ -27,7 +27,7 @@ select ok(
 select ok(
   (
     select coalesce(p.proconfig, array[]::text[])
-      @> array['search_path=public']
+      @> array['search_path=public, pg_temp']
     from pg_proc p
     where p.oid =
       'public.revert_task_to_history(uuid,uuid,uuid,text[])'::regprocedure

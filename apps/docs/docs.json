@@ -56,6 +56,7 @@
                   "platform/features/forms-studio-layouts",
                   "platform/features/meet-calls",
                   "platform/features/native-calendar-recurrence",
+                  "platform/features/native-calendar-preferences",
                   "platform/features/notes-voice-analysis",
                   "platform/features/programming-playgrounds",
                   "platform/features/account-benefits",
@@ -384,6 +385,7 @@
               "build/development-tools/documenting",
               "build/development-tools/mobile-state-regressions",
               "build/development-tools/mobile-design-system",
+              "build/development-tools/mobile-shadcn-migration",
               "build/development-tools/public-seo",
               "build/development-tools/seo-strategy",
               {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/duration.dart';
@@ -58,7 +59,7 @@ class SessionTile extends StatelessWidget {
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.only(left: 20),
           child: Icon(
-            shad.LucideIcons.pencil,
+            LucideIcons.pencil,
             color: theme.colorScheme.primaryForeground,
           ),
         ),
@@ -67,7 +68,7 @@ class SessionTile extends StatelessWidget {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
           child: Icon(
-            shad.LucideIcons.trash2,
+            LucideIcons.trash2,
             color: theme.colorScheme.primaryForeground,
           ),
         ),

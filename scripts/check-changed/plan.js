@@ -90,6 +90,22 @@ function nodeScriptTests(files, exists) {
   return [...selected].sort();
 }
 
+function isNodeTest(file, context) {
+  const workspace = workspaceOf(file);
+  if (!workspace) return NODE_TEST_FILE.test(file);
+  const script = context.workspaces?.find(
+    (entry) => entry.workspace === workspace
+  )?.testScript;
+  const source = context.readSource?.(file) ?? '';
+  const imports = (module) =>
+    new RegExp(
+      `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
+    ).test(source);
+  if (imports('vitest')) return false;
+  if (imports('node:test')) return true;
+  return /\bnode\s+--test(?:\s|$)/.test(script ?? '');
+}
+
 /**
  * Build the ordered step list. `changes` is [{ status, file }] relative to the
  * repository root; deleted files only affect path gating.
@@ -116,16 +132,21 @@ function planChecks(changes, context) {
       `not covered; CI only: root/shared configuration (${sharedConfig.join(', ')})`,
     ]);
 
-  if (context.branch) {
+  const branches =
+    context.pushedBranches ?? (context.branch ? [context.branch] : []);
+  if (branches.length) {
     steps.push({
       id: 'branch-name',
-      label: `branch name ${context.branch}`,
-      inline: () => isBranchNameValid(context.branch),
+      label: `branch name ${branches.join(', ')}${context.localBranch ? ` (tracking for ${context.localBranch})` : ''}`,
+      inline: () => branches.every(isBranchNameValid),
       failureHint:
         'Use a type/description branch, for example chore/<topic>; ci/ is rejected.',
     });
   } else {
-    skipped.push(['branch-name', 'detached HEAD']);
+    skipped.push([
+      'branch-name',
+      context.pushedBranches ? 'no pushed branch refs' : 'detached HEAD',
+    ]);
   }
 
   steps.push(
@@ -213,6 +234,28 @@ function planChecks(changes, context) {
       ])
     );
   }
+  if (
+    any(
+      /^(bun\.lock$|apps\/mobile\/(lib\/core\/ui\/icons\/generated|assets\/fonts\/lucide|test\/fixtures\/lucide)\/|scripts\/(mobile-lucide\/|check-mobile-lucide-sync\.js$))/
+    )
+  ) {
+    steps.push(
+      nodeStep('mobile-lucide-sync', 'mobile Lucide icons match web', [
+        'scripts/check-mobile-lucide-sync.js',
+      ])
+    );
+  }
+  if (
+    any(
+      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/(check-mobile-shadcn-imports|dart-directive-uris)\.js$)/
+    )
+  ) {
+    steps.push(
+      nodeStep('mobile-shadcn-ratchet', 'mobile shadcn import ratchet', [
+        'scripts/check-mobile-shadcn-imports.js',
+      ])
+    );
+  }
   if (any(/^(apps\/mobile\/lib|apps\/web\/src\/app\/api)\//)) {
     steps.push(
       nodeStep('mobile-api-mappings', 'mobile API mappings', [
@@ -222,20 +265,32 @@ function planChecks(changes, context) {
   }
 
   const workflowTouched = any(/^\.github\/(workflows|actions)\//);
-  const scriptTests = nodeScriptTests(all, exists);
+  const relatedTests = new Map();
+  for (const file of present) {
+    if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
+    for (const related of siblingTests(file, exists)) {
+      relatedTests.set(related, isNodeTest(related, context));
+    }
+  }
+  const scriptTests = nodeScriptTests(
+    all.filter((file) => !isPausedPath(file)),
+    exists
+  ).filter((file) => !workspaceOf(file) || isNodeTest(file, context));
   const nodeTests = [
     ...new Set([
       ...scriptTests,
+      ...[...relatedTests].filter(([, node]) => node).map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
     ]),
   ].filter(exists);
   if (nodeTests.length) {
     steps.push(
-      nodeStep('script-tests', `node --test (${nodeTests.length} files)`, [
-        '--test',
-        '--test-concurrency=2',
-        ...nodeTests,
-      ])
+      nodeStep(
+        'script-tests',
+        `node --test (${nodeTests.length} files)`,
+        ['--test', '--test-concurrency=2', ...nodeTests],
+        { heavy: true }
+      )
     );
   }
 
@@ -292,7 +347,7 @@ function planChecks(changes, context) {
     if (!context.hasVitest(workspace)) continue;
     const tests = [
       ...new Set(files.flatMap((file) => siblingTests(file, exists))),
-    ];
+    ].filter((file) => !relatedTests.get(file));
     if (!tests.length) continue;
     steps.push({
       id: `vitest:${workspace}`,

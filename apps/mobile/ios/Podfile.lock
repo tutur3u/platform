@@ -1,4 +1,6 @@
 PODS:
+  - app_attest (0.1.1):
+    - Flutter
   - app_links (7.0.0):
     - Flutter
   - AppAuth (2.1.0):
@@ -261,6 +263,7 @@ PODS:
   - WebRTC-SDK (150.7871.01)
 
 DEPENDENCIES:
+  - app_attest (from `.symlinks/plugins/app_attest/ios`)
   - app_links (from `.symlinks/plugins/app_links/ios`)
   - background_downloader (from `.symlinks/plugins/background_downloader/ios`)
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/darwin`)
@@ -329,6 +332,8 @@ SPEC REPOS:
     - WebRTC-SDK
 
 EXTERNAL SOURCES:
+  app_attest:
+    :path: ".symlinks/plugins/app_attest/ios"
   app_links:
     :path: ".symlinks/plugins/app_links/ios"
   background_downloader:
@@ -405,6 +410,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/video_player_avfoundation/darwin"
 
 SPEC CHECKSUMS:
+  app_attest: e86baf7f7ddb6d0b1eba6dae3a33112aacbc4976
   app_links: a754cbec3c255bd4bbb4d236ecc06f28cd9a7ce8
   AppAuth: ef4da5a3fc2e10b90c09a0a94a9baeaedc0341d5
   AppCheckCore: e215d35177a9cf469927863e69c13e220df32a8b

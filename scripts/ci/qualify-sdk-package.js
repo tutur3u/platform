@@ -13,6 +13,9 @@ const {
   getWorkspaceVersions,
 } = require('./prepare-npm-package-manifest');
 const {
+  stageSdkRuntime,
+  stageBuildIdentity,
+  checkIdentity,
   registryRewrites,
   requireInstalledDependencies,
 } = require('./sdk-qualification-phase');
@@ -103,16 +106,6 @@ function checkRegistryTuple(name, version, result) {
   }
   return { name, version, integrity: value.dist.integrity };
 }
-function checkIdentity(expected, value, stage) {
-  if (
-    typeof expected.version !== 'string' ||
-    !value ||
-    value.name !== expected.name ||
-    value.version !== expected.version
-  )
-    fail('PACKAGE_IDENTITY_MISMATCH', `${stage} name/version mismatch`);
-  return { name: value.name, version: value.version };
-}
 function checkPack(result, stagedFiles) {
   const packs = JSON.parse(result.stdout);
   if (result.status !== 0 || !Array.isArray(packs) || packs.length !== 1)
@@ -145,6 +138,7 @@ function checkPack(result, stagedFiles) {
   if (bytes > MAX_BYTES) fail('PACKAGE_LIMIT', 'Package byte bound exceeded');
   for (const required of [
     'package.json',
+    'bin/ttr.cjs',
     'dist/index.js',
     'dist/index.d.ts',
     'dist/cli/index.js',
@@ -212,6 +206,7 @@ async function qualify({
   output,
   sourceSha,
   phase = 'public',
+  packageVersion,
   run = runProcess,
 }) {
   if (!['source', 'public'].includes(phase))
@@ -301,12 +296,7 @@ async function qualify({
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.copyFileSync(manifestPath, target);
     }
-    const dist = path.join(root, 'packages/sdk/dist');
-    for (const file of inventory(dist)) {
-      const target = path.join(stageSdk, 'dist', file.path);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.copyFileSync(path.join(dist, file.path), target);
-    }
+    stageSdkRuntime(root, stageSdk, inventory);
     for (const name of ['README.md', 'LICENSE']) {
       const source = path.join(root, 'packages/sdk', name);
       if (fs.existsSync(source))
@@ -316,11 +306,16 @@ async function qualify({
       packageDir: 'packages/sdk',
       repoRoot: staging,
     });
-    const identity = JSON.parse(before);
+    const { source, staged: identity } = stageBuildIdentity({
+      before,
+      manifestPath: path.join(stageSdk, 'package.json'),
+      sourceSha,
+      packageVersion,
+    });
     receipt.identities = {
       source: checkIdentity(
-        { name: 'tuturuuu', version: identity.version },
-        identity,
+        { name: 'tuturuuu', version: source.version },
+        source,
         'source'
       ),
       staging: checkIdentity(
@@ -541,7 +536,7 @@ async function qualify({
     ];
     for (const alias of ['ttr', 'tuturuuu', 'tutur3u']) {
       const bin = path.join(consumer, 'node_modules/.bin', alias);
-      if (fs.realpathSync(bin) !== entry)
+      if (fs.realpathSync(bin) !== path.join(installed, 'bin/ttr.cjs'))
         fail('BIN_RESOLUTION_FAILED', 'Installed bin target mismatch');
       runtimes.push([bin, [], alias]);
     }

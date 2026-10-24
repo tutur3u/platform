@@ -40,6 +40,19 @@ export interface ProcessGroupOptions {
 // descendant (shells, Docker CLIs, test workers), not only the direct child:
 // SIGTERM to the group, then SIGKILL to anything left after the grace period.
 export async function runProcessGroup(options: ProcessGroupOptions) {
+  // This is an argv executable, never a shell command string. Explicit
+  // interpreters remain supported for authenticated trusted-runner jobs.
+  if (
+    !options.command ||
+    /[;&|`$<>]/u.test(options.command) ||
+    [...options.command].some((part) => {
+      const code = part.charCodeAt(0);
+      return code < 32 || code === 127;
+    }) ||
+    options.args.some((arg) => arg.includes('\0'))
+  ) {
+    throw new Error('Invalid devbox executable or argument.');
+  }
   const graceMs = options.graceMs ?? DEVBOX_JOB_KILL_GRACE_MS;
   const child = spawn(options.command, options.args, {
     cwd: options.cwd,

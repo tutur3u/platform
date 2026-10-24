@@ -131,7 +131,7 @@ select is((select array_agg(proname::text order by proname) from pg_proc where o
  'public.insert_time_tracking_session_with_bypass(uuid,uuid,text,text,uuid,uuid,timestamptz,timestamptz,integer,boolean)'::regprocedure,
  'public.update_time_tracking_session_with_bypass(uuid,jsonb)'::regprocedure) and prosecdef),
  array['insert_time_tracking_session_with_bypass','pause_session_for_break','update_time_tracking_session_with_bypass']::text[],'legacy definer writers explicitly retained, not inferred safe');
-select ok((select prosecdef and proconfig @> array['search_path=""'] from pg_proc where oid='private.replace_running_time_tracker_session(uuid,uuid,bigint,uuid,uuid,text,text,uuid,uuid)'::regprocedure),'new definer uses empty fixed search path');
+select ok((select prosecdef and proconfig @> array['search_path=pg_catalog, pg_temp'] from pg_proc where oid='private.replace_running_time_tracker_session(uuid,uuid,bigint,uuid,uuid,text,text,uuid,uuid)'::regprocedure),'new definer uses hardened fixed search path');
 select ok(not has_function_privilege('anon','private.replace_running_time_tracker_session(uuid,uuid,bigint,uuid,uuid,text,text,uuid,uuid)','EXECUTE'),'new function inherits no public anonymous grant');
 select ok(not has_function_privilege('authenticated','private.replace_running_time_tracker_session(uuid,uuid,bigint,uuid,uuid,text,text,uuid,uuid)','EXECUTE'),'new function inherits no public browser grant');
 select throws_ok($q$set local role authenticated; select * from private.time_tracker_operation_receipts$q$,'42501',null,'actual browser role cannot read receipts');

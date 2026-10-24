@@ -7146,7 +7146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsFirstDaySunday => 'Sunday';
 
   @override
-  String get settingsGeneralGroup => 'Personalize';
+  String get settingsGeneralGroup => 'General';
 
   @override
   String get settingsHaptics => 'Haptic feedback';
@@ -10933,4 +10933,171 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaUploadExpired => 'The upload link expired or is invalid. Select the image again.';
+
+  @override
+  String get settingsNativeVerificationFailed => 'Could not verify this device. Check your connection and try again.';
+
+  @override
+  String get settingsTimezonePickerAll => 'All timezones';
+
+  @override
+  String get settingsTimezonePickerAutoPersonal => 'Uses the workspace timezone, or this device\'s when the workspace has none.';
+
+  @override
+  String get settingsTimezonePickerAutoWorkspace => 'Members without a personal timezone use their own device\'s.';
+
+  @override
+  String settingsTimezonePickerAutoResolved(String timezone) {
+    return 'Currently $timezone.';
+  }
+
+  @override
+  String get settingsTimezonePickerCurrent => 'Current';
+
+  @override
+  String settingsTimezonePickerEmpty(String query) {
+    return 'No timezones match “$query”.';
+  }
+
+  @override
+  String get settingsTimezonePickerSearchHint => 'Search city, region or GMT offset';
+
+  @override
+  String get settingsAppsGroup => 'Apps';
+
+  @override
+  String get settingsSearchPlaceholder => 'Search settings';
+
+  @override
+  String settingsSearchNoResults(String query) {
+    return 'No settings match “$query”.';
+  }
+
+  @override
+  String settingsSearchResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAppOfflineData => 'Offline data';
+
+  @override
+  String get settingsAppOfflineDataDescription => 'Prepare and review what this device keeps offline';
+
+  @override
+  String get settingsAppBoardsGroup => 'Boards';
+
+  @override
+  String get settingsAppWeekGroup => 'Week';
+
+  @override
+  String get settingsAppConnectionsGroup => 'Connected calendars';
+
+  @override
+  String get settingsAppPrivacyGroup => 'Privacy';
+
+  @override
+  String get settingsAppFocusGroup => 'Focus';
+
+  @override
+  String get settingsAppRequestsGroup => 'Requests';
+
+  @override
+  String settingsPomodoroSummary(int focus, int shortBreak) {
+    return '$focus min focus · $shortBreak min break';
+  }
+
+  @override
+  String settingsRequestThresholdSummary(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Entries older than $days days need approval',
+      one: 'Entries older than 1 day need approval',
+      zero: 'Every missed entry needs approval',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsFirstDaySummary(String day) {
+    return 'First day: $day';
+  }
+
+  @override
+  String get settingsMailSummary => 'Mailboxes, reading and swipe actions';
+
+  @override
+  String get settingsAssistantSummary => 'Personality, memory and on-device models';
+
+  @override
+  String get settingsTimeZoneGroup => 'Time zone';
+
+  @override
+  String settingsAppSettingsFor(String app) {
+    return '$app settings';
+  }
+
+  @override
+  String get settingsApprovalThreshold => 'Approval threshold';
+
+  @override
+  String get settingsPomodoroTitle => 'Pomodoro';
+
+  @override
+  String get settingsRequireApproval => 'Require approval';
+
+  @override
+  String get settingsApprovalOlderThan => 'For entries older than';
+
+  @override
+  String get settingsDaysUnit => 'days';
+
+  @override
+  String get settingsStatusChangeWindow => 'Status change window';
+
+  @override
+  String get settingsFooterDevice => 'Saved on this device.';
+
+  @override
+  String get settingsFooterFirstDay => 'Saved to your account on every device. Auto uses the workspace default.';
+
+  @override
+  String get settingsFooterWorkspace => 'Applies to everyone in this workspace.';
+
+  @override
+  String get settingsFooterCalendarAccounts => 'Calendar accounts connected to this workspace.';
+
+  @override
+  String get settingsFooterOffline => 'Data kept on this device for offline use.';
+
+  @override
+  String get settingsTasksSummaryBoardView => 'Board view';
+
+  @override
+  String get settingsTasksSummaryBoardList => 'Board list';
+
+  @override
+  String get settingsFinanceAmountsShown => 'Amounts shown';
+
+  @override
+  String get settingsFinanceAmountsHidden => 'Amounts hidden';
+
+  @override
+  String get settingsSearchBrowserTerm => 'browser';
+
+  @override
+  String get profilePhoto => 'Photo';
+
+  @override
+  String get profileCoverBanner => 'Cover banner';
+
+  @override
+  String get profileMediaSet => 'Set';
 }

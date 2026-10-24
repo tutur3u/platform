@@ -30,6 +30,7 @@ const serialized = [
   'release-please-auto-merge.yaml',
   'release-please-transient-retry.yaml',
   'release-please.yaml',
+  'release-sdk-dev.yaml',
   'release-sdk-package.yaml',
   'release-supabase-package.yaml',
   'release-types-package.yaml',
@@ -94,6 +95,8 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'release-sdk-dev.yaml':
+    'Dev publication retains its serial npm dist-tag lock',
   'biome-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
@@ -313,7 +316,9 @@ for (const file of serialized) {
     assert.equal(c.queue, 'max');
     // Staging migrations and Cloudflare deploys are dispatched from main.
     const ref =
-      file.endsWith('-cloudflare.yaml') || file === 'supabase-staging.yaml'
+      file.endsWith('-cloudflare.yaml') ||
+      file === 'supabase-staging.yaml' ||
+      file === 'release-sdk-dev.yaml'
         ? 'refs/heads/main'
         : 'refs/heads/production';
     const first = context(ref, 'first', 1, 'workflow_dispatch');

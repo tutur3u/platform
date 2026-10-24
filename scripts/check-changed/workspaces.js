@@ -21,6 +21,7 @@ function readWorkspaces(root) {
       workspaces.push({
         workspace,
         name: manifest.name,
+        testScript: manifest.scripts?.test ?? '',
         dependencies: Object.keys({
           ...manifest.dependencies,
           ...manifest.devDependencies,

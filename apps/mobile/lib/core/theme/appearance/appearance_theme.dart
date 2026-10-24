@@ -6,6 +6,7 @@ import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Derives app-wide shad and Material themes from [AppearanceSettings].
@@ -92,6 +93,7 @@ abstract final class AppearanceTheme {
           outlineVariant: scheme.border,
         ),
         dividerTheme: material.DividerThemeData(color: scheme.border),
+        extensions: [colorTokens(scheme, b)],
       );
     });
   }
@@ -147,6 +149,42 @@ abstract final class AppearanceTheme {
       border: () => line,
       input: () => line,
       ring: () => accent,
+    );
+  }
+
+  /// Design-system roles for a resolved scheme. Status hues keep the Classic
+  /// values and are lifted to AA against the scheme background.
+  static AppColorTokens colorTokens(shad.ColorScheme scheme, Brightness b) {
+    final status = AppColorTokens.fallback(b);
+    Color readable(Color color) => AppearanceContrast.ensureContrast(
+      color,
+      against: scheme.background,
+      target: AppearanceContrast.aaText,
+    );
+    return AppColorTokens(
+      brightness: b,
+      background: scheme.background,
+      foreground: scheme.foreground,
+      card: scheme.card,
+      cardForeground: scheme.cardForeground,
+      popover: scheme.popover,
+      popoverForeground: scheme.popoverForeground,
+      primary: scheme.primary,
+      primaryForeground: scheme.primaryForeground,
+      secondary: scheme.secondary,
+      secondaryForeground: scheme.secondaryForeground,
+      muted: scheme.muted,
+      mutedForeground: scheme.mutedForeground,
+      accent: scheme.accent,
+      accentForeground: scheme.accentForeground,
+      destructive: scheme.destructive,
+      destructiveForeground: labelOn(scheme.destructive),
+      border: scheme.border,
+      input: scheme.input,
+      ring: scheme.ring,
+      success: readable(status.success),
+      warning: readable(status.warning),
+      info: readable(status.info),
     );
   }
 

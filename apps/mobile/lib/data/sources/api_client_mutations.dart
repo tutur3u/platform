@@ -102,6 +102,11 @@ extension _ApiClientMutations on ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
+    if (requiresAuth && NativeIntegrityClient.protects(path)) {
+      return _handleResponse(
+        await _requestWithIntegrity('PATCH', path, body: jsonEncode(body)),
+      );
+    }
     final url = _url(path);
 
     final response = await _performRequest(

@@ -1,39 +1,32 @@
 part of 'settings_page.dart';
 
+/// Device-wide preferences. Per-app settings live under Settings > Apps.
 class _PreferencesSection extends StatelessWidget {
   const _PreferencesSection({
     required this.permissionsRepository,
     required this.permissionsRevision,
     required this.appearanceTheme,
     required this.appearanceIsNew,
-    required this.showFinanceAmounts,
     required this.languageLabel,
-    required this.calendarLabel,
-    required this.disableDefaultTaskBoardNavigation,
     required this.onChangeLanguage,
-    required this.onToggleFinanceAmounts,
-    required this.onToggleDefaultTaskBoardNavigation,
     required this.onOpenAppearance,
-    required this.onChangeFirstDayOfWeek,
     required this.hapticsEnabled,
     required this.onToggleHaptics,
+    required this.anchors,
   });
 
   final WorkspacePermissionsRepository permissionsRepository;
   final int permissionsRevision;
   final String appearanceTheme;
   final bool appearanceIsNew;
-  final bool showFinanceAmounts;
   final String languageLabel;
-  final String calendarLabel;
-  final bool disableDefaultTaskBoardNavigation;
   final VoidCallback onChangeLanguage;
-  final VoidCallback onToggleFinanceAmounts;
-  final VoidCallback onToggleDefaultTaskBoardNavigation;
   final VoidCallback onOpenAppearance;
-  final VoidCallback onChangeFirstDayOfWeek;
   final bool hapticsEnabled;
   final VoidCallback onToggleHaptics;
+
+  /// Quick-jump targets keyed by group id.
+  final GlobalKey Function(String id) anchors;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +45,7 @@ class _PreferencesSection extends StatelessWidget {
     final appearance = SettingsTile(
       key: const ValueKey('settings-appearance-row'),
       grouped: true,
-      icon: shad.LucideIcons.palette,
+      icon: LucideIcons.palette,
       title: l10n.settingsAppearance,
       trailingValue: appearanceTheme,
       badge: appearanceIsNew ? l10n.appearanceNew : null,
@@ -60,51 +53,24 @@ class _PreferencesSection extends StatelessWidget {
     );
     final language = SettingsTile(
       grouped: true,
-      icon: shad.LucideIcons.globe,
+      icon: LucideIcons.globe,
       title: l10n.settingsLanguage,
       value: languageLabel,
       onTap: onChangeLanguage,
     );
-    final finance = SettingsTile(
-      key: const ValueKey('settings-finance-row'),
-      grouped: true,
-      icon: shad.LucideIcons.eye,
-      title: l10n.settingsFinanceAmounts,
-      value: showFinanceAmounts
-          ? l10n.financeShowAmounts
-          : l10n.financeHideAmounts,
-      onTap: onToggleFinanceAmounts,
-    );
-    final calendar = SettingsTile(
-      grouped: true,
-      icon: shad.LucideIcons.calendar,
-      title: l10n.settingsFirstDayOfWeek,
-      value: calendarLabel,
-      onTap: onChangeFirstDayOfWeek,
-    );
     final notifications = SettingsTile(
       grouped: true,
-      icon: shad.LucideIcons.bellRing,
+      icon: LucideIcons.bellRing,
       title: l10n.remindersTitle,
       onTap: () => context.push(Routes.settingsReminders),
     );
     final interaction = SettingsTile(
       key: const ValueKey('settings-haptics-row'),
       grouped: true,
-      icon: shad.LucideIcons.vibrate,
+      icon: LucideIcons.vibrate,
       title: l10n.settingsHaptics,
       value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
       onTap: onToggleHaptics,
-    );
-    final tasks = SettingsTile(
-      key: const ValueKey('settings-task-board-row'),
-      grouped: true,
-      icon: shad.LucideIcons.squareKanban,
-      title: l10n.taskBoardsTitle,
-      value: disableDefaultTaskBoardNavigation
-          ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
-          : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-      onTap: onToggleDefaultTaskBoardNavigation,
     );
     final workspaceZone = workspaceId == null
         ? null
@@ -116,20 +82,25 @@ class _PreferencesSection extends StatelessWidget {
             grouped: true,
           );
     final groups = [
-      (l10n.settingsAppearanceLanguage, [appearance, language]),
+      ('appearance', l10n.settingsAppearanceLanguage, [appearance, language]),
       (
-        l10n.settingsCalendarTimezone,
-        [personalZone, if (workspaceZone != null) workspaceZone, calendar],
+        'time-zone',
+        l10n.settingsTimeZoneGroup,
+        [personalZone, if (workspaceZone != null) workspaceZone],
       ),
-      (l10n.settingsNotificationsInteraction, [notifications, interaction]),
       (
-        l10n.settingsAppPreferences,
-        [finance, tasks, const LinkBrowserSettingsTile()],
+        'interaction',
+        l10n.settingsNotificationsInteraction,
+        [notifications, interaction, const LinkBrowserSettingsTile()],
       ),
     ];
     final sections = [
       for (final group in groups)
-        SettingsCompactSection(title: group.$1, children: group.$2),
+        SettingsCompactSection(
+          key: anchors(group.$1),
+          title: group.$2,
+          children: group.$3,
+        ),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {

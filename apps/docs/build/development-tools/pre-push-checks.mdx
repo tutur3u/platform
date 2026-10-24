@@ -25,7 +25,9 @@ bun check:changed --files a.ts b.ts
 It never runs builds, `bun validate` or Turbo. Small repository scripts run directly;
 Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
 when resource control is installed and enabled (`--no-ttr` opts out). Without
-ttr, steps run sequentially with Vitest capped at two workers.
+the `~/.bun/bin/ttr` directory entry, the gate warns and runs sequentially with Vitest
+capped at two workers. An invalid installed global CLI or unsafe ancestor bin
+alias still fails closed; a workspace binary is never used as a fallback. A dangling global launcher symlink or missing package bin target is a broken installation, not an absent CLI: reinstall with `bun add -g tuturuuu` before retrying.
 
 ## What runs for which paths
 
@@ -35,7 +37,7 @@ ttr, steps run sequentially with Vitest capped at two workers.
 | JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
 | `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
 | A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
-| A workspace with a Vitest config | Changed tests plus colocated `foo.test.ts(x)` and `__tests__/foo.test.ts(x)` siblings |
+| A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest. Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
 | `scripts/`, `.github/actions/`, `plugins/` | Changed and sibling `node --test` files |
 | `.github/workflows/` or `.github/actions/` | Workflow concurrency, Bun pin and workflow-config policy tests |
 | `apps/mobile/` | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it |
@@ -45,6 +47,29 @@ ttr, steps run sequentially with Vitest capped at two workers.
 Oxlint stays advisory until a scope records Biome parity under the
 [Oxc adoption rules](/build/development-tools/oxc-cloudflare-adoption); Biome
 remains the blocking formatter and linter. Paused runtimes are excluded.
+
+In hook mode, every non-deletion `refs/heads/*` destination from Git's pre-push
+stdin is validated, including additional branches whose commits differ from
+HEAD. Tracking cannot override an invalid destination such as `tmp/agent`.
+Branch deletions and tag names do not undergo branch-name validation.
+
+Without push refs, local `tmp/` branches with a configured tracking branch validate that tracked
+branch name and print both names. Untracked `tmp/` branches still fail, and other
+local branch names always validate themselves. This keeps the check blocking
+while allowing temporary agent worktrees that track a valid publication branch.
+The manual label `branch name fix/routing (tracking for tmp/agent)` validates only
+the configured upstream name, which may name a local or remote branch. It does
+not certify a future push destination. For example, `git push origin tmp/agent`
+is still rejected by the opted-in hook even when the upstream is `fix/routing`.
+CI continues to validate the actual published branch name.
+
+Ancestor bin refusals can be caused by stale links in the main checkout even
+when the current worktree is healthy. `--no-ttr` does not bypass that safety
+check. Inspect the listed ancestor's manifest and links: refresh declared
+workspace dependencies with `~/.bun/bin/ttr resources run -- bun install --force`,
+keeping legitimate package links. Remove links only after proving they are
+undeclared orphan symlinks; follow the conditional
+[orphan alias recovery procedure](/reference/packages/sdk#orphan-workspace-aliases).
 
 ## Type-checking without built declarations
 
@@ -122,3 +147,5 @@ a passing frozen install alone does not prove a normal install leaves it stable.
 and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
 ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
+
+Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. An explicit Vitest import selects Vitest when a file also imports Node test helpers or types. This runner partition avoids false “No test suite found” failures.

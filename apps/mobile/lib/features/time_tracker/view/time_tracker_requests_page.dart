@@ -3,12 +3,14 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
@@ -27,7 +29,6 @@ import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_filters.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
-import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -117,8 +118,6 @@ class _RequestsViewState extends State<_RequestsView> {
   String? _pendingRouteRequestId;
   String? _handledRouteRequestId;
   final Map<String, int> _missedEntryDialogRequestVersionByWorkspace =
-      <String, int>{};
-  final Map<String, int> _thresholdSaveRequestVersionByWorkspace =
       <String, int>{};
   bool _didInitializeWorkspaceLoad = false;
 
@@ -352,7 +351,7 @@ class _RequestsViewState extends State<_RequestsView> {
     return [
       ShellActionSpec(
         id: 'requests-filter',
-        icon: shad.LucideIcons.filter,
+        icon: LucideIcons.filter,
         tooltip: l10n.timerRequestsFilterTitle,
         highlighted: hasActiveFilters(
           selectedFilter: _selectedFilter,
@@ -365,7 +364,7 @@ class _RequestsViewState extends State<_RequestsView> {
       if (showSettingsAction)
         ShellActionSpec(
           id: 'requests-settings',
-          icon: shad.LucideIcons.settings2,
+          icon: LucideIcons.settings2,
           tooltip: l10n.settingsTitle,
           enabled:
               _hasResolvedPermissions &&
@@ -460,7 +459,7 @@ class _RequestsViewState extends State<_RequestsView> {
                   return Center(
                     child: Text(
                       l10n.assistantSelectWorkspace,
-                      style: shad.Theme.of(context).typography.textMuted,
+                      style: AppTokens.of(context).typography.textMuted,
                     ),
                   );
                 }
@@ -485,15 +484,15 @@ class _RequestsViewState extends State<_RequestsView> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                shad.LucideIcons.circleAlert,
+                                LucideIcons.circleAlert,
                                 size: 48,
-                                color: shad.Theme.of(
+                                color: AppTokens.of(
                                   context,
                                 ).colorScheme.destructive,
                               ),
-                              const shad.Gap(16),
+                              const AppGap(16),
                               Text(state.error ?? 'Error'),
-                              const shad.Gap(16),
+                              const AppGap(16),
                               shad.SecondaryButton(
                                 onPressed: () => unawaited(_loadRequests()),
                                 child: Text(l10n.commonRetry),
@@ -535,7 +534,7 @@ class _RequestsViewState extends State<_RequestsView> {
                                   child: Center(
                                     child: Text(
                                       l10n.timerNoSessions,
-                                      style: shad.Theme.of(
+                                      style: AppTokens.of(
                                         context,
                                       ).typography.textMuted,
                                     ),

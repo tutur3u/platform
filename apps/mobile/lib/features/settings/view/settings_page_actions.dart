@@ -4,7 +4,6 @@ part of 'settings_page.dart';
 /// choice and writes only an explicit selection.
 mixin _SettingsPageActions on State<_SettingsView> {
   final SettingsRepository _settingsRepository = SettingsRepository();
-  bool _disableDefaultTaskBoardNavigation = false;
 
   /// Hides the "New" chip until the stored flag says otherwise.
   bool _appearanceIntroSeen = true;
@@ -31,28 +30,6 @@ mixin _SettingsPageActions on State<_SettingsView> {
     );
   }
 
-  String _calendarDisplayName(
-    CalendarSettingsState state,
-    AppLocalizations l10n,
-  ) {
-    final effective = state.userPreference != FirstDayOfWeek.auto_
-        ? state.userPreference
-        : state.workspacePreference != FirstDayOfWeek.auto_
-        ? state.workspacePreference
-        : FirstDayOfWeek.auto_;
-
-    switch (effective) {
-      case FirstDayOfWeek.auto_:
-        return l10n.settingsFirstDayAuto;
-      case FirstDayOfWeek.sunday:
-        return l10n.settingsFirstDaySunday;
-      case FirstDayOfWeek.monday:
-        return l10n.settingsFirstDayMonday;
-      case FirstDayOfWeek.saturday:
-        return l10n.settingsFirstDaySaturday;
-    }
-  }
-
   String _localeDisplayName(
     Locale systemLocale,
     Locale? selectedLocale,
@@ -76,47 +53,6 @@ mixin _SettingsPageActions on State<_SettingsView> {
     }
   }
 
-  Future<void> _loadDefaultTaskBoardNavigationPreference() async {
-    final value = await _settingsRepository
-        .getDisableDefaultTaskBoardNavigation();
-    if (!mounted) return;
-    setState(() => _disableDefaultTaskBoardNavigation = value);
-  }
-
-  Future<void> _showDefaultTaskBoardDialog() async {
-    final l10n = context.l10n;
-    final selected = await showSettingsChoiceDialog<bool>(
-      context: context,
-      title: l10n.settingsDefaultTaskBoardNavigation,
-      description: l10n.settingsDefaultTaskBoardNavigationDescription,
-      currentValue: _disableDefaultTaskBoardNavigation,
-      options: [
-        SettingsChoiceOption(
-          value: false,
-          label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-          icon: shad.LucideIcons.squareKanban,
-        ),
-        SettingsChoiceOption(
-          value: true,
-          label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
-          icon: shad.LucideIcons.layoutDashboard,
-        ),
-      ],
-    );
-    if (selected == null ||
-        !mounted ||
-        selected == _disableDefaultTaskBoardNavigation) {
-      return;
-    }
-    await _settingsRepository.setDisableDefaultTaskBoardNavigation(
-      value: selected,
-    );
-    if (mounted) setState(() => _disableDefaultTaskBoardNavigation = selected);
-  }
-
-  Future<void> _showFinanceAmountsDialog(FinancePreferencesCubit cubit) =>
-      openFinanceProductSettings(context, cubit);
-
   Future<void> _showHapticsDialog() async {
     final l10n = context.l10n;
     final selected = await showSettingsChoiceDialog<bool>(
@@ -127,12 +63,12 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: true,
           label: l10n.commonOn,
-          icon: shad.LucideIcons.vibrate,
+          icon: LucideIcons.vibrate,
         ),
         SettingsChoiceOption(
           value: false,
           label: l10n.commonOff,
-          icon: shad.LucideIcons.bellOff,
+          icon: LucideIcons.bellOff,
         ),
       ],
     );
@@ -141,8 +77,6 @@ mixin _SettingsPageActions on State<_SettingsView> {
       if (mounted) setState(() {});
     }
   }
-
-  Future<void> _showCalendarDialog() => openCalendarProductSettings(context);
 
   Future<void> _showLanguageDialog() async {
     final l10n = context.l10n;
@@ -158,18 +92,18 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: 'system',
           label: l10n.settingsLanguageSystem,
-          icon: shad.LucideIcons.monitorSmartphone,
+          icon: LucideIcons.monitorSmartphone,
           description: l10n.settingsLanguageSystemDescription,
         ),
         SettingsChoiceOption(
           value: 'en',
           label: l10n.settingsLanguageEnglish,
-          icon: shad.LucideIcons.languages,
+          icon: LucideIcons.languages,
         ),
         SettingsChoiceOption(
           value: 'vi',
           label: l10n.settingsLanguageVietnamese,
-          icon: shad.LucideIcons.languages,
+          icon: LucideIcons.languages,
         ),
       ],
     );

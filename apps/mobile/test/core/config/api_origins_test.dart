@@ -41,8 +41,6 @@ void main() {
         for (final path in [
           '/api/v1/calendar/connections?wsId=personal',
           '/api/v1/workspaces/personal/calendar/events',
-          '/api/v1/users/calendar-settings',
-          '/api/v1/workspaces/personal/calendar-settings',
         ]) {
           expect(
             origins.baseUrlForPath(path),
@@ -55,6 +53,39 @@ void main() {
         }
       },
     );
+
+    test('routes calendar preferences directly to Web in every flavor', () {
+      for (final flavor in AppFlavor.values) {
+        final origins = ApiOrigins.forFlavor(flavor);
+        final expected = flavor == AppFlavor.development
+            ? 'http://localhost:7803'
+            : 'https://tuturuuu.com';
+        for (final path in [
+          '/api/v1/users/calendar-settings',
+          '/api/v1/users/calendar-settings?refresh=true',
+          '/api/v1/workspaces/personal/calendar-settings',
+          '/api/v1/workspaces/workspace%2Fa/calendar-settings/',
+        ]) {
+          expect(origins.ownerForPath(path), ApiOrigin.platform, reason: path);
+          expect(origins.baseUrlForPath(path), expected, reason: path);
+        }
+      }
+    });
+
+    test('calendar preferences preserve the Web origin override', () {
+      final origins = ApiOrigins.forFlavor(
+        AppFlavor.production,
+        platformOverride: 'https://web.example.com/',
+        calendarOverride: 'https://calendar.example.com',
+        infrastructureOverride: 'https://infra.example.com',
+      );
+      for (final path in [
+        '/api/v1/users/calendar-settings',
+        '/api/v1/workspaces/personal/calendar-settings',
+      ]) {
+        expect(origins.baseUrlForPath(path), 'https://web.example.com');
+      }
+    });
 
     test('uses local app ports in development', () {
       final origins = ApiOrigins.forFlavor(AppFlavor.development);

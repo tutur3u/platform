@@ -83,8 +83,15 @@ void main() {
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(EditableText), 'new york');
         await tester.pumpAndSettle();
-        expect(find.text('America/New_York'), findsOneWidget);
-        await tester.tap(find.text('America/New_York'));
+        final newYork = find.byKey(
+          const ValueKey('timezone-option-America/New_York'),
+        );
+        expect(newYork, findsOneWidget);
+        expect(
+          find.descendant(of: newYork, matching: find.text('New York')),
+          findsOneWidget,
+        );
+        await tester.tap(newYork);
         await tester.pumpAndSettle();
         verify(() => cubit.save('America/New_York')).called(1);
         expect(tester.takeException(), isNull);

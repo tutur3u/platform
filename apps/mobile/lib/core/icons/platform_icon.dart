@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/icons/platform_icon_data.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/ui/icons/app_icons.dart';
 
 class PlatformIconOption {
   const PlatformIconOption({
@@ -31,7 +31,7 @@ final List<PlatformIconOption> platformIconOptions = platformIconKeys
     .toList(growable: false);
 
 IconData resolvePlatformIcon(String? key, {IconData? fallback}) {
-  return resolvePlatformIconData(key) ?? fallback ?? shad.LucideIcons.circle;
+  return resolvePlatformIconData(key) ?? fallback ?? LucideIcons.circle;
 }
 
 String _humanizePlatformIconKey(String key) {
