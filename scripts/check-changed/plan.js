@@ -101,8 +101,8 @@ function isNodeTest(file, context) {
     new RegExp(
       `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
     ).test(source);
-  if (imports('node:test')) return true;
   if (imports('vitest')) return false;
+  if (imports('node:test')) return true;
   return /\bnode\s+--test(?:\s|$)/.test(script ?? '');
 }
 

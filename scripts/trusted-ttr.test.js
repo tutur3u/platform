@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -59,6 +59,23 @@ function fixture(t, orphan = false) {
   return { root, home, worktree, pkg, cli, legacy, launcher, observed, env };
 }
 
+for (const relative of ['.bun', '.bun/install']) {
+  test(`canonicalises a symlinked ${relative} install base and rejects escapes`, (t) => {
+    const f = fixture(t);
+    const base = path.join(f.home, relative);
+    const target = path.join(f.root, 'relocated-install');
+    fs.renameSync(base, target);
+    fs.symlinkSync(target, base, 'dir');
+    const resolve = () => trustedTtr(f.home, f.root);
+    assert.equal(resolve(), f.cli);
+    assert.equal(fs.existsSync(f.observed), false);
+    fs.unlinkSync(f.cli);
+    fs.symlinkSync(f.legacy, f.cli);
+    assert.throws(resolve, /outside the global installation/);
+    assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
+  });
+}
+
 test('ancestor workspace binary is refused from a worktree without node_modules', (t) => {
   const f = fixture(t, true);
   assert.equal(fs.existsSync(path.join(f.worktree, 'node_modules')), false);
@@ -79,26 +96,118 @@ test('ancestor workspace binary is refused from a worktree without node_modules'
   assert.equal(fs.existsSync(f.observed), false);
 });
 
+test('fixture cwd isolates resolution while the default still refuses stale ancestor bins', (t) => {
+  const f = fixture(t, true);
+  const resolver = path.join(__dirname, 'trusted-ttr.js');
+  const run = (cwdArgument) =>
+    execFileSync(
+      process.execPath,
+      [
+        '-p',
+        `require(${JSON.stringify(resolver)}).trustedTtr(${JSON.stringify(f.home)}${cwdArgument})`,
+      ],
+      { cwd: f.worktree, env: f.env, encoding: 'utf8', stdio: 'pipe' }
+    ).trim();
+  assert.equal(run(`,${JSON.stringify(f.root)}`), f.cli);
+  assert.throws(run.bind(null, ''), (error) =>
+    /Unsafe ancestor ttr bin links/.test(String(error.stderr))
+  );
+  assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
+  assert.equal(fs.existsSync(f.observed), false);
+});
+
 test('missing, legacy and redirected global installations refuse with recovery instructions', (t) => {
   const f = fixture(t);
   fs.writeFileSync(
     path.join(f.pkg, 'package.json'),
     JSON.stringify({ name: 'tuturuuu', version: '0.27.0' })
   );
-  assert.throws(() => trustedTtr(f.home), /bun add -g tuturuuu.*0.28.0/);
+  assert.throws(
+    () => trustedTtr(f.home, f.root),
+    /bun add -g tuturuuu.*0\.28\.0/
+  );
   fs.unlinkSync(f.cli);
   fs.symlinkSync(f.legacy, f.cli);
   assert.throws(
-    () => trustedTtr(f.home),
+    () => trustedTtr(f.home, f.root),
     /outside the global installation.*bun add -g tuturuuu/
   );
   fs.unlinkSync(f.cli);
-  assert.throws(
-    () => trustedTtr(f.home),
-    /Trusted global ttr unavailable.*bun add -g tuturuuu/
-  );
+  assert.throws(() => trustedTtr(f.home, f.root), {
+    code: 'TTR_GLOBAL_NOT_INSTALLED',
+    message:
+      /Trusted global ttr unavailable at .*Run bun add -g tuturuuu to install/,
+  });
   assert.equal(fs.existsSync(f.observed), false);
 });
+
+for (const state of [
+  'absent',
+  'dangling',
+  'missing-bin-target',
+  'missing-install-base',
+]) {
+  test(`global launcher presence distinguishes ${state} from not installed`, (t) => {
+    const f = fixture(t);
+    if (state === 'missing-install-base') {
+      fs.renameSync(
+        path.join(f.home, '.bun/install'),
+        path.join(f.root, 'saved-install')
+      );
+      fs.unlinkSync(f.cli);
+      fs.symlinkSync(f.legacy, f.cli);
+    } else if (state === 'missing-bin-target') {
+      const manifest = path.join(f.pkg, 'package.json');
+      fs.writeFileSync(
+        manifest,
+        JSON.stringify({
+          ...JSON.parse(fs.readFileSync(manifest, 'utf8')),
+          bin: { ttr: './bin/missing.cjs' },
+        })
+      );
+    } else {
+      fs.unlinkSync(f.cli);
+      if (state === 'dangling')
+        fs.symlinkSync(path.join(f.root, 'missing.cjs'), f.cli);
+    }
+    const checker = path.join(__dirname, 'check-changed.js');
+    const result = spawnSync(
+      process.execPath,
+      [
+        '-e',
+        `
+      const {execFileSync}=require('node:child_process');
+      const warnings=[];
+      try {
+        const prefix=require(${JSON.stringify(checker)}).ttrPrefix(true,execFileSync,process.env,undefined,(line)=>warnings.push(line));
+        process.stdout.write(JSON.stringify({prefix,warnings}));
+      } catch(error) { console.error(error.message); process.exitCode=1; }
+    `,
+      ],
+      { cwd: f.worktree, env: f.env, encoding: 'utf8' }
+    );
+    assert.equal(result.error, undefined);
+    if (state === 'absent') {
+      assert.equal(result.status, 0, result.stderr);
+      const { prefix, warnings } = JSON.parse(result.stdout);
+      assert.equal(prefix, null);
+      assert.match(warnings.join('\n'), /not installed.*sequentially/);
+    } else {
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(
+        result.stderr,
+        /global launcher exists but its installation is broken/
+      );
+      assert.match(result.stderr, /bun add -g tuturuuu/);
+      assert.doesNotMatch(
+        result.stdout + result.stderr,
+        /not installed; running checks sequentially/
+      );
+    }
+    assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
+    assert.equal(fs.existsSync(f.observed), false);
+  });
+}
 
 test('package scripts and shared wrapper preserve arguments and skip inherited lane admission', (t) => {
   const f = fixture(t);
@@ -201,7 +310,7 @@ test('trusted resolver accepts the published wrapper entry declared by a new glo
   );
   fs.unlinkSync(f.cli);
   fs.symlinkSync(bin, f.cli);
-  assert.equal(trustedTtr(f.home), f.cli);
+  assert.equal(trustedTtr(f.home, f.root), f.cli);
 });
 
 test('symlinked HOME resolves the same trusted global CLI', (t) => {
@@ -209,7 +318,7 @@ test('symlinked HOME resolves the same trusted global CLI', (t) => {
   const alias = path.join(f.root, 'home-link');
   fs.symlinkSync(f.home, alias, 'dir');
   assert.equal(
-    trustedTtr(alias),
+    trustedTtr(alias, f.root),
     fs.realpathSync(path.dirname(f.cli)) + '/ttr'
   );
 });
