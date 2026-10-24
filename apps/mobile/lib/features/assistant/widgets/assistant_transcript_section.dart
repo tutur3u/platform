@@ -126,7 +126,7 @@ class _AssistantTranscriptSectionState
                 actorId: widget.actorId,
                 isActionCurrent: widget.isActionCurrent,
                 onReply: persisted && widget.onReply != null
-                    ? () => widget.onReply!(message.id)
+                    ? () => widget.onReply?.call(message.id)
                     : null,
                 onReact: persisted && !refreshRequired && widget.onReact != null
                     ? (reaction) => widget.onReact!(message.id, reaction)

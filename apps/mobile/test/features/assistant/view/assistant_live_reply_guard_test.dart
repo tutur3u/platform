@@ -19,6 +19,7 @@ import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart'
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_actions.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
+import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 
 import 'background_reply_harness.dart';
@@ -250,6 +251,44 @@ void main() {
     );
     expect(h.repository.starts, 0);
     expect(live.state.userDraft, isEmpty);
+  });
+
+  testWidgets('mounted Reply sheet survives Live disabling its callback', (
+    tester,
+  ) async {
+    final h = await _mount(tester);
+    final live = h.pageContext.read<AssistantLiveCubit>();
+    live.emit(
+      const AssistantLiveState(
+        workspaceId: _workspace,
+        chatId: _chat,
+        microphonePermission: AssistantLivePermissionState.denied,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final transcript = find.byType(AssistantTranscriptSection);
+    final originalTranscript = tester.element(transcript);
+    final bubble = find.byType(AssistantTranscriptBubble).first;
+    final originalBubble = tester.element(bubble);
+    await tester.longPress(find.text('Saved answer', findRichText: true));
+    await tester.pumpAndSettle();
+    expect(find.text('Reply'), findsOneWidget);
+
+    _connect(live);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.element(transcript), same(originalTranscript));
+    expect(tester.element(bubble), same(originalBubble));
+    expect(_bubble(tester).onReply, isNull);
+    expect(find.text('Reply'), findsOneWidget);
+    await tester.tap(find.text('Reply'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(AssistantMessageActions), findsNothing);
+    expect(h.chat.state.replyTarget, isNull);
+    expect(h.repository.starts, 0);
+    expect(live.state.userDraft, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   for (final cancelReply in [false, true]) {
