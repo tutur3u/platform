@@ -234,6 +234,17 @@ function planChecks(changes, context) {
       ])
     );
   }
+  if (
+    any(
+      /^(bun\.lock$|apps\/mobile\/(lib\/core\/ui\/icons\/generated|assets\/fonts\/lucide|test\/fixtures\/lucide)\/|scripts\/(mobile-lucide\/|check-mobile-lucide-sync\.js$))/
+    )
+  ) {
+    steps.push(
+      nodeStep('mobile-lucide-sync', 'mobile Lucide icons match web', [
+        'scripts/check-mobile-lucide-sync.js',
+      ])
+    );
+  }
   if (any(/^(apps\/mobile\/lib|apps\/web\/src\/app\/api)\//)) {
     steps.push(
       nodeStep('mobile-api-mappings', 'mobile API mappings', [

@@ -99,6 +99,63 @@ rows. Row layout belongs to the owning feature (for example `SettingsTile`).
 Cards use theme `surface` / `outlineVariant` and become solid in high-contrast
 mode.
 
+## Icons
+
+Mobile icons match the web's Lucide icons in glyph and name. `LucideIcons`
+(base) and `LucideLabIcons` (lab) are generated from the exact `lucide-react`
+and `@lucide/lab` versions in `bun.lock`. Import them through
+`package:mobile/core/ui/ui.dart` or `core/ui/icons/app_icons.dart`.
+
+| Web | Mobile |
+| --- | --- |
+| `<ArrowRight />` (`arrow-right`) | `Icon(LucideIcons.arrowRight)` |
+| `<Home />`, an alias of `house` | `LucideIcons.home`, the same glyph as `LucideIcons.house` |
+| `@lucide/lab` `appleCore` | `Icon(LucideLabIcons.appleCore)` |
+
+- **Coverage.** Every icon at the pinned versions: 1,903 base icons with 264
+  web aliases, and 357 lab icons. Names are the web names in
+  lowerCamelCase. Dart reserved words get an `Icon` suffix (`switchIcon`).
+- **Glyphs.** Each glyph is the 2px round-stroked outline the web renders at
+  24px. `scripts/mobile-lucide/generate.mjs` strokes the pinned SVG nodes
+  with Skia (CanvasKit), the engine Flutter draws with, and unions any filled
+  shapes. Contours are re-oriented for the nonzero fill rule fonts use, so
+  holes stay open. The written font is parsed back, and every serialized
+  glyph is rasterised against the stroked original; any glyph whose visible
+  ink differs by more than 1% fails the run. The worst glyphs differ by
+  0.12% (base) and 0.08% (lab). A font is used because the app passes icons as
+  `IconData` (`Icon`, `IconButton`, shell actions). Stroke width is therefore
+  fixed at the web default of 2.
+- **Brand marks.** Lucide no longer ships brand icons. `AppIcons` maps the
+  few the app used to neutral glyphs.
+- **Licences.** Lucide and Lucide Lab are ISC licensed. Their notices ship as
+  `assets/fonts/lucide/LICENSE-*.txt` and appear on the app's licences page.
+  The fonts and Dart classes are marked as generated.
+
+### Regenerating
+
+Generation is deterministic: sorted names and fixed font timestamps. Run it on a
+remote validation lane, not on an agent laptop:
+
+```bash
+cd scripts/mobile-lucide
+npm ci
+node generate.mjs --repo ../..
+```
+
+The generator reads the versions and integrity hashes from `bun.lock`,
+downloads the tarballs, and refuses a tarball whose hash differs. It then
+rewrites the fonts, the generated Dart, the licence copies, the manifest and
+the parity fixture. `scripts/check-mobile-lucide-sync.js` runs in Mobile
+Analysis, in `bun check:changed` and as `bun check:mobile-lucide`. It fails
+when the web's `lucide-react` or `@lucide/lab` version changes without
+regeneration, or when a generated file differs from its manifest hash.
+
+`test/core/ui/lucide_icons_test.dart` checks the manifest counts. It also
+renders sample base and lab icons through the real `Icon` widget and compares
+them with the web SVG drawn by `flutter_svg`. Set `DESIGN_RENDER_DIR` to write
+the light and dark parity grids (`lucide-parity-light.png`,
+`lucide-parity-dark.png`).
+
 ## Full-bleed allowlist
 
 Only these screen types may use `AppPageBody.fullBleed` or skip the gutters:

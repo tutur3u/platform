@@ -1,18 +1,22 @@
 /// Icon abstraction for the mobile design system.
 ///
-/// Lucide glyphs come from the maintained standalone `lucide_icons_flutter`
-/// package. `LucideIcons.<name>` keeps the legacy shadcn member names, so the
-/// migration codemod only drops the `shad.` prefix. The standalone package
-/// omits brand marks; [AppIcons] maps the few the app used to neutral glyphs.
+/// [LucideIcons] and `LucideLabIcons` are generated from the exact
+/// `lucide-react` and `@lucide/lab` versions the web uses
+/// (scripts/mobile-lucide), so names and glyphs match the web: `arrow-right`
+/// is `LucideIcons.arrowRight`, lab `apple-core` is
+/// `LucideLabIcons.appleCore`. Web aliases (`home` for `house`) are kept.
+/// Lucide no longer ships brand marks; [AppIcons] maps the few the app used
+/// to neutral glyphs.
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mobile/core/ui/icons/generated/lucide_icons.g.dart';
 
-export 'package:lucide_icons_flutter/lucide_icons.dart' show LucideIcons;
+export 'package:mobile/core/ui/icons/generated/lucide_icons.g.dart';
+export 'package:mobile/core/ui/icons/generated/lucide_lab_icons.g.dart';
 
-/// App-owned icon aliases: semantic names for repeated actions plus the brand
-/// fallbacks missing from the standalone Lucide set.
+/// App-owned icon aliases: semantic names for repeated actions plus neutral
+/// fallbacks for brand marks Lucide no longer ships.
 abstract final class AppIcons {
   // Semantic actions.
   static const IconData search = LucideIcons.search;
@@ -26,7 +30,7 @@ abstract final class AppIcons {
   static const IconData warning = LucideIcons.triangleAlert;
   static const IconData error = LucideIcons.circleAlert;
 
-  // Brand marks absent from lucide_icons_flutter. Prefer the SVG logos in
+  // Brand marks absent from Lucide. Prefer the SVG logos in
   // `assets/logos/` where a real brand mark is required.
   static const IconData codepen = LucideIcons.codeXml;
   static const IconData codesandbox = LucideIcons.box;
