@@ -20,7 +20,7 @@ void main() {
     h.dispose();
   });
   test(
-    'production gateway 401 refreshes the token and retries timezone reads',
+    'production Web 401 refreshes the token and retries timezone reads',
     () async {
       await cubit.close();
       h.dispose();
@@ -50,10 +50,7 @@ void main() {
         h.requests.last.headers['authorization'],
         'Bearer synthetic-renewed',
       );
-      expect(
-        h.requests.every((r) => r.url.host == 'infrastructure.tuturuuu.com'),
-        true,
-      );
+      expect(h.requests.every((r) => r.url.host == 'tuturuuu.com'), true);
     },
   );
 
@@ -68,20 +65,20 @@ void main() {
   );
 
   test(
-    'production GET/PATCH preference contracts retain Bearer and gateway',
+    'production GET/PATCH preference contracts retain Bearer and direct Web routing',
     () async {
       final values = {
         'users/calendar-settings': 'auto',
         'workspaces/synthetic-ws/calendar-settings': 'UTC',
       };
       h.respond = (req) async {
-        expect(req.url.host, 'infrastructure.tuturuuu.com');
+        expect(req.url.host, 'tuturuuu.com');
         expect(req.headers['authorization'], 'Bearer synthetic-access');
         expect(
           req.url.path,
           isIn(const [
-            '/api/v1/mobile-calendar/api/v1/users/calendar-settings',
-            '/api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+            '/api/v1/users/calendar-settings',
+            '/api/v1/workspaces/synthetic-ws/calendar-settings',
           ]),
         );
         final path = req.url.path.split('/api/v1/').last;
@@ -106,10 +103,10 @@ void main() {
       expect(
         h.requests.map((r) => '${r.method} ${r.url.path}'),
         containsAll(const [
-          'GET /api/v1/mobile-calendar/api/v1/users/calendar-settings',
-          'GET /api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
-          'PATCH /api/v1/mobile-calendar/api/v1/users/calendar-settings',
-          'PATCH /api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+          'GET /api/v1/users/calendar-settings',
+          'GET /api/v1/workspaces/synthetic-ws/calendar-settings',
+          'PATCH /api/v1/users/calendar-settings',
+          'PATCH /api/v1/workspaces/synthetic-ws/calendar-settings',
         ]),
       );
       expect(h.requests.where((r) => r.method == 'PATCH'), hasLength(2));

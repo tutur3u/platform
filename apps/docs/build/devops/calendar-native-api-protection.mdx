@@ -5,11 +5,22 @@ description: "Trace timezone read/save rejection layers and audit the hosting ex
 
 ## Request ownership and counts
 
-Default release configuration routes personal `/api/v1/users/calendar-settings` and workspace
-`/api/v1/workspaces/:wsId/calendar-settings` through Infrastructure's
-`/api/v1/mobile-calendar` gateway to Calendar. Both support GET/PATCH with the
-original Supabase Bearer token. These local routes do not use the satellite
-fallback rewrite to Web. No satellite browser session is required.
+Native personal `/api/v1/users/calendar-settings` and workspace
+`/api/v1/workspaces/:wsId/calendar-settings` GET/PATCH requests default directly to
+Web at `https://tuturuuu.com` (`ApiOrigin.platform`, the existing Web origin). Web serves these paths locally;
+its former Calendar rewrites must stay removed. `API_BASE_URL` and existing
+origin overrides remain available for development and explicit environments.
+The adapters inject the verified actor into shared calendar settings logic;
+Calendar retains its routes for existing browser/app-session clients. Native
+requests require the original Supabase Bearer token and verified MFA, without
+a satellite browser session.
+
+Infrastructure's `/api/v1/mobile-calendar` settings allowlist remains a deliberate
+compatibility path for already published mobile versions. Those versions still
+reach Calendar and still need the Calendar hosting exception below. The new
+mobile release bypasses both hops only for these two preference endpoints;
+other native Calendar APIs retain their current gateway routing. Shipping Web
+alone cannot change the routing embedded in an installed mobile binary.
 
 The app-level timezone scope makes one personal and one workspace GET at cold
 startup. Opening/reopening Settings displays that scope and adds zero requests.
@@ -25,9 +36,16 @@ the API client's `kind=http; status=429` response. There is no automatic 429 ret
 
 ## Rejection inventory
 
+The Infrastructure/Calendar rows apply to the retained compatibility path. New
+mobile preferences use Web hosting, the shared MFA/native-preferences guard and
+the local Web adapter instead.
+
 | Layer | Read/save protection and identity | Observable result |
 | --- | --- | --- |
 | Mobile repository | Account-scoped cooldown after a genuine 429; no network retry during cooldown | Retains the originating diagnostic; not proof of a fresh request on Settings open |
+| Web hosting | Existing Web native API hosting policy; no WAF/bot exception is declared in `apps/web/vercel.json` | Provider challenges run before route auth; live policy must be checked by the deployment operator |
+| Shared Web guard | Dedicated `proxy:web:calendar-preferences` actor bucket after MFA verification; persistent IP blocks | `native-calendar-preferences` with caller/window/quota headers; `proxy-ip-block` for blocked IPs |
+| Web personal PATCH quota | Additional adaptive authenticated actor quota using `session:user:mutate`, base 60/minute; no pre-auth shared-IP bucket or browser challenge | `web-calendar-session-user-mutate`, caller `authenticated`, window `minute`; preserves numeric quota and Retry-After headers |
 | Infrastructure hosting | Platform bot/WAF/DDoS protections before application code | May return a bare HTML/JSON 429 without application metadata |
 | Shared Infrastructure guard | Dedicated preferences quotas; already verified MFA Bearer actor, independent of warm trust cache | `native-calendar-preferences`, caller and minute/hour/day; IP blocks use `proxy-ip-block` |
 | Offline download guard | Additional quotas only with explicit offline-download header | `offline-capable-read`; ordinary timezone startup does not mark bulk downloads |
@@ -45,7 +63,52 @@ mutation limits are 60/minute, 300/hour, 2,000/day. Personal and workspace paths
 share each actor's quota across token rotation. Existing environment overrides,
 trust/risk decisions, downstream authentication, MFA and IP blocks remain active.
 
-## Hosting exception coverage
+## Web hosting acceptance and operator items
+
+Application authentication and hosting bot protection are separate boundaries.
+Existing native Web APIs use the shared Bearer/MFA guard; the documented browser
+step-up policy excludes native clients. That does not establish an active Vercel
+WAF exemption: `apps/web/vercel.json` contains no firewall rule. Do not add a fake
+browser user agent or trust an unverified Authorization header to avoid hosting
+challenges. [Vercel challenges require a browser session](https://vercel.com/docs/vercel-firewall/firewall-concepts#challenge-limitations).
+
+The production operator must perform these steps; repository deployment does not
+publish provider firewall configuration:
+
+1. Confirm the deployed Web source includes local settings handlers and no
+   Calendar settings rewrites. Read the active Web project's Firewall rules and
+   pending draft privately. Identify the treatment already used for working
+   native `/api/v1/**` calls on `tuturuuu.com`; check that both new exact paths
+   receive the same treatment.
+2. If Bot Protection challenges these paths, prepare a custom rule named
+   `Native Web calendar preferences` with **all** these conditions: Host equals
+   `tuturuuu.com`; Method is one of `GET`, `PATCH`; Path matches
+   `^/api/v1/(users/calendar-settings|workspaces/[^/]+/calendar-settings)$`.
+   Use the existing native Web hosting exception mechanism. If that mechanism
+   is a Vercel custom **Bypass**, put it after applicable custom deny/rate rules
+   and before managed bot evaluation. Review its full effect: Vercel custom
+   Bypass skips all subsequent custom/managed rules, not just Bot Protection.
+   Do not create a system bypass or broaden to all API paths. The path exception
+   permits requests to reach application verification; it grants no actor trust.
+   Retain platform DDoS protection, IP blocks and all application MFA, membership,
+   permission and preference quotas. Review and publish only this scoped change
+   through the release operator, then read back the active rule.
+3. Verify both GET and PATCH with a real native client on the exact deployed
+   source. Confirm JSON success, persistence and no `x-vercel-mitigated: challenge`.
+   Confirm missing/forged Bearers fail, insufficient MFA fails, nonmembers and
+   users without settings permission fail, invalid values fail, and controlled
+   quota rejection retains `Retry-After` and `X-RateLimit-*` diagnostics. Keep
+   private request identities out of reports. A curl control alone does not prove
+   acceptance of an affected user's request.
+4. Retain the existing Calendar private-credential rule for older mobile builds.
+   Audit and correct its settings-path coverage as below. Verify old-client
+   read/save plus forged gateway credential rejection before calling that path
+   recovered. Roll back the mobile origin only with the old route's hosting
+   acceptance confirmed; otherwise it restores the original challenge exposure.
+
+No live Vercel or Cloudflare firewall mutation is part of the source change.
+
+## Compatibility gateway hosting exception coverage
 
 The legacy native gateway WAF regex covered `/api/v1/calendar/**`, workspace
 `/calendar/**` and the two cron routes, but excluded both `/calendar-settings`
@@ -95,3 +158,64 @@ request receipt. Correlate that build's effective host/path and timestamp with
 Infrastructure/Calendar logs to attribute an exact event. Keep the private
 credential condition: direct requests without it should still be challenged.
 Never log tokens, cookies, private bodies, actor/workspace identifiers or IPs here.
+
+
+## Native verification follow-up (default off)
+
+Phase 1 preserves the existing authentication and abuse controls and introduces
+no native CAPTCHA requirement or production enforcement flag. Recommend Apple
+App Attest plus Google Play Integrity as the eventual native integrity signal,
+with an observation-only rollout before any enforcement. They address authentic
+app/device evidence without introducing a hidden browser dependency. They do not
+replace Bearer authentication, MFA, workspace authorization or quotas. Account
+for unsupported devices, sideload/distribution policy, service failure, replay
+protection and privacy before choosing enforcement defaults. Bind each proof to
+a server challenge/request and authenticated session; validate on the server.
+See [Apple App Attest](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity)
+and [Play Integrity](https://developer.android.com/google/play/integrity/overview).
+
+A Turnstile alternative can reuse `@tuturuuu/turnstile/server`, as Calendar's
+`abuse-risk.ts` does, but native Flutter cannot execute the widget directly.
+[Cloudflare's mobile integration requires a WebView](https://developers.cloudflare.com/turnstile/get-started/mobile-implementation/).
+A trusted HTTPS page on `tuturuuu.com` could mint a token and return it through a
+strictly origin-checked WebView bridge, then send it in
+`x-tuturuuu-turnstile-token`. Keep access tokens out of that page/bridge. Tokens
+are [single use and expire after five minutes](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/):
+personal/workspace loads and retries need separate tokens. Never treat one token
+as a reusable session credential or spin up an unbounded background refresh loop.
+
+Before such a pilot, extend the shared verifier to validate expected hostname and
+action (its current contract only checks Siteverify success), bind the proof to
+the request/session, and test expired/replayed/wrong-context tokens, bridge
+navigation, cancellation, provider timeout and disabled-flag behavior. Use a
+server flag absent/false by default; disabled must perform no verification fetch
+and require no WebView/token. An invisible widget is not a guarantee that no user
+interaction or failure recovery will ever be needed. Turnstile verification in
+application code also cannot bypass a Vercel challenge that blocks the request
+before application execution. Keep this as design follow-up rather than coupling
+the production timezone repair to a new verification dependency.
+
+
+## Regression evidence
+
+- Shared validation, persistence, defaults, membership and edit permission:
+  [`calendar-settings-server.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/calendar-settings-server.test.ts).
+- Web auth/MFA and response contract:
+  [`calendar-settings-handler.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/calendar-settings-handler.test.ts).
+- Web personal PATCH adaptive actor quota and diagnostic parity:
+  [`calendar-personal-mutation-quota.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/calendar-personal-mutation-quota.test.ts).
+- Web guard route boundaries, dedicated quotas and diagnostic parity:
+  [`calendar-preference-guard.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/calendar-preference-guard.test.ts),
+  plus `api-proxy-calendar-preference-reads.test.ts` and
+  `api-proxy-calendar-preference-mutations.test.ts` in the same directory.
+- Web local ownership rather than Calendar forwarding:
+  [`satellite-api-rewrites.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/satellite-api-rewrites.test.ts).
+- Mobile direct Web routing and environment overrides:
+  [`api_origins_test.dart`](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/core/config/api_origins_test.dart).
+- Retained old-client gateway and private-credential WAF coverage:
+  `apps/infrastructure/src/lib/mobile-calendar/gateway.test.ts` and
+  `firewall-policy.test.ts`.
+
+These tests establish source behavior at their tested boundaries. Exact-commit
+CI builds, deployed hosting policy and real native read/save acceptance remain
+separate release evidence.
