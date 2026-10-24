@@ -58,6 +58,7 @@ import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
+import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -1363,20 +1364,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const defaultWorkspace = await getUserDefaultWorkspace();
 
         if (defaultWorkspace) {
-          const target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-
-          const canonicalPath = `/${target}`;
-          const localizedCanonicalPath = prependLocalePrefix(
-            canonicalPath,
-            activeLocalePrefix
+          const wsRedirect = NextResponse.redirect(
+            workspaceHomeRedirectUrl(defaultWorkspace, req.nextUrl, (path) =>
+              prependLocalePrefix(path, activeLocalePrefix)
+            )
           );
-
-          const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
-          const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;
         }

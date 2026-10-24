@@ -81,6 +81,13 @@ generated type files.
   unless the product already owns that route pattern.
 - Extract portable settings to `packages/ui` only when they have no `@/`
   imports.
+- Read and write dialog URL state only through `useSettingsDialogUrlState` and
+  `@tuturuuu/ui/hooks/settings-dialog-url`. A bare `?settingsTab=` opens the
+  dialog. Build links with `buildSettingsDialogHref`.
+- Satellite dialogs include `createAccountSettingsNavGroup` and
+  `SatelliteAccountSettingsPanel` from `@tuturuuu/satellite/account-settings`.
+  Never proxy password, 2FA, passkey or session mutations from a satellite; link
+  to the web tab instead. See `apps/docs/platform/features/settings-dialog.mdx`.
 
 ### Dependencies
 
