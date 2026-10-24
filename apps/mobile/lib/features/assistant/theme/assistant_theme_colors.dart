@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_preferences.dart';
 
 @immutable
@@ -15,6 +16,13 @@ class AssistantMessageColors {
   final Color background;
   final Color foreground;
   final Color mutedForeground;
+
+  ThemeData theme(ThemeData base) => _surfaceTheme(
+    base,
+    background: background,
+    foreground: foreground,
+    mutedForeground: mutedForeground,
+  );
 }
 
 /// All colors derive from the shared appearance palette, for either brightness.
@@ -93,6 +101,13 @@ class AssistantThemeColors {
   final AssistantMessageColors userMessage;
   final AssistantMessageColors assistantMessage;
 
+  ThemeData pageTheme(ThemeData base) => _surfaceTheme(
+    base,
+    background: backgroundColors.first,
+    foreground: foreground,
+    mutedForeground: mutedForeground,
+  );
+
   BoxDecoration get backgroundDecoration => BoxDecoration(
     color: backgroundColors.first,
     gradient: backgroundColors.length < 2
@@ -106,5 +121,53 @@ class AssistantThemeColors {
                 : Alignment.bottomRight,
             colors: backgroundColors,
           ),
+  );
+}
+
+ThemeData _surfaceTheme(
+  ThemeData base, {
+  required Color background,
+  required Color foreground,
+  required Color mutedForeground,
+}) {
+  final tokens =
+      base.extension<AppColorTokens>() ??
+      AppColorTokens.fallback(base.brightness);
+  return base.copyWith(
+    colorScheme: base.colorScheme.copyWith(
+      surface: background,
+      onSurface: foreground,
+      onSurfaceVariant: mutedForeground,
+      primary: foreground,
+      onPrimary: background,
+    ),
+    textTheme: base.textTheme.apply(
+      bodyColor: foreground,
+      displayColor: foreground,
+    ),
+    iconTheme: base.iconTheme.copyWith(color: foreground),
+    extensions: [
+      for (final extension in base.extensions.values)
+        if (extension is! AppColorTokens) extension,
+      tokens.copyWith(
+        background: background,
+        foreground: foreground,
+        card: background,
+        cardForeground: foreground,
+        popover: background,
+        popoverForeground: foreground,
+        primary: foreground,
+        primaryForeground: background,
+        secondary: background,
+        secondaryForeground: foreground,
+        muted: background,
+        mutedForeground: mutedForeground,
+        accent: background,
+        accentForeground: foreground,
+        border: mutedForeground,
+        input: mutedForeground,
+        ring: foreground,
+      ),
+    ],
   );
 }

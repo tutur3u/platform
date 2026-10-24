@@ -11039,7 +11039,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantReactionLove => 'Yêu thích';
 
   @override
-  String get assistantReactionUnconfirmed => 'Chưa xác định được kết quả cảm xúc. Tạm dừng thay đổi cho tin nhắn này; làm mới chỉ đọc cảm xúc đã lưu.';
+  String get assistantReactionUnconfirmed => 'Chưa thể xác nhận cảm xúc. Hãy làm mới cảm xúc để đối soát an toàn.';
+
+  @override
+  String get assistantReactionUnavailable => 'Hiện chưa thể cập nhật cảm xúc. Vui lòng thử lại.';
 
   @override
   String get assistantRefreshReactions => 'Làm mới cảm xúc';

@@ -15,11 +15,13 @@ class AssistantThemeEditor extends StatelessWidget {
   const AssistantThemeEditor({
     required this.value,
     required this.onChanged,
+    this.onChangeEnd,
     super.key,
   });
 
   final AssistantThemePreferences value;
   final ValueChanged<AssistantThemePreferences>? onChanged;
+  final VoidCallback? onChangeEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +140,9 @@ class AssistantThemeEditor extends StatelessWidget {
                       ? null
                       : (intensity) =>
                             change(value.copyWith(intensity: intensity)),
+                  onChangeEnd: onChanged == null
+                      ? null
+                      : (_) => onChangeEnd?.call(),
                 ),
               ),
           ],

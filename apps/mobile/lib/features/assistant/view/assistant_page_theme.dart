@@ -17,23 +17,8 @@ extension _AssistantPageTheme on _AssistantPageState {
     builder: (context, _) => AssistantThemeScope(
       value: _chatTheme.value,
       child: Builder(
-        builder: (context) {
-          final colors = AssistantThemeScope.of(context);
-          final theme = Theme.of(context);
-          return Theme(
-            data: theme.copyWith(
-              colorScheme: theme.colorScheme.copyWith(
-                onSurface: colors.foreground,
-                onSurfaceVariant: colors.mutedForeground,
-              ),
-              textTheme: theme.textTheme.apply(
-                bodyColor: colors.foreground,
-                displayColor: colors.foreground,
-              ),
-            ),
-            child: AssistantThemeBackdrop(child: _buildPage(context)),
-          );
-        },
+        builder: (context) =>
+            AssistantThemeBackdrop(child: _buildPage(context)),
       ),
     ),
   );

@@ -98,20 +98,11 @@ Legacy `ai-chat-*` and `legacy-ai-*` conversations keep Copy, but cannot use pri
 Chat message IDs. Legacy dashboard Mira reaction/reply parity requires its own
 adapter work; IDs must never be stripped or guessed to enable it.
 
-Reaction toggles do not enter the offline queue. An uncertain outcome retains a
-write fence: **Refresh reactions** reads saved summaries but cannot establish that
-the original timed-out request has finished. Changes remain paused for that
-message after an unknown outcome, including across restarts. Releasing this hold
-requires terminal operation evidence or a future idempotent server contract.
-Missing targets also keep the fence. Reaction receipts update summaries without
-replacing current message content. A separate actor/workspace/conversation/message
-Hive journal must accept and flush the pending marker to disk before dispatch.
-Replacing the conversation cache cannot erase that marker;
-only the original toggle's acknowledged receipt clears it. Coverage includes
-`assistant_chat_reaction_persistence_test.dart`,
-`assistant_chat_reply_persistence_test.dart`,
-`assistant_native_reply_transport_test.dart` and
-`assistant_message_actions_test.dart`.
+Reactions use the native idempotent operation contract described below. Unknown
+outcomes expose **Refresh reactions**, which safely reconciles the original
+intent before updating the exact message's summaries. Reply previews jump to
+loaded originals without resuming automatic bottom-following; acknowledgment ID
+relocation retains the same expanded message state.
 
 Open the Assistant's More menu and choose **Chat appearance**. Presets adapt to
 the app's light/dark mode and offer solid, gradient and ombre backgrounds. The
@@ -121,7 +112,8 @@ device-local and scoped to the signed-in actor across all of that actor's
 Assistant conversations and workspaces; it does not change the shell, web UI or
 another actor's preferences. It does not synchronize across devices. Both remote
 and on-device conversations use the selected appearance. The theme controller
-retires delayed edits on logout or session replacement. Preset contrast, storage
+previews successive edits immediately, debounces storage and flushes slider changes
+on release. Delayed edits retire on logout or session replacement. Preset contrast, storage
 round trips, actor/session fences and the collapsed editor are covered under
 `apps/mobile/test/features/assistant/theme/`.
 

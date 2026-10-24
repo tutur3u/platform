@@ -21130,8 +21130,14 @@ abstract class AppLocalizations {
   /// No description provided for @assistantReactionUnconfirmed.
   ///
   /// In en, this message translates to:
-  /// **'Reaction outcome is unknown. Changes are paused for this message; refresh only reads saved reactions.'**
+  /// **'The reaction could not be confirmed. Refresh reactions to reconcile it safely.'**
   String get assistantReactionUnconfirmed;
+
+  /// No description provided for @assistantReactionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactions are unavailable right now. Try again.'**
+  String get assistantReactionUnavailable;
 
   /// No description provided for @assistantRefreshReactions.
   ///

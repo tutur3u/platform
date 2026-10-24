@@ -80,15 +80,20 @@ class AssistantMessageActions extends StatelessWidget {
               runSpacing: 8,
               children: [
                 for (final reaction in AssistantReaction.values)
-                  Semantics(
-                    selected: selectedReactions.contains(reaction.value),
-                    child: AppIconButton(
-                      key: ValueKey('assistant-react-${reaction.name}'),
-                      tooltip: reaction.label(l10n),
-                      icon: Icon(reaction.icon),
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).pop(AssistantReactToMessage(reaction.value)),
+                  MergeSemantics(
+                    child: Semantics(
+                      selected: selectedReactions.contains(reaction.value),
+                      child: AppIconButton(
+                        key: ValueKey('assistant-react-${reaction.name}'),
+                        tooltip: reaction.label(l10n),
+                        variant: selectedReactions.contains(reaction.value)
+                            ? AppButtonVariant.primary
+                            : AppButtonVariant.ghost,
+                        icon: Icon(reaction.icon),
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pop(AssistantReactToMessage(reaction.value)),
+                      ),
                     ),
                   ),
               ],

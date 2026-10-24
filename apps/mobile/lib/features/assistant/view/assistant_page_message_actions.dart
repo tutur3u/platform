@@ -39,9 +39,10 @@ extension _AssistantPageMessageActions on _AssistantPageState {
             isCurrent: current,
           );
     if (!mounted || !current()) return;
-    if (result == AssistantReactionResult.unknown ||
-        result == AssistantReactionResult.refreshRequired ||
-        result == AssistantReactionResult.unavailable) {
+    if (result == AssistantReactionResult.unavailable) {
+      _showInlineNotice(context.l10n.assistantReactionUnavailable);
+    } else if (result == AssistantReactionResult.unknown ||
+        result == AssistantReactionResult.refreshRequired) {
       _showInlineNotice(context.l10n.assistantReactionUnconfirmed);
     }
   }

@@ -565,6 +565,7 @@ extension _AssistantPageLayout on _AssistantPageState {
       canPersistMessage: remote ? _chatCubit.canPersistMessage : null,
       needsReactionRefresh: remote ? _chatCubit.needsReactionRefresh : null,
       isActionCurrent: current,
+      onJumpToReply: _transcriptFollower.suspend,
       onReply: (id) => _replyToMessage(id, current),
       onReact: (id, reaction) =>
           unawaited(_reactToMessage(id, reaction, current)),

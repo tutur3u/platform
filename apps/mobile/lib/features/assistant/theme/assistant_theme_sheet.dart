@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/components/app_list_tile.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
@@ -78,15 +79,29 @@ class AssistantThemeSheet extends StatelessWidget {
           if (controller?.storageFailed ?? false)
             Semantics(
               liveRegion: true,
-              child: AppListTile(
-                title: Text(l10n.assistantThemeStorageError),
-                trailing: AppButton.outline(
-                  onPressed: () => unawaited(controller!.retry()),
-                  child: Text(l10n.assistantThemeRetry),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l10n.assistantThemeStorageError),
+                    const SizedBox(height: AppSpacing.sm),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: AppButton.outline(
+                        onPressed: () => unawaited(controller!.retry()),
+                        child: Text(l10n.assistantThemeRetry),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          AssistantThemeEditor(value: value, onChanged: onChanged),
+          AssistantThemeEditor(
+            value: value,
+            onChanged: onChanged,
+            onChangeEnd: controller?.onChangeEnd,
+          ),
         ],
       ),
     );

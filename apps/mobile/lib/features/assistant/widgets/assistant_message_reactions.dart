@@ -29,27 +29,40 @@ class AssistantMessageReactions extends StatelessWidget {
             final label =
                 reaction?.label(context.l10n) ??
                 context.l10n.assistantReactionLabel;
-            return Semantics(
-              selected: selected,
-              child: AppButton.ghost(
-                key: ValueKey('assistant-reaction-${summary.emoji}'),
-                onPressed: onReact == null
-                    ? null
-                    : () => onReact!(summary.emoji),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(reaction?.icon ?? LucideIcons.smile, size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$label ${summary.count}',
-                      style: TextStyle(
-                        fontWeight: selected ? FontWeight.w700 : null,
-                      ),
-                    ),
-                  ],
+            final content = Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(reaction?.icon ?? LucideIcons.smile, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  '$label ${summary.count}',
+                  style: TextStyle(
+                    fontWeight: selected ? FontWeight.w700 : null,
+                  ),
                 ),
-              ),
+              ],
+            );
+            final key = ValueKey('assistant-reaction-${summary.emoji}');
+            if (onReact == null) {
+              return Semantics(
+                selected: selected,
+                child: AppBadge(
+                  key: key,
+                  variant: selected
+                      ? AppBadgeVariant.primary
+                      : AppBadgeVariant.outline,
+                  child: content,
+                ),
+              );
+            }
+            return AppButton(
+              key: key,
+              selected: selected,
+              variant: selected
+                  ? AppButtonVariant.primary
+                  : AppButtonVariant.ghost,
+              onPressed: () => onReact!(summary.emoji),
+              child: content,
             );
           },
         ),

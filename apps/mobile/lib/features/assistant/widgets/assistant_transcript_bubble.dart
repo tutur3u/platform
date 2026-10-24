@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
@@ -81,6 +84,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
   Future<void> _openActions(String payload) async {
     if (_selected) return;
     setState(() => _selected = true);
+    unawaited(AppHaptics.pickup());
     try {
       final onReply = widget.onReply;
       final onReact = widget.onReact;
@@ -125,10 +129,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
 
   Widget _surface(BuildContext context, Widget child) {
     final theme = Theme.of(context);
-    final hasChatTheme =
-        context.dependOnInheritedWidgetOfExactType<AssistantThemeScope>() !=
-        null;
-    final colors = hasChatTheme ? AssistantThemeScope.of(context) : null;
+    final colors = AssistantThemeScope.maybeOf(context);
     final message = alignEnd ? colors?.userMessage : colors?.assistantMessage;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final duration = reduceMotion
@@ -156,21 +157,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         ),
         child: message == null
             ? child
-            : Theme(
-                data: theme.copyWith(
-                  colorScheme: theme.colorScheme.copyWith(
-                    surface: message.background,
-                    onSurface: message.foreground,
-                    onSurfaceVariant: message.mutedForeground,
-                    primary: message.foreground,
-                  ),
-                  textTheme: theme.textTheme.apply(
-                    bodyColor: message.foreground,
-                    displayColor: message.foreground,
-                  ),
-                ),
-                child: child,
-              ),
+            : Theme(data: message.theme(theme), child: child),
       ),
     );
   }

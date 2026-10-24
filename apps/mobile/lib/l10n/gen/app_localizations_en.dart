@@ -11175,7 +11175,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantReactionLove => 'Love';
 
   @override
-  String get assistantReactionUnconfirmed => 'Reaction outcome is unknown. Changes are paused for this message; refresh only reads saved reactions.';
+  String get assistantReactionUnconfirmed => 'The reaction could not be confirmed. Refresh reactions to reconcile it safely.';
+
+  @override
+  String get assistantReactionUnavailable => 'Reactions are unavailable right now. Try again.';
 
   @override
   String get assistantRefreshReactions => 'Refresh reactions';
