@@ -15,6 +15,7 @@ on:
       - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
       - 'scripts/ci/calendar-cf-types*'
+      - 'scripts/ci/calendar-cf-fixture*'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -37,6 +38,7 @@ on:
       - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
       - 'scripts/ci/calendar-cf-types*'
+      - 'scripts/ci/calendar-cf-fixture*'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -246,7 +248,7 @@ jobs:
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
-        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs scripts/ci/calendar-cf-types.test.mjs
+        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs scripts/ci/calendar-cf-types.test.mjs scripts/ci/calendar-cf-fixture.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:

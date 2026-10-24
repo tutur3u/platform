@@ -136,6 +136,10 @@ Local `cf:typegen` requires a qualified existing build; it does not build or
 publish. Exact-head CI must run the real cf CLI and the retained reference
 producer. Fixture tests exercise failure handling and the real TypeScript proof;
 they do not establish supported-runtime cf execution on an older local Node.
+Keep supplier-dependent fixtures and restored copies under `apps/calendar/tmp`.
+Copying the workspace manifest into repository-level `tmp` does not install its
+dependencies there; Bun's isolated layout resolves cf and its type imports through
+the owning Calendar workspace. Test that layout without a root-hoisted cf package.
 
 ## Native Worker template
 

@@ -4,7 +4,6 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readdirSync,
   readFileSync,
   renameSync,
@@ -16,6 +15,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { calendarDirectory, calendarFixture } from './calendar-cf-fixture.mjs';
 import {
   generateCalendarTypes,
   requireSupportedNode,
@@ -33,9 +33,7 @@ interface Env extends Cloudflare.Env {}
 `;
 
 function fixture(t) {
-  mkdirSync(join(root, 'tmp'), { recursive: true });
-  const app = mkdtempSync(join(root, 'tmp/calendar-cf-types-'));
-  t.after(() => rmSync(app, { recursive: true, force: true }));
+  const app = calendarFixture(t, 'calendar-cf-types-');
   const put = (name, value) => {
     const path = join(app, name);
     mkdirSync(dirname(path), { recursive: true });
@@ -305,14 +303,13 @@ test('the output has no surviving disposable config dependency', (t) => {
   generateCalendarTypes(options(f));
   assert.ok(existsSync(f.output));
   assert.deepEqual(readdirSync(join(f.app, '.cloudflare')), []);
-  const restored = mkdtempSync(join(root, 'tmp/calendar-cf-types-restored-'));
-  t.after(() => rmSync(restored, { recursive: true, force: true }));
+  const restored = calendarFixture(t, 'calendar-cf-types-restored-');
   cpSync(f.app, restored, { recursive: true });
   assert.match(
     readFileSync(join(restored, 'cloudflare-env.d.ts'), 'utf8'),
     /import\("\.\/dist\/server\/worker\.js"\)/
   );
-  const require = createRequire(join(root, 'package.json'));
+  const require = createRequire(join(calendarDirectory, 'package.json'));
   const tsPath = require.resolve('typescript/package.json');
   const ts = JSON.parse(readFileSync(tsPath, 'utf8'));
   writeFileSync(
