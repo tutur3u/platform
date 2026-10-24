@@ -21012,6 +21012,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved settings are read-only until access can be verified.'**
   String get mailSettingsReadOnly;
+
+  /// No description provided for @calendarSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save calendar preferences. Retry when online.'**
+  String get calendarSettingsError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -73,7 +73,28 @@ class _CalendarAppSettingsState extends State<CalendarAppSettings> {
                   icon: LucideIcons.calendar,
                   title: l10n.settingsFirstDayOfWeek,
                   value: calendarFirstDayLabel(calendar.state, l10n),
-                  onTap: () => unawaited(openCalendarProductSettings(context)),
+                  subtitle: calendar.state.isFromCache
+                      ? l10n.settingsDataStatusCached
+                      : null,
+                  onTap: calendar.state.saving || calendar.state.revalidating
+                      ? null
+                      : () => unawaited(openCalendarProductSettings(context)),
+                ),
+              if (calendar?.state.error != null)
+                SettingsTile(
+                  key: const ValueKey('settings-calendar-error'),
+                  grouped: true,
+                  icon: LucideIcons.circleAlert,
+                  title: l10n.calendarSettingsError,
+                  wrapSupportingText: true,
+                  showChevron: false,
+                  trailing: AppIconButton(
+                    tooltip: l10n.commonRetry,
+                    onPressed: calendar!.state.loading || calendar.state.saving
+                        ? null
+                        : () => unawaited(calendar.loadUserPreference()),
+                    icon: const Icon(LucideIcons.rotateCw),
+                  ),
                 ),
               SettingsTile(
                 key: const ValueKey('settings-calendar-timezone-row'),

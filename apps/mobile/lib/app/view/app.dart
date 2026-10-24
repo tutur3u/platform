@@ -10,6 +10,7 @@ import 'package:mobile/app/view/auth_session_boundary.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/router/app_router.dart';

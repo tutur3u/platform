@@ -31,6 +31,9 @@ extension _AppOfflinePreparation on _AppState {
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
+    OfflineMutationQueue.instance.syncRevision.addListener(
+      _refreshCalendarSettings,
+    );
     _syncOfflinePreparationScope();
   }
 
@@ -87,6 +90,16 @@ extension _AppOfflinePreparation on _AppState {
     _syncOfflinePreparationScope();
   }
 
+  void _refreshCalendarSettings() {
+    final auth = _authCubit.state;
+    unawaited(
+      _calendarSettingsCubit.load(
+        userId: auth.status == AuthStatus.authenticated ? auth.user?.id : null,
+        workspaceId: _workspaceCubit.state.currentWorkspace?.id,
+      ),
+    );
+  }
+
   void _syncOfflinePreparationScope({bool resetWorkspace = false}) {
     final auth = _authCubit.state;
     final userId = auth.user?.id;
@@ -94,6 +107,12 @@ extension _AppOfflinePreparation on _AppState {
         ? null
         : _workspaceCubit.state.currentWorkspace?.id;
     final coordinator = OfflinePreparationCoordinator.instance;
+    unawaited(
+      _calendarSettingsCubit.load(
+        userId: auth.status == AuthStatus.authenticated ? userId : null,
+        workspaceId: workspaceId,
+      ),
+    );
     unawaited(
       coordinator
           .setScope(userId: userId, workspaceId: workspaceId)
@@ -118,6 +137,9 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _unregisterOfflinePreparation() {
+    OfflineMutationQueue.instance.syncRevision.removeListener(
+      _refreshCalendarSettings,
+    );
     CacheStore.instance.removedResource.removeListener(
       _invalidateOfflineReadiness,
     );

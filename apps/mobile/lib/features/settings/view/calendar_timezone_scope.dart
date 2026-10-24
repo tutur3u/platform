@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -48,6 +49,7 @@ class _CalendarTimezoneScopeState extends State<CalendarTimezoneScope>
       deviceLoader: widget.deviceLoader ?? getVerifiedDeviceTimezoneIdentifier,
       loadTimeout: widget.loadTimeout,
     );
+    OfflineMutationQueue.instance.syncRevision.addListener(_load);
     _load();
   }
 
@@ -58,6 +60,7 @@ class _CalendarTimezoneScopeState extends State<CalendarTimezoneScope>
 
   @override
   void dispose() {
+    OfflineMutationQueue.instance.syncRevision.removeListener(_load);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_cubit.close());
     if (widget.repository == null) _repository.dispose();

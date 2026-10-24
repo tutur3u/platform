@@ -297,6 +297,19 @@ Coverage:
 - `profile_page_test.dart` and `profile_page_render_test.dart` cover the Edit
   profile groups and renders.
 
+### Calendar settings offline behavior
+
+Week-start and time-zone preferences restore encrypted account/workspace
+snapshots, then revalidate in the background even when the snapshot is fresh.
+Leaving an account or workspace clears its visible preference; reconnect and app
+resume refresh the active scope. A failed save preserves the last confirmed
+selection and shows a localized recovery action. These settings do not queue
+writes: their PATCH contract currently has no operation receipt or revision
+precondition. Offline editing and cross-device conflict resolution remain pending
+API work, rather than silently reporting success. Coverage is in
+`calendar_settings_cache_test.dart`, `calendar_settings_offline_test.dart` and
+`timezone_settings_offline_test.dart`.
+
 ### Mail settings offline behavior
 
 Mail account rows and mailbox settings restore an encrypted account/workspace
