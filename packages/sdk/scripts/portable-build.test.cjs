@@ -185,3 +185,16 @@ test('stages the actual SDK closure without server dependencies or test-only fil
   );
   assert.doesNotMatch(entry, /['"]@tuturuuu\/(internal-api|utils)/);
 });
+
+test('omits shared test fixtures that import test runners', (t) => {
+  const f = fixture(t);
+  f.write(
+    'packages/sdk/src/cli/example-test-fixtures.ts',
+    "import { beforeEach } from 'vitest';\nexport const ready = beforeEach;\n"
+  );
+  stagePortableSources({ repoRoot: f.root, destination: f.destination });
+  assert.equal(
+    fs.existsSync(path.join(f.destination, 'cli/example-test-fixtures.ts')),
+    false
+  );
+});
