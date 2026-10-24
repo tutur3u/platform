@@ -1,0 +1,5 @@
+# Private, PID-owned packaging coordination; never ship these files.
+.dev-pack.lock
+.dev-pack.lock.*.tmp
+.dev-pack.lock.*.update
+.dev-pack.lock.reclaim/
