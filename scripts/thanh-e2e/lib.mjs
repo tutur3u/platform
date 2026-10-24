@@ -12,6 +12,24 @@ export const DEFAULT_SUPABASE_BASE_PORT = 8000;
 export const DEFAULT_WEB_PORT = 7803;
 export const LOOPBACK_HOST = '127.0.0.1';
 
+// Satellite apps web proxies to for mobile flows (web proxies Calendar's
+// event API to the Calendar app). Ports match their `dev:app` defaults.
+export const KNOWN_SATELLITES = Object.freeze({ calendar: 7806 });
+
+export function parseSatellites(value) {
+  if (value === undefined) return ['calendar'];
+  const names = value
+    .split(',')
+    .map((name) => name.trim())
+    .filter((name) => name && name !== 'none');
+  for (const name of names) {
+    if (!Object.hasOwn(KNOWN_SATELLITES, name)) {
+      throw new Error(`Unknown satellite in TUTURUUU_E2E_SATELLITES: ${name}`);
+    }
+  }
+  return names;
+}
+
 // Same synthetic coordination secret as the web E2E fixtures; never a real value.
 export const LOCAL_APP_COORDINATION_SECRET =
   'local-e2e-app-coordination-secret';
@@ -84,6 +102,7 @@ export function resolveConfig(env = process.env, { home = os.homedir() } = {}) {
     avd: env.TUTURUUU_E2E_AVD || 'tuturuuu-android-36-pixel9pro',
     avdPort,
     androidSerial: `emulator-${avdPort}`,
+    satellites: parseSatellites(env.TUTURUUU_E2E_SATELLITES),
     stateDir,
     supabaseBasePort,
     supabaseApiPort: supabaseBasePort + 1,
@@ -97,6 +116,7 @@ export function resolveConfig(env = process.env, { home = os.homedir() } = {}) {
     shotsDir: path.join(stateDir, 'shots'),
     envDir: path.join(stateDir, 'env'),
     webPidFile: path.join(stateDir, 'web.pid'),
+    pidFile: (name) => path.join(stateDir, `${name}.pid`),
   };
 }
 
@@ -152,6 +172,29 @@ export function assertLoopback(name, value) {
   }
 }
 
+function satelliteUrls(config) {
+  const urls = {};
+  for (const name of config.satellites) {
+    const url = webOrigin(KNOWN_SATELLITES[name]);
+    urls[`${name.toUpperCase()}_APP_URL`] = url;
+    urls[`NEXT_PUBLIC_${name.toUpperCase()}_APP_URL`] = url;
+  }
+  return urls;
+}
+
+export function satelliteEnv(config, status, name) {
+  const port = KNOWN_SATELLITES[name];
+  const web = webOrigin(config.webPort);
+  return {
+    ...webEnv(config, status),
+    PORT: String(port),
+    NEXT_PUBLIC_APP_URL: webOrigin(port),
+    WEB_APP_URL: web,
+    NEXT_PUBLIC_WEB_APP_URL: web,
+    INTERNAL_WEB_API_ORIGIN: web,
+  };
+}
+
 export function webEnv(config, status) {
   assertLoopback('Supabase API URL', status.apiUrl);
   return {
@@ -165,6 +208,7 @@ export function webEnv(config, status) {
     NEXT_PUBLIC_WEB_APP_URL: webOrigin(config.webPort),
     PORT: String(config.webPort),
     NEXT_TELEMETRY_DISABLED: '1',
+    ...satelliteUrls(config),
   };
 }
 

@@ -21,6 +21,7 @@ import {
   formatEnvFile,
   helpText,
   isolatedDockerConfigJson,
+  KNOWN_SATELLITES,
   loopbackUrl,
   mobileDefines,
   parseCliArgs,
@@ -28,6 +29,7 @@ import {
   parseSupabaseStatus,
   playwrightEnv,
   resolveConfig,
+  satelliteEnv,
   webEnv,
 } from './lib.mjs';
 
@@ -167,12 +169,8 @@ async function up(config, flags) {
   await writeEnvFiles(config);
 }
 
-function readPid(config) {
-  const pid = Number(
-    fs.existsSync(config.webPidFile)
-      ? fs.readFileSync(config.webPidFile, 'utf8')
-      : NaN
-  );
+function readPid(file) {
+  const pid = Number(fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : NaN);
   if (!Number.isInteger(pid)) return null;
   try {
     process.kill(pid, 0);
@@ -198,14 +196,9 @@ async function waitForHttp(url, timeoutMs) {
 
 async function web(config, flags) {
   ensureDirs(config);
-  if (readPid(config)) {
-    log(
-      `web already running (pid ${readPid(config)}) on ${loopbackUrl(config.webPort)}`
-    );
-    return;
-  }
   const status = await writeEnvFiles(config);
-  if (!flags['skip-prebuild']) {
+  const running = readPid(config.webPidFile);
+  if (!running && !flags['skip-prebuild']) {
     // `bun dev:web` watches these dist-exporting packages; build them once.
     for (const pkg of ['types', 'supabase']) {
       run('bun', ['run', 'build'], {
@@ -213,31 +206,66 @@ async function web(config, flags) {
       });
     }
   }
-  const logFile = fs.openSync(path.join(config.logsDir, 'web.log'), 'a');
-  const child = spawn(
-    path.join(webDir, 'node_modules', '.bin', 'next'),
-    ['dev', '-p', String(config.webPort), '--turbopack'],
-    {
+  if (running) {
+    log(
+      `web already running (pid ${running}); restart with down --web-only to apply env changes`
+    );
+  } else {
+    await startDetached(config, {
+      name: 'web',
+      command: path.join(webDir, 'node_modules', '.bin', 'next'),
+      args: ['dev', '-p', String(config.webPort), '--turbopack'],
       cwd: webDir,
-      detached: true,
       env: {
-        ...process.env,
         ...webEnv(config, status),
         NODE_OPTIONS: '--experimental-require-module',
       },
-      stdio: ['ignore', logFile, logFile],
+      pidFile: config.webPidFile,
+      readyUrl: `${loopbackUrl(config.webPort)}/login`,
+    });
+  }
+  for (const name of config.satellites) {
+    const port = KNOWN_SATELLITES[name];
+    if (readPid(config.pidFile(name))) {
+      log(`${name} already running on ${loopbackUrl(port)}`);
+      continue;
     }
-  );
+    if (!(await isPortAvailable(port))) {
+      throw new Error(
+        `${name} port ${port} is busy; stop the other server first.`
+      );
+    }
+    await startDetached(config, {
+      name,
+      command: 'bun',
+      args: ['run', 'dev:app'],
+      cwd: path.join(repoRoot, 'apps', name),
+      env: satelliteEnv(config, status, name),
+      pidFile: config.pidFile(name),
+      readyUrl: `${loopbackUrl(port)}/`,
+    });
+  }
+}
+
+// Starts a long-lived dev server in its own process group, logging to
+// logs/<name>.log, and waits until it answers HTTP below 500.
+async function startDetached(
+  config,
+  { name, command, args, cwd, env, pidFile, readyUrl }
+) {
+  const logPath = path.join(config.logsDir, `${name}.log`);
+  const logFile = fs.openSync(logPath, 'a');
+  const child = spawn(command, args, {
+    cwd,
+    detached: true,
+    env: { ...process.env, ...env },
+    stdio: ['ignore', logFile, logFile],
+  });
   child.unref();
-  fs.writeFileSync(config.webPidFile, String(child.pid));
-  log(
-    `web starting (pid ${child.pid}); log ${path.join(config.logsDir, 'web.log')}`
-  );
-  const code = await waitForHttp(
-    `${loopbackUrl(config.webPort)}/login`,
-    600_000
-  );
-  log(`web ready on ${loopbackUrl(config.webPort)} (HTTP ${code})`);
+  fs.writeFileSync(pidFile, String(child.pid));
+  log(`${name} starting (pid ${child.pid}); log ${logPath}`);
+  const code = await waitForHttp(readyUrl, 600_000);
+  log(`${name} ready on ${new URL(readyUrl).origin} (HTTP ${code})`);
 }
 
 async function webE2e(config, flags, positionals) {
@@ -446,7 +474,7 @@ async function status(config) {
       ? stack.output || '(no Supabase containers)'
       : `docker: ${stack.output}`
   );
-  const pid = readPid(config);
+  const pid = readPid(config.webPidFile);
   console.log(
     pid ? `web: pid ${pid} on ${loopbackUrl(config.webPort)}` : 'web: stopped'
   );
@@ -483,12 +511,17 @@ async function doctor(config) {
 }
 
 async function down(config, flags) {
-  const pid = readPid(config);
-  if (pid) {
-    process.kill(-pid, 'SIGTERM');
-    log(`stopped web (pid ${pid})`);
+  for (const [name, file] of [
+    ['web', config.webPidFile],
+    ...config.satellites.map((sat) => [sat, config.pidFile(sat)]),
+  ]) {
+    const pid = readPid(file);
+    if (pid) {
+      process.kill(-pid, 'SIGTERM');
+      log(`stopped ${name} (pid ${pid})`);
+    }
+    fs.rmSync(file, { force: true });
   }
-  fs.rmSync(config.webPidFile, { force: true });
   if (flags['web-only']) return;
   const args = ['stop', '--project-id', config.projectId];
   if (flags.purge) args.push('--no-backup');

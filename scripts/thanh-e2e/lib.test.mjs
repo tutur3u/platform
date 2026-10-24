@@ -10,10 +10,12 @@ import {
   MOBILE_API_OVERRIDE_KEYS,
   mobileDefines,
   parseCliArgs,
+  parseSatellites,
   parseShotMarker,
   parseSupabaseStatus,
   playwrightEnv,
   resolveConfig,
+  satelliteEnv,
   webEnv,
 } from './lib.mjs';
 
@@ -134,6 +136,27 @@ describe('dummyGoogleServicesJson', () => {
       ]
     );
     assert.equal(json.client[1].api_key[0].current_key, 'dummy_key');
+  });
+});
+
+describe('satellites', () => {
+  it('defaults to calendar and validates names', () => {
+    assert.deepEqual(parseSatellites(undefined), ['calendar']);
+    assert.deepEqual(parseSatellites('none'), []);
+    assert.throws(() => parseSatellites('calendar,mars'), /Unknown satellite/);
+  });
+
+  it('points web at the satellite and the satellite back at web', () => {
+    const config = resolveConfig({}, { home: '/Users/thanh' });
+    assert.equal(
+      webEnv(config, status).CALENDAR_APP_URL,
+      'http://localhost:7806'
+    );
+    const env = satelliteEnv(config, status, 'calendar');
+    assert.equal(env.PORT, '7806');
+    assert.equal(env.NEXT_PUBLIC_APP_URL, 'http://localhost:7806');
+    assert.equal(env.INTERNAL_WEB_API_ORIGIN, 'http://localhost:7803');
+    assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, 'http://127.0.0.1:8001');
   });
 });
 

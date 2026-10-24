@@ -53,6 +53,7 @@ after an administrator runs
 | Supabase project id | `tuturuuu-e2e` | `TUTURUUU_E2E_PROJECT_ID` |
 | Supabase ports | `8000`-`8007` (API `8001`, DB `8002`, Studio `8003`, mail `8004`) | `TUTURUUU_E2E_SUPABASE_BASE_PORT` |
 | Web dev server | `http://127.0.0.1:7803` | `TUTURUUU_E2E_WEB_PORT` |
+| Satellites | Calendar on `http://localhost:7806` | `TUTURUUU_E2E_SATELLITES` (`calendar`, `none`) |
 | iOS Simulator | `tuturuuu-ios-iphone17pro` | `TUTURUUU_E2E_IOS_SIM` |
 | Android Emulator | `tuturuuu-android-36-pixel9pro` on `emulator-5580` | `TUTURUUU_E2E_AVD`, `TUTURUUU_E2E_AVD_PORT` |
 
@@ -84,7 +85,7 @@ E2E=scripts/thanh-e2e/thanh-e2e.mjs
 
 node $E2E doctor
 ttr resources run -- node $E2E up          # start + migrations + seed
-ttr resources run -- node $E2E web         # build types/supabase, start next dev
+ttr resources run -- node $E2E web         # build types/supabase, start web + satellites
 node $E2E devices                          # boot simulator + emulator headless
 ttr resources run -- node $E2E web-e2e --install -- e2e/auth.noauth.spec.ts
 ttr resources run -- node $E2E mobile-e2e ios
@@ -104,6 +105,17 @@ The seed creates `local@tuturuuu.com` (root admin) and `user1`-`user4@tuturuuu.c
 with the public local-only seed password from `apps/database/supabase/seed.sql`.
 The mobile flow defaults to `local@tuturuuu.com`; override with
 `--dart-define=E2E_EMAIL=...` only for other seeded accounts.
+
+## Satellites
+
+Web proxies some owner APIs to satellite apps; Calendar's event API is proxied
+to the Calendar app, so without it Agenda shows `ApiException(500): Request
+failed` and web logs `Failed to proxy https://calendar.tuturuuu.localhost/...
+ECONNREFUSED`. `web` therefore also starts each satellite in
+`TUTURUUU_E2E_SATELLITES` (default `calendar`) with `bun run dev:app` on its
+default port, the same local Supabase env, and `WEB_APP_URL`/
+`INTERNAL_WEB_API_ORIGIN` pointing back at web; web gets
+`CALENDAR_APP_URL=http://localhost:7806`. `down` stops web and satellites.
 
 ## Mobile wiring
 
@@ -168,6 +180,14 @@ Playwright Chromium build first. Pass spec paths or Playwright flags after `--`.
 - Mobile login ignores "Continue with email" while OTP availability resolves
   (a short grace period); the test retries the tap until the password stage
   renders.
+- Every wait in the flow captures `timeout-<label>.png` and prints the visible
+  text on timeout, so a failing run shows the stuck screen.
+- Simulator and emulator keyboards are real: the test dismisses the keyboard
+  before tapping, and re-enters the email before each Continue attempt because
+  the login page can rebuild once startup checks settle. On the Android
+  profile build the typed email still did not stick; after 20 seconds the test
+  signs in through `AuthCubit.signInWithPassword` (the call the Sign in button
+  makes) and logs `E2E_NOTE`, so profile mode still covers Agenda and Settings.
 - `mobile-e2e` runs `flutter drive` in its own process group with a 20-minute
   timeout and requires the `All tests passed` line; a killed drive can exit 0.
 
