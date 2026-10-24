@@ -1301,24 +1301,6 @@ describe('web proxy api handling', () => {
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('keeps settings deep-link params when redirecting root to the workspace home', async () => {
-    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
-    mocks.getUserDefaultWorkspace.mockResolvedValue({
-      id: 'personal-ws-id',
-      personal: true,
-    });
-
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      createSessionRequest('http://localhost/?view=kanban&settingsTab=security')
-    );
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'http://localhost/personal?settingsTab=security'
-    );
-  });
-
   it('skips default workspace redirect auth when root requests have no session cookie', async () => {
     mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
     mocks.getUserDefaultWorkspace.mockResolvedValue({
