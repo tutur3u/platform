@@ -58,7 +58,9 @@ type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
 // unreadable or oversized summary cannot establish success, even after 200 headers.
 export const MAX_OUTCOME_BODY_BYTES = 64 * 1024;
 
-async function readOutcome(response: Response): Promise<Exclude<RunOutcome, 'stopped'>> {
+async function readOutcome(
+  response: Response
+): Promise<Exclude<RunOutcome, 'stopped'>> {
   const reader = response.body?.getReader();
   if (!reader) return 'unknown';
   const chunks: Uint8Array[] = [];
