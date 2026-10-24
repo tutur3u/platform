@@ -36,7 +36,17 @@ interface ReclaimOptions {
  */
 export async function runReclaimCommand(options: ReclaimOptions) {
   const env = options.holdsDirs.length
-    ? { ...process.env, TTR_STORAGE_HOLDS_DIRS: options.holdsDirs.join(':') }
+    ? {
+        ...process.env,
+        TTR_STORAGE_HOLDS_DIRS: [
+          ...new Set([
+            ...(process.env.TTR_STORAGE_HOLDS_DIRS?.split(':').filter(
+              Boolean
+            ) ?? []),
+            ...options.holdsDirs,
+          ]),
+        ].join(':'),
+      }
     : process.env;
   const thresholds = hysteresisThresholds(env);
   for (const warning of thresholds.warnings)

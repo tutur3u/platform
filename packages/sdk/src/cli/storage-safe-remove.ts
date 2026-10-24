@@ -145,9 +145,27 @@ export function removeVerifiedTree(
     if (problem) throw new Error(`${problem}; refusing the whole removal`);
   };
   owned(target.path, fs.lstat(target.path));
+  const exists = (path: string) => {
+    try {
+      fs.lstat(path);
+      return true;
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+        return false;
+      throw error;
+    }
+  };
+  const refuseRepository = (path: string, names?: string[]) => {
+    const has = (name: string) =>
+      names ? names.includes(name) : exists(join(path, name));
+    if (has('.git') || ['HEAD', 'objects', 'refs'].every(has))
+      throw new Error(`${path} contains a git repository; stopped`);
+  };
   const scan = (link: Link): Node => {
     const node: Node = { ...link, files: [], dirs: [] };
-    for (const name of fs.readdir(link.path)) {
+    const names = fs.readdir(link.path);
+    refuseRepository(link.path, names);
+    for (const name of names) {
       const path = join(link.path, name);
       const info = fs.lstat(path);
       owned(path, info);
@@ -172,12 +190,18 @@ export function removeVerifiedTree(
       ownershipProblem(link.path, info, euid) === null
     );
   };
-  const remove = (node: Node) => {
-    for (const dir of node.dirs) remove(dir);
+  const remove = (node: Node, ancestors: string[] = []) => {
+    const chain = [...ancestors, node.path];
+    const checkRepositories = () => {
+      for (const path of chain) refuseRepository(path);
+    };
+    checkRepositories();
+    for (const dir of node.dirs) remove(dir, chain);
     verifyChain(identity, fs);
     if (!same(node) || fs.lstat(node.path).isSymbolicLink())
       throw new Error(`identity changed at ${node.path}; stopped`);
     for (const file of node.files) {
+      checkRepositories();
       if (!same(node))
         throw new Error(`identity changed at ${node.path}; stopped`);
       if (!same(file))
@@ -185,6 +209,7 @@ export function removeVerifiedTree(
       fs.unlink(file.path);
       removed += 1;
     }
+    checkRepositories();
     fs.rmdir(node.path);
     removed += 1;
   };

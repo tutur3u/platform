@@ -82,6 +82,40 @@ describe('automatic reclaim plan', () => {
     expect(plan(null)).toEqual([]);
   });
 
+  it.each(['directory', 'file', 'bare'])(
+    'excludes ignored output containing a %s repository',
+    async (kind) => {
+      const fixture = await createRepoFixture();
+      await writeFile(join(fixture.repo, '.git', 'info', 'exclude'), 'dist\n');
+      const merged = await fixture.worktree('merged');
+      const artifact = join(merged.path, 'apps', 'web', 'dist');
+      const nested = join(artifact, 'project');
+      await mkdir(nested, { recursive: true });
+      if (kind === 'directory') await mkdir(join(nested, '.git'));
+      else if (kind === 'file')
+        await writeFile(join(nested, '.git'), 'gitdir: /keep');
+      else {
+        await writeFile(join(nested, 'HEAD'), 'ref: refs/heads/main');
+        await mkdir(join(nested, 'objects'));
+        await mkdir(join(nested, 'refs'));
+      }
+      expect(
+        planReclaim({
+          holds: () => [],
+          liveness: liveness([]),
+          measure,
+          git: realGit,
+          prs: () => null,
+          repos: [fixture.repo],
+          olderThanDays: 1,
+          now: later,
+          home: fixture.root,
+          platform: 'linux',
+        })
+      ).toEqual([]);
+    }
+  );
+
   it('fetches PR facts once per repo per run, re-checks included', async () => {
     const fixture = await createRepoFixture();
     await writeFile(join(fixture.repo, '.git', 'info', 'exclude'), 'dist\n');

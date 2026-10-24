@@ -323,6 +323,9 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
   with plain `git worktree remove` (no `--force`) and their branch with
   `git branch -d`; git keeps a squash-merged branch, which is reported for a
   human to delete after checking.
+- Repositories or linked worktrees nested inside a reclaim candidate, including
+  ignored output and bare repositories. Planning rejects the candidate; the
+  deletion walk rechecks repository markers before every unlink and rmdir.
 - Source, Trash, VM disk images, Xcode archives, AVDs and Supabase volumes not
   named explicitly.
 

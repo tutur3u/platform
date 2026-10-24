@@ -5,6 +5,7 @@ import { findArtifacts } from './storage-analyze';
 import { canonicalPath, type Hold, isInside } from './storage-holds';
 import { commandRunning, type Liveness } from './storage-liveness';
 import type { Measurer } from './storage-measure';
+import { containsGitRepository } from './storage-scratch';
 import { newestMtime } from './storage-targets';
 import {
   classifyWorktrees,
@@ -198,6 +199,7 @@ export function planReclaim(input: PlanDeps): ReclaimCandidate[] {
   // Never act outside the rule's root or off the low volume.
   const deviceOf = deps.deviceOf ?? ((path: string) => lstatSync(path).dev);
   return candidates.filter((candidate) => {
+    if (containsGitRepository(candidate.path)) return false;
     if (!isInside(canonicalPath(candidate.path), canonicalPath(candidate.root)))
       return false;
     if (deps.device === undefined) return true;
