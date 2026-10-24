@@ -55,10 +55,8 @@ export function sanitizePathSegments(
       if (next === decoded) break;
       decoded = next;
     }
-    const next = decoded.replace(/%([\da-f]{2})/gi, (_match, byte: string) =>
-      String.fromCharCode(Number.parseInt(byte, 16))
-    );
-    if (next !== decoded) return null;
+    // Escapes that still decode after the pass limit hide their final form.
+    if (decodePercentEscapes(decoded) !== decoded) return null;
     if (
       decoded === '.' ||
       decoded === '..' ||

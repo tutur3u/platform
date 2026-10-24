@@ -117,7 +117,9 @@ describe('Storage Path Sanitization', () => {
       expect(sanitizePathStrict(encodedTraversal)).toBeNull();
       expect(sanitizePath('50% done')).toBe('50% done');
       expect(sanitizePath('x%')).toBe('x%');
-      expect(sanitizePath('100%ab')).toBe('100%ab');
+      expect(sanitizePath('100%zz')).toBe('100%zz');
+      // `%ab` is a lone UTF-8 continuation byte, so it is malformed, not literal.
+      expect(sanitizePath('100%ab')).toBeNull();
     });
 
     it('preserves adjacent dots inside a legacy filename', () => {
