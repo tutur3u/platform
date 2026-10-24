@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsTile extends StatelessWidget {
   const SettingsTile({
@@ -46,7 +45,7 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final muted = theme.colorScheme.mutedForeground;
     final iconColor = isDestructive
         ? theme.colorScheme.destructive
@@ -105,6 +104,9 @@ class SettingsTile extends StatelessWidget {
                             width(end, endStyle) >=
                         titleWidth;
                 final endBelow = end.isNotEmpty && !endInline;
+                // With a value line under the title, the trailing value sits
+                // on the title line only, so the value keeps the full width.
+                final endInTitle = endInline && hasSupportingLine;
                 final supporting = hasSupportingLine || endBelow;
                 return Row(
                   crossAxisAlignment: supporting && trailingWidth == null
@@ -119,36 +121,40 @@ class SettingsTile extends StatelessWidget {
                         child: Icon(icon, size: 21, color: iconColor),
                       ),
                     ),
-                    const shad.Gap(SettingsRowLayout.textGap),
+                    const AppGap(SettingsRowLayout.textGap),
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(top: supporting ? 2 : 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Wrap(
-                              spacing: 8,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(title, style: titleStyle),
-                                if (badge case final label?)
-                                  DecoratedBox(
-                                    decoration: ShapeDecoration(
-                                      color: theme.colorScheme.primary,
-                                      shape: const StadiumBorder(),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
+                            _withTitleEnd(
+                              endInTitle ? end : null,
+                              endStyle,
+                              Wrap(
+                                spacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(title, style: titleStyle),
+                                  if (badge case final label?)
+                                    DecoratedBox(
+                                      decoration: ShapeDecoration(
+                                        color: theme.colorScheme.primary,
+                                        shape: const StadiumBorder(),
                                       ),
-                                      child: Text(label, style: badgeStyle),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        child: Text(label, style: badgeStyle),
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                             if (endBelow) ...[
-                              const shad.Gap(2),
+                              const AppGap(2),
                               Text(
                                 end,
                                 style: theme.typography.small.copyWith(
@@ -157,7 +163,7 @@ class SettingsTile extends StatelessWidget {
                               ),
                             ],
                             if (value?.trim().isNotEmpty ?? false) ...[
-                              const shad.Gap(2),
+                              const AppGap(2),
                               Text(
                                 value!,
                                 maxLines: 2,
@@ -169,7 +175,7 @@ class SettingsTile extends StatelessWidget {
                               ),
                             ],
                             if (subtitle?.trim().isNotEmpty ?? false) ...[
-                              const shad.Gap(2),
+                              const AppGap(2),
                               Text(
                                 subtitle!,
                                 maxLines: onTap != null && !wrapSupportingText
@@ -187,7 +193,7 @@ class SettingsTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (endInline)
+                    if (endInline && !endInTitle)
                       SizedBox(
                         height: SettingsRowLayout.actionWidth,
                         child: Align(
@@ -200,7 +206,7 @@ class SettingsTile extends StatelessWidget {
                         ),
                       )
                     else
-                      const shad.Gap(8),
+                      const AppGap(8),
                     SizedBox(
                       width: trailingWidth ?? SettingsRowLayout.actionWidth,
                       child: IconButtonTheme(
@@ -236,3 +242,16 @@ class SettingsTile extends StatelessWidget {
     );
   }
 }
+
+/// Places [end] flush right on the title line, or returns [title] alone.
+Widget _withTitleEnd(String? end, TextStyle style, Widget title) => end == null
+    ? title
+    : Row(
+        children: [
+          Expanded(child: title),
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Text(end, maxLines: 1, style: style),
+          ),
+        ],
+      );

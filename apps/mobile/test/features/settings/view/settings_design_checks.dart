@@ -133,6 +133,7 @@ void registerSettingsDesignChecks() {
     final lastRow = find.byType(SettingsTile).last;
     final dock = find.byType(MorphingNavigationBar);
     expect(tester.getRect(lastRow).bottom, lessThan(tester.getRect(dock).top));
+    await _capture(tester, 'settings-root-end');
     expect(find.byType(AppBar), findsNothing);
     expect(tester.takeException(), isNull);
   });
