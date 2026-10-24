@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -46,6 +47,7 @@ const PLANTS = [
 ];
 const ZONE = 'fedcba9876543210fedcba9876543210';
 const TOKEN_ID = '0123456789abcdef0123456789abcdef';
+const TOKEN_FP = `fp:${createHash('sha256').update(TOKEN_ID).digest('hex').slice(0, 12)}`;
 
 const directory = mkdtempSync(join(tmpdir(), 'cf-worker-settings-cli-'));
 after(() => rmSync(directory, { recursive: true, force: true }));
@@ -127,6 +129,8 @@ function runCli(routes, index) {
 }
 
 function assertNoToken(output) {
+  // The raw token id is response-derived; only its fingerprint may print.
+  assert.ok(!output.includes(TOKEN_ID), 'the raw token id reached output');
   for (const form of FORMS)
     assert.ok(!output.includes(form), 'a token encoding reached output');
   for (const form of FORMS.slice(0, 5))
@@ -142,7 +146,9 @@ test('the CLI accepts the live previous identity (harness control)', () => {
   assert.equal(status, 0, output);
   assert.match(
     output,
-    new RegExp(`Cloudflare API token id ${TOKEN_ID} status active`)
+    new RegExp(
+      `Cloudflare API token ${TOKEN_FP} status active \\(user token\\)`
+    )
   );
   assert.match(output, /before snapshot verified \(previous identity\)/);
   assertNoToken(output);
@@ -213,6 +219,32 @@ for (const [index, [name, changes, pattern]] of [
       },
     },
     /zone list returned an invalid id for zone #1$/m,
+  ],
+  [
+    'token id hex-encoding a 16-byte token prefix',
+    {
+      verify: {
+        status: 200,
+        body: JSON.stringify({
+          success: true,
+          result: {
+            id: Buffer.from(TOKEN.slice(0, 16)).toString('hex'),
+            status: 'active',
+          },
+        }),
+      },
+      routes: {
+        status: 403,
+        body: JSON.stringify({ errors: [{ code: 10000 }] }),
+      },
+    },
+    new RegExp(
+      `^Cloudflare API token fp:${createHash('sha256')
+        .update(Buffer.from(TOKEN.slice(0, 16)).toString('hex'))
+        .digest('hex')
+        .slice(0, 12)} status active \\(user token\\)$`,
+      'm'
+    ),
   ],
   [
     'token echoed in verify fields and error bodies',
@@ -289,6 +321,7 @@ const LEAVES = Object.keys(live).flatMap((endpoint) =>
 // Strings the gate does not compare: they must still never be printed, and
 // poisoning one alone may pass. Every other string must fail the gate closed.
 const UNGATED = new Set([
+  // Printed only as a fingerprint of a 32-hex id (`fp:<12 hex>`).
   'verify/result.id',
   'verify/result.status',
   'zones/result.0.name',

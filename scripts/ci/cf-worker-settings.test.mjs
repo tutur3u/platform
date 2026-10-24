@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {
   captureSettings,
@@ -286,7 +287,7 @@ test('no server-provided string reaches output in any token encoding', async () 
     },
   });
   assert.deepEqual(lines, [
-    'Cloudflare API token id unrecognized status unrecognized (user token)',
+    'Cloudflare API token fp:<invalid> status unrecognized (user token)',
     'Cloudflare API token could not be verified: user HTTP 401 (codes 1000); ' +
       'account HTTP 401 (codes 1000)',
     'Cloudflare API token could not be verified: user error; account error',
@@ -294,32 +295,65 @@ test('no server-provided string reaches output in any token encoding', async () 
   assertNoServerText([...outputs, ...lines]);
 });
 
-test('token diagnostics print a well-formed token id and status', async () => {
-  const lines = [];
-  const id = 'fedcba9876543210fedcba9876543210';
+const fingerprint = (id) =>
+  `fp:${createHash('sha256').update(id).digest('hex').slice(0, 12)}`;
+
+function verifiedAs(result) {
   const calls = [];
-  const description = await describeToken({
-    accountId: 'fixture-account',
-    token: TOKEN,
-    log: (line) => lines.push(line),
+  return {
+    calls,
     fetchImpl: async (url, init) => {
       assert.equal(init.method, 'GET');
       calls.push(url);
       return url.includes('/user/')
         ? reject(401, { errors: [{ code: 1000 }] })
-        : {
-            ok: true,
-            json: async () => ({
-              success: true,
-              result: { id, status: 'active' },
-            }),
-          };
+        : { ok: true, json: async () => ({ success: true, result }) };
     },
+  };
+}
+
+test('token diagnostics print a fingerprint of the id, never the id', async () => {
+  const lines = [];
+  const id = 'fedcba9876543210fedcba9876543210';
+  const api = verifiedAs({ id, status: 'active' });
+  const description = await describeToken({
+    accountId: 'fixture-account',
+    token: TOKEN,
+    log: (line) => lines.push(line),
+    fetchImpl: api.fetchImpl,
   });
-  assert.deepEqual(description, { owner: 'account', id, status: 'active' });
+  assert.deepEqual(description, {
+    owner: 'account',
+    fingerprint: fingerprint(id),
+    status: 'active',
+  });
+  assert.match(fingerprint(id), /^fp:[0-9a-f]{12}$/);
   assert.deepEqual(lines, [
-    `Cloudflare API token id ${id} status active (account token)`,
+    `Cloudflare API token ${fingerprint(id)} status active (account token)`,
   ]);
-  assert.equal(calls.length, 2);
-  assert.ok(calls[1].endsWith('/accounts/fixture-account/tokens/verify'));
+  assert.ok(!JSON.stringify([description, lines]).includes(id));
+  assert.equal(api.calls.length, 2);
+  assert.ok(api.calls[1].endsWith('/accounts/fixture-account/tokens/verify'));
+});
+
+test('a token id hex-encoding a token prefix is printed only as a fingerprint', async () => {
+  // A well-formed id that is the hex of the token's first 16 bytes.
+  const prefix = TOKEN.slice(0, 16);
+  const id = Buffer.from(prefix).toString('hex');
+  assert.match(id, /^[0-9a-f]{32}$/);
+  const lines = [];
+  const description = await describeToken({
+    accountId: 'fixture-account',
+    token: TOKEN,
+    log: (line) => lines.push(line),
+    fetchImpl: verifiedAs({ id, status: 'active' }).fetchImpl,
+  });
+  const text = JSON.stringify([description, lines]);
+  for (const form of [id, id.toUpperCase(), prefix, prefix.slice(0, 8)])
+    assert.ok(!text.includes(form), 'the id or its token prefix was printed');
+  for (let start = 0; start + 8 <= id.length; start++)
+    assert.ok(!text.includes(id.slice(start, start + 8)));
+  assert.deepEqual(lines, [
+    `Cloudflare API token ${fingerprint(id)} status active (account token)`,
+  ]);
 });

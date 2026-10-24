@@ -126,10 +126,22 @@ async function failedResponseCodes(response) {
 }
 
 /**
+ * Fingerprint of a token id: the first 12 hex of its SHA-256, computed only
+ * for a well-formed 32-hex id. The raw id is response-derived and could carry
+ * an encoded credential, so it is never printed or returned.
+ */
+export function tokenFingerprint(id) {
+  return CLOUDFLARE_ID.test(id)
+    ? `fp:${createHash('sha256').update(id).digest('hex').slice(0, 12)}`
+    : 'fp:<invalid>';
+}
+
+/**
  * Diagnostic only: identify which API token CI used. User tokens verify at
- * /user/tokens/verify and account-owned tokens at the account endpoint. The
- * token id and status are not secret; the token value is never printed, and
- * an unverifiable token is reported but left to the settings readback to fail.
+ * /user/tokens/verify and account-owned tokens at the account endpoint. Only a
+ * fingerprint of the token id and a known status are printed; operators match
+ * it against `sha256(id)` of the dashboard's candidate tokens. An unverifiable
+ * token is reported but left to the settings readback to fail.
  */
 export async function describeToken({
   accountId,
@@ -161,13 +173,13 @@ export async function describeToken({
         const { result } = await response.json();
         const description = {
           owner,
-          id: CLOUDFLARE_ID.test(result?.id) ? result.id : 'unrecognized',
+          fingerprint: tokenFingerprint(result?.id),
           status: TOKEN_STATUSES.has(result?.status)
             ? result.status
             : 'unrecognized',
         };
         log(
-          `Cloudflare API token id ${description.id} status ${description.status} (${owner} token)`
+          `Cloudflare API token ${description.fingerprint} status ${description.status} (${owner} token)`
         );
         return description;
       }
