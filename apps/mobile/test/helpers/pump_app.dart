@@ -40,6 +40,24 @@ extension PumpApp on WidgetTester {
     );
   }
 
+  /// Pumps the app shell around [router]; [wrap] adds providers above it.
+  Future<void> pumpAppRouter(
+    GoRouter router, {
+    Widget Function(Widget app)? wrap,
+  }) {
+    final app = shad.ShadcnApp.router(
+      theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        AppShadcnLocalizationsDelegate(),
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+      builder: ShadcnMaterialBridge.appBuilder,
+    );
+    return pumpWidget(wrap == null ? app : wrap(app));
+  }
+
   Future<void> drainShadToastTimers() async {
     await pump(const Duration(seconds: 6));
     await pump(const Duration(milliseconds: 50));
