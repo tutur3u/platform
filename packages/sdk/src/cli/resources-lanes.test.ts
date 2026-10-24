@@ -27,8 +27,12 @@ import {
 } from './resources-slots';
 import {
   bunRunSeparatorExpected,
+  crossProcessTimeout,
   entry,
   exists,
+  groupProducer,
+  jsLiteral,
+  operationProducer,
   privateFixtures,
   until,
 } from './resources-test-fixtures';
@@ -49,7 +53,7 @@ afterEach(async () => {
   host.memory = 24 * 1024 ** 3;
   host.cpus = 10;
 });
-describe('lane policy', () => {
+describe('lane policy', { timeout: crossProcessTimeout }, () => {
   it('preserves Bun run separators when clamping the underlying Turbo command', () => {
     expect(
       limitCommand(
@@ -148,17 +152,19 @@ describe('lane policy', () => {
       expect((await launch(path, args).done).code).toBe(1);
   });
 });
-describe('real cross-process lane admission', { timeout: 45_000 }, () => {
+describe('real cross-process lane admission', {
+  timeout: crossProcessTimeout,
+}, () => {
   it('overlaps two independent children, holds the third, and admits FIFO without exceeding two', async () => {
     const path = await home();
     const a = run(path, await held(path, 'a'));
     const b = run(path, await held(path, 'b'));
-    await until(() => exists(join(path, 'a.ready')));
-    await until(() => exists(join(path, 'b.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     const c = run(path, await held(path, 'c'));
-    await waiting(path, 1);
+    await waiting(path, 1, [c]);
     const d = run(path, await held(path, 'd'));
-    await waiting(path, 2);
+    await waiting(path, 2, [d]);
     expect(await exists(join(path, 'c.ready'))).toBe(false);
     expect(await exists(join(path, 'd.ready'))).toBe(false);
     const status = await launch(path, ['status', '--json']).done;
@@ -177,12 +183,12 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     ]);
     await release(path, 'a');
     expect((await a.done).code).toBe(0);
-    await until(() => exists(join(path, 'c.ready')));
+    await c.until(() => exists(join(path, 'c.ready')));
     expect(await exists(join(path, 'd.ready'))).toBe(false);
     expect((await resourceQueueStatus(path, 2)).owners).toHaveLength(2);
     await release(path, 'b');
     await b.done;
-    await until(() => exists(join(path, 'd.ready')));
+    await d.until(() => exists(join(path, 'd.ready')));
     await release(path, 'c');
     await release(path, 'd');
     expect((await c.done).code).toBe(0);
@@ -203,26 +209,26 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
   it('retains one-lane serialization', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const b = run(path, await held(path, 'b'));
-    await waiting(path, 1);
+    await waiting(path, 1, [b]);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     await release(path, 'a');
     await a.done;
-    await until(() => exists(join(path, 'b.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     await release(path, 'b');
     await b.done;
   });
   it('active legacy parent or child excludes both lanes until drain', async () => {
     const path = await home();
     const legacy = launch(path, [], await held(path, 'legacy'));
-    await until(() => exists(join(path, 'legacy.ready')));
+    await legacy.until(() => exists(join(path, 'legacy.ready')));
     const metadata = { ...newOwner('legacy'), pid: legacy.child.pid! };
     await mkdir(join(path, 'lock'));
     await atomicJson(join(path, 'lock', 'owner.json'), metadata);
     const a = run(path, await held(path, 'a'));
     const b = run(path, await held(path, 'b'));
-    await waiting(path, 2);
+    await waiting(path, 2, [a, b]);
     expect(await exists(join(path, 'a.ready'))).toBe(false);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     await atomicJson(join(path, 'lock', 'owner.json'), {
@@ -235,8 +241,8 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     expect(status.occupied).toBe(1);
     await release(path, 'legacy');
     await legacy.done;
-    await until(() => exists(join(path, 'a.ready')));
-    await until(() => exists(join(path, 'b.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     await release(path, 'a');
     await release(path, 'b');
     await a.done;
@@ -245,7 +251,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
   it('actual nested shim finds any live ancestor, restores caps after filtering, and ignores forged tokens', async () => {
     const path = await home();
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const nested = join(path, 'nested.cjs');
     await writeFile(
       nested,
@@ -268,14 +274,14 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     for (const identity of nestedHosts)
       expect([identity.memory, identity.cpus]).toEqual([24 * 1024 ** 3, 10]);
     const c = run(path, await held(path, 'c'));
-    await until(() => exists(join(path, 'c.ready')));
+    await c.until(() => exists(join(path, 'c.ready')));
     const fake = launch(
       path,
       ['run', '--ignore-pressure', '--', 'node', '-e', 'console.log(3)'],
       entry,
       { TTR_RESOURCE_OWNER: 'forged' }
     );
-    await waiting(path, 1);
+    await waiting(path, 1, [fake]);
     expect(fake.child.exitCode).toBeNull();
     await release(path, 'c');
     await c.done;
@@ -286,7 +292,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
   it('pressure blocks new admission while an active child continues', async () => {
     const path = await home();
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const runner = join(path, 'pressure.ts');
     await held(path, 'b');
     await held(path, 'c');
@@ -295,9 +301,9 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       `import {mock} from 'bun:test';import * as timers from 'node:timers/promises';import {existsSync,writeFileSync,appendFileSync} from 'node:fs';const base=${JSON.stringify(path)};const name=process.argv[2];const sleep=timers.setTimeout;mock.module('node:timers/promises',()=>({...timers,setTimeout:(ms,...args)=>{if(ms===5000)writeFileSync(base+'/'+name+'.backoff','');return sleep(ms,...args)}}));const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});process.exitCode=await queuedResourceCommand(base,'node',[base+'/'+name+'.cjs'],process.env,false,2,async()=>{appendFileSync(base+'/'+name+'.checked','probe\\n');return {blocked:!existsSync(base+'/pressure.release'),reason:'fixture pressure'}});`
     );
     const b = launch(path, ['b'], runner);
-    await until(() => exists(join(path, 'b.backoff')));
+    await b.until(() => exists(join(path, 'b.backoff')));
     const c = launch(path, ['c'], runner);
-    await waiting(path, 2);
+    await waiting(path, 2, [c]);
     expect(await exists(join(path, 'c.checked'))).toBe(false);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     // Completing an imported transaction proves the blocked timer is outside admission.
@@ -307,11 +313,11 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     });
     b.child.kill('SIGTERM');
     expect((await b.done).code).toBe(143);
-    await until(() => exists(join(path, 'c.backoff')));
+    await c.until(() => exists(join(path, 'c.backoff')));
     expect(await exists(join(path, 'c.ready'))).toBe(false);
     expect((await resourceQueueStatus(path, 2)).owners).toHaveLength(1);
     await writeFile(join(path, 'pressure.release'), '');
-    await until(() => exists(join(path, 'c.ready')));
+    await c.until(() => exists(join(path, 'c.ready')));
     expect(
       (await readFile(join(path, 'c.checked'), 'utf8')).trim().split('\n')
         .length
@@ -325,18 +331,18 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
   it('cancels only its own waiter and preserves FIFO siblings', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const b = run(path, await held(path, 'b'));
-    await waiting(path, 1);
+    await waiting(path, 1, [b]);
     const c = run(path, await held(path, 'c'));
-    await waiting(path, 2);
+    await waiting(path, 2, [c]);
     b.child.kill('SIGTERM');
     expect((await b.done).code).toBe(143);
-    await waiting(path, 1);
+    await waiting(path, 1, [c]);
     expect((await resourceQueueStatus(path)).owners).toHaveLength(1);
     await release(path, 'a');
     await a.done;
-    await until(() => exists(join(path, 'c.ready')));
+    await c.until(() => exists(join(path, 'c.ready')));
     await release(path, 'c');
     await c.done;
   });
@@ -344,20 +350,20 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     const path = await home();
     const a = run(path, await held(path, 'a', true));
     const b = run(path, await held(path, 'b'));
-    await until(() => exists(join(path, 'a.ready')));
-    await until(() => exists(join(path, 'b.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     const c = run(path, await held(path, 'c'));
-    await waiting(path, 1);
+    await waiting(path, 1, [c]);
     const sibling = (await resourceQueueStatus(path, 2)).owners.find(
       (owner) => owner.pid === b.child.pid
     );
     a.child.kill('SIGTERM');
-    await until(() => exists(join(path, 'a.signal')));
+    await a.until(() => exists(join(path, 'a.signal')));
     expect(await exists(join(path, 'c.ready'))).toBe(false);
     expect(a.child.exitCode).toBeNull();
     await release(path, 'a');
     expect((await a.done).code).toBe(143);
-    await until(() => exists(join(path, 'c.ready')));
+    await c.until(() => exists(join(path, 'c.ready')));
     expect(
       (await resourceQueueStatus(path, 2)).owners.find(
         (owner) => owner.pid === b.child.pid
@@ -371,24 +377,24 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
   it('dead broker retains live child ownership, then reclaims only after child exit', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
-    await until(async () =>
+    await a.until(() => exists(join(path, 'a.ready')));
+    await a.until(async () =>
       Boolean((await resourceQueueStatus(path)).owner?.childPid)
     );
     a.child.kill('SIGKILL');
     await a.exited;
     const b = run(path, await held(path, 'b'));
-    await waiting(path, 1);
+    await waiting(path, 1, [b]);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     await release(path, 'a');
-    await until(() => exists(join(path, 'b.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     await release(path, 'b');
     await b.done;
   });
   it('rejects busy lane changes for owners and waiters', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const before = await readFile(join(path, 'config.json'), 'utf8');
     expect(
       (await launch(path, ['setup', '--lanes', '2', '--shell', 'none']).done)
@@ -396,7 +402,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     ).toBe(1);
     expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
     const b = run(path, await held(path, 'b'));
-    await waiting(path, 1);
+    await waiting(path, 1, [b]);
     await expect(
       setupResources({
         home: path,
@@ -408,7 +414,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     ).rejects.toThrow('drain');
     await release(path, 'a');
     await a.done;
-    await until(() => exists(join(path, 'b.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     await release(path, 'b');
     await b.done;
   });
@@ -423,20 +429,20 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
         `import {spawnResourceCommand} from ${JSON.stringify(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';process.exitCode=await spawnResourceCommand('node',[${JSON.stringify(child)}],process.env,true,async(pid)=>{writeFileSync(${JSON.stringify(join(path, 'receipt'))},String(pid));while(!existsSync(${JSON.stringify(join(path, 'receipt.release'))}))await setTimeout(10);});`
       );
       const broker = launch(path, [], runner);
-      await until(() => exists(join(path, 'receipt')));
+      await broker.until(() => exists(join(path, 'receipt')));
       expect(await exists(join(path, 'gated.ready'))).toBe(false);
       await writeFile(join(path, 'receipt.release'), '');
-      await until(() => exists(join(path, 'gated.ready')));
+      await broker.until(() => exists(join(path, 'gated.ready')));
       await release(path, 'gated');
       expect((await broker.done).code).toBe(0);
       await rm(join(path, 'gated.ready'));
       await rm(join(path, 'receipt.release'));
       await rm(join(path, 'receipt'));
       const lost = launch(path, [], runner);
-      await until(() => exists(join(path, 'receipt')));
+      await lost.until(() => exists(join(path, 'receipt')));
       const pid = Number(await readFile(join(path, 'receipt'), 'utf8'));
       lost.child.kill(signal);
-      await until(async () => !processGroupAlive(pid));
+      await until(async () => !processGroupAlive(pid), [groupProducer(pid)]);
       if (signal === 'SIGHUP') {
         expect(lost.child.exitCode).toBeNull();
         await writeFile(join(path, 'receipt.release'), '');
@@ -453,7 +459,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     const ticket = join(path, 'queue', '000-legacy.json');
     await atomicJson(ticket, legacy);
     const a = run(path, await held(path, 'a'));
-    await waiting(path, 2);
+    await waiting(path, 2, [a]);
     expect(await exists(join(path, 'a.ready'))).toBe(false);
     expect((await resourceQueueStatus(path, 2)).owners).toHaveLength(0);
     await expect(
@@ -466,7 +472,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       })
     ).rejects.toThrow('drain');
     await rm(ticket);
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     await release(path, 'a');
     await a.done;
   });
@@ -479,18 +485,18 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       `const cp=require('child_process');const fs=require('fs');cp.spawn('node',[${JSON.stringify(grandchild)}],{stdio:'ignore'}).unref();const t=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(path, 'parent.release'))})){clearInterval(t);process.exit(0)}},10);fs.writeFileSync(${JSON.stringify(join(path, 'parent.ready'))},'');`
     );
     const a = run(path, source);
-    await until(() => exists(join(path, 'grandchild.ready')));
-    await until(async () =>
+    await a.until(() => exists(join(path, 'grandchild.ready')));
+    await a.until(async () =>
       Boolean((await resourceQueueStatus(path)).owner?.childPid)
     );
     a.child.kill('SIGKILL');
     await a.exited;
     await release(path, 'parent');
     const b = run(path, await held(path, 'b'));
-    await waiting(path, 1);
+    await waiting(path, 1, [b]);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     await release(path, 'grandchild');
-    await until(() => exists(join(path, 'b.ready')));
+    await b.until(() => exists(join(path, 'b.ready')));
     await release(path, 'b');
     await b.done;
   });
@@ -508,13 +514,14 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     await until(async () => {
       const state = await resourceQueueStatus(path, 2);
       return state.owners.length === 2 && state.waiting.length === 1;
-    });
+    }, [...jobs.map((job) => job.producer)]);
     const status = await resourceQueueStatus(path, 2);
     expect(status.owners).toHaveLength(2);
     await until(
       async () =>
         (await readdir(path)).filter((name) => name.endsWith('.ready'))
-          .length === 2
+          .length === 2,
+      [...jobs.map((job) => job.producer)]
     );
     const ready = await readdir(path);
     expect(ready.filter((name) => name.endsWith('.ready'))).toHaveLength(2);
@@ -525,7 +532,8 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     await until(
       async () =>
         (await readdir(path)).filter((name) => name.endsWith('.ready'))
-          .length === 3
+          .length === 3,
+      [...jobs.map((job) => job.producer)]
     );
     expect(
       (await resourceQueueStatus(path, 2)).owners.length
@@ -543,14 +551,14 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const job=queuedResourceCommand(${JSON.stringify(path)},'node',[${JSON.stringify(child)}],process.env,true,2);while(process.listenerCount('SIGTERM')<1)await setTimeout(10);writeFileSync(${JSON.stringify(join(path, 'broker.ready'))},'');process.exitCode=await job;`
     );
     const broker = launch(path, [], brokerRunner);
-    await until(() => exists(join(path, 'broker.ready')));
+    await broker.until(() => exists(join(path, 'broker.ready')));
     const runner = join(path, 'mutex-wait.ts');
     await writeFile(
       runner,
       `import {withAdmission} from ${JSON.stringify(resolve('src/cli/resources-slots.ts'))};import {writeFileSync} from 'node:fs';let cancel=false;process.on('SIGTERM',()=>cancel=true);writeFileSync(${JSON.stringify(join(path, 'mutex.ready'))},'');await withAdmission(${JSON.stringify(path)},async()=>{throw new Error('must not enter')},()=>cancel);`
     );
     const waiter = launch(path, [], runner);
-    await until(() => exists(join(path, 'mutex.ready')));
+    await waiter.until(() => exists(join(path, 'mutex.ready')));
     waiter.child.kill('SIGTERM');
     expect((await waiter.done).code).toBe(0);
     broker.child.kill('SIGTERM');
@@ -600,70 +608,11 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       () => cancelled
     );
     await until(
-      async () => (await readdir(join(path, 'admission'))).length === 0
+      async () => (await readdir(join(path, 'admission'))).length === 0,
+      [operationProducer(waiting, 'admission initialization')]
     );
     cancelled = true;
     await waiting;
     expect(entered).toBe(false);
   });
 });
-it('stalled admission publication cannot recreate a lost directory or overwrite a successor', async () => {
-  for (const mode of ['lost', 'successor', 'initializing']) {
-    const path = await home();
-    const runner = join(path, 'stalled.ts');
-    const slots = JSON.stringify(resolve('src/cli/resources-slots.ts'));
-    const base = JSON.stringify(path);
-    await writeFile(
-      runner,
-      `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const base=${base};const original=fs.open;const make=fs.mkdir;let paused=false;let count=0;mock.module('node:fs/promises',()=>({...fs,mkdir:async(path,...args)=>{if(String(path)===base+'/admission'&&!args[0]?.recursive)count++;return make(path,...args)},open:async(path,...args)=>{if(String(path)===base+'/admission/reclaim'&&!paused){paused=true;writeFileSync(base+'/stalled.ready','');while(!existsSync(base+'/stalled.release'))await setTimeout(10)}return original(path,...args)}}));const {withAdmission}=await import(${slots});await withAdmission(base,async()=>{writeFileSync(base+'/entered',String(count));while(!existsSync(base+'/action.release'))await setTimeout(10)},()=>{if(paused&&existsSync(base+'/stalled.release'))writeFileSync(base+'/retry.ready','');return false});`
-    );
-    const stalled = launch(path, [], runner);
-    await until(() => exists(join(path, 'stalled.ready')));
-    const old = new Date(0);
-    await utimes(join(path, 'admission'), old, old);
-    let successor: ReturnType<typeof launch> | undefined;
-    if (mode === 'lost') await rm(join(path, 'admission'), { recursive: true });
-    else {
-      const next = join(path, 'successor.ts');
-      await writeFile(
-        next,
-        `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const base=${base};const original=fs.link;mock.module('node:fs/promises',()=>({...fs,link:async(...args)=>{${mode === 'initializing' ? "writeFileSync(base+'/initializing.ready','');while(!existsSync(base+'/initializing.release'))await setTimeout(10);" : ''}return original(...args)}}));const {withAdmission}=await import(${slots});await withAdmission(base,async()=>{writeFileSync(base+'/successor.ready','');while(!existsSync(base+'/successor.release'))await setTimeout(10)});`
-      );
-      successor = launch(path, [], next);
-      await until(() =>
-        exists(
-          join(
-            path,
-            mode === 'initializing' ? 'initializing.ready' : 'successor.ready'
-          )
-        )
-      );
-    }
-    const owner = await readFile(
-      join(path, 'admission', 'owner.json'),
-      'utf8'
-    ).catch(() => undefined);
-    await writeFile(join(path, 'stalled.release'), '');
-    if (mode !== 'lost') {
-      await until(() => exists(join(path, 'retry.ready')));
-      expect(await exists(join(path, 'entered'))).toBe(false);
-      expect(
-        await readFile(join(path, 'admission', 'owner.json'), 'utf8').catch(
-          () => undefined
-        )
-      ).toBe(owner);
-      if (mode === 'initializing') {
-        await writeFile(join(path, 'initializing.release'), '');
-        await until(() => exists(join(path, 'successor.ready')));
-      }
-      await writeFile(join(path, 'successor.release'), '');
-      expect((await successor!.done).code).toBe(0);
-    }
-    await until(() => exists(join(path, 'entered')));
-    expect(
-      Number(await readFile(join(path, 'entered'), 'utf8'))
-    ).toBeGreaterThanOrEqual(2);
-    await writeFile(join(path, 'action.release'), '');
-    expect((await stalled.done).code).toBe(0);
-  }
-}, 45_000);

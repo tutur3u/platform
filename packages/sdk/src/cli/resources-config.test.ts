@@ -9,7 +9,11 @@ import {
   resourceLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
-import { entry, privateFixtures } from './resources-test-fixtures';
+import {
+  crossProcessTimeout,
+  entry,
+  privateFixtures,
+} from './resources-test-fixtures';
 
 const host = vi.hoisted(() => ({ memory: 24 * 1024 ** 3, cpus: 10 }));
 vi.mock('node:os', async (original) => ({
@@ -25,7 +29,9 @@ afterEach(async () => {
   host.cpus = 10;
 });
 
-it('reads legacy configs as one lane, clamps numeric counts, and names bad fields', async () => {
+it('reads legacy configs as one lane, clamps numeric counts, and names bad fields', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const path = await home();
   const old = defaultResourceConfig();
   delete old.validationLanes;
@@ -83,7 +89,9 @@ it('reads legacy configs as one lane, clamps numeric counts, and names bad field
   await rm(join(path, 'config.json'));
   expect(await readResourceConfig(path)).toBeUndefined();
 });
-it('clamps two lanes on a low-budget host to one worker each instead of failing', async () => {
+it('clamps two lanes on a low-budget host to one worker each instead of failing', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const home = await fixtures.home();
   host.memory = 8 * 1024 ** 3;
   host.cpus = 2;
