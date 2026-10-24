@@ -393,10 +393,11 @@ jobs:
       - name: Exercise exact emitted offline asset
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs
+      - name: Verify cf comparison after runtime checks
+        run: node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
       - name: Verify runtime checks left the sealed artifact unchanged
         run: |
           node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
-          node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
           pointer=.wrangler/deploy/config.json
           if [ -f apps/calendar/.void/preview-deploy-config.json ]; then
             pointer=.void/preview-deploy-config.json

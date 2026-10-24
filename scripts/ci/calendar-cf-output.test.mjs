@@ -4,7 +4,6 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -14,6 +13,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { calendarFixture } from './calendar-cf-fixture.mjs';
 import {
   emitCalendarOutput,
   verifyCalendarOutput,
@@ -25,9 +25,7 @@ const sha = 'b'.repeat(40);
 const outputPrefix = '.cloudflare/output/v0/';
 
 function fixture(t) {
-  mkdirSync(join(root, 'tmp'), { recursive: true });
-  const directory = mkdtempSync(join(root, 'tmp/calendar-cf-output-'));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const directory = calendarFixture(t, 'calendar-cf-output-');
   const app = join(directory, 'app');
   mkdirSync(app);
   const put = (name, value, base = app) => {
@@ -303,6 +301,22 @@ test('real workflow qualifies before runtime and compares a same-run restored ou
         step.name === 'Qualify Calendar cf Build Output without publication'
     ).run,
     /calendar-cf-output\.mjs emit apps\/calendar "\$SOURCE_SHA" "\$RUNNER_TEMP\/calendar-cf-output"/
+  );
+  const cfVerification = native.find(
+    (step) => step.name === 'Verify cf comparison after runtime checks'
+  );
+  assert.match(
+    cfVerification.run,
+    /calendar-cf-output\.mjs verify apps\/calendar/
+  );
+  assert.notEqual(cfVerification['continue-on-error'], true);
+  assert.ok(
+    at(native, cfVerification.name) >
+      at(native, 'Exercise exact emitted offline asset')
+  );
+  assert.ok(
+    at(native, cfVerification.name) <
+      at(native, 'Verify runtime checks left the sealed artifact unchanged')
   );
   const uploaded = native.find(
     (step) => step.name === 'Retain Calendar cf comparison output'
