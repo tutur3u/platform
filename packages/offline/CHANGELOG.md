@@ -5,8 +5,7 @@
 
 ### Bug Fixes
 
-* **security:** harden apps and offline file access ([f41dd6c](https://github.com/tutur3u/platform/commit/f41dd6cadb6f7217da984ed1df0fbc8d595972fd))
-* **security:** harden apps and offline file access ([#6529](https://github.com/tutur3u/platform/issues/6529)) ([1883927](https://github.com/tutur3u/platform/commit/18839272a06409a999d9201f297a5298fc728f9b))
+* **security:** harden apps and offline file access ([f41dd6c](https://github.com/tutur3u/platform/commit/f41dd6cadb6f7217da984ed1df0fbc8d595972fd)) ([#6529](https://github.com/tutur3u/platform/issues/6529)) ([1883927](https://github.com/tutur3u/platform/commit/18839272a06409a999d9201f297a5298fc728f9b))
 
 ## [0.2.1](https://github.com/tutur3u/platform/compare/offline-v0.2.0...offline-v0.2.1) (2026-09-20)
 

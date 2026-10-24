@@ -5,8 +5,7 @@
 
 ### Bug Fixes
 
-* **auth:** repair account switching and notification access ([ab4b75e](https://github.com/tutur3u/platform/commit/ab4b75ee65bc942e3d113243d8c9a48a8af4b0aa))
-* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **auth:** repair account switching and notification access ([ab4b75e](https://github.com/tutur3u/platform/commit/ab4b75ee65bc942e3d113243d8c9a48a8af4b0aa)) ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
 * **notifications:** guard wildcard invite email filters ([c9f8ac8](https://github.com/tutur3u/platform/commit/c9f8ac8d227e9d2d9adc95753dbacc7448a09d99))
 * **notifications:** match unclaimed email invites ([0106ff5](https://github.com/tutur3u/platform/commit/0106ff5cec660bafd6dac35b66d0a88939830777))
 * **users-core:** use confirmed email for invite access ([042730e](https://github.com/tutur3u/platform/commit/042730e1624f81997edad4b6f24d9193fdc4b2b7))

@@ -9,11 +9,7 @@
     "directory": "packages/editor"
   },
   "type": "module",
-  "files": [
-    "dist",
-    "README.md",
-    "styles.css"
-  ],
+  "files": ["dist", "README.md", "styles.css"],
   "publishConfig": {
     "access": "public"
   },

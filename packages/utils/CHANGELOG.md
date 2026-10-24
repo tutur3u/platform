@@ -5,15 +5,12 @@
 
 ### Bug Fixes
 
-* **auth:** add per-account MFA verification limits ([95205fe](https://github.com/tutur3u/platform/commit/95205fe35733b55c9eb1d6cf03f47ec3ba2318f0))
-* **auth:** add per-account MFA verification limits ([#6555](https://github.com/tutur3u/platform/issues/6555)) ([b4d67f0](https://github.com/tutur3u/platform/commit/b4d67f008ac7f9a2e103d4f35d039175acc0bf5b))
+* **auth:** add per-account MFA verification limits ([95205fe](https://github.com/tutur3u/platform/commit/95205fe35733b55c9eb1d6cf03f47ec3ba2318f0)) ([#6555](https://github.com/tutur3u/platform/issues/6555)) ([b4d67f0](https://github.com/tutur3u/platform/commit/b4d67f008ac7f9a2e103d4f35d039175acc0bf5b))
 * **auth:** reserve MFA attempts atomically and restrict the hook ([0c945d5](https://github.com/tutur3u/platform/commit/0c945d5c528c64d3842033bb8bc6eaa262f44bb6))
 * **calendar:** preserve native quota diagnostics and reuse verified actors ([88c464c](https://github.com/tutur3u/platform/commit/88c464c75ca1a51014e360ee92aabea0b16d919c))
 * **calendar:** serve native timezone preferences from Web ([#6573](https://github.com/tutur3u/platform/issues/6573)) ([a1bcec6](https://github.com/tutur3u/platform/commit/a1bcec69510d4efaaee91737a563c00ffc253dd4))
-* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5))
-* **security:** derive client IP from trusted proxy headers ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
-* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e))
-* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5)) ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e)) ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
 * **security:** harden request-keyed records, push previews and key handoff ([#6521](https://github.com/tutur3u/platform/issues/6521)) ([1c7dfb1](https://github.com/tutur3u/platform/commit/1c7dfb13762c6da6b1935e8ea409aa29dce4c747))
 * **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
 * **security:** reserve password attempts and close guest view grants ([7c1088c](https://github.com/tutur3u/platform/commit/7c1088c6a63f5e42ce6d7c5d00bbadaed1b90f29))

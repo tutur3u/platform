@@ -5,8 +5,7 @@
 
 ### Features
 
-* **security:** add staged native integrity verification ([b9155e4](https://github.com/tutur3u/platform/commit/b9155e45bba5486b9943a4dc3e9cb9b2aedb8b14))
-* **security:** add staged native integrity verification ([#6575](https://github.com/tutur3u/platform/issues/6575)) ([332368d](https://github.com/tutur3u/platform/commit/332368dd35586096f314355eb6bc8f7904ed0868))
+* **security:** add staged native integrity verification ([b9155e4](https://github.com/tutur3u/platform/commit/b9155e45bba5486b9943a4dc3e9cb9b2aedb8b14)) ([#6575](https://github.com/tutur3u/platform/issues/6575)) ([332368d](https://github.com/tutur3u/platform/commit/332368dd35586096f314355eb6bc8f7904ed0868))
 
 ## [0.1.3](https://github.com/tutur3u/platform/compare/turnstile-v0.1.2...turnstile-v0.1.3) (2026-09-20)
 

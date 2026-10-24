@@ -11,8 +11,7 @@
 ### Bug Fixes
 
 * **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
-* **deps:** patch high-severity advisories ([f263ae6](https://github.com/tutur3u/platform/commit/f263ae6e96baa799d43aaa7e3f4cbb2e9010b4ce))
-* **deps:** patch high-severity advisories ([#6569](https://github.com/tutur3u/platform/issues/6569)) ([a67ca56](https://github.com/tutur3u/platform/commit/a67ca56759b100a61a0bec792b40c049a2c44681))
+* **deps:** patch high-severity advisories ([f263ae6](https://github.com/tutur3u/platform/commit/f263ae6e96baa799d43aaa7e3f4cbb2e9010b4ce)) ([#6569](https://github.com/tutur3u/platform/issues/6569)) ([a67ca56](https://github.com/tutur3u/platform/commit/a67ca56759b100a61a0bec792b40c049a2c44681))
 * **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
 
 ## [0.30.0](https://github.com/tutur3u/platform/compare/mail-v0.29.0...mail-v0.30.0) (2026-10-17)

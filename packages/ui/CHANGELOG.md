@@ -10,10 +10,8 @@
 
 ### Bug Fixes
 
-* **auth:** repair account switching and notification access ([ab4b75e](https://github.com/tutur3u/platform/commit/ab4b75ee65bc942e3d113243d8c9a48a8af4b0aa))
-* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
-* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e))
-* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **auth:** repair account switching and notification access ([ab4b75e](https://github.com/tutur3u/platform/commit/ab4b75ee65bc942e3d113243d8c9a48a8af4b0aa)) ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e)) ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
 * **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
 * **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
 * **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
