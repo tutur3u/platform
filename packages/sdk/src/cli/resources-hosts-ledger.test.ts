@@ -204,7 +204,11 @@ describe('multi-host dispatch', { timeout: 30_000 }, () => {
           heartbeat_enabled: true,
           enabled_features: { run: true },
           resource_limits: null,
-          capabilities: { executionMode: 'trusted', disk: { freeGiB: 400 } },
+          capabilities: {
+            executionMode: 'trusted',
+            protocols: { commitRun: [1] },
+            disk: { freeGiB: 400 },
+          },
           drain_requested_at: null,
           activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
         },

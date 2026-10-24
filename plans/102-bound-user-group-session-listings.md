@@ -63,7 +63,7 @@ making the route reject omitted bounds.
 | Typechecks | `bun run --cwd packages/users-core type-check && bun run --cwd packages/internal-api type-check && bun run --cwd apps/contacts type-check` | exit 0 |
 | Route tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | re-keyed first-class Web contract matches Rust |
 | App builds | `bun run --cwd apps/web build && bun run --cwd apps/contacts build` | both route consumers compile |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

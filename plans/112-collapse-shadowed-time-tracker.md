@@ -57,7 +57,7 @@ the live copy exactly; localization changes are outside this structural plan.
 | Tasks UI typecheck | `bun run --cwd packages/tasks-ui type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -107,7 +107,7 @@ implementation through that file.
 ### Step 4: Verify both hosts
 
 Run focused/package tests and typecheck, then build both Tasks and Calendar
-before `bun check`.
+before `bun validate`.
 
 ## Done criteria
 

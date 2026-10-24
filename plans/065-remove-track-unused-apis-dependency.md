@@ -51,7 +51,7 @@ condition until its runtime/config role is understood.
 | Absence check | `rg -n '@tuturuuu/apis' apps/track` | no output |
 | Dependency tests | `node --test scripts/check-workspace-dependencies.test.js` | all cases pass |
 | Track typecheck | `bun run --cwd apps/track type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Track build | `bun run --cwd apps/track build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -102,7 +102,7 @@ real build provide the integration proof.
 
 - [ ] Track no longer declares or imports `@tuturuuu/apis`.
 - [ ] The lockfile diff contains only consequences of that removal.
-- [ ] Dependency tests, Track typecheck/build, `bun check`, and whitespace pass.
+- [ ] Dependency tests, Track typecheck/build, `bun validate`, and whitespace pass.
 - [ ] No Track source or unrelated manifest is modified.
 
 ## STOP conditions

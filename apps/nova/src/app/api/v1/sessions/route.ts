@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { hasChallengeAccess, requestCookieStore } from '@/lib/challenge-access';
+import {
+  isManagerCatalogAccess,
+  resolveNovaCatalogActor,
+  resolveNovaChallengeCatalogAccess,
+} from '@/lib/challenge-catalog-access';
 import { createSessionSchema } from '../schemas';
 
 export async function GET(request: Request) {
@@ -66,6 +72,42 @@ export async function POST(request: Request) {
   try {
     // Validate request body with Zod
     const validatedData = createSessionSchema.parse(body);
+
+    const { data: challenge, error: challengeError } = await supabase
+      .schema('private')
+      .from('nova_challenges')
+      .select('id, enabled, previewable_at, whitelisted_only, password_hash')
+      .eq('id', validatedData.challengeId)
+      .maybeSingle();
+
+    if (challengeError) throw challengeError;
+    if (!challenge) {
+      return NextResponse.json(
+        { message: 'Challenge not found' },
+        { status: 404 }
+      );
+    }
+
+    const access = await resolveNovaChallengeCatalogAccess({
+      actor: await resolveNovaCatalogActor({ sbAdmin: supabase, user }),
+      challenge,
+      sbAdmin: supabase,
+    });
+    if (access === 'denied') {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    // Participants must hold the signed grant issued after the challenge
+    // password verifies; starting a session unlocks the challenge problems.
+    if (
+      !isManagerCatalogAccess(access) &&
+      !hasChallengeAccess(challenge, requestCookieStore(request), user.id)
+    ) {
+      return NextResponse.json(
+        { message: 'Challenge password required' },
+        { status: 403 }
+      );
+    }
 
     const sessionData = {
       start_time: validatedData.startTime,

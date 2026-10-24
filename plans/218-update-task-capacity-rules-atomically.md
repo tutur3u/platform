@@ -88,7 +88,7 @@ exact-base isolated worktree and immediate `bun setup`.
 | Focused database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/task-capacity-rules.sql` | fresh migration applies; atomicity matrix passes |
 | Full database/typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP passes, then typegen exits 0 |
 | Tasks | `bun run --cwd apps/tasks type-check && bun run --cwd apps/tasks build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 
@@ -125,7 +125,7 @@ editing the historical migration.
 - [ ] Every validation/constraint/late failure leaves the entire prior rule
       unchanged and enabled state cannot be weakened.
 - [ ] The RPC is tenant-bound and executable only by service role.
-- [ ] Focused/full pgTAP, typegen, route tests, Tasks gates, `bun check`, and
+- [ ] Focused/full pgTAP, typegen, route tests, Tasks gates, `bun validate`, and
       whitespace pass.
 
 ## STOP conditions

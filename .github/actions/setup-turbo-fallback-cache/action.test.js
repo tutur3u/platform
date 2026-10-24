@@ -72,7 +72,13 @@ function restoreKey(step, fixture, archives) {
 }
 
 test('parsed writer gate retains default-branch-only trust for the event/ref/actor matrix', () => {
-  for (const event of ['push', 'workflow_dispatch', 'pull_request']) {
+  for (const event of [
+    'push',
+    'workflow_dispatch',
+    'pull_request',
+    'pull_request_target',
+    'workflow_run',
+  ]) {
     for (const ref of ['main', 'feature', 'production']) {
       for (const actor of ['vhpx', 'dependabot[bot]']) {
         const fixture = context();
@@ -82,7 +88,7 @@ test('parsed writer gate retains default-branch-only trust for the event/ref/act
           actor,
         });
         const allowed =
-          event !== 'pull_request' &&
+          ['push', 'workflow_dispatch'].includes(event) &&
           ref === 'main' &&
           actor !== 'dependabot[bot]';
         assert.equal(
@@ -174,12 +180,21 @@ test('only Type Check opts in; tasks and credential gates stay independent of ar
   assert.equal(action.inputs['cross-lock-restore'].default, 'false');
   for (const step of [trusted, writer, readonly])
     assert.equal(step.with.path, '.turbo/cache');
-  assert.equal(writer.uses, 'actions/cache@v6');
+  assert.equal(
+    writer.uses,
+    'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
+  );
   assert.equal(writer.with['lookup-only'], true);
   assert.equal(writer.with.key, trusted.with.key);
   assert.equal(writer.with['restore-keys'], trusted.with['restore-keys']);
-  assert.equal(trusted.uses, 'actions/cache/restore@v6');
-  assert.equal(readonly.uses, 'actions/cache/restore@v6');
+  assert.equal(
+    trusted.uses,
+    'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
+  );
+  assert.equal(
+    readonly.uses,
+    'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
+  );
   const source = fs.readFileSync(path.join(__dirname, 'action.yml'), 'utf8');
   assert.doesNotMatch(
     source,

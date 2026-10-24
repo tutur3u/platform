@@ -2,20 +2,20 @@
   "name": "@tuturuuu/devbox-control",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "scripts": {
-    "dev": "vp dev --host 127.0.0.1 --port 8799",
+    "dev": "vp dev",
     "build": "vp build",
     "test": "vp test",
-    "type-check": "wrangler types --env-interface DevboxControlEnv worker-configuration.d.ts && tsc --project tsconfig.json",
-    "lint": "vp lint --config .oxlintrc.json src vite.config.ts --deny-warnings",
-    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts --check"
+    "type-check": "cf workers types && tsc --project tsconfig.json",
+    "lint": "vp lint --config .oxlintrc.json src vite.config.ts cloudflare.config.ts --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts cloudflare.config.ts --check"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.64.0",
+    "cf": "1.0.0-beta.20",
     "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
-    "vite-plus": "1.3.0",
-    "wrangler": "4.152.0"
+    "vite-plus": "1.3.0"
   }
 }

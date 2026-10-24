@@ -62,7 +62,7 @@ artifacts.
 | Focused routes | `bun --cwd apps/teach vitest run 'src/app/api/v1/workspaces/[wsId]/courses/[courseId]/modules/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/[moduleId]/route.test.ts'` | all authorization, containment, validation, and success cases pass |
 | Teach typecheck | `bun run --cwd apps/teach type-check` | exit 0 |
 | Teach build | `bun run --cwd apps/teach build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -133,7 +133,7 @@ that performs zero writes.
 
 ### Step 4: Run all gates
 
-Run the focused suite, Teach typecheck/build, `bun check`, and whitespace.
+Run the focused suite, Teach typecheck/build, `bun validate`, and whitespace.
 Confirm status contains only scoped routes/tests/helper plus README.
 
 ## Done criteria

@@ -110,7 +110,7 @@ adding a general report search service.
    recent current report, old current report merged into options, deduplication,
    `new`, and query failure behavior.
 
-6. **Verify.** Run the focused test, then `bun check`,
+6. **Verify.** Run the focused test, then `bun validate`,
    `bun run --cwd apps/contacts build`, and `git diff --check`; expected exit 0
    and no whitespace output.
 
@@ -119,7 +119,7 @@ adding a general report search service.
 ```bash
 bun --cwd apps/contacts vitest run \
   'src/app/[locale]/[wsId]/users/reports/[reportId]/page.test.tsx'
-bun check
+bun validate
 bun run --cwd apps/contacts build
 git diff --check
 ```
@@ -136,7 +136,7 @@ recent current report, old current report, deduplication, `new`, and query error
   to 100, and filters the exact workspace/group/user tuple.
 - [ ] Current old-report deep links remain selectable and are not duplicated.
 - [ ] Tests fail if projection, tenant filters, ordering, or the bound regresses.
-- [ ] Focused tests, `bun check`, the Contacts build, and `git diff --check` pass.
+- [ ] Focused tests, `bun validate`, the Contacts build, and `git diff --check` pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

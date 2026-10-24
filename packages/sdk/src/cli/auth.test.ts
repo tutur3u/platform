@@ -126,6 +126,18 @@ describe('CLI auth exchange', () => {
       })
     );
   });
+
+  it('does not send an app-session refresh token over an insecure remote URL', async () => {
+    const fetchMock = vi.fn();
+    await expect(
+      refreshCliSession({
+        baseUrl: 'http://example.test',
+        fetch: fetchMock,
+        refreshToken: 'ttr_app_old-refresh-token',
+      })
+    ).rejects.toThrow('CLI authentication requires HTTPS except on localhost.');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('CLI browser login fallback', () => {

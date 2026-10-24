@@ -240,6 +240,31 @@ async function assertRunnerOwnsRun(
   }
 }
 
+// Lets the agent that claimed a run observe a remote stop request. Only the
+// claiming runner can read it; other runners get the same 404 as events.
+export async function readDevboxRunControl(input: {
+  runId: string;
+  runnerId: string;
+}) {
+  const privateClient = await createPrivateDevboxClient();
+  const { data, error } = await getPrivateTable(privateClient, 'devbox_runs')
+    .select('status')
+    .eq('id', input.runId)
+    .eq('runner_id', input.runnerId)
+    .limit(1);
+
+  if (error) {
+    throw getDevboxStorageError(error);
+  }
+
+  const status = (data?.[0] as { status?: unknown } | undefined)?.status;
+  if (typeof status !== 'string') {
+    throw new DevboxStoreError('Devbox run not found for runner.', 404);
+  }
+
+  return { cancelRequested: status === 'cancel_requested' };
+}
+
 export async function recordDevboxRunEvents(input: {
   events: DevboxAgentEventInput[];
   runId: string;

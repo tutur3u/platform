@@ -14,6 +14,7 @@ export interface DevboxFleetRunner {
     cli?: { version?: string };
     os?: { hostname?: string; platform?: string; arch?: string };
     executionMode?: string;
+    protocols?: { commitRun?: unknown };
     [key: string]: unknown;
   } | null;
   // Present once the trust-pool/drain migration is live; null before that.
@@ -33,12 +34,23 @@ export type DevboxRunnerBlocker =
   | 'capability_missing'
   | 'trust_cap';
 export const DEVBOX_HEARTBEAT_FRESH_MS = 60_000;
+/** Commit-run envelope version `ttr resources --offload` submits. */
+export const COMMIT_RUN_PROTOCOL_VERSION = 1;
+
+/** Whether the runner advertises it can decode this client's envelope. */
+export function runnerSupportsCommitRun(runner: DevboxFleetRunner) {
+  const versions = runner.capabilities?.protocols?.commitRun;
+  return (
+    Array.isArray(versions) && versions.includes(COMMIT_RUN_PROTOCOL_VERSION)
+  );
+}
 
 /**
  * Trusted-work eligibility from the client side. `status` alone is not
  * freshness: it stays "online" after an agent stops heartbeating. Runners
  * must be fresh, not draining, run-enabled, carry no Judge/playground role,
- * and attest `executionMode: trusted` (trust cap).
+ * attest `executionMode: trusted` (trust cap), and advertise the commit-run
+ * protocol this client submits.
  */
 export function evaluateTrustedRunner(
   runner: DevboxFleetRunner,
@@ -88,6 +100,14 @@ export function evaluateTrustedRunner(
       blockedBy: 'trust_cap',
       reason:
         'runner does not attest executionMode=trusted (enable TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE on the runner)',
+    };
+  // Fail closed: a runner without the decoder would treat the envelope as a
+  // command, so offload requires the advertised protocol, not a CLI version.
+  if (!runnerSupportsCommitRun(runner))
+    return {
+      eligible: false,
+      blockedBy: 'capability_missing',
+      reason: `runner does not advertise commit-run protocol v${COMMIT_RUN_PROTOCOL_VERSION} (upgrade ttr on the runner)`,
     };
   return { eligible: true, reason: 'fresh trusted-development runner' };
 }

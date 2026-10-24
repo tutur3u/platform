@@ -54,7 +54,7 @@ the exact paths are transferred.
 | Users-core types | `bun run --cwd packages/users-core type-check` | exit 0 |
 | App builds | `bun run --cwd apps/web build && bun run --cwd apps/contacts build` | both live consumers compile |
 | Migration metadata | `bun migration:tanstack:manifest && bun migration:tanstack:check` | changed Web routes remain tracked |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -132,7 +132,7 @@ not modify historical data implicitly.
 ### Step 5: Verify all callers and migration tracking
 
 Run focused suites, types, the real Web build, migration manifest/check, and
-`bun check`. Inspect the final diff for unrelated queue or Users work.
+`bun validate`. Inspect the final diff for unrelated queue or Users work.
 
 ## Done criteria
 

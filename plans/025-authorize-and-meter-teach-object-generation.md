@@ -61,7 +61,7 @@ notes, and do not start while another owner claims these exact routes.
 | Focused tests | `bun --cwd apps/teach vitest run src/app/api/ai/objects/**/*.test.ts` | auth, tenant, validation, provider, and credit cases pass |
 | Teach tests | `bun run --cwd apps/teach test` | exit 0 |
 | Typechecks | `bun run --cwd apps/teach type-check && bun run --cwd packages/ai type-check && bun run --cwd packages/internal-api type-check` | all exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Teach build | `bun run --cwd apps/teach build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -144,7 +144,7 @@ Run every command in the table, including the real Teach build.
 - [ ] Success response shapes and current Teach callers remain compatible.
 - [ ] The obsolete shared route implementations have no remaining import.
 - [ ] Focused tests, Teach tests/typecheck/build, package typechecks,
-      `bun check`, and whitespace pass.
+      `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

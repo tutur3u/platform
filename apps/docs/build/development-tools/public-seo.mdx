@@ -36,7 +36,7 @@ node scripts/generate-public-seo-routes.js
 node scripts/generate-public-seo-routes.js --check
 ```
 
-`bun check` runs the second command and rejects stale manifests or conflicting
+`bun validate` runs the second command and rejects stale manifests or conflicting
 static metadata assets. Dynamic content requires a publication-aware reader;
 never crawl arbitrary workspace, user, invitation, or shared-document routes.
 
@@ -80,7 +80,7 @@ serializing JSON-LD into HTML. Structured data does not guarantee a rich result.
 Run focused non-build generator, sitemap-reader, structured-data, and locale tests
 locally through the shared resource queue. Require the applicable repository
 checks and an actual web app build in CI for the exact source SHA; do not run
-`bun check` or builds locally, because the check's Turbo graph can also build
+`bun validate` or builds locally, because the check's Turbo graph can also build
 dependencies. For a deployed release:
 
 - Inspect `/sitemap.xml` and `/robots.txt` for successful XML/text responses.

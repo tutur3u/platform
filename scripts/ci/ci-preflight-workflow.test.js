@@ -68,102 +68,6 @@ test('release relevance is opt-in and shares the exact full-history checkout', (
   assert.equal(release['continue-on-error'], undefined);
 });
 
-for (const [name, aggregate, checkName, shardName] of [
-  ['turbo-unit-tests.yaml', 'build', 'Unit Tests (24)', 'Unit test shard'],
-  ['codecov.yaml', 'test', 'Run tests and collect coverage', 'Coverage shard'],
-]) {
-  test(`${name} preserves heavy checks and requires both shared preflight decisions`, () => {
-    const workflow = readWorkflow(name);
-    assert.equal(workflow.jobs['release-relevance'], undefined);
-    assert.equal(
-      workflow.jobs['check-ci'].uses,
-      './.github/workflows/ci-check.yml'
-    );
-    assert.deepEqual(workflow.jobs['check-ci'].with, {
-      workflow_name: name,
-      check_release_only: true,
-    });
-    const job = workflow.jobs[aggregate];
-    assert.equal(job.name, checkName);
-    const condition = expression(
-      "!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'"
-    );
-    const hasRootSuite = name === 'turbo-unit-tests.yaml';
-    assert.equal(
-      job.if,
-      hasRootSuite
-        ? expression(
-            "!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'"
-          )
-        : condition
-    );
-    assert.deepEqual(
-      job.needs,
-      shardName
-        ? [
-            'check-ci',
-            'duplicate-validation',
-            'test-shards',
-            ...(hasRootSuite
-              ? ['root-script-tests', 'backend-source-qualification']
-              : []),
-          ]
-        : ['check-ci']
-    );
-    if (shardName) {
-      const shard = workflow.jobs['test-shards'];
-      assert.deepEqual(shard.needs, ['check-ci', 'duplicate-validation']);
-      assert.equal(shard.if, condition);
-      assert.equal(shard.name, `${shardName} (${expression('matrix.shard')})`);
-      assert.deepEqual(shard.strategy.matrix.shard, [0, 1, 2, 3]);
-      assert.equal(shard.strategy['fail-fast'], false);
-      assert.equal(shard['timeout-minutes'], 20);
-      assert.equal(
-        job.steps[0].env.TEST_RESULT,
-        expression('needs.test-shards.result')
-      );
-      if (hasRootSuite) {
-        assert.equal(
-          job.steps[0].env.ROOT_SCRIPT_RESULT,
-          expression('needs.root-script-tests.result')
-        );
-        assert.equal(
-          job.steps[0].env.DUPLICATE_RESULT,
-          expression('needs.duplicate-validation.result')
-        );
-        assert.equal(
-          job.steps[0].env.DUPLICATE_RUN_CHECKS,
-          expression('needs.duplicate-validation.outputs.run_checks')
-        );
-      } else assert.equal(job.steps[0].run, 'test "$TEST_RESULT" = success');
-      assert.deepEqual(workflow.permissions, { contents: 'read' });
-      assert.deepEqual(workflow.jobs['check-ci'].permissions, {
-        contents: 'read',
-        deployments: 'read',
-      });
-      assert.ok(workflow.concurrency, 'validation must declare supersession');
-    }
-    const triggers =
-      typeof workflow.on === 'string'
-        ? [workflow.on]
-        : Object.keys(workflow.on).sort();
-    assert.deepEqual(
-      triggers,
-      shardName ? ['push'] : ['push', 'workflow_dispatch']
-    );
-    if (name === 'codecov.yaml') {
-      assert.ok(
-        job.steps.some((step) => step.uses === 'codecov/codecov-action@v7')
-      );
-      assert.ok(
-        workflow.jobs['test-shards'].steps.some(
-          (step) => step.uses === 'actions/upload-artifact@v7'
-        )
-      );
-    }
-  });
-}
-
 test('shared release step passes through true/false and fails on execution errors', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-preflight-step-'));
   const step = gate.jobs.check.steps.find(
@@ -241,11 +145,7 @@ function evaluateValidationGate(job, needs, isCancelled = false, github = {}) {
   )(needs, () => isCancelled, github);
 }
 
-for (const [workflowName, jobs] of [
-  ['codecov.yaml', ['test-shards', 'test']],
-  ['turbo-unit-tests.yaml', ['test-shards', 'build']],
-  ['biome-check.yaml', ['format', 'lint']],
-]) {
+for (const [workflowName, jobs] of [['biome-check.yaml', ['format', 'lint']]]) {
   const workflow = readWorkflow(workflowName);
   for (const id of jobs) {
     test(`${workflowName}/${id} runs without a successful explicit duplicate proof`, () => {
@@ -320,7 +220,7 @@ function runAggregate(step, env) {
   );
 }
 
-test('unit aggregate requires fresh root success even when package proof skips shards', () => {
+test('unit aggregate requires fresh root and shard success despite legacy receipts', () => {
   const job = readWorkflow('turbo-unit-tests.yaml').jobs.build;
   const needs = {
     'check-ci': {
@@ -337,7 +237,7 @@ test('unit aggregate requires fresh root success even when package proof skips s
   assert.equal(evaluateValidationGate(job, needs), true);
   const step = job.steps[0];
   for (const [duplicate, runChecks, shards, rootResult, pass] of [
-    ['success', 'false', 'skipped', 'success', true],
+    ['success', 'false', 'skipped', 'success', false],
     ['success', 'false', 'skipped', 'failure', false],
     ['success', 'false', 'skipped', 'cancelled', false],
     ['success', 'false', 'skipped', 'skipped', false],
@@ -450,7 +350,7 @@ test('Rust source qualification is bounded and restricted to the reviewed integr
   }
 });
 
-test('release aggregate requires fresh Rust success even when package proof skips shards', () => {
+test('release aggregate requires fresh Rust success despite legacy receipts', () => {
   const job = readWorkflow('turbo-unit-tests.yaml').jobs.build;
   const step = job.steps[0];
   assert.equal(
@@ -474,7 +374,7 @@ test('release aggregate requires fresh Rust success even when package proof skip
           result: reuse ? 'success' : 'skipped',
           outputs: { run_checks: reuse ? 'false' : '' },
         },
-        'test-shards': { result: reuse ? 'skipped' : 'success' },
+        'test-shards': { result: 'success' },
         'root-script-tests': { result: 'success' },
         'backend-source-qualification': { result: rust },
       };

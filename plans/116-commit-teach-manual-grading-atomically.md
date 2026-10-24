@@ -53,7 +53,7 @@ also have active owners. Do not execute without explicit transfers.
 | Type generation | `bun sb:typegen` | generated types include the RPC and no unrelated drift |
 | Route tests | `bun --cwd apps/teach vitest run 'src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.test.ts'` | manual grading suite passes |
 | Teach typecheck/build | `bun run --cwd apps/teach type-check && bun run --cwd apps/teach build` | both exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

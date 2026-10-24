@@ -225,6 +225,23 @@ describe('one-use protected desktop signing bundle', () => {
         expect(call.value).toEqual(Buffer.alloc(call.value.length));
     }
   );
+  it('keeps parser unavailability fail-closed as a bundle material conflict', async () => {
+    const f = fixture();
+    mock.certificate.mockReturnValue({
+      ok: false,
+      code: 'certificate_inspection_unavailable',
+    });
+    await expect(
+      fetchDesktopSigningBundle({ ...f, token, claims })
+    ).rejects.toMatchObject({
+      status: 409,
+      code: 'desktop_bundle_material_invalid',
+    });
+    expect(f.rpc).toHaveBeenLastCalledWith(
+      'desktop_deployment_complete_bundle',
+      { p_lease: 'lease', p_failure_code: 'material_or_admission_failed' }
+    );
+  });
   it('does not return bytes when revocation occurs before final completion', async () => {
     const f = fixture();
     const original = f.rpc.getMockImplementation()!;

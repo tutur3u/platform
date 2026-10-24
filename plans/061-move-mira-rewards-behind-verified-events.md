@@ -63,7 +63,7 @@ before designing the migration.
 | Migration manifest | `bun migration:tanstack:manifest && bun migration:tanstack:check` | metadata is current and check passes |
 | Backend gate | `bun check:backend` | unchanged backend coverage remains green |
 | App typechecks | `bun run --cwd apps/web type-check && bun run --cwd apps/tasks type-check` | both exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Whitespace | `git diff --check` | no output |

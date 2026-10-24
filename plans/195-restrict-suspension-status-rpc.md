@@ -58,7 +58,7 @@ base and run `bun setup` immediately.
 | Full database | `bun --cwd apps/database sb:validate:isolated` | complete pgTAP suite passes |
 | Type generation | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/user-suspension-rpc-security.sql` | succeeds and leaves no generated-type diff |
 | Type diff | `git diff --exit-code -- packages/types/src/supabase.ts` | no output; ACL-only migration did not change generated types |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

@@ -10,6 +10,7 @@ import {
   getUpstashRestRedisClient,
   type UpstashRestRedisClient,
 } from '../upstash-rest';
+import { type ClientIpConfig, resolveClientIp } from './client-ip';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
@@ -333,34 +334,12 @@ export async function recordSuspiciousApiRequestEdge(
 }
 
 /**
- * Lightweight IP extraction for Edge Runtime.
- * Checks standard proxy headers in priority order.
+ * Lightweight IP extraction for Edge Runtime and proxy middleware.
+ * Reads only headers set by the configured trusted proxy (see `client-ip.ts`).
  */
-export function extractIPFromRequest(headers: Headers): string {
-  // cf-connecting-ip (Cloudflare)
-  const cfIP = headers.get('cf-connecting-ip');
-  if (cfIP && isValidIPEdge(cfIP)) return cfIP;
-
-  // true-client-ip (some Cloudflare/enterprise proxy setups)
-  const trueClientIP = headers.get('true-client-ip');
-  if (trueClientIP && isValidIPEdge(trueClientIP)) return trueClientIP;
-
-  // x-forwarded-for (most common generic proxy header)
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const firstIP = forwardedFor.split(',')[0]?.trim();
-    if (firstIP && isValidIPEdge(firstIP)) return firstIP;
-  }
-
-  // x-real-ip (Nginx)
-  const realIP = headers.get('x-real-ip');
-  if (realIP && isValidIPEdge(realIP)) return realIP;
-
-  return 'unknown';
-}
-
-function isValidIPEdge(ip: string): boolean {
-  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
-  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
+export function extractIPFromRequest(
+  headers: Headers,
+  config?: ClientIpConfig
+): string {
+  return resolveClientIp(headers, config);
 }

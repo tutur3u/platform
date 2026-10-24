@@ -16,6 +16,7 @@ import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
@@ -48,6 +49,7 @@ Future<void> bootstrap(
   FutureOr<Widget> Function({
     required AppFlavor appFlavor,
     required shad.ThemeMode initialThemeMode,
+    required AppearanceSettings initialAppearance,
     String? initialRoute,
   })
   builder,
@@ -70,6 +72,15 @@ Future<void> bootstrap(
   } on Object catch (e, st) {
     log('Failed to load theme mode, defaulting to system: $e', stackTrace: st);
     initialThemeMode = shad.ThemeMode.system;
+  }
+  AppearanceSettings initialAppearance;
+  try {
+    initialAppearance = AppearanceSettings.decode(
+      await settingsRepository.getAppearance(),
+    );
+  } on Object catch (e, st) {
+    log('Failed to load appearance, using default: $e', stackTrace: st);
+    initialAppearance = const AppearanceSettings();
   }
   final resolvedBrightness = AppTheme.resolveBrightness(
     initialThemeMode,
@@ -132,6 +143,7 @@ Future<void> bootstrap(
       appFlavor: appFlavor,
       initialRoute: initialRoute,
       initialThemeMode: initialThemeMode,
+      initialAppearance: initialAppearance,
     ),
   );
 }

@@ -10,7 +10,8 @@ import {
 import { basename, delimiter, dirname, join, resolve } from 'node:path';
 import type { ResourceConfig } from './resources-config';
 
-const heavyTask = /^(test|build|check|check-types|type-check|lint|tc)(:.*)?$/;
+const heavyTask =
+  /^(test|build|validate|check|check-types|type-check|lint|tc)(:.*)?$/;
 const tools = [
   'turbo',
   'vitest',
@@ -33,17 +34,196 @@ export function commandCwd(args: string[], cwd = process.cwd()) {
   return cwd;
 }
 
+// Flags that consume the next argument, so it is not mistaken for the program.
+const valueFlags: Record<string, readonly string[]> = {
+  node: [
+    '-r',
+    '--require',
+    '--import',
+    '--loader',
+    '--experimental-loader',
+    '-C',
+    '--conditions',
+    '--input-type',
+    '--env-file',
+    '--title',
+    '--allow-fs-read',
+    '--allow-fs-write',
+    '--build-sea',
+    '--build-snapshot-config',
+    '--cpu-prof-dir',
+    '--cpu-prof-interval',
+    '--cpu-prof-name',
+    '--diagnostic-dir',
+    '--disable-proto',
+    '--disable-warning',
+    '--dns-result-order',
+    '--env-file-if-exists',
+    '--experimental-default-type',
+    '--experimental-package-map',
+    '--experimental-sea-config',
+    '--experimental-test-tag-filter',
+    '--heap-prof-dir',
+    '--heap-prof-interval',
+    '--heap-prof-name',
+    '--heapsnapshot-near-heap-limit',
+    '--heapsnapshot-signal',
+    '--icu-data-dir',
+    '--debug-port',
+    '--inspect-port',
+    '--inspect-publish-uid',
+    '--localstorage-file',
+    '--max-http-header-size',
+    '--max-old-space-size',
+    '--max-old-space-size-percentage',
+    '--max-semi-space-size',
+    '--stack-size',
+    '--network-family-autoselection-attempt-timeout',
+    '--openssl-config',
+    '--redirect-warnings',
+    '--report-directory',
+    '--report-dir',
+    '--report-filename',
+    '--report-signal',
+    '--run',
+    '--secure-heap',
+    '--secure-heap-min',
+    '--snapshot-blob',
+    '--test-concurrency',
+    '--test-coverage-branches',
+    '--test-coverage-exclude',
+    '--test-coverage-functions',
+    '--test-coverage-include',
+    '--test-coverage-lines',
+    '--test-global-setup',
+    '--experimental-test-isolation',
+    '--test-isolation',
+    '--test-name-pattern',
+    '--test-random-seed',
+    '--test-reporter',
+    '--test-reporter-destination',
+    '--test-rerun-failures',
+    '--test-shard',
+    '--test-skip-pattern',
+    '--test-timeout',
+    '--tls-cipher-list',
+    '--tls-keylog',
+    '--trace-event-categories',
+    '--trace-event-file-pattern',
+    '--trace-require-module',
+    '--unhandled-rejections',
+    '--use-largepages',
+    '--v8-pool-size',
+    '--watch-kill-signal',
+    '--watch-path',
+  ],
+  bun: [
+    '--cwd',
+    '-F',
+    '--filter',
+    '--env-file',
+    '-r',
+    '--preload',
+    '--config',
+    '-c',
+    '--tsconfig-override',
+    '-d',
+    '--define',
+  ],
+  bunx: ['-p', '--package'],
+  npx: ['-p', '--package', '-c', '--call'],
+};
+// Bare forms do not consume the following argv in Node 26.4.
+export const nodeConfigFlags = new Set([
+  '--experimental-config-file',
+  '--experimental-default-config-file',
+]);
+const nodeEqualsOnlyFlags = new Set(['--experimental-specifier-resolution']);
+// Only known switches can be skipped without risking a value becoming the program.
+const nodeSwitches = new Set([
+  '--help',
+  '-h',
+  '--version',
+  '-v',
+  '--no-warnings',
+  '--enable-source-maps',
+  '--experimental-strip-types',
+  '--experimental-transform-types',
+  '--experimental-vm-modules',
+  '--expose-gc',
+  '--inspect',
+  '--inspect-brk',
+  '--inspect-wait',
+  '--no-deprecation',
+  '--trace-deprecation',
+  '--trace-warnings',
+  '--no-experimental-fetch',
+]);
+// The ttr CLI (`#!/usr/bin/env bun`) starts through the bun shim whenever the
+// shims are on PATH. It does its own admission, so a shim must never admit it.
+const ttrLaunchers = new Set([
+  'ttr',
+  'tuturuuu',
+  'tutur3u',
+  'resources-entry.ts',
+  'resources-entry.js',
+]);
 export function commandTool(name: string, args: string[]) {
+  if (name === 'bun' && basename(args[0] || '') === 'ttr.cjs')
+    return { tool: 'ttr', tail: args.slice(1), offset: 1 };
+
   if (['node', 'bun', 'bunx', 'npx'].includes(name)) {
+    let optionsEnded = false;
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]!;
       if (
+        !optionsEnded &&
         ['-e', '-p', '--eval', '--print'].some(
           (flag) => arg === flag || arg.startsWith(`${flag}=`)
-        )
+        ) &&
+        (name === 'node' || name === 'bun')
       )
         break;
+      if (!optionsEnded && arg.startsWith('-')) {
+        if (arg === '--') {
+          optionsEnded = true;
+          continue;
+        }
+        const flag = arg.split('=')[0]!;
+        if (name === 'node' && (flag === '--run' || nodeConfigFlags.has(flag)))
+          return { tool: 'ambiguous', tail: args, offset: 0 };
+        if (name === 'node' && nodeEqualsOnlyFlags.has(flag)) {
+          if (!arg.includes('='))
+            return { tool: 'ambiguous', tail: args, offset: 0 };
+          continue;
+        }
+        if (valueFlags[name]?.includes(flag)) {
+          if (!arg.includes('=')) {
+            const value = args[i + 1];
+            if (
+              !value ||
+              value.startsWith('-') ||
+              commandTool(name, [value]).tool !== name ||
+              isHeavyCommand(name, [value])
+            )
+              return { tool: 'ambiguous', tail: args, offset: 0 };
+            i++;
+          }
+        } else if (
+          name === 'node' &&
+          !nodeSwitches.has(flag) &&
+          !/^-[rC].+/u.test(arg)
+        )
+          return { tool: 'ambiguous', tail: args, offset: 0 };
+        continue;
+      }
+      if (name === 'bun' && ['run', 'x', 'exec'].includes(arg)) continue;
+      // The first positional is the program; everything after it is that
+      // program's own argv (`bun /path/ttr resources run -- bunx vitest` runs
+      // ttr, not vitest).
       const file = basename(arg);
+      if (ttrLaunchers.has(file))
+        return { tool: 'ttr', tail: args.slice(i + 1), offset: i + 1 };
       for (const tool of tools) {
         if (
           [tool, `${tool}.js`, `${tool}.mjs`].includes(file) ||
@@ -55,13 +235,28 @@ export function commandTool(name: string, args: string[]) {
           return { tool, tail: args.slice(offset), offset };
         }
       }
+      break;
     }
   }
   return { tool: name, tail: args, offset: 0 };
 }
 
+function bunTaskIndex(args: string[]) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (['--cwd', '--filter', '-F', '--env-file'].includes(arg)) {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('-') || ['run', 'x', 'exec'].includes(arg)) continue;
+    return i;
+  }
+  return -1;
+}
+
 export function isHeavyCommand(name: string, args: string[]) {
   const { tool, tail } = commandTool(basename(name), args);
+  if (tool === 'ambiguous') return true;
   const flags = tail.includes('--') ? tail.slice(0, tail.indexOf('--')) : tail;
   if (
     flags.some(
@@ -92,19 +287,13 @@ export function isHeavyCommand(name: string, args: string[]) {
   if (tool === 'node')
     return tail.some((arg) => scripts.includes(basename(arg)));
   if (tool === 'bun') {
-    for (let i = 0; i < tail.length; i++) {
-      const arg = tail[i]!;
-      if (['--cwd', '--filter', '-F', '--env-file'].includes(arg)) {
-        i++;
-        continue;
-      }
-      if (arg.startsWith('-') || ['run', 'x', 'exec'].includes(arg)) continue;
-      return (
-        heavyTask.test(arg) ||
+    const arg = tail[bunTaskIndex(tail)];
+    return (
+      !!arg &&
+      (heavyTask.test(arg) ||
         ['sb:start', 'sb:reset', 'sb:up'].includes(arg) ||
-        scripts.includes(basename(arg))
-      );
-    }
+        scripts.includes(basename(arg)))
+    );
   }
   return false;
 }
@@ -222,6 +411,56 @@ export function isTrivialCommand(
   return trivialExecutable(name, env) !== undefined;
 }
 
+function nodeTestOptions(args: string[]) {
+  let testing = false;
+  let workers: number | undefined;
+  let end = 0;
+  for (; end < args.length; end++) {
+    const arg = args[end]!;
+    if (arg === '--' || !arg.startsWith('-')) break;
+    const flag = arg.split('=')[0]!.replaceAll('_', '-');
+    if (['-e', '-p', '--eval', '--print'].includes(flag)) return undefined;
+    if (flag === '--test' || nodeConfigFlags.has(flag)) testing = true;
+    if (flag === '--test-concurrency') {
+      const requested = Number(
+        arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : args[end + 1]
+      );
+      workers =
+        Number.isInteger(requested) && requested > 0 ? requested : undefined;
+    }
+    if (valueFlags.node?.includes(flag) && !arg.includes('=')) end++;
+  }
+  return testing ? { end, workers } : undefined;
+}
+
+export function nodeTestWorkers(args: string[], cap: number) {
+  const options = nodeTestOptions(args);
+  return options ? Math.min(options.workers ?? cap, cap) : undefined;
+}
+
+function limitNodeTests(args: string[], tokens: number) {
+  const parsed = nodeTestOptions(args);
+  if (!parsed) return undefined;
+  const { end } = parsed;
+  const workers = Math.min(parsed.workers ?? tokens, tokens);
+  const options: string[] = [];
+  for (let i = 0; i < end; i++) {
+    const arg = args[i]!;
+    const flag = arg.split('=')[0]!.replaceAll('_', '-');
+    if (flag === '--test-concurrency') {
+      if (!arg.includes('=')) i++;
+    } else {
+      options.push(arg);
+      // Preserve option values verbatim, including strings that look like flags.
+      if (valueFlags.node?.includes(flag) && !arg.includes('=')) {
+        if (args[i + 1] !== undefined) options.push(args[i + 1]!);
+        i++;
+      }
+    }
+  }
+  return [`--test-concurrency=${workers}`, ...options, ...args.slice(end)];
+}
+
 export function limitCommand(
   name: string,
   args: string[],
@@ -229,6 +468,10 @@ export function limitCommand(
 ) {
   const { tool, tail, offset } = commandTool(basename(name), args);
   if (!isHeavyCommand(name, args)) return args;
+  if (basename(name) === 'node') {
+    const tests = limitNodeTests(args, config.vitestWorkers);
+    if (tests) return tests;
+  }
   if (tool === 'vitest' || tool === 'cargo') {
     const budget = tool === 'vitest' ? config.vitestWorkers : config.buildJobs;
     const flags =
@@ -257,6 +500,34 @@ export function limitCommand(
     const cap =
       tool === 'vitest' ? `--maxWorkers=${budget}` : `--jobs=${budget}`;
     limited.splice(divider < 0 ? limited.length : divider, 0, cap);
+    return [...args.slice(0, offset), ...limited];
+  }
+  if (tool === 'bun' && tail[bunTaskIndex(tail)] === 'check') {
+    let budget = config.buildJobs;
+    const limited: string[] = [];
+    for (let i = 0; i < tail.length; i++) {
+      const arg = tail[i]!;
+      if (arg === '--') {
+        limited.push(...tail.slice(i));
+        break;
+      }
+      if (arg === '--threads' || arg.startsWith('--threads=')) {
+        const value =
+          arg === '--threads' ? tail[++i] : arg.slice('--threads='.length);
+        const requested = Number(value);
+        if (!Number.isSafeInteger(requested) || requested < 1)
+          throw new Error('bun check --threads requires a positive integer.');
+        budget = Math.min(budget, requested);
+        continue;
+      }
+      limited.push(arg);
+    }
+    const divider = limited.indexOf('--');
+    limited.splice(
+      divider < 0 ? limited.length : divider,
+      0,
+      `--threads=${budget}`
+    );
     return [...args.slice(0, offset), ...limited];
   }
   if (tool !== 'turbo') return args;

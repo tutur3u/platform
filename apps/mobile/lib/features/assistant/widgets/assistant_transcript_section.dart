@@ -3,6 +3,7 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
+import 'package:mobile/features/assistant/widgets/assistant_message_receipt.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -38,14 +39,15 @@ class AssistantTranscriptSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...chatState.messages.map((message) {
+        ...chatState.messages.indexed.map((entry) {
+          final (index, message) = entry;
           final toolParts = _messageToolParts(message);
           return Padding(
             key: ValueKey((
               'assistant-turn',
               chatState.workspaceId,
               chatState.chat?.id ?? chatState.fallbackChatId,
-              message.id,
+              message.clientRequestId ?? message.id,
             )),
             padding: const EdgeInsets.only(bottom: 14),
             child: AssistantTranscriptBubble(
@@ -58,6 +60,7 @@ class AssistantTranscriptSection extends StatelessWidget {
               transcript: _messageTranscript(message),
               attachments:
                   chatState.attachmentsByMessageId[message.id] ?? const [],
+              receipt: assistantMessageReceiptStatus(chatState.messages, index),
               timestamp: message.role == 'user' ? message.createdAt : null,
               toolParts: toolParts,
               orderedParts: message.role == 'user' ? const [] : message.parts,

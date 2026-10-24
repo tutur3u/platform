@@ -110,6 +110,19 @@ describe('legacy plan transport ports', () => {
       ])
     ).rejects.toThrow();
     await expect(f.ports.togglePlanLock(['plan', 'true'])).rejects.toThrow();
+    // Stored password hashes are no longer an accepted guest credential field.
+    await expect(
+      f.ports.submitVote([
+        'plan',
+        {
+          userType: 'GUEST',
+          guestId: 'guest',
+          guestPasswordHash: 'stored-hash',
+          pollId: 'poll',
+          optionIds: [],
+        },
+      ])
+    ).rejects.toThrow();
     expect(f.load).not.toHaveBeenCalled();
   });
 
@@ -134,7 +147,7 @@ describe('legacy plan transport ports', () => {
     const participant = {
       userType: 'GUEST',
       guestId: 'guest',
-      guestPasswordHash: 'fixture-hash',
+      guestSession: 'fixture-session',
     };
     await f.ports.addPollOption([
       'plan',
@@ -214,7 +227,7 @@ describe('legacy plan transport ports', () => {
       userType: 'GUEST',
       pollId: 'poll',
       value: 'Option',
-      guestPasswordHash: 'hash',
+      guestSession: 'session',
     },
   ])(
     'denies guest option creation without both credentials: %j',

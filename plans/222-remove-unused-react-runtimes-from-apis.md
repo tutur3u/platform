@@ -50,7 +50,7 @@ never hand-edit dependency declarations or `bun.lock`.
 | Remove | `cd packages/apis && bun remove react react-dom` | manifest and lockfile update only expected dependency edges |
 | Package | `bun run --cwd packages/apis type-check && bun run --cwd packages/apis test` | both exit 0 |
 | Release/packed contracts | `node --test scripts/ci/package-release-readiness.test.js scripts/ci/prepare-npm-package-manifest.test.js scripts/ci/release-workflows.test.js` | production manifest preparation and packed-tarball assertions pass |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

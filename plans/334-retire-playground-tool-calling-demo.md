@@ -50,7 +50,7 @@ entire surface until a separately designed, metered example exists.
 | Deletion | `test ! -e apps/playground/src/app/tool-calling && test ! -e apps/playground/src/app/api/ai/tool-calling` | exits 0 |
 | Typecheck | `bun --cwd apps/playground run type-check` | exits 0 |
 | Build | `bun --cwd apps/playground run build` | production build passes and no retired route is emitted |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only layout, the two deleted route trees, focused test, and plan status changed |
 
 ## Suggested executor toolkit
@@ -99,7 +99,7 @@ or unsupported replacement response.
 
 ### Step 3: Run application and repository gates
 
-Run Playground typecheck/build, `bun check`, scope, and whitespace. Inspect the
+Run Playground typecheck/build, `bun validate`, scope, and whitespace. Inspect the
 build route list to confirm neither retired path is emitted and all other
 Playground routes still compile.
 
@@ -115,7 +115,7 @@ Playground routes still compile.
 - [ ] Playground no longer advertises or serves the nonfunctional demo/API.
 - [ ] `/tool-calling` and `/api/ai/tool-calling` truthfully resolve through normal absence/404 behavior.
 - [ ] No live provider, credential, metering, dependency, or adjacent AI surface changed.
-- [ ] Focused test, typecheck/build, `bun check`, scope, and whitespace pass.
+- [ ] Focused test, typecheck/build, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

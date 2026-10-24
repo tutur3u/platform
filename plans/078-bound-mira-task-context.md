@@ -56,7 +56,7 @@ paths. Run `git status --short` and create the migration with `bun sb:new`.
 | AI tests | `bun run --cwd packages/ai test -- src/tools/context-builder.test.ts` | bounded/context parity cases pass |
 | AI types | `bun run --cwd packages/ai type-check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | shared Google route compiles in production app |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -142,7 +142,7 @@ build, and repository gates.
 - [ ] Mira never downloads all accessible tasks to build one prompt.
 - [ ] Result row cardinality is constant while total count remains exact.
 - [ ] Permission and personal-workspace parity are proven in pgTAP.
-- [ ] Migration apply, typegen, focused tests, types, Web build, `bun check`,
+- [ ] Migration apply, typegen, focused tests, types, Web build, `bun validate`,
   and whitespace pass.
 - [ ] Production duplicate/signature preflight is documented before rollout.
 
