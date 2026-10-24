@@ -24,6 +24,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useState } from 'react';
 import AgendaDetails from './agenda-details';
+import { GuestPasswordReset } from './guest-password-reset';
 import { MeetInsightsPanel } from './meet-insights-panel';
 import { MeetSuggestionsPanel } from './meet-suggestions-panel';
 import PlanLogin from './plan-login';
@@ -210,6 +211,7 @@ export default function PlanDetailsClient({
           <section className="rounded-2xl border bg-background/80 p-4 sm:p-5">
             <AgendaDetails plan={plan} />
           </section>
+          {isCreator && plan.id && <GuestPasswordReset planId={plan.id} />}
         </div>
       </main>
       {isDirty && <StickyBottomIndicator />}

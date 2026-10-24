@@ -17,6 +17,8 @@ load only the reference section needed by the affected surface.
 - `references/platform-checklist.md`: follow-through for a substantial change across
   translations, navigation, active route ownership, or multiple packages.
 
+For retired Nova/Meet shared-secret credentials, follow the [required reset decision](../../../../apps/docs/platform/features/shared-secret-password-reset.mdx).
+
 Maintain the live Next.js API and shared contracts. Docker setup, Rust, and
 TanStack Start are paused; do not refresh or validate their inactive trees. Shared client API
 access belongs in `packages/internal-api`; satellite actors come from app sessions.

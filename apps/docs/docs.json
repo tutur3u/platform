@@ -271,6 +271,7 @@
                   "platform/applications/apps",
                   "platform/applications/calendar",
                   "platform/features/calendar-scheduling-summary",
+                  "platform/features/shared-secret-password-reset",
                   "platform/applications/chat",
                   "platform/applications/cms",
                   "platform/applications/drive",
