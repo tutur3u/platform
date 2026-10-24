@@ -27,7 +27,7 @@ ttr --version
 ttr workspaces --help
 ```
 
-Inside the Tuturuuu monorepo, use `bun ttr ...` to run the local package script.
+Inside the Tuturuuu monorepo, `bun ttr ...` invokes the trusted global `~/.bun/bin/ttr` through an absolute path. Never use workspace `node_modules/.bin/ttr` for operational commands.
 After global installation, use `ttr ...` directly. Do not diagnose `bun ttr login`
 as a registry install failure: Bun interprets that form as a workspace package-script
 lookup, so inspect the local script and its error first.
@@ -70,8 +70,8 @@ first-run, CI, and headless environments.
 
 ## Common Commands
 
-In a source preview, `bun ttr backlog search help --lang en|vi --json` and
-`bun ttr backlog search model-status --json` use the native offline entry before
+In a source preview, `bun packages/sdk/src/cli/index.ts backlog search help --lang en|vi --json` and
+`bun packages/sdk/src/cli/index.ts backlog search model-status --json` use the native offline entry before
 login. Status without `--runtime-dir` performs no model load/download. Lexical
 queries use an explicit `--db`. Indexing scans the full projection and rebuilds
 all lexical documents. It reuses vectors only for identical record IDs and
@@ -237,7 +237,7 @@ should fail before making the request.
 
 The Tuturuuu monorepo contains a workspace package named `tuturuuu` under
 `packages/sdk`. From the repo root, Bun resolves that package name to the local
-workspace package. Use `bun ttr ...` for the local script and `ttr ...` for the
+workspace package. Use `bun ttr ...` for the trusted global wrapper and `ttr ...` for the
 globally installed CLI.
 
 ## Companion Workflows
@@ -273,3 +273,26 @@ environment variables. Existing jobs and absolute executable paths may bypass
 new shell configuration. This is cooperative scheduling, not a memory cgroup.
 Prefer remote `ttr box` validation for broad checks; verify the runner's actual
 host because same-machine runners and containers are not resource offload.
+
+
+### Resource offload failure boundary
+
+For `resources run --offload`, permit local fallback only before creation or
+following an explicit server rejection that proves no run was created. Preserve
+SIGINT/SIGTERM through every creation outcome (130/143), including 403 responses.
+Validate success acknowledgements inside the remote-follow boundary; retain any
+known run ID for cancellation and never replay an uncertain write locally.
+Bound each control-plane request, propagate its AbortSignal through the SDK, and
+check cancellation and the overall deadline between log pages. Keep stop requests
+bounded independently of an already-aborted follow signal. A failed stop remains
+unconfirmed; direct the operator to inspect the original run before retrying.
+Treat a 503 carrying `code: DEVBOX_IDEMPOTENCY_UNAVAILABLE` as a definite
+rejection (no run was written) and queue locally; any other 503 is ambiguous.
+Send a per-offload operation ID as the create `idempotencyKey`. When an
+acknowledgement is lost, cancel through `runs/stop-by-key` within a bound, or
+print the key. Submit envelopes only to runners that advertise the matching
+`protocols.commitRun` version. Use `resources-offload-interruption.test.ts`,
+`resources-offload-operation-key.test.ts` and
+`resources-offload-protocol.test.ts` for these regressions. Use
+`store-run-logs.test.ts` to check that the per-run sequence cursor neither skips
+nor repeats a line that commits late.

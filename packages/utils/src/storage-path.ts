@@ -5,19 +5,12 @@
  * Prevents directory traversal attacks and ensures safe file operations.
  */
 
+const UNSAFE_PATH_CHARACTER = /[\p{Cc}\\]/u;
+
 /**
- * Canonicalizes a legacy relative path, then applies strict path validation.
+ * Validates an exact relative path without canonicalizing it.
  *
- * @param path - The path string to sanitize
- * @returns Canonicalized path string, or null if the path is unsafe
- *
- * @example
- * ```ts
- * sanitizePath('folder/subfolder') // => 'folder/subfolder'
- * sanitizePath('../../../etc/passwd') // => null
- * sanitizePath('folder\\subfolder') // => 'folder/subfolder'
- * sanitizePath('') // => ''
- * ```
+ * @returns The path segments, or null if the path is unsafe
  */
 export function sanitizePathSegments(
   path: string,
@@ -26,11 +19,7 @@ export function sanitizePathSegments(
   if (path === '') return [];
   if (
     typeof path !== 'string' ||
-    path.includes('\\') ||
-    [...path].some((character) => {
-      const code = character.charCodeAt(0);
-      return code <= 0x1f || code === 0x7f;
-    }) ||
+    UNSAFE_PATH_CHARACTER.test(path) ||
     /^[a-z][a-z\d+.-]*:\/\//i.test(path) ||
     (options.strict && (path.includes('?') || path.includes('#')))
   ) {
@@ -57,11 +46,7 @@ export function sanitizePathSegments(
       decoded === '.' ||
       decoded === '..' ||
       decoded.includes('/') ||
-      decoded.includes('\\') ||
-      [...decoded].some((character) => {
-        const code = character.charCodeAt(0);
-        return code <= 0x1f || code === 0x7f;
-      })
+      UNSAFE_PATH_CHARACTER.test(decoded)
     ) {
       return null;
     }
@@ -70,6 +55,22 @@ export function sanitizePathSegments(
   return segments;
 }
 
+/**
+ * Canonicalizes a legacy relative path, then validates its segments. Literal
+ * `?` and `#` are allowed for callers that encode object keys at the transport
+ * boundary; use `sanitizePathStrict` for paths interpolated into URLs.
+ *
+ * @param path - The path string to sanitize
+ * @returns Canonicalized path string, or null if the path is unsafe
+ *
+ * @example
+ * ```ts
+ * sanitizePath('folder/subfolder') // => 'folder/subfolder'
+ * sanitizePath('../../../etc/passwd') // => null
+ * sanitizePath('folder\\subfolder') // => 'folder/subfolder'
+ * sanitizePath('') // => ''
+ * ```
+ */
 export function sanitizePath(path: string): string | null {
   if (typeof path !== 'string' || /^[a-z][a-z\d+.-]*:\/\//i.test(path)) {
     return null;

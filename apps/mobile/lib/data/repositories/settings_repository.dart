@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Ported from apps/native/lib/stores/ui-store.ts.
 class SettingsRepository {
   static const _themeModeKey = 'theme-mode';
+  static const _appearanceKey = 'appearance-v1';
+  static const _appearanceIntroSeenKey = 'appearance-intro-seen';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
   static const _disableDefaultTaskBoardNavigationKey =
@@ -95,6 +97,36 @@ class SettingsRepository {
     final prefs = await SharedPreferences.getInstance();
     if (shouldWrite?.call() == false) return;
     await prefs.setString(_themeModeKey, mode);
+  }
+
+  /// Encoded appearance customisation, or `null` before the first change.
+  /// Light/dark/system mode stays under the original `theme-mode` key.
+  Future<String?> getAppearance() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_appearanceKey);
+  }
+
+  Future<void> setAppearance(
+    String encoded, {
+    bool Function()? shouldWrite,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (shouldWrite?.call() == false) return;
+    await prefs.setString(_appearanceKey, encoded);
+  }
+
+  /// Whether the user has opened Appearance since the themes were introduced.
+  Future<bool> getAppearanceIntroSeen() async =>
+      (await SharedPreferences.getInstance()).getBool(
+        _appearanceIntroSeenKey,
+      ) ??
+      false;
+
+  Future<void> setAppearanceIntroSeen() async {
+    await (await SharedPreferences.getInstance()).setBool(
+      _appearanceIntroSeenKey,
+      true,
+    );
   }
 
   Future<String> getCalendarView() async {

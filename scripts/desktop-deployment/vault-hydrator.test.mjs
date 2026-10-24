@@ -464,13 +464,16 @@ test('cancellation kills a real TERM-resistant descendant with the still-owned p
   const ready = new Promise((resolve) => {
     readyResolve = resolve;
   });
-  const descendantSource = `require('node:process').on('SIGTERM',()=>{});process.stdout.write('ready');setTimeout(()=>require('node:fs').writeFileSync(${JSON.stringify(marker)},'survived'),400);setInterval(()=>{},10000)`;
-  const parentSource = `const child=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendantSource)}],{stdio:['ignore','pipe','ignore']});child.stdout.on('data',chunk=>process.stdout.write(chunk));setInterval(()=>{},10000)`;
+  const descendantSource =
+    "require('node:process').on('SIGTERM',()=>{});process.stdout.write('ready');setTimeout(()=>require('node:fs').writeFileSync(process.argv[1],'survived'),400);setInterval(()=>{},10000)";
+  const parentSource =
+    "const child=require('node:child_process').spawn(process.execPath,['-e',process.argv[1],process.argv[2]],{stdio:['ignore','pipe','ignore']});child.stdout.on('data',chunk=>process.stdout.write(chunk));setInterval(()=>{},10000)";
   const completion = packageChild(
     { DESKTOP_PLATFORM: 'macos' },
     {
       launch: (_command, _args, options) => {
-        parent = spawn(process.execPath, ['-e', parentSource], {
+        const args = ['-e', parentSource, descendantSource, marker];
+        parent = spawn(process.execPath, args, {
           ...options,
           env: {},
           stdio: ['ignore', 'pipe', 'ignore'],

@@ -1,19 +1,14 @@
 'use client';
 
-import {
-  Loader2,
-  Mic,
-  MicOff,
-  TriangleAlert,
-  Video,
-  VideoOff,
-} from '@tuturuuu/icons';
+import { Loader2, Mic, MicOff, Video, VideoOff } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import type { MeetSignalingStatus } from '../lib/signaling';
 import { AdmissionNotice } from './admission-notice';
+import { resourceErrorKey } from './call-resource-notice';
 
 /**
  * Pre-join check. Nothing is published until the user presses join, so the
@@ -22,12 +17,14 @@ import { AdmissionNotice } from './admission-notice';
 export function Lobby({
   defaultDisplayName,
   avatarUrl,
-  connectionError,
+  connectionStatus,
+  error,
   isJoining,
   meetingName,
   transcriptionNotice,
   onJoin,
   onLeave,
+  onRetry,
   waiting,
 }: {
   defaultDisplayName: string;
@@ -36,7 +33,9 @@ export function Lobby({
   meetingName: string;
   transcriptionNotice?: string;
   /** Set when signaling could not be reached, so the CTA can explain itself. */
-  connectionError?: string | null;
+  connectionStatus: MeetSignalingStatus;
+  error: string | null;
+  onRetry: () => void;
   onJoin: (options: {
     previewStream: MediaStream | null;
     audioEnabled: boolean;
@@ -48,6 +47,12 @@ export function Lobby({
 }) {
   const t = useTranslations('meet.call');
   const displayName = defaultDisplayName;
+  const resourceKey = resourceErrorKey(error);
+  const connectionError = resourceKey
+    ? t(resourceKey)
+    : connectionStatus === 'closed' || connectionStatus === 'error' || error
+      ? t('join_error_hint')
+      : null;
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -180,14 +185,11 @@ export function Lobby({
                 {transcriptionNotice}
               </p>
             ) : null}
-            <AdmissionNotice waiting={waiting} connecting={isJoining} />
-
-            {connectionError ? (
-              <p className="mt-4 flex items-start gap-2 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
-                <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-                <span>{connectionError}</span>
-              </p>
-            ) : null}
+            <AdmissionNotice
+              waiting={waiting}
+              connecting={isJoining}
+              error={connectionError}
+            />
 
             <div className="mt-5 space-y-1">
               <p className="text-muted-foreground text-xs">{t('joining_as')}</p>
@@ -200,8 +202,14 @@ export function Lobby({
 
           <Button
             className="mt-4 w-full shrink-0"
-            disabled={isJoining || waiting || !displayName.trim()}
+            disabled={
+              !connectionError && (isJoining || waiting || !displayName.trim())
+            }
             onClick={() => {
+              if (connectionError) {
+                onRetry();
+                return;
+              }
               transferred.current = stream;
               onJoin({
                 previewStream: stream,
@@ -213,14 +221,16 @@ export function Lobby({
             size="lg"
             type="button"
           >
-            {isJoining && !waiting ? (
+            {isJoining && !waiting && !connectionError ? (
               <Loader2 className="mr-2 size-4 animate-spin" />
             ) : null}
-            {waiting
-              ? t('waiting_for_host')
-              : isJoining
-                ? t('connecting')
-                : t('join_now')}
+            {connectionError
+              ? t('connection_refresh')
+              : waiting
+                ? t('waiting_for_host')
+                : isJoining
+                  ? t('connecting')
+                  : t('join_now')}
           </Button>
           <Button
             className="mt-2 w-full shrink-0"
@@ -228,7 +238,7 @@ export function Lobby({
             type="button"
             variant="ghost"
           >
-            {t('leave')}
+            {t(waiting ? 'join_cancel_request' : 'leave')}
           </Button>
         </div>
       </div>

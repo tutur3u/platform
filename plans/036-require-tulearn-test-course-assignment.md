@@ -56,7 +56,7 @@ Sequence after any active education owner reaches a canonical terminal state.
 | Core tests | `bun --cwd packages/education-core vitest run 'src/tulearn/test-access.test.ts'` | assignment matrix passes |
 | Learn route tests | `bun --cwd apps/learn vitest run 'src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/test-access.route.test.ts'` | cross-tenant/unassigned cases pass |
 | Learn typecheck | `bun run --cwd apps/learn type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Learn build | `bun run --cwd apps/learn build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -115,7 +115,7 @@ unassigned targets.
 - [ ] Every test-session route proves workspace ownership and course assignment.
 - [ ] Admin queries cannot cross the authorized test/course boundary.
 - [ ] Parent and revoked-assignment semantics are explicit and tested.
-- [ ] Core/route tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Core/route tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

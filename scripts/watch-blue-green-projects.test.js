@@ -437,8 +437,8 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
   ]);
 
   assert.match(config, /server_name docs\.example\.com;/);
-  assert.doesNotMatch(config, /tuturuuu\.com/);
-  assert.doesNotMatch(config, /hive\.tuturuuu\.com/);
+  assert.equal(config.includes('tuturuuu.com'), false);
+  assert.equal(config.includes('hive.tuturuuu.com'), false);
   assert.doesNotMatch(config, /bad host\.example\.com/);
   assert.doesNotMatch(config, /return 200 "pwned"/);
 });

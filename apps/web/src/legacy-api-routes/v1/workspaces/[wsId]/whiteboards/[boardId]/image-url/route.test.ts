@@ -60,7 +60,7 @@ describe('whiteboard image signed URL path boundary', () => {
         params: Promise.resolve({ wsId, boardId }),
       });
 
-      expect(response.status).toBe(400);
+      expect(response?.status).toBe(400);
       expect(mocks.createSignedUrl).not.toHaveBeenCalled();
     }
   );
@@ -71,7 +71,7 @@ describe('whiteboard image signed URL path boundary', () => {
       params: Promise.resolve({ wsId, boardId }),
     });
 
-    expect(response.status).toBe(200);
+    expect(response?.status).toBe(200);
     expect(mocks.createSignedUrl).toHaveBeenCalledExactlyOnceWith(path, 3600);
   });
 });

@@ -208,6 +208,26 @@ describe('revision-fenced desktop administration', () => {
       expect.anything()
     );
   });
+  it('persists parser unavailability as a distinct validation error', async () => {
+    const { db, rpc } = fixture();
+    mock.certificate.mockReturnValue({
+      ok: false,
+      code: 'certificate_inspection_unavailable',
+    });
+    await expect(
+      applyDesktopMutation(db, 'actor', {
+        action: 'validate',
+        versionId: 'version',
+        revision: 7,
+      })
+    ).resolves.toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith('desktop_deployment_validate_version', {
+      p_actor: 'actor',
+      p_version: 'version',
+      p_revision: 7,
+      p_errors: ['certificate_inspection_unavailable'],
+    });
+  });
   it('rejects a concurrent edit at validation instead of activating older material', async () => {
     const { db, rpc } = fixture();
     rpc.mockResolvedValue({ error: { code: '40001' } });

@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('./safe-fs');
 const path = require('node:path');
 const policy = require('../packages/utils/src/seo-policy.json');
 
@@ -145,12 +146,11 @@ function generate({ check = false, root = ROOT } = {}) {
   const expected = outputs();
   for (const [file, source] of expected) {
     const target = path.join(root, file);
-    if (fs.existsSync(target) && fs.readFileSync(target, 'utf8') === source)
-      continue;
+    if (readOptionalFileSync(target, { encoding: 'utf8' }) === source) continue;
     stale.push(file);
     if (!check) {
       fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.writeFileSync(target, source);
+      atomicWriteFileSync(target, source);
     }
   }
   // A private app must not retain an old public sitemap when its policy changes.

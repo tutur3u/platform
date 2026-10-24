@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -135,7 +136,11 @@ class _AssistantPersonalityFieldEditorState
     final options = field.options(context);
     if (options.isNotEmpty) options.putIfAbsent(_text.text, () => _text.text);
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: AppPageInsets.of(
+        context,
+        width: MediaQuery.sizeOf(context).width,
+        kind: AppPageKind.form,
+      ),
       child: Form(
         key: _form,
         child: Column(

@@ -58,7 +58,7 @@ uniquely named migration only after those transfers.
 | Route tests | `bun --cwd apps/web vitest run 'src/app/api/v1/workspaces/[wsId]/external-projects/emails/route.test.ts'` | sequential, duplicate, and overlapping cases pass |
 | Migration tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | refreshed route metadata is valid |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

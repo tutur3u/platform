@@ -55,7 +55,7 @@ fresh disposable stack; do not rely only on historical migration text.
 | Isolated types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/ai-execution-analytics-access.sql` | signatures/results are unchanged or intentional drift is reviewed |
 | Web focused | `bun --cwd apps/web vitest run 'src/app/[locale]/(dashboard)/[wsId]/ai/executions/services/analytics-service.test.ts'` | admin-backed analytics contract passes |
 | Web types/build | `bun run --cwd apps/web type-check && bun run --cwd apps/web build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

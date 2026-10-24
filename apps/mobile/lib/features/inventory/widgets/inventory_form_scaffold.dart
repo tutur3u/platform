@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/inventory/widgets/inventory_search_chrome.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
@@ -19,6 +20,7 @@ class InventoryFormScaffold extends StatefulWidget {
     this.embedded = false,
     this.searchController,
     this.onSearchChanged,
+    this.kind = AppPageKind.form,
     super.key,
   });
 
@@ -32,6 +34,9 @@ class InventoryFormScaffold extends StatefulWidget {
   final bool embedded;
   final TextEditingController? searchController;
   final ValueChanged<String>? onSearchChanged;
+
+  /// Width policy of the form body; data-entry forms keep the narrow default.
+  final AppPageKind kind;
 
   @override
   State<InventoryFormScaffold> createState() => _InventoryFormScaffoldState();
@@ -61,17 +66,23 @@ class _InventoryFormScaffoldState extends State<InventoryFormScaffold> {
   Widget build(BuildContext context) {
     final colors = shad.Theme.of(context).colorScheme;
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-    final body = Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, widget.embedded ? 88 : 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.footerTop != null && widget.embedded) ...[
-            widget.footerTop!,
-            const SizedBox(height: 12),
+    // Embedded forms stop above the shell dock. Standalone forms sit above
+    // their own footer, which already reserves the bottom system inset.
+    final body = AppPageBody(
+      kind: widget.kind,
+      consumeBottomClearance: widget.embedded,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: widget.embedded ? 0 : AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.footerTop != null && widget.embedded) ...[
+              widget.footerTop!,
+              const SizedBox(height: AppSpacing.md),
+            ],
+            Expanded(child: widget.child),
           ],
-          Expanded(child: widget.child),
-        ],
+        ),
       ),
     );
     if (widget.embedded) {

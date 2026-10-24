@@ -2,7 +2,10 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppCoordinationToken } from '../app-coordination-token';
-import { enforceRequiredMfaRequest } from '../required-mfa-runtime';
+import {
+  enforceRequiredMfaRequest,
+  getVerifiedMfaBearerUser,
+} from '../required-mfa-runtime';
 
 const mocks = vi.hoisted(() => ({ admin: vi.fn() }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -52,6 +55,115 @@ beforeEach(() => {
   vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-required-mfa-secret');
 });
 describe('connected required MFA request enforcement', () => {
+  it('reports only a provider-verified bearer actor after MFA passes', async () => {
+    const { getUser } = setup();
+    getUser.mockResolvedValue({
+      data: { user: { id: 'actor', app_metadata: {} } },
+      error: null,
+    });
+    const verified = vi.fn();
+    expect(
+      await enforceRequiredMfaRequest(
+        request({ authorization: 'Bearer eyJprovider', 'x-user-id': 'forged' }),
+        verified
+      )
+    ).toBeNull();
+    expect(verified).toHaveBeenCalledExactlyOnceWith('actor');
+    expect(getUser).toHaveBeenCalledExactlyOnceWith('eyJprovider');
+  });
+
+  it('coalesces pending checks and replays callbacks only after all identities pass', async () => {
+    const { getUser } = setup();
+    const pending = Promise.withResolvers<TestUserResult>();
+    getUser.mockReturnValue(pending.promise);
+    const req = request({
+      authorization: 'Bearer eyJprovider',
+      'x-user-id': 'forged',
+    });
+    const firstCallback = vi.fn();
+    const secondCallback = vi.fn();
+    const first = enforceRequiredMfaRequest(req, firstCallback);
+    const second = enforceRequiredMfaRequest(req, secondCallback);
+    expect(getVerifiedMfaBearerUser(req)).toBeNull();
+    pending.resolve({
+      data: { user: { id: 'actor', app_metadata: {} } },
+      error: null,
+    });
+    expect(await first).toBeNull();
+    expect(await second).toBeNull();
+    expect(getUser).toHaveBeenCalledExactlyOnceWith('eyJprovider');
+    expect(firstCallback).toHaveBeenCalledExactlyOnceWith('actor');
+    expect(secondCallback).toHaveBeenCalledExactlyOnceWith('actor');
+    expect(getVerifiedMfaBearerUser(req)?.id).toBe('actor');
+    const cachedCallback = vi.fn();
+    await enforceRequiredMfaRequest(req, cachedCallback);
+    expect(cachedCallback).toHaveBeenCalledExactlyOnceWith('actor');
+    expect(getUser).toHaveBeenCalledTimes(1);
+  });
+  it('does not trust a forged identity or copy assurance to a cloned request', async () => {
+    const { getUser } = setup();
+    getUser.mockResolvedValue({
+      data: { user: { id: 'actor', app_metadata: {} } },
+      error: null,
+    });
+    const req = request({
+      authorization: 'Bearer eyJprovider',
+      'x-tuturuuu-verified-user': 'forged',
+    });
+    expect(getVerifiedMfaBearerUser(req)).toBeNull();
+    await enforceRequiredMfaRequest(req);
+    const clone = new NextRequest(req.clone());
+    expect(getVerifiedMfaBearerUser(clone)).toBeNull();
+    await enforceRequiredMfaRequest(clone);
+    expect(getUser).toHaveBeenCalledTimes(2);
+    expect(getVerifiedMfaBearerUser(clone)?.id).toBe('actor');
+  });
+  it('invalidates cached context when selected credentials change', async () => {
+    const { getUser } = setup();
+    getUser.mockResolvedValue({
+      data: { user: { id: 'actor', app_metadata: {} } },
+      error: null,
+    });
+    const req = request({ authorization: 'Bearer eyJprovider' });
+    await enforceRequiredMfaRequest(req);
+    req.headers.set('authorization', 'Bearer eyJother');
+    expect(getVerifiedMfaBearerUser(req)).toBeNull();
+    await enforceRequiredMfaRequest(req);
+    expect(getUser).toHaveBeenCalledTimes(2);
+    expect(getUser).toHaveBeenLastCalledWith('eyJother');
+  });
+  it('does not expose a bearer identity if an ambient identity fails assurance', async () => {
+    const { getUser } = setup();
+    getUser.mockResolvedValue({
+      data: { user: { id: 'optional', app_metadata: {} } },
+      error: null,
+    });
+    const required = createAppCoordinationToken({
+      userId: 'actor',
+      targetApp: 'infra',
+    }).token;
+    const req = request({
+      authorization: 'Bearer eyJprovider',
+      cookie: `tuturuuu_app_session=${required}`,
+    });
+    const callback = vi.fn();
+    expect((await enforceRequiredMfaRequest(req, callback))?.status).toBe(403);
+    expect(callback).not.toHaveBeenCalled();
+    expect(getVerifiedMfaBearerUser(req)).toBeNull();
+  });
+  it('does not report a bearer actor when MFA rejects the request', async () => {
+    setup();
+    const verified = vi.fn();
+    expect(
+      (
+        await enforceRequiredMfaRequest(
+          request({ authorization: 'Bearer eyJprovider' }),
+          verified
+        )
+      )?.status
+    ).toBe(403);
+    expect(verified).not.toHaveBeenCalled();
+  });
   it('denies provider-authenticated AAL1 sessions with fresh required policy', async () => {
     setup();
     const response = await enforceRequiredMfaRequest(

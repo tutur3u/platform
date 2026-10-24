@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_visibility_button.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
-import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 List<AppModule> arrangeApps(List<AppModule> modules, AppTabCubit cubit) {
@@ -95,12 +95,14 @@ class AppsPickerEditor extends StatelessWidget {
       for (final module in hiddenExperiments)
         module.id: AppRegistry.experimentalAccessAvailable(context, module.id),
     };
+    // Hosted below the order editor sheet's own title row, so it needs no
+    // floating shell header clearance.
     return ReorderableListView.builder(
       padding: EdgeInsets.fromLTRB(
-        16,
-        floatingShellHeaderInset(context) + 8,
-        16,
-        8 + MediaQuery.paddingOf(context).bottom,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm + MediaQuery.paddingOf(context).bottom,
       ),
       buildDefaultDragHandles: false,
       itemCount: modules.length,

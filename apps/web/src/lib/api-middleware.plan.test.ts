@@ -5,6 +5,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({
   key: vi.fn(),
+  ip: vi.fn(),
+  blocked: vi.fn(),
   rate: vi.fn(),
   policy: vi.fn(),
   enabled: vi.fn(),
@@ -16,8 +18,8 @@ vi.mock('@tuturuuu/auth/api-keys', () => ({
   hasAnyPermission: () => true,
 }));
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
-  extractIPFromHeaders: () => '192.0.2.1',
-  isIPBlocked: vi.fn(),
+  extractIPFromHeaders: mocks.ip,
+  isIPBlocked: mocks.blocked,
 }));
 vi.mock('@tuturuuu/storage-core/security-budget', () => ({
   isSecurityEgressEnforcementEnabled: mocks.enabled,
@@ -46,6 +48,8 @@ const request = () =>
     headers: { authorization: 'Bearer ttr_test_only', 'x-plan': 'ENTERPRISE' },
   });
 beforeEach(() => {
+  mocks.ip.mockReset().mockReturnValue('192.0.2.1');
+  mocks.blocked.mockReset().mockResolvedValue(null);
   mocks.enabled.mockReset().mockReturnValue(true);
   mocks.key.mockReset().mockResolvedValue({
     wsId: 'workspace-verified',
@@ -105,4 +109,36 @@ it('denies safely on entitlement outage and preserves existing limits before act
     expect.objectContaining({ maxRequests: 50 }),
     'workspace-verified'
   );
+});
+
+it('rate-limits the shared unknown IP bucket before validating an API key', async () => {
+  mocks.ip.mockReturnValue('unknown');
+  mocks.rate.mockResolvedValue(
+    NextResponse.json({ error: 'Too Many Requests' }, { status: 429 })
+  );
+  const response = await withApiAuth(handler, {
+    rateLimit: { windowMs: 60000, maxRequests: 50 },
+  })(request());
+  expect(response.status).toBe(429);
+  expect(mocks.rate).toHaveBeenCalledWith('ip:read:unknown', {
+    windowMs: 60000,
+    maxRequests: 50,
+  });
+  expect(mocks.key).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
+});
+it('rejects a persistently blocked unknown IP bucket before authentication', async () => {
+  mocks.ip.mockReturnValue('unknown');
+  mocks.blocked.mockResolvedValue({ expiresAt: new Date(Date.now() + 60000) });
+  const response = await withApiAuth(handler)(request());
+  expect(response.status).toBe(429);
+  expect(await response.json()).toMatchObject({ code: 'IP_BLOCKED' });
+  expect(Number(response.headers.get('Retry-After'))).toBeGreaterThan(0);
+  expect(mocks.blocked).toHaveBeenCalledWith('unknown', {
+    route: '/api/v1/storage/download/file',
+    source: 'api-middleware',
+  });
+  expect(mocks.key).not.toHaveBeenCalled();
+  expect(mocks.rate).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
 });

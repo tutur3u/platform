@@ -1,8 +1,12 @@
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  isWebOriginRequest,
   normalizePersistableMultiAccountRoute,
   resolveMultiAccountAddRedirect,
   resolveMultiAccountSwitchRedirect,
+  WEB_WORKSPACE_ROUTE_SEGMENTS,
 } from './routes';
 import { normalizeMultiAccountRedirectPath } from './vault';
 
@@ -18,6 +22,59 @@ describe('web multi-account vault helpers', () => {
         request
       )
     ).toBe('/en/personal/tasks?view=board');
+  });
+
+  it('recognizes the configured Web origin behind an internal proxy URL', () => {
+    expect(
+      isWebOriginRequest(
+        new Request('http://web-worker.internal/api/switch', {
+          headers: { origin: 'https://tuturuuu.com' },
+        }),
+        'https://tuturuuu.com'
+      )
+    ).toBe(true);
+  });
+
+  it('rejects route persistence when the Origin header is missing', () => {
+    expect(
+      isWebOriginRequest(
+        new Request('https://tuturuuu.com/api/switch'),
+        'https://tuturuuu.com'
+      )
+    ).toBe(false);
+  });
+
+  it('keeps the Web workspace route registry aligned with page routes', () => {
+    const routeRoot = resolve(
+      process.cwd(),
+      'src/app/[locale]/(dashboard)/[wsId]'
+    );
+    const pageRouteRoots = new Set<string>();
+    const visit = (directory: string, segments: string[] = []) => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          visit(
+            resolve(directory, entry.name),
+            entry.name.startsWith('(') && entry.name.endsWith(')')
+              ? segments
+              : [...segments, entry.name]
+          );
+        } else if (
+          (entry.name === 'page.tsx' || entry.name === 'route.ts') &&
+          segments[0]
+        ) {
+          pageRouteRoots.add(segments[0]);
+        }
+      }
+    };
+
+    visit(routeRoot);
+
+    expect(
+      [...pageRouteRoots].filter((route) =>
+        WEB_WORKSPACE_ROUTE_SEGMENTS.has(route)
+      )
+    ).toHaveLength(pageRouteRoots.size);
   });
 
   it('converts same-origin absolute redirects to relative paths', () => {
@@ -50,6 +107,22 @@ describe('web multi-account vault helpers', () => {
         '/add-account?returnUrl=%2Fen%2Fpersonal%2Ftasks',
         request
       )
+    ).toBe(null);
+  });
+
+  it.each([
+    'archive',
+    'drafts',
+    'inbox',
+    'muted',
+    'sent',
+    'snoozed',
+    'spam',
+    'starred',
+    'trash',
+  ])('does not keep Mail-only workspace route %s as persistable', (folder) => {
+    expect(
+      normalizePersistableMultiAccountRoute(`/personal/${folder}`, request)
     ).toBe(null);
   });
 });
@@ -99,6 +172,126 @@ describe('resolveMultiAccountSwitchRedirect', () => {
       )
     ).toBe('/en/personal/tasks');
   });
+
+  it.each([
+    'archive',
+    'drafts',
+    'inbox',
+    'muted',
+    'sent',
+    'snoozed',
+    'spam',
+    'starred',
+    'trash',
+  ])(
+    'falls back to the workspace home for the Mail-only %s route',
+    (folder) => {
+      expect(
+        resolveMultiAccountSwitchRedirect(
+          { lastRoute: `/en/personal/${folder}` },
+          request
+        )
+      ).toBe('/en/personal');
+    }
+  );
+
+  it('does not honor an explicit target to the removed inbox route', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { targetRoute: '/personal/inbox' },
+        request
+      )
+    ).toBe('/personal');
+  });
+
+  it('preserves an explicit login target when the saved route is inbox', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        {
+          lastRoute: '/en/personal/inbox',
+          targetRoute: '/en/login?returnUrl=https%3A%2F%2Fmail.example%2Fauth',
+        },
+        request
+      )
+    ).toBe('/en/login?returnUrl=https%3A%2F%2Fmail.example%2Fauth');
+  });
+
+  it('does not turn a transient saved route into a workspace fallback', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { lastRoute: '/en/login/inbox' },
+        request
+      )
+    ).toBe('/');
+  });
+
+  it.each([
+    'archive',
+    'cycles',
+    'courses',
+    'drafts',
+    'goals',
+    'history',
+    'inbox',
+    'lab',
+    'muted',
+    'sent',
+    'snoozed',
+    'spam',
+    'starred',
+    'timer',
+    'transactions',
+    'trash',
+    'wallets',
+  ])('falls back home for a saved non-Web workspace route: %s', (route) => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { lastRoute: `/en/personal/${route}` },
+        request
+      )
+    ).toBe('/en/personal');
+  });
+
+  it('keeps saved paths owned by Web unchanged', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { lastRoute: '/en/personal/tasks' },
+        request
+      )
+    ).toBe('/en/personal/tasks');
+  });
+
+  it.each([
+    '/en/personal/finance/invoices/invoice-1?status=paid',
+    '/en/personal/mail/sent?mailbox=mailbox-1',
+  ])('keeps workspace paths handled by Web redirects unchanged: %s', (path) => {
+    expect(
+      resolveMultiAccountSwitchRedirect({ lastRoute: path }, request)
+    ).toBe(path);
+  });
+
+  it('preserves public profile routes whose handle matches a Mail folder', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect({ lastRoute: '/en/u/inbox' }, request)
+    ).toBe('/en/u/inbox');
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { targetRoute: '/en/users/trash' },
+        request
+      )
+    ).toBe('/en/users/trash');
+  });
+
+  it.each([
+    '/.//evil.example/login',
+    '/%2e%2e//evil.example/login',
+    'https://tuturuuu.localhost//evil.example/login',
+  ])(
+    'rejects same-origin redirect paths that normalize to // URLs: %s',
+    (value) => {
+      expect(normalizeMultiAccountRedirectPath(value, request)).toBe('/');
+    }
+  );
 
   it('never leaves the origin, even when asked to', () => {
     expect(

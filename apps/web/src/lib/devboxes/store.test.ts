@@ -157,6 +157,17 @@ describe('devbox store', () => {
     expect(membershipEqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
   });
 
+  it('throws a retryable error when the membership lookup fails', async () => {
+    membershipMaybeSingleMock.mockResolvedValue({
+      data: null,
+      error: { message: 'connection reset' },
+    });
+
+    await expect(verifyDevboxRunnerToken('tdbx_active')).rejects.toMatchObject({
+      status: 503,
+    });
+  });
+
   it('allows registered runners to authenticate before the first heartbeat', async () => {
     runnerLimitMock.mockResolvedValue({
       data: [

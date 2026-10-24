@@ -512,7 +512,8 @@ test('profile subprocess controls isolate the diagnostic dispatch environment', 
         'product-feedback-causal-controls.test.mjs',
       ].map((file) => fileURLToPath(new URL(file, import.meta.url))),
     ],
-    { env, encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 }
+    // The spawned legacy suites take ~15s alone; leave headroom under load.
+    { env, encoding: 'utf8', timeout: 60000, maxBuffer: 1024 * 1024 }
   );
   assert.equal(result.error, undefined);
   assert.equal(result.signal, null);

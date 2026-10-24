@@ -8,8 +8,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/drive/drive_models.dart';
 import 'package:mobile/data/repositories/drive_repository.dart';
@@ -841,118 +840,111 @@ class _DrivePageState extends State<DrivePage> {
                   ),
               ],
             ),
-            ResponsiveWrapper(
-              maxWidth: context.isCompact ? null : 1440,
-              child: _isLoading && _entries.isEmpty
-                  ? const Center(child: NovaLoadingIndicator())
-                  : NovaRefreshIndicator(
-                      onRefresh: _reload,
-                      child: ListView(
-                        controller: _scrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          8,
-                          16,
-                          40 + MediaQuery.paddingOf(context).bottom,
-                        ),
-                        children: [
-                          _DriveToolbar(
-                            path: _path,
-                            onGoUp: _path.isEmpty ? null : _goUp,
-                            selectedCount: _selectedNames.length,
-                          ),
-                          const SizedBox(height: 16),
-                          if (_error != null)
-                            _DriveMessageCard(message: _error!),
-                          if (_entries.isEmpty && _error == null)
-                            _DriveMessageCard(
-                              message: context.l10n.driveEmptyState,
-                            )
-                          else if (_showGrid)
-                            _DriveGrid(
-                              entries: _entries,
-                              workspaceId: _wsId ?? '',
-                              directoryPath: _path,
-                              selectedNames: _selectedNames,
-                              onTap: _openEntry,
-                              onToggleSelection: (entry) {
-                                setState(() {
-                                  if (_selectedNames.contains(entry.name)) {
-                                    _selectedNames.remove(entry.name);
-                                  } else {
-                                    _selectedNames.add(entry.name);
-                                  }
-                                });
-                              },
-                              onRename: _canManageDrive ? _renameEntry : null,
-                              onDelete: _canManageDrive
-                                  ? (entry) => _deleteEntries([entry])
-                                  : null,
-                              onShare: _shareEntry,
-                              onCopyPath: _copyEntryPath,
-                              onOpenExternal: _openExternal,
-                              onExportLinks: _showExportLinks,
-                            )
-                          else
-                            ..._entries.map(
-                              (entry) => PendingSyncFrame(
-                                workspaceId: _wsId ?? '',
-                                feature: 'drive',
-                                entityId: _path.isEmpty
-                                    ? entry.name
-                                    : '$_path/${entry.name}',
-                                child: _DriveListTile(
-                                  entry: entry,
-                                  selected: _selectedNames.contains(entry.name),
-                                  onTap: () => _openEntry(entry),
-                                  onLongPress: () {
-                                    setState(() {
-                                      if (_selectedNames.contains(entry.name)) {
-                                        _selectedNames.remove(entry.name);
-                                      } else {
-                                        _selectedNames.add(entry.name);
-                                      }
-                                    });
-                                  },
-                                  onRename: _canManageDrive
-                                      ? () => _renameEntry(entry)
-                                      : null,
-                                  onDelete: _canManageDrive
-                                      ? () => _deleteEntries([entry])
-                                      : null,
-                                  onShare: entry.isFolder
-                                      ? null
-                                      : () => _shareEntry(entry),
-                                  onCopyPath: () => _copyEntryPath(entry),
-                                  onOpenExternal: entry.isFolder
-                                      ? null
-                                      : () => _openExternal(entry),
-                                  onExportLinks: entry.isFolder
-                                      ? () => _showExportLinks(entry)
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          if (_hasMore) ...[
-                            const SizedBox(height: 16),
-                            Center(
-                              child: FilledButton.tonal(
-                                onPressed: _isLoadingMore ? null : _loadMore,
-                                child: _isLoadingMore
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: NovaLoadingIndicator(size: 20),
-                                      )
-                                    : Text(context.l10n.commonLoadMore),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+            if (_isLoading && _entries.isEmpty)
+              const AppPageBody(
+                kind: AppPageKind.root,
+                child: Center(child: NovaLoadingIndicator()),
+              )
+            else
+              NovaRefreshIndicator(
+                onRefresh: _reload,
+                child: AppPageListView(
+                  kind: AppPageKind.root,
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    _DriveToolbar(
+                      path: _path,
+                      onGoUp: _path.isEmpty ? null : _goUp,
+                      selectedCount: _selectedNames.length,
                     ),
-            ),
+                    const SizedBox(height: AppSpacing.lg),
+                    if (_error != null) _DriveMessageCard(message: _error!),
+                    if (_entries.isEmpty && _error == null)
+                      _DriveMessageCard(message: context.l10n.driveEmptyState)
+                    else if (_showGrid)
+                      _DriveGrid(
+                        entries: _entries,
+                        workspaceId: _wsId ?? '',
+                        directoryPath: _path,
+                        selectedNames: _selectedNames,
+                        onTap: _openEntry,
+                        onToggleSelection: (entry) {
+                          setState(() {
+                            if (_selectedNames.contains(entry.name)) {
+                              _selectedNames.remove(entry.name);
+                            } else {
+                              _selectedNames.add(entry.name);
+                            }
+                          });
+                        },
+                        onRename: _canManageDrive ? _renameEntry : null,
+                        onDelete: _canManageDrive
+                            ? (entry) => _deleteEntries([entry])
+                            : null,
+                        onShare: _shareEntry,
+                        onCopyPath: _copyEntryPath,
+                        onOpenExternal: _openExternal,
+                        onExportLinks: _showExportLinks,
+                      )
+                    else
+                      ..._entries.map(
+                        (entry) => PendingSyncFrame(
+                          workspaceId: _wsId ?? '',
+                          feature: 'drive',
+                          entityId: _path.isEmpty
+                              ? entry.name
+                              : '$_path/${entry.name}',
+                          child: _DriveListTile(
+                            entry: entry,
+                            selected: _selectedNames.contains(entry.name),
+                            onTap: () => _openEntry(entry),
+                            onLongPress: () {
+                              setState(() {
+                                if (_selectedNames.contains(entry.name)) {
+                                  _selectedNames.remove(entry.name);
+                                } else {
+                                  _selectedNames.add(entry.name);
+                                }
+                              });
+                            },
+                            onRename: _canManageDrive
+                                ? () => _renameEntry(entry)
+                                : null,
+                            onDelete: _canManageDrive
+                                ? () => _deleteEntries([entry])
+                                : null,
+                            onShare: entry.isFolder
+                                ? null
+                                : () => _shareEntry(entry),
+                            onCopyPath: () => _copyEntryPath(entry),
+                            onOpenExternal: entry.isFolder
+                                ? null
+                                : () => _openExternal(entry),
+                            onExportLinks: entry.isFolder
+                                ? () => _showExportLinks(entry)
+                                : null,
+                          ),
+                        ),
+                      ),
+                    if (_hasMore) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: FilledButton.tonal(
+                          onPressed: _isLoadingMore ? null : _loadMore,
+                          child: _isLoadingMore
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: NovaLoadingIndicator(size: 20),
+                                )
+                              : Text(context.l10n.commonLoadMore),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
           ],
         ),
       ),

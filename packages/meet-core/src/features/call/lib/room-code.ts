@@ -10,6 +10,8 @@
  * characters cannot appear; decoding still accepts them and folds them onto the
  * digits people meant.
  */
+import { trimTrailingSlashes } from './trim-trailing-slashes';
+
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const GROUP_SIZES = [9, 9, 8] as const;
 const UUID_PATTERN =
@@ -114,5 +116,5 @@ export function decodeRoomCode(code: string): string | null {
 }
 
 export function buildJoinUrl(origin: string, meetingId: string) {
-  return `${origin.replace(/\/+$/u, '')}/r/${encodeRoomCode(meetingId)}`;
+  return `${trimTrailingSlashes(origin)}/r/${encodeRoomCode(meetingId)}`;
 }

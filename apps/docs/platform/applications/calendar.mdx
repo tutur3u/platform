@@ -208,37 +208,11 @@ auth/session and build-info routes are local as well.
 
 ### Calendar settings authorization
 
-Personal calendar preferences are scoped to the authenticated user. Settings
-updates accept supported IANA timezone names or `auto` inheritance; invalid
-names and fixed-offset strings are rejected before storage. Workspace
-calendar settings are readable by members, but updates require
-`manage_workspace_settings`. Check that permission explicitly on the owning
-PATCH route: a verified signed app session can use an admin-backed database
-client, so membership and table RLS alone do not enforce editing rights.
-
-Native clients reach the Calendar owner through the authenticated mobile gateway.
-The settings allowlist permits only GET and PATCH on
-`/api/v1/users/calendar-settings` and
-`/api/v1/workspaces/:wsId/calendar-settings`; upstream ownership, workspace
-permission checks, credential isolation and response limits remain enforced.
-
-Native preference GETs use a dedicated Infrastructure guard bucket so calendar
-event/account fan-out cannot consume their read allowance. The shared guard
-still enforces the same default anonymous/authenticated limits, verified-session
-keying, MFA, and IP blocks; PATCH and other gateway requests retain the existing
-bucket. A preferences 429 emits only policy/caller/window/reason diagnostics,
-without actor, workspace, IP, credentials or response bodies. This does not
-bypass an IP block or make an exhausted preferences bucket unlimited.
-Regression coverage: `preference-guard.test.ts` exact route/method boundaries
-and `gateway.test.ts` upstream diagnostic isolation. Actual authenticated
-mobile recovery must be verified after deployment. Mobile's API error retains
-only fixed known reason, policy, caller and window values from a 429 response,
-and includes those safe fields in its diagnostic log. Unknown values become
-`unknown`; URLs, actor/workspace identifiers, IPs, cookies, credentials and
-response bodies are never included in that diagnostic. This preserves the
-server rejection and cooldown rather than treating an unavailable preference as
-success. Regression: `api_client_error_contract_test.dart` exercises the HTTP
-boundary and rejects private or arbitrary header values.
+Personal/workspace settings use shared validation and explicit workspace edit
+permissions. Native preferences default directly to Web; Calendar browser clients
+and older mobile gateway clients retain their existing adapters. See
+[Native Calendar preferences](/platform/features/native-calendar-preferences)
+for the product decision, quotas, exceptions and regression evidence.
 
 ## OAuth Token Safety
 
@@ -272,16 +246,52 @@ Google Calendar OAuth initiation and callback handlers are owned by
 `apps/calendar`. The local `/api/v1/calendar/auth` route builds its callback URL
 from a browser-safe configured origin and ignores wildcard listener addresses
 such as `0.0.0.0` or `::`. Existing provider registrations may still configure
-the central Web origin; if no safe configured origin is available, the fallback
-origin is `https://tuturuuu.com`.
+`GOOGLE_REDIRECT_URI`; otherwise production uses the Calendar `BASE_URL` (see
+below), and local development falls back to the configured Web origin.
 
-After Google returns to the callback, the flow always sends the user to the
-central Web Calendar page at
-`https://tuturuuu.com/{wsId}/calendar?provider=google&connected=true`. Valid
-local development callback URLs such as
+Valid local development callback URLs such as
 `http://localhost:7803/api/v1/calendar/auth/callback` may still be configured
 through `GOOGLE_REDIRECT_URI`, but wildcard listener URLs must never be emitted
 as Google `redirect_uri` values or browser redirects.
+
+Google and Microsoft connections share these security rules (regression
+coverage lives beside the routes under `apps/calendar/src/app/api/v1/calendar/auth/`
+and in `apps/calendar/src/lib/calendar/calendar-oauth-*.test.ts`):
+
+- The OAuth `state` is signed, expires after 10 minutes, and binds the flow to
+  the initiating user and workspace. Callbacks reject forged, swapped, expired,
+  other-user and non-member states before exchanging the authorization code.
+- Each state is single-use. The callback consumes its nonce through the
+  service-role-only RPC `private.consume_calendar_oauth_state_nonce`, which
+  inserts into `private.calendar_oauth_state_nonces` (RLS forced, no client
+  policies or grants) and treats an existing row as a replay. The same call
+  purges at most 100 rows that expired over an hour ago. If the ledger is
+  unavailable (for example the migration has not been applied), the callback
+  fails closed with `503` before exchanging the code.
+- Google uses S256 PKCE derived from the signed state. Microsoft uses S256 PKCE
+  with an HttpOnly verifier cookie.
+- After connecting (or on a provider error), the browser is redirected to the
+  Calendar app's workspace page, `{BASE_URL}/{wsId}`, which is where the
+  Calendar satellite serves each workspace calendar. `BASE_URL`
+  (`apps/calendar/src/constants/common.ts`) resolves `CALENDAR_APP_URL` or
+  `NEXT_PUBLIC_CALENDAR_APP_URL` against the registered Calendar domain and
+  otherwise defaults to `https://calendar.tuturuuu.com` in production. The
+  origin is never taken from the request URL, Host or forwarded headers.
+  Without a verified workspace the redirect goes to the origin root.
+- In production the Google `redirect_uri` is `GOOGLE_REDIRECT_URI` when set,
+  otherwise `{BASE_URL}/api/v1/calendar/auth/callback`. The Web-origin and
+  forwarded-header fallbacks apply only outside production, for local proxies.
+- No environment variables beyond the existing provider credentials are
+  required. The nonce ledger ships as a migration through the gated production
+  migration workflow.
+
+To exercise the ledger against a disposable local Supabase with migrations
+applied, run the env-gated integration test from `apps/calendar` with
+`CALENDAR_OAUTH_NONCE_IT_SUPABASE_URL`, `CALENDAR_OAUTH_NONCE_IT_SERVICE_ROLE_KEY`
+and `CALENDAR_OAUTH_NONCE_IT_USER_ID` (a synthetic local auth user):
+`bunx vitest run src/lib/calendar/calendar-oauth-nonce-store.integration.test.ts`.
+It is skipped when those variables are absent. Never point it at a shared or
+remote project.
 
 Normal Google Calendar connect and reconnect URLs request
 `access_type=offline` and `include_granted_scopes=true`, but they must not force
@@ -780,6 +790,15 @@ lookup. Workspace saving still requires permission and a loaded workspace scope.
 Failed reads retain Unknown with an explicit retry; they never imply an automatic
 preference or cause an implicit save. Failed saves retain the prior preference and
 allow retry. Account/workspace changes invalidate in-flight replies and editors.
+Mobile only marks a timezone resolved after the bundled timezone database accepts
+the effective personal, workspace or native identifier. The full IANA database
+accepts native aliases such as `Asia/Saigon`, including after another feature
+initializes the compact database. Unsupported identifiers
+remain a recoverable settings failure rather than throwing from Calendar or the
+personal Agenda clock. An acknowledged save retains its saved value even if its
+new inherited timezone cannot resolve. Existing initialized device-local timezone
+configuration is preserved. `calendar_timezone_failure_test.dart` covers invalid
+saved/native identifiers, rejected writes and acknowledged-save recovery.
 `timezone_settings_http_contract_test.dart` and
 `timezone_settings_http_widget_test.dart` exercise production gateway paths,
 Bearer serialization, failure/retry and explicit saving with synthetic data.
@@ -789,8 +808,8 @@ failed authenticated request without runtime evidence.
 Calendar's local authentication rejections classify existing IP blocks as
 `ip-already-blocked` and upstream authentication backpressure as
 `backend-auth-rate-limit`. The native gateway preserves these fixed categories
-for safe timezone diagnostics. Neither branch invents a limiter policy, caller
-class or exhausted window; unavailable fields remain Unknown. Status 429,
+for safe timezone diagnostics. Each branch names its policy; unknown caller/window fields stay Unknown.
+Unclassified responses distinguish absent metadata from unsupported values. Status 429,
 Retry-After, authentication, bans and quotas retain their existing behavior.
 `api-auth-rate-diagnostics.test.ts` exercises the real personal preference GET
 and gateway; `api_rate_limit_local_auth_test.dart` checks the safe mobile copy.
