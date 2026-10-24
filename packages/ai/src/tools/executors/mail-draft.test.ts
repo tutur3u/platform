@@ -66,6 +66,16 @@ function fakeMailServer() {
         status: 'draft',
         subject: payload.subject,
         bodyText: payload.bodyText,
+        recipients: [
+          ...(payload.to as string[]).map((address) => ({
+            address,
+            kind: 'to',
+          })),
+          ...(payload.cc as string[]).map((address) => ({
+            address,
+            kind: 'cc',
+          })),
+        ],
       };
       drafts.set(id, message);
       return { message };
@@ -120,6 +130,7 @@ describe('draft_email_reply idempotency', () => {
       identity: { userId: 'user', wsId: 'workspace', chatId: 'chat' },
       mailboxId: MAILBOX,
       threadId: THREAD,
+      replyToMessageId: 'inbound',
       replyAll: false,
       source: 'body' as const,
       content: 'Sounds good',
@@ -132,11 +143,97 @@ describe('draft_email_reply idempotency', () => {
     for (const changed of [
       { ...base, content: 'Different reply' },
       { ...base, threadId: 'other-thread' },
+      { ...base, replyToMessageId: 'newer-inbound' },
       { ...base, replyAll: true },
       { ...base, identity: { ...base.identity, chatId: 'other-chat' } },
       { ...base, identity: { ...base.identity, userId: 'other-user' } },
     ])
       expect(await draftOperationId(changed)).not.toBe(key);
+  });
+
+  it('starts a new draft when a newer inbound message arrives in the thread', async () => {
+    const drafts = fakeMailServer();
+    const args = { mailboxId: MAILBOX, threadId: THREAD, body: 'Thanks' };
+    const first = await executeMailTool('draft_email_reply', args, context());
+    api.getThread.mockResolvedValue(
+      thread([
+        inbound(),
+        inbound({ id: 'newer', internetMessageId: '<newer@example.com>' }),
+      ])
+    );
+    const second = await executeMailTool('draft_email_reply', args, context());
+
+    expect(drafts.size).toBe(2);
+    expect(first).toMatchObject({ replyToMessageId: 'inbound' });
+    expect(second).toMatchObject({
+      success: true,
+      replyToMessageId: 'newer',
+    });
+    expect(api.createDraft.mock.calls[1]?.[2]).toMatchObject({
+      inReplyTo: '<newer@example.com>',
+    });
+  });
+
+  it('keeps a pinned retry on its original target after a newer message arrives', async () => {
+    const drafts = fakeMailServer();
+    const args = { mailboxId: MAILBOX, threadId: THREAD, body: 'Thanks' };
+    const first = (await executeMailTool(
+      'draft_email_reply',
+      args,
+      context()
+    )) as { draftId: string; replyToMessageId: string };
+    api.getThread.mockResolvedValue(
+      thread([inbound(), inbound({ id: 'newer' })])
+    );
+    const retry = await executeMailTool(
+      'draft_email_reply',
+      { ...args, replyToMessageId: first.replyToMessageId },
+      context()
+    );
+
+    expect(drafts.size).toBe(1);
+    expect(retry).toMatchObject({ success: true, draftId: first.draftId });
+  });
+
+  it('rejects a pinned target that is not a message in the thread', async () => {
+    fakeMailServer();
+    const result = await executeMailTool(
+      'draft_email_reply',
+      {
+        mailboxId: MAILBOX,
+        threadId: THREAD,
+        body: 'Thanks',
+        replyToMessageId: 'missing',
+      },
+      context()
+    );
+    expect(result).toMatchObject({ success: false });
+    expect(api.createDraft).not.toHaveBeenCalled();
+  });
+
+  it('reports the recipients Mail stored on an existing user-edited draft', async () => {
+    api.createDraft.mockResolvedValue({
+      message: {
+        id: 'edited',
+        threadId: THREAD,
+        status: 'draft',
+        subject: 'Re: Quarterly plan',
+        bodyText: 'Edited by the user',
+        recipients: [
+          { address: 'bob@example.com', displayName: null, kind: 'to' },
+          { address: 'carol@example.com', displayName: null, kind: 'cc' },
+        ],
+      },
+    });
+    const result = await executeMailTool(
+      'draft_email_reply',
+      { mailboxId: MAILBOX, threadId: THREAD, body: 'Thanks' },
+      context()
+    );
+    expect(result).toMatchObject({
+      success: true,
+      untrusted: { to: ['bob@example.com'], cc: ['carol@example.com'] },
+    });
   });
 
   it('never reports an already-sent message with the same key as a new draft', async () => {

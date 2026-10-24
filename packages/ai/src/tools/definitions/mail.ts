@@ -59,6 +59,12 @@ export const mailToolDefinitions = {
         .max(4000)
         .optional()
         .describe('What the reply should say, for the Mail draft assistant'),
+      replyToMessageId: z
+        .guid()
+        .optional()
+        .describe(
+          'Message to reply to. Omit for the latest message; when retrying, pass the replyToMessageId from the earlier result.'
+        ),
       replyAll: z.boolean().default(false),
     }),
   }),

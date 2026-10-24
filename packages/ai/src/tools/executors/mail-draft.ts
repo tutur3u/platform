@@ -15,7 +15,7 @@ import {
 } from './mail-helpers';
 
 const DRAFT_NOTE =
-  'Draft created in Mail. It has NOT been sent. Tell the user you created a draft and that they review and send it in Mail. Repeating the same request returns this same draft.';
+  'Draft created in Mail. It has NOT been sent. Tell the user you created a draft and that they review and send it in Mail. Retrying with the same replyToMessageId and content returns this same draft.';
 
 export type MailDraftIdentity = {
   userId: string;
@@ -31,24 +31,28 @@ const optionalString = (value: unknown) =>
  * `clientMessageId`. It deliberately excludes the tool-call id: after a lost
  * response the model retries with a new call id, and that retry must resolve
  * to the same draft. The key is scoped to the user, workspace, mailbox, thread,
- * reply mode, chat, and normalized content, and is formatted as an RFC 9562
+ * the message being replied to, reply mode, chat, and normalized content, so a
+ * new inbound message in the same thread starts a new operation instead of
+ * resolving to an earlier draft (or one already sent). It is formatted as an RFC 9562
  * version 8 UUID because Mail validates it as a UUID.
  */
 export async function draftOperationId(input: {
   identity: MailDraftIdentity;
   mailboxId: string;
   threadId: string;
+  replyToMessageId: string;
   replyAll: boolean;
   source: 'body' | 'instructions';
   content: string;
 }) {
   const material = JSON.stringify([
-    'mira-mail-draft:v1',
+    'mira-mail-draft:v2',
     input.identity.userId,
     input.identity.wsId,
     input.identity.chatId ?? '',
     input.mailboxId,
     input.threadId,
+    input.replyToMessageId,
     input.replyAll,
     input.source,
     normalizeWhitespace(input.content.normalize('NFC')),
@@ -77,6 +81,7 @@ export async function draftEmailReply(
   const threadId = optionalString(args.threadId);
   const body = optionalString(args.body);
   const instructions = optionalString(args.instructions);
+  const replyToMessageId = optionalString(args.replyToMessageId);
   if (!mailboxId || !threadId)
     return { success: false, error: 'mailboxId and threadId are required.' };
   if (!body && !instructions)
@@ -90,13 +95,21 @@ export async function draftEmailReply(
     getMailBootstrap(wsId, options, false),
     getMailThread(wsId, mailboxId, threadId, options),
   ]);
+  // A retry pins the original reply target so a newer inbound message in the
+  // same thread cannot change which operation the retry belongs to.
   const target = [...(detail.messages ?? [])]
     .reverse()
-    .find((message) => message.status !== 'draft');
+    .find(
+      (message) =>
+        message.status !== 'draft' &&
+        (!replyToMessageId || message.id === replyToMessageId)
+    );
   if (!target)
     return {
       success: false,
-      error: 'This thread has no sent or received message to reply to.',
+      error: replyToMessageId
+        ? 'That message is not a sent or received message in this thread. No draft was created.'
+        : 'This thread has no sent or received message to reply to.',
     };
   const ownAddresses = new Set(
     (bootstrap.mailboxes ?? []).map((mailbox) => mailbox.address.toLowerCase())
@@ -112,6 +125,7 @@ export async function draftEmailReply(
     identity,
     mailboxId,
     threadId,
+    replyToMessageId: target.id,
     replyAll,
     source: body ? 'body' : 'instructions',
     content: body ?? instructions ?? '',
@@ -159,6 +173,11 @@ export async function draftEmailReply(
     },
     options
   );
+  // Mail may return an existing, user-edited draft for this key; report what
+  // Mail stored, not what this call computed.
+  const stored = created.message.recipients ?? [];
+  const storedAddresses = (kind: 'to' | 'cc') =>
+    stored.filter((item) => item.kind === kind).map((item) => item.address);
   if (created.message.status !== 'draft')
     return {
       success: false,
@@ -174,13 +193,14 @@ export async function draftEmailReply(
     draftId: created.message.id,
     mailboxId,
     threadId: created.message.threadId ?? threadId,
+    replyToMessageId: target.id,
     bodySource,
     note: DRAFT_NOTE,
     contentTrust: MAIL_UNTRUSTED_NOTICE,
     untrusted: {
       subject: created.message.subject || subject,
-      to: recipients.to,
-      cc: recipients.cc,
+      to: storedAddresses('to'),
+      cc: storedAddresses('cc'),
       bodyPreview: truncateText(created.message.bodyText ?? bodyText, 600).text,
     },
   };
