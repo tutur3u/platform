@@ -260,3 +260,8 @@ Toggle and checkbox rows activate from their labels as well as their controls.
 Toast handles cancel their timers when their overlay is disposed. Regression
 coverage lives in app_toast_lifecycle_test.dart,
 assistant_personality_route_scope_test.dart and assistant_routed_editors_test.dart.
+
+A covered ancestor can pause a nested navigator's exit animation. Scope
+invalidation removes the exact owned settings route instead of waiting for a pop
+animation; it must preserve an unrelated covering route. The settings shell ABA
+checks cover this cancellation while the editor is covered.
