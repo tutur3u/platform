@@ -149,6 +149,18 @@ class _AppModalBindingState extends State<AppModalBinding> {
     if (chrome != null && !chrome.isClosed) chrome.retireOwner(_ownerId);
   }
 
+  /// Android Back via the router's dispatcher. Declines (returns false) when
+  /// this overlay is departing or another route is above it, so the
+  /// dispatcher offers Back to the next listener instead of swallowing it.
+  Future<bool> _onSystemBack() async {
+    if (!mounted || _retired) return false;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return false;
+    if (!widget.dismissible) return true;
+    unawaited(_close());
+    return true;
+  }
+
   Future<void> _close() async {
     if (!mounted || _closing || _retired) return;
     final route = ModalRoute.of(context);
@@ -190,10 +202,9 @@ class _AppModalBindingState extends State<AppModalBinding> {
     // Without a Router, system Back already pops the topmost route.
     if (Router.maybeOf(context)?.backButtonDispatcher == null) return scope;
     return BackButtonListener(
-      onBackButtonPressed: () async {
-        unawaited(_close());
-        return true;
-      },
+      // A stable tear-off: a fresh closure per build would make the
+      // listener re-take dispatcher priority above overlays opened later.
+      onBackButtonPressed: _onSystemBack,
       child: scope,
     );
   }

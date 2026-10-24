@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:leak_tracker_flutter_testing/leak_tracker_flutter_testing.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -141,4 +142,84 @@ void main() {
       }
     },
   );
+
+  group('system Back through the router dispatcher', () {
+    late BuildContext sheetContext;
+    late BuildContext dialogContext;
+
+    Future<void> openSheetAndDialog(WidgetTester tester) async {
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, _) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () => unawaited(
+                    showAppSheet<void>(
+                      context: context,
+                      builder: (context) {
+                        sheetContext = context;
+                        return const AppSheetScaffold(
+                          title: 'Sheet',
+                          child: Text('Body'),
+                        );
+                      },
+                    ),
+                  ),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      unawaited(
+        showAppDialog<void>(
+          context: sheetContext,
+          builder: (context) {
+            dialogContext = context;
+            return const AppDialog(title: 'Confirm');
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('closes an open dialog first, then the sheet', (tester) async {
+      await openSheetAndDialog(tester);
+      // The sheet rebuilt when the dialog covered it; Back must still reach
+      // the dialog rather than be swallowed by the sheet.
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('Confirm'), findsNothing);
+      expect(find.text('Body'), findsOneWidget);
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('Body'), findsNothing);
+      expect(find.text('Open'), findsOneWidget);
+    });
+
+    testWidgets('skips a departing dialog and closes the sheet', (
+      tester,
+    ) async {
+      await openSheetAndDialog(tester);
+      Navigator.of(dialogContext).pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(find.text('Confirm'), findsOneWidget, reason: 'still animating');
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('Confirm'), findsNothing);
+      expect(find.text('Body'), findsNothing);
+      expect(find.text('Open'), findsOneWidget);
+    });
+  });
 }
