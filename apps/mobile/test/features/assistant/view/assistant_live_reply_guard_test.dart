@@ -93,12 +93,17 @@ class _Repository extends ReplyRepository {
 
   void acknowledge() {
     final row = sent!.lastWhere((message) => message.role == 'user');
+    final text = row.parts
+        .where((part) => part.type == 'text')
+        .map((part) => part.text ?? '')
+        .join('\n\n')
+        .trim();
     stream.add(
       AssistantJsonStreamEvent({
         'type': 'saved-user-message',
         'messageId': _saved,
         'clientRequestId': row.clientRequestId,
-        'text': _draft,
+        'text': text,
         'message': row.copyWith(id: _saved, isPersisted: true).toJson(),
         'nativeReceipt': {
           'actorId': _actor,
@@ -106,7 +111,7 @@ class _Repository extends ReplyRepository {
           'chatId': _chat,
           'requestId': row.clientRequestId,
           'messageId': _saved,
-          'text': _draft,
+          'text': text,
           'replyToMessageId': row.replyToMessageId,
           'attachments': [
             for (final attachment in sentAttachments)
@@ -376,6 +381,128 @@ void main() {
     expect(h.chat.state.composerAttachments, attachments);
     expect(find.text(_notice), findsOneWidget);
   });
+
+  testWidgets('admitted native ACK and response survive next reply and Live', (
+    tester,
+  ) async {
+    final h = await _mount(tester);
+    final repository = h.repository as _Repository;
+    final composer = _composer(tester);
+    const original = 'Original native question';
+    composer.controller.text = original;
+    var completed = false;
+    final sending = composer.onSend().then((_) => completed = true);
+    for (var i = 0; i < 8 && repository.starts == 0; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(repository.starts, 1);
+    final submitted = repository.sent!.last;
+    expect(submitted.role, 'user');
+    expect(submitted.parts.single.text, original);
+    expect(submitted.replyToMessageId, isNull);
+    expect(repository.sentAttachments, isEmpty);
+    expect(completed, isFalse);
+    repository.stream.add(
+      const AssistantJsonStreamEvent({'type': 'native-dispatch-admitted'}),
+    );
+
+    _bubble(tester).onReply!();
+    await tester.pump();
+    composer.controller.value = const TextEditingValue(
+      text: _draft,
+      selection: TextSelection(baseOffset: 2, extentOffset: 9),
+    );
+    await tester.runAsync(
+      () => h.chat.addComposerAttachments(
+        wsId: _workspace,
+        files: [
+          GalleryPlatformFile(
+            XFile.fromData(Uint8List.fromList([1, 2, 3]), name: 'retained.txt'),
+          ),
+        ],
+        modelId: 'synthetic-model',
+        timezone: 'UTC',
+      ),
+    );
+    await tester.pump();
+    final nextReply = h.chat.state.replyTarget;
+    final nextDraft = composer.controller.value;
+    final nextAttachments = h.chat.state.composerAttachments;
+    expect(nextReply?.id, _answer);
+    expect(nextAttachments.single.isUploaded, isTrue);
+    expect(h.chat.replyBlockedByPendingSubmission, isTrue);
+    final live = h.pageContext.read<AssistantLiveCubit>();
+    _connect(live);
+    await _browseFromLive(tester, h);
+    expect(_bubble(tester).onReply, isNull);
+    expect(completed, isFalse);
+
+    repository.acknowledge();
+    await tester.pump();
+    expect(completed, isTrue);
+    await sending;
+    final saved = h.chat.state.messages.singleWhere((row) => row.id == _saved);
+    expect(saved.isPersisted, isTrue);
+    expect(saved.clientRequestId, submitted.clientRequestId);
+    expect(saved.parts.single.text, original);
+    expect(saved.replyToMessageId, isNull);
+    expect(h.chat.replyBlockedByPendingSubmission, isFalse);
+    repository.stream.add(const AssistantJsonStreamEvent({'type': 'start'}));
+    repository.stream.add(
+      const AssistantJsonStreamEvent({
+        'type': 'text-delta',
+        'id': 'original-response',
+        'delta': 'Original native response',
+      }),
+    );
+    unawaited(repository.stream.close());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(h.chat.state.status, AssistantChatStatus.idle);
+    expect(
+      h.chat.state.messages.last.parts.single.text,
+      'Original native response',
+    );
+    expect(find.text('Original native response'), findsOneWidget);
+    expect(repository.starts, 1);
+    expect(live.state.userDraft, isEmpty);
+    expect(h.chat.state.replyTarget, same(nextReply));
+    expect(composer.controller.value, nextDraft);
+    expect(h.chat.state.composerAttachments, nextAttachments);
+  });
+
+  testWidgets(
+    'reply cancellation during timezone await refuses old submission',
+    (tester) async {
+      final h = await _mount(tester);
+      await _prepareDraft(tester, h);
+      final composer = _composer(tester);
+      final draft = composer.controller.value;
+      final attachments = h.chat.state.composerAttachments;
+      final entered = Completer<void>();
+      final timezone = Completer<String>();
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('flutter_timezone'),
+        (_) {
+          entered.complete();
+          return timezone.future;
+        },
+      );
+      var completed = false;
+      final sending = composer.onSend().then((_) => completed = true);
+      await tester.pump();
+      expect(entered.isCompleted, isTrue);
+      composer.onCancelReply!();
+      timezone.complete('UTC');
+      await tester.pump();
+      expect(completed, isTrue);
+      await sending;
+      expect(h.repository.starts, 0);
+      expect(h.chat.state.replyTarget, isNull);
+      expect(composer.controller.value, draft);
+      expect(h.chat.state.composerAttachments, attachments);
+    },
+  );
 
   for (final actorChange in [false, true]) {
     testWidgets('stale Reply refuses ${actorChange ? 'actor' : 'workspace'} '

@@ -10,6 +10,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
     if (!guard.current) return;
     final shellState = _shellCubit.state;
     final chatState = _chatCubit.state;
+    final submittedReplyId = chatState.replyTarget?.id;
     final liveState = _liveCubit.state;
     final operation = _remoteOperationGuard(wsId);
     final workspaceVersion = _chatCubit.attachmentScopeVersion;
@@ -94,11 +95,11 @@ extension _AssistantPageSubmission on _AssistantPageState {
         isCurrent: () =>
             guard.current &&
             _chatCubit.attachmentScopeVersion == workspaceVersion &&
-            !liveReplyBlocked(),
+            _chatCubit.state.replyTarget?.id == submittedReplyId &&
+            !_shouldSendThroughLive(_chatCubit.state, _liveCubit.state),
         isOperationCurrent: () =>
             operation.current &&
-            _chatCubit.attachmentScopeVersion == workspaceVersion &&
-            !liveReplyBlocked(),
+            _chatCubit.attachmentScopeVersion == workspaceVersion,
       )) {
         if (mounted && guard.current && liveReplyBlocked()) {
           _showInlineNotice(context.l10n.assistantReplyLiveUnavailable);
