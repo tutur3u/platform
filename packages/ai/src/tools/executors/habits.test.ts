@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
 import {
+  buildOperationKey,
   convertWeight,
   getDayWindow,
+  normalizeEntryValues,
+  resolveRequestLocale,
   resolveUserTimezone,
   summarizeWeights,
   toDateKey,
@@ -14,10 +17,10 @@ const api = vi.hoisted(() => ({
   listTrackers: vi.fn(),
   createEntry: vi.fn(),
 }));
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api/habit-trackers', () => ({
   listWorkspaceHabitTrackers: api.listTrackers,
-  createWorkspaceHabitTrackerEntry: api.createEntry,
-  createWorkspaceHabitTracker: vi.fn(),
+  createWorkspaceHabitTrackerEntryWithStatus: api.createEntry,
+  createWorkspaceHabitTrackerWithStatus: vi.fn(),
   listWorkspaceHabitTrackerEntries: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api/client', () => ({
@@ -64,17 +67,60 @@ beforeEach(() => {
       },
     ],
   });
+  const stored = new Map<string, Record<string, unknown>>();
   api.createEntry.mockImplementation(
-    async (_ws: string, _id: string, input: Record<string, unknown>) => ({
-      id: 'entry-1',
-      entry_date: input.entry_date,
-      primary_value: 2,
-      values: input.values,
-    })
+    async (_ws: string, _id: string, input: Record<string, unknown>) => {
+      const key = String(input.idempotency_key ?? `unkeyed-${stored.size}`);
+      const existing = stored.get(key);
+      if (existing) return { entry: existing, replayed: true };
+      const entry = {
+        id: `entry-${stored.size + 1}`,
+        entry_date: input.entry_date,
+        primary_value: 2,
+        values: input.values,
+      };
+      stored.set(key, entry);
+      return { entry, replayed: false };
+    }
   );
 });
 
 describe('habit helpers', () => {
+  it('resolves the user language from the request', () => {
+    expect(resolveRequestLocale(undefined)).toBe('en');
+    expect(
+      resolveRequestLocale(new Headers({ cookie: 'NEXT_LOCALE=vi' }))
+    ).toBe('vi');
+    expect(
+      resolveRequestLocale(
+        new Headers({ 'accept-language': 'vi-VN,vi;q=0.9,en;q=0.8' })
+      )
+    ).toBe('vi');
+    expect(
+      resolveRequestLocale(
+        new Headers({
+          cookie: 'NEXT_LOCALE=en',
+          'accept-language': 'vi-VN',
+        })
+      )
+    ).toBe('en');
+    expect(
+      resolveRequestLocale(new Headers({ 'accept-language': 'ja-JP' }))
+    ).toBe('en');
+  });
+
+  it('derives stable operation keys from normalized input', async () => {
+    const a = await buildOperationKey('habit', [
+      normalizeEntryValues({ b: 2, a: 1 }),
+    ]);
+    const b = await buildOperationKey('habit', [
+      normalizeEntryValues({ a: 1, b: 2 }),
+    ]);
+    expect(a).toBe(b);
+    expect(a).toMatch(/^mira:habit:[0-9a-f]{48}$/);
+    expect(await buildOperationKey('habit', [{ a: 2 }])).not.toBe(a);
+  });
+
   it('converts kg and lb', () => {
     expect(convertWeight(100, 'lb', 'kg')).toBeCloseTo(45.359237);
     expect(convertWeight(45.359237, 'kg', 'lb')).toBeCloseTo(100);
@@ -165,6 +211,38 @@ describe('log_habit_entry', () => {
       success: true,
       tracker: { id: waterId, name: 'Water' },
     });
+  });
+
+  it('stores one entry when the same tool call is retried', async () => {
+    const ctx = context({ chatId: 'chat-1' });
+    const args = { trackerId: waterId, values: { glasses: 1 } };
+    const first = await executeLogHabitEntry(args, ctx, { toolCallId: 'c-1' });
+    const retry = await executeLogHabitEntry(args, ctx, { toolCallId: 'c-1' });
+    expect(first).toMatchObject({ entry: { id: 'entry-1' } });
+    expect(first).not.toHaveProperty('alreadyLogged');
+    expect(retry).toMatchObject({
+      alreadyLogged: true,
+      entry: { id: 'entry-1' },
+    });
+    const keys = api.createEntry.mock.calls.map(
+      (call) => (call[2] as { idempotency_key?: string }).idempotency_key
+    );
+    expect(keys[0]).toMatch(/^mira:habit:[0-9a-f]{48}$/);
+    expect(keys[1]).toBe(keys[0]);
+  });
+
+  it('keeps separate tool calls as separate counter entries', async () => {
+    const ctx = context({ chatId: 'chat-1' });
+    const args = { trackerId: waterId, values: { glasses: 1 } };
+    await executeLogHabitEntry(args, ctx, { toolCallId: 'c-1' });
+    const second = await executeLogHabitEntry(args, ctx, {
+      toolCallId: 'c-2',
+    });
+    expect(second).toMatchObject({ entry: { id: 'entry-2' } });
+    await executeLogHabitEntry(args, ctx);
+    expect(api.createEntry.mock.calls[2]?.[2]).not.toHaveProperty(
+      'idempotency_key'
+    );
   });
 
   it('passes explicit values through for the satellite to sanitise', async () => {

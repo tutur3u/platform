@@ -42107,6 +42107,7 @@ export type Database = {
           entry_date: string;
           entry_kind: string;
           id: string;
+          idempotency_key: string | null;
           note: string | null;
           occurred_at: string;
           primary_value: number | null;
@@ -42123,6 +42124,7 @@ export type Database = {
           entry_date?: string;
           entry_kind?: string;
           id?: string;
+          idempotency_key?: string | null;
           note?: string | null;
           occurred_at?: string;
           primary_value?: number | null;
@@ -42139,6 +42141,7 @@ export type Database = {
           entry_date?: string;
           entry_kind?: string;
           id?: string;
+          idempotency_key?: string | null;
           note?: string | null;
           occurred_at?: string;
           primary_value?: number | null;
@@ -42330,6 +42333,7 @@ export type Database = {
           composer_mode: string;
           created_at: string;
           created_by: string | null;
+          creation_key: string | null;
           description: string | null;
           freeze_allowance: number;
           icon: string;
@@ -42358,6 +42362,7 @@ export type Database = {
           composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
+          creation_key?: string | null;
           description?: string | null;
           freeze_allowance?: number;
           icon?: string;
@@ -42386,6 +42391,7 @@ export type Database = {
           composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
+          creation_key?: string | null;
           description?: string | null;
           freeze_allowance?: number;
           icon?: string;

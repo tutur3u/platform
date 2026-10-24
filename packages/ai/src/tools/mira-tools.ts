@@ -195,7 +195,7 @@ export function createMiraStreamTools(
       ...def,
       execute: async (
         args: Record<string, unknown>,
-        options?: { abortSignal?: AbortSignal }
+        options?: { abortSignal?: AbortSignal; toolCallId?: string }
       ) => {
         const executionCtx =
           name === 'set_workspace_context'

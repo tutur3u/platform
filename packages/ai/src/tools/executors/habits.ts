@@ -1,14 +1,17 @@
 import {
-  createWorkspaceHabitTrackerEntry,
+  createWorkspaceHabitTrackerEntryWithStatus,
   listWorkspaceHabitTrackers,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/habit-trackers';
 import type { HabitTrackerEntryValue } from '@tuturuuu/types/primitives/HabitTracker';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tool-types';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 import {
+  buildOperationKey,
   getTrackerUnit,
+  type HabitToolOptions,
   isTargetMet,
+  normalizeEntryValues,
   resolveHabitApi,
   resolveUserTimezone,
   runHabitEffect,
@@ -89,7 +92,8 @@ export async function executeListHabitTrackers(
 
 export async function executeLogHabitEntry(
   args: Record<string, unknown>,
-  ctx: MiraToolContext
+  ctx: MiraToolContext,
+  options?: HabitToolOptions
 ) {
   const parsed = logEntryArgsSchema.safeParse(args);
   if (!parsed.success)
@@ -128,17 +132,32 @@ export async function executeLogHabitEntry(
       trackerName = tracker.name;
       entryValues = { ...entryValues, [tracker.primary_metric_key]: value };
     }
-    const entry = await createWorkspaceHabitTrackerEntry(
-      wsId,
-      trackerId,
-      {
-        entry_date: toDateKey(occurredAt, timezone),
-        occurred_at: occurredAt.toISOString(),
-        values: entryValues,
-        ...(note ? { note } : {}),
-      },
-      api.options
-    );
+    const entryDate = toDateKey(occurredAt, timezone);
+    // Counters may legitimately repeat the same input, so only a retry of the
+    // same tool call (same id and input) is deduplicated.
+    const idempotencyKey = options?.toolCallId
+      ? await buildOperationKey('habit', [
+          ctx.chatId ?? null,
+          options.toolCallId,
+          trackerId,
+          parsed.data.occurredAt ?? entryDate,
+          normalizeEntryValues(entryValues),
+          note ?? null,
+        ])
+      : undefined;
+    const { entry, replayed } =
+      await createWorkspaceHabitTrackerEntryWithStatus(
+        wsId,
+        trackerId,
+        {
+          entry_date: entryDate,
+          occurred_at: occurredAt.toISOString(),
+          values: entryValues,
+          ...(note ? { note } : {}),
+          ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+        },
+        api.options
+      );
     return {
       success: true,
       workspaceId: wsId,
@@ -149,6 +168,7 @@ export async function executeLogHabitEntry(
         primaryValue: entry.primary_value ?? null,
         values: entry.values,
       },
+      ...(replayed ? { alreadyLogged: true } : {}),
       timezone,
       ...(timezoneAssumed ? { timezoneAssumed: true } : {}),
     };

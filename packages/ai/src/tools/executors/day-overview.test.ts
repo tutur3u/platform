@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
-import { DAY_OVERVIEW_LIMITS, executeGetDayOverview } from './day-overview';
+import {
+  DAY_OVERVIEW_LIMITS,
+  executeGetDayOverview,
+  summarizeDayProgress,
+} from './day-overview';
+import { ENTRY_PAGE_LIMIT } from './habit-helpers';
 import { supabaseStub, trackerFixture } from './habit-test-utils';
 
 const mocks = vi.hoisted(() => ({
@@ -12,7 +17,7 @@ vi.mock('./tasks', () => ({ executeGetMyTasks: mocks.getMyTasks }));
 vi.mock('./helpers/encryption', () => ({
   decryptEventsForTools: async (events: unknown[]) => events,
 }));
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api/habit-trackers', () => ({
   listWorkspaceHabitTrackers: mocks.listTrackers,
   listWorkspaceHabitTrackerEntries: mocks.listEntries,
 }));
@@ -251,5 +256,72 @@ describe('get_day_overview', () => {
     expect(result.tasks.dueOnDay).toHaveLength(DAY_OVERVIEW_LIMITS.tasks);
     expect(result.tasks.counts.dueOnDay).toBe(20);
     expect(result.tasks.truncated).toBe(true);
+  });
+
+  it('reports capped habit history as incomplete, not zero', async () => {
+    // The list is full of newer entries; today's entry is beyond the cap.
+    const others = Array.from({ length: ENTRY_PAGE_LIMIT }, () => ({
+      user_id: 'user-2',
+      entry_date: '2026-10-25',
+      primary_value: 1,
+      values: {},
+    }));
+    mocks.listEntries.mockResolvedValue(others);
+    const result = (await executeGetDayOverview({}, context())) as Record<
+      string,
+      any
+    >;
+    expect(result.habits.trackers[0]).toMatchObject({
+      id: 'water',
+      progress: 'incomplete',
+      dayTotal: null,
+      visibleTotal: 0,
+      visibleEntryCount: 0,
+      met: null,
+    });
+    expect(result.habits.trackers[0]).not.toHaveProperty('entryCount');
+  });
+});
+
+describe('summarizeDayProgress', () => {
+  const entry = (user: string, value: number) => ({
+    user_id: user,
+    entry_date: '2026-10-25',
+    primary_value: value,
+    values: {},
+  });
+
+  it('is exact below the cap', () => {
+    const tracker = trackerFixture({ aggregation_strategy: 'sum' });
+    expect(
+      summarizeDayProgress(
+        tracker,
+        Array.from({ length: ENTRY_PAGE_LIMIT - 1 }, () => entry('user-1', 1)),
+        'user-1',
+        '2026-10-25'
+      )
+    ).toMatchObject({ progress: 'complete', dayTotal: 49, met: false });
+  });
+
+  it('only confirms a met target that hidden entries cannot undo', () => {
+    const full = Array.from({ length: ENTRY_PAGE_LIMIT }, () =>
+      entry('user-1', 80)
+    );
+    expect(
+      summarizeDayProgress(
+        trackerFixture({ aggregation_strategy: 'max', target_value: 70 }),
+        full,
+        'user-1',
+        '2026-10-25'
+      )
+    ).toMatchObject({ progress: 'incomplete', visibleTotal: 80, met: true });
+    expect(
+      summarizeDayProgress(
+        trackerFixture({ aggregation_strategy: 'sum', target_value: 70 }),
+        full,
+        'user-1',
+        '2026-10-25'
+      )
+    ).toMatchObject({ progress: 'incomplete', met: null });
   });
 });

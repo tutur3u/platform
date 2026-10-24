@@ -1,28 +1,31 @@
+import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import {
-  createWorkspaceHabitTracker,
-  createWorkspaceHabitTrackerEntry,
+  createWorkspaceHabitTrackerEntryWithStatus,
+  createWorkspaceHabitTrackerWithStatus,
   listWorkspaceHabitTrackerEntries,
   listWorkspaceHabitTrackers,
-} from '@tuturuuu/internal-api';
-import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
-import type {
-  HabitTracker,
-  HabitTrackerInput,
-} from '@tuturuuu/types/primitives/HabitTracker';
+} from '@tuturuuu/internal-api/habit-trackers';
+import type { HabitTracker } from '@tuturuuu/types/primitives/HabitTracker';
 import dayjs from 'dayjs';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tool-types';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
+import { buildBodyWeightTrackerInput } from './body-weight-template';
 import {
   BODY_WEIGHT_KG_BOUNDS,
+  buildOperationKey,
   convertWeight,
+  ENTRY_PAGE_LIMIT,
   errorMessage,
   getEntryPrimaryValue,
   getTrackerUnit,
+  type HabitLocale,
+  type HabitToolOptions,
   isNotFoundError,
   isWithinBodyWeightBounds,
   normalizeWeightUnit,
   resolveHabitApi,
+  resolveRequestLocale,
   resolveUserTimezone,
   round2,
   runHabitEffect,
@@ -30,9 +33,6 @@ import {
   toDateKey,
   type WeightUnit,
 } from './habit-helpers';
-
-/** Tasks returns at most this many recent entries per tracker. */
-const ENTRY_PAGE_LIMIT = 50;
 
 const logArgsSchema = z.object({
   value: z.number().positive().max(1500),
@@ -51,49 +51,6 @@ type ResolvedTracker = {
   isCurrentWorkspace: boolean;
   created: boolean;
 };
-
-/**
- * Mirrors the Tasks `body_weight` template. The Tasks satellite sanitises and
- * validates the payload, so this stays minimal.
- */
-export function buildBodyWeightTrackerInput(
-  unit: WeightUnit
-): HabitTrackerInput {
-  return {
-    name: 'Body Weight',
-    description:
-      'Log body weight with per-tracker units and a clean daily check-in.',
-    color: 'INDIGO',
-    icon: 'SlidersHorizontal',
-    tracking_mode: 'daily_summary',
-    target_period: 'daily',
-    target_operator: 'gte',
-    target_value: unit === 'lb' ? 154 : 70,
-    primary_metric_key: 'weight',
-    aggregation_strategy: 'max',
-    quick_add_values: [],
-    input_schema: [
-      {
-        key: 'weight',
-        label: 'Body Weight',
-        type: 'number',
-        unit,
-        required: true,
-      },
-      { key: 'note', label: 'Note', type: 'text' },
-    ],
-    freeze_allowance: 1,
-    recovery_window_periods: 1,
-    use_case: 'body_weight',
-    template_category: 'health',
-    composer_mode: 'measurement',
-    composer_config: {
-      unit,
-      supported_units: ['kg', 'lb'],
-      progress_variant: 'ring',
-    },
-  };
-}
 
 async function findBodyWeightTracker(
   wsId: string,
@@ -186,6 +143,7 @@ export async function findBodyWeightTrackerForUser(
 export async function createPrivateBodyWeightTracker(
   missing: MissingTracker,
   unit: WeightUnit,
+  locale: HabitLocale,
   options: InternalApiClientOptions
 ): Promise<ResolvedTracker | { error: string }> {
   if (!missing.personalWsId)
@@ -193,9 +151,10 @@ export async function createPrivateBodyWeightTracker(
       error:
         'No personal workspace was found, so no private Body Weight tracker could be created. Nothing was logged.',
     };
-  const tracker = await createWorkspaceHabitTracker(
+  // The creation key makes concurrent first logs converge on one tracker.
+  const { tracker, created } = await createWorkspaceHabitTrackerWithStatus(
     missing.personalWsId,
-    buildBodyWeightTrackerInput(unit),
+    buildBodyWeightTrackerInput(unit, locale),
     options
   );
   return {
@@ -203,7 +162,7 @@ export async function createPrivateBodyWeightTracker(
     workspaceId: missing.personalWsId,
     personal: true,
     isCurrentWorkspace: missing.currentIsPersonal,
-    created: true,
+    created,
   };
 }
 
@@ -217,7 +176,8 @@ function describeWorkspace(resolved: ResolvedTracker) {
 
 export async function executeLogBodyWeight(
   args: Record<string, unknown>,
-  ctx: MiraToolContext
+  ctx: MiraToolContext,
+  options?: HabitToolOptions
 ) {
   const parsed = logArgsSchema.safeParse(args);
   if (!parsed.success)
@@ -245,6 +205,7 @@ export async function executeLogBodyWeight(
       const created = await createPrivateBodyWeightTracker(
         found,
         createUnit,
+        resolveRequestLocale(ctx.requestHeaders),
         api.options
       );
       if ('error' in created) return { success: false, error: created.error };
@@ -264,16 +225,29 @@ export async function executeLogBodyWeight(
       return { ...outOfBounds, trackerCreated: resolved.created };
     const storedUnit = trackerUnit;
     const storedValue = round2(convertWeight(value, unit, storedUnit));
-    let entry: Awaited<ReturnType<typeof createWorkspaceHabitTrackerEntry>>;
+    const entryDate = toDateKey(occurredAt, timezone);
+    // Same conversation, day, value and note: a retry returns the stored entry.
+    const idempotencyKey = await buildOperationKey('weight', [
+      ctx.chatId ?? options?.toolCallId ?? null,
+      resolved.tracker.id,
+      entryDate,
+      storedValue,
+      storedUnit,
+      note ?? null,
+    ]);
+    let written: Awaited<
+      ReturnType<typeof createWorkspaceHabitTrackerEntryWithStatus>
+    >;
     try {
-      entry = await createWorkspaceHabitTrackerEntry(
+      written = await createWorkspaceHabitTrackerEntryWithStatus(
         resolved.workspaceId,
         resolved.tracker.id,
         {
-          entry_date: toDateKey(occurredAt, timezone),
+          entry_date: entryDate,
           occurred_at: occurredAt.toISOString(),
           values: { [resolved.tracker.primary_metric_key]: storedValue },
           ...(note ? { note } : {}),
+          idempotency_key: idempotencyKey,
         },
         api.options
       );
@@ -296,11 +270,12 @@ export async function executeLogBodyWeight(
       },
       workspace: describeWorkspace(resolved),
       entry: {
-        id: entry.id,
-        date: entry.entry_date,
+        id: written.entry.id,
+        date: written.entry.entry_date,
         value: storedValue,
         unit: storedUnit,
       },
+      ...(written.replayed ? { alreadyLogged: true } : {}),
       ...(storedUnit !== unit ? { convertedFrom: { value, unit } } : {}),
       timezone,
       ...(timezoneAssumed ? { timezoneAssumed: true } : {}),

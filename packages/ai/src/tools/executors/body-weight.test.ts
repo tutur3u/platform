@@ -16,11 +16,11 @@ const api = vi.hoisted(() => ({
     forwarded: true,
   })),
 }));
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api/habit-trackers', () => ({
   listWorkspaceHabitTrackers: api.listTrackers,
-  createWorkspaceHabitTracker: api.createTracker,
+  createWorkspaceHabitTrackerWithStatus: api.createTracker,
   listWorkspaceHabitTrackerEntries: api.listEntries,
-  createWorkspaceHabitTrackerEntry: api.createEntry,
+  createWorkspaceHabitTrackerEntryWithStatus: api.createEntry,
 }));
 vi.mock('@tuturuuu/internal-api/client', () => ({
   withForwardedInternalApiAuth: api.forward,
@@ -46,21 +46,44 @@ const trackersIn = (
     trackers: (byWs[wsId] ?? []).map((tracker) => ({ tracker })),
   }));
 
+// Emulates the Tasks API keyed writes backed by the partial unique indexes.
+let storedTrackers: Map<string, ReturnType<typeof trackerFixture>>;
+let storedEntries: Map<string, { id: string; entry_date: string }>;
 beforeEach(() => {
   vi.clearAllMocks();
+  storedTrackers = new Map();
+  storedEntries = new Map();
   api.createEntry.mockImplementation(
-    async (_ws: string, _id: string, input: { entry_date: string }) => ({
-      id: 'entry-1',
-      entry_date: input.entry_date,
-    })
+    async (
+      _ws: string,
+      trackerId: string,
+      input: { entry_date: string; idempotency_key?: string }
+    ) => {
+      const key = `${trackerId}:${input.idempotency_key ?? storedEntries.size}`;
+      const existing = storedEntries.get(key);
+      if (existing) return { entry: existing, replayed: true };
+      const entry = {
+        id: `entry-${storedEntries.size + 1}`,
+        entry_date: input.entry_date,
+      };
+      storedEntries.set(key, entry);
+      return { entry, replayed: false };
+    }
   );
   api.createTracker.mockImplementation(
-    async (wsId: string, input: Record<string, unknown>) =>
-      trackerFixture({
+    async (wsId: string, input: Record<string, unknown>) => {
+      const key = `${wsId}:${String(input.creation_key)}`;
+      const existing = storedTrackers.get(key);
+      if (existing) return { tracker: existing, created: false };
+      const tracker = trackerFixture({
         id: '00000000-0000-4000-8000-0000000000aa',
         ws_id: wsId,
+        name: String(input.name),
         composer_config: input.composer_config as never,
-      })
+      });
+      storedTrackers.set(key, tracker);
+      return { tracker, created: true };
+    }
   );
 });
 
@@ -195,6 +218,93 @@ describe('log_body_weight', () => {
         isCurrentWorkspace: false,
       },
       error: 'Entry rejected',
+    });
+  });
+
+  it('stores one entry when the same log is retried', async () => {
+    trackersIn({ 'team-ws': [trackerFixture()] });
+    const ctx = context({ chatId: 'chat-1' });
+    const first = await executeLogBodyWeight(
+      { value: 70.5, note: 'morning' },
+      ctx,
+      { toolCallId: 'call-1' }
+    );
+    const retry = await executeLogBodyWeight(
+      { value: 70.5, note: 'morning' },
+      ctx,
+      { toolCallId: 'call-2' }
+    );
+    expect(storedEntries.size).toBe(1);
+    expect(first).toMatchObject({ entry: { id: 'entry-1' } });
+    expect(retry).toMatchObject({
+      success: true,
+      alreadyLogged: true,
+      entry: { id: 'entry-1' },
+    });
+    const keys = api.createEntry.mock.calls.map(
+      (call) => (call[2] as { idempotency_key: string }).idempotency_key
+    );
+    expect(keys[0]).toMatch(/^mira:weight:[0-9a-f]{48}$/);
+    expect(keys[1]).toBe(keys[0]);
+  });
+
+  it('keeps different weights on the same day as separate operations', async () => {
+    trackersIn({ 'team-ws': [trackerFixture()] });
+    const ctx = context({ chatId: 'chat-1' });
+    await executeLogBodyWeight({ value: 70 }, ctx);
+    await executeLogBodyWeight({ value: 71 }, ctx);
+    const [first, second] = api.createEntry.mock.calls.map(
+      (call) => (call[2] as { idempotency_key: string }).idempotency_key
+    );
+    expect(first).not.toBe(second);
+  });
+
+  it('creates one tracker when first logs race', async () => {
+    trackersIn({});
+    const [a, b] = await Promise.all([
+      executeLogBodyWeight({ value: 70 }, context({ chatId: 'chat-1' })),
+      executeLogBodyWeight({ value: 70 }, context({ chatId: 'chat-1' })),
+    ]);
+    expect(storedTrackers.size).toBe(1);
+    expect(api.createTracker).toHaveBeenCalledTimes(2);
+    for (const call of api.createTracker.mock.calls)
+      expect(call[1]).toMatchObject({ creation_key: 'mira:body_weight' });
+    expect(
+      [a, b].map(
+        (result) => (result as { trackerCreated: boolean }).trackerCreated
+      )
+    ).toEqual([true, false]);
+    expect(storedEntries.size).toBe(1);
+  });
+
+  it('names a new tracker in the user language', async () => {
+    trackersIn({});
+    await executeLogBodyWeight(
+      { value: 70 },
+      context({
+        requestHeaders: new Headers({ cookie: 'theme=dark; NEXT_LOCALE=vi' }),
+      })
+    );
+    expect(api.createTracker.mock.calls[0]?.[1]).toMatchObject({
+      name: 'Cân nặng',
+      input_schema: [
+        expect.objectContaining({ key: 'weight', label: 'Cân nặng' }),
+        expect.objectContaining({ key: 'note', label: 'Ghi chú' }),
+      ],
+    });
+  });
+
+  it('names a new tracker in English by default', async () => {
+    trackersIn({});
+    await executeLogBodyWeight(
+      { value: 70 },
+      context({
+        requestHeaders: new Headers({ 'accept-language': 'fr-FR,de;q=0.8' }),
+      })
+    );
+    expect(api.createTracker.mock.calls[0]?.[1]).toMatchObject({
+      name: 'Body Weight',
+      description: expect.stringMatching(/^Log body weight/),
     });
   });
 

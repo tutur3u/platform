@@ -122,7 +122,7 @@ import type { MiraToolContext } from './mira-tool-types';
 type ToolHandler = (
   args: Record<string, unknown>,
   ctx: MiraToolContext,
-  options?: { abortSignal?: AbortSignal }
+  options?: { abortSignal?: AbortSignal; toolCallId?: string }
 ) => Promise<unknown> | unknown;
 
 const toolHandlers = {
@@ -258,7 +258,7 @@ export async function executeMiraTool(
   toolName: string,
   args: Record<string, unknown>,
   ctx: MiraToolContext,
-  options?: { abortSignal?: AbortSignal }
+  options?: { abortSignal?: AbortSignal; toolCallId?: string }
 ): Promise<unknown> {
   if (toolName === 'render_ui') {
     if (!isRenderableRenderUiSpec(args)) {

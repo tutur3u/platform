@@ -51,7 +51,43 @@ creates a tracker.
 
 The new tracker follows the Tasks `body_weight` template: a daily summary,
 maximum aggregation, `weight` as the primary metric and `kg`/`lb` as supported
-units. Its unit is the logged unit, or kg when none is given.
+units. Its unit is the logged unit, or kg when none is given. Its name,
+description and field labels use the user's language: Vietnamese ("Cân nặng")
+when the forwarded `NEXT_LOCALE` cookie or, failing that, `Accept-Language`
+prefers Vietnamese, otherwise English. Mobile clients currently send neither,
+so trackers created from mobile are named in English.
+
+## Idempotent writes
+
+Retries and concurrent requests must not duplicate habit data. Two opt-in keys,
+added by migration `20261025034500_add_habit_tracker_idempotency_keys`, enforce
+this in the database:
+
+- **Tracker `creation_key`.** A partial unique index allows one active,
+  unarchived tracker per (workspace, creator, key). Mira creates its Body Weight
+  tracker with the key `mira:body_weight`, so two concurrent first logs converge
+  on one tracker. The Tasks API answers a repeat with the existing tracker and
+  `created: false` (HTTP 200); only the request that inserted it reports
+  `trackerCreated: true`. Archiving or deactivating the tracker releases the key.
+- **Entry `idempotency_key`.** A partial unique index allows one entry per
+  (tracker, member, key). The Tasks entries API returns the stored entry with
+  `replayed: true` (HTTP 200) instead of writing again, and Mira reports
+  `alreadyLogged: true`.
+
+Mira derives entry keys by hashing the operation scope and normalized input:
+
+- **Body weight:** the conversation (or tool call when there is no
+  conversation), tracker, day, stored value, unit and note. Re-logging the same
+  weight on the same day in a conversation returns the first entry. A
+  different value is a new operation.
+- **Generic entries:** the tool call ID plus tracker, time, values and note.
+  Counters legitimately repeat identical input, so only a retry of the same tool
+  call is deduplicated. Without a tool call ID, no key is sent.
+
+Both columns are new and nullable, so existing rows, including duplicate
+trackers already in the data, keep `NULL` keys and cannot violate the indexes.
+UI writes send no keys and behave as before. The Tasks API ignores keys while
+the columns are missing, so app and migration rollout order does not matter.
 
 ## Units, bounds and dates
 
@@ -83,8 +119,16 @@ only when every section fails. No section is filled with guessed data.
 | --- | --- | --- |
 | `tasks` | the `get_my_tasks` feed, re-bucketed into `dueOnDay` and `overdue` (due before the day and still open) | 15 tasks total, with `truncated` and `mayBeIncomplete` flags |
 | `calendar` | workspace events overlapping the day, decrypted like `get_upcoming_events` | 20 events |
-| `habits` | active trackers with the caller's aggregate for that date (`dayTotal`, and `met` for daily targets) | 10 trackers |
+| `habits` | active trackers with the caller's aggregate for that date (`dayTotal`, and `met` for daily targets); see below when history is capped | 10 trackers |
 | `timer` | the caller's running session in the workspace, if any | 1 session |
+
+The Tasks entry list holds only the 50 most recent entries per tracker across all
+members. When a tracker's list is full, entries for the day may be hidden, so
+the tracker reports `progress: "incomplete"`, `dayTotal: null` and the
+`visibleTotal` it could see, never a false zero. `met` is `true` only when the
+visible entries already prove a `gte` target under an aggregation that hidden
+entries cannot lower (`max`, `count_entries`, `boolean_any`); otherwise it is
+`null`. Below the cap, progress is `"complete"` and exact.
 
 The calendar section requires `manage_calendar`, like `get_upcoming_events`. When
 the session cannot verify that permission, the section fails closed.
@@ -93,11 +137,20 @@ the session cannot verify that permission, the section fails closed.
 
 - `packages/ai/src/tools/executors/body-weight.test.ts`: forwarded auth, the
   missing-header result, find vs create, personal-workspace creation from a
-  team workspace, no-personal-workspace refusal, unit conversion, bounds and the
-  history summary.
+  team workspace, no-personal-workspace refusal, a retried log storing one
+  entry, racing first logs creating one tracker, Vietnamese and English tracker
+  labels, unit conversion, bounds and the history summary.
 - `packages/ai/src/tools/executors/habits.test.ts`: conversion, Ho Chi Minh
-  City day boundaries, UTC fallback, list mapping and generic entry logging.
+  City day boundaries, UTC fallback, locale resolution, stable operation keys,
+  list mapping, generic entry logging and a retried tool call storing one
+  entry.
 - `packages/ai/src/tools/executors/day-overview.test.ts`: timezone bucketing,
-  per-section partial failure, calendar fail-closed, caps and date validation.
+  per-section partial failure, calendar fail-closed, caps, date validation and
+  capped habit history reported as incomplete instead of zero.
+- `apps/tasks/src/lib/habit-trackers/writes.test.ts`: keyed tracker and entry
+  replay, unique-violation races and the pre-migration fallback.
+- `apps/database/supabase/tests/habit-tracker-idempotency.sql`: the partial
+  unique indexes, key release on archive or deactivation, legacy duplicates and
+  key format checks.
 - `packages/ai/src/tools/mira-tool-discovery.test.ts`: English and Vietnamese
   discovery of the health and planning tools.

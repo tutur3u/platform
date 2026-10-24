@@ -1,13 +1,18 @@
 import {
   listWorkspaceHabitTrackerEntries,
   listWorkspaceHabitTrackers,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/habit-trackers';
+import type {
+  HabitTracker,
+  HabitTrackerEntry,
+} from '@tuturuuu/types/primitives/HabitTracker';
 import { Effect } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tool-types';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 import {
   aggregateDayValue,
+  ENTRY_PAGE_LIMIT,
   errorMessage,
   formatInTimezone,
   getDayWindow,
@@ -145,6 +150,50 @@ async function loadCalendar({ ctx, wsId, timezone, start, end }: DayContext) {
   };
 }
 
+/** Aggregates where hidden entries can only raise the total. */
+const MONOTONIC_STRATEGIES = new Set(['max', 'count_entries', 'boolean_any']);
+
+/**
+ * The Tasks entry list holds only the most recent entries across all members.
+ * When it is full, entries for the day may be missing, so progress is reported
+ * as incomplete rather than a false zero.
+ */
+export function summarizeDayProgress(
+  tracker: HabitTracker,
+  entries: Array<
+    Pick<
+      HabitTrackerEntry,
+      'user_id' | 'entry_date' | 'primary_value' | 'values'
+    >
+  >,
+  userId: string,
+  dateKey: string
+) {
+  const mine = entries.filter(
+    (entry) => entry.user_id === userId && entry.entry_date === dateKey
+  );
+  const total = aggregateDayValue(tracker, mine);
+  const daily = tracker.target_period === 'daily';
+  if (entries.length < ENTRY_PAGE_LIMIT)
+    return {
+      progress: 'complete' as const,
+      dayTotal: total,
+      entryCount: mine.length,
+      ...(daily ? { met: isTargetMet(tracker, total) } : {}),
+    };
+  const provablyMet =
+    tracker.target_operator === 'gte' &&
+    MONOTONIC_STRATEGIES.has(tracker.aggregation_strategy) &&
+    total >= tracker.target_value;
+  return {
+    progress: 'incomplete' as const,
+    dayTotal: null,
+    visibleTotal: total,
+    visibleEntryCount: mine.length,
+    ...(daily ? { met: provablyMet ? true : null } : {}),
+  };
+}
+
 async function loadHabits({ ctx, wsId, dateKey }: DayContext) {
   const api = resolveHabitApi(ctx);
   if (!api.ok) throw new Error(api.result.error);
@@ -161,29 +210,19 @@ async function loadHabits({ ctx, wsId, dateKey }: DayContext) {
     Effect.forEach(
       shown,
       (tracker) =>
-        Effect.tryPromise(() =>
-          listWorkspaceHabitTrackerEntries(wsId, tracker.id, api.options)
+        Effect.tryPromise(
+          (): Promise<HabitTrackerEntry[]> =>
+            listWorkspaceHabitTrackerEntries(wsId, tracker.id, api.options)
         ).pipe(
-          Effect.map((entries) => {
-            const mine = entries.filter(
-              (entry) =>
-                entry.user_id === ctx.userId && entry.entry_date === dateKey
-            );
-            const total = aggregateDayValue(tracker, mine);
-            return {
-              id: tracker.id,
-              name: tracker.name,
-              useCase: tracker.use_case ?? 'generic',
-              unit: getTrackerUnit(tracker),
-              targetPeriod: tracker.target_period,
-              target: tracker.target_value,
-              dayTotal: total,
-              entryCount: mine.length,
-              ...(tracker.target_period === 'daily'
-                ? { met: isTargetMet(tracker, total) }
-                : {}),
-            };
-          }),
+          Effect.map((entries) => ({
+            id: tracker.id,
+            name: tracker.name,
+            useCase: tracker.use_case ?? 'generic',
+            unit: getTrackerUnit(tracker),
+            targetPeriod: tracker.target_period,
+            target: tracker.target_value,
+            ...summarizeDayProgress(tracker, entries, ctx.userId, dateKey),
+          })),
           Effect.catchAll(() =>
             Effect.succeed({
               id: tracker.id,

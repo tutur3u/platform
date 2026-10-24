@@ -17,6 +17,8 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export const KG_PER_LB = 0.45359237;
+/** The Tasks entry list returns at most this many recent entries per tracker. */
+export const ENTRY_PAGE_LIMIT = 50;
 export const BODY_WEIGHT_KG_BOUNDS = { min: 2, max: 650 } as const;
 
 export type WeightUnit = 'kg' | 'lb';
@@ -218,4 +220,51 @@ export function runHabitEffect<T>(task: () => Promise<T>, fallback: string) {
       )
     )
   );
+}
+
+/** Execution options the AI SDK and the Live bridge pass to tool handlers. */
+export type HabitToolOptions = { toolCallId?: string };
+
+/**
+ * Durable operation key for idempotent habit writes: the same scope and
+ * normalized input always produce the same key, which the Tasks entries API
+ * honours by returning the stored entry instead of writing again.
+ */
+export async function buildOperationKey(scope: string, parts: unknown[]) {
+  const data = new TextEncoder().encode(JSON.stringify([scope, ...parts]));
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const hex = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
+  return `mira:${scope}:${hex.slice(0, 48)}`;
+}
+
+/** Key-sorted pairs so equivalent value objects hash identically. */
+export function normalizeEntryValues(values: Record<string, unknown>) {
+  return Object.keys(values)
+    .sort()
+    .map((key) => [key, values[key]]);
+}
+
+export type HabitLocale = 'en' | 'vi';
+
+/**
+ * Resolves the caller's language from the forwarded request: the web
+ * `NEXT_LOCALE` preference cookie first, then `Accept-Language`, else English.
+ */
+export function resolveRequestLocale(
+  headers: Pick<Headers, 'get'> | undefined
+): HabitLocale {
+  const cookie = headers?.get('cookie') ?? '';
+  const preferred = /(?:^|;\s*)NEXT_LOCALE=([^;]+)/
+    .exec(cookie)?.[1]
+    ?.trim()
+    .toLowerCase();
+  if (preferred === 'vi' || preferred === 'en') return preferred;
+  for (const part of (headers?.get('accept-language') ?? '').split(',')) {
+    const tag = part.split(';')[0]?.trim().toLowerCase();
+    if (tag?.startsWith('vi')) return 'vi';
+    if (tag?.startsWith('en')) return 'en';
+  }
+  return 'en';
 }
