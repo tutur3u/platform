@@ -62,6 +62,9 @@ for roles, independent review, publication, receipts and retirement.
   stop fence. Verify operation-count and failure/restart regressions; ingress rate
   limits, billing alerts and per-invocation CPU caps are not total-spend caps.
   Record service-specific cost/stop evidence in the adoption guidance.
+- Put new crons, queues, schedulers and heavy backend work on Cloudflare, not Vercel
+  Cron, Next `after()`, pg_cron, Edge Functions or Trigger.dev; see the shrink-only
+  [ownership guard](apps/docs/build/devops/cloudflare-backend-ownership.mdx).
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
