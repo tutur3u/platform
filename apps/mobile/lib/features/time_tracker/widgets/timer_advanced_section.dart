@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -106,7 +107,7 @@ class _TaskLinkField extends StatelessWidget {
                           ),
                           const shad.Gap(8),
                           Icon(
-                            shad.LucideIcons.chevronsUpDown,
+                            LucideIcons.chevronsUpDown,
                             size: 14,
                             color: colorScheme.mutedForeground,
                           ),
@@ -207,7 +208,7 @@ class _ClearButton extends StatelessWidget {
           border: Border(left: BorderSide(color: colorScheme.border)),
         ),
         child: Icon(
-          shad.LucideIcons.x,
+          LucideIcons.x,
           size: 14,
           color: colorScheme.mutedForeground,
         ),
@@ -269,7 +270,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
             child: Row(
               children: [
                 Icon(
-                  shad.LucideIcons.settings2,
+                  LucideIcons.settings2,
                   size: 14,
                   color: colorScheme.mutedForeground,
                 ),
@@ -286,7 +287,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                   turns: _expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
-                    shad.LucideIcons.chevronDown,
+                    LucideIcons.chevronDown,
                     size: 14,
                     color: colorScheme.mutedForeground,
                   ),

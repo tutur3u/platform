@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -217,7 +218,7 @@ class SettingsTile extends StatelessWidget {
                                       ? SizedBox(
                                           height: 44,
                                           child: Icon(
-                                            shad.LucideIcons.chevronRight,
+                                            LucideIcons.chevronRight,
                                             size: 17,
                                             color: muted,
                                           ),

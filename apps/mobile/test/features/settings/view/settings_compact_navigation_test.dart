@@ -17,6 +17,7 @@ import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/ui/components/app_option_tile.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';

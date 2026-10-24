@@ -9,6 +9,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
@@ -352,7 +353,7 @@ class _RequestsViewState extends State<_RequestsView> {
     return [
       ShellActionSpec(
         id: 'requests-filter',
-        icon: shad.LucideIcons.filter,
+        icon: LucideIcons.filter,
         tooltip: l10n.timerRequestsFilterTitle,
         highlighted: hasActiveFilters(
           selectedFilter: _selectedFilter,
@@ -365,7 +366,7 @@ class _RequestsViewState extends State<_RequestsView> {
       if (showSettingsAction)
         ShellActionSpec(
           id: 'requests-settings',
-          icon: shad.LucideIcons.settings2,
+          icon: LucideIcons.settings2,
           tooltip: l10n.settingsTitle,
           enabled:
               _hasResolvedPermissions &&
@@ -485,7 +486,7 @@ class _RequestsViewState extends State<_RequestsView> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                shad.LucideIcons.circleAlert,
+                                LucideIcons.circleAlert,
                                 size: 48,
                                 color: shad.Theme.of(
                                   context,

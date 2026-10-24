@@ -3,8 +3,6 @@
 # `node scripts/check-mobile-shadcn-imports.js --prune` does it for you.
 lib/app/view/app.dart
 lib/bootstrap.dart
-lib/core/icons/platform_icon.dart
-lib/core/icons/platform_icon_data.dart
 lib/core/responsive/adaptive_sheet.dart
 lib/core/theme/app_theme.dart
 lib/core/theme/appearance/accessible_destructive_button.dart
@@ -16,7 +14,6 @@ lib/core/widgets/shadcn_localizations_fallback.dart
 lib/core/widgets/shadcn_material_bridge.dart
 lib/counter/view/counter_page.dart
 lib/features/app_version/view/app_version_gate.dart
-lib/features/apps/registry/app_registry.dart
 lib/features/assistant/view/assistant_page.dart
 lib/features/assistant/widgets/assistant_composer_launcher.dart
 lib/features/assistant/widgets/assistant_local_status_sheet.dart
@@ -65,7 +62,6 @@ lib/features/finance/widgets/wallet_checkpoint_ui.dart
 lib/features/finance/widgets/wallet_dialog.dart
 lib/features/finance/widgets/wallet_image_picker_sheet.dart
 lib/features/finance/widgets/wallet_visual_avatar.dart
-lib/features/habits/habit_tracker_presentation.dart
 lib/features/habits/view/habits_library_section.dart
 lib/features/habits/view/habits_page.dart
 lib/features/habits/view/habits_page_chrome.dart
@@ -137,9 +133,6 @@ lib/features/settings/view/appearance/appearance_page.dart
 lib/features/settings/view/appearance/appearance_pickers.dart
 lib/features/settings/view/appearance/appearance_preview.dart
 lib/features/settings/view/appearance/appearance_theme_gallery.dart
-lib/features/settings/view/link_browser_settings_tile.dart
-lib/features/settings/view/offline_preparation_section.dart
-lib/features/settings/view/product_settings_registry.dart
 lib/features/settings/view/release_notes_page.dart
 lib/features/settings/view/settings_dialogs.dart
 lib/features/settings/view/settings_group.dart
@@ -155,7 +148,6 @@ lib/features/settings/view/settings_workspace_members_page.dart
 lib/features/settings/view/settings_workspace_page.dart
 lib/features/settings/view/settings_workspace_roles_page.dart
 lib/features/settings/view/settings_workspace_secrets_page.dart
-lib/features/settings/view/timezone_settings_tile.dart
 lib/features/settings/view/workspace_properties_dialog.dart
 lib/features/shell/view/account_presentation.dart
 lib/features/shell/view/account_switcher_sheet.dart
@@ -228,7 +220,6 @@ lib/features/time_tracker/widgets/stats_cards.dart
 lib/features/time_tracker/widgets/stats_tab.dart
 lib/features/time_tracker/widgets/task_link_picker_sheet.dart
 lib/features/time_tracker/widgets/threshold_settings_dialog.dart
-lib/features/time_tracker/widgets/time_tracker_add_entry_fab.dart
 lib/features/time_tracker/widgets/time_tracker_filter_sheet.dart
 lib/features/time_tracker/widgets/time_tracker_goals/goal_card.dart
 lib/features/time_tracker/widgets/time_tracker_goals/goal_detail_sheet.dart
@@ -243,7 +234,6 @@ lib/features/time_tracker/widgets/timer_tab.dart
 lib/features/time_tracker/widgets/workspace_stats_tab.dart
 lib/features/workspace/view/workspace_select_page.dart
 lib/features/workspace/widgets/create_workspace_dialog.dart
-lib/features/workspace/widgets/hidden_workspaces_settings_row.dart
 lib/features/workspace/widgets/workspace_avatar.dart
 lib/features/workspace/widgets/workspace_picker_sheet.dart
 lib/features/workspace/widgets/workspace_tier_badge.dart

@@ -304,7 +304,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                   onPressed: onPrevMonth,
                   density: shad.ButtonDensity.icon,
                   child: Icon(
-                    shad.LucideIcons.chevronLeft,
+                    LucideIcons.chevronLeft,
                     size: 16,
                     color: theme.colorScheme.mutedForeground,
                   ),
@@ -351,7 +351,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                   onPressed: onNextMonth,
                   density: shad.ButtonDensity.icon,
                   child: Icon(
-                    shad.LucideIcons.chevronRight,
+                    LucideIcons.chevronRight,
                     size: 16,
                     color: theme.colorScheme.mutedForeground,
                   ),
