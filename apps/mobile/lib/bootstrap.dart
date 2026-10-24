@@ -17,6 +17,7 @@ import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/icons/lucide_licenses.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
@@ -55,6 +56,7 @@ Future<void> bootstrap(
   builder,
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerLucideLicenses();
   ApiConfig.configure(appFlavor);
   if (Platform.isAndroid || Platform.isIOS) {
     // Restore public model jobs without blocking authenticated app startup.

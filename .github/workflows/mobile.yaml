@@ -14,6 +14,8 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - "scripts/mobile-lucide/**"
+      - "scripts/check-mobile-lucide-sync.js"
       - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
     paths:
@@ -22,6 +24,8 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - "scripts/mobile-lucide/**"
+      - "scripts/check-mobile-lucide-sync.js"
       - ".github/actions/setup-flutter-with-cache/**"
 
 permissions:
@@ -347,6 +351,9 @@ jobs:
 
       - name: 🕵️ Analyze
         run: flutter analyze lib test
+
+      - name: 🔣 Lucide icons match the web
+        run: node ../../scripts/check-mobile-lucide-sync.js
 
       - name: ✅ Bloc Lint
         run: |

@@ -1,0 +1,58 @@
+{
+  "generator": "scripts/mobile-lucide/generate.mjs",
+  "glyphGrid": 24,
+  "strokeWidth": 2,
+  "unitsPerEm": 960,
+  "sets": {
+    "base": {
+      "package": "lucide-react",
+      "version": "1.61.0",
+      "integrity": "sha512-v2SQPPPNjnr+BlhL9Spuzmo5yR+hLkftfuE4E3jaxdNPgSH0hJKPcLJBP7yAta87jQNPsSERS59PJjCJ/CorBA==",
+      "icons": 1903,
+      "aliases": 264,
+      "skippedAliases": [
+        {
+          "alias": "arrow-down-01",
+          "target": "arrow-down-0-1",
+          "reason": "same Dart name"
+        },
+        {
+          "alias": "arrow-down-10",
+          "target": "arrow-down-1-0",
+          "reason": "same Dart name"
+        },
+        {
+          "alias": "arrow-up-01",
+          "target": "arrow-up-0-1",
+          "reason": "same Dart name"
+        },
+        {
+          "alias": "arrow-up-10",
+          "target": "arrow-up-1-0",
+          "reason": "same Dart name"
+        }
+      ],
+      "maxParityMismatch": 0.00165,
+      "worstIcon": "waves-arrow-down"
+    },
+    "lab": {
+      "package": "@lucide/lab",
+      "version": "0.7.0",
+      "integrity": "sha512-Cy4z/LUtre/XnnWTIRfgAxSB2+OGF4oqZczgYr05iRa7ecNtDKVDmTbPc4Ak8LkJYj7jGGN+AfkR9MYgXmdRRA==",
+      "icons": 357,
+      "aliases": 0,
+      "skippedAliases": [],
+      "maxParityMismatch": 0.0015,
+      "worstIcon": "waves-birds"
+    }
+  },
+  "files": {
+    "assets/fonts/lucide/LucideIcons.otf": "f9ab1fcbb0314ad8936a5ca14fcba75df674fe0c4025751b613374306678b5bd",
+    "lib/core/ui/icons/generated/lucide_icons.g.dart": "d376aa5ad9775febcba860b06db4dbda8b0f40607b751ac5d76fd20dec9642d0",
+    "assets/fonts/lucide/LICENSE-lucide.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+    "assets/fonts/lucide/LucideLabIcons.otf": "410c7ec6d805a908becd06a69e1a023d2a3d2ce782ef48af0911b21fc172fbf5",
+    "lib/core/ui/icons/generated/lucide_lab_icons.g.dart": "4a8afad97d4d7c77c2cd447a3a4d5aecf5e0ae5724221561ed49119b345b258b",
+    "assets/fonts/lucide/LICENSE-lucide-lab.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+    "test/fixtures/lucide/parity_samples.json": "b994e0ee68890e3fb54d2470cc2015b6c9d37ddcbdf2010dcc49c68dd26101f6"
+  }
+}

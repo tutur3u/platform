@@ -130,6 +130,7 @@
     "check:backend": "node scripts/paused-runtimes.js migration",
     "check:mobile": "node scripts/check-mobile.js",
     "check:mobile-api-mappings": "node scripts/check-mobile-api-mappings.js",
+    "check:mobile-lucide": "node scripts/check-mobile-lucide-sync.js",
     "rust-cache": "node scripts/rust-cache.js",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "dev:mobile:prod": "cd apps/mobile && flutter run --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
