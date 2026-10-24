@@ -4,9 +4,6 @@
   "workspaces": {
     "": {
       "name": "tutur3u",
-      "dependencies": {
-        "@tuturuuu/email-service": "workspace:*",
-      },
       "devDependencies": {
         "@babel/parser": "7.29.9",
         "@biomejs/biome": "^2.5.13",
