@@ -1,60 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
-const _page = '/page';
-
-/// A page on a nested navigator, as in the shell, with its own chrome action.
-class _Page extends StatelessWidget {
-  const _Page({required this.open});
-
-  final void Function(BuildContext context) open;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: TextButton(
-      onPressed: () => open(context),
-      child: const Text('Open'),
-    ),
-  );
-}
-
-Future<ShellChromeActionsCubit> _pump(
-  WidgetTester tester,
-  void Function(BuildContext context) open,
-) async {
-  tester.view.physicalSize = const Size(390, 844);
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.reset);
-  final chrome = ShellChromeActionsCubit()
-    ..register(
-      registrationId: 'page',
-      ownerId: 'page',
-      locations: const {_page},
-      actions: [
-        ShellActionSpec(id: 'page-add', icon: Icons.add, onPressed: () {}),
-      ],
-    );
-  addTearDown(chrome.close);
-  await tester.pumpWidget(
-    BlocProvider.value(
-      value: chrome,
-      child: MaterialApp(
-        theme: AppTheme.light,
-        home: Navigator(
-          onGenerateRoute: (_) =>
-              MaterialPageRoute<void>(builder: (_) => _Page(open: open)),
-        ),
-      ),
-    ),
-  );
-  return chrome;
-}
+import 'sheet_host_harness.dart';
 
 void main() {
   testWidgets('modal registration replaces page actions and Back', (
@@ -63,7 +14,7 @@ void main() {
     final query = TextEditingController();
     addTearDown(query.dispose);
     String? result = 'unset';
-    final chrome = await _pump(tester, (context) async {
+    final chrome = await pumpSheetHost(tester, (context) async {
       result = await showAppSheet<String>(
         context: context,
         size: AppSheetSize.large,
@@ -78,11 +29,11 @@ void main() {
         ),
       );
     });
-    expect(chrome.state.backForLocation(_page), isNull);
+    expect(chrome.state.backForLocation(sheetHostPage), isNull);
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
-    final actions = chrome.state.resolveForLocation(_page);
+    final actions = chrome.state.resolveForLocation(sheetHostPage);
     expect(actions.map((a) => a.id).single, endsWith('/search'));
     expect(actions.single.inDock, isTrue);
     // Inside the shell there is no inline search field.
@@ -92,18 +43,18 @@ void main() {
     actions.single.onPressed!();
     await tester.pump();
     expect(
-      chrome.state.resolveForLocation(_page).single.searchController,
+      chrome.state.resolveForLocation(sheetHostPage).single.searchController,
       same(query),
     );
 
     // Dock or shell Back closes the sheet, not the page underneath.
-    await chrome.state.backForLocation(_page)!();
+    await chrome.state.backForLocation(sheetHostPage)!();
     await tester.pumpAndSettle();
     expect(find.text('Body'), findsNothing);
     expect(find.text('Open'), findsOneWidget);
     expect(result, isNull);
     expect(chrome.state.topmostModalOwner, isNull);
-    expect(chrome.state.resolveForLocation(_page).map((a) => a.id), [
+    expect(chrome.state.resolveForLocation(sheetHostPage).map((a) => a.id), [
       'page-add',
     ]);
   });
@@ -112,7 +63,7 @@ void main() {
     tester,
   ) async {
     late BuildContext sheetContext;
-    final chrome = await _pump(tester, (context) {
+    final chrome = await pumpSheetHost(tester, (context) {
       unawaited(
         showAppSheet<void>(
           context: context,
@@ -133,12 +84,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await chrome.state.backForLocation(_page)!();
+    await chrome.state.backForLocation(sheetHostPage)!();
     await tester.pumpAndSettle();
     expect(find.text('Confirm'), findsNothing);
     expect(find.text('Body'), findsOneWidget);
 
-    await chrome.state.backForLocation(_page)!();
+    await chrome.state.backForLocation(sheetHostPage)!();
     await tester.pumpAndSettle();
     expect(find.text('Body'), findsNothing);
     expect(find.text('Open'), findsOneWidget);
@@ -205,6 +156,10 @@ void main() {
           ),
         ),
       ),
+    );
+    expect(
+      tester.getSize(find.byType(AppSelect<String>)).height,
+      greaterThanOrEqualTo(kAppMinTapTarget),
     );
     await tester.tap(find.text('Medium'));
     await tester.pumpAndSettle();

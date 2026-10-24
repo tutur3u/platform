@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/components/app_option_tile.dart';
+import 'package:mobile/core/ui/components/app_tap_target.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
@@ -93,7 +94,7 @@ class AppSelect<T> extends StatelessWidget {
               borderRadius: tokens.borderRadiusLg,
             ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
+              constraints: const BoxConstraints(minHeight: kAppMinTapTarget),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md + 2,

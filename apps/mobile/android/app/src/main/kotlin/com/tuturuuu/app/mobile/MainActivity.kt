@@ -17,6 +17,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var exitHintMessage: String = "Tap back once more to close the app"
     private var lastExitAttemptAt: Long = 0L
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
+    private var shellBackChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,10 +51,12 @@ class MainActivity : FlutterFragmentActivity() {
             Log.w("MainActivity", "video_player explicit registration skipped: $error")
         }
 
-        MethodChannel(
+        val channel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "mobile/shell_back",
-        ).setMethodCallHandler { call, result ->
+        )
+        shellBackChannel = channel
+        channel.setMethodCallHandler { call, result ->
             if (call.method == "updateState") {
                 currentRoute = call.argument<String>("route")
                 exitMessage = call.argument<String>("exitMessage") ?: exitMessage
@@ -82,30 +85,66 @@ class MainActivity : FlutterFragmentActivity() {
     private fun handleBackPress() {
         val route = currentRoute
         Log.d("MainActivity", "handleBackPress route=$route")
-        if (route == "/" || route == "/apps") {
-            val now = System.currentTimeMillis()
-            if (now - lastExitAttemptAt <= 2000L) {
-                Log.d("MainActivity", "handleBackPress exitConfirmed")
-                finishAffinity()
+        if (isExitRoute(route)) {
+            val channel = shellBackChannel
+            if (channel == null) {
+                confirmExit()
                 return
             }
+            // An open sheet or dialog takes Back before the exit gesture.
+            channel.invokeMethod(
+                "hasModal",
+                null,
+                object : MethodChannel.Result {
+                    override fun success(result: Any?) {
+                        if (result == true) {
+                            Log.d("MainActivity", "handleBackPress closeModal")
+                            lastExitAttemptAt = 0L
+                            popFlutterRoute()
+                        } else {
+                            confirmExit()
+                        }
+                    }
 
-            lastExitAttemptAt = now
-            Log.d("MainActivity", "handleBackPress showExitToast")
-            val toastMessage = "$exitMessage\n$exitHintMessage"
-            Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT).show()
+                    override fun error(code: String, message: String?, details: Any?) {
+                        confirmExit()
+                    }
+
+                    override fun notImplemented() {
+                        confirmExit()
+                    }
+                },
+            )
             return
         }
 
         lastExitAttemptAt = 0L
+        popFlutterRoute()
+    }
 
+    private fun popFlutterRoute() {
         val engine = flutterEngine
         if (engine != null) {
             engine.navigationChannel.popRoute()
             return
         }
 
+        @Suppress("DEPRECATION")
         super.onBackPressed()
+    }
+
+    private fun confirmExit() {
+        val now = System.currentTimeMillis()
+        if (now - lastExitAttemptAt <= 2000L) {
+            Log.d("MainActivity", "handleBackPress exitConfirmed")
+            finishAffinity()
+            return
+        }
+
+        lastExitAttemptAt = now
+        Log.d("MainActivity", "handleBackPress showExitToast")
+        val toastMessage = "$exitMessage\n$exitHintMessage"
+        Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT).show()
     }
 
     private fun isExitRoute(route: String?): Boolean {
@@ -113,6 +152,8 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun onDestroy() {
+        shellBackChannel?.setMethodCallHandler(null)
+        shellBackChannel = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             onBackInvokedCallback?.let { callback ->
                 onBackInvokedDispatcher.unregisterOnBackInvokedCallback(callback)

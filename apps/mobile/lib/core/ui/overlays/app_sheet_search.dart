@@ -29,8 +29,9 @@ class AppSheetSearch {
 /// the top navbar into the shell search field bound to [search]'s controller.
 /// The registration is modal (see `ShellChromeActionsState.topmostModalOwner`)
 /// so the page's own actions are hidden while the sheet is open, and it is
-/// removed with the sheet. Outside the shell, an inline [AppSearchField] is
-/// rendered instead.
+/// removed with the sheet. When the shell chrome does not visibly host the
+/// sheet (no shell, or a root-navigator sheet covering the navbar), an inline
+/// [AppSearchField] is rendered instead.
 class AppSheetSearchHost extends StatefulWidget {
   const AppSheetSearchHost({required this.search, super.key});
 
@@ -46,12 +47,19 @@ class _AppSheetSearchHostState extends State<AppSheetSearchHost> {
 
   String get _registrationId => '${_scope!.ownerId}/search';
 
+  /// The registry only when the shell chrome visibly hosts this sheet; a
+  /// root-navigator sheet covers the navbar and uses the inline field.
+  static ShellChromeActionsCubit? _chromeOf(AppModalScope? scope) =>
+      scope != null && scope.shellChromeVisible ? scope.chrome : null;
+
+  ShellChromeActionsCubit? get _chrome => _chromeOf(_scope);
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final next = AppModalScope.maybeOf(context);
-    if (next?.ownerId != _scope?.ownerId || next?.chrome != _scope?.chrome) {
-      if (_scope?.chrome case final chrome?) chrome.unregister(_registrationId);
+    if (next?.ownerId != _scope?.ownerId || _chromeOf(next) != _chrome) {
+      _chrome?.unregister(_registrationId);
     }
     _scope = next;
     _sync();
@@ -65,7 +73,7 @@ class _AppSheetSearchHostState extends State<AppSheetSearchHost> {
 
   @override
   void dispose() {
-    final chrome = _scope?.chrome;
+    final chrome = _chrome;
     if (chrome != null && !chrome.isClosed) chrome.unregister(_registrationId);
     super.dispose();
   }
@@ -92,7 +100,7 @@ class _AppSheetSearchHostState extends State<AppSheetSearchHost> {
 
   void _sync() {
     final scope = _scope;
-    final chrome = scope?.chrome;
+    final chrome = _chrome;
     if (scope == null || chrome == null || chrome.isClosed) return;
     final search = widget.search;
     final hasQuery = search.controller.text.isNotEmpty;
@@ -121,7 +129,7 @@ class _AppSheetSearchHostState extends State<AppSheetSearchHost> {
 
   @override
   Widget build(BuildContext context) {
-    if (_scope?.chrome != null) return const SizedBox.shrink();
+    if (_chrome != null) return const SizedBox.shrink();
     final search = widget.search;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),

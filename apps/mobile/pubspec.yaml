@@ -86,6 +86,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   json_serializable: ^6.13.1
+  leak_tracker_flutter_testing: ^3.0.10
   mocktail: ^1.0.4
   shared_preferences_platform_interface: ^2.4.2
   very_good_analysis: ^11.0.0

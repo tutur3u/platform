@@ -207,7 +207,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
     Future<void> Function()? onBack,
     VoidCallback? onResetSection,
   }) {
-    if (isClosed) return;
+    if (isClosed || _retiredOwners.contains(ownerId)) return;
     final nextRegistration = ShellChromeActionRegistration(
       ownerId: ownerId,
       immersive: immersive,
@@ -257,6 +257,20 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
 
   /// Remove a departing route's dock action before its pop animation ends.
   /// Otherwise the handoff preview briefly shows a disabled stale action.
+  // Owners whose overlay is closing; late re-registrations are ignored.
+  final Set<String> _retiredOwners = {};
+
+  /// Removes [ownerId]'s registrations and ignores further ones until
+  /// [forgetOwner]. Overlays call this when their pop begins, so Back during
+  /// the reverse transition reaches the overlay beneath.
+  void retireOwner(String ownerId) {
+    _retiredOwners.add(ownerId);
+    dismissOwner(ownerId);
+  }
+
+  /// Drops [ownerId] from the retired set once its overlay is disposed.
+  void forgetOwner(String ownerId) => _retiredOwners.remove(ownerId);
+
   void dismissOwner(String ownerId) {
     if (isClosed) return;
     final departed = state.registrations.values

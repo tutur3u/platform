@@ -23,6 +23,7 @@ import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/android_modal_back_bridge.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -163,6 +164,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
+    AndroidModalBackBridge.install(_hasOpenModal);
     _layerController = PageController(initialPage: 1);
     _hasVisitedRoot = _isRootTabLocation(widget.matchedLocation);
     if (_hasVisitedRoot) _lastRootLocation = widget.matchedLocation;
@@ -591,6 +593,13 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _exitConfirmationToast = null;
   }
 
+  /// Whether Back should close an overlay rather than leave this route.
+  bool _hasOpenModal() =>
+      mounted &&
+      (Navigator.of(context, rootNavigator: true).canPop() ||
+          context.read<ShellChromeActionsCubit?>()?.state.topmostModalOwner !=
+              null);
+
   void _syncAndroidBackState() {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return;
@@ -627,6 +636,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    AndroidModalBackBridge.uninstall(_hasOpenModal);
     unawaited(SystemNavigator.setFrameworkHandlesBack(false));
     _stopLongPressTimer();
     _dismissExitConfirmationToast();
