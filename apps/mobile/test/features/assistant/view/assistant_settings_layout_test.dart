@@ -64,7 +64,7 @@ void main() {
         final header = tester.getRect(find.text('Assistant Settings'));
         final setting = tester.getRect(find.byType(AppToggleRow));
         expect(header.top, greaterThanOrEqualTo(47));
-        expect(setting.top - header.bottom, greaterThanOrEqualTo(0));
+        expect(setting.top - header.bottom, inInclusiveRange(0, AppSpacing.xl));
         expect(setting.left, 16);
         expect(setting.right, width - 16);
 

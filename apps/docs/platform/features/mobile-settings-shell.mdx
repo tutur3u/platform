@@ -588,9 +588,9 @@ acceptance on the exact CI-built artifact remain separate gates.
 Appearance, Storage and Offline use the shared design-system controls. Appearance
 sliders preview immediately and persist on release. Storage opens as a large
 hosted sheet; its clear confirmation remains disabled during an active download
-and clears data only after explicit confirmation. Back or dismissal cancels the
-confirmation. Back dismisses the current picker or confirmation
-before leaving Settings.
+and clears data only after explicit confirmation. Back dismisses the current
+picker or cancels the confirmation before leaving Settings; outside dismissal
+also cancels the confirmation.
 
 Offline module search lives in the floating navbar. Browsing a stored namespace
 opens a hosted sheet with its own navbar search and lazily rendered record details.

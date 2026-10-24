@@ -122,7 +122,7 @@ class _AssistantNameDialogState extends State<AssistantNameDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
-        AppButton.ghost(
+        AppButton.primary(
           key: const ValueKey('assistant-name-save'),
           onPressed: _busy || _controller.text.trim().isEmpty
               ? null

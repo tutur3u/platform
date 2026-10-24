@@ -163,7 +163,14 @@ class AppButtonFrame extends StatelessWidget {
                 padding: EdgeInsets.symmetric(
                   horizontal: style.horizontalPadding,
                 ),
-                child: Center(widthFactor: 1, heightFactor: 1, child: child),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: ExcludeSemantics(
+                    excluding: semanticLabel != null,
+                    child: child,
+                  ),
+                ),
               ),
             ),
           ),

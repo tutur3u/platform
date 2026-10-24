@@ -88,7 +88,7 @@ Future<bool> showAppConfirmDialog({
       title: title,
       content: message == null ? null : Text(message),
       actions: [
-        AppButton.outline(
+        AppButton.ghost(
           onPressed: () => Navigator.of(dialogContext).pop(false),
           child: Text(cancelLabel),
         ),

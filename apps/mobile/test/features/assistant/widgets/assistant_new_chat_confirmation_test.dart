@@ -94,7 +94,19 @@ void main() {
           (widget) =>
               widget is AppButton && widget.variant == AppButtonVariant.primary,
         ),
-        findsNothing,
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Check history'))
+            .variant,
+        AppButtonVariant.primary,
+      );
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Done'))
+            .variant,
+        AppButtonVariant.ghost,
       );
       await tester.tap(find.widgetWithText(AppButton, action));
       await tester.pumpAndSettle();

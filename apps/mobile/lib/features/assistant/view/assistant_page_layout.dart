@@ -387,6 +387,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   ),
                                               repository: _repository,
                                               chatState: chatState,
+                                              chatCubit: _chatCubit,
                                               liveState: liveState,
                                               liveUiState: liveUiState,
                                               shellState: shellState,

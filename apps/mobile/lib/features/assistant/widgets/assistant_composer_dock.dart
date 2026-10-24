@@ -42,6 +42,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onSend,
     required this.onRemoveAttachment,
     this.repository,
+    this.chatCubit,
     this.voiceCapture,
     this.onAttachVoice,
     this.onSendVoice,
@@ -60,6 +61,7 @@ class AssistantComposerDock extends StatelessWidget {
   final Future<void> Function()? onAttachVoice;
   final Future<void> Function()? onSendVoice;
   final AssistantChatState chatState;
+  final AssistantChatCubit? chatCubit;
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final AssistantShellState shellState;
@@ -96,6 +98,7 @@ class AssistantComposerDock extends StatelessWidget {
           localModelLabel: localModelLabel,
           onOpenLocalModels: onOpenLocalModels,
           chatState: chatState,
+          chatCubit: chatCubit,
           shellState: shellState,
           repository: repository,
           onOpenAttachments: onOpenAttachments,

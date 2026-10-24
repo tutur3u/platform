@@ -291,6 +291,7 @@ void main() {
     await tester.enterText(input, 'Nova');
     final save = find.byKey(const ValueKey('assistant-name-save'));
     expect(save.hitTestable(), findsOneWidget);
+    expect(tester.widget<AppButton>(save).variant, AppButtonVariant.primary);
     expect(tester.getBottomRight(save).dy, lessThanOrEqualTo(544));
     await tester.tap(save);
     await tester.pumpAndSettle();

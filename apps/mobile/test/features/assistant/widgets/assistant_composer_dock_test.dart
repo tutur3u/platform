@@ -28,6 +28,7 @@ Widget composerTestApp({
   required TextEditingController controller,
   required FocusNode focus,
   AssistantChatState chat = const AssistantChatState(fallbackChatId: 'draft'),
+  AssistantChatCubit? chatCubit,
   double scale = 1,
   double keyboard = 0,
   bool reducedMotion = false,
@@ -76,6 +77,7 @@ Widget composerTestApp({
             onAttachVoice: onAttachVoice,
             onSendVoice: onSendVoice,
             chatState: chat,
+            chatCubit: chatCubit,
             liveState: const AssistantLiveState(),
             liveUiState: const AssistantLiveUiState(
               kind: AssistantLiveUiKind.unavailable,

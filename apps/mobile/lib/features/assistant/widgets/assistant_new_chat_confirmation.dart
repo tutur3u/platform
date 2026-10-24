@@ -49,7 +49,7 @@ Future<bool> showAssistantNewChatResetStatus(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(dialogContext.l10n.commonDone),
           ),
-          AppButton.ghost(
+          AppButton.primary(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(dialogContext.l10n.assistantNewChatInspectHistory),
           ),
