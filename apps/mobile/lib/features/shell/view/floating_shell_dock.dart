@@ -435,7 +435,7 @@ class _DockActionsState extends State<_DockActions> {
       bloc: cubit,
       builder: (context, state) {
         final registered = state.registrations.values.any(
-          (item) => item.locations.contains(widget.location),
+          (item) => item.modal || item.locations.contains(widget.location),
         );
         final actions = !registered && _allowPreview
             ? cubit!.dockPreviewForLocation(widget.location)
