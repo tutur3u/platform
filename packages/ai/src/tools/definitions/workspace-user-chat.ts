@@ -4,6 +4,7 @@ import {
   showWorkspaceArtifactSchema,
 } from '../../workspace-artifacts';
 import { tool } from '../core';
+import { MIRA_APP_DESTINATIONS } from '../mira-client-capabilities';
 
 type SettingsLikeData = {
   name?: unknown;
@@ -104,6 +105,16 @@ export const workspaceUserChatToolDefinitions = {
       'Switch the UI theme. Use when user asks for dark mode, light mode, or system theme.',
     inputSchema: z.object({
       theme: z.enum(['light', 'dark', 'system']).describe('Theme to apply'),
+    }),
+  }),
+
+  open_app: tool({
+    description:
+      'Switch the user to another Tuturuuu app when they ask to open, go to, or switch to it. This only navigates; it does not read or change data. Call once and stop after success.',
+    inputSchema: z.object({
+      destination: z
+        .enum(MIRA_APP_DESTINATIONS)
+        .describe('App to open in the current workspace'),
     }),
   }),
 

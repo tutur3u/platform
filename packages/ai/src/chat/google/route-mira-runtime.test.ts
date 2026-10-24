@@ -424,4 +424,37 @@ describe('prepareMiraRuntime', () => {
       undefined
     );
   });
+
+  it('tells Mira which UI effects a declaring client cannot apply', async () => {
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-1',
+      wsId: 'workspace-1',
+      name: 'Personal',
+      personal: true,
+      memberCount: 1,
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => false });
+    mocks.buildMiraContext.mockRejectedValue(new Error('context unavailable'));
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { client } = createTaskBoardSupabaseMock(null);
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    const result = await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: client,
+      clientCapabilities: ['theme', 'navigate'],
+    });
+    error.mockRestore();
+
+    expect(result.miraSystemPrompt).toContain('## Client capabilities');
+    expect(result.miraSystemPrompt).toContain('use open_app');
+    const ctx = mocks.createMiraStreamTools.mock.calls.at(-1)?.[0];
+    expect([...ctx.clientCapabilities].sort()).toEqual(['navigate', 'theme']);
+  });
 });

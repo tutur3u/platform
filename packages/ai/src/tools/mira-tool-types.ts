@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { PermissionId } from '@tuturuuu/types';
+import type { MiraClientCapability } from './mira-client-capabilities';
 import type { MiraWorkspaceContextState } from './workspace-context';
 
 export interface MiraToolContext {
@@ -12,6 +13,8 @@ export interface MiraToolContext {
   timezone?: string;
   requestHeaders?: Pick<Headers, 'get'>;
   executionState?: object;
+  /** UI effects the requesting client applies; undefined keeps legacy Web. */
+  clientCapabilities?: ReadonlySet<MiraClientCapability>;
   authorizeWorkspaceTools?: (
     wsId: string,
     permissions: PermissionId[]

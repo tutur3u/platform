@@ -516,6 +516,7 @@ export function createPOST(
           toolSupabase: sbAdmin as typeof supabase,
           timezone,
           taskBoardContext,
+          clientCapabilities: parsedBody.data.clientCapabilities,
           getSteps: () => stepsRef.current,
         });
 

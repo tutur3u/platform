@@ -198,9 +198,11 @@ export const assistantAiRow: {
 };
 
 export function createRequest({
+  clientCapabilities,
   miraMode = false,
   timezone,
 }: {
+  clientCapabilities?: string[];
   miraMode?: boolean;
   timezone?: string;
 } = {}) {
@@ -212,6 +214,7 @@ export function createRequest({
         content: 'hello',
         ...(miraMode ? { miraMode: true } : {}),
         ...(timezone ? { timezone } : {}),
+        ...(clientCapabilities ? { clientCapabilities } : {}),
       }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',

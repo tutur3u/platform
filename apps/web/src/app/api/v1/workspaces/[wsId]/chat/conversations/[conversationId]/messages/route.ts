@@ -1,3 +1,4 @@
+import { miraClientCapabilitiesInputSchema } from '@tuturuuu/ai/tools/mira-client-capabilities';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -76,6 +77,7 @@ const createMessageSchema = z.object({
   replyToMessageId: z.string().uuid().nullable().optional(),
   // Device IANA timezone for Mira date tools; validated again downstream.
   timezone: z.string().trim().max(64).optional(),
+  clientCapabilities: miraClientCapabilitiesInputSchema.optional(),
 });
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
@@ -220,6 +222,7 @@ export const POST = withSessionAuth<RouteParams>(
         miraMode,
         stream: wantsChatMessageStream(request),
         timezone: parsed.data.timezone,
+        clientCapabilities: parsed.data.clientCapabilities,
       });
     }
 
@@ -486,6 +489,7 @@ export const POST = withSessionAuth<RouteParams>(
             request,
             miraMode,
             timezone: parsed.data.timezone,
+            clientCapabilities: parsed.data.clientCapabilities,
             userMessage: message,
           });
         }
@@ -500,6 +504,7 @@ export const POST = withSessionAuth<RouteParams>(
             request,
             miraMode,
             timezone: parsed.data.timezone,
+            clientCapabilities: parsed.data.clientCapabilities,
             userMessage: message,
           });
         } catch (error) {

@@ -48,6 +48,7 @@
                   "platform/features/mobile-timer",
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
+                  "platform/features/mira-client-actions",
                   "platform/features/colab",
                   "platform/features/lettin",
                   "platform/features/cms-site-contract-v1",
