@@ -7,6 +7,10 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
   final Map<String, GlobalKey> _anchors = {};
   String _searchQuery = '';
 
+  /// Whether the dock's search field is open; Settings search is the root's
+  /// primary floating action.
+  bool _searchActive = false;
+
   GlobalKey _anchor(String id) =>
       _anchors.putIfAbsent(id, () => GlobalKey(debugLabel: 'settings-$id'));
 
@@ -35,7 +39,10 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
 
   void _jumpTo(String groupId) {
     _searchController.clear();
-    setState(() => _searchQuery = '');
+    setState(() {
+      _searchQuery = '';
+      _searchActive = false;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final target = _anchors[groupId]?.currentContext;
       if (target == null || !target.mounted) return;

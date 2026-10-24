@@ -140,6 +140,52 @@ void registerSettingsAppsChecks() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final mode in [shad.ThemeMode.light, shad.ThemeMode.dark]) {
+    testWidgets('search is the root primary dock action (${mode.name})', (
+      tester,
+    ) async {
+      _viewport(tester, const Size(390, 844));
+      final h = _SettingsHarness();
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await h.dispose();
+      });
+      await h.theme.setThemeMode(mode);
+      await h.pump(tester, shellChrome: true);
+      // No inline field: the dock owns Settings search.
+      expect(find.byKey(const ValueKey('settings-search-field')), findsNothing);
+      ShellActionSpec action() =>
+          h.actions.state.resolveForLocation(Routes.settings).first;
+      expect(action().inDock, isTrue);
+      expect(action().tooltip, 'Search settings');
+      expect(action().searchController, isNull);
+      await _capture(tester, 'settings-root-dock-search-${mode.name}');
+
+      action().onPressed!();
+      await _settle(tester);
+      final controller = action().searchController!..text = 'amounts';
+      action().onSearchChanged!('amounts');
+      await _settle(tester);
+      final result = find.byKey(
+        const ValueKey('settings-search-app-finance-0'),
+      );
+      expect(result, findsOneWidget);
+      await _capture(tester, 'settings-root-dock-search-results-${mode.name}');
+
+      // Jumping to an inline row closes the dock search.
+      controller.text = 'personal time';
+      action().onSearchChanged!('personal time');
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('settings-search-timezone')));
+      await _settle(tester);
+      expect(action().searchController, isNull);
+      expect(controller.text, isEmpty);
+      expect(find.text('Personal timezone'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('Calendar reloads the workspace default and links time zones', (
     tester,
   ) async {
