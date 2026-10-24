@@ -17,6 +17,7 @@ on:
       - "scripts/mobile-lucide/**"
       - "scripts/check-mobile-lucide-sync.js"
       - "scripts/check-mobile-shadcn-imports.js"
+      - "scripts/dart-directive-uris.js"
       - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
     paths:
@@ -28,6 +29,7 @@ on:
       - "scripts/mobile-lucide/**"
       - "scripts/check-mobile-lucide-sync.js"
       - "scripts/check-mobile-shadcn-imports.js"
+      - "scripts/dart-directive-uris.js"
       - ".github/actions/setup-flutter-with-cache/**"
 
 permissions:
@@ -363,12 +365,12 @@ jobs:
           # previous main commit.
           RATCHET_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          if [ -n "$RATCHET_BASE" ] && [ "$RATCHET_BASE" != "0000000000000000000000000000000000000000" ]; then
-            git fetch --no-tags --depth=1 origin "$RATCHET_BASE"
-            node ../../scripts/check-mobile-shadcn-imports.js --base "$RATCHET_BASE"
-          else
-            node ../../scripts/check-mobile-shadcn-imports.js
+          # The check fails closed without a base, so always provide one.
+          if [ -z "$RATCHET_BASE" ] || [ "$RATCHET_BASE" = "0000000000000000000000000000000000000000" ]; then
+            RATCHET_BASE=main
           fi
+          git fetch --no-tags --depth=1 origin "$RATCHET_BASE"
+          node ../../scripts/check-mobile-shadcn-imports.js --base FETCH_HEAD
 
       - name: ✅ Bloc Lint
         run: |

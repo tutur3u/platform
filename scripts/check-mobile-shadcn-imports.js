@@ -15,6 +15,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { directiveUris } = require('./dart-directive-uris.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const MOBILE_DIR = 'apps/mobile';
@@ -32,29 +33,11 @@ const SHIM_FILES = new Set([
   'lib/core/theme/mobile_shad_theme.dart',
 ]);
 
-// A directive starts a line and runs to its `;`, possibly across lines. Every
-// string literal inside it is a URI: the primary one and each conditional
-// `if (dart.library.x) 'alt.dart'` alternative.
-const DIRECTIVE = /^[ \t]*(?:import|export)\b([^;]*);/gmu;
-const URI = /(?:'([^'\n]*)'|"([^"\n]*)")/gu;
-// Block comments that start a line can hide directives; strip them first.
-const LEADING_BLOCK_COMMENT = /^[ \t]*\/\*[\s\S]*?\*\//gmu;
-
-function directiveUris(source) {
-  const uris = [];
-  const code = source.replace(LEADING_BLOCK_COMMENT, '');
-  for (const directive of code.matchAll(DIRECTIVE)) {
-    for (const literal of directive[1].matchAll(URI)) {
-      uris.push(literal[1] ?? literal[2]);
-    }
-  }
-  return uris;
-}
-
 /** Resolves a URI to an apps/mobile-relative path, or null if external. */
 function resolveUri(uri, fromFile) {
   if (uri.startsWith('package:mobile/')) {
-    return `lib/${uri.slice('package:mobile/'.length)}`;
+    // Normalise `./` and `../` segments inside package paths too.
+    return path.posix.normalize(`lib/${uri.slice('package:mobile/'.length)}`);
   }
   if (/^[a-z][a-z0-9+.-]*:/u.test(uri) || fromFile == null) return null;
   return path.posix.normalize(
@@ -68,7 +51,7 @@ function resolveUri(uri, fromFile) {
  */
 function importsShadcn(source, file = null) {
   return directiveUris(source).some((uri) => {
-    if (uri.startsWith('package:shadcn_flutter/')) return true;
+    if (/^package:shadcn_flutter(\/|$)/u.test(uri)) return true;
     const resolved = resolveUri(uri, file);
     return resolved != null && SHIM_FILES.has(resolved);
   });
@@ -188,9 +171,9 @@ function defaultBase({ rootDir = ROOT_DIR, run = execFileSync } = {}) {
   }
 }
 
-function main(argv = process.argv.slice(2)) {
-  const allowlistPath = path.join(ROOT_DIR, ALLOWLIST);
-  const importers = collectShadcnImporters();
+function main(argv = process.argv.slice(2), { rootDir = ROOT_DIR } = {}) {
+  const allowlistPath = path.join(rootDir, ALLOWLIST);
+  const importers = collectShadcnImporters({ rootDir });
   const allowlist = fs.existsSync(allowlistPath)
     ? parseAllowlist(fs.readFileSync(allowlistPath, 'utf8'))
     : [];
@@ -203,21 +186,27 @@ function main(argv = process.argv.slice(2)) {
     );
     return 0;
   }
-  const pubspec = fs.readFileSync(path.join(ROOT_DIR, PUBSPEC), 'utf8');
+  const pubspec = fs.readFileSync(path.join(rootDir, PUBSPEC), 'utf8');
   const baseFlag = argv.indexOf('--base');
-  const base = baseFlag >= 0 ? argv[baseFlag + 1] : defaultBase();
+  if (baseFlag >= 0 && !argv[baseFlag + 1]) {
+    console.error('shadcn_flutter ratchet: --base needs a revision.');
+    return 1;
+  }
+  const base = baseFlag >= 0 ? argv[baseFlag + 1] : defaultBase({ rootDir });
   let baseAllowlist = null;
   if (base) {
     try {
-      baseAllowlist = readBaseAllowlist(base);
+      baseAllowlist = readBaseAllowlist(base, { rootDir });
     } catch {
       console.error(`Cannot read base revision ${base} for the shrink check.`);
       return 1;
     }
   } else {
-    console.warn(
-      'shadcn_flutter ratchet: no base revision (pass --base); skipping the shrink-only comparison.'
+    // Fail closed: without a base the shrink-only rule cannot be enforced.
+    console.error(
+      'shadcn_flutter ratchet: cannot determine the base revision for the shrink-only check. Pass --base <rev> (for example `git fetch origin main` then `--base FETCH_HEAD`), or make origin/main available so its merge base resolves.'
     );
+    return 1;
   }
   const { errors } = validate({ importers, allowlist, pubspec, baseAllowlist });
   if (errors.length > 0) {
@@ -236,9 +225,9 @@ if (require.main === module) process.exitCode = main();
 module.exports = {
   ALLOWLIST,
   collectShadcnImporters,
-  directiveUris,
   formatAllowlist,
   importsShadcn,
+  main,
   parseAllowlist,
   readBaseAllowlist,
   validate,

@@ -247,7 +247,7 @@ function planChecks(changes, context) {
   }
   if (
     any(
-      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/check-mobile-shadcn-imports\.js$)/
+      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/(check-mobile-shadcn-imports|dart-directive-uris)\.js$)/
     )
   ) {
     steps.push(

@@ -10,6 +10,7 @@ const {
   collectShadcnImporters,
   formatAllowlist,
   importsShadcn,
+  main,
   parseAllowlist,
   readBaseAllowlist,
   validate,
@@ -187,4 +188,75 @@ test('reads the base allowlist from git and fails on a missing revision', () => 
   ]);
   assert.throws(() => readBaseAllowlist('deadbeef', { rootDir: root }));
   fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('package paths are normalised before matching the shims', () => {
+  const file = 'lib/features/x/view/page.dart';
+  for (const uri of [
+    'package:mobile/core/widgets/./shadcn_flutter_compat.dart',
+    'package:mobile/features/../core/widgets/shadcn_flutter_compat.dart',
+    'package:mobile/core//theme/mobile_shad_theme.dart',
+  ]) {
+    assert.ok(importsShadcn(`import '${uri}';`, file), uri);
+  }
+  assert.ok(
+    importsShadcn(
+      "import /* x; */ 'package:shadcn_flutter/shadcn_flutter.dart';",
+      file
+    )
+  );
+  assert.ok(
+    importsShadcn(
+      "import 'a.dart'; import 'package:shadcn_flutter/shadcn_flutter.dart';",
+      file
+    )
+  );
+});
+
+test('the base check fails closed when no base resolves', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'shadcn-closed-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  const write = (relative, body) => {
+    const file = path.join(root, relative);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, body);
+  };
+  write(
+    'apps/mobile/pubspec.yaml',
+    'dependencies:\n  shadcn_flutter: ^0.0.54\n'
+  );
+  write(
+    'apps/mobile/lib/a.dart',
+    "import 'package:shadcn_flutter/shadcn_flutter.dart';\n"
+  );
+  write(
+    'apps/mobile/tool/shadcn_import_allowlist.txt',
+    formatAllowlist(['lib/a.dart'])
+  );
+  git('init', '-q');
+  git('config', 'user.email', 'ratchet@example.test');
+  git('config', 'user.name', 'Ratchet');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  const errors = [];
+  const original = console.error;
+  console.error = (message) => errors.push(String(message));
+  t.after(() => {
+    console.error = original;
+  });
+  // No origin/main and no --base: refuse instead of skipping the check.
+  assert.equal(main([], { rootDir: root }), 1);
+  assert.match(errors.join('\n'), /cannot determine the base revision/u);
+  assert.equal(main(['--base'], { rootDir: root }), 1);
+  assert.equal(main(['--base', 'deadbeef'], { rootDir: root }), 1);
+  console.error = original;
+  const log = console.log;
+  console.log = () => {};
+  try {
+    assert.equal(main(['--base', 'HEAD'], { rootDir: root }), 0);
+  } finally {
+    console.log = log;
+  }
 });
