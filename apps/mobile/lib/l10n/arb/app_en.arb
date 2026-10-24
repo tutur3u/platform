@@ -779,13 +779,6 @@
       }
     }
   },
-  "@settingsTimezoneEffective": {
-    "placeholders": {
-      "timezone": {
-        "type": "String"
-      }
-    }
-  },
   "@settingsWorkspaceMembersActiveSection": {
     "placeholders": {
       "count": {
@@ -3521,7 +3514,8 @@
   "settingsTimezoneAccountPending": "Waiting for your account.",
   "settingsTimezoneAuto": "Automatic",
   "settingsTimezoneDescription": "Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.",
-  "settingsTimezoneEffective": "Effective timezone: {timezone}",
+  "settingsTimezoneAutoShort": "Auto",
+  "settingsTimezoneCityHoChiMinh": "Ho Chi Minh City",
   "settingsTimezoneError": "Could not load or save timezone. Retry or edit a loaded preference.",
   "settingsTimezoneLoading": "Resolving timezone…",
   "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",

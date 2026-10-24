@@ -13,7 +13,7 @@ use Lucide icons only. Inset dividers start at the title column (54px), not unde
 the icon. Rows have a 56px minimum height and expand for translated or enlarged
 text. A row shows its current value as a muted summary under the title, or as a
 short trailing value before the chevron (for example, the Appearance theme name).
-It does not show both. A trailing value keeps its natural width, flush right,
+It does not show both, except the Time zone rows below. A trailing value keeps its natural width, flush right,
 while the title still fits on one line; otherwise it moves under the title, so
 titles never break mid-word at enlarged text. Full-size controls such as
 switches widen the trailing column and centre vertically instead of scaling
@@ -22,12 +22,37 @@ stack in the trailing column, keeping the text width and action centers
 consistent with chevrons. Existing English and Vietnamese labels and tooltips
 remain unchanged.
 
-Settings scroll lists include the shell-provided bottom inset plus 32px of
-breathing room. They inherit the shell surface and keep Back in its floating
-dock. These presentation defaults do not change timezone reads, writes, retries
+Settings scroll lists use the design foundation's tokens (`AppLayout`): content
+starts 8px below the shell header (`pageTop`) and ends with the shell-provided
+dock clearance plus a 24px end gap (`scrollEndGap`). Row height (56px), row inset
+(16px) and the gap between groups (24px) are the foundation's row and section
+tokens. They inherit the shell surface and keep Back in its floating dock. These presentation defaults do not change timezone reads, writes, retries
 or permissions. `settings_design_checks.dart` covers row geometry, action touch
 targets and the final control clearing the dock; the compact navigation suite
 also exercises enlarged text in both languages and themes.
+
+### Time zone rows
+
+Each Time zone row shows one value line: the zone as a city with its current
+GMT offset, for example "Ho Chi Minh City (GMT+7)". Offsets follow daylight saving
+time, and the offset stays attached to its city. Raw identifiers such as
+`Asia/Saigon` are never shown, so they can't break mid-word. Legacy device ids
+map to their current city, and Vietnamese shows "TP. Hồ Chí Minh". When the
+personal choice is Automatic, the row shows "Auto" on its title line and names
+the zone that applies. An explicit choice shows only that zone. The workspace row
+shows only the workspace choice, so the effective zone is never repeated.
+Loading and account states replace the value rather than adding lines. Errors and
+rate limits keep their wrapped explanation and Retry action.
+
+These rows are the one place a row shows both a value line and a short trailing
+value. When a row has a value line, its trailing value sits on the title line, so
+the value keeps the full text width; at enlarged text it moves under the title.
+The explanation of Automatic and the zone list stay in the picker opened from the
+row. Offsets resolve through `core/utils/timezone_location.dart`, which loads the
+full tz data when a native alias such as `Asia/Saigon` is missing.
+`timezone_label_test.dart` checks every supported zone,
+`settings_timezone_rows_checks.dart` checks the one-line rows in both languages,
+and `timezone_resolution_scope_test.dart` checks the scoped states.
 
 ## Settings detail shell and profile settings
 

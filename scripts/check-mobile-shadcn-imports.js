@@ -173,12 +173,19 @@ function defaultBase({ rootDir = ROOT_DIR, run = execFileSync } = {}) {
   }
 }
 
+function readOptional(file) {
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 function main(argv = process.argv.slice(2), { rootDir = ROOT_DIR } = {}) {
   const allowlistPath = path.join(rootDir, ALLOWLIST);
   const importers = collectShadcnImporters({ rootDir });
-  const allowlist = fs.existsSync(allowlistPath)
-    ? parseAllowlist(fs.readFileSync(allowlistPath, 'utf8'))
-    : [];
+  const allowlist = parseAllowlist(readOptional(allowlistPath) ?? '');
   if (argv.includes('--prune')) {
     const current = new Set(importers);
     const pruned = allowlist.filter((file) => current.has(file)).sort();

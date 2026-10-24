@@ -52,6 +52,12 @@ export interface TreeIdentity {
   target: string;
   /** Root first, target last. */
   chain: Link[];
+  /**
+   * Refuse repositories in the pre-delete scan and before every deletion.
+   * Defaults to true; manual prune callers may explicitly opt out for
+   * regenerable caches after their category-specific safety checks.
+   */
+  refuseRepositories?: boolean;
 }
 
 /**
@@ -156,6 +162,7 @@ export function removeVerifiedTree(
     }
   };
   const refuseRepository = (path: string, names?: string[]) => {
+    if (identity.refuseRepositories === false) return;
     const has = (name: string) =>
       names ? names.includes(name) : exists(join(path, name));
     if (has('.git') || ['HEAD', 'objects', 'refs'].every(has))

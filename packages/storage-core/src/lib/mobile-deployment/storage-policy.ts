@@ -7,7 +7,18 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { MOBILE_DEPLOYMENT_DRIVE_PREFIX } from './constants';
 
 function normalizeRelativePath(path: string) {
-  return sanitizePath(path);
+  const canonicalPath = sanitizePath(path);
+  if (canonicalPath === null) return null;
+  let normalized = canonicalPath;
+  for (let pass = 0; pass < 5; pass += 1) {
+    const decoded = normalized.replace(
+      /%([\da-f]{2})/gi,
+      (_match, byte: string) => String.fromCharCode(Number.parseInt(byte, 16))
+    );
+    if (decoded === normalized) break;
+    normalized = decoded;
+  }
+  return normalized.replace(/^\/+|\/+$/g, '').replace(/\/{2,}/g, '/');
 }
 
 export function buildMobileDeploymentVaultStoragePath(
@@ -26,8 +37,13 @@ export function isReservedMobileDeploymentDrivePath(
   }
 
   const normalizedPath = normalizeRelativePath(path);
-  if (normalizedPath === null) {
-    return false;
+  if (normalizedPath === null) return true;
+
+  if (
+    normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}?`) ||
+    normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}#`)
+  ) {
+    return true;
   }
 
   return (
@@ -43,12 +59,9 @@ export function isReservedMobileDeploymentDrivePath(
 export function filterReservedMobileDeploymentDriveEntries<
   T extends { name?: string | null },
 >(wsId: string, path: string, entries: T[]) {
-  if (
-    resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID ||
-    normalizeRelativePath(path)
-  ) {
-    return entries;
-  }
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID) return entries;
+  const normalizedPath = normalizeRelativePath(path);
+  if (normalizedPath !== null && normalizedPath !== '') return entries;
 
   return entries.filter((entry) => entry.name !== '.tuturuuu');
 }

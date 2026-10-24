@@ -1,0 +1,16 @@
+{
+  "name": "tuturuuu-bot",
+  "description": "Local agent task-branch pushes and PR authorship for tutur3u/platform.",
+  "url": "https://github.com/tutur3u/platform",
+  "hook_attributes": {
+    "active": false,
+    "url": "https://github.com/tutur3u/platform"
+  },
+  "public": false,
+  "default_permissions": {
+    "contents": "write",
+    "pull_requests": "write",
+    "metadata": "read"
+  },
+  "default_events": []
+}

@@ -206,62 +206,106 @@ describe('executeConvertFileToMarkdown', () => {
     expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 
-  it('converts user-group files only after caller-provided storage authorization', async () => {
-    const createSignedUrl = vi.fn().mockResolvedValue({
-      data: { signedUrl: 'https://storage.test/signed-syllabus' },
-      error: null,
-    });
-    const canReadUserGroupStorage = vi.fn().mockResolvedValue(true);
-    createAdminClientMock.mockResolvedValue({
-      rpc: vi.fn(),
-      storage: {
-        from: vi.fn().mockReturnValue({
-          createSignedUrl,
-          list: vi.fn(),
-        }),
-      },
-    });
+  it.each([
+    'workspace-1/user-groups/group-1/../group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2e%2e/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2E%2E/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2e./group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/.%2e/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2fgroup-2/secret.pdf',
+    'workspace-1\\user-groups\\group-1\\secret.pdf',
+    'workspace-2/user-groups/group-1/secret.pdf',
+  ])(
+    'rejects unsafe or cross-workspace storage path %s before admin access',
+    async (storagePath) => {
+      const result = (await executeConvertFileToMarkdown(
+        { storagePath },
+        createContext({ canReadUserGroupStorage: () => true })
+      )) as Record<string, unknown>;
 
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          ok: true,
-          markdown: '# Converted syllabus',
-          title: 'Syllabus',
-        }),
-        { status: 200 }
-      )
-    );
-    vi.stubGlobal('fetch', fetchMock);
+      expect(result.ok).toBe(false);
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+      expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
+    }
+  );
 
+  it('rejects encoded traversal from the current chat folder before admin access', async () => {
     const result = (await executeConvertFileToMarkdown(
       {
-        storagePath: 'workspace-1/user-groups/group-1/syllabus.pdf',
+        storagePath: 'workspace-1/chats/ai/resources/chat-1/%2e%2e/secret.pdf',
       },
-      createContext({ canReadUserGroupStorage })
+      createContext()
     )) as Record<string, unknown>;
 
-    expect(result.ok).toBe(true);
-    expect(result.storagePath).toBe(
-      'workspace-1/user-groups/group-1/syllabus.pdf'
-    );
-    expect(canReadUserGroupStorage).toHaveBeenCalledWith({
-      groupId: 'group-1',
-      storagePath: 'workspace-1/user-groups/group-1/syllabus.pdf',
-      wsId: 'workspace-1',
-    });
-    expect(createSignedUrl).toHaveBeenCalledWith(
-      'workspace-1/user-groups/group-1/syllabus.pdf',
-      120
-    );
-    expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        amount: 100,
-        wsId: 'workspace-1',
-      }),
-      expect.any(Object)
-    );
+    expect(result.ok).toBe(false);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['syllabus.pdf', 'syllabus.pdf'],
+    // A literal percent name is signed with its once-encoded key, the same
+    // key the storage provider wrote it under.
+    ['literal%41.pdf', 'literal%2541.pdf'],
+  ])(
+    'converts user-group file %s only after caller-provided storage authorization',
+    async (name, signedName) => {
+      const createSignedUrl = vi.fn().mockResolvedValue({
+        data: { signedUrl: 'https://storage.test/signed-syllabus' },
+        error: null,
+      });
+      const canReadUserGroupStorage = vi.fn().mockResolvedValue(true);
+      createAdminClientMock.mockResolvedValue({
+        rpc: vi.fn(),
+        storage: {
+          from: vi.fn().mockReturnValue({
+            createSignedUrl,
+            list: vi.fn(),
+          }),
+        },
+      });
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ok: true,
+            markdown: '# Converted syllabus',
+            title: 'Syllabus',
+          }),
+          { status: 200 }
+        )
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = (await executeConvertFileToMarkdown(
+        {
+          storagePath: `workspace-1/user-groups/group-1/${name}`,
+        },
+        createContext({ canReadUserGroupStorage })
+      )) as Record<string, unknown>;
+
+      expect(result.ok).toBe(true);
+      expect(result.storagePath).toBe(
+        `workspace-1/user-groups/group-1/${name}`
+      );
+      expect(canReadUserGroupStorage).toHaveBeenCalledWith({
+        groupId: 'group-1',
+        storagePath: `workspace-1/user-groups/group-1/${name}`,
+        wsId: 'workspace-1',
+      });
+      expect(createSignedUrl).toHaveBeenCalledWith(
+        `workspace-1/user-groups/group-1/${signedName}`,
+        120
+      );
+      expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 100,
+          wsId: 'workspace-1',
+        }),
+        expect.any(Object)
+      );
+    }
+  );
 
   it('treats a YouTube URL passed as storagePath as a direct URL', async () => {
     createAdminClientMock.mockResolvedValue({

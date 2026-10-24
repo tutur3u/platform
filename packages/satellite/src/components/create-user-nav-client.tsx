@@ -10,6 +10,8 @@ interface CreateUserNavClientConfig {
   ttrUrl: string;
   externalSettingsHost?: boolean;
   SettingsDialog?: ComponentType<{
+    /** Web app origin used for account tabs that open the web dialog. */
+    centralUrl: string;
     wsId?: string;
     user: WorkspaceUser | null;
   }>;
@@ -45,7 +47,7 @@ export function createUserNavClient({
         externalSettingsHost={externalSettingsHost}
         settingsDialog={
           user && SettingsDialog ? (
-            <SettingsDialog wsId={wsId} user={user} />
+            <SettingsDialog centralUrl={ttrUrl} wsId={wsId} user={user} />
           ) : undefined
         }
       />

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -95,7 +96,11 @@ export const POST = withSessionAuth(
       const { imagePaths } = getImageUrlsSchema.parse(body);
 
       for (const imagePath of imagePaths) {
-        if (!imagePath.startsWith(`${id}/`) || imagePath.includes('..')) {
+        if (
+          sanitizePathStrict(imagePath) !== imagePath ||
+          !imagePath.startsWith(`${id}/`) ||
+          imagePath.length === id.length + 1
+        ) {
           return NextResponse.json(
             { error: 'Invalid image path list' },
             { status: 400 }

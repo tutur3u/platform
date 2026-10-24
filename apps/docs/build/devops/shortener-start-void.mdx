@@ -1,0 +1,161 @@
+---
+title: "Shortener on Start + Void"
+description: "Native Shortener runtime, emitted-Worker qualification, and the held cutover and rollback runbook."
+---
+
+Shortener (`apps/shortener`) is the first Wave 2 Vercel exit. Its source runs on
+TanStack Start, Vite+ and the official Void SDK with a custom Worker entry
+(`cloudflare/worker.ts`). Production publication is **held for wave-2 cutover**
+by `productionPublicationPolicy` in `tuturuuu.ci.ts`: the legacy
+`vercel-production-shortener.yaml` publisher reports the hold and never deploys,
+and the canonical domains keep serving the last Vercel deployment. **Held** is
+not delivery, and no staging publisher exists yet.
+
+## Request ownership
+
+The Worker owns the request policy before Start runs:
+
+| Request | Owner and behavior |
+| --- | --- |
+| Any of the seven production hosts | Fenced with `503 Staging gateway only` unless `SHORTENER_CANONICAL_HOST_ENABLED=1`. |
+| `www.ttr.gg` | `308` to `https://ttr.gg` with the same path and raw query. |
+| `shortener.tuturuuu.com`, `tuturuu.com`, `www.tuturuu.com`, `tutur3u.com`, `www.tutur3u.com` | `307` to `https://ttr.gg` with the same path and raw query. |
+| `/api/build-info` | Local build identity (`GET`, `HEAD`, `OPTIONS`). |
+| `/api`, `/api/*` | The retained `proxy:shortener:api` abuse guard runs first. |
+| `/api/verify` | Local password verification (`POST`; `OPTIONS` returns `204`). |
+| Other `/api/*` | Forwarded to `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`) with the raw query, body, cookies and every `Set-Cookie`. |
+| `/assets/*` and the eight `public/` files | Static assets; they win over a same-named slug. |
+| `/` | `307` to `SHORTENER_HOME_URL` (default `https://tuturuuu.com`). |
+| `/{slug}/` | `308` to `/{slug}` with the raw query. |
+| `/{slug}` | Exact, case-sensitive lookup; see [Shortener](/platform/applications/shortener) for the result rules. |
+| Deeper paths | Start renders the not-found page with `404`. |
+| Other document methods | `405` with `Allow: GET, HEAD`. |
+
+Every response carries `X-Robots-Tag: noindex, nofollow, nosnippet`,
+`X-Frame-Options: DENY` and `frame-ancestors 'none'`, matching the retained
+Next configuration. Documents use the dynamic `private, no-cache, no-store`
+cache policy, so a CDN never caches a redirect target.
+
+Domain logic lives in framework-free modules under `src/link/` with an injected
+store; `src/native/supabase-store.server.ts` is the service-role adapter and
+`src/native/shortener-request.ts` is the injectable request policy. Start only
+renders the password, not-found and invalid-destination pages from the model the
+Worker resolved. A direct server-function call has no resolved slug and receives
+the not-found model, so it never discloses a destination.
+
+## Local verification
+
+Run focused tests through the resource queue:
+
+```bash
+ttr resources run -- bun --cwd apps/shortener run test
+ttr resources run -- node --test scripts/ci/production-publication-policy.test.js
+python3 scripts/ci/shortener-native-artifact.test.py
+```
+
+`bun run dev` serves the Worker through Void's dev server. Do not run
+`build:cloudflare` locally; CI builds the exact commit.
+
+## CI qualification
+
+`shortener-cloudflare.yaml` runs on pull requests and `main` pushes for the
+Shortener closure. It builds the native Start SSR output with Void, rejects
+route-tree drift, type-checks, discovers the single emitted Wrangler config and
+checks the staging identity, static output and binding types, and dry-runs
+Wrangler without publication. It seals the output with
+`shortener-native-artifact.py`, which reuses the reviewed Apps seal and restore
+implementation with Shortener's identity and public files.
+
+Like Apps, Shortener's Wrangler use is admitted in
+`scripts/ci/wrangler-usage-allowlist.json` under the `void-wave1-publication`
+gap: Void rebuilds on deploy, so CI qualifies the exact emitted Worker with the
+pinned Wrangler adapter. The entries are removed with the Apps gap once
+`cf deploy --prebuilt` publication of a Void build is proven byte-identical.
+
+`cloudflare/native-built-worker.test.mjs` starts a copy of the emitted artifact
+in workerd. Every subrequest goes to the in-process fence in
+`cloudflare/native-fixture.mjs`, which stands in for Supabase REST and the central
+API; any other egress fails the test. It covers:
+
+- build identity at the exact source SHA
+- `307` redirects for generated slugs and custom aliases, with one click row each
+- the production-host fence
+- SSR of the not-found, invalid-destination and password pages, without the
+  destination or secrets and with loadable client scripts
+- local `bcryptjs` verification (`400`, `403`, `404`, `405`, `413`, and `401`
+  for an invalid app bearer)
+- central forwarding with a raw duplicate query and multiple `Set-Cookie` headers
+
+A clean `restore-acceptance` job restores the archive without rebuilding,
+dry-runs Wrangler again, repeats the same workerd suite, and verifies that the
+hashes are unchanged.
+
+## Cutover and rollback runbook
+
+Apply the shared sequence in [Wave-1 native cutover](/build/devops/wave1-native-cutover)
+with this Shortener profile. Do not switch traffic with an unfilled release record.
+
+### Before cutover
+
+1. **Release record.** Capture the exact accepted `main` SHA, the green
+   `shortener-cloudflare.yaml` run and artifact hash, the account/zone/Worker
+   identity, secret **names** (`NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
+   `TUTURUUU_APP_COORDINATION_SECRET`), the immutable Vercel deployment ID/URL,
+   operator and rollback owner.
+2. **Domains.** Export all seven Vercel domain mappings and redirect statuses
+   (`shortener.tuturuuu.com`, `tuturuu.com`, `www.tuturuu.com`, `tutur3u.com`,
+   `www.tutur3u.com`, `www.ttr.gg`, `ttr.gg`), with DNS records and TTLs. Vercel
+   reports no explicit status for `tuturuu.com` and `tutur3u.com`, so the Worker
+   uses Vercel's `307` default. Confirm the observed status before cutover and
+   update `src/link/hosts.ts` if it differs.
+3. **Baseline capture.** From an allowlisted probe (Vercel bot protection answers
+   anonymous probes with `429`), record the live status, `Location` and cache
+   headers for `/`, an existing slug, a custom alias, a password link, a
+   missing slug and one alias host. Use a dedicated test link so analytics stay
+   clean. The legacy streamed page may answer an existing slug with `200` and a
+   client redirect; the native Worker always answers `307`.
+4. **Admission.** Admit Shortener with `surfaces: ['frontend']` in a reviewed
+   cutover PR only after a staging publisher following the Wave-1 pattern has
+   produced hosted acceptance. Leave `SHORTENER_CANONICAL_HOST_ENABLED` unset
+   until the switch.
+
+### Acceptance on the hosted candidate
+
+Check each of these before the switch:
+
+- existing generated slugs and custom aliases redirect to their stored targets
+  with `307`
+- raw duplicate query keys survive alias-host redirects and API forwarding
+- password links: a wrong password returns `403`, the right one navigates and
+  records one click
+- an invalid stored target shows the invalid-destination page, and a missing
+  slug shows not found
+- the API abuse guard rejects oversized bodies and invalid app bearers
+- click rows carry Cloudflare geolocation, and `vercel_region` and `vercel_id`
+  are null
+
+### Switch
+
+Prefer a pre-staged, proxied Cloudflare route in front of the still-valid Vercel
+origin, so removing the route restores Vercel at the same hostname. Switch only
+the Shortener hosts. Enable `SHORTENER_CANONICAL_HOST_ENABLED=1` on the admitted
+production Worker in the same change. Verify `/api/build-info` on `ttr.gg`, a
+test-link redirect, an alias-host redirect and the error rate against the
+baseline.
+
+### Rollback
+
+- **Triggers:** any wrong redirect target, an open redirect, a disclosed
+  password-protected target, or analytics privacy failure triggers an immediate
+  rollback. So does sustained 5xx above 1% or p95 above twice the baseline for
+  5 minutes, once the operator agrees thresholds.
+- **Action:** remove or repoint only the prepared Worker route, or restore the
+  captured mappings and DNS for all seven domains and the immutable Vercel
+  deployment. Never rebuild on the rollback path. Target ≤5 minutes after the
+  decision, and record the actual time.
+- **Data:** route rollback never rewrites `shortened_links` targets or slugs.
+  Click rows written by the Worker remain; never delete or replay them.
+- **Stability:** keep the Vercel project, domains and credentials for **14
+  consecutive stable days**; any material regression resets the clock.
+  Decommissioning Vercel is a separate approval.

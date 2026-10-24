@@ -34,3 +34,11 @@ A dead preparation owner without `admission/mutation.json` is reclaimable by
 ordinary admission. For a legacy retained fence, use the operator guide's stale-admission
 procedure: stop new submissions, verify dead owner/child/group and unchanged
 token, preserve the directory, and never clear a mutation fence or live queue.
+
+Integrity regressions live in `scripts/sdk-rollout-descriptor.test.js` and
+`scripts/sdk-rollout-race.test.js`. The filesystem-injected race tests can run
+against historical source with `SDK_ROLLOUT_TEST_REF=<git-ref>`; confirm actual
+swap/assertion failures rather than loader errors. Directory identity checks
+cover enumeration and recursive hashing. Cache manifests deliberately follow
+symlinks and classify/read one descriptor. Run FIFO controls in children with
+an explicit kill deadline so a blocking-open defect cannot hang the test runner.

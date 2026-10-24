@@ -276,7 +276,7 @@ host's devbox agent to be upgraded. Record per-host activation evidence
 | `homebrew-cache` | `brew cleanup --prune=<days>` (also removes old formula versions) | safe | named only |
 | `docker` | Build cache older than the age bound; unused images. Verified local daemon only | safe / moderate | named only |
 | `supabase-volumes` | Supabase CLI local volumes | high | only `--name <volume>`, never attached |
-| `tmp-old` | Identified tool scratch dirs (mktemp, `tmp-*`, Vitest, Turbo, Bun, `ttr-*` and similar) directly under a tmp root, idle past the age bound, at least 25 MiB, with no git checkout, linked worktree or bare repository inside | moderate | named only |
+| `tmp-old` | Identified tool scratch dirs (mktemp, `tmp-*`, Vitest, Turbo, Bun, `ttr-*` and similar) directly under a tmp root, idle past the age bound, at least 25 MiB, with no git checkout, linked worktree or bare repository inside (checked again by the deleting walk itself, which refuses the whole removal if one appears) | moderate | named only |
 | `xcode-device-support`, `gradle`, `playwright` | Rebuildable but costly | moderate | manual command only |
 | `trash`, `xcode-archives`, `android-sdk` AVDs, `vm-disks` | User data, signed builds, emulator state, VM images | high | never |
 
@@ -361,6 +361,13 @@ Receipts and step checks record the evidence level (`private-tree` or
 `full-visibility`). Root's processes remain uninspectable under this rule;
 that residual is accepted only for proven-private trees. Idle Xcode
 DerivedData usually qualifies through `~/Library/Developer` (0700, no ACL).
+Its repository-refusal exemption applies only to the literal
+`~/Library/Developer/Xcode/DerivedData` root when its canonical path matches
+and every component through the user's home is a real directory owned by the
+effective user. Symlinked roots or ancestors and nonstandard report roots are
+skipped, and the chain is checked again immediately before removal. This keeps
+checkouts reached through a redirected DerivedData path intact; see
+`packages/sdk/src/cli/storage-derived-data.test.ts`.
 Worktrees and their artifacts under `~/.t3` do not qualify unless that tree
 is 0700; ttr never changes permissions to make something qualify.
 

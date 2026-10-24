@@ -202,9 +202,11 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
   )
     return false;
   // Advisory self-reports; stored only, never an authorization input.
+  // Check the type first: String(['trusted']) would otherwise pass.
   if (
     data.executionMode !== undefined &&
-    !EXECUTION_MODES.has(String(data.executionMode))
+    (typeof data.executionMode !== 'string' ||
+      !EXECUTION_MODES.has(data.executionMode))
   )
     return false;
   const protocols = data.protocols;
