@@ -43,6 +43,7 @@
                   "platform/features/command-center-dashboard",
                   "platform/personal-journal",
                   "platform/features/assistant-live",
+                  "platform/features/mira-mail-tools",
                   "platform/features/assistant-local-models",
                   "platform/personal-proactive-execution",
                   "platform/features/mobile-timer",

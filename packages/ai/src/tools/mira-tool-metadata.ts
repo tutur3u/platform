@@ -53,6 +53,11 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   delete_event: 'Delete a calendar event',
   check_e2ee_status: 'Check E2EE encryption status for calendar',
   enable_e2ee: 'Enable end-to-end encryption for calendar events',
+  list_recent_emails:
+    'List recent or unread email threads in your Mail inbox (hộp thư)',
+  get_email_thread: 'Read an email thread as bounded plain text (đọc thư)',
+  draft_email_reply:
+    'Create a reply draft in Mail for the user to review and send; never sends (trả lời thư)',
   log_transaction: 'Log an income or expense transaction',
   get_spending_summary: 'Get spending/income summary for N days',
   list_wallets: 'List workspace wallets',
