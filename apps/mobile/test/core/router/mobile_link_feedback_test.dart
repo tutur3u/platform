@@ -76,7 +76,10 @@ void main() {
     );
     await tester.tap(find.text('Open'));
     await tester.pump();
-    expect(find.byType(SnackBar), findsNothing);
+    expect(
+      find.text('Could not open this link. Please try again.'),
+      findsNothing,
+    );
   });
 
   testWidgets('failed deferred launch after unmount does not use old context', (
