@@ -54,13 +54,14 @@ test('staging embeds exact source and channel without changing source manifest',
   assert.deepEqual(dev.staged.tuturuuuBuild, {
     channel: 'dev',
     sourceSha: sha,
+    rolloutProtocol: 1,
   });
   assert.deepEqual(JSON.parse(before), source);
   reset();
   assert.deepEqual(
     stageBuildIdentity({ before, manifestPath, sourceSha: sha }).staged
       .tuturuuuBuild,
-    { channel: 'latest', sourceSha: sha }
+    { channel: 'latest', sourceSha: sha, rolloutProtocol: 1 }
   );
   for (const version of [
     '0.29.0-dev.123.abcdef0',

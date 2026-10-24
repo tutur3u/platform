@@ -384,6 +384,45 @@ first. Only after confirming every recorded PID and process group has ended, rem
 lock/guard paths and retry. Do not delete a live owner's lock or partial package
 outputs from another job. These coordination files are ignored by Git.
 
+#### Roll out and recover
+
+The rollout tool is a repository command, so it can update an older global CLI.
+Run it outside an admitted job: its cutover needs an idle queue. Each target uses
+its existing home, global Bun installation, queue, roots and limits. Hosts run
+sequentially; the first failure stops the fleet operation.
+
+```sh
+bun sdk:rollout --channel dev --host skr-studio --host skr-sonha
+bun sdk:rollout --channel latest --wait-drain 120 --host skr-studio
+bun sdk:rollout --tarball /private/path/tuturuuu-preview.tgz --sha256 <manifest-sha256> --host skr-studio
+```
+
+Review the JSON report and retain its backup directory. The command verifies
+bytes before installation, backs up the previous supplier and scheduler files,
+previews setup, applies setup, and qualifies the global CLI and launchers. It
+holds admission during cutover, never kills owners, and restores the backup on
+failure. Without `--wait-drain`, an occupied queue refuses immediately. A bounded
+wait does not authorize interrupting another job.
+
+Automatic rollout targets must advertise `tuturuuuBuild.rolloutProtocol: 1`.
+The existing 0.28.0 package predates that protocol and is refused before install;
+use the reviewed manual drain/backup procedure for that older target, or wait for
+a maintenance-capable stable release. Newly qualified dev and stable packs carry
+the protocol marker. Manual crash recovery requires Python 3 for its OS-released
+recovery lock. The tool qualifies project root/package metadata, not each
+project's test suite.
+
+Use the generated rollback command in the report to restore the saved supplier
+without downloading it again. Rollback also requires an idle queue. Preserve the
+backup until the host passes qualification; reconcile a failed or interrupted
+rollback before attempting another rollout. Do not change `TTR_RESOURCES_HOME`,
+link a workspace `dist`, or run concurrent global package-manager operations.
+Global installation is required by the same-install trust fence.
+
+Promote code by merging the reviewed change and following the existing
+production/Release Please process. Do not promote a dev tarball by moving
+`latest`: stable releases are separately versioned, qualified and published.
+
 #### Operator setup and threat model
 
 Before enabling publication, create GitHub environment `sdk-release-dev` with

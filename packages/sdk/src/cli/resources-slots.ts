@@ -176,6 +176,10 @@ async function reclaimMutex(path: string) {
   if (before.kind === 'invalid')
     throw new Error('Malformed admission mutex; admission is closed.');
   if (before.kind === 'owner' && ownerAlive(before.owner)) return;
+  if (before.kind === 'owner' && before.owner.tool === 'rollout')
+    throw new Error(
+      'Interrupted SDK rollout; admission remains closed. Run its backed-up rollback.sh before admitting work.'
+    );
   if (
     before.kind === 'missing' &&
     Date.now() - (await stat(path)).mtimeMs <= initializationGrace
@@ -276,6 +280,24 @@ export async function withAdmission<T>(
     if (acquired) await releaseMutex(path, owner.token);
     await rm(staged, { force: true });
   }
+}
+
+// Only setup may reenter an operator-held maintenance mutex. Queue admission
+// deliberately never consults this capability.
+export async function hasSetupMaintenanceLease(
+  home: string,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const token = env.TTR_RESOURCES_MAINTENANCE;
+  if (!token) return false;
+  const owner = await readOwner(join(home, 'admission', 'owner.json'));
+  return Boolean(
+    owner?.tool === 'rollout' &&
+      owner.scheduler === 2 &&
+      owner.token === token &&
+      processAlive(owner.pid) &&
+      processLineage(true)?.pids.has(owner.pid)
+  );
 }
 
 async function releaseMutex(path: string, token: string) {

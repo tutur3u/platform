@@ -53,6 +53,7 @@ function stageBuildIdentity({
   staged.tuturuuuBuild = {
     channel: packageVersion ? 'dev' : 'latest',
     sourceSha,
+    rolloutProtocol: 1,
   };
   fs.writeFileSync(manifestPath, `${JSON.stringify(staged, null, 2)}\n`);
   return { source, staged };
