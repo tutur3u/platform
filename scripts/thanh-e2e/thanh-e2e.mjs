@@ -14,6 +14,7 @@ import {
   listTrackedSupabaseFiles,
   rewriteSupabaseConfig,
 } from '../../apps/database/scripts/run-supabase-isolated.js';
+import { ensureFirebaseConfig, readPidFile } from './files.mjs';
 import {
   adbReversePorts,
   dockerEnv,
@@ -170,8 +171,8 @@ async function up(config, flags) {
 }
 
 function readPid(file) {
-  const pid = Number(fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : NaN);
-  if (!Number.isInteger(pid)) return null;
+  const pid = readPidFile(file);
+  if (pid === null) return null;
   try {
     process.kill(pid, 0);
     return pid;
@@ -366,8 +367,7 @@ function prepareFirebase(platform) {
     return;
   }
   const target = path.join(mobileDir, 'android', 'app', 'google-services.json');
-  if (!fs.existsSync(target))
-    fs.writeFileSync(target, dummyGoogleServicesJson());
+  ensureFirebaseConfig(target, dummyGoogleServicesJson());
 }
 
 const DRIVE_TIMEOUT_MS = 20 * 60_000;
