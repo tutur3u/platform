@@ -231,7 +231,7 @@ class BackgroundReplyHarness {
   final dock = ShellDockSlotController();
   late AssistantChatCubit chat;
   late BuildContext pageContext;
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(WidgetTester tester, {VoidCallback? onFirstFrame}) async {
     SharedPreferences.setMockInitialValues({});
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('flutter_timezone'),
@@ -266,6 +266,7 @@ class BackgroundReplyHarness {
         ),
       ),
     );
+    onFirstFrame?.call();
     await tester.pumpAndSettle();
     if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
       await tester.tap(find.byType(AssistantComposerFab));

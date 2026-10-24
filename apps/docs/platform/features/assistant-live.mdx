@@ -52,6 +52,17 @@ Mobile chat uses the shell's existing dock for its composer and primary action.
 An empty draft keeps the navigation menu; a nonempty draft or attachment changes
 that action to Send. During inline recording it becomes Pause, then Send while
 paused. Cancel discards only the recording and returns to the retained text draft.
+If a text-only send has no selected conversation and local creation authority
+needs recovery, Send opens the existing informed New Chat confirmation. Cancel
+retains the draft without creating or sending anything. Confirmation resets the
+held selection, retains the unchanged draft, and sends it once; only a persisted
+user-message acknowledgement clears it. Unknown writes still require informed
+recovery and are never silently replayed. Remote-model preference hydration does
+not show a temporary local-model status in the navbar; a resolved local choice or
+preparation failure still shows its status. These mobile-only rules are covered
+by `assistant_send_recovery_test.dart`.
+
+![Mobile Assistant creation recovery with a retained draft](/images/assistant-send-recovery.png)
 The input row has no second Send button. Each assistant turn has one initially
 collapsed transparent thinking accordion, showing the latest heading from reasoning
 text already supplied by the API. Expanding it reveals those existing sections in

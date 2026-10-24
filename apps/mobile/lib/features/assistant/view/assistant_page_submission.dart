@@ -19,6 +19,32 @@ extension _AssistantPageSubmission on _AssistantPageState {
         _chatCubit.state.status == AssistantChatStatus.restoring) {
       return;
     }
+    if (chatState.creationOutcomeUnknown &&
+        chatState.storedChatId == null &&
+        chatState.composerAttachments.isEmpty &&
+        _inputController.text.trim().isNotEmpty) {
+      final scope = _localScope();
+      final draft = _inputController.value;
+      final result = await _startNewConversation(
+        wsId,
+        chatState,
+        liveState,
+        preserveDraft: true,
+      );
+      if (result == _AssistantNewChatResult.committed &&
+          mounted &&
+          scope != null &&
+          scope == _localScope() &&
+          _inputController.value == draft) {
+        await _handleSend(
+          wsId,
+          _shellCubit.state,
+          _chatCubit.state,
+          _liveCubit.state,
+        );
+      }
+      return;
+    }
     if (chatState.composerAttachments.any(
       (attachment) =>
           attachment.uploadState == AssistantAttachmentUploadState.uploading,
