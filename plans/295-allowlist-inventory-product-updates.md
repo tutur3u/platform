@@ -64,7 +64,7 @@ and the older nonterminal Inventory handoff. Preserve unrelated Inventory work.
 | --- | --- | --- |
 | Focused route | `bun --cwd apps/inventory vitest run 'src/app/api/v1/workspaces/[wsId]/products/[productId]/route.test.ts'` | supported updates pass; protected and unknown keys are rejected before update |
 | Inventory app | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | app compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only the route/test, `inventory/request.ts`, an optional focused schema sibling, and plan status changed |
 
 ## Scope
@@ -89,7 +89,7 @@ response redesign; other compatibility routes.
 3. Characterize valid partial fields, explicit nulls, legacy manufacturer
    input, nested inventory permission denial, relation denial, normalized
    workspace scoping, database failure, not found, and success/audit behavior.
-4. Run focused tests, Inventory typecheck/build, `bun check`, whitespace, and
+4. Run focused tests, Inventory typecheck/build, `bun validate`, whitespace, and
    scope gates.
 
 ## Done criteria

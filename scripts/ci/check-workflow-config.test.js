@@ -562,11 +562,11 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   );
   assert.match(
     setupAction,
-    /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /bun-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
   );
   assert.match(
     setupAction,
-    /bun-deps-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /bun-deps-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
   );
   for (const saveStep of [runtimeSaveStep, packageSaveStep]) {
     assert.match(saveStep, /github\.ref == 'refs\/heads\/main'/);
@@ -574,7 +574,7 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   }
   for (const restoreStep of [runtimeRestoreStep, packageRestoreStep]) {
     assert.match(restoreStep, /github\.ref != 'refs\/heads\/main'/);
-    assert.match(restoreStep, /github\.event_name == 'pull_request'/);
+    assert.match(restoreStep, /github\.event_name != 'push'/);
     assert.match(restoreStep, /github\.actor == 'dependabot\[bot\]'/);
   }
   assert.doesNotMatch(setupAction, /node_modules/);
@@ -587,18 +587,14 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(retryScript, /--minimum-release-age=0/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
 
+  const retryScriptPath = path.join(repoRoot, 'scripts/ci/run-with-backoff.sh');
   const failedCommand = spawnSync(
     'bash',
-    [
-      path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
-      'bash',
-      '-c',
-      'exit 37',
-    ],
+    [retryScriptPath, 'bash', '-c', 'exit 37'],
     {
       encoding: 'utf8',
       env: {
-        ...process.env,
+        PATH: process.env.PATH,
         CI_RETRY_MAX_ATTEMPTS: '1',
       },
     }
@@ -631,7 +627,7 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
   assert.match(setupAction, /runner\.arch/);
   assert.match(setupAction, /github\.event\.pull_request\.base\.sha/);
   assert.match(setupAction, /github\.event\.repository\.default_branch/);
-  assert.match(setupAction, /github\.event_name == 'pull_request'/);
+  assert.match(setupAction, /github\.event_name != 'push'/);
   assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
   assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
@@ -750,14 +746,13 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     stepNamed('Setup Supabase CLI')?.uses,
     './.github/actions/setup-supabase-cli-with-retry'
   );
-  assert.match(
-    stepNamed('Restore cached Supabase Docker images')?.uses || '',
-    /^actions\/cache\/restore@[0-9a-f]{40}$/u
+  assert.equal(
+    stepNamed('Restore shared Supabase images')?.uses,
+    './.github/actions/cache-supabase-images'
   );
-  assert.match(
-    stepNamed('Restore cached Supabase Docker images')?.with?.key || '',
-    /supabase-docker-v2-/u
-  );
+  const imageCache = stepNamed('Restore shared Supabase images')?.with;
+  assert.equal(imageCache.profile, 'full');
+  assert.equal(imageCache.save, 'false');
   assert.equal(
     stepNamed('Install Playwright browser')?.['working-directory'],
     'apps/inventory'

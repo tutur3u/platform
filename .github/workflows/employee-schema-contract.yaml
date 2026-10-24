@@ -203,12 +203,11 @@ jobs:
         if: inputs.include_http == true
         working-directory: source
         run: bun x tsc --project apps/web/e2e/fixtures/tsconfig.employee-http.json --noEmit
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/setup-flutter-with-cache
         if: inputs.include_chat_initial_settings == true
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
       - name: Restore locked chat mobile dependencies
         if: inputs.include_chat_initial_settings == true
         working-directory: source/apps/mobile

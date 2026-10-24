@@ -80,7 +80,7 @@ changing balances and reports twice.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/money-lover-import.test.sql --typegen packages/types/src/supabase.ts` | atomic failure, exact replay, concurrent replay, ACL, and result tests pass |
 | Types | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot" && bun run --cwd apps/finance type-check && bun run --cwd packages/internal-api type-check && bun run --cwd packages/ui type-check` | a second isolated typegen is byte-identical to the intentional generated diff; consumers compile |
 | Finance build | `bun run --cwd apps/finance build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

@@ -71,7 +71,7 @@ wallet-interest route.
 | Focused package | `bun run --cwd packages/apis type-check && bun --cwd packages/apis vitest run 'src/finance/wallets/walletId/interest/route.test.ts'` | typecheck and existing focused tests pass; if the route test does not exist at execution time, STOP rather than inventing an unrelated test path |
 | Smoke contracts | `node --test scripts/ci/npm-package-artifact-smoke.test.js scripts/ci/package-release-readiness.test.js` | installed-artifact dependency/import cases pass |
 | APIs artifact | `node scripts/ci/npm-package-artifact-smoke.js --prepare-and-smoke packages/apis` | a clean temporary consumer installs the exact prepared tarball and imports both configured APIs subpaths without workspace fallback |
-| Repository | `bun check && git diff --check` | all checks pass and whitespace is clean |
+| Repository | `bun validate && git diff --check` | all checks pass and whitespace is clean |
 | Scope | `git status --short` | only the approved plan implementation paths are changed |
 
 ## Scope
@@ -122,7 +122,7 @@ Please files, registry permissions, or publishing an artifact.
    not the repository workspace.
    **Verify:** all Focused package, Smoke contracts, and APIs artifact commands
    exit 0.
-5. Run `bun check`, whitespace, exact-scope, and dependency-manifest review.
+5. Run `bun validate`, whitespace, exact-scope, and dependency-manifest review.
    Record the artifact import and lockfile evidence in the coordination note,
    then commit only the approved implementation paths.
    **Verify:** Repository and Scope commands meet their expected results.

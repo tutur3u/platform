@@ -253,7 +253,7 @@ central login, workspace switching, invite acceptance, collaborator roles,
 membership revocation, conflicting edits, artwork privacy, and anonymous published
 world browsing. Require exact-commit CI test, lint, type-check, and real app build gates before
 release; record unrelated repository blockers separately from Lettin's focused
-validation. Do not run `bun check` locally because its task graph can build.
+validation. Do not run `bun validate` locally because its task graph can build.
 
 Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
 

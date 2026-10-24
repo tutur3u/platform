@@ -74,7 +74,7 @@ existing speech execution test as the mocking pattern; no live provider calls.
 | Focused | `bun --cwd apps/ai vitest run src/lib/image-execution.test.ts src/app/v1/images/generations/route.test.ts` | validation, n=1/4, metering, partial failure, abort, and capture/settlement cases pass |
 | AI suite | `bun run --cwd apps/ai test && bun run --cwd apps/ai type-check` | all AI tests/types pass |
 | AI build | `bun run --cwd apps/ai build` | production build passes |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

@@ -47,7 +47,7 @@ database error details in query parameters.
 | --- | --- | --- |
 | Action tests | `bun --cwd apps/git vitest run 'src/app/[locale]/-/[wsId]/admin-actions.test.ts'` | all cases pass |
 | Git typecheck | `bun run --cwd apps/git type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Git build | `bun run --cwd apps/git build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -91,7 +91,7 @@ row, sanitized redirects, audit event type, and cache-tag behavior.
 - [ ] Failed or missing updates never produce the success query flag.
 - [ ] Successful updates retain audit and revalidation behavior.
 - [ ] Caller-visible errors contain no raw database details.
-- [ ] Focused tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

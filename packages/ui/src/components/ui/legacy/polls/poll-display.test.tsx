@@ -66,7 +66,7 @@ describe('PlanDetailsPollContent guest authorization', () => {
         display_name: 'Guest',
         id: 'guest-1',
         is_guest: true,
-        password_hash: 'plan-bound-credential',
+        guest_session: 'plan-bound-session',
       },
     });
     mocks.addPollOption.mockResolvedValue({
@@ -101,14 +101,14 @@ describe('PlanDetailsPollContent guest authorization', () => {
     await waitFor(() => {
       expect(mocks.addPollOption).toHaveBeenCalledWith('plan-1', {
         guestId: 'guest-1',
-        guestPasswordHash: 'plan-bound-credential',
+        guestSession: 'plan-bound-session',
         pollId: 'poll-1',
         userType: 'GUEST',
         value: 'Cafe',
       });
       expect(mocks.submitVote).toHaveBeenCalledWith('plan-1', {
         guestId: 'guest-1',
-        guestPasswordHash: 'plan-bound-credential',
+        guestSession: 'plan-bound-session',
         optionIds: ['option-1'],
         pollId: 'poll-1',
         userType: 'GUEST',

@@ -51,7 +51,7 @@ Obtain exact path transfer; never edit another owner's messages concurrently.
 | Chat tests | `bun run --cwd apps/chat test` | shared-shell tests pass |
 | Mail tests | `bun --cwd apps/mail vitest run src/app/shared-notification-shell.test.tsx` | shared-shell tests pass |
 | App builds | `bun run --cwd apps/chat build && bun run --cwd apps/mail build` | both exit 0 |
-| Repository | `bun check` | exit 0 or documented unrelated blocker |
+| Repository | `bun validate` | exit 0 or documented unrelated blocker |
 
 ## Scope
 
@@ -77,14 +77,14 @@ worktree and run `bun setup`. Commit `fix(i18n): validate satellite shell keys`.
    regression.
 3. Repeat independently for Mail. Keep each app's key list source-derived and
    document the rule for enrolling the remaining seven.
-4. Sort bundles and run validator, app tests/builds, and `bun check`.
+4. Sort bundles and run validator, app tests/builds, and `bun validate`.
 
 ## Done criteria
 
 - [ ] Chat and Mail are no longer skipped by the namespace validator.
 - [ ] Their live shared notification shells resolve every unconditional key.
 - [ ] English/Vietnamese bundles remain key-parity sorted.
-- [ ] Validator/app tests, both builds, and `bun check` pass.
+- [ ] Validator/app tests, both builds, and `bun validate` pass.
 
 ## STOP conditions
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildAuthRateLimitDiagnosticHeaders,
   jsonWithAuthRateLimitDiagnostics,
@@ -13,6 +13,14 @@ function requestWithIp(ipAddress: string) {
 }
 
 describe('auth rate-limit response diagnostics', () => {
+  beforeEach(() => {
+    vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('adds customer-debuggable rate-limit headers on 429 auth responses', () => {
     const request = requestWithIp('203.0.113.42');
     const headers = buildAuthRateLimitDiagnosticHeaders({

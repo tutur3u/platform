@@ -60,7 +60,7 @@ Infrastructure replacement as navigation only.
 | Sync route tests | `bun --cwd apps/calendar vitest run 'src/app/api/v1/workspaces/[wsId]/calendar/sync/route.test.ts'` | auth, lock, and trigger cases pass |
 | Infrastructure focused test | `bun --cwd apps/infrastructure vitest run 'src/app/[locale]/(dashboard)/[wsId]/calendar-sync/_components/sync-trigger-button.test.tsx'` | Calendar deep-link contract passes |
 | Typechecks | `bun run --cwd apps/calendar type-check && bun run --cwd apps/infrastructure type-check` | both exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | App builds | `bun run --cwd apps/calendar build && bun run --cwd apps/infrastructure build` | both exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -109,7 +109,7 @@ before admin queries or provider calls.
 
 Cover the actual Infrastructure hostname/rewrite behavior plus Calendar
 membership, permission, lock, cooldown, and failure responses. Run both real
-app builds because route/rewrite behavior is not established by `bun check`.
+app builds because route/rewrite behavior is not established by `bun validate`.
 
 ## Test plan
 
@@ -125,7 +125,7 @@ app builds because route/rewrite behavior is not established by `bun check`.
       authorization and lock/cooldown path.
 - [ ] Infrastructure no longer calls a route that its rewrite sends to Web.
 - [ ] Cross-app authentication does not broaden either satellite audience.
-- [ ] Focused tests, typechecks, `bun check`, both builds, and whitespace pass.
+- [ ] Focused tests, typechecks, `bun validate`, both builds, and whitespace pass.
 
 ## STOP conditions
 

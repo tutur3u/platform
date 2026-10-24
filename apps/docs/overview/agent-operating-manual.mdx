@@ -207,7 +207,7 @@ remaining dirty-path summary.
 ## Tooling & Environment Rules
 
 - Single package manager: **Bun**. Use workspace filters (`bun --filter ...`) to target apps/packages.
-- Use `bun check:now` when you need to cancel queued or running repo-root `bun check` invocations for the current workspace and start a fresh pass immediately.
+- Use `bun validate:now` when you need to cancel queued or running repo-root `bun validate` invocations for the current workspace and start a fresh pass immediately.
 - Supabase lifecycle via scripts: `sb:start`, `sb:stop`, `sb:new`, `sb:up`, `sb:typegen` (user applies pushes).
 - Do not invent new cache stores; rely on Turborepo, Bun, BuildKit, and Cargo
   caches plus the documented bounded cleanup wrappers.

@@ -1399,16 +1399,16 @@ describe('withSessionAuth', () => {
 
   // ---- Unknown IP handling ----
 
-  it('should skip rate limiting and IP block for unknown IPs', async () => {
+  it('should block-check and rate-limit the shared unknown IP bucket', async () => {
     mockExtractIP.mockReturnValue('unknown');
-
     const handler = vi.fn().mockReturnValue(NextResponse.json({}));
     const wrapped = withSessionAuth(handler);
-    await wrapped(makeRequest('GET'));
+    await wrapped(makeRequest('POST'));
 
-    expect(mockIsIPBlocked).not.toHaveBeenCalled();
-    expect(mockCheckRateLimit).not.toHaveBeenCalled();
-    expect(handler).toHaveBeenCalled();
+    expect(mockIsIPBlocked).toHaveBeenCalledWith('unknown');
+    expect(mockCheckRateLimit.mock.calls[0]?.[0]).toBe(
+      'session:ip:mutate:unknown'
+    );
   });
 
   // ---- Route params ----

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('node:fs');
+const { atomicWriteFileSync } = require('./safe-fs');
 const path = require('node:path');
 const { performance } = require('node:perf_hooks');
 
@@ -793,7 +794,6 @@ async function runBenchmark(options) {
     setups,
   };
 }
-
 function writeReport(report, outputDir = DEFAULT_OUTPUT_DIR, fsImpl = fs) {
   const resolvedOutputDir = path.resolve(outputDir);
 
@@ -809,13 +809,13 @@ function writeReport(report, outputDir = DEFAULT_OUTPUT_DIR, fsImpl = fs) {
   const stamp = report.generatedAt.replace(/[:.]/gu, '-');
   const reportDir = path.join(resolvedOutputDir, stamp);
   const reportPath = path.join(reportDir, 'report.json');
-
   fsImpl.mkdirSync(reportDir, { recursive: true });
-  fsImpl.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  atomicWriteFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, {
+    fsImpl,
+  });
 
   return reportPath;
 }
-
 function printHelp() {
   console.log(`Usage: bun benchmark:web-setups -- [options]
 

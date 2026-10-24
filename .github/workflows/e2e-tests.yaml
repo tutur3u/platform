@@ -74,6 +74,7 @@ env:
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
   E2E_IMAGE_BUNDLE_WAIT_SECONDS: "10"
   E2E_DOCKER_SUPABASE_RESET: "0"
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
   E2E_SUPABASE_IMAGE_TRANSPORT: ${{ inputs.supabase_image_transport || 'cache' }}
 
 jobs:
@@ -275,24 +276,6 @@ jobs:
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
 
-      - name: Get Supabase CLI version
-        id: supabase-version
-        run: echo "version=$(supabase --version)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore cached Docker images
-        id: cache-supabase
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
-          restore-keys: |
-            supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-
-
-      - name: Load cached Docker images
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && steps.cache-supabase.outputs.cache-matched-key != ''
-        run: docker load -i /tmp/supabase-docker/images.tar || true
-
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -339,6 +322,14 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
 
+      - name: Restore shared Supabase images
+        continue-on-error: true
+        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
+        uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
+          save: ${{ matrix.mode == 'shard' && matrix.shard == 1 }}
+
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline
       - name: Install Playwright browsers
@@ -379,27 +370,6 @@ jobs:
         id: redact-diagnostics
         if: ${{ failure() }}
         run: node scripts/ci/e2e-diagnostics-redact.js
-
-      - name: Save Supabase Docker images for cache
-        id: prepare-supabase-docker-cache
-        # Only the general first shard uploads the multi-GB cache, not invitation shards.
-        if: ${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
-        run: |
-          mkdir -p /tmp/supabase-docker
-          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
-          if [ -s /tmp/supabase-docker/images.tar ]; then
-            echo "cache-ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No Supabase Docker images were available to cache."
-            echo "cache-ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Cache Supabase Docker images
-        if: ${{ always() && steps.prepare-supabase-docker-cache.outputs.cache-ready == 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
 
       - name: Upload E2E failure artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -459,24 +429,6 @@ jobs:
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
 
-      - name: Get Supabase CLI version
-        id: supabase-version
-        run: echo "version=$(supabase --version)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore cached Supabase Docker images
-        id: cache-supabase
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
-          restore-keys: |
-            supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-
-
-      - name: Load cached Supabase Docker images
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && steps.cache-supabase.outputs.cache-matched-key != ''
-        run: docker load -i /tmp/supabase-docker/images.tar || true
-
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -497,6 +449,14 @@ jobs:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/inventory^... --filter=@tuturuuu/storefront^...
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+      - name: Restore shared Supabase images
+        continue-on-error: true
+        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
+        uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
+          save: "false"
 
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline

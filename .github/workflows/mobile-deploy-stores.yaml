@@ -187,10 +187,18 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
-          cache-dependency-path: |
-            apps/mobile/android/**/*.gradle*
-            apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
+
+      # Production jobs read caches populated by trusted main builds.
+      - name: Restore Gradle dependencies without saving
+        id: gradle-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
@@ -291,6 +299,7 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-android.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
+
   publish-ios-testflight:
     permissions:
       actions: read
@@ -324,8 +333,10 @@ jobs:
           flutter-version: "3.47.x"
           channel: stable
 
-      - name: Cache CocoaPods downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      # Production jobs read caches populated by trusted main builds.
+      - name: Restore CocoaPods downloads without saving
+        id: pods-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             /Users/runner/Library/Caches/CocoaPods
@@ -557,6 +568,7 @@ jobs:
           rm -rf "$RUNNER_TEMP/mobile-deployment"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
+
 
   retry-ios-testflight-review:
     permissions:

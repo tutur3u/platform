@@ -3,7 +3,7 @@ name: Release Please Auto Merge
 # Runs `bun git-release-please` and `bun git-sync` on a schedule — the same two
 # commands the release flow uses locally, rather than a YAML reimplementation of
 # them. Those scripts already own the merge rules (platform version sync,
-# conflict detection, `bun check`, fast-forward safety) and are covered by
+# conflict detection, `bun validate`, fast-forward safety) and are covered by
 # scripts/git-release-please.test.js and scripts/git-sync.test.js, so keeping
 # CI on top of them means the cloud path and the local path cannot drift.
 #
@@ -119,7 +119,7 @@ jobs:
             echo "needs_sync=${needs_sync}"
           } >> "$GITHUB_OUTPUT"
 
-      # Checked before the ~40 minutes of install, build and `bun check` that
+      # Checked before the ~40 minutes of install, build and `bun validate` that
       # follow, because none of it can land without this. `main` and
       # `production` are covered by a ruleset whose only bypass actor is
       # OrganizationAdmin, so `github.token` is refused by the remote with
@@ -155,7 +155,7 @@ jobs:
         if: steps.plan.outputs.should_merge == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
-      # `bun git-release-please` runs `bun check`, and the turbo `test` task
+      # `bun git-release-please` runs `bun validate`, and the turbo `test` task
       # depends on `transit` (a no-op marker), not `^build`. Locally that is
       # invisible because `bun setup` builds these five packages, but a fresh CI
       # checkout has no `dist/**`, and @tuturuuu/types, @tuturuuu/supabase and
@@ -172,18 +172,16 @@ jobs:
 
       # Release-please bumps apps/mobile/pubspec.yaml on every release, so
       # `touchesMobile()` in scripts/git-release-please.js is always true and
-      # `bun check` is followed by `bun check:mobile` — dart-format,
+      # `bun validate` is followed by `bun check:mobile` — dart-format,
       # flutter-analyze and flutter-test. Without a Flutter toolchain all three
       # exit 127 and the merge never reaches the push. Keep the version pin in
       # step with mobile.yaml.
       - name: Setup Flutter
         if: steps.plan.outputs.should_merge == 'true'
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       # `generate: true` in pubspec.yaml means this also runs gen-l10n, which
       # flutter-analyze needs before it can resolve lib/l10n/gen.
@@ -235,7 +233,7 @@ jobs:
                 if [[ "$mobile_changed" == true ]]; then
                   (cd apps/mobile && flutter pub get)
                 fi
-                bun check
+                bun validate
                 if [[ "$mobile_changed" == true ]]; then
                   bun check:mobile
                 fi

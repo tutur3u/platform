@@ -66,7 +66,7 @@ landed; a real cutover is a STOP, not permission to guess new wording.
 | Focused contract | `node --test scripts/devops-runtime-authority-docs.test.js` | overview and both canonical warnings agree; stale deployed/ship wording is rejected |
 | Discovery | `bun test:scripts --list | rg 'scripts/devops-runtime-authority-docs.test.js'` | exactly one discovered test path |
 | Docs metadata | `node -e "JSON.parse(require('fs').readFileSync('apps/docs/docs.json','utf8'))"` | exit 0 |
-| Full script/repository | `bun test:scripts && bun check && git diff --check` | all tests/checks pass; whitespace output is empty |
+| Full script/repository | `bun test:scripts && bun validate && git diff --check` | all tests/checks pass; whitespace output is empty |
 
 ## Scope
 
@@ -87,7 +87,7 @@ backend or TanStack source, docs navigation, secrets, other runbooks.
 3. Run the focused test and discovery gate. Search the overview for `ship as
    Docker sidecars` and any assertion that backend currently serves production;
    expected result is no match.
-4. Run JSON parse, full script tests, `bun check`, whitespace, and exact-scope
+4. Run JSON parse, full script tests, `bun validate`, whitespace, and exact-scope
    gates.
 
 ## Done criteria

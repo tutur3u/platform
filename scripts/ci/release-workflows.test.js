@@ -1791,7 +1791,7 @@ test('package publish workflows release from production version bumps', () => {
     );
     assert.doesNotMatch(workflow, /\n {2}pull_request:\n/);
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
-    assert.doesNotMatch(workflow, /pull_request\.title/);
+    assert.equal(workflow.includes('pull_request.title'), false);
     assert.doesNotMatch(workflow, /wait-workspace-dependencies/);
     assert.doesNotMatch(workflow, /jsr/);
     assert.doesNotMatch(workflow, /npm\.pkg\.github\.com/);
@@ -1804,7 +1804,6 @@ test('package publish workflows release from production version bumps', () => {
     assert.doesNotMatch(workflow, /secrets\.NPM_TOKEN/);
     assert.match(workflow, /publish-npm:/);
     assert.match(workflow, /registry-url: "https:\/\/registry\.npmjs\.org"/);
-
     assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
     assert.match(rejectJob, /permissions:\s*\{\}/);
     assert.match(rejectJob, rejectMessagePattern);

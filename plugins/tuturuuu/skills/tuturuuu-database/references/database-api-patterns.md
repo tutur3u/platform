@@ -374,3 +374,14 @@ rename and completed-RESTORE revision lineage may expose a separate original
 creation name. Missing provenance or current profile/mailbox drift denies proof.
 Use the hosted managed-profile schema selection and same-database type artifact;
 source checks cannot establish SQL, concurrency or production acceptance.
+
+### Guest table and participant view grants
+
+Meet guest data and the legacy `meet_together_users` participant view are read by
+server/admin clients. Revoking a base table does not revoke an owner-rights view:
+audit dependent views and their client grants together. Keep service-role access,
+and prove both client roles receive permission denial on actual view reads as well
+as checking effective privileges. The regression is
+`apps/database/supabase/tests/security-meet-guest-grants.sql`; a socket-only PG14
+fixture can apply the relevant historical view definition and later grant
+migrations against synthetic prerequisite tables without a shared Docker stack.

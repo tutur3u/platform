@@ -11,6 +11,7 @@ import {
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { readRegularFileSync } from '../safe-fs.js';
 import {
   captureNormalization,
   checkNormalization,
@@ -216,7 +217,7 @@ function hashes(app) {
       ),
       'private or legacy artifact forbidden'
     );
-    const bytes = readFileSync(path);
+    const bytes = readRegularFileSync(path);
     if (name.startsWith('dist/client/'))
       assert.ok(
         !bytes.includes(Buffer.from(PRIVATE_CANARY)),

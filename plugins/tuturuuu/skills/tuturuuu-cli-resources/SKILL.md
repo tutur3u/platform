@@ -33,7 +33,7 @@ ttr resources setup --root <repo> --shell zsh
 ttr resources status --json
 ```
 
-Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
+Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Repository scripts and check:changed invoke `~/.bun/bin/ttr` directly, bypassing workspace binaries. Run and shim never provision launchers. Setup refuses existing launchers owned by a different installation; use the explicit force preview and drain procedure below before switching. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
 
 Repeat `--root` for other repositories. Linked Git worktrees inherit repository
 scope. Zsh/Bash hooks apply to new shells; `--shell none` avoids shell edits and
@@ -114,3 +114,45 @@ retain argv/env. Invalid config errors name the field and range but omit values.
 Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
 
 Prepare fixture shims once per home; concurrent run loaders wait for that preparation instead of racing shell-file compare-and-swap. Scope barriers to the child, operation or detached group that can produce the awaited state. Allow one second for final writes after liveness ends and emit scoped stderr before the test deadline. Keep synthetic CPU, memory and load telemetry consistent so host contention does not alter policy inputs. Test idle-warning status composition with one injected CPU snapshot, asserting warning data and rendered text plus a busy-snapshot negative control. A preliminary zero sample cannot stabilise a later ps read; do not resample an injected table. Reuse a fixture home only with the same CPU/memory budget; changed host budgets require a fresh home.
+
+### Launcher mismatch incident recovery
+
+Symptom: the global CLI rejects missing, stale or malformed launchers. A stale workspace SDK dist can write its own entry into shared launchers before admission, and its nested run can block the queue. Never run operational commands through workspace or ancestor `node_modules/.bin/ttr` or stale `packages/sdk/dist`.
+
+Repository admission uses the verified global `~/.bun/bin/ttr` (stable >= 0.28.0). `check:changed` and `node scripts/ttr-run.js -- COMMAND` run directly when the inherited `TTR_RESOURCES_ADMITTED` or `TTR_RESOURCE_OWNER` marker is present. When the global install is absent, `check:changed` warns and runs sequentially with its existing worker limits. The operational wrappers still require a global CLI, and an invalid/old installed global fails with `bun add -g tuturuuu` recovery guidance. None falls back to a workspace binary. Refresh declared workspace bin links after adopting the source wrapper. `bun install` alone can leave orphan aliases unchanged; use the explicit orphan inspection/removal procedure below. This does not rebuild dist. The shipped bin works in installed packages; workspace aliases refuse to execute dist, including from `bunx`.
+
+An operator with installation authority must identify and drain the offending jobs, preserve the existing resource configuration, then restore canonical launchers through the trusted global CLI with the **same existing roots and shell settings**:
+
+```sh
+~/.bun/bin/ttr resources setup --root <existing-root-1> --root <existing-root-2> --shell <existing-shell>
+~/.bun/bin/ttr resources status --json
+```
+
+Fence-enabled CLI versions refuse a different installation by default. Inspect `setup --force --dry-run` before an intentional cross-install restore, then use `setup --force` with the same roots after the queue drains. The plan reports each old/new launcher. Force never overwrites unmanaged files. Version changes within one Bun global installation are allowed; versioned cache paths normalise to its stable global link. Run/shim never write launchers. Review status for enabled installation and an empty queue before resuming work. Source changes do not repair already-installed links or prove historical writer attribution.
+
+Regression coverage: `scripts/trusted-ttr.test.js`, `scripts/workspace-ttr-bin.test.js`, and `resources-provisioning.test.ts` exercise ancestor lookup, inherited admission, minimum version, stale bins, same-install upgrades, refusal and forced replacement with disposable homes.
+
+#### Orphan workspace aliases
+
+A refusal can also mean stale workspace bin links in an ancestor checkout that still has a legitimate SDK dependency. Inspect that ancestor's package.json and links first. For a declared dependency, run `~/.bun/bin/ttr resources run -- bun install --force` there to regenerate aliases pointing to `bin/ttr.cjs`; retain its legitimate package link. `--no-ttr` does not bypass unsafe ancestor links. The removal procedure below applies only to confirmed undeclared orphan symlinks.
+
+If the root manifest has no `tuturuuu` dependency, old symlinks can remain: `node_modules/tuturuuu -> ../packages/sdk` and `node_modules/.bin/{ttr,tuturuuu,tutur3u} -> ../tuturuuu/dist/cli/index.js`. Bun may report no changes and keep them. The trusted repo wrapper and `check:changed` refuse such ancestor aliases, even inside an admitted lane; they never execute or remove them silently. A healthy global CLI does not make those bare aliases safe.
+
+From the affected ancestor checkout, inspect the manifest and every link first. Only after confirming these are the orphan symlinks above, remove those links explicitly and reinstall under admission:
+
+```sh
+ls -l node_modules/tuturuuu node_modules/.bin/ttr node_modules/.bin/tuturuuu node_modules/.bin/tutur3u
+# Confirm the root has no tuturuuu dependency and each path is a symlink.
+for alias in ttr tuturuuu tutur3u; do
+  file="node_modules/.bin/$alias"
+  if [ -L "$file" ] && [ "$(readlink "$file")" = '../tuturuuu/dist/cli/index.js' ]; then
+    rm -- "$file"
+  fi
+done
+if [ -L node_modules/tuturuuu ] && [ "$(readlink node_modules/tuturuuu)" = '../packages/sdk' ]; then
+  rm -- node_modules/tuturuuu
+fi
+~/.bun/bin/ttr resources run -- bun install
+```
+
+Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity.

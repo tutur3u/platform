@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { accountKey, recordObservation } from '../src/admission';
 import { createBlock, matchingBlocks } from '../src/block-ledger';
-import { completedFailureClass, failureClass } from '../src/failure-receipt';
+import {
+  completedFailureClass,
+  executionFailureKind,
+  failureClass,
+} from '../src/failure-receipt';
 import { emptyLedger } from '../src/hook-ledger';
 import { pruneLedger } from '../src/ledger-retention';
 import { gateDecision } from '../src/positional-admit';
@@ -43,6 +47,22 @@ describe('model-only provider capacity cooldown', () => {
     );
     expect(completedFailureClass('Overload: retry later')).toBe('capacity');
     expect(completedFailureClass('Resource exhausted')).toBe('capacity');
+  });
+  it('distinguishes context allowance and provider-start failures from quota', () => {
+    expect(
+      executionFailureKind('Native Claude handoff exceeded context allowance')
+    ).toBe('context-allowance-failure');
+    expect(
+      executionFailureKind('Provider failed to start the resumed run')
+    ).toBe('provider-start-failure');
+    expect(
+      completedFailureClass('Native Claude handoff exceeded context allowance')
+    ).toBeNull();
+    expect(
+      executionFailureKind(
+        'Usage Limit Reached; context window resets in 6 days'
+      )
+    ).toBeNull();
   });
   it('records an exact model block with a default thirty-minute next eligibility', () => {
     const block = createBlock({

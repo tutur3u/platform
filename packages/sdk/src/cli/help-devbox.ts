@@ -37,7 +37,7 @@ export const boxHelp = {
     'ttr box upgrade --runner <runner-id>',
     'ttr box restart --runner <runner-id>',
     'TUTURUUU_DEVBOX_RUNNER_TOKEN=<token> ttr box shutdown',
-    'ttr box run -- bun check',
+    'ttr box run -- bun validate',
     'ttr box build --cwd apps/web',
     'ttr box serve --cwd apps/web --port 7803 --database-url-env DEVBOX_DATABASE_URL',
     'ttr box tunnel --cloudflared-token-env CLOUDFLARED_TOKEN',
