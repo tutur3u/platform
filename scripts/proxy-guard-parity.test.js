@@ -38,16 +38,9 @@ function getNextApps() {
   return getAppsWithNextDependency().filter((app) => !isNativeStartApp(app));
 }
 
-function readSources(directory) {
-  if (!fs.existsSync(directory)) return [];
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return readSources(entryPath);
-    return /\.[cm]?tsx?$/.test(entry.name) && !/\.test\./.test(entry.name)
-      ? [fs.readFileSync(entryPath, 'utf8')]
-      : [];
-  });
-}
+// Native Start apps prove their guard wiring behaviourally: this test drives
+// the real Worker entry with only the shared guard verdict and network faked.
+const NATIVE_GUARD_TEST = 'src/native/worker-api-guard.test.ts';
 
 test('every Next app under apps/ has a src/proxy.ts file', () => {
   const apps = getNextApps();
@@ -85,16 +78,26 @@ test('every app proxy uses the shared API guard or the web-specific guard path',
   }
 });
 
-test('native Start apps guard API traffic in their Worker request path', () => {
+test('native Start apps own a behavioural Worker API guard test', () => {
   const nativeApps = getAppsWithNextDependency().filter(isNativeStartApp);
 
   for (const appName of nativeApps) {
-    const sources = ['src', 'cloudflare'].flatMap((directory) =>
-      readSources(path.join(appsDir, appName, directory))
-    );
+    const appDir = path.join(appsDir, appName);
+    const testPath = path.join(appDir, NATIVE_GUARD_TEST);
     assert.ok(
-      sources.some((source) => /guardApiProxyRequest/.test(source)),
-      `Expected ${appName} to guard API traffic with guardApiProxyRequest`
+      fs.existsSync(testPath),
+      `Expected ${appName} to prove its Worker API guard in ${path.relative(repoRoot, testPath)}`
+    );
+    const source = fs.readFileSync(testPath, 'utf8');
+    // The real Worker entry runs; only the guard verdict and fetch are faked.
+    assert.match(source, /import\('\.\.\/\.\.\/cloudflare\/worker'\)/);
+    assert.match(source, /vi\.mock\('@tuturuuu\/utils\/api-proxy-guard'/);
+    assert.match(source, /vi\.stubGlobal\('fetch'/);
+    assert.match(source, /expect\(upstream\)\.not\.toHaveBeenCalled\(\)/);
+    assert.match(
+      fs.readFileSync(path.join(appDir, 'vitest.config.ts'), 'utf8'),
+      /'src\/native\/\*\*\/\*\.test\.\{ts,tsx\}'/,
+      `Expected ${appName}'s unit suite to run ${NATIVE_GUARD_TEST}`
     );
   }
 });
