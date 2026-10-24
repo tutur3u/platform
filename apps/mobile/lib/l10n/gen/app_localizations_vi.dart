@@ -6645,9 +6645,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get remindersDescription => 'Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.';
-
-  @override
   String get remindersEnableNotifications => 'Bật thông báo';
 
   @override

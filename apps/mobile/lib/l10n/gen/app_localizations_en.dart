@@ -6742,9 +6742,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get remindersDescription => 'Task deadlines and calendar events, kept ready on this device.';
-
-  @override
   String get remindersEnableNotifications => 'Enable notifications';
 
   @override
