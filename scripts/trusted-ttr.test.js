@@ -72,7 +72,7 @@ for (const relative of ['.bun', '.bun/install']) {
         process.execPath,
         [
           '-p',
-          `require(${JSON.stringify(script)}).trustedTtr(${JSON.stringify(f.home)})`,
+          `require(${JSON.stringify(script)}).trustedTtr(${JSON.stringify(f.home)},${JSON.stringify(f.root)})`,
         ],
         { cwd: f.root, env: f.env, encoding: 'utf8', stdio: 'pipe' }
       ).trim();
@@ -112,23 +112,46 @@ test('ancestor workspace binary is refused from a worktree without node_modules'
   assert.equal(fs.existsSync(f.observed), false);
 });
 
+test('fixture cwd isolates resolution while the default still refuses stale ancestor bins', (t) => {
+  const f = fixture(t, true);
+  const resolver = path.join(__dirname, 'trusted-ttr.js');
+  const run = (cwdArgument) =>
+    execFileSync(
+      process.execPath,
+      [
+        '-p',
+        `require(${JSON.stringify(resolver)}).trustedTtr(${JSON.stringify(f.home)}${cwdArgument})`,
+      ],
+      { cwd: f.worktree, env: f.env, encoding: 'utf8', stdio: 'pipe' }
+    ).trim();
+  assert.equal(run(`,${JSON.stringify(f.root)}`), f.cli);
+  assert.throws(run.bind(null, ''), (error) =>
+    /Unsafe ancestor ttr bin links/.test(String(error.stderr))
+  );
+  assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
+  assert.equal(fs.existsSync(f.observed), false);
+});
+
 test('missing, legacy and redirected global installations refuse with recovery instructions', (t) => {
   const f = fixture(t);
   fs.writeFileSync(
     path.join(f.pkg, 'package.json'),
     JSON.stringify({ name: 'tuturuuu', version: '0.27.0' })
   );
-  assert.throws(() => trustedTtr(f.home), /bun add -g tuturuuu.*0.28.0/);
+  assert.throws(
+    () => trustedTtr(f.home, f.root),
+    /bun add -g tuturuuu.*0\.28\.0/
+  );
   fs.unlinkSync(f.cli);
   fs.symlinkSync(f.legacy, f.cli);
   assert.throws(
-    () => trustedTtr(f.home),
+    () => trustedTtr(f.home, f.root),
     /outside the global installation.*bun add -g tuturuuu/
   );
   fs.unlinkSync(f.cli);
   assert.throws(
-    () => trustedTtr(f.home),
-    /Trusted global ttr unavailable.*bun add -g tuturuuu/
+    () => trustedTtr(f.home, f.root),
+    /Trusted global ttr unavailable at .*Run bun add -g tuturuuu to install/
   );
   assert.equal(fs.existsSync(f.observed), false);
 });
@@ -234,7 +257,7 @@ test('trusted resolver accepts the published wrapper entry declared by a new glo
   );
   fs.unlinkSync(f.cli);
   fs.symlinkSync(bin, f.cli);
-  assert.equal(trustedTtr(f.home), f.cli);
+  assert.equal(trustedTtr(f.home, f.root), f.cli);
 });
 
 test('symlinked HOME resolves the same trusted global CLI', (t) => {
@@ -242,7 +265,7 @@ test('symlinked HOME resolves the same trusted global CLI', (t) => {
   const alias = path.join(f.root, 'home-link');
   fs.symlinkSync(f.home, alias, 'dir');
   assert.equal(
-    trustedTtr(alias),
+    trustedTtr(alias, f.root),
     fs.realpathSync(path.dirname(f.cli)) + '/ttr'
   );
 });

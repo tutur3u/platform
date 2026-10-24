@@ -46,8 +46,8 @@ function inResourceLane(env = process.env) {
   return Boolean(env.TTR_RESOURCES_ADMITTED || env.TTR_RESOURCE_OWNER);
 }
 
-function trustedTtr(home = homedir()) {
-  assertWorkspaceBins();
+function trustedTtr(home = homedir(), cwd = process.cwd()) {
+  assertWorkspaceBins(cwd);
   let cli = path.join(home, '.bun/bin/ttr');
   try {
     home = fs.realpathSync(home);
