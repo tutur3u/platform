@@ -671,12 +671,11 @@ the shared runtime’s `BASE_URL` points at Parley when running there. Participa
 invitations must instead remain on the current Parley origin at `/r/<code>`,
 never `/sessions/<id>`. Codes do not confer authorization.
 
-Reset participation acknowledgement when switching the selected scenario. Keep
-the selection visible when search filters hide its option. Load saved private
-rubrics only after both session-owner and meeting-host checks; render the session
-snapshot rather than the current scenario revision. See the Parley product guide
-and studio setup, invitation, review-route and Meet-link regression tests.
-
+Reset participation acknowledgement when switching scenarios. Keep filtered selections
+visible. Load private rubrics only after session-owner and meeting-host checks;
+render the session snapshot. See the Parley product guide and studio setup,
+invitation, review-route and Meet-link regression tests. Keep shared chat mention
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
 
 ## Immediate notification selection
 
