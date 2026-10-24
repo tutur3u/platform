@@ -25,9 +25,9 @@ bun check:changed --files a.ts b.ts
 It never runs builds, `bun validate` or Turbo. Small repository scripts run directly;
 Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
 when resource control is installed and enabled (`--no-ttr` opts out). Without
-a global ttr installation, the gate warns and runs sequentially with Vitest
+the `~/.bun/bin/ttr` directory entry, the gate warns and runs sequentially with Vitest
 capped at two workers. An invalid installed global CLI or unsafe ancestor bin
-alias still fails closed; a workspace binary is never used as a fallback.
+alias still fails closed; a workspace binary is never used as a fallback. A dangling global launcher symlink or missing package bin target is a broken installation, not an absent CLI: reinstall with `bun add -g tuturuuu` before retrying.
 
 ## What runs for which paths
 
@@ -57,6 +57,10 @@ Without push refs, local `tmp/` branches with a configured tracking branch valid
 branch name and print both names. Untracked `tmp/` branches still fail, and other
 local branch names always validate themselves. This keeps the check blocking
 while allowing temporary agent worktrees that track a valid publication branch.
+The manual label `branch name fix/routing (tracking for tmp/agent)` validates only
+the configured upstream name, which may name a local or remote branch. It does
+not certify a future push destination. For example, `git push origin tmp/agent`
+is still rejected by the opted-in hook even when the upstream is `fix/routing`.
 CI continues to validate the actual published branch name.
 
 Ancestor bin refusals can be caused by stale links in the main checkout even

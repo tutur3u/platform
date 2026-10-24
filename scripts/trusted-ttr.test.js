@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -155,6 +155,62 @@ test('missing, legacy and redirected global installations refuse with recovery i
   );
   assert.equal(fs.existsSync(f.observed), false);
 });
+
+for (const state of ['absent', 'dangling', 'missing-bin-target']) {
+  test(`global launcher presence distinguishes ${state} from not installed`, (t) => {
+    const f = fixture(t);
+    if (state === 'missing-bin-target') {
+      const manifest = path.join(f.pkg, 'package.json');
+      fs.writeFileSync(
+        manifest,
+        JSON.stringify({
+          ...JSON.parse(fs.readFileSync(manifest, 'utf8')),
+          bin: { ttr: './bin/missing.cjs' },
+        })
+      );
+    } else {
+      fs.unlinkSync(f.cli);
+      if (state === 'dangling')
+        fs.symlinkSync(path.join(f.root, 'missing.cjs'), f.cli);
+    }
+    const checker = path.join(__dirname, 'check-changed.js');
+    const result = spawnSync(
+      process.execPath,
+      [
+        '-e',
+        `
+      const {execFileSync}=require('node:child_process');
+      const warnings=[];
+      try {
+        const prefix=require(${JSON.stringify(checker)}).ttrPrefix(true,execFileSync,process.env,undefined,(line)=>warnings.push(line));
+        process.stdout.write(JSON.stringify({prefix,warnings}));
+      } catch(error) { console.error(error.message); process.exitCode=1; }
+    `,
+      ],
+      { cwd: f.worktree, env: f.env, encoding: 'utf8' }
+    );
+    assert.equal(result.error, undefined);
+    if (state === 'absent') {
+      assert.equal(result.status, 0, result.stderr);
+      const { prefix, warnings } = JSON.parse(result.stdout);
+      assert.equal(prefix, null);
+      assert.match(warnings.join('\n'), /not installed.*sequentially/);
+    } else {
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(
+        result.stderr,
+        /global launcher exists but its installation is broken/
+      );
+      assert.match(result.stderr, /bun add -g tuturuuu/);
+      assert.doesNotMatch(
+        result.stdout + result.stderr,
+        /not installed; running checks sequentially/
+      );
+    }
+    assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
+    assert.equal(fs.existsSync(f.observed), false);
+  });
+}
 
 test('package scripts and shared wrapper preserve arguments and skip inherited lane admission', (t) => {
   const f = fixture(t);

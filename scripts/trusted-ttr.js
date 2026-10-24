@@ -77,10 +77,22 @@ function trustedTtr(home = homedir(), cwd = process.cwd()) {
       throw new Error('requires a stable tuturuuu version >= 0.28.0');
     return cli;
   } catch (cause) {
-    throw new Error(
-      `Trusted global ttr unavailable at ${cli}: ${cause.message}. Run bun add -g tuturuuu to install a stable version >= 0.28.0; workspace or ancestor node_modules binaries are never used.`,
+    let missing = false;
+    let broken = false;
+    if (cause.code === 'ENOENT') {
+      try {
+        fs.lstatSync(cli);
+        broken = true;
+      } catch (status) {
+        missing = status.code === 'ENOENT';
+      }
+    }
+    const error = new Error(
+      `Trusted global ttr unavailable at ${cli}: ${cause.message}.${broken ? ' The global launcher exists but its installation is broken.' : ''} Run bun add -g tuturuuu to install a stable version >= 0.28.0; workspace or ancestor node_modules binaries are never used.`,
       { cause }
     );
+    if (missing) error.code = 'TTR_GLOBAL_NOT_INSTALLED';
+    throw error;
   }
 }
 
