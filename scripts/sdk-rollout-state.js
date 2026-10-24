@@ -185,7 +185,10 @@ function fingerprint(
   const real = fs.realpathSync(target);
   // Classify and hash one descriptor so the hashed bytes always belong to the
   // inode whose type and mode were recorded.
-  const fd = fs.openSync(real, readOnlyNoFollow);
+  const fd = fs.openSync(
+    real,
+    readOnlyNoFollow | (stat.isDirectory() ? fs.constants.O_DIRECTORY : 0)
+  );
   try {
     return fingerprintOpened(target, stat, real, fd, ancestry, budget);
   } finally {
@@ -204,24 +207,37 @@ function fingerprintOpened(target, stat, real, fd, ancestry, budget) {
     : ['entry'];
   if (info.isDirectory()) {
     const next = new Set(ancestry).add(real);
-    return hash(
-      JSON.stringify([
-        ...type,
-        info.mode & 0o777,
-        fs
-          .readdirSync(real)
-          .sort()
-          .map((name) => [
-            name,
-            fingerprint(path.join(real, name), next, budget),
-          ]),
-      ])
-    );
+    // Node has no portable descriptor-relative readdir/openat. Fence pathname
+    // traversal with the checked directory's identity before and after each
+    // enumeration and after child hashing; never publish a mixed fingerprint.
+    assertDirectoryIdentity(real, info);
+    const names = fs.readdirSync(real).sort();
+    assertDirectoryIdentity(real, info);
+    const children = names.map((name) => [
+      name,
+      fingerprint(path.join(real, name), next, budget),
+    ]);
+    assertDirectoryIdentity(real, info);
+    return hash(JSON.stringify([...type, info.mode & 0o777, children]));
   }
   if (!info.isFile()) throw new Error('Unsupported supplier state');
   return hash(
     JSON.stringify([...type, info.mode & 0o777, hash(fs.readFileSync(fd))])
   );
+}
+function assertDirectoryIdentity(real, checked) {
+  let current;
+  try {
+    current = fs.lstatSync(real);
+  } catch (error) {
+    if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error;
+  }
+  if (
+    !current?.isDirectory() ||
+    current.dev !== checked.dev ||
+    current.ino !== checked.ino
+  )
+    throw new Error('Supplier directory changed while fingerprinting');
 }
 function currentState(backup) {
   return readJson(path.join(backup, 'restore.json')).files.map(

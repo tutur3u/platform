@@ -456,6 +456,21 @@ current/protected backup. Failed or unknown recovery evidence stays retained.
 Cache pruning preserves archives referenced by the current installation and
 retained backups.
 
+Rollout integrity checks classify and read launcher files, supplier file contents,
+and cache manifests through the same open descriptor. Directory fingerprints
+compare the traversed path's device and inode with the open directory before and
+after enumeration and after hashing children; a replacement aborts the check.
+Cache manifests intentionally follow existing symlinks, while launcher paths
+reject them. Special files fail without waiting on a FIFO.
+
+Run `node --test scripts/sdk-rollout-descriptor.test.js scripts/sdk-rollout-race.test.js`
+for deterministic check/read and directory-swap regressions. The test loader
+injects filesystem hooks without changing the production functions. Set
+`SDK_ROLLOUT_TEST_REF=<git-ref>` to exercise the race tests against historical
+source; FIFO controls run in child processes with a two-second kill deadline.
+These checks do not replace exclusive use of the global package manager during
+rollout and restore.
+
 #### Recover a stale admission fence
 
 A dead preparation owner with no `admission/mutation.json` has not changed the

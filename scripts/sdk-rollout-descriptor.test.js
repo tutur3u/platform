@@ -6,9 +6,10 @@ const path = require('node:path');
 const test = require('node:test');
 const { launcherHashes } = require('./sdk-rollout-engine');
 const { fingerprint } = require('./sdk-rollout-state');
+const { assertChildCompletes } = require('./sdk-rollout-test-support');
 
-// Launchers and supplier state are classified and hashed through one open
-// descriptor, so a symlink or FIFO is rejected instead of followed or awaited.
+// Launchers reject symlinks; supplier fingerprints record and resolve them.
+// Descriptor classification rejects special files without waiting on a FIFO.
 function tempHome(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-descriptor-'));
   t.after(() => fs.rmSync(home, { recursive: true, force: true }));
@@ -39,9 +40,16 @@ test('launcher hashes reject a symlinked launcher without following it', (t) => 
 test('launcher hashes reject a FIFO launcher without blocking', (t) => {
   const home = tempHome(t);
   mkfifo(path.join(home, 'bin/bun'));
-  assert.throws(
-    () => launcherHashes(home, { shims: ['bun'] }),
-    /Resource launchers must be regular files/
+  assertChildCompletes(
+    `
+    const assert = require('node:assert/strict');
+    const { loadRollout } = require('./sdk-rollout-test-support');
+    assert.throws(
+      () => loadRollout('engine').launcherHashes(process.argv[1], { shims: ['bun'] }),
+      /Resource launchers must be regular files/
+    );
+  `,
+    [home]
   );
 });
 
@@ -69,5 +77,15 @@ test('fingerprint records a symlink and hashes its resolved target', (t) => {
 test('fingerprint rejects a FIFO without blocking', (t) => {
   const home = tempHome(t);
   mkfifo(path.join(home, 'bin/pipe'));
-  assert.throws(() => fingerprint(home), /Unsupported supplier state/);
+  assertChildCompletes(
+    `
+    const assert = require('node:assert/strict');
+    const { loadRollout } = require('./sdk-rollout-test-support');
+    assert.throws(
+      () => loadRollout('state').fingerprint(process.argv[1]),
+      /Unsupported supplier state/
+    );
+  `,
+    [home]
+  );
 });
