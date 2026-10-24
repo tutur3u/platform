@@ -3,8 +3,12 @@ import { versionDescription } from './build-identity';
 
 const args = process.argv.slice(2);
 const local = args[0] === 'backlog' || args[0] === 'operational-memory';
+const separator = args.indexOf('--');
+const globalArgs = separator >= 0 ? args.slice(0, separator) : args;
 const run =
-  args[0] === '--version' || args[0] === '-v'
+  args[0] !== 'resources' &&
+  !local &&
+  (globalArgs.includes('--version') || globalArgs.includes('-v'))
     ? Promise.resolve().then(() => {
         process.stdout.write(`${versionDescription()}\n`);
       })

@@ -74,6 +74,11 @@ test('top-level version probe preserves resource child version arguments', (t) =
   const probe = spawnSync('bun', [entry, '--version'], { encoding: 'utf8' });
   assert.equal(probe.status, 0, probe.stderr);
   assert.equal(probe.stdout.trim(), '0.28.0 (latest, source unknown)');
+  const disabled = spawnSync('bun', [entry, '--no-update-check', '--version'], {
+    encoding: 'utf8',
+  });
+  assert.equal(disabled.status, 0, disabled.stderr);
+  assert.equal(disabled.stdout.trim(), '0.28.0 (latest, source unknown)');
   const child = spawnSync(
     'bun',
     [entry, 'resources', 'run', '--', 'node', '--version'],
