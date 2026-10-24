@@ -71,7 +71,7 @@ is archived or explicitly dispositioned.
 | Workflow contracts | `node --test scripts/ci/release-workflows.test.js scripts/ci/check-workflow-config.test.js` | workflow remains valid and privileged merge cannot run before validation |
 | YAML parse | `ruby -e 'require "yaml"; YAML.load_file(".github/workflows/release-please-auto-merge.yaml", aliases: true)'` | exit 0 |
 | Plugin | `python3 plugins/tuturuuu/scripts/validate_plugin.py` | exit 0 if the CI tooling reference changes |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

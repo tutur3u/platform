@@ -66,7 +66,7 @@ ownership transfers.
 | Backend focused | `cargo test --manifest-path apps/backend/Cargo.toml time_tracking_export` | root export still passes with caller-token RPC authorization |
 | Backend full | `bun check:backend` | exit 0 |
 | Track typecheck | `bun run --cwd apps/track type-check` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

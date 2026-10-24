@@ -4,8 +4,10 @@ import {
   copyFile,
   mkdir,
   mkdtemp,
+  open,
   readdir,
   rm,
+  stat,
   writeFile,
 } from 'node:fs/promises';
 import os from 'node:os';
@@ -59,25 +61,30 @@ async function dispose({ metadata, repositoryRoot }) {
   await rm(metadata.disposableRoot, { recursive: true, force: true });
   await rm(repositoryRoot, { recursive: true, force: true });
 }
-test('actual metadata writer preserves old recovery record and removes failed partial temporary', async () => {
+test('actual metadata writer preserves old recovery record and removes failed partial temporary', async (t) => {
   const owned = await fixture();
   try {
+    const handle = await open(path.join(owned.repositoryRoot, 'probe'), 'wx');
+    const prototype = Object.getPrototypeOf(handle);
+    await handle.close();
+    const originalWrite = prototype.writeFile;
+    const write = t.mock.method(
+      prototype,
+      'writeFile',
+      async function (data, options) {
+        await originalWrite.call(this, data.slice(0, 17), options);
+        throw new Error('synthetic interrupted write');
+      }
+    );
     await assert.rejects(
-      writeMetadata(
-        owned.metadata.disposableRoot,
-        {
-          ...owned.metadata,
-          status: 'starting',
-        },
-        {
-          write: async (file, data, options) => {
-            await writeFile(file, data.slice(0, 17), options);
-            throw new Error('synthetic interrupted write');
-          },
-        }
-      ),
+      writeMetadata(owned.metadata.disposableRoot, {
+        ...owned.metadata,
+        status: 'starting',
+      }),
       /synthetic interrupted write/
     );
+    assert.equal(write.mock.callCount(), 1);
+    write.mock.restore();
     assert.deepEqual(
       await readLifecycleMetadata(owned.metadata.disposableRoot),
       owned.metadata
@@ -87,6 +94,32 @@ test('actual metadata writer preserves old recovery record and removes failed pa
       files.filter((file) => file.endsWith('.tmp')),
       []
     );
+  } finally {
+    await dispose(owned);
+  }
+});
+test('metadata transitions and identical retries atomically replace the recovery record', async () => {
+  const owned = await fixture();
+  try {
+    for (const status of ['starting', 'starting', 'resetting', 'resetting']) {
+      const next = { ...owned.metadata, status };
+      await writeMetadata(owned.metadata.disposableRoot, next);
+      assert.deepEqual(
+        await readLifecycleMetadata(owned.metadata.disposableRoot),
+        next
+      );
+      assert.equal(
+        (await stat(path.join(owned.metadata.disposableRoot, METADATA_FILE)))
+          .mode & 0o777,
+        0o600
+      );
+      assert.deepEqual(
+        (await readdir(owned.metadata.disposableRoot)).filter((file) =>
+          file.endsWith('.tmp')
+        ),
+        []
+      );
+    }
   } finally {
     await dispose(owned);
   }
@@ -140,23 +173,37 @@ for (const [phase, previous] of [
       await writeFile(
         childFile,
         `
-        import { writeFile } from 'node:fs/promises';
+        import assert from 'node:assert/strict';
+        import { open, readdir } from 'node:fs/promises';
         import { writeFileSync } from 'node:fs';
-        import { runIsolatedLifecycle, writeMetadata } from ${JSON.stringify(helperUrl)};
+        import path from 'node:path';
+        import { mock } from 'node:test';
+        import { runIsolatedLifecycle, writeMetadata, METADATA_FILE } from ${JSON.stringify(helperUrl)};
         const metadata = JSON.parse(process.argv[2]);
         const phase = process.argv[3];
+        const probe = await open(path.join(metadata.disposableRoot, METADATA_FILE), 'r');
+        const prototype = Object.getPrototypeOf(probe);
+        await probe.close();
+        const originalWrite = prototype.writeFile;
+        let currentPhase;
+        mock.method(prototype, 'writeFile', async function(data, options) {
+          if(currentPhase!==phase) return originalWrite.call(this,data,options);
+          await originalWrite.call(this,data.slice(0,17),options);
+          const temporary = (await readdir(metadata.disposableRoot)).filter(file=>file.endsWith('.tmp'));
+          assert.equal(temporary.length,1);
+          writeFileSync(process.argv[4],JSON.stringify({
+            file:path.join(metadata.disposableRoot,temporary[0]),pid:process.pid
+          }));
+          setInterval(()=>{},1000);
+          await new Promise(()=>{});
+        });
         await runIsolatedLifecycle({
           binaryPath:'synthetic-not-executed', metadata,
           runner:async()=>({code:0}), typegen:async()=>{},
-          updateMetadata:async(root,next)=>writeMetadata(root,next,{
-            write:async(file,data,options)=>{
-              if(next.status!==phase) return writeFile(file,data,options);
-              await writeFile(file,data.slice(0,17),options);
-              writeFileSync(process.argv[4],JSON.stringify({file,pid:process.pid}));
-              setInterval(()=>{},1000);
-              await new Promise(()=>{});
-            }
-          })
+          updateMetadata:async(root,next)=>{
+            currentPhase=next.status;
+            return writeMetadata(root,next);
+          }
         });
       `
       );
@@ -218,21 +265,32 @@ for (const [phase, previous] of [
   });
 }
 
-test('metadata preserves its original write failure when temp cleanup also fails', async () => {
+test('metadata preserves its original write failure when temp cleanup also fails', async (t) => {
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), 'metadata-write-failure-')
+  );
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const handle = await open(path.join(directory, 'probe'), 'wx');
+  const prototype = Object.getPrototypeOf(handle);
+  await handle.close();
   const primary = new Error('synthetic write failure');
+  const write = t.mock.method(prototype, 'writeFile', async () => {
+    throw primary;
+  });
+  let cleanupCalls = 0;
   await assert.rejects(
     writeMetadata(
-      '/synthetic-owned-root',
+      directory,
       { status: 'staged' },
       {
-        write: async () => {
-          throw primary;
-        },
         remove: async () => {
+          cleanupCalls++;
           throw new Error('synthetic cleanup failure');
         },
       }
     ),
     (error) => error === primary
   );
+  assert.equal(write.mock.callCount(), 1);
+  assert.equal(cleanupCalls, 1);
 });

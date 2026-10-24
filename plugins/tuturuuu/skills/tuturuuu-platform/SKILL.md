@@ -28,7 +28,7 @@ Schema/RLS changes use `$tuturuuu-database`; satellite shells use
 when that operation is part of the request. Do not load them for unrelated code edits.
 
 Run focused non-build checks locally and require relevant exact-commit CI
-tests, type-check, lint, and Next app builds. Do not run local builds or `bun check`. Production schema changes use the authorized gated migration workflow; never push directly from an agent checkout.
+tests, type-check, lint, and Next app builds. Do not run local builds or `bun validate`. Production schema changes use the authorized gated migration workflow; never push directly from an agent checkout.
 
 For shared rooms, cursors, collaborative editing or realtime checkpoint services,
 use `$tuturuuu-realtime` and its focused implementation reference.

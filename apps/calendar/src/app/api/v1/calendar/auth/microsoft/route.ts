@@ -16,6 +16,8 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { checkCalendarOAuthRuntime } from '@/lib/calendar/calendar-oauth-runtime';
+import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
@@ -88,6 +90,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const runtime = checkCalendarOAuthRuntime();
+  if (!runtime.ok) return runtime.response;
+
   try {
     // Generate PKCE code verifier and challenge
     const codeVerifier = generateCodeVerifier();
@@ -99,7 +104,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const authUrl = await cca.getAuthCodeUrl({
       scopes: MICROSOFT_CALENDAR_SCOPES,
       redirectUri: config.redirectUri,
-      state: normalizedWsId,
+      state: createCalendarOAuthState(
+        'microsoft',
+        { userId: user.id, wsId: normalizedWsId },
+        config.clientSecret
+      ).state,
       prompt: 'consent',
       codeChallenge,
       codeChallengeMethod: 'S256',

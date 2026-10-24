@@ -125,24 +125,27 @@ jobs:
         env:
           CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
         run: test "$CONTRACT_ENABLED" = true
+      # Dispatch this workflow on the ref whose head is the source commit: the
+      # source must equal the workflow commit, so no dispatch input ever selects
+      # code to run in this ref's cache scope (in particular main's).
       - name: Validate exact source selection
-        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA) || (process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION === "true" && process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== process.env.EMPLOYEE_SCHEMA_CONTROL_SHA)) process.exit(1)'
+        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA) || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== process.env.EMPLOYEE_SCHEMA_CONTROL_SHA) process.exit(1)'
       - name: Validate structured diagnostic selection
         if: inputs.structured_provenance == true && inputs.include_chat_initial_settings != true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.source_sha }}
+          ref: ${{ github.sha }}
           path: source
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@v7
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
           package-manager-cache: false
@@ -203,12 +206,11 @@ jobs:
         if: inputs.include_http == true
         working-directory: source
         run: bun x tsc --project apps/web/e2e/fixtures/tsconfig.employee-http.json --noEmit
-      - uses: subosito/flutter-action@v2
+      - uses: ./.github/actions/setup-flutter-with-cache
         if: inputs.include_chat_initial_settings == true
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
       - name: Restore locked chat mobile dependencies
         if: inputs.include_chat_initial_settings == true
         working-directory: source/apps/mobile
@@ -280,7 +282,7 @@ jobs:
         if: always() && inputs.include_google_destination_provider == true
         working-directory: source
         run: node --experimental-strip-types ../apps/database/scripts/employee-google-provider-ci.mjs --finalize
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always() && inputs.structured_provenance != true
         with:
           name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
@@ -291,7 +293,7 @@ jobs:
             ${{ runner.temp }}/employee-schema-receipts/google-provider.json
           if-no-files-found: error
           retention-days: 3
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always() && inputs.structured_provenance == true
         with:
           name: employee-provenance-${{ inputs.source_sha }}-${{ github.run_id }}

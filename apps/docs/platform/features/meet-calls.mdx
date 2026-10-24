@@ -212,6 +212,59 @@ online meetings. Other signed-in users can follow an invitation and ask the
 host to admit them. Sign-in preserves the room link, and an existing profile
 display name is reused. A missing name is saved to the profile before joining.
 
+## Joining and admission feedback
+
+Meet distinguishes connecting to signaling from waiting for host approval. A
+confirmed waiting response means the request was sent; the lobby shows approval
+copy and a cancel-and-leave action without a spinner. After 60 seconds it explains
+that approval is still outstanding and suggests contacting the host or returning
+later. It does not resend the request, auto-admit the participant, or treat a slow
+host response as a connection failure. Host presence is not inferred from the
+absence of a presence snapshot in a waiting response.
+
+The signaling readiness deadline is 10 seconds per attempt, including refreshed
+token resolution and the server's `ready` response. Automatic recovery is limited
+to 12 retries. The budget resets only after the socket stays open for 30 seconds
+after protocol-ready; repeated ready/disconnect cycles still exhaust it. The first
+pending admission reconnect uses normal backoff immediately; subsequent attempts are
+limited to one per minute, including failed token refreshes. Both the stability
+window and throttle use a monotonic clock, unaffected by wall-clock changes. The
+server currently re-announces pending admission on every connection,
+even for an existing waiting entry; this client limit bounds those notifications
+but does not provide server-side deduplication across tabs or page reloads. Late
+responses
+from expired attempts cannot revive them. Connection errors offer retry and leave;
+room-capacity refusals cannot leave a disabled Connecting spinner. Preparing the
+page or controls for more than 30 seconds replaces its spinner with an explanation
+and a way back. Retrying a join starts from the invitation; it does not grant access.
+
+Admitted participants see confirmation before choosing **Join now**. Declined
+requests and host removal show distinct messages with a way back, rather than
+claiming the participant voluntarily left. Ended rooms retain the existing ended
+screen. Invalid or inaccessible room links show a privacy-preserving unavailable
+message; room-page failures offer retry. Meet's retained Next routes and native
+router use the same feedback components. Shared Meet/Parley call controls ship
+English and Vietnamese copy; admission and workspace access rules are unchanged.
+
+Regression coverage: `join-flow.test.tsx` exercises pending-to-admitted,
+pending-to-denied, prolonged waiting, removal, recovery, and loading deadlines.
+`signaling-readiness.test.tsx` covers hung token resolution, missing protocol-ready,
+bounded retries, cancellation and late-event fences. `room-route-feedback.test.tsx`
+covers the native route's bilingual missing/error feedback. These fixtures do not
+establish successful hosted SFU/TURN connectivity or reproduce a specific user's
+production account failure.
+
+Meet's first-paint theme initializer is a literal script, not a serialized
+function. Worker bundlers that preserve function names can inject `__name` helpers
+inside functions; serializing such a function with `toString()` loses those helper
+bindings. The Meet theme provider leaves the upstream initializer inert and keeps
+its hydrated theme context, while its own initializer applies the same configured
+theme before hydration. Native and retained Next providers both use it; other
+satellites keep their existing provider. `theme-provider.test.tsx` reproduces the
+helper failure against the installed upstream script and executes the replacement
+with saved/system/forced themes. Require exact-commit CI and deployed first-paint
+verification; this console repair alone does not prove an authenticated join works.
+
 ## Call controls and admission
 
 The sending and receiving arrow badges open connection details. The displayed

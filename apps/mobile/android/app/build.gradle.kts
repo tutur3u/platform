@@ -127,6 +127,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    testImplementation("junit:junit:4.13.2")
 }
 
 // The installed WebRTC capturer drops Android's OS revoke/lock callback. Replace

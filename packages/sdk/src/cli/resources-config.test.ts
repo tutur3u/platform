@@ -9,7 +9,11 @@ import {
   resourceLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
-import { entry, privateFixtures } from './resources-test-fixtures';
+import {
+  crossProcessTimeout,
+  entry,
+  privateFixtures,
+} from './resources-test-fixtures';
 
 const host = vi.hoisted(() => ({ memory: 24 * 1024 ** 3, cpus: 10 }));
 vi.mock('node:os', async (original) => ({
@@ -25,7 +29,9 @@ afterEach(async () => {
   host.cpus = 10;
 });
 
-it('reads legacy configs as one lane, clamps numeric counts, and names bad fields', async () => {
+it('reads legacy configs as one lane, clamps numeric counts, and names bad fields', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const path = await home();
   const old = defaultResourceConfig();
   delete old.validationLanes;
@@ -36,7 +42,7 @@ it('reads legacy configs as one lane, clamps numeric counts, and names bad field
     for (const [lanes, expected] of [
       [0, 1],
       [3, 3],
-      [9, 8],
+      [17, 16],
       [1.5, 1],
     ] as const) {
       await atomicJson(join(path, 'config.json'), {
@@ -46,7 +52,7 @@ it('reads legacy configs as one lane, clamps numeric counts, and names bad field
       expect(resourceLanes((await readResourceConfig(path))!)).toBe(expected);
     }
     expect(stderr.mock.calls.join('\n')).toContain(
-      'validationLanes must be an integer from 1 to 8; using 8.'
+      'validationLanes must be an integer from 1 to 16; using 16.'
     );
   } finally {
     stderr.mockRestore();
@@ -57,7 +63,7 @@ it('reads legacy configs as one lane, clamps numeric counts, and names bad field
       validationLanes: lanes,
     });
     await expect(readResourceConfig(path)).rejects.toThrow(
-      'Invalid resource configuration: validationLanes must be an integer from 1 to 8.'
+      'Invalid resource configuration: validationLanes must be an integer from 1 to 16.'
     );
   }
   for (const [raw, message] of [
@@ -67,7 +73,7 @@ it('reads legacy configs as one lane, clamps numeric counts, and names bad field
     ],
     [
       JSON.stringify({ ...old, validationLanes: 'private-sentinel' }),
-      'Invalid resource configuration: validationLanes must be an integer from 1 to 8.',
+      'Invalid resource configuration: validationLanes must be an integer from 1 to 16.',
     ],
     [
       JSON.stringify({ ...old, enabled: 'private-sentinel' }),
@@ -83,7 +89,9 @@ it('reads legacy configs as one lane, clamps numeric counts, and names bad field
   await rm(join(path, 'config.json'));
   expect(await readResourceConfig(path)).toBeUndefined();
 });
-it('clamps two lanes on a low-budget host to one worker each instead of failing', async () => {
+it('clamps two lanes on a low-budget host to one worker each instead of failing', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const home = await fixtures.home();
   host.memory = 8 * 1024 ** 3;
   host.cpus = 2;

@@ -1,3 +1,4 @@
+import { resolveMeetGuestFromSession } from '@tuturuuu/apis/meet/guest-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -9,7 +10,9 @@ import {
 
 const payloadSchema = z.object({
   guestId: z.string().uuid().optional(),
-  passwordHash: z.string().min(1).max(512).optional(),
+  // Server-issued guest session from guest login. Stored password hashes are
+  // not accepted as guest credentials.
+  guestSession: z.string().min(1).max(2048).optional(),
   timeblocks: z
     .array(
       z.object({
@@ -51,21 +54,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   let userId = actor?.id;
   let isGuest = false;
 
-  if (parsed.data.guestId || parsed.data.passwordHash) {
-    if (!parsed.data.guestId || !parsed.data.passwordHash) {
+  if (parsed.data.guestId || parsed.data.guestSession) {
+    if (!parsed.data.guestId || !parsed.data.guestSession) {
       return NextResponse.json(
         { error: 'Guest credentials are incomplete' },
         { status: 401 }
       );
     }
     const admin = await createAdminClient();
-    const { data: guest } = await admin
-      .from('meet_together_guests')
-      .select('id')
-      .eq('id', parsed.data.guestId)
-      .eq('plan_id', snapshot.plan.id)
-      .eq('password_hash', parsed.data.passwordHash)
-      .maybeSingle();
+    const guest = await resolveMeetGuestFromSession(
+      admin,
+      snapshot.plan.id,
+      parsed.data.guestSession,
+      parsed.data.guestId
+    );
     if (!guest) {
       return NextResponse.json(
         { error: 'Invalid guest credentials' },

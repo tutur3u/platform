@@ -189,6 +189,66 @@ it.each([
     expect(writes).toBe(0);
   }
 );
+const capabilityHeartbeat = (capabilities: unknown) =>
+  new Request('https://control.test/v1/heartbeat', {
+    method: 'POST',
+    headers: { 'X-Devbox-Runner-Token': token },
+    body: JSON.stringify({ capabilities }),
+  });
+it('accepts an optional advisory execution mode and isolation summary', async () => {
+  const capabilities = {
+    executionMode: 'trusted',
+    protocols: { commitRun: [1] },
+    isolation: { checkedAt: '2026-10-23T00:00:00.000Z', dedicatedUser: true },
+  };
+  expect(
+    (await worker.fetch(capabilityHeartbeat(capabilities), env)).status
+  ).toBe(200);
+  const write = vi
+    .mocked(globalThis.fetch)
+    .mock.calls.find(([, init]) => init?.method === 'PATCH');
+  const stored = JSON.parse(String(write?.[1]?.body)).capabilities;
+  expect([stored.executionMode, stored.protocols, stored.isolation]).toEqual([
+    'trusted',
+    capabilities.protocols,
+    capabilities.isolation,
+  ]);
+});
+it('drops a protocol advertisement from a Judge-only runner', async () => {
+  const capabilities = {
+    executionMode: 'judge-only',
+    protocols: { commitRun: [1] },
+  };
+  expect(
+    (await worker.fetch(capabilityHeartbeat(capabilities), env)).status
+  ).toBe(200);
+  const write = vi
+    .mocked(globalThis.fetch)
+    .mock.calls.find(([, init]) => init?.method === 'PATCH');
+  const stored = JSON.parse(String(write?.[1]?.body)).capabilities;
+  expect(stored).toEqual({ executionMode: 'judge-only' });
+});
+it.each([
+  { executionMode: 'root' },
+  { executionMode: 1 },
+  { isolation: { dedicatedUser: 'yes' } },
+  { isolation: { tokenValue: true } },
+  { isolation: { checkedAt: 'x'.repeat(101) } },
+  { isolation: null },
+  { isolation: [] },
+  { protocols: { commitRun: ['1'] } },
+  { protocols: { commitRun: [0] } },
+  { protocols: { shell: [1] } },
+  { protocols: [] },
+])(
+  'rejects malformed execution mode or isolation reports without writes: %j',
+  async (capabilities) => {
+    expect(
+      (await worker.fetch(capabilityHeartbeat(capabilities), env)).status
+    ).toBe(400);
+    expect(writes).toBe(0);
+  }
+);
 it('still rejects unknown top-level capability keys', async () => {
   expect(
     (

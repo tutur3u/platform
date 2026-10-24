@@ -7,12 +7,12 @@ import {
   mkdtemp,
   readFile,
   realpath,
-  stat,
   writeFile,
 } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readRegularFile } from '../safe-fs.js';
 import {
   APPS_ASSERTION_GROUPS,
   admitAppsSupplier,
@@ -265,11 +265,9 @@ export async function launchAppsAcceptance(
     gates.push(error);
   }
   try {
-    assert.ok(
-      (await stat(receiptFile)).size <= 65536,
-      'Oversized Apps receipt'
+    receipt = JSON.parse(
+      await readRegularFile(receiptFile, { maxBytes: 65536 })
     );
-    receipt = JSON.parse(await readFile(receiptFile));
     requireAppsReceipt(receipt, plan, mode);
     assert.deepEqual(
       await supplierReceipt(plan.ownerPackage),

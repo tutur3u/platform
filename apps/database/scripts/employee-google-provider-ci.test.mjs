@@ -682,5 +682,7 @@ test('CI controller boundary contracts use installed exact source before provide
     /working-directory: source\n {8}run: node --test apps\/database\/scripts\/employee-google-provider-ci.test.mjs/
   );
   assert.match(workflow, /EMPLOYEE_SCHEMA_CONTROL_SHA: \$\{\{ github.sha \}\}/);
-  assert.match(workflow, /ref: \$\{\{ inputs.source_sha \}\}/);
+  // The source checkout is the dispatched commit (source == control).
+  assert.match(workflow, /ref: \$\{\{ github.sha \}\}\n {10}path: source/);
+  assert.doesNotMatch(workflow, /ref: \$\{\{ inputs\./);
 });

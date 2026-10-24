@@ -110,104 +110,50 @@ describe('abuse-protection', () => {
   });
 
   describe('extractIPFromHeaders', () => {
-    it('should extract IP from x-forwarded-for header', () => {
-      const headers = new Headers();
-      headers.set('x-forwarded-for', '192.168.1.1, 10.0.0.1');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.1');
-    });
-
-    it('should extract single IP from x-forwarded-for', () => {
-      const headers = new Headers();
-      headers.set('x-forwarded-for', '203.0.113.50');
-      expect(extractIPFromHeaders(headers)).toBe('203.0.113.50');
-    });
-
-    it('should extract IP from x-real-ip header', () => {
-      const headers = new Headers();
-      headers.set('x-real-ip', '192.168.1.100');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.100');
-    });
-
-    it('should extract IP from cf-connecting-ip header (Cloudflare)', () => {
+    it('ignores spoofable client IP headers when no proxy is trusted', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'none');
       const headers = new Headers();
       headers.set('cf-connecting-ip', '172.16.0.1');
-      expect(extractIPFromHeaders(headers)).toBe('172.16.0.1');
+      headers.set('true-client-ip', '172.16.0.2');
+      headers.set('x-forwarded-for', '192.168.1.1, 10.0.0.1');
+      headers.set('x-real-ip', '192.168.1.100');
+      expect(extractIPFromHeaders(headers)).toBe('unknown');
     });
 
-    it('should prefer cf-connecting-ip over forwarded proxy headers', () => {
+    it('reads cf-connecting-ip behind Cloudflare', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
       const headers = new Headers();
       headers.set('x-forwarded-for', '192.168.1.1');
-      headers.set('x-real-ip', '192.168.1.2');
       headers.set('cf-connecting-ip', '192.168.1.3');
       expect(extractIPFromHeaders(headers)).toBe('192.168.1.3');
     });
 
-    it('should prefer true-client-ip when cf-connecting-ip is absent', () => {
+    it('reads the Vercel-set client address on Vercel', () => {
+      vi.stubEnv('TRUSTED_PROXY', '');
+      vi.stubEnv('VERCEL', '1');
       const headers = new Headers();
-      headers.set('x-forwarded-for', '192.168.1.1');
-      headers.set('x-real-ip', '192.168.1.2');
-      headers.set('true-client-ip', '192.168.1.4');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.4');
+      headers.set('cf-connecting-ip', '172.16.0.1');
+      headers.set('x-vercel-forwarded-for', '203.0.113.50');
+      expect(extractIPFromHeaders(headers)).toBe('203.0.113.50');
     });
 
-    it('should fall back to x-forwarded-for if explicit client IP headers are invalid', () => {
-      const headers = new Headers();
-      headers.set('cf-connecting-ip', 'invalid-ip');
-      headers.set('true-client-ip', 'also-invalid');
-      headers.set('x-forwarded-for', '192.168.1.100, 10.0.0.1');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.100');
-    });
+    it('accepts Map and plain object headers', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'forwarded');
+      const map = new Map<string, string>();
+      map.set('x-forwarded-for', '10.0.0.5');
+      expect(extractIPFromHeaders(map)).toBe('10.0.0.5');
 
-    it('should return "unknown" when no valid IP is found', () => {
-      const headers = new Headers();
-      expect(extractIPFromHeaders(headers)).toBe('unknown');
-    });
-
-    it('should return "unknown" for invalid IP formats', () => {
-      const headers = new Headers();
-      headers.set('x-forwarded-for', 'not-an-ip');
-      headers.set('x-real-ip', 'also-invalid');
-      headers.set('cf-connecting-ip', 'still.not.valid');
-      expect(extractIPFromHeaders(headers)).toBe('unknown');
-    });
-
-    it('should accept IPs with values matching format regex', () => {
-      // Note: The regex validates format, not IPv4 value ranges
-      // 999.999.999.999 matches the pattern \d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}
-      const headers = new Headers();
-      headers.set('x-forwarded-for', '999.999.999.999');
-      expect(extractIPFromHeaders(headers)).toBe('999.999.999.999');
-    });
-
-    it('should work with Map-based headers', () => {
-      const headers = new Map<string, string>();
-      headers.set('x-forwarded-for', '10.0.0.5');
-      expect(extractIPFromHeaders(headers)).toBe('10.0.0.5');
-    });
-
-    it('should work with plain object headers', () => {
-      const headers: Record<string, string | null> = {
+      const record: Record<string, string | null> = {
         'x-forwarded-for': '10.0.0.10',
       };
-      expect(extractIPFromHeaders(headers)).toBe('10.0.0.10');
+      expect(extractIPFromHeaders(record)).toBe('10.0.0.10');
     });
 
-    it('should handle IPv6 addresses', () => {
+    it('returns "unknown" for invalid addresses from a trusted proxy', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
       const headers = new Headers();
-      headers.set('x-forwarded-for', '2001:db8::1');
-      expect(extractIPFromHeaders(headers)).toBe('2001:db8::1');
-    });
-
-    it('should handle IPv6 in x-real-ip', () => {
-      const headers = new Headers();
-      headers.set('x-real-ip', '::1');
-      expect(extractIPFromHeaders(headers)).toBe('::1');
-    });
-
-    it('should handle whitespace in IP list', () => {
-      const headers = new Headers();
-      headers.set('x-forwarded-for', '  192.168.1.1  , 10.0.0.1');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.1');
+      headers.set('cf-connecting-ip', '999.999.999.999');
+      expect(extractIPFromHeaders(headers)).toBe('unknown');
     });
   });
 
@@ -789,7 +735,15 @@ describe('abuse-protection types', () => {
 });
 
 describe('IP address validation', () => {
-  // Test IPv4 validation through extractIPFromHeaders
+  // Validation runs through extractIPFromHeaders with a trusted forwarder.
+  beforeEach(() => {
+    vi.stubEnv('TRUSTED_PROXY', 'forwarded');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   describe('IPv4 addresses', () => {
     it('should accept valid IPv4 addresses', () => {
       const validIPs = [
@@ -805,25 +759,27 @@ describe('IP address validation', () => {
         expect(extractIPFromHeaders(headers)).toBe(ip);
       });
     });
+
+    it('should reject out-of-range IPv4 octets', () => {
+      const headers = new Headers();
+      headers.set('x-forwarded-for', '256.1.1.1');
+      expect(extractIPFromHeaders(headers)).toBe('unknown');
+    });
   });
 
   describe('IPv6 addresses', () => {
     it('should accept common IPv6 addresses', () => {
-      // Test the IPv6 addresses that match the current regex pattern
-      const supportedIPs = ['::1', '2001:db8::1', 'fe80::1'];
+      const supportedIPs = [
+        '::1',
+        '2001:db8::1',
+        'fe80::1',
+        '::ffff:192.0.2.1',
+      ];
       supportedIPs.forEach((ip) => {
         const headers = new Headers();
         headers.set('x-forwarded-for', ip);
         expect(extractIPFromHeaders(headers)).toBe(ip);
       });
-    });
-
-    it('should handle IPv6 formats matching the regex pattern', () => {
-      // The regex pattern is basic and may not match all valid IPv6 formats
-      // like ::ffff:192.168.1.1 (IPv4-mapped IPv6)
-      const headers = new Headers();
-      headers.set('x-forwarded-for', '::1');
-      expect(extractIPFromHeaders(headers)).toBe('::1');
     });
   });
 });

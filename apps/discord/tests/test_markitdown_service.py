@@ -4,17 +4,17 @@ from fastapi import HTTPException
 import markitdown_service
 
 
-def test_resolve_supabase_hostname_uses_server_url_fallback(monkeypatch):
+def test_require_supabase_url_uses_server_url_fallback(monkeypatch):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.setenv("SUPABASE_SERVER_URL", "http://host.docker.internal:8001")
 
-    assert markitdown_service._resolve_supabase_hostname() == "host.docker.internal"
+    assert markitdown_service._require_supabase_url() == "http://host.docker.internal:8001"
 
 
 def test_validate_signed_url_allows_local_docker_supabase_http():
     markitdown_service._validate_signed_url(
         "http://host.docker.internal:8001/storage/v1/object/sign/workspaces/file.docx?token=signed-token",
-        "host.docker.internal",
+        "http://host.docker.internal:8001",
     )
 
 
@@ -22,7 +22,7 @@ def test_validate_signed_url_still_rejects_remote_http():
     with pytest.raises(HTTPException) as error:
         markitdown_service._validate_signed_url(
             "http://project-ref.supabase.co/storage/v1/object/sign/workspaces/file.docx?token=signed-token",
-            "project-ref.supabase.co",
+            "https://project-ref.supabase.co",
         )
 
     assert error.value.status_code == 400
@@ -32,7 +32,7 @@ def test_validate_signed_url_still_rejects_remote_http():
 def test_validate_direct_youtube_url_accepts_short_links():
     assert (
         markitdown_service._validate_direct_youtube_url("https://youtu.be/dQw4w9WgXcQ")
-        == "https://youtu.be/dQw4w9WgXcQ"
+        == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     )
 
 
@@ -47,7 +47,7 @@ def test_validate_direct_youtube_url_rejects_non_youtube_hosts():
 @pytest.mark.asyncio
 async def test_handle_markitdown_converts_direct_youtube_url(monkeypatch):
     async def convert_url(url: str, enable_plugins: bool):
-        assert url == "https://youtu.be/dQw4w9WgXcQ"
+        assert url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
         assert enable_plugins is True
         return "# Transcript", "Video title"
 
@@ -65,7 +65,7 @@ async def test_handle_markitdown_converts_direct_youtube_url(monkeypatch):
         "markdown": "# Transcript",
         "title": "Video title",
         "filename": "video.md",
-        "url": "https://youtu.be/dQw4w9WgXcQ",
+        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     }
 
 

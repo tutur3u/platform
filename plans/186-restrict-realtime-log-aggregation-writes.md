@@ -68,7 +68,7 @@ persistence is a public contract.
 | Supabase build | `bun run --cwd packages/supabase build` | package exports compile without deleted internals |
 | Retired writer | `test ! -e packages/supabase/src/next/realtime-log-actions.ts && test ! -e packages/supabase/src/next/realtime-log-aggregator.ts` | no client-addressable privileged writer remains |
 | Backend | `bun check:backend` | read-only analytics parity passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

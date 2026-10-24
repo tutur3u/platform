@@ -95,7 +95,7 @@ top-level notes before claiming these exact paths.
 | Database focused/full | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/meet-participant-plan-boundary.sql && bun --cwd apps/database sb:validate:isolated` | co-plan cleanup, rollback, ACL, and full baseline pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/meet-participant-plan-boundary.sql` | generated RPC types are current with no unrelated drift |
 | Types | `bun run --cwd packages/apis type-check && bun run --cwd packages/ui type-check` | exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all gates pass; whitespace output is empty |
 
 ## Scope
 

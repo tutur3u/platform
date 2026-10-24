@@ -61,7 +61,7 @@ or internally inconsistent.
 | Route | `bun --cwd apps/inventory vitest run 'src/app/api/v1/inventory/square/webhook/[wsId]/route.test.ts'` | 401, success, sanitized settlement 500, and retry behavior pass |
 | Types | `bun run --cwd packages/inventory-core type-check && bun run --cwd apps/inventory type-check` | both typechecks pass |
 | Inventory build | `bun run --cwd apps/inventory build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | canonical checks pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical checks pass; whitespace output is empty |
 
 ## Scope
 
@@ -88,7 +88,7 @@ historical entries; Polar or cash settlement.
    durable pending entry. Preserve false/no-op provider events.
 4. Add route coverage proving the typed failure returns sanitized 500 and a
    provider retry reuses identical source keys; keep invalid signatures at 401.
-5. Run focused tests, typechecks, Inventory build, `bun check`, whitespace, and
+5. Run focused tests, typechecks, Inventory build, `bun validate`, whitespace, and
    exact-scope review.
 
 ## Done criteria

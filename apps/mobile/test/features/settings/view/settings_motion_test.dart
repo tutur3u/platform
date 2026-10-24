@@ -219,7 +219,7 @@ void main() {
       verify(
         () => permissions.getPermissions(wsId: 'ws', userId: 'user-1'),
       ).called(1);
-      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Experiments'),
@@ -313,12 +313,13 @@ void main() {
 
       expect(find.byType(StaggeredEntry), findsOneWidget);
       expect(find.text('Appearance & language'), findsOneWidget);
-      expect(find.text('Calendar & timezone'), findsOneWidget);
+      expect(find.text('Time zone'), findsOneWidget);
       expect(find.text('Notifications & interaction'), findsOneWidget);
-      expect(find.text('App preferences'), findsOneWidget);
-      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
-      expect(find.text('Boards'), findsOneWidget);
+      // Per-app rows live on their Settings > Apps sub-screens.
+      expect(find.text('App preferences'), findsNothing);
+      expect(find.text('Boards'), findsNothing);
       expect(find.text('About the app'), findsNothing);
       expect(find.text('Session'), findsNothing);
     });
@@ -386,9 +387,28 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StaggeredEntry), findsAtLeastNWidgets(2));
+      // The 3:1 banner header keeps later sections below the first frame, so
+      // check each top-level section's stagger wrapper once it is built.
       expect(find.text('Alex Nguyen'), findsWidgets);
-      expect(find.text('Identity'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('Alex Nguyen').first,
+          matching: find.byType(StaggeredEntry),
+        ),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Identity'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(
+        find.ancestor(
+          of: find.text('Identity'),
+          matching: find.byType(StaggeredEntry),
+        ),
+        findsOneWidget,
+      );
       await tester.scrollUntilVisible(
         find.text('Avatar'),
         200,

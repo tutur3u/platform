@@ -64,7 +64,7 @@ generated migration artifacts.
 | Migration check | `bun migration:tanstack:check` | exit 0 |
 | Rust handler tests | `cargo test --locked workspaces_wsid_documents_documentid -- --nocapture` from `apps/backend` | GET parity and non-GET fallthrough pass |
 | Backend gate | `bun check:backend` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -129,7 +129,7 @@ and DELETE return `None` for fallback. Do not port mutations in this plan.
 - [ ] Only the three canonical mutable fields can reach the admin update.
 - [ ] Immutable and tenant fields are rejected or ignored consistently with the shared schema.
 - [ ] The handler is first-class and migration tracking references its new source.
-- [ ] Focused tests, route checks, manifest checks, `bun check:backend`, `bun check`, Web build, and whitespace pass.
+- [ ] Focused tests, route checks, manifest checks, `bun check:backend`, `bun validate`, Web build, and whitespace pass.
 
 ## STOP conditions
 

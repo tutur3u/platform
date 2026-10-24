@@ -59,8 +59,11 @@ Use useful subagents for independent ready backlog while PR/CI or resource gates
 run. Arrange child work before arming a native PR watch, then end the turn as the
 tool requires; native result/watch events resume delivery without a user reminder.
 Relay the policy, project instructions, current custody overrides and remaining
-child budget in each brief. The shared contract permits up to five useful children
-when supported; lower runtime/provider/resource caps still apply.
+child budget in each brief. The [agent operating model](/build/development-tools/agent-operating-model)
+allows up to 10 subagents per thread tree, including descendants. That number is
+a contract plus checker, not a runtime-enforced or observed live-session limit.
+Leads receive explicit remaining budgets, and lower observed runtime, provider
+and resource limits still apply.
 
 After observed delays or unnecessary handovers, use a bounded child workflow
 audit at a safe checkpoint. Apply accepted improvements to maintained source,
@@ -226,7 +229,7 @@ Then verify the cached page after refresh at
   registration, one-shot smoke tests, 24/7 system services, runner-token
   cleanup, CLI upgrades, and infrastructure devbox observability.
 - `$tuturuuu-validation-offload`: validation strategy guidance for deciding
-  when to run focused tests, `bun check`, Supabase, Docker, or browser-heavy
+  when to run focused tests, `bun validate`, Supabase, Docker, or browser-heavy
   workflows through internal devboxes instead of the local agent session.
 - `$tuturuuu-web-release`: `apps/web` release badge metadata, blue/green
   runtime snapshot fallback, `PLATFORM_BUILD_*` precedence, and
@@ -488,7 +491,7 @@ worktree state.
 The normal scoped commit path still lets Git hooks run. Agents may use
 `git commit --no-verify` only when they can produce a proof packet for their
 exact staged paths: reviewed status and staged diff output, path ownership,
-separated validation mapped to the relevant `bun check` components, path-based
+separated validation mapped to the relevant `bun validate` components, path-based
 rationale for skipped components, and `bun check:mobile` coverage when
 `apps/mobile` is touched. Incomplete proof, unclear ownership, or uncertain
 check mapping means the hook should run or the risk should be reported instead

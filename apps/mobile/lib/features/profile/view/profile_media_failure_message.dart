@@ -6,6 +6,8 @@ String profileMediaFailureMessage(
   ProfileMediaFailure? failure, {
   String? fallback,
 }) => switch (failure?.kind) {
+  ProfileMediaFailureKind.network => l10n.profileMediaNetworkError,
+  ProfileMediaFailureKind.expired => l10n.profileMediaUploadExpired,
   ProfileMediaFailureKind.image => l10n.profileMediaInvalidImage,
   ProfileMediaFailureKind.size => l10n.profileMediaImageTooLarge,
   ProfileMediaFailureKind.authorization => l10n.profileMediaNotAuthorized,

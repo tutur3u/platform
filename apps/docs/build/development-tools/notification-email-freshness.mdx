@@ -43,7 +43,7 @@ provider-result handling remain in place; freshness is not reevaluated after a
 provider attempt. Push and non-task notifications retain their existing checks.
 
 For source validation, run the focused notification freshness and dispatcher
-tests, then `bun check` and a real web app build through the resource queue.
+tests, then `bun validate` and a real web app build through the resource queue.
 The digest route is first-class under `apps/web/src/app/api/cron/`; after route
 registration changes, run `node scripts/tanstack-migration-manifest.js generate`
 followed by `node scripts/tanstack-migration-manifest.js check` and

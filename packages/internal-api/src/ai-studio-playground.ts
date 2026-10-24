@@ -63,7 +63,10 @@ export class AiStudioPlaygroundError extends Error {
 }
 
 function publicApiUrl(path: string, baseUrl = 'https://ai.tuturuuu.com') {
-  return `${baseUrl.replace(/\/+$/u, '')}${path}`;
+  // Linear trim: a regex here backtracks quadratically on long slash runs.
+  let end = baseUrl.length;
+  while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) end -= 1;
+  return `${baseUrl.slice(0, end)}${path}`;
 }
 
 async function parsePublicAiResponse<T>(response: Response): Promise<T> {
