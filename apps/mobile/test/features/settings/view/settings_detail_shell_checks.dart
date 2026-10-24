@@ -27,12 +27,15 @@ void registerSettingsDetailShellChecks() {
           .first;
       final listContext = tester.element(list);
       final padding = tester.widget<ListView>(list).padding! as EdgeInsets;
-      expect(padding.top, 16);
+      expect(padding.top, AppSpacing.sm);
+      expect(MediaQuery.paddingOf(listContext).bottom, 0);
       expect(
-        MediaQuery.paddingOf(listContext).bottom,
-        greaterThanOrEqualTo(68),
+        padding.bottom,
+        24 +
+            MediaQuery.paddingOf(
+              tester.element(find.byType(OfflinePage)),
+            ).bottom,
       );
-      expect(padding.bottom, 24 + MediaQuery.paddingOf(listContext).bottom);
       expect(MediaQuery.paddingOf(listContext).top, 0);
       expect(
         Theme.of(listContext).scaffoldBackgroundColor,

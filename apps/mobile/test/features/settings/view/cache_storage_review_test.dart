@@ -13,6 +13,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/view/cache_storage_chart.dart';
@@ -166,6 +167,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CacheStorageSheet), findsOneWidget);
     expect(find.byType(CacheStorageChart), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(CacheStorageSheet), findsNothing);
+    expect(router.state.matchedLocation, '/');
+    expect(find.text('Open Storage'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -176,13 +182,10 @@ void main() {
     expect(find.byType(CacheStorageChart), findsNothing);
     expect(find.textContaining('Select a workspace'), findsOneWidget);
     expect(
-      tester.widget<ChoiceChip>(find.byType(ChoiceChip).first).onSelected,
+      tester.widget<AppChip>(find.byType(AppChip).first).onSelected,
       isNotNull,
     );
-    expect(
-      tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
-      isNull,
-    );
+    expect(tester.widget<AppButton>(find.byType(AppButton)).onPressed, isNull);
     expect(
       (await store.storageSnapshot(
         userId: 'actor',
@@ -202,7 +205,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await show(tester, 'workspace');
       expect(
-        tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+        tester.widget<AppButton>(find.byType(AppButton)).onPressed,
         isNotNull,
       );
       final download = coordinator.run(
@@ -212,24 +215,22 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(coordinator.state.value.running, true);
-      for (final chip in tester.widgetList<ChoiceChip>(
-        find.byType(ChoiceChip),
-      )) {
+      for (final chip in tester.widgetList<AppChip>(find.byType(AppChip))) {
         expect(chip.onSelected, isNull);
       }
       expect(
-        tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+        tester.widget<AppButton>(find.byType(AppButton)).onPressed,
         isNull,
       );
       pending.complete();
       await download;
       await tester.pumpAndSettle();
       expect(
-        tester.widget<ChoiceChip>(find.byType(ChoiceChip).first).onSelected,
+        tester.widget<AppChip>(find.byType(AppChip).first).onSelected,
         isNotNull,
       );
       expect(
-        tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+        tester.widget<AppButton>(find.byType(AppButton)).onPressed,
         isNotNull,
       );
       await tester.pumpWidget(const SizedBox());

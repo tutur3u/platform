@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/cache_storage_sheet.dart';
 import 'package:mobile/features/settings/view/offline_changes_sheet.dart';
@@ -18,13 +20,7 @@ class OfflinePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final body = ListView(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        24 + MediaQuery.paddingOf(context).bottom,
-      ),
+    final body = AppPageListView(
       children: [
         Text(l10n.offlineSectionDescription),
         const SizedBox(height: 20),
@@ -36,14 +32,14 @@ class OfflinePage extends StatelessWidget {
             SettingsTile(
               grouped: true,
               wrapSupportingText: true,
-              icon: Icons.storage_outlined,
+              icon: LucideIcons.hardDrive,
               title: l10n.cacheStorageTitle,
               subtitle: l10n.offlineStorageScope,
               onTap: () => unawaited(showCacheStorageSheet(context)),
             ),
             SettingsTile(
               grouped: true,
-              icon: Icons.sync_rounded,
+              icon: LucideIcons.refreshCw,
               title: l10n.offlineChangesTitle,
               onTap: () => unawaited(
                 showOfflineChangesSheet(
@@ -63,9 +59,6 @@ class OfflinePage extends StatelessWidget {
       ],
     );
     if (embedded) return body;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.offlineSectionTitle)),
-      body: body,
-    );
+    return AppScaffold(child: body);
   }
 }

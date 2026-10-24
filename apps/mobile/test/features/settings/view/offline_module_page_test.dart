@@ -11,6 +11,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -218,6 +219,7 @@ void main() {
 
   Future<void> browseItems(WidgetTester tester) async {
     await tester.tap(find.text('Browse stored items'));
+    await tester.pump();
     await tester.runAsync(
       () => store.queryReplica(
         namespace: 'inventory.products',
@@ -240,8 +242,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Item ID: synthetic-item'), findsOneWidget);
     expect(find.textContaining('Latest fetch:'), findsWidgets);
-    final search = find.byKey(
-      const ValueKey(('offline-item-search', 'inventory.products')),
+    final search = find.descendant(
+      of: find.byType(AppSheetScaffold),
+      matching: find.byType(AppSearchField),
     );
     await tester.enterText(search, 'not-stored');
     await tester.pumpAndSettle();
@@ -258,8 +261,9 @@ void main() {
   ) async {
     await pump(tester);
     await browseItems(tester);
-    final search = find.byKey(
-      const ValueKey(('offline-item-search', 'inventory.products')),
+    final search = find.descendant(
+      of: find.byType(AppSheetScaffold),
+      matching: find.byType(AppSearchField),
     );
     await tester.enterText(search, 'synthetic-item');
     await tester.pumpAndSettle();

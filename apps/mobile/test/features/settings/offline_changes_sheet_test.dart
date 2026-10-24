@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/offline_changes_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -85,10 +86,17 @@ void main() {
     expect(find.textContaining('does not undo'), findsOneWidget);
     expect(queue.pending.value, hasLength(1));
     final cancelLabel = MaterialLocalizations.of(
-      tester.element(find.byType(AlertDialog)),
+      tester.element(find.byType(AppDialog)),
     ).cancelButtonLabel;
     await tester.tap(find.text(cancelLabel));
     await tester.pumpAndSettle();
+    expect(queue.pending.value, hasLength(1));
+    await tester.tap(find.text('Discard local change'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(AppDialog), findsNothing);
+    expect(find.byType(AppSheetScaffold), findsOneWidget);
     expect(queue.pending.value, hasLength(1));
   });
 }

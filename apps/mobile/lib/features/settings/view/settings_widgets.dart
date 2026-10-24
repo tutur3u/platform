@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/settings/view/settings_group.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
@@ -8,7 +9,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 export 'package:mobile/features/settings/view/settings_group.dart';
 export 'package:mobile/features/settings/view/settings_tile.dart';
@@ -25,7 +25,7 @@ class SettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.card,
@@ -58,14 +58,14 @@ class SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title.trim().isNotEmpty) SettingsCaption(title),
         if (description?.trim().isNotEmpty ?? false) ...[
-          const shad.Gap(6),
+          const AppGap(6),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: SettingsRowLayout.captionInset,
@@ -79,7 +79,7 @@ class SettingsSection extends StatelessWidget {
           ),
         ],
         if (title.trim().isNotEmpty || description?.trim().isNotEmpty == true)
-          const shad.Gap(8),
+          const AppGap(8),
         if (grouped)
           SettingsGroup(children: children)
         else
@@ -96,7 +96,7 @@ class SettingsSection extends StatelessWidget {
     final widgets = <Widget>[];
     for (var index = 0; index < children.length; index++) {
       if (index > 0) {
-        widgets.add(const shad.Gap(6));
+        widgets.add(const AppGap(6));
       }
       widgets.add(children[index]);
     }
@@ -162,7 +162,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 entityId: currentWorkspace?.id ?? '',
                 feature: 'workspace',
                 child: SettingsTile(
-                  icon: Icons.apartment_rounded,
+                  icon: LucideIcons.building2,
                   title: l10n.settingsCurrentWorkspace,
                   value:
                       currentWorkspace?.name ??
@@ -175,7 +175,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 entityId: workspaceState.defaultWorkspace?.id ?? '',
                 feature: 'workspace',
                 child: SettingsTile(
-                  icon: Icons.home_work_outlined,
+                  icon: LucideIcons.house,
                   title: l10n.settingsDefaultWorkspace,
                   value:
                       workspaceState.defaultWorkspace?.name ??
@@ -188,7 +188,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 entityId: currentWorkspace?.id ?? '',
                 feature: 'finance',
                 child: SettingsTile(
-                  icon: Icons.attach_money_rounded,
+                  icon: LucideIcons.banknote,
                   title: l10n.settingsWorkspaceDefaultCurrencyTitle,
                   value: isWorkspaceCurrencyLoading
                       ? '…'
@@ -205,7 +205,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 entityId: currentWorkspace?.id ?? '',
                 feature: 'workspace',
                 child: SettingsTile(
-                  icon: Icons.drive_file_rename_outline_rounded,
+                  icon: LucideIcons.pencilLine,
                   title: l10n.settingsWorkspacePropertiesTitle,
                   value:
                       currentWorkspace?.name ??
@@ -219,7 +219,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 ),
               ),
               SettingsTile(
-                icon: Icons.key_rounded,
+                icon: LucideIcons.key,
                 title: l10n.settingsWorkspaceSecretsTitle,
                 onTap: canManageWorkspaceSecrets
                     ? onOpenWorkspaceSecrets
@@ -229,7 +229,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
           ),
         ),
         if (showWorkspaceAccess) ...[
-          const shad.Gap(18),
+          const AppGap(18),
           StaggeredEntry(
             index: 2,
             playOnceKey: 'settings-workspace-access',
@@ -237,14 +237,14 @@ class SettingsWorkspaceSection extends StatelessWidget {
               title: l10n.settingsWorkspaceAccessTitle,
               children: [
                 SettingsTile(
-                  icon: Icons.group_outlined,
+                  icon: LucideIcons.group,
                   title: l10n.settingsWorkspaceMembersTitle,
                   onTap: canManageWorkspaceMembers
                       ? onOpenWorkspaceMembers
                       : null,
                 ),
                 SettingsTile(
-                  icon: Icons.admin_panel_settings_outlined,
+                  icon: LucideIcons.shieldCheck,
                   title: l10n.settingsWorkspaceRolesTitle,
                   onTap: canManageWorkspaceRoles ? onOpenWorkspaceRoles : null,
                 ),
@@ -265,7 +265,7 @@ class SettingsMetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -285,7 +285,7 @@ class SettingsMetaChip extends StatelessWidget {
               color: theme.colorScheme.mutedForeground,
             ),
           ),
-          const shad.Gap(2),
+          const AppGap(2),
           Text(
             value,
             maxLines: 2,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/offline_stored_items.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
@@ -57,14 +58,12 @@ void main() {
     await tester.tap(find.text('Browse stored items'));
     await tester.pumpAndSettle();
     expect(reads, 1);
-    expect(find.byType(ExpansionTile).evaluate().length, lessThan(20));
+    expect(find.byType(AppDisclosure).evaluate().length, lessThan(20));
     expect(find.text('Product 1999'), findsNothing);
     expect(payloads.fold<int>(0, (sum, row) => sum + row.calls), 0);
 
     // Search covers a far-away item, not just the first rendered/read page.
-    final search = find.byKey(
-      const ValueKey(('offline-item-search', 'inventory.products')),
-    );
+    final search = find.byType(AppSearchField);
     await tester.enterText(search, 'synthetic-1999');
     await tester.pumpAndSettle();
     expect(find.text('Product 1999'), findsOneWidget);
@@ -99,8 +98,9 @@ void main() {
       'synthetic-1999',
     );
     expect(payloads.fold<int>(0, (sum, row) => sum + row.calls), 2);
-    await tester.tap(find.text('Browse stored items'));
+    await tester.tap(find.byKey(const ValueKey('app-sheet-close')));
     await tester.pumpAndSettle();
+    expect(find.byType(AppSheetScaffold), findsNothing);
     rows[1999] = ReplicaEntityRecord(
       id: 'synthetic-1999',
       namespace: 'inventory.products',
@@ -114,6 +114,8 @@ void main() {
     await tester.tap(find.text('Browse stored items'));
     await tester.pumpAndSettle();
     expect(reads, 3);
+    await tester.enterText(find.byType(AppSearchField), 'synthetic-1999');
+    await tester.pumpAndSettle();
     expect(find.text('Updated product'), findsOneWidget);
     expect(
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
