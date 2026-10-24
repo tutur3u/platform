@@ -53,7 +53,7 @@ select ok((select prosecdef from pg_proc
   where oid='private.employee_creation_preflight(uuid,uuid,text,text)'::regprocedure),'security definer retained');
 select is((select proconfig from pg_proc
   where oid='private.employee_creation_preflight(uuid,uuid,text,text)'::regprocedure),
-  array['search_path=""']::text[],'empty search path retained');
+  array['search_path=pg_catalog, pg_temp']::text[],'hardened catalog search path retained');
 select is((select prorettype::regtype::text from pg_proc
   where oid='private.employee_creation_preflight(uuid,uuid,text,text)'::regprocedure),'boolean','boolean contract retained');
 select ok(not exists(select 1 from pg_proc p,
