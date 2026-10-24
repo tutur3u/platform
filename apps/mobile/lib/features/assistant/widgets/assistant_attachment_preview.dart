@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_document_link.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:video_player/video_player.dart';
 
@@ -29,6 +30,7 @@ class AssistantAttachmentPreview extends StatelessWidget {
         File(localPath).existsSync();
     final canPreview =
         isMedia && (hasLocalFile || (url != null && url.isNotEmpty));
+    final documentUri = isMedia ? null : assistantDocumentUri(url);
     final label = _displayName(context, attachment);
     final failed =
         attachment.uploadState == AssistantAttachmentUploadState.error;
@@ -51,6 +53,10 @@ class AssistantAttachmentPreview extends StatelessWidget {
                 builder: (_) =>
                     _MediaPreviewDialog(attachment: attachment, label: label),
               )
+            : documentUri != null &&
+                  attachment.uploadState ==
+                      AssistantAttachmentUploadState.uploaded
+            ? () => unawaited(openAssistantDocument(context, documentUri))
             : null,
         onDeleted: onRemove,
         deleteButtonTooltipMessage:
@@ -70,6 +76,15 @@ class AssistantAttachmentPreview extends StatelessWidget {
     String? url,
     bool isVideo,
   ) {
+    if (attachment.uploadState == AssistantAttachmentUploadState.uploading) {
+      return Semantics(
+        label: context.l10n.commonLoading,
+        child: const SizedBox.square(
+          dimension: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
     if (attachment.isImage) {
       if (localPath != null &&
           localPath.isNotEmpty &&
@@ -97,15 +112,6 @@ class AssistantAttachmentPreview extends StatelessWidget {
           ),
         );
       }
-    }
-    if (attachment.uploadState == AssistantAttachmentUploadState.uploading) {
-      return Semantics(
-        label: context.l10n.commonLoading,
-        child: const SizedBox.square(
-          dimension: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
     }
     return Icon(
       attachment.uploadState == AssistantAttachmentUploadState.error

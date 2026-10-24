@@ -69,7 +69,7 @@ no static, dynamic, wildcard-export, or test consumer.
 | i18n | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | exit 0 |
 | Calendar typecheck | `bun run --cwd apps/calendar type-check` | exit 0 |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -127,7 +127,7 @@ gates pass.
 
 ### Step 4: Run all gates
 
-Run focused tests, i18n, Calendar typecheck/build, `bun check`, and whitespace.
+Run focused tests, i18n, Calendar typecheck/build, `bun validate`, and whitespace.
 Confirm status contains only scoped Calendar source/messages/tests plus README.
 
 ## Done criteria

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { privateTempDirSync, writeExclusiveFileSync } = require('./safe-fs');
 const path = require('node:path');
 
 const {
@@ -26,7 +26,7 @@ const {
 } = require('./check-discord-python.js');
 
 function createTempDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'check-queue-'));
+  return privateTempDirSync('check-queue-');
 }
 
 function sleep(ms) {
@@ -108,7 +108,7 @@ test('getActiveChecks adds Discord Python validation after script tests when Dis
   ]);
 });
 
-test('bun check always includes mobile iOS project settings validation', () => {
+test('bun validate always includes mobile iOS project settings validation', () => {
   const activeChecks = getActiveChecks({
     changedFiles: ['apps/web/src/app/page.tsx'],
   });
@@ -117,14 +117,14 @@ test('bun check always includes mobile iOS project settings validation', () => {
   ]);
 });
 
-test('bun check omits paused TanStack implementation validation', () => {
+test('bun validate omits paused TanStack implementation validation', () => {
   const activeChecks = getActiveChecks({
     changedFiles: ['apps/tanstack-web/src/routes/index.tsx'],
   });
   assert.ok(!activeChecks.find(({ name }) => name === 'tanstack-api-access'));
 });
 
-test('bun check includes platform release sync validation for release-please files only', () => {
+test('bun validate includes platform release sync validation for release-please files only', () => {
   assert.equal(touchesPlatformReleaseVersion(['platform-version.txt']), true);
   assert.equal(
     touchesPlatformReleaseVersion(['.release-please-manifest.json']),
@@ -179,7 +179,7 @@ test('Biome check treats warnings as blocking local check issues', () => {
   );
 });
 
-test('bun check registers, runs, and reports source-size failures', async () => {
+test('bun validate registers, runs, and reports source-size failures', async () => {
   const sourceSizeCheck = checks.find((check) => check.name === 'source-size');
   assert.ok(sourceSizeCheck);
   assert.deepEqual(sourceSizeCheck.args, ['check:source-size']);
@@ -320,12 +320,12 @@ test('acquireCheckQueueLock serializes queued checks in order', async () => {
 
   assert.ok(
     queueMessages.some((line) =>
-      line.includes('Queued behind 1 earlier bun check invocation')
+      line.includes('Queued behind 1 earlier bun validate invocation')
     )
   );
   assert.ok(
     queueMessages.some((line) =>
-      line.includes('Queued behind 2 earlier bun check invocations')
+      line.includes('Queued behind 2 earlier bun validate invocations')
     )
   );
 });
@@ -338,7 +338,7 @@ test('acquireCheckQueueLock prunes stale tickets and stale locks', async () => {
   const staleTicketPath = path.join(paths.ticketsDir, `${staleTicketId}.json`);
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     staleTicketPath,
     JSON.stringify(
       {
@@ -352,7 +352,7 @@ test('acquireCheckQueueLock prunes stale tickets and stale locks', async () => {
   );
 
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -393,7 +393,7 @@ test('acquireCheckQueueLock ignores active non-check queue records', async () =>
   );
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     forgedTicketPath,
     JSON.stringify(
       {
@@ -407,7 +407,7 @@ test('acquireCheckQueueLock ignores active non-check queue records', async () =>
   );
 
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -446,7 +446,7 @@ test('listTrackedCheckProcesses returns active owner and queued tickets once', (
   const sharedPid = process.pid;
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     path.join(paths.ticketsDir, '0000000000001-00000001-alpha.json'),
     JSON.stringify(
       {
@@ -459,7 +459,7 @@ test('listTrackedCheckProcesses returns active owner and queued tickets once', (
     )
   );
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -494,7 +494,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
   const queueMessages = [];
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     path.join(paths.ticketsDir, '0000000000002-00041002-bravo.json'),
     JSON.stringify(
       {
@@ -507,7 +507,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
     )
   );
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -540,7 +540,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
   ]);
   assert.ok(
     queueMessages.some((line) =>
-      line.includes('Force stopping 2 earlier bun check invocations')
+      line.includes('Force stopping 2 earlier bun validate invocations')
     )
   );
   assert.equal(fs.existsSync(paths.lockDir), false);
@@ -555,7 +555,7 @@ test('forceClearCheckQueue discards unverified queue PIDs without signaling them
   const queueMessages = [];
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     path.join(paths.ticketsDir, '0000000000002-00061002-bravo.json'),
     JSON.stringify(
       {
@@ -568,7 +568,7 @@ test('forceClearCheckQueue discards unverified queue PIDs without signaling them
     )
   );
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -597,7 +597,7 @@ test('forceClearCheckQueue discards unverified queue PIDs without signaling them
   assert.deepEqual(killCalls, []);
   assert.ok(
     queueMessages.some((line) =>
-      line.includes('Discarding 2 unverified bun check queue records')
+      line.includes('Discarding 2 unverified bun validate queue records')
     )
   );
   assert.equal(fs.existsSync(paths.lockDir), false);
@@ -612,7 +612,7 @@ test('acquireCheckQueueLock forceNow clears earlier checks before taking the loc
   const killCalls = [];
 
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {

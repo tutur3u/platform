@@ -92,7 +92,7 @@ providers only; no live credentials or calls.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/calendar-event-creation-operations.test.sql --typegen packages/types/src/supabase.ts` | tenant, ACL, lease, replay, ciphertext, and rollback tests pass |
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second isolated type generation is byte-identical |
 | App gates | `bun run --cwd apps/calendar type-check && bun run --cwd apps/calendar build` | Calendar compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Size | `wc -l 'apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/events/route.ts' apps/calendar/src/lib/calendar/event-creation.ts` | substantially edited files remain below 700 lines |
 
 ## Scope

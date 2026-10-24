@@ -57,7 +57,7 @@ do not move it into `legacy-api-routes`.
 | Web route checks | `bun web:api-routes:check` | exit 0; route stays first-class |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -114,7 +114,7 @@ unrelated override changes appear.
 
 ### Step 4: Run all gates
 
-Run focused tests, Web typecheck/build, `bun check`, and whitespace. Confirm
+Run focused tests, Web typecheck/build, `bun validate`, and whitespace. Confirm
 status lists only scoped files plus the executor-owned README row.
 
 ## Done criteria

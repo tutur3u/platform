@@ -1,4 +1,5 @@
 import { google } from '@tuturuuu/google';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
@@ -21,6 +22,23 @@ export async function POST(request: Request) {
       );
     }
     const { supabase, user } = auth;
+
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
+
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get the Google tokens for this workspace
     const { data: googleTokens, error: tokensError } = await supabase

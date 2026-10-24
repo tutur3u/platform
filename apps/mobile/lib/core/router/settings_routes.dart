@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/product_feedback/product_feedback_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
@@ -7,6 +9,7 @@ import 'package:mobile/features/reminders/reminder_settings_page.dart';
 import 'package:mobile/features/security/account/account_security_page.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_scanner_page.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_page.dart';
 import 'package:mobile/features/settings/view/internal_accounts_page.dart';
 import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/settings/view/offline_page.dart';
@@ -32,6 +35,15 @@ List<RouteBase> settingsRoutes() => [
   GoRoute(
     path: Routes.settingsPreferences,
     redirect: (context, state) => Routes.settings,
+  ),
+  ...appSettingsRoutes(),
+  GoRoute(
+    path: Routes.settingsAppearance,
+    builder: (context, state) => AppearancePage(
+      highlight: AppearanceThemeId.values
+          .where((id) => id.name == state.uri.queryParameters['highlight'])
+          .firstOrNull,
+    ),
   ),
   GoRoute(
     path: Routes.settingsExperiments,

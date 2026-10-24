@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
@@ -161,8 +162,8 @@ class _ThreadHeader extends StatelessWidget {
                   child: shad.IconButton.ghost(
                     icon: Icon(
                       conversation.isPinned
-                          ? shad.LucideIcons.pinOff
-                          : shad.LucideIcons.pin,
+                          ? LucideIcons.pinOff
+                          : LucideIcons.pin,
                       size: 18,
                     ),
                     onPressed: onPin,
@@ -172,7 +173,7 @@ class _ThreadHeader extends StatelessWidget {
                 Tooltip(
                   message: context.l10n.chatDetails,
                   child: shad.IconButton.ghost(
-                    icon: const Icon(shad.LucideIcons.panelRight, size: 18),
+                    icon: const Icon(LucideIcons.panelRight, size: 18),
                     onPressed: onDetails,
                   ),
                 ),
@@ -185,10 +186,10 @@ class _ThreadHeader extends StatelessWidget {
 
   IconData _iconFor(ChatConversationType type) {
     return switch (type) {
-      ChatConversationType.ai => shad.LucideIcons.bot,
-      ChatConversationType.channel => shad.LucideIcons.hash,
-      ChatConversationType.direct => shad.LucideIcons.user,
-      ChatConversationType.group => shad.LucideIcons.users,
+      ChatConversationType.ai => LucideIcons.bot,
+      ChatConversationType.channel => LucideIcons.hash,
+      ChatConversationType.direct => LucideIcons.user,
+      ChatConversationType.group => LucideIcons.users,
     };
   }
 }

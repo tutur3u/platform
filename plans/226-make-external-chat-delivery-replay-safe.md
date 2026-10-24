@@ -77,7 +77,7 @@ all exact paths. Do not expose provider credentials or raw messages in tests.
 | Full database | `bun --cwd apps/database sb:validate:isolated` | full pgTAP baseline passes |
 | Package/app types | `bun run --cwd packages/internal-api type-check && bun run --cwd packages/ui type-check && bun run --cwd apps/infrastructure type-check` | exit 0 |
 | Build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

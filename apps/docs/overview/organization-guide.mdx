@@ -56,7 +56,7 @@ Assets such as images remain in `apps/docs/images/`. Shared assets for navigatio
 - **Diagrams** use Mermaid syntax (rendered by Mintlify).
 - **Images** belong in `apps/docs/images/` and are referenced with absolute paths (`/images/...`).
 - **Internal links** use absolute documentation paths (for example `/build/overview`, not `/overview`) so moving files does not break references.
-- **Linting** — Markdown and MDX are explicitly excluded from Biome (`biome.json` ignores `**/*.md` and `**/*.mdx`), so `bun check` does not lint these pages. Validate docs by previewing them with the Mintlify CLI and checking that links resolve and front matter is present, rather than relying on Biome formatting.
+- **Linting** — Markdown and MDX are explicitly excluded from Biome (`biome.json` ignores `**/*.md` and `**/*.mdx`), so `bun validate` does not lint these pages. Validate docs by previewing them with the Mintlify CLI and checking that links resolve and front matter is present, rather than relying on Biome formatting.
 
 Need inspiration for structuring a new guide? Browse the [Platform Overview](/platform/overview) and [Build & Ship](/build/overview) pages—they demonstrate the preferred narrative pattern (context → diagrams → next steps).
 

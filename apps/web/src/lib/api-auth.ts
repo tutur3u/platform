@@ -1,9 +1,8 @@
 import {
-  type AppSessionTargetApp,
   attachSupabaseAuthUser,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
-  verifyAppSessionRequest,
+  hasSupportedSupabaseAuthCookie,
 } from '@tuturuuu/auth/app-session';
 import {
   CLI_APP_ACCESS_SCOPE,
@@ -39,7 +38,10 @@ import {
   recordResponseAbuseSignal,
   resolveWebAbuseDecision,
 } from './abuse-risk';
-import { getDefaultAppSessionVerificationOptions } from './api-auth-audiences';
+import {
+  type AppSessionAuthOptions,
+  verifyConfiguredAppSessionRequest,
+} from './api-auth-app-session';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
@@ -184,59 +186,6 @@ export interface SessionAuthContext {
   supabase: TypedSupabaseClient;
 }
 
-type StrictAppSessionAuthOptions = {
-  requiredScope?: string | false;
-  targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
-};
-
-type AppSessionAuthOptions =
-  | boolean
-  | StrictAppSessionAuthOptions
-  | readonly StrictAppSessionAuthOptions[];
-
-function getAppSessionVerificationOptions(
-  request: Pick<NextRequest, 'url'>,
-  allowAppSessionAuth:
-    | true
-    | StrictAppSessionAuthOptions
-    | readonly StrictAppSessionAuthOptions[]
-): readonly StrictAppSessionAuthOptions[] {
-  if (allowAppSessionAuth === true) {
-    return [getDefaultAppSessionVerificationOptions(request.url)];
-  }
-
-  return isAppSessionAuthOptionsList(allowAppSessionAuth)
-    ? allowAppSessionAuth
-    : [allowAppSessionAuth];
-}
-
-function isAppSessionAuthOptionsList(
-  value: StrictAppSessionAuthOptions | readonly StrictAppSessionAuthOptions[]
-): value is readonly StrictAppSessionAuthOptions[] {
-  return Array.isArray(value);
-}
-
-function verifyConfiguredAppSessionRequest(
-  request: Pick<NextRequest, 'headers' | 'url'>,
-  allowAppSessionAuth:
-    | true
-    | StrictAppSessionAuthOptions
-    | readonly StrictAppSessionAuthOptions[]
-): Extract<ReturnType<typeof verifyAppSessionRequest>, { ok: true }> | null {
-  for (const verificationOptions of getAppSessionVerificationOptions(
-    request,
-    allowAppSessionAuth
-  )) {
-    const verification = verifyAppSessionRequest(request, verificationOptions);
-
-    if (verification.ok) {
-      return verification;
-    }
-  }
-
-  return null;
-}
-
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
   const resolution = await resolveAuthenticatedSessionUser(supabase);
   if (resolution.user) {
@@ -372,6 +321,8 @@ interface SessionAuthOptions {
    * explicit because the Supabase client is admin-backed.
    */
   allowAppSessionAuth?: AppSessionAuthOptions;
+  /** Prefer the current browser Supabase identity when a supported auth cookie exists. */
+  preferSupabaseSessionAuth?: boolean;
   /**
    * Allows verified app-session requests to skip browser step-up challenges.
    * Use only for server-to-server routes that are protected by explicit scopes.
@@ -547,37 +498,37 @@ export function withSessionAuth<T = unknown>(
     let deferredApiAbuseBlock: BlockInfo | null = null;
 
     // 2. Check persistent IP block
-    if (ipAddress && ipAddress !== 'unknown') {
-      const blockInfo = await isIPBlocked(ipAddress, {
-        route: endpoint,
-        source: 'api-auth',
-      });
-      if (blockInfo) {
-        const authenticatedSessionMarker = hasAuthenticatedApiSession(request);
+    // An undetermined client IP resolves to the shared 'unknown' bucket,
+    // which is still block-checked and rate-limited rather than skipped.
+    const blockInfo = await isIPBlocked(ipAddress, {
+      route: endpoint,
+      source: 'api-auth',
+    });
+    if (blockInfo) {
+      const authenticatedSessionMarker = hasAuthenticatedApiSession(request);
 
-        // Proxy-side anonymous abuse blocks should not lock out valid signed-in
-        // sessions, but syntactic auth markers are not trusted by themselves.
-        // Defer api_abuse blocks only long enough to validate route auth.
-        if (blockInfo.reason === 'api_abuse' && authenticatedSessionMarker) {
-          deferredApiAbuseBlock = blockInfo;
-        } else {
-          return buildIpBlockResponse(blockInfo);
-        }
+      // Proxy-side anonymous abuse blocks should not lock out valid signed-in
+      // sessions, but syntactic auth markers are not trusted by themselves.
+      // Defer api_abuse blocks only long enough to validate route auth.
+      if (blockInfo.reason === 'api_abuse' && authenticatedSessionMarker) {
+        deferredApiAbuseBlock = blockInfo;
+      } else {
+        return buildIpBlockResponse(blockInfo);
       }
+    }
 
-      // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
-      if (options?.rateLimit !== false) {
-        const config =
-          options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
+    // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
+    if (options?.rateLimit !== false) {
+      const config =
+        options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
 
-        if (config !== false) {
-          const rateLimitResult = await checkRateLimit(
-            `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
-            config
-          );
-          if (!('allowed' in rateLimitResult)) {
-            return rateLimitResult;
-          }
+      if (config !== false) {
+        const rateLimitResult = await checkRateLimit(
+          `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
+          config
+        );
+        if (!('allowed' in rateLimitResult)) {
+          return rateLimitResult;
         }
       }
     }
@@ -666,7 +617,11 @@ export function withSessionAuth<T = unknown>(
       return response;
     }
 
-    if (options?.allowAppSessionAuth) {
+    if (
+      options?.allowAppSessionAuth &&
+      (!options.preferSupabaseSessionAuth ||
+        !hasSupportedSupabaseAuthCookie(request))
+    ) {
       const appSessionToken = getAppSessionTokenFromRequest(request);
 
       if (appSessionToken) {

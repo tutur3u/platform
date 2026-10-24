@@ -57,7 +57,7 @@ rebased once. Registry lookup is read-only; record no credentials.
 | Focused test | `bun test scripts/check-cloudflare-workers.test.js` | floating/missing/mismatched/valid fixtures pass |
 | Worker validator | `bun scripts/check-cloudflare-workers.js` | Rust Worker workflow contract passes |
 | Script fleet | `bun test:scripts` | root-discovered script suite passes |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

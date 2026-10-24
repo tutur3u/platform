@@ -1,0 +1,12 @@
+{
+  "name": "mobile-lucide-generator",
+  "version": "1.0.0",
+  "description": "Generates the mobile Lucide icon fonts and Dart classes from the web pinned lucide-react and @lucide/lab.",
+  "scripts": {},
+  "license": "ISC",
+  "private": true,
+  "dependencies": {
+    "canvaskit-wasm": "0.42.0",
+    "opentype.js": "2.0.0"
+  }
+}

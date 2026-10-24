@@ -128,7 +128,7 @@ command exits nonzero; restore it and prove exit 0.
 node --test scripts/ci/check-build-info-coverage.test.js
 node scripts/ci/check-build-info-coverage.js
 bun turbo:local run type-check --filter=@tuturuuu/apps --filter=@tuturuuu/tools
-bun check
+bun validate
 bun run --cwd apps/apps build
 bun run --cwd apps/tools build
 git diff --check
@@ -143,7 +143,7 @@ because this plan adds Next route handlers.
 - [ ] Apps and Tools expose truthful no-store build-info responses.
 - [ ] Every registered deployed Next app is checked from one canonical registry.
 - [ ] Missing or identity-mismatched route coverage fails with actionable output.
-- [ ] Focused tests, typechecks, both app builds, `bun check`, and whitespace pass.
+- [ ] Focused tests, typechecks, both app builds, `bun validate`, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

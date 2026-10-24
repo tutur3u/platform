@@ -94,7 +94,7 @@ Vietnamese bundles and run `bun i18n:sort`.
 | Adjacent recovery | `bun --cwd apps/infrastructure vitest run src/lib/auth/recovery.test.ts src/app/api/v1/infrastructure/auth-recovery/route.test.ts 'src/app/api/v1/infrastructure/auth-recovery/[overrideId]/send-email/route.test.ts'` | collection and issuance contracts remain green together |
 | Messages | `bun i18n:sort && bun i18n:check` | warning key is present and sorted in both bundles |
 | Infrastructure | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all canonical gates pass; whitespace output is empty |
 
 ## Scope
 
@@ -129,7 +129,7 @@ permissions, other UI, Web/Rust/TanStack source, or production email calls.
    and the new documented result union. Do not introduce a second
    implementation.
 6. Run focused/adjacent/internal tests, i18n gates, Infrastructure typecheck/
-   build, `bun check`, whitespace, and exact-scope gates. Confirm no live
+   build, `bun validate`, whitespace, and exact-scope gates. Confirm no live
    provider or database is contacted.
 
 ## Done criteria

@@ -67,7 +67,7 @@ or modifying migrations.
 | Focused route | `bun --cwd apps/finance vitest run 'src/app/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/route.test.ts'` | permission, tenant, failure preservation, success, and replay cases pass |
 | Child-delete absence | `if rg -n "from\('finance_invoice_(products|promotions)'\)" 'apps/finance/src/app/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/route.ts'; then exit 1; fi` | item route contains no manual child delete |
 | Finance app | `bun run --cwd apps/finance type-check && bun run --cwd apps/finance build` | Finance app compiles and builds |
-| Repository | `bun check && git diff --check` | repository and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | repository and whitespace gates pass |
 | Scope | `git status --short` | only the invoice item route and focused test changed |
 
 ## Scope

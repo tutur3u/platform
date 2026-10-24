@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const { readRegularFileSync } = require('./safe-fs');
 const path = require('node:path');
 
 // Resolve local path items for the source contract checks. This is not a
@@ -27,7 +28,9 @@ function readOpenApiSource(openApiPath) {
     ) {
       throw new Error('OpenAPI path-item module must be a local regular file');
     }
-    const moduleLines = fs.readFileSync(file, 'utf8').split('\n');
+    const moduleLines = readRegularFileSync(file, { encoding: 'utf8' }).split(
+      '\n'
+    );
     const keys = moduleLines.flatMap((value, position) => {
       const match = value.match(/^([A-Za-z][A-Za-z0-9]*):\s*$/u);
       return match ? [{ name: match[1], position }] : [];

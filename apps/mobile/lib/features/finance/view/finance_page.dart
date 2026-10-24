@@ -5,9 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -34,20 +32,14 @@ class FinanceOverviewSkeleton extends StatelessWidget {
   const FinanceOverviewSkeleton({super.key});
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: EdgeInsets.fromLTRB(
-      16,
-      12,
-      16,
-      28 + MediaQuery.paddingOf(context).bottom,
-    ),
-    children: const [
+  Widget build(BuildContext context) => const AppPageListView(
+    children: [
       FinanceSkeletonBlock(height: 180, radius: 24),
-      SizedBox(height: 16),
+      SizedBox(height: AppSpacing.lg),
       FinanceSkeletonBlock(height: 96, radius: 20),
-      SizedBox(height: 12),
+      SizedBox(height: AppLayout.itemGap),
       FinanceSkeletonBlock(height: 96, radius: 20),
-      SizedBox(height: 20),
+      SizedBox(height: AppSpacing.xl),
       FinanceSkeletonBlock(height: 56, radius: 18),
     ],
   );
@@ -131,35 +123,18 @@ class _FinanceView extends StatelessWidget {
                   ownerId: 'finance-overview-amount-visibility',
                   locations: {Routes.finance},
                 ),
-                ResponsiveWrapper(
-                  maxWidth: ResponsivePadding.maxContentWidth(
-                    context.deviceClass,
-                  ),
-                  child: NovaRefreshIndicator(
-                    onRefresh: () => _reload(context),
-                    child: ListView(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        8,
-                        16,
-                        28 + MediaQuery.paddingOf(context).bottom,
-                      ),
-                      children: [
-                        _OverviewHero(state: state, showAmounts: showAmounts),
-                        const shad.Gap(24),
-                        const _CheckpointAuditShortcut(),
-                        const shad.Gap(24),
-                        _WalletHighlights(
-                          state: state,
-                          showAmounts: showAmounts,
-                        ),
-                        const shad.Gap(28),
-                        _ActivityPreview(
-                          state: state,
-                          showAmounts: showAmounts,
-                        ),
-                      ],
-                    ),
+                NovaRefreshIndicator(
+                  onRefresh: () => _reload(context),
+                  child: AppPageListView(
+                    children: [
+                      _OverviewHero(state: state, showAmounts: showAmounts),
+                      const shad.Gap(AppLayout.sectionGap),
+                      const _CheckpointAuditShortcut(),
+                      const shad.Gap(AppLayout.sectionGap),
+                      _WalletHighlights(state: state, showAmounts: showAmounts),
+                      const shad.Gap(AppLayout.sectionGap),
+                      _ActivityPreview(state: state, showAmounts: showAmounts),
+                    ],
                   ),
                 ),
               ],
@@ -180,9 +155,8 @@ class _FinanceError extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return AppPageBody(
+      child: Center(
         child: FinanceEmptyState(
           icon: Icons.error_outline,
           title: l10n.commonSomethingWentWrong,

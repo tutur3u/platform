@@ -371,8 +371,9 @@ test('the release workflow runs the auto approve step with pull-request write ac
     /node scripts\/ci\/release-please-auto-approve\.js --target-branch production/
   );
   assert.ok(
-    workflow.indexOf('googleapis/release-please-action@v5') <
-      workflow.indexOf('release-please-auto-approve.js'),
+    workflow.indexOf('googleapis/release-please-action@') >= 0 &&
+      workflow.indexOf('googleapis/release-please-action@') <
+        workflow.indexOf('release-please-auto-approve.js'),
     'the release PR must exist before it can be approved'
   );
   assert.match(
