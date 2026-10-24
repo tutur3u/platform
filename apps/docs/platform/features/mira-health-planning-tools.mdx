@@ -1,0 +1,103 @@
+---
+title: Mira body weight, habits and day overview
+description: How Mira logs body weight and habit entries and builds a one-read plan for a day.
+---
+
+Mira exposes five server-side tools from the shared `@tuturuuu/ai` tool
+registry. Web chat, mobile chat and mobile Live (through the canonical
+`execute_workspace_tool` bridge) use the same definitions and executors.
+
+| Tool | Purpose |
+| --- | --- |
+| `log_body_weight` | Log a weight in kg or lb; create a private Body Weight tracker on first use |
+| `get_body_weight_history` | Entries for the last `days` (default 30, max 365) with latest, change, min and max |
+| `list_habit_trackers` | Active trackers in the current workspace with target, unit, current-period progress and streak |
+| `log_habit_entry` | Log any tracker: `value` maps to the tracker's primary metric, or pass `values` by field key |
+| `get_day_overview` | One bounded read for planning a day: tasks, events, habit progress and the running timer |
+
+## Data ownership and transport
+
+Habit data lives only in `workspace_habit_trackers` and
+`workspace_habit_tracker_entries`. Mira calls the Tasks satellite habit API
+(`/api/v1/workspaces/:wsId/habit-trackers`) with the caller's forwarded
+authorization. The satellite enforces membership, the workspace habits feature
+flag, input sanitising and RLS, so the tools need no extra Mira permission.
+The Tasks origin must use HTTPS outside local development. Sessions without
+forwarded request headers get a truthful "unavailable in this session" result;
+nothing is logged.
+
+Mira does not copy weights or habit entries into AI memory. The tools return
+the stored values to the current conversation only.
+
+## Body weight tracker selection and auto-create
+
+Habit trackers and their entries are visible to every member of a workspace;
+there is no per-user private tracker. Mira therefore resolves the tracker in
+this order:
+
+1. An active `use_case = 'body_weight'` tracker in the current workspace. The
+   user created it there, so Mira logs there.
+2. An active body weight tracker in the user's personal workspace.
+3. Otherwise `log_body_weight` creates a **private** "Body Weight" tracker,
+   always in the personal workspace. If the current workspace is a team
+   workspace, Mira never creates a shared health tracker there. The result
+   reports `trackerCreated: true` and the `workspace` used (`id`, `personal`,
+   `isCurrentWorkspace`), and Mira tells the user. Without a personal
+   workspace, nothing is created or logged.
+
+The release authority approved auto-create on 2026-10-25. One function,
+`createPrivateBodyWeightTracker`, owns creation. `get_body_weight_history` never
+creates a tracker.
+
+The new tracker follows the Tasks `body_weight` template: a daily summary,
+maximum aggregation, `weight` as the primary metric and `kg`/`lb` as supported
+units. Its unit is the logged unit, or kg when none is given.
+
+## Units, bounds and dates
+
+- A weight given in the other unit is converted to the tracker's unit
+  (1 lb = 0.45359237 kg) and rounded to 0.01. The result includes
+  `convertedFrom`. A tracker with any other unit is rejected rather than
+  mislabelled.
+- Accepted weights are 2 to 650 kg (or the same range in lb). Out-of-range
+  values are rejected before any tracker is created.
+- Daily-summary trackers keep one entry per day. A second log on the same day
+  replaces that day's value (Tasks service behaviour).
+- `entry_date` is the calendar date of `occurredAt` (default now) in the user
+  timezone. With a missing or invalid timezone, Mira uses UTC and returns
+  `timezoneAssumed: true`.
+- History reads the caller's own entries from the Tasks entry list, which holds
+  the 50 most recent entries per tracker across all members. When that limit
+  may hide older entries in the window, the result includes
+  `mayBeIncomplete: true`.
+
+## Day overview
+
+`get_day_overview` takes an optional `date` (`YYYY-MM-DD`, default today in the
+user timezone) and computes the day window `[start, end)` in that timezone.
+Sections load in parallel and fail independently: a failed section is `null`,
+its message is under `errors`, and `partial: true` is set. `success` is false
+only when every section fails. No section is filled with guessed data.
+
+| Section | Source | Bound |
+| --- | --- | --- |
+| `tasks` | the `get_my_tasks` feed, re-bucketed into `dueOnDay` and `overdue` (due before the day and still open) | 15 tasks total, with `truncated` and `mayBeIncomplete` flags |
+| `calendar` | workspace events overlapping the day, decrypted like `get_upcoming_events` | 20 events |
+| `habits` | active trackers with the caller's aggregate for that date (`dayTotal`, and `met` for daily targets) | 10 trackers |
+| `timer` | the caller's running session in the workspace, if any | 1 session |
+
+The calendar section requires `manage_calendar`, like `get_upcoming_events`. When
+the session cannot verify that permission, the section fails closed.
+
+## Regression coverage
+
+- `packages/ai/src/tools/executors/body-weight.test.ts`: forwarded auth, the
+  missing-header result, find vs create, personal-workspace creation from a
+  team workspace, no-personal-workspace refusal, unit conversion, bounds and the
+  history summary.
+- `packages/ai/src/tools/executors/habits.test.ts`: conversion, Ho Chi Minh
+  City day boundaries, UTC fallback, list mapping and generic entry logging.
+- `packages/ai/src/tools/executors/day-overview.test.ts`: timezone bucketing,
+  per-section partial failure, calendar fail-closed, caps and date validation.
+- `packages/ai/src/tools/mira-tool-discovery.test.ts`: English and Vietnamese
+  discovery of the health and planning tools.

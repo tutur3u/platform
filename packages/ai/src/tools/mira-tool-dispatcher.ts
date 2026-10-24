@@ -8,6 +8,7 @@ import {
 } from './executors/calendar';
 import { executeCalendarAutomation } from './executors/calendar-automation';
 import { executeSetImmersiveMode } from './executors/chat';
+import { executeGetDayOverview } from './executors/day-overview';
 import {
   executeCreateTransactionCategory,
   executeCreateTransactionTag,
@@ -29,6 +30,12 @@ import {
   executeUpdateTransactionTag,
   executeUpdateWallet,
 } from './executors/finance';
+import {
+  executeGetBodyWeightHistory,
+  executeListHabitTrackers,
+  executeLogBodyWeight,
+  executeLogHabitEntry,
+} from './executors/habits';
 import { executeGenerateImage } from './executors/image';
 import { executeConvertFileToMarkdown } from './executors/markitdown';
 import {
@@ -217,6 +224,11 @@ const toolHandlers = {
   update_time_tracking_session: executeUpdateTimeTrackingSession,
   delete_time_tracking_session: executeDeleteTimeTrackingSession,
   move_time_tracking_session: executeMoveTimeTrackingSession,
+  log_body_weight: executeLogBodyWeight,
+  get_body_weight_history: executeGetBodyWeightHistory,
+  list_habit_trackers: executeListHabitTrackers,
+  log_habit_entry: executeLogHabitEntry,
+  get_day_overview: executeGetDayOverview,
 
   remember: executeRemember,
   recall: executeRecall,
