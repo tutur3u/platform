@@ -3,6 +3,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { DevboxFleetSnapshot } from '../devbox-fleet-types';
+import { commandCwd } from './resources-command';
 import {
   type DiskGate,
   diskGate,
@@ -103,7 +104,7 @@ export async function hostsRun({
   command,
   args,
   jobClass,
-  cwd = process.cwd(),
+  cwd = commandCwd(args),
   env = process.env,
   registry,
   deps,

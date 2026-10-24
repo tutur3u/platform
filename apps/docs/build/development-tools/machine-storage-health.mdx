@@ -57,13 +57,15 @@ before queueing it. At `critical` it refuses with exit code 75 and prints the
 top non-high actions from the last `ttr storage suggest`; at `low` it warns and
 continues. A failed probe is UNKNOWN and is refused too, with the probe error
 and the override. Once queued, the lane queue re-checks free disk at dequeue
-(`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`) and holds the job,
+(`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`, and
+`TTR_STORAGE_MIN_FREE_INODE_PERCENT`) and holds the job,
 failing closed, until headroom returns.
 
 - `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides both checks
   once. Prefer reclaiming space.
 - `--hosts` dispatch skips the queue-time refusal; it applies its own local
-  disk gate per placement.
+  disk gate per placement, including inode pressure. Both placement and dequeue
+  probe the command directory selected by `--cwd`, `--dir` or `-C`.
 - With `--offload auto`, a critical local disk counts as saturated, so the
   exact pushed commit runs on a devbox runner when one is eligible.
 - Commands nested inside an admitted job are not checked again.
