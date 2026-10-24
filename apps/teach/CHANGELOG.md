@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/teach-v0.27.1...teach-v0.28.0) (2026-10-24)
+
+
+### Features
+
+* **satellite:** shared account, profile and security settings in every app ([#6477](https://github.com/tutur3u/platform/issues/6477)) ([2cd0879](https://github.com/tutur3u/platform/commit/2cd087939043a1dd91d1bfecee3337e4122badae))
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5)) ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **storage:** reject encoded traversal paths ([#6507](https://github.com/tutur3u/platform/issues/6507)) ([b461f77](https://github.com/tutur3u/platform/commit/b461f7733b80e43036a9ae0d2e0188dd276b020e))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.27.1](https://github.com/tutur3u/platform/compare/teach-v0.27.0...teach-v0.27.1) (2026-10-17)
 
 

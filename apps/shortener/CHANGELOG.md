@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/shortener-v0.24.1...shortener-v0.25.0) (2026-10-24)
+
+
+### Features
+
+* **shortener:** move the redirect runtime to Start on Void ([#6432](https://github.com/tutur3u/platform/issues/6432)) ([b88be50](https://github.com/tutur3u/platform/commit/b88be503c09da46b91edc7fcb6a8672adb754294))
+
+
+### Bug Fixes
+
+* **shortener:** trust only Cloudflare geolocation for clicks on Workers ([3f1e38a](https://github.com/tutur3u/platform/commit/3f1e38a94cbc6581627ebfc4c5c1c0b4a1ee9e84))
+
 ## [0.24.1](https://github.com/tutur3u/platform/compare/shortener-v0.24.0...shortener-v0.24.1) (2026-10-17)
 
 
