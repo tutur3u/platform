@@ -1,0 +1,225 @@
+---
+title: "Turbo Remote Cache"
+description: "Self-hosted Turborepo remote cache on Cloudflare R2: trust model, configuration, cost bounds, cutover, and rollback."
+updatedAt: "2026-10-24"
+---
+
+`apps/turbo-cache` is a Cloudflare Worker that implements the Turborepo remote
+cache API (`/v8/artifacts`) on an R2 bucket. It replaces the Vercel-hosted
+remote cache, which stays the fallback until cutover. It ships **disabled**:
+`TURBO_CACHE_MODE` defaults to `off`, which serves nothing and performs no
+billable storage operations. For cache layers and miss debugging, see
+the Caching page (`apps/docs/build/devops/caching.mdx`).
+
+## Design
+
+- **Keys:** artifacts are stored at `v1/<scope>/<hash>`. The scope comes from
+  the server-side token registry, never from the client's `teamId` or `slug`,
+  so a client cannot choose where its artifacts land.
+- **Tokens:** `TURBO_CACHE_TOKENS` is a JSON list of
+  `{ "id", "sha256", "read": [scopes], "write"?: scope }`. The registry stores
+  only SHA-256 digests of tokens and compares them in constant time. A writer
+  may write only the first scope it reads. One malformed entry disables the
+  whole registry (fail closed).
+- **Signatures:** with `TURBO_CACHE_REQUIRE_SIGNATURE=true` (the default),
+  uploads without an `x-artifact-tag` are rejected. Clients sign and verify
+  with `TURBO_REMOTE_CACHE_SIGNATURE_KEY` when `turbo.json` sets
+  `remoteCache.signature: true`, so a stored artifact that was not signed with
+  the shared key is rejected by every reader.
+- **Bounds:** artifacts are capped at 100 MiB (ceiling 500 MiB). Artifacts
+  older than the TTL (default 7 days, ceiling 30) are served as misses even if
+  the R2 lifecycle rule lags. Batch queries accept at most 50 hashes. A rate
+  limiter allows 600 requests per token per 10 seconds.
+- **Durable stop fence:** `_control/budget-v1` in R2 is the authoritative
+  budget and fence. The Worker reads it directly, without edge/KV caching,
+  before contacting `TurboCacheBudget`. Missing, malformed or unreadable state
+  fails closed. The Durable Object serializes reservations with an explicit
+  promise queue because R2 I/O does not use DO storage input gates.
+  - Daily class A, class B and write-byte caps deny reservations until the
+    next UTC day. Reads also consume class A for their control snapshot PUT.
+  - A successful reservation that exhausts the monthly class A allowance
+    persists a fence that survives month rollover until an operator reset.
+    A reservation that does not fit the remaining allowance is denied without
+    mutating state; smaller reservations can still fit.
+  - Every successful reservation persists its full charge before allowing
+    artifact access. There are no admission retries. A lost response can waste
+    a reservation, but cannot erase it after restart.
+  - Denials perform no PUTs or DO storage writes. A fresh isolate sees the same
+    snapshot and skips DO admission. A request already past preflight can reach
+    the DO, which rechecks and denies without writing. The 60-second negative
+    memo only saves additional control reads within one isolate.
+  - Denied reads return a miss; denied writes return `503`.
+- **Admin:** `GET /admin/budget` and `POST /admin/fence`
+  (`{"action":"trip"}` or `{"action":"reset"}`) require the admin token, whose
+  SHA-256 is `TURBO_CACHE_ADMIN_TOKEN_SHA256`. Repeated trip/reset actions
+  coalesce without rewriting an unchanged fence. Status reads the durable
+  snapshot; events are discarded without storage work.
+
+## Trust model
+
+| Client | Token | Reads | Writes |
+| --- | --- | --- | --- |
+| Trusted `main` and `production` CI jobs | `gha-main` | `main` | `main` |
+| Same-repository branch CI (optional, needs CI security owner sign-off) | `gha-branches` | `branches`, `main` | `branches` |
+| Fork pull requests and Dependabot | none (GitHub withholds secrets) | — | — |
+| Trusted local machines and devboxes | one token per machine | `local-<id>`, `main` | `local-<id>` |
+| Untrusted agent sandboxes | read-only token | `main` | — |
+
+`main` artifacts are written only by trusted `main` CI, so branch, machine and
+sandbox clients can reuse them but never poison them. Clients can additionally
+enforce read-only at the client with `TURBO_REMOTE_CACHE_READ_ONLY=1` (or
+`TURBO_CACHE=local:rw,remote:r`).
+
+## Configuration names
+
+Set these values by name only. Never commit them.
+
+Worker secrets (owner creates them with the cf CLI or the dashboard):
+
+- `TURBO_CACHE_TOKENS`: JSON token registry, digests only.
+- `TURBO_CACHE_ADMIN_TOKEN_SHA256`: digest of the admin token.
+
+Worker variables (in `apps/turbo-cache/cloudflare.config.ts`):
+
+- `TURBO_CACHE_MODE`: `off` (default), `read-only`, or `read-write`.
+- `TURBO_CACHE_REQUIRE_SIGNATURE`, `TURBO_CACHE_TTL_DAYS`,
+  `TURBO_CACHE_MAX_ARTIFACT_BYTES`, `TURBO_CACHE_DAILY_CLASS_A`,
+  `TURBO_CACHE_DAILY_CLASS_B`, `TURBO_CACHE_DAILY_WRITE_BYTES`,
+  `TURBO_CACHE_MONTHLY_CLASS_A_FENCE`. Missing or malformed values fall back
+  to defaults, and overrides are clamped to hard ceilings.
+
+Cloudflare resources (owner creates):
+
+- R2 bucket `tuturuuu-turbo-cache` with a lifecycle rule that deletes objects
+  under `v1/` after 7 days. Exclude `_control/` from expiry and cleanup. Never
+  delete the budget snapshot to clear a fence or recover an outage.
+- Custom domain `turbo-cache.tuturuuu.com` on the Worker.
+
+GitHub repository settings (owner sets at cutover):
+
+- Variable `TURBO_API`: `https://turbo-cache.tuturuuu.com`.
+- Variable `TURBO_TEAM`: any stable slug. The Worker ignores it for scoping.
+- Secret `TURBO_TOKEN`: the `gha-main` token, replacing the Vercel token.
+- Secret `TURBO_REMOTE_CACHE_SIGNATURE_KEY`: at least 32 random bytes, shared
+  by every trusted client.
+
+Local trusted machines (shell profile or secret store, never `.env`):
+`TURBO_API`, `TURBO_TEAM`, `TURBO_TOKEN`, and
+`TURBO_REMOTE_CACHE_SIGNATURE_KEY`.
+
+## Cost estimate
+
+From the 2026-10-16 to 2026-10-23 CI inventory:
+
+- Test, Type Check, Coverage, Mail Calendar Tasks, Meet and Parley run about
+  303,000 Turbo task lookups per week. Vercel and release builds add about
+  20,000.
+- Runs on `main` produce about 40,000 of those lookups. Those are the only
+  writes under the default trust model.
+
+A successful lookup costs one Worker request, one Durable Object request,
+two control GETs, one control PUT and up to one artifact GET/HEAD per readable
+scope. An upload costs two control GETs, one control PUT and one artifact PUT.
+The snapshot reserves all these R2 operations, plus a conservative 4 KiB for
+its own write payload, before serving the artifact. An unsuccessful artifact
+write retains its reservation.
+
+A batch reserves `hashes × readable scopes` HEADs, two control GETs and one
+control PUT. The largest accepted batch is 50 hashes across four scopes:
+200 artifact HEADs plus three control operations, one DO call and one rate-limit
+call. The configured 208-subrequest ceiling covers this conservative 205-operation
+envelope, including nested DO work. There is no retry fan-out.
+
+With about 1.4M successful monthly lookups and 175,000 uploads, control accounting
+alone adds about 1.575M R2 PUTs and 3.15M R2 GETs; artifact operations are additional.
+The previous estimate that charged only artifact operations is invalid. Validate
+current account pricing and measured traffic before enabling the service.
+
+The default monthly 2M class A allowance includes control PUTs and artifact PUTs.
+The daily 100,000 class A and 1M class B allowances also include control work for
+successful reservations. Daily write bytes include the control payload allowance.
+Admin trip/reset writes are authenticated operator actions outside these counters;
+repeating an unchanged action performs no write.
+
+These are bounds on successful reservations, not a total bill cap. Denied fresh
+isolates and status requests still cost one Worker request and one R2 control GET.
+Requests already past preflight can add a DO request and control GET after the cap
+is exhausted. Unavailable DOs or failed uncommitted R2 PUTs can also incur failed
+attempt costs; each request attempts admission once, but new ingress is not a
+bounded retry job. No fixed monthly total follows from these counters. Use
+`TURBO_CACHE_MODE=off` to stop all artifact-path storage/admission activity during
+an outage or unexpected ingress, and disable the Worker route to stop Worker
+invocations. Ingress rate limits and billing alerts are operational controls,
+not total-spend caps.
+
+`src/stop-regression.test.ts` pins denied requests across fresh isolates/DO
+restarts, zero denial writes, serialized racing reservations, coalesced admin
+actions, failed reads, unknown committed PUT outcomes and the maximum batch cost.
+These use in-memory R2/DO fixtures.
+
+## CI qualification
+
+`.github/workflows/turbo-cache-cloudflare.yaml` runs automatically for cache,
+lockfile, toolchain and runtime-harness changes. Its `build-acceptance` job
+checks out the immutable PR head, runs types, lint, format and unit checks,
+then builds with `bun run build` without restoring compiled artifacts. It runs
+`node --test apps/turbo-cache/scripts/verify-worker-runtime.mjs` against both
+the source Worker and the emitted cf Build Output (the latter with
+`TURBO_CACHE_TEST_BUILD_OUTPUT=1`), retaining the accepted output under the head
+SHA. This workflow qualifies artifacts only and has no publication job.
+
+The real local workerd checks exercise the default-disabled API, unauthorized
+admin rejection, missing-snapshot refusal, authenticated R2 initialization through
+the Durable Object, repeated trip, fence persistence across workerd restart and
+operator reset. They use random disposable credentials, loopback HTTP and an
+isolated temporary persistence directory cleaned on close or failure. Run the
+source check under resource admission; builds and emitted-output checks run in
+exact-commit CI. Enabled artifact traffic, denial operation counts and maximum
+batch bounds have fixture coverage above. Hosted routing, rate-limit behavior,
+account pricing and live storage/stop acceptance remain release-owner gates.
+
+## Cutover checklist
+
+1. Owner creates the R2 bucket, its 7-day `v1/` lifecycle rule, the custom
+   domain, and the two Worker secrets. Generate tokens locally, store only
+   their SHA-256 digests in `TURBO_CACHE_TOKENS`, and hand the raw tokens to
+   their holders through the secret store.
+2. Deploy the Worker with `TURBO_CACHE_MODE=off`. Before first enablement,
+   initialize the missing snapshot with authenticated `POST /admin/fence` and
+   `{"action":"reset"}`. This seeds empty counters only for a never-enabled
+   cache. If an older deployment used DO-local accounting, keep mode off, drain
+   its requests, retain that state and migrate the reviewed counters/fence to
+   R2 before enabling this revision; never reset prior usage to zero. Confirm
+   `GET /v8/artifacts/status` returns `disabled`, then verify ordinary
+   disabled artifact requests add no R2 operations. Admin initialization itself
+   performs one control GET and one control PUT.
+3. Set `TURBO_CACHE_MODE=read-write`. From one trusted machine, run a small
+   task twice with the new `TURBO_API` and token, then confirm a `remote` hit
+   and the budget counters (`GET /admin/budget`).
+4. Pass `api: ${{ vars.TURBO_API }}` and
+   `signature-key: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}` to
+   `.github/actions/run-with-turbo-remote-cache` under the existing trusted
+   conditions. Set the repository variable and secrets. Replace
+   `TURBO_TOKEN` with the `gha-main` token.
+5. Enable `remoteCache.signature: true` and
+   `futureFlags.longerSignatureKey: true` in `turbo.json`. Existing unsigned
+   artifacts then miss once and are rewritten signed.
+6. Watch one week of budget counters against this estimate before adding
+   branch or machine writers.
+
+## Rollback
+
+- **Durable pause:** `POST /admin/fence` with `{"action":"trip"}`. New
+  artifact requests read the fence and skip DO admission and artifact I/O;
+  control reads and Worker invocations continue. Already reserved work may
+  finish.
+- **Independent storage/admission stop:** set `TURBO_CACHE_MODE=off`, including
+  when the DO is unavailable. Drain the prior revision. Ordinary disabled
+  artifact requests perform no R2 or DO calls. Disable the Worker route as
+  well when ingress itself must stop. Clients fall back to running tasks.
+- **Return to Vercel:** delete the `TURBO_API` variable, which makes the
+  wrapper unset `TURBO_API`, and restore the Vercel token to `TURBO_TOKEN`.
+  Keep the Vercel token in the owner's secret store until the self-hosted
+  cache has run a full week within budget.
+- Signed artifacts are not required for the Vercel fallback. Revert step 5 if
+  Vercel clients lack the signature key.

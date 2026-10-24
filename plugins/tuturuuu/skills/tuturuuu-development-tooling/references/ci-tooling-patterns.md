@@ -90,6 +90,26 @@ Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
 
+For Turbo cache admission, `_control/budget-v1` in R2 is the single durable
+authority. Check it outside the DO before admission; do not use an isolate memo
+or eventually consistent negative cache as a stop fence. Queue the DO's external
+R2 read/modify/write path explicitly, persist successful reservations before
+artifact access, and perform no writes on denials or unchanged admin actions.
+Account for control GETs/PUTs and the largest hash-by-scope batch when setting
+subrequest limits. Preserve charges after unknown PUT outcomes and never retry
+admission automatically. Keep `_control/` outside artifact lifecycle cleanup.
+The runbook records first initialization and prior DO-state migration; never
+replace lost state with empty counters on an enabled cache. Denied ingress and
+failed attempts remain traffic-dependent costs requiring the independent mode-off
+stop. `apps/turbo-cache/src/stop-regression.test.ts` owns the operation-count,
+restart, failure, concurrency and maximum-batch fixtures. The nonpublishing
+`turbo-cache-cloudflare.yaml` / `build-acceptance` job must build the exact PR
+head without a compiled-artifact cache and exercise both source and emitted
+Workers in workerd. The cache runtime script uses the shared cf harness with
+random disposable secrets and isolated temporary persistence; it verifies the
+default-off boundary and authenticated R2/DO initialization, trip and restart.
+Keep hosted enabled-traffic/cost acceptance separate from this local-runtime gate.
+
 ## Cloudflare backend ownership guard
 
 New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare
