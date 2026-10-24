@@ -30,9 +30,10 @@ interface ShellBackHost {
  * Elsewhere Back goes straight to Flutter. On exit routes the app asks Flutter
  * whether an overlay is open first:
  * - one query at a time; presses while it is in flight are ignored;
- * - each query is stamped with a sequence number and the route, and a reply
- *   whose stamp is stale (superseded, timed out, or the route changed) is
- *   dropped;
+ * - each query is stamped with a sequence number and the route generation
+ *   (incremented on every route change, so leaving and returning to the same
+ *   route still invalidates it); a stale reply (superseded, timed out, or any
+ *   route change since) is dropped;
  * - only a definite [ModalReply.NONE] can lead to the exit confirmation. A
  *   missing channel, an error or a timeout hands Back to Flutter instead, so
  *   the app never exits while an overlay might be open.
@@ -47,13 +48,17 @@ class ShellBackCoordinator(
     private var lastExitAttemptAt = 0L
     private var sequence = 0L
     private var inFlight: Long? = null
-    private var inFlightRoute: String? = null
+    private var routeGeneration = 0L
+    private var inFlightGeneration = 0L
     private var cancelTimeout: (() -> Unit)? = null
 
     val isQuerying: Boolean
         get() = inFlight != null
 
     fun updateRoute(next: String?) {
+        // Each change starts a new generation; Flutter also re-sends the
+        // unchanged route on rebuilds, which must not drop a pending press.
+        if (next != route) routeGeneration++
         route = next
         if (!isExitRoute(next)) lastExitAttemptAt = 0L
     }
@@ -68,7 +73,7 @@ class ShellBackCoordinator(
         if (inFlight != null) return
         val stamp = ++sequence
         inFlight = stamp
-        inFlightRoute = current
+        inFlightGeneration = routeGeneration
         cancelTimeout = host.schedule(timeoutMs) { settle(stamp, ModalReply.UNAVAILABLE) }
         val sent = host.queryHasModal { reply -> settle(stamp, reply) }
         if (!sent) settle(stamp, ModalReply.UNAVAILABLE)
@@ -79,8 +84,8 @@ class ShellBackCoordinator(
         inFlight = null
         cancelTimeout?.invoke()
         cancelTimeout = null
-        // The press belonged to a route that is no longer shown.
-        if (route != inFlightRoute) return
+        // The route changed since the press, even if it came back.
+        if (routeGeneration != inFlightGeneration) return
         when (reply) {
             ModalReply.OPEN -> {
                 lastExitAttemptAt = 0L

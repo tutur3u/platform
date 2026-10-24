@@ -147,4 +147,27 @@ class ShellBackCoordinatorTest {
         host.reply(1, ModalReply.NONE)
         assertEquals(listOf("query", "hint", "query", "hint"), host.events)
     }
+
+    @Test
+    fun staleReplyAfterLeavingAndReturningCannotExit() {
+        // Arm the exit window.
+        back.onBack()
+        host.reply(0, ModalReply.NONE)
+        assertEquals(listOf("query", "hint"), host.events)
+        // Query on "/", then navigate / -> /apps -> / before the reply.
+        back.onBack()
+        back.updateRoute("/apps")
+        back.updateRoute("/")
+        host.reply(1, ModalReply.NONE)
+        assertEquals(listOf("query", "hint", "query"), host.events)
+        assertFalse(back.isQuerying)
+    }
+
+    @Test
+    fun resendingTheUnchangedRouteKeepsThePendingPress() {
+        back.onBack()
+        back.updateRoute("/")
+        host.reply(0, ModalReply.OPEN)
+        assertEquals(listOf("query", "pop"), host.events)
+    }
 }
