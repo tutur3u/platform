@@ -23,27 +23,26 @@ Each client declares the effects it applies with `clientCapabilities`:
 
 The server removes undeclared UI tools from the registry, tool discovery and
 forced tool steps. When a forced tool is unavailable, the step falls back to
-discovery instead of requiring an impossible call. A client that declares
-capabilities also gets a short prompt note naming the missing effects. For
+discovery instead of requiring an impossible call. Every request gets a short
+prompt note naming the effects its client cannot apply. For
 example, without `artifact_panels` Mira uses `open_app` or answers in chat.
 Unknown capability names are ignored so newer clients stay compatible. Data
 tools are never gated by capabilities; permissions still apply.
 
-Defaults by surface:
+An absent declaration means no UI effects, on every transport. Only clients
+that explicitly declare an effect receive its tool:
 
 - Web Mira chat declares `theme`, `sidebar`, `artifact_panels`, `immersive` and
   `navigate`.
-- A request to the shared AI chat route without a declaration keeps the legacy
-  Web set (everything except `navigate`).
-- The native `/chat/conversations/:id/messages` route, used by mobile, forwards
-  a declared set. Without a declaration it uses `theme` and `immersive`, which
-  is what current mobile builds apply. Mobile no longer gets panel tools it
-  silently ignored.
-- Canonical Live (`/api/v1/assistant/live/tools/execute`, used by mobile Live)
-  defaults to no UI effects. Previously `set_theme` and panel tools reported
-  success there without any client effect. A client opts in by sending
-  `clientCapabilities` with each execution. The route also resolves the user
-  timezone (client value, then saved personal, then workspace preference).
+- The shared AI chat route, including the retained legacy mobile transport,
+  the native `/chat/conversations/:id/messages` route and canonical Live
+  (`/api/v1/assistant/live/tools/execute`) forward only what the client sends.
+  Without a declaration they expose no UI tools, so older mobile builds lose
+  `set_theme` in chat until they update. That is preferable to Mira claiming
+  effects nobody applies.
+- AI agents and Mind have no client that applies markers and get no UI tools.
+- Canonical Live also resolves the user timezone (client value, then saved
+  personal, then workspace preference).
 - Web dashboard Live declares `open_app` as a client function, alongside the
   existing theme, sidebar and panel functions.
 

@@ -13,7 +13,7 @@ export interface MiraToolContext {
   timezone?: string;
   requestHeaders?: Pick<Headers, 'get'>;
   executionState?: object;
-  /** UI effects the requesting client applies; undefined keeps legacy Web. */
+  /** UI effects the requesting client declared; undefined means none. */
   clientCapabilities?: ReadonlySet<MiraClientCapability>;
   authorizeWorkspaceTools?: (
     wsId: string,

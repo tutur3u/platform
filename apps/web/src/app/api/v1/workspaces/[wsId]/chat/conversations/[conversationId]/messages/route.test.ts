@@ -252,7 +252,7 @@ describe('native AI chat message route', () => {
   });
 
   it.each([
-    { declared: undefined, forwarded: ['theme', 'immersive'] },
+    { declared: undefined, forwarded: undefined },
     { declared: ['theme', 'navigate'], forwarded: ['theme', 'navigate'] },
   ])(
     'forwards client capabilities $forwarded',
@@ -282,9 +282,13 @@ describe('native AI chat message route', () => {
           }),
         }
       );
-      expect(mocks.aiRouteBodies.at(-1)).toMatchObject({
-        clientCapabilities: forwarded,
-      });
+      const body = mocks.aiRouteBodies.at(-1) as Record<string, unknown>;
+      if (forwarded) {
+        expect(body.clientCapabilities).toEqual(forwarded);
+      } else {
+        // Omitted declarations reach the AI route as omitted (no UI tools).
+        expect(body).not.toHaveProperty('clientCapabilities');
+      }
     }
   );
 

@@ -58,7 +58,7 @@ type PrepareMiraRuntimeParams = {
   toolSupabase?: SupabaseClientLike;
   timezone?: string;
   taskBoardContext?: ChatRequestTaskBoardContext;
-  /** UI effects declared by the client; omitted keeps legacy Web behavior. */
+  /** UI effects declared by the client; omitted means none. */
   clientCapabilities?: readonly string[];
   /** Optional callback for render_ui context-aware fallback. */
   getSteps?: () => unknown[];
@@ -295,7 +295,7 @@ export async function prepareMiraRuntime({
     miraSystemPrompt = buildMiraSystemInstruction({ withoutPermission });
   }
   const capabilityInstruction = buildMiraClientCapabilityInstruction(
-    clientCapabilities ? ctx.clientCapabilities : undefined
+    ctx.clientCapabilities
   );
   if (capabilityInstruction) {
     miraSystemPrompt = `${miraSystemPrompt}\n\n${capabilityInstruction}`;

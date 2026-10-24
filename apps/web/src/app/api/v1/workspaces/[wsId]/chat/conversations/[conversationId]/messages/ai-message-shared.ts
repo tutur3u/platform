@@ -586,9 +586,6 @@ function withAiMessageSplitInstruction(messages: UiMessageForAi[]) {
   ] satisfies UiMessageForAi[];
 }
 
-// Mobile builds that predate declaration apply only theme and immersive markers.
-const NATIVE_LEGACY_MIRA_CLIENT_CAPABILITIES = ['theme', 'immersive'];
-
 export async function callAiChatRoute({
   chatId,
   creditSource,
@@ -637,8 +634,7 @@ export async function callAiChatRoute({
       persistenceRequestId,
       thinkingMode,
       ...(timezone ? { timezone } : {}),
-      clientCapabilities:
-        clientCapabilities ?? NATIVE_LEGACY_MIRA_CLIENT_CAPABILITIES,
+      ...(clientCapabilities ? { clientCapabilities } : {}),
       workspaceContextId: wsId,
       wsId,
       ...(creditWsId ? { creditWsId } : {}),

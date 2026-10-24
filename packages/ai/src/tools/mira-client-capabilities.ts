@@ -16,10 +16,6 @@ export const MIRA_CLIENT_CAPABILITIES = [
 
 export type MiraClientCapability = (typeof MIRA_CLIENT_CAPABILITIES)[number];
 
-/** Clients that predate declaration keep the effects Web chat applied then. */
-export const LEGACY_MIRA_CLIENT_CAPABILITIES: readonly MiraClientCapability[] =
-  ['theme', 'sidebar', 'artifact_panels', 'immersive'];
-
 /** Unknown names are ignored so newer clients stay compatible. */
 export const miraClientCapabilitiesInputSchema = z
   .array(z.string().trim().min(1).max(48))
@@ -54,10 +50,14 @@ export const MIRA_APP_DESTINATIONS = [
 
 export type MiraAppDestination = (typeof MIRA_APP_DESTINATIONS)[number];
 
+/**
+ * An absent declaration is an empty set on every transport: only clients that
+ * explicitly declare an effect receive its tool.
+ */
 export function resolveMiraClientCapabilities(
   declared: readonly string[] | null | undefined
 ): ReadonlySet<MiraClientCapability> {
-  if (!declared) return new Set(LEGACY_MIRA_CLIENT_CAPABILITIES);
+  if (!declared) return new Set();
   const known = new Set<string>(MIRA_CLIENT_CAPABILITIES);
   return new Set(
     declared.filter((value): value is MiraClientCapability => known.has(value))
@@ -70,9 +70,7 @@ export function isMiraToolAvailableToClient(
 ) {
   const required = MIRA_CLIENT_TOOL_CAPABILITIES[name as MiraToolName];
   if (!required) return true;
-  return (capabilities ?? resolveMiraClientCapabilities(undefined)).has(
-    required
-  );
+  return capabilities?.has(required) ?? false;
 }
 
 /**
@@ -82,18 +80,17 @@ export function isMiraToolAvailableToClient(
 export function buildMiraClientCapabilityInstruction(
   capabilities: ReadonlySet<MiraClientCapability> | undefined
 ) {
-  if (!capabilities) return '';
   const missing = MIRA_CLIENT_CAPABILITIES.filter(
-    (capability) => !capabilities.has(capability)
+    (capability) => !capabilities?.has(capability)
   );
   if (!missing.length) return '';
   const lines = [
     '## Client capabilities',
     `This app cannot apply these UI effects: ${missing.join(', ')}. Their tools are unavailable; never claim they happened.`,
   ];
-  if (!capabilities.has('artifact_panels')) {
+  if (!capabilities?.has('artifact_panels')) {
     lines.push(
-      capabilities.has('navigate')
+      capabilities?.has('navigate')
         ? 'To show tasks, calendar, finance, or meetings, use open_app with the matching destination, or answer in chat.'
         : 'To show tasks, calendar, finance, or meetings, answer in chat and tell the user which app to open.'
     );

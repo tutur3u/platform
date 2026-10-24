@@ -25,13 +25,33 @@ function toolsFor(clientCapabilities?: readonly string[]) {
 }
 
 describe('Mira client capabilities', () => {
-  it('keeps legacy Web effects for clients that do not declare any', () => {
-    expect([...resolveMiraClientCapabilities(undefined)].sort()).toEqual([
-      'artifact_panels',
-      'immersive',
-      'sidebar',
-      'theme',
-    ]);
+  it('treats an absent declaration as no UI effects', () => {
+    expect([...resolveMiraClientCapabilities(undefined)]).toEqual([]);
+    expect(isMiraToolAvailableToClient('set_theme', undefined)).toBe(false);
+    expect(isMiraToolAvailableToClient('create_task', undefined)).toBe(true);
+  });
+
+  it('exposes no UI tools to clients that omit a declaration', async () => {
+    const tools = toolsFor();
+    for (const name of [
+      'set_theme',
+      'set_sidebar',
+      'show_workspace_artifact',
+      'manage_workspace',
+      'set_immersive_mode',
+      'open_app',
+    ]) {
+      expect(tools).not.toHaveProperty(name);
+    }
+    expect(tools).toHaveProperty('create_task');
+    const search = tools.search_tools?.execute as (input: {
+      query: string;
+    }) => Promise<{ matches: { name: string }[] }>;
+    const names = (
+      await search({ query: 'dark theme sidebar panel' })
+    ).matches.map((match) => match.name);
+    expect(names).not.toContain('set_theme');
+    expect(names).not.toContain('show_workspace_artifact');
   });
 
   it('ignores unknown names from newer clients', () => {
@@ -67,14 +87,29 @@ describe('Mira client capabilities', () => {
     expect(names).not.toContain('set_sidebar');
   });
 
-  it('offers open_app only to clients that navigate', () => {
-    expect(toolsFor()).not.toHaveProperty('open_app');
-    expect(toolsFor()).toHaveProperty('show_workspace_artifact');
+  it('offers each UI tool only to clients that declare its effect', () => {
     expect(toolsFor(['navigate'])).toHaveProperty('open_app');
+    expect(toolsFor(['navigate'])).not.toHaveProperty('set_theme');
+    expect(toolsFor(['artifact_panels'])).toHaveProperty(
+      'show_workspace_artifact'
+    );
   });
 
   it('tells Mira which effects are unavailable', () => {
-    expect(buildMiraClientCapabilityInstruction(undefined)).toBe('');
+    expect(buildMiraClientCapabilityInstruction(undefined)).toContain(
+      'theme, sidebar, artifact_panels, immersive, navigate'
+    );
+    expect(
+      buildMiraClientCapabilityInstruction(
+        resolveMiraClientCapabilities([
+          'theme',
+          'sidebar',
+          'artifact_panels',
+          'immersive',
+          'navigate',
+        ])
+      )
+    ).toBe('');
     const mobile = buildMiraClientCapabilityInstruction(
       resolveMiraClientCapabilities(['theme', 'immersive', 'navigate'])
     );
