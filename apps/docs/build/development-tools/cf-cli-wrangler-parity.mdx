@@ -154,6 +154,14 @@ same-count substitutions require admission. Lower or remove counts when usage fa
 An `admitted` record must be `{ "decision": "https://github.com/tutur3u/platform/pull/<id>",
 "reason": "<specific reviewed change>" }`. New entries, growth, changed digests and
 changed gap scope need a fresh record; reverting a migration follows the same rule.
+Compatibility references need admission too: cache policies must still recognize
+legacy declaration producers and scratch directories, and cleanup exclusions must
+retain local state until its owning toolchain is retired. These references do not
+invoke the CLI; replacing their names with cf would change their safety coverage.
+Use the existing `shared-toolchain` gap for scratch/state policy references and
+`producer-inventory` for declaration-producer detection, with exact counts, digests
+and the admitting PR decision. Remove each reference only with its covered usage.
+
 CI
 compares the allowlist with its base commit (`HEAD^1` of the pull request merge ref)
 and fails if that commit is unavailable.
