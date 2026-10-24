@@ -1685,6 +1685,8 @@ Node config-file options (`--experimental-config-file` and `--experimental-defau
 
 ### Budget scheduler rollout and rollback
 
+The budget-capable setup preflight runs before `--force`: force applies only to managed launchers already carrying protocol 3. A foreign legacy launcher is refused even with `--force --dry-run`. For that incident, an operator must stop all work, take exclusive custody, verify zero owners and waiters, and preserve the config and launcher bytes. Move only the identified foreign managed launcher files to an operator-owned backup outside `bin`; preserve unmanaged files and any existing budget marker. Then use the verified owning global CLI to run setup with the saved roots and shell settings. Verify every launcher and global version before resuming. Do not use a stale workspace CLI for recovery.
+
 Protocol 3 permanently fences legacy clients on the first normal admission, even when no project budget is configured. The frozen 0.28.0 error `Unknown resource slot; admission is closed.` means upgrade the global CLI and refresh its shims; it is not permission to delete a live marker. At 12 lanes, 0.28.0 already fails closed independently of this marker.
 
 Before rollout, fix [PID start identity #6561](https://github.com/tutur3u/platform/issues/6561) before enabling budgets on long-uptime Studio hosts: PID reuse can retain a dead reservation and stall every project. Source review and a package build do not publish or activate the new scheduler.
