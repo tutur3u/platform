@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.2](https://github.com/tutur3u/platform/compare/ai-studio-v0.18.1...ai-studio-v0.18.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **ai:** keep playground key handoff out of web storage ([04662e2](https://github.com/tutur3u/platform/commit/04662e2a9fc01864cf3a679f87d7dc0146926f93))
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** harden request-keyed records, push previews and key handoff ([#6521](https://github.com/tutur3u/platform/issues/6521)) ([1c7dfb1](https://github.com/tutur3u/platform/commit/1c7dfb13762c6da6b1935e8ea409aa29dce4c747))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.18.1](https://github.com/tutur3u/platform/compare/ai-studio-v0.18.0...ai-studio-v0.18.1) (2026-10-17)
 
 

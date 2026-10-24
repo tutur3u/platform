@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.25.1](https://github.com/tutur3u/platform/compare/apps-v0.25.0...apps-v0.25.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** harden apps and offline file access ([f41dd6c](https://github.com/tutur3u/platform/commit/f41dd6cadb6f7217da984ed1df0fbc8d595972fd))
+* **security:** harden apps and offline file access ([#6529](https://github.com/tutur3u/platform/issues/6529)) ([1883927](https://github.com/tutur3u/platform/commit/18839272a06409a999d9201f297a5298fc728f9b))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/apps-v0.24.0...apps-v0.25.0) (2026-10-17)
 
 

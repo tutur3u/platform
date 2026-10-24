@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.31.2](https://github.com/tutur3u/platform/compare/learn-v0.31.1...learn-v0.31.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5))
+* **security:** derive client IP from trusted proxy headers ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **security:** harden regexes, escaping and key handling in shared packages ([d518804](https://github.com/tutur3u/platform/commit/d518804d9fe811cfba3a1ff04a6f253d4fa44c1d))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.31.1](https://github.com/tutur3u/platform/compare/learn-v0.31.0...learn-v0.31.1) (2026-10-17)
 
 
