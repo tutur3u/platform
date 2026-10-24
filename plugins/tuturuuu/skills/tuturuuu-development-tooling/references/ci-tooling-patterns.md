@@ -10,15 +10,14 @@ Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and
 format writes are intentional. Existing Biome CI/editor/generator ownership remains
 until a workspace records rule coverage, formatting deltas and compensating
 validators. Do not run global formatters or the root-wide Vite+ migrator for a
-single workspace. Run `node --test scripts/oxc.test.js` to exercise file scope,
-symlink rejection, dialog linting and read-only formatting behavior.
+single workspace. `scripts/oxc.test.js` covers file scope, symlinks and read-only formatting.
+Colab's local Worker preview uses `vite.worker.config.ts`; keep its existing
+configuration/persistence, disable remote bindings and require the CI preview runtime check.
+Publication remains separate.
 
-Gradual Cloudflare adoption preserves request/session, API, storage, consent and
-localization contracts. Domain modules and portable React components use injected
-adapters rather than framework/runtime globals. Keep framework imports in explicit
-adapter entrypoints and protect portability with import-boundary regressions.
-Vite+ tooling does not convert Next.js routes/actions; paused TanStack Start remains
-paused. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
+Preserve session, API, storage, consent and localization contracts. Portable domain/UI
+modules use injected adapters; keep framework imports in explicit entrypoints
+Enforce import boundaries; Vite+ does not convert routes/actions or resume paused runtimes. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
 for parity and Worker acceptance gates; builds stay in exact-commit CI.
 
 ## cf CLI migration boundaries

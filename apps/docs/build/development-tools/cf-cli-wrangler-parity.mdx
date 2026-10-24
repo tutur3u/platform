@@ -211,12 +211,32 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | --- | --- | --- | --- |
 | Cron Control | cf (after its parity PR) | Template | — |
 | Devbox Control, Coordination | Wrangler until a rehearsal-backed publisher change | Template with DO `exports`, runtime SQLite namespace checks | — |
-| Colab | Wrangler bundler with assets and AI | Needs Vite build-output template | `pending-migration` |
+| Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
 | Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
 | Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |
 | Meet, Apps, Calendar, Mail, Shortener | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
 | Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
 | Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
+
+### Colab local Worker preview
+
+Run `bun run --cwd apps/colab preview` to serve the Worker and source UI on
+`127.0.0.1:8795`. The UI's separate `7835` dev proxy remains available.
+`vite.worker.config.ts` reuses the UI's React/Tailwind plugins and source alias,
+replaces its proxy with the local Worker, and reads the existing service
+configuration through the Cloudflare Vite plugin. It preserves the plugin's default local persistence path,
+disables remote bindings and leaves the UI build and production publisher intact.
+HMR stays disabled so React cannot inject an inline refresh preamble rejected by
+the Worker's production CSP. Cloud AI calls are outside this local-only scope.
+
+The Colab workflow exercises the actual preview config after its UI build: health
+and session responses, signed-out workshop denial and foreign-origin rejection.
+It also requests HTML, transformed client imports and compiled Tailwind CSS so
+an API-only pass cannot hide a broken UI.
+It uses disposable signing/persistence fixtures, refuses local credential files,
+and restores the process environment and removes only its own state on close.
+Types, release Build Output, DO migration history and publisher cutover remain
+separate gates; do not rename those commands based on this development change.
 
 ## Settings preflight token permissions
 
