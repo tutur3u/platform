@@ -252,6 +252,37 @@ for (const [label, binding, error] of [
     /unreviewed kv_namespace binding CACHE/,
   ],
   [
+    'foreign Durable Object environment',
+    {
+      name: 'CRON_LEDGER',
+      type: 'durable_object_namespace',
+      class_name: 'CronLedger',
+      environment: 'staging',
+    },
+    /unreviewed environment on durable_object_namespace binding CRON_LEDGER/,
+  ],
+  [
+    'Durable Object dispatch namespace',
+    {
+      name: 'CRON_LEDGER',
+      type: 'durable_object_namespace',
+      class_name: 'CronLedger',
+      script_name: 'tuturuuu-cron-control',
+      dispatch_namespace: 'tenants',
+    },
+    /unreviewed dispatch_namespace on durable_object_namespace binding CRON_LEDGER/,
+  ],
+  [
+    'unreviewed text binding attribute',
+    {
+      name: 'WEB_ORIGIN',
+      type: 'plain_text',
+      text: 'https://tuturuuu.com',
+      environment: 'staging',
+    },
+    /unreviewed environment on plain_text binding WEB_ORIGIN/,
+  ],
+  [
     'cross-Worker Durable Object',
     {
       name: 'CRON_LEDGER',

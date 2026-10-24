@@ -4,6 +4,7 @@ import {
   captureSettings,
   compareSettings,
   describeToken,
+  redactToken,
 } from './cf-worker-settings.mjs';
 
 const identity = {
@@ -221,4 +222,63 @@ test('token diagnostics log the token id and status, never the token', async () 
   ]);
   assert.equal(calls.length, 5);
   assert.ok(!lines.join('\n').includes('disposable-fixture'));
+});
+
+test('server error text is redacted before truncation and never echoes a token', async () => {
+  const token = 'Echo_Token-0123456789abcdefghijABCDEFGHIJ';
+  const otherToken = 'zZ9_' + 'q'.repeat(36);
+  // The supplied token straddles the 300-character truncation boundary.
+  const echoed = {
+    ok: false,
+    status: 403,
+    json: async () => ({
+      errors: [
+        { code: 10000, message: `${'x '.repeat(140)}bad ${token}` },
+        { code: 9109, message: `Bearer ${otherToken} rejected` },
+      ],
+    }),
+  };
+  const api = fixture();
+  await assert.rejects(
+    captureSettings({
+      ...options(api),
+      token,
+      fetchImpl: async () => echoed,
+    }),
+    (error) => {
+      for (let start = 0; start + 8 <= token.length; start++)
+        assert.ok(!error.message.includes(token.slice(start, start + 8)));
+      assert.ok(!error.message.includes(otherToken.slice(4, 20)));
+      assert.match(error.message, /10000: /);
+      return true;
+    }
+  );
+  const lines = [];
+  await describeToken({
+    accountId: 'fixture-account',
+    token,
+    fetchImpl: async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({
+        errors: [{ code: 1000, message: `Invalid token ${token}` }],
+      }),
+    }),
+    log: (line) => lines.push(line),
+  });
+  assert.deepEqual(lines, [
+    'Cloudflare API token could not be verified: user HTTP 401 (1000: Invalid token [redacted]); ' +
+      'account HTTP 401 (1000: Invalid token [redacted])',
+  ]);
+});
+
+test('token redaction covers the supplied token and token-shaped text', () => {
+  assert.equal(
+    redactToken('a short-token and secretvalue123 stay', 'short-token'),
+    'a [redacted] and secretvalue123 stay'
+  );
+  assert.equal(
+    redactToken(`id ${'a'.repeat(40)} end`, undefined),
+    'id [redacted] end'
+  );
 });

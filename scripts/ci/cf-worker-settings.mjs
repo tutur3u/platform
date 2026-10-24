@@ -24,16 +24,25 @@ const digest = (value) =>
     .update(JSON.stringify(canonical(value)))
     .digest('hex');
 
-/** Cloudflare error codes and messages from a failed response, bounded. */
-async function apiErrors(response) {
+// Cloudflare API tokens are 40 URL-safe characters; redact any long run of
+// token-shaped characters, not just the supplied token, before truncating.
+const TOKEN_SHAPED = /[A-Za-z0-9_-]{32,}/g;
+
+export function redactToken(text, token) {
+  const withoutToken = token ? text.split(token).join('[redacted]') : text;
+  return withoutToken.replace(TOKEN_SHAPED, '[redacted]');
+}
+
+/** Cloudflare error codes and messages from a failed response, redacted and bounded. */
+async function apiErrors(response, token) {
   try {
     const { errors } = await response.json();
     const text = (Array.isArray(errors) ? errors : [])
       .slice(0, 3)
       .map(({ code, message }) => `${code}: ${message}`)
-      .join('; ')
-      .slice(0, 300);
-    return text ? ` (${text})` : '';
+      .join('; ');
+    const safe = redactToken(text, token).slice(0, 300);
+    return safe ? ` (${safe})` : '';
   } catch {
     return '';
   }
@@ -84,7 +93,7 @@ export async function describeToken({
         return description;
       }
       attempts.push(
-        `${owner} HTTP ${response.status}${await apiErrors(response)}`
+        `${owner} HTTP ${response.status}${await apiErrors(response, token)}`
       );
     } catch (error) {
       attempts.push(`${owner} ${error?.name ?? 'error'}`);
@@ -119,7 +128,7 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
     if (!response.ok)
       assert.fail(
         `settings snapshot HTTP ${response.status} for ${target}` +
-          (await apiErrors(response))
+          (await apiErrors(response, token))
       );
     const body = await response.json();
     assert.equal(
@@ -167,6 +176,19 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   };
 }
 
+const REVIEWED_BINDING_ATTRIBUTES = {
+  plain_text: new Set(['name', 'type', 'text']),
+  secret_text: new Set(['name', 'type']),
+  // namespace_id is assigned by Cloudflare; script_name is checked below.
+  durable_object_namespace: new Set([
+    'name',
+    'type',
+    'class_name',
+    'script_name',
+    'namespace_id',
+  ]),
+};
+
 /** Summarize text and Durable Object bindings; text values keep only a digest. */
 function verifyBindings(settings, identity) {
   const { bindings } = settings;
@@ -177,6 +199,15 @@ function verifyBindings(settings, identity) {
   const vars = {};
   const durableObjects = {};
   for (const binding of bindings) {
+    // Routing attributes (environment, dispatch namespace, ...) are not part
+    // of the reviewed identity; any present one fails instead of being dropped.
+    const reviewed = REVIEWED_BINDING_ATTRIBUTES[binding.type];
+    if (reviewed)
+      for (const [attribute, value] of Object.entries(binding))
+        assert.ok(
+          reviewed.has(attribute) || value === undefined || value === null,
+          `unreviewed ${attribute} on ${binding.type} binding ${binding.name}`
+        );
     switch (binding.type) {
       case 'plain_text':
         vars[binding.name] = binding.text;

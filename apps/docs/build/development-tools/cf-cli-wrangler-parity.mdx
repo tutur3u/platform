@@ -242,7 +242,8 @@ fail before publication; do not bypass that gate to deploy.
 Each snapshot phase first logs the token's id and status from
 `/user/tokens/verify` (or the account-owned token endpoint); the token value is
 never printed and this diagnostic cannot fail the job. A failed read names its
-request path, the zone name for route lists, and Cloudflare's error codes, so a
+request path, the zone name for route lists, and Cloudflare's error text with the
+supplied token and any token-shaped run redacted before truncation, so a
 `403` shows which token and zone lack access. Compare that id with the token
 listed in the Cloudflare dashboard before changing the GitHub secret.
 
@@ -307,7 +308,8 @@ For each service, the orchestrator verifies before promotion:
    `identity` (the emitted artifact). Every other identity field must be equal and
    every declared field must change. `before` reads once and must match exactly one
    stage, verifying text values (digest only, differing names in errors) and Durable
-   Object bindings; a Worker matching neither fails closed. `after` must match the
+   Object bindings; unreviewed binding attributes such as `environment` or
+   `dispatch_namespace` fail. A Worker matching neither stage fails closed. `after` must match the
    target. On the first publication only the settings hash, bindings and schedules
    may change; once live already matches the target, settings must stay unchanged.
    Storage classes are verified on the artifact, not read back live. Remove the
