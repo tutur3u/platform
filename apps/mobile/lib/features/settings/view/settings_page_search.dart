@@ -7,8 +7,6 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
   final Map<String, GlobalKey> _anchors = {};
   String _searchQuery = '';
 
-  /// Whether the dock's search field is open; Settings search is the root's
-  /// primary floating action.
   bool _searchActive = false;
 
   GlobalKey _anchor(String id) =>
@@ -17,7 +15,9 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
   @override
   void dispose() {
     settingsFocusRequest.removeListener(_consumeFocusRequest);
-    _searchController.dispose();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _searchController.dispose(),
+    );
     super.dispose();
   }
 
