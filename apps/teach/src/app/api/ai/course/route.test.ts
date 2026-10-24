@@ -233,4 +233,31 @@ describe('course generation route', () => {
       })
     ).toBe(false);
   });
+
+  it.each([
+    `workspace-1/user-groups/${GROUP_ID}/../other/secret.pdf`,
+    `workspace-1/user-groups/${GROUP_ID}/%2e%2e/other/secret.pdf`,
+    `workspace-1/user-groups/${GROUP_ID}/%2E%2E/other/secret.pdf`,
+    `workspace-1/user-groups/${GROUP_ID}/%2e./other/secret.pdf`,
+    `workspace-1/user-groups/${GROUP_ID}/.%2e/other/secret.pdf`,
+    `workspace-1/user-groups/${GROUP_ID}/%2fother/secret.pdf`,
+    `workspace-2/user-groups/${GROUP_ID}/secret.pdf`,
+    `https://storage.test/workspace-1/user-groups/${GROUP_ID}/secret.pdf`,
+  ])(
+    'rejects invalid group object path before conversion: %s',
+    async (storagePath) => {
+      mocks.requireTeachWorkspaceAccess.mockResolvedValue({
+        normalizedWsId: 'workspace-1',
+        sbAdmin: {},
+        userId: 'user-1',
+      });
+
+      const { POST } = await import('./route');
+      const response = await POST(createCourseRequest({ storagePath }));
+
+      expect(response.status).toBe(403);
+      expect(mocks.executeConvertFileToMarkdown).not.toHaveBeenCalled();
+      expect(mocks.generateObject).not.toHaveBeenCalled();
+    }
+  );
 });
