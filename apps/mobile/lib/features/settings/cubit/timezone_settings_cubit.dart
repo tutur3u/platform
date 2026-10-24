@@ -413,5 +413,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
 }
 
 String _failureMessage(Object error) => error is ApiException
-    ? '${error.statusCode}: ${error.message}'
+    ? error.code == 'NATIVE_INTEGRITY_REQUIRED'
+          ? 'NATIVE_INTEGRITY_REQUIRED'
+          : '${error.statusCode}: ${error.message}'
     : error.toString();

@@ -7,12 +7,16 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   verified: vi.fn(),
   client: vi.fn(),
+  integrity: vi.fn(),
   suspension: vi.fn(),
   quota: vi.fn(),
   finalize: vi.fn(),
   personal: vi.fn(),
   workspace: vi.fn(),
   connection: vi.fn(),
+}));
+vi.mock('./native-integrity/guard', () => ({
+  guardNativeCalendarIntegrity: mocks.integrity,
 }));
 vi.mock('@tuturuuu/utils/abuse-protection/user-suspension', () => ({
   checkUserSuspension: mocks.suspension,
@@ -61,6 +65,7 @@ describe('Web calendar settings adapters', () => {
     vi.clearAllMocks();
     mocks.verified.mockReturnValue(null);
     mocks.client.mockResolvedValue({});
+    mocks.integrity.mockResolvedValue(null);
     mocks.finalize.mockImplementation((response) => response);
     mocks.quota.mockResolvedValue({
       response: null,
@@ -212,4 +217,20 @@ describe('Web calendar settings adapters', () => {
       expect(mocks.client).not.toHaveBeenCalled();
     }
   );
+  it('checks integrity after verified auth and before personal or workspace writes', async () => {
+    mocks.integrity.mockResolvedValue(
+      NextResponse.json({ code: 'NATIVE_INTEGRITY_REQUIRED' }, { status: 403 })
+    );
+    expect(
+      (await personalPATCH(request('PATCH', '{"timezone":"auto"}'))).status
+    ).toBe(403);
+    expect(
+      (await workspacePATCH(request('PATCH', '{"timezone":"auto"}'), context))
+        .status
+    ).toBe(403);
+    expect(mocks.integrity).toHaveBeenCalledWith(expect.anything(), 'actor');
+    expect(mocks.personal).not.toHaveBeenCalled();
+    expect(mocks.workspace).not.toHaveBeenCalled();
+    expect(mocks.finalize).toHaveBeenCalled();
+  });
 });

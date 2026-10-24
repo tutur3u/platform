@@ -4640,6 +4640,7 @@
   "feedbackDetailsRequired": "Enter details of 1–8000 characters.",
   "profileMediaNetworkError": "Could not connect. Check your connection and try again.",
   "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again.",
+  "settingsNativeVerificationFailed": "Could not verify this device. Check your connection and try again.",
   "settingsTimezonePickerAll": "All timezones",
   "settingsTimezonePickerAutoPersonal": "Uses the workspace timezone, or this device's when the workspace has none.",
   "settingsTimezonePickerAutoWorkspace": "Members without a personal timezone use their own device's.",

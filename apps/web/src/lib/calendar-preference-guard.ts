@@ -1,4 +1,22 @@
-import type { GuardOptions } from '@tuturuuu/utils/api-proxy-guard';
+import type {
+  GuardOptions,
+  ProxyRoutePolicy,
+} from '@tuturuuu/utils/api-proxy-guard';
+
+const nativeIntegrityBridgeReadPolicy: ProxyRoutePolicy = {
+  key: 'native-integrity-bridge',
+  matches: (request) =>
+    request.method === 'GET' &&
+    request.nextUrl.pathname === '/native-integrity/turnstile',
+  rateLimits: {
+    get: [
+      { window: 'minute', duration: '1 m', limit: 60 },
+      { window: 'hour', duration: '1 h', limit: 240 },
+      { window: 'day', duration: '1 d', limit: 1200 },
+    ],
+    mutate: [],
+  },
+};
 
 export function calendarPreferenceGuardOptions(request: {
   method: string;
@@ -10,6 +28,28 @@ export function calendarPreferenceGuardOptions(request: {
   | 'diagnosticPolicyName'
   | 'routePolicies'
 > {
+  if (
+    request.method === 'GET' &&
+    request.nextUrl.pathname === '/native-integrity/turnstile'
+  )
+    return {
+      prefixBase: 'proxy:web:native-integrity-bridge',
+      routePolicies: [nativeIntegrityBridgeReadPolicy],
+      useVerifiedBearerActor: true,
+      diagnosticPolicyName: 'native-integrity-bridge',
+    };
+  if (
+    request.method === 'POST' &&
+    /^\/api\/v1\/native-integrity\/(?:challenge|enroll)$/u.test(
+      request.nextUrl.pathname
+    )
+  )
+    return {
+      prefixBase: 'proxy:web:native-integrity',
+      routePolicies: [],
+      useVerifiedBearerActor: true,
+      diagnosticPolicyName: 'native-integrity-challenge',
+    };
   const preferences =
     (request.method === 'GET' || request.method === 'PATCH') &&
     /^\/api\/v1\/(?:users\/calendar-settings|workspaces\/[a-zA-Z0-9_-]+\/calendar-settings)$/u.test(
@@ -25,7 +65,7 @@ export function calendarPreferenceGuardOptions(request: {
     : { prefixBase: 'proxy:web:api' };
 }
 
-/** Preferences retain hard limits even when staff debug mode permits other APIs. */
+/** Native preferences and verification retain hard limits for staff too. */
 export function handleCalendarPreferenceGuardResponse<
   T,
   R extends { method: string; nextUrl: { pathname: string } },
