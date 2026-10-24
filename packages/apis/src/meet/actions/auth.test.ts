@@ -4,7 +4,7 @@ import {
   verifyPassword,
 } from '@tuturuuu/utils/crypto';
 import { verifyMeetGuestSession } from '@tuturuuu/utils/meet-guest-session';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const PLAN_ID = '0b6f8a52-3c1e-4f7a-9d2b-5e8c7a6b4d3f';
 const COMPACT_PLAN_ID = PLAN_ID.replaceAll('-', '');
@@ -103,8 +103,14 @@ vi.mock('next/headers', () => ({
 const mutations = () => mocks.calls.filter((c) => c.operation !== 'select');
 
 describe('Meet guest login', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Client IP headers are trusted only behind a configured proxy (#6554).
+    vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
     mocks.reset();
     limits.check.mockResolvedValue({ allowed: true, refund: limits.refund });
   });
