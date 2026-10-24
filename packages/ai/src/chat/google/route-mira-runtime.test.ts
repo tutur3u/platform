@@ -387,4 +387,41 @@ describe('prepareMiraRuntime', () => {
       'Client says this board is authoritative'
     );
   });
+
+  it('gives Mira tools the saved timezone when the client omits one', async () => {
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-1',
+      wsId: 'workspace-1',
+      name: 'Personal',
+      personal: true,
+      memberCount: 1,
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => false });
+    mocks.buildMiraContext.mockResolvedValue({
+      contextString: 'ctx',
+      soul: null,
+      isFirstInteraction: false,
+    });
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+    const { client } = createTaskBoardSupabaseMock({
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: client,
+    });
+
+    expect(mocks.createMiraStreamTools).toHaveBeenCalledWith(
+      expect.objectContaining({ timezone: 'Asia/Ho_Chi_Minh' }),
+      expect.any(Function),
+      undefined
+    );
+  });
 });

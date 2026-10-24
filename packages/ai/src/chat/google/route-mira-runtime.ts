@@ -13,6 +13,7 @@ import { resolveWorkspaceContextState } from '../../tools/workspace-context';
 import { buildMiraPrompt } from '../mira-prompt';
 import { buildMiraSystemInstruction } from '../mira-system-instruction';
 import type { ChatRequestTaskBoardContext } from './chat-request-schema';
+import { resolveMiraTimezone } from './mira-timezone';
 
 type PermissionResultLike = {
   withoutPermission?: (permission: PermissionId) => boolean;
@@ -223,6 +224,13 @@ export async function prepareMiraRuntime({
     console.error('Failed to get permissions for Mira tools:', permErr);
   }
 
+  const { timezone: resolvedTimezone } = await resolveMiraTimezone({
+    requestTimezone: timezone,
+    supabase: miraSupabase,
+    userId,
+    wsId: resolvedWorkspaceContext.wsId,
+  });
+
   const ctx: MiraToolContext = {
     userId,
     wsId,
@@ -230,7 +238,7 @@ export async function prepareMiraRuntime({
     workspaceContext: resolvedWorkspaceContext,
     chatId,
     supabase: miraSupabase,
-    timezone,
+    timezone: resolvedTimezone,
     requestHeaders: request.headers,
     authorizeWorkspaceTools: async (targetWsId, permissions) => {
       let pending = permissionCache.get(targetWsId);
@@ -266,7 +274,7 @@ export async function prepareMiraRuntime({
       userId,
       wsId: resolvedWorkspaceContext.wsId,
       supabase: miraSupabase,
-      timezone,
+      timezone: resolvedTimezone,
       withoutPermission,
       workspaceContext: resolvedWorkspaceContext,
       taskBoardInstruction,

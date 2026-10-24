@@ -197,7 +197,13 @@ export const assistantAiRow: {
   prompt_tokens: 7,
 };
 
-export function createRequest({ miraMode = false } = {}) {
+export function createRequest({
+  miraMode = false,
+  timezone,
+}: {
+  miraMode?: boolean;
+  timezone?: string;
+} = {}) {
   return new Request(
     'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/conversation-1/messages',
     {
@@ -205,6 +211,7 @@ export function createRequest({ miraMode = false } = {}) {
         clientRequestId: '11111111-1111-4111-8111-111111111111',
         content: 'hello',
         ...(miraMode ? { miraMode: true } : {}),
+        ...(timezone ? { timezone } : {}),
       }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
