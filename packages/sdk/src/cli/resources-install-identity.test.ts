@@ -10,8 +10,16 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
-import { resourceShims } from './resources-command';
-import { installResourceShims, shellQuote } from './resources-setup';
+import {
+  commandTool,
+  isHeavyCommand,
+  resourceShims,
+} from './resources-command';
+import {
+  existingLauncherIdentity,
+  installResourceShims,
+  shellQuote,
+} from './resources-setup';
 
 const homes: string[] = [];
 afterEach(async () => {
@@ -41,7 +49,12 @@ async function fixture() {
     Promise.all(
       resourceShims.map((name) => readFile(join(home, 'bin', name), 'utf8'))
     );
-  return { home, entryAt, contents };
+  return {
+    home,
+    entryAt,
+    contents,
+    globalEntry: join(modules, 'tuturuuu/dist/cli/resources-entry.js'),
+  };
 }
 
 it('refuses a consumer cache entry while the verified global link still points at another version', async () => {
@@ -77,4 +90,43 @@ it('permits the same installation to update a quoted Bun runtime path', async ()
         !content.includes('/old user')
     )
   ).toBe(true);
+});
+
+it('preserves entry ownership when an owned install adds the protocol-3 comment', async () => {
+  const f = await fixture();
+  const old = (await f.contents())[0]!.replace(
+    '# Resource scheduler protocol: 3\n',
+    ''
+  );
+  const global = f.globalEntry;
+  const next = old.replace(
+    '# Managed by ttr resources\n',
+    '# Managed by ttr resources\n# Resource scheduler protocol: 3\n'
+  );
+  expect(
+    existingLauncherIdentity(old, f.home, global, resourceShims[0]!, next)
+  ).toBe(next);
+  const incoming = f.entryAt('0.30.0+b');
+  const foreign = next.replace(global, incoming);
+  expect(
+    existingLauncherIdentity(old, f.home, incoming, resourceShims[0]!, foreign)
+  ).not.toBe(foreign);
+});
+
+it('keeps the shipped CLI wrapper outside shim admission', () => {
+  for (const payload of [
+    ['bun', 'run', 'test'],
+    ['bun', 'run', 'build'],
+    ['bunx', 'vitest', 'run', '--maxWorkers=24'],
+  ]) {
+    const args = [
+      '/global/tuturuuu/bin/ttr.cjs',
+      'resources',
+      'run',
+      '--',
+      ...payload,
+    ];
+    expect(commandTool('bun', args).tool).toBe('ttr');
+    expect(isHeavyCommand('bun', args)).toBe(false);
+  }
 });

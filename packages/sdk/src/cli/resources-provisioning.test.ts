@@ -236,7 +236,9 @@ it('upgrades versioned Bun global cache entries within one installation', async 
     const file = join(home, 'bin', name);
     await fs.writeFile(
       file,
-      (await fs.readFile(file, 'utf8')).replace(stable, entryAt('0.28.0'))
+      (await fs.readFile(file, 'utf8'))
+        .replace(stable, entryAt('0.28.0'))
+        .replace('# Resource scheduler protocol: 3\n', '')
     );
   }
   await fs.unlink(alias);

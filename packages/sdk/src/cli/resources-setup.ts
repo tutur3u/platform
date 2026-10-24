@@ -406,11 +406,12 @@ export async function installedResourceShims(
   return bin;
 }
 
-function existingLauncherIdentity(
+export function existingLauncherIdentity(
   content: string,
   home: string,
   entry: string,
-  name: string
+  name: string,
+  expected = resourceLauncher(home, entry, name)
 ) {
   // Only an entry verified against the public global link may migrate old
   // versioned cache paths. A consumer cache entry must remain distinct.
@@ -422,8 +423,17 @@ function existingLauncherIdentity(
   ) {
     content = globalResourceEntry(content);
   }
-  const prefix = `#!/bin/sh\n# Managed by ttr resources\nTTR_RESOURCES_HOME=${shellQuote(home)} exec `;
   const suffix = ` ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+  const prefix = expected.slice(
+    0,
+    -(shellQuote(process.execPath).length + suffix.length)
+  );
+  const protocol = '# Resource scheduler protocol: 3\n';
+  if (prefix.includes(protocol) && !content.includes(protocol)) {
+    const oldPrefix = prefix.replace(protocol, '');
+    if (content.startsWith(oldPrefix) && content.endsWith(suffix))
+      content = prefix + content.slice(oldPrefix.length);
+  }
   if (content.startsWith(prefix) && content.endsWith(suffix)) {
     const runtime = content.slice(prefix.length, -suffix.length);
     if (/^'(?:[^']|'\\'')*'$/u.test(runtime)) {
@@ -448,7 +458,8 @@ async function resourceShimEdits(home: string, entry: string, force = false) {
       );
     if (
       existing !== undefined &&
-      existingLauncherIdentity(existing.content, home, entry, name) !== next &&
+      existingLauncherIdentity(existing.content, home, entry, name, next) !==
+        next &&
       !force
     )
       throw new Error(
