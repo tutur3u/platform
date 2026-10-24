@@ -1,7 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import type { ShortLinkStore } from '../link/store';
 
-type AdminClient = Awaited<ReturnType<typeof createAdminClient>>;
+// `ReturnType` of the generic factory resolves `T` to `unknown`, which types
+// every table as `never`; instantiate it with the generated schema instead.
+type AdminClient = Awaited<ReturnType<typeof createAdminClient<Database>>>;
 
 /**
  * Service-role store used by the public redirect surface. A missing,
