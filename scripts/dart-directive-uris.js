@@ -6,7 +6,9 @@
 // line, or `import` text inside a string or comment cannot hide or fake a
 // directive. A directive is `import`/`export` at brace depth 0 followed by a
 // string literal; every string literal up to its `;` is a URI, including
-// conditional `if (dart.library.x) 'alt.dart'` alternatives.
+// conditional `if (dart.library.x) 'alt.dart'` alternatives. Dart escapes
+// (\n, \xHH, \uXXXX, \u{...}, \c) are decoded; an undecodable URI is
+// reported as UNDECODABLE_URI so the caller fails closed.
 
 const IDENT_START = /[A-Za-z_$]/u;
 const IDENT_PART = /[A-Za-z0-9_$]/u;
@@ -69,6 +71,47 @@ function lex(source, start = 0, untilBrace = false) {
   return { tokens, end: n };
 }
 
+const SIMPLE_ESCAPES = {
+  n: '\n',
+  r: '\r',
+  f: '\f',
+  b: '\b',
+  t: '\t',
+  v: '\v',
+};
+
+/**
+ * Decodes the Dart escape starting at the backslash `source[i]`. Returns
+ * `{ text, end }`, or `{ text: null, end }` for a malformed escape.
+ */
+function decodeEscape(source, i) {
+  const c = source[i + 1];
+  if (c === undefined) return { text: null, end: i + 1 };
+  if (c in SIMPLE_ESCAPES) return { text: SIMPLE_ESCAPES[c], end: i + 2 };
+  // Malformed escapes consume only the backslash and letter, so the closing
+  // quote is never swallowed.
+  const malformed = { text: null, end: i + 2 };
+  const codePoint = (hex, end) => {
+    if (!/^[0-9a-fA-F]+$/u.test(hex)) return malformed;
+    const value = Number.parseInt(hex, 16);
+    return value <= 0x10ffff
+      ? { text: String.fromCodePoint(value), end }
+      : malformed;
+  };
+  if (c === 'x') return codePoint(source.slice(i + 2, i + 4), i + 4);
+  if (c === 'u') {
+    if (source[i + 2] === '{') {
+      const close = source.indexOf('}', i + 3);
+      const hex = close < 0 ? '' : source.slice(i + 3, close);
+      if (hex.length < 1 || hex.length > 6) return malformed;
+      return codePoint(hex, close + 1);
+    }
+    return codePoint(source.slice(i + 2, i + 6), i + 6);
+  }
+  // Any other escaped character stands for itself (\\, \', \$, \a).
+  return { text: c, end: i + 2 };
+}
+
 function lexString(source, start) {
   let i = start;
   const raw = source[i] === 'r' || source[i] === 'R';
@@ -78,6 +121,7 @@ function lexString(source, start) {
   const delimiter = triple ? quote.repeat(3) : quote;
   i += delimiter.length;
   let value = '';
+  // Interpolated or malformed literals have no static value.
   let interpolated = false;
   while (i < source.length) {
     if (source.startsWith(delimiter, i)) {
@@ -86,8 +130,10 @@ function lexString(source, start) {
     const c = source[i];
     if (!triple && c === '\n') break;
     if (!raw && c === '\\') {
-      value += source[i + 1] ?? '';
-      i += 2;
+      const decoded = decodeEscape(source, i);
+      if (decoded.text == null) interpolated = true;
+      else value += decoded.text;
+      i = decoded.end;
     } else if (!raw && c === '$') {
       interpolated = true;
       if (source[i + 1] === '{') {
@@ -102,6 +148,12 @@ function lexString(source, start) {
   }
   return { value: null, end: i };
 }
+
+/**
+ * Marker for a directive URI whose literal has no static value (malformed
+ * escape or interpolation). Callers must treat it as a match (fail closed).
+ */
+const UNDECODABLE_URI = '\u0000undecodable';
 
 /** Every URI of every top-level import/export directive in `source`. */
 function directiveUris(source) {
@@ -132,7 +184,10 @@ function directiveUris(source) {
       const part = tokens[j];
       if (part.type === 'punct' && part.value === ';') break;
       if (part.type === 'str') {
-        if (part.value != null) pending = `${pending ?? ''}${part.value}`;
+        pending =
+          part.value == null || pending === UNDECODABLE_URI
+            ? UNDECODABLE_URI
+            : `${pending ?? ''}${part.value}`;
       } else {
         flush();
       }
@@ -143,4 +198,4 @@ function directiveUris(source) {
   return uris;
 }
 
-module.exports = { directiveUris, lex };
+module.exports = { UNDECODABLE_URI, directiveUris, lex };

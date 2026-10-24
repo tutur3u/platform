@@ -260,3 +260,31 @@ test('the base check fails closed when no base resolves', (t) => {
     console.log = log;
   }
 });
+
+test('escaped shadcn and shim URIs are caught', () => {
+  const file = 'lib/features/x/view/page.dart';
+  assert.ok(
+    importsShadcn(
+      "import 'package:\\u0073hadcn_flutter/shadcn_flutter.dart' as shad;",
+      file
+    )
+  );
+  assert.ok(
+    importsShadcn(
+      "import 'package:mobile/core/widgets/\\x73hadcn_flutter_compat.dart';",
+      file
+    )
+  );
+  assert.ok(
+    importsShadcn(
+      "import '../../../core/widgets/shadcn\\u{5f}flutter_compat.dart';",
+      file
+    )
+  );
+  // Undecodable URIs fail closed.
+  assert.ok(importsShadcn("import 'package:\\x7.dart';", file));
+  assert.equal(
+    importsShadcn("import 'package:mobile/core/ui/\\u0075i.dart';", file),
+    false
+  );
+});

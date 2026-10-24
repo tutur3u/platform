@@ -22,8 +22,10 @@ file must appear in `apps/mobile/tool/shadcn_import_allowlist.txt`.
   tokenizer (`scripts/dart-directive-uris.js`) skips comments and strings,
   so comments inside a directive, several directives on one line, conditional
   `if (dart.library.x)` alternatives and adjacent string literals are all
-  read. Relative and `package:mobile/` paths are normalised before matching
-  a shim.
+  read. Dart escapes (`\uXXXX`, `\u{...}`, `\xHH`, simple escapes) are
+  decoded, and a URI with a malformed escape or interpolation fails closed.
+  Relative and `package:mobile/` paths are normalised before matching a
+  shim.
 - An allowlisted file that no longer imports shadcn also fails. Run
   `node scripts/check-mobile-shadcn-imports.js --prune` to remove migrated
   entries. The flag never adds entries.

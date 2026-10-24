@@ -15,7 +15,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const { directiveUris } = require('./dart-directive-uris.js');
+const { UNDECODABLE_URI, directiveUris } = require('./dart-directive-uris.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const MOBILE_DIR = 'apps/mobile';
@@ -51,6 +51,8 @@ function resolveUri(uri, fromFile) {
  */
 function importsShadcn(source, file = null) {
   return directiveUris(source).some((uri) => {
+    // Fail closed on a URI with no static value.
+    if (uri === UNDECODABLE_URI) return true;
     if (/^package:shadcn_flutter(\/|$)/u.test(uri)) return true;
     const resolved = resolveUri(uri, file);
     return resolved != null && SHIM_FILES.has(resolved);
