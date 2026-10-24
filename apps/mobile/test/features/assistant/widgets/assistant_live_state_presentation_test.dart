@@ -11,7 +11,8 @@ void main() {
   for (final locale in ['en', 'vi']) {
     for (final ime in [0.0, 280.0]) {
       testWidgets(
-        'permission, recovery and ended retain a reachable transcript $locale IME=$ime',
+        'permission, recovery and ended retain a reachable transcript '
+        '$locale IME=$ime',
         (tester) async {
           tester.view
             ..physicalSize = const Size(320, 844)

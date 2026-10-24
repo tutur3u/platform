@@ -140,11 +140,11 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     bool current() =>
         mounted && epoch == _voiceActorScopeEpoch && _loadedWorkspaceId == wsId;
     await _liveBrowsingPreferenceLoad;
-    if (!current()) return;
+    if (!mounted || !current()) return;
     if (!_keepLiveWhileBrowsing) {
       // The opt-in browsing setting is the only path that retains media tracks.
       await _liveCubit.disconnect();
-      if (!current()) return;
+      if (!mounted || !current()) return;
       _liveStartGate.cancel(attempt);
     }
     context.read<AssistantChromeCubit>().exitLiveMode();

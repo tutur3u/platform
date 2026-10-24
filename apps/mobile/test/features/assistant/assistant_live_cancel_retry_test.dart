@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -132,15 +131,15 @@ class _CancelRetryHarness {
     SharedPreferences.setMockInitialValues({
       '$_actor::$assistantKeepLiveWhileBrowsingKeyPrefix$_workspace': false,
     });
-    final messenger = tester.binding.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(
-      const MethodChannel('flutter_timezone'),
-      (_) async => 'UTC',
-    );
-    messenger.setMockMethodCallHandler(
-      const MethodChannel('flutter_pcm_sound/methods'),
-      (_) async => true,
-    );
+    tester.binding.defaultBinaryMessenger
+      ..setMockMethodCallHandler(
+        const MethodChannel('flutter_timezone'),
+        (_) async => 'UTC',
+      )
+      ..setMockMethodCallHandler(
+        const MethodChannel('flutter_pcm_sound/methods'),
+        (_) async => true,
+      );
     await tester.pumpApp(
       MultiBlocProvider(
         providers: [

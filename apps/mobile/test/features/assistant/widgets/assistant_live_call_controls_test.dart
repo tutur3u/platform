@@ -25,11 +25,11 @@ void main() {
     AppHaptics.enabled = false;
     final platformCalls = <MethodCall>[];
     final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      platformCalls.add(call);
-      return null;
-    });
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            platformCalls.add(call);
+            return null;
+          });
     addTearDown(() {
       AppHaptics.enabled = enabled;
       messenger.setMockMethodCallHandler(SystemChannels.platform, null);

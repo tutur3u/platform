@@ -180,7 +180,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(fixture.captures, 0);
       expect(fixture.cubit.state.isMicrophoneActive, isFalse);
-      verifyNever(() => fixture.camera.ensurePermission());
+      verifyNever(fixture.camera.ensurePermission);
       verifyNever(
         () => fixture.socket.connect(
           token: 'token',
@@ -260,7 +260,7 @@ void main() {
       expect(fixture.cubit.state.isMicrophoneActive, isFalse);
       expect(connection.isCompleted, isFalse);
       expect(fixture.microphoneStartCompletions, 0);
-      verify(() => fixture.socket.endAudioStream()).called(1);
+      verify(fixture.socket.endAudioStream).called(1);
       await tester.tap(mic);
       await tester.pump();
       expect(permissionRequests, 1);
@@ -281,7 +281,7 @@ void main() {
       expect(connectionRequests, 1);
       expect(tester.element(mic), same(identity));
       expect(tester.getCenter(mic), center);
-      verifyNever(() => fixture.camera.ensurePermission());
+      verifyNever(fixture.camera.ensurePermission);
       expect(tester.takeException(), isNull);
     },
   );

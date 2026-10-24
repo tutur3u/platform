@@ -47,7 +47,6 @@ void main() {
                 scale: 2,
                 ime: ime,
                 reducedMotion: reduced,
-                safeBottom: 34,
               ),
             );
             await _settle(tester);

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 
-/// Independent actions in the shared navbar; toggles do not select destinations.
+/// Independent actions in the shared navbar;
+/// toggles do not select destinations.
 class ShellDockControlItem extends StatelessWidget {
   const ShellDockControlItem({
     required this.label,
