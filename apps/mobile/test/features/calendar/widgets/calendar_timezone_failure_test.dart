@@ -62,7 +62,10 @@ void main() {
     );
     addTearDown(preferences.close);
     addTearDown(repository.dispose);
-    await preferences.load(userId: 'timezone-regression', workspaceId: 'shared');
+    await preferences.load(
+      userId: 'timezone-regression',
+      workspaceId: 'shared',
+    );
     expect(preferences.state.resolved, isTrue);
     await preferences.save('auto');
     expect(repository.writes, 1);

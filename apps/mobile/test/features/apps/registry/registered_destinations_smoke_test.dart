@@ -39,16 +39,14 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
-const _workspace = Workspace(
-  id: 'smoke-workspace',
-  name: 'Smoke workspace',
-);
+const _workspace = Workspace(id: 'smoke-workspace', name: 'Smoke workspace');
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
-class _Habits extends MockCubit<HabitsAccessState> implements HabitsAccessCubit {}
+class _Habits extends MockCubit<HabitsAccessState>
+    implements HabitsAccessCubit {}
 
 class _Education extends MockCubit<EducationAccessState>
     implements EducationAccessCubit {}
@@ -94,69 +92,66 @@ void main() {
   for (final size in [const Size(390, 844), const Size(1024, 1366)]) {
     for (final hasWorkspace in [false, true]) {
       for (final destination in destinations) {
-        testWidgets(
-          'registered destination $destination builds at $size '
-          '(workspace: $hasWorkspace)',
-          (tester) async {
-            final errors = <FlutterErrorDetails>[];
-            final originalOnError = FlutterError.onError;
-            FlutterError.onError = (details) {
-              errors.add(details);
-              originalOnError?.call(details);
-            };
-            addTearDown(() => FlutterError.onError = originalOnError);
-            SharedPreferences.setMockInitialValues({});
-            tester.view
-              ..devicePixelRatio = 1
-              ..physicalSize = size;
-            addTearDown(() {
-              tester.view.resetPhysicalSize();
-              tester.view.resetDevicePixelRatio();
-            });
+        testWidgets('registered destination $destination builds at $size '
+            '(workspace: $hasWorkspace)', (tester) async {
+          final errors = <FlutterErrorDetails>[];
+          final originalOnError = FlutterError.onError;
+          FlutterError.onError = (details) {
+            errors.add(details);
+            originalOnError?.call(details);
+          };
+          addTearDown(() => FlutterError.onError = originalOnError);
+          SharedPreferences.setMockInitialValues({});
+          tester.view
+            ..devicePixelRatio = 1
+            ..physicalSize = size;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            const MethodChannel('mobile/shell_back'),
+            (_) async => null,
+          );
+          addTearDown(() {
             tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
               const MethodChannel('mobile/shell_back'),
-              (_) async => null,
+              null,
             );
-            addTearDown(() {
-              tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-                const MethodChannel('mobile/shell_back'),
-                null,
-              );
-            });
+          });
 
-            final harness = _DestinationHarness(
-              destination,
-              hasWorkspace: hasWorkspace,
-            );
-            addTearDown(() async {
-              await tester.pumpWidget(const SizedBox.shrink());
-              await tester.pump();
-              await harness.dispose();
-            });
-            await tester.pumpWidget(harness.build());
-            for (var frame = 0; frame < 12; frame++) {
-              await tester.pump(const Duration(milliseconds: 50));
-              expect(
-                tester.takeException(),
-                isNull,
-                reason: [
-                  '$destination frame $frame at $size',
-                  for (final details in errors) ...[
-                    details.toString(),
-                    details.stack?.toString() ?? '(Flutter supplied no stack)',
-                  ],
-                ].join('\n'),
-              );
-            }
+          final harness = _DestinationHarness(
+            destination,
+            hasWorkspace: hasWorkspace,
+          );
+          addTearDown(() async {
+            await tester.pumpWidget(const SizedBox.shrink());
+            await tester.pump();
+            await harness.dispose();
+          });
+          await tester.pumpWidget(harness.build());
+          for (var frame = 0; frame < 12; frame++) {
+            await tester.pump(const Duration(milliseconds: 50));
             expect(
-              harness.router.routeInformationProvider.value.uri.path,
-              destination,
-              reason: 'A redirect must not substitute a different screen.',
+              tester.takeException(),
+              isNull,
+              reason: [
+                '$destination frame $frame at $size',
+                for (final details in errors) ...[
+                  details.toString(),
+                  details.stack?.toString() ?? '(Flutter supplied no stack)',
+                ],
+              ].join('\n'),
             );
-            expect(find.byType(ShellPage), findsOneWidget);
-            expect(find.byType(ErrorWidget), findsNothing);
-          },
-        );
+          }
+          expect(
+            harness.router.routeInformationProvider.value.uri.path,
+            destination,
+            reason: 'A redirect must not substitute a different screen.',
+          );
+          expect(find.byType(ShellPage), findsOneWidget);
+          expect(find.byType(ErrorWidget), findsNothing);
+        });
       }
     }
   }
@@ -171,8 +166,8 @@ class _DestinationHarness {
     whenListen(
       auth,
       const Stream<AuthState>.empty(),
-      initialState: AuthState.authenticated(
-        const supa.User(
+      initialState: const AuthState.authenticated(
+        supa.User(
           id: 'smoke-user',
           appMetadata: {},
           userMetadata: {},

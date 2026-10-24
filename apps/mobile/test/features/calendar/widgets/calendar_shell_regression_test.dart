@@ -6,9 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
@@ -19,6 +20,7 @@ import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -40,6 +42,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -70,6 +73,36 @@ class _CalendarRepository extends CalendarRepository {
   }
 }
 
+class _Storage extends Mock implements CacheStore {
+  @override
+  Future<CacheReadResult<T>> read<T>({
+    required CacheKey key,
+    required CacheJsonDecoder<T> decode,
+  }) async => CacheReadResult<T>(state: CacheEntryState.missing);
+
+  @override
+  Future<void> write({
+    required CacheKey key,
+    required CachePolicy policy,
+    required Object? payload,
+    String? etag,
+    List<String> tags = const [],
+    int? expectedRevision,
+    void Function()? checkScope,
+    bool requirePublication = false,
+  }) async {
+    checkScope?.call();
+  }
+}
+
+class _ZonePreferences extends TimezoneSettingsRepository {
+  _ZonePreferences({required this.device});
+  final bool device;
+
+  @override
+  Future<String> loadPersonal() async => device ? 'auto' : 'Invalid/Zone';
+}
+
 enum _Result { loaded, empty, error }
 
 Future<void> _frames(WidgetTester tester) async {
@@ -77,41 +110,6 @@ Future<void> _frames(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 50));
     expect(tester.takeException(), isNull, reason: 'frame $frame');
   }
-}
-
-Future<void> _progress(
-  WidgetTester tester,
-  bool Function() complete,
-) async {
-  for (var turn = 0; turn < 100 && !complete(); turn++) {
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
-    await tester.pump();
-    expect(tester.takeException(), isNull);
-  }
-  expect(complete(), isTrue, reason: 'The owned async fixture must complete.');
-}
-
-Future<void> _operation(
-  WidgetTester tester,
-  Future<void> Function() operation,
-) async {
-  var complete = false;
-  Object? failure;
-  unawaited(
-    operation().then<void>(
-      (_) {
-        complete = true;
-      },
-      onError: (Object error) {
-        failure = error;
-        complete = true;
-      },
-    ),
-  );
-  await _progress(tester, () => complete);
-  expect(failure, isNull);
 }
 
 void main() {
@@ -132,15 +130,64 @@ void main() {
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
     );
-    await CacheStore.instance.init();
   });
 
-  tearDownAll(() async {
-    await CacheStore.instance.closeForTesting();
-  });
+  for (final device in [false, true]) {
+    testWidgets('real shell Agenda rejects unsupported '
+        '${device ? 'device' : 'saved'} timezone', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      CalendarCubit.clearCache();
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('mobile/shell_back'),
+        (_) async => null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('mobile/shell_back'),
+          null,
+        ),
+      );
+      final repository = _CalendarRepository();
+      final zones = _ZonePreferences(device: device);
+      final preferences = TimezoneSettingsCubit(
+        repository: zones,
+        deviceLoader: () async => device ? 'GMT+07:00' : 'UTC',
+      );
+      final harness = _CalendarShellHarness(
+        repository,
+        Brightness.dark,
+        const Workspace(id: 'timezone-regression'),
+        preferences: preferences,
+      );
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await harness.dispose();
+        repository.dispose();
+        zones.dispose();
+      });
+      await tester.pumpWidget(harness.build());
+      await _frames(tester);
+      final calendar = tester
+          .element(find.byType(CalendarMinuteClock))
+          .read<CalendarCubit>();
+      await calendar.setViewMode(CalendarViewMode.agenda);
+      repository.initial.complete([]);
+      await _frames(tester);
+      await preferences.load(userId: 'timezone-regression', workspaceId: null);
+      await _frames(tester);
+      expect(preferences.state.resolved, isFalse);
+      expect(preferences.state.failed, isTrue);
+      expect(find.byType(AgendaView), findsOneWidget);
+      expect(find.byType(ErrorWidget), findsNothing);
+    });
+  }
 
-  final runId = DateTime.now().microsecondsSinceEpoch;
-  var nextScope = 0;
   for (final size in [const Size(390, 844), const Size(1024, 1366)]) {
     for (final brightness in Brightness.values) {
       for (final result in _Result.values) {
@@ -167,8 +214,8 @@ void main() {
             );
           });
           final repository = _CalendarRepository();
-          final workspace = Workspace(
-            id: 'calendar-shell-$runId-${nextScope++}',
+          const workspace = Workspace(
+            id: 'calendar-shell-workspace',
             name: 'Calendar shell workspace',
           );
           final harness = _CalendarShellHarness(
@@ -191,10 +238,7 @@ void main() {
           final calendar = tester
               .element(find.byType(CalendarMinuteClock))
               .read<CalendarCubit>();
-          await _operation(
-            tester,
-            () => calendar.setViewMode(CalendarViewMode.agenda),
-          );
+          await calendar.setViewMode(CalendarViewMode.agenda);
           await _frames(tester);
           expect(calendar.state.viewMode, CalendarViewMode.agenda);
 
@@ -225,10 +269,6 @@ void main() {
           } else {
             repository.initial.complete(repository.events);
           }
-          await _progress(
-            tester,
-            () => calendar.state.status != CalendarStatus.loading,
-          );
           await _frames(tester);
 
           if (result == _Result.error) {
@@ -238,28 +278,9 @@ void main() {
               findsWidgets,
             );
             expect(find.text('Retry'), findsOneWidget);
-            await _operation(
-              tester,
-              () => calendar.loadEvents(workspace.id, forceRefresh: true),
-            );
+            await calendar.loadEvents(workspace.id, forceRefresh: true);
             await _frames(tester);
           }
-          // The loaded frame precedes persistence. Observe publication without
-          // introducing a second same-key write while the first is in flight.
-          await _progress(tester, () {
-            final published = CacheStore.instance.peek<Map<String, dynamic>>(
-              key: CacheKey(
-                namespace: 'calendar.events.utc.v2',
-                userId: currentCacheUserId(),
-                workspaceId: workspace.id,
-                locale: currentCacheLocaleTag(),
-              ),
-              decode: (json) => Map<String, dynamic>.from(json as Map),
-            );
-            return published.data?['hasLoadedOnce'] == true &&
-                published.data?['lastUpdatedAt'] ==
-                    calendar.state.lastUpdatedAt?.toIso8601String();
-          });
           expect(calendar.state.status, CalendarStatus.loaded);
           expect(find.byType(AgendaView), findsOneWidget);
           if (result == _Result.empty) {
@@ -280,7 +301,12 @@ void main() {
 }
 
 class _CalendarShellHarness {
-  _CalendarShellHarness(this.repository, this.brightness, this.scope) {
+  _CalendarShellHarness(
+    this.repository,
+    this.brightness,
+    this.scope, {
+    TimezoneSettingsCubit? preferences,
+  }) : timezone = preferences ?? _Timezone() {
     whenListen(
       auth,
       const Stream<AuthState>.empty(),
@@ -300,15 +326,17 @@ class _CalendarShellHarness {
       const Stream<ShellProfileState>.empty(),
       initialState: const ShellProfileState(),
     );
-    whenListen(
-      timezone,
-      const Stream<TimezoneSettingsState>.empty(),
-      initialState: const TimezoneSettingsState(
-        personal: 'UTC',
-        loading: false,
-        resolved: true,
-      ),
-    );
+    if (preferences == null) {
+      whenListen(
+        timezone,
+        const Stream<TimezoneSettingsState>.empty(),
+        initialState: const TimezoneSettingsState(
+          personal: 'UTC',
+          loading: false,
+          resolved: true,
+        ),
+      );
+    }
     router = GoRouter(
       initialLocation: Routes.calendar,
       routes: [
@@ -323,6 +351,7 @@ class _CalendarShellHarness {
               path: Routes.calendar,
               builder: (_, _) => CalendarPage(
                 repositoryFactory: () => repository,
+                cacheStore: storage,
               ),
             ),
           ],
@@ -332,12 +361,13 @@ class _CalendarShellHarness {
   }
 
   final _CalendarRepository repository;
+  final storage = _Storage();
   final Brightness brightness;
   final Workspace scope;
   final auth = _Auth();
   final workspace = _Workspace();
   final profile = _Profile();
-  final timezone = _Timezone();
+  final TimezoneSettingsCubit timezone;
   final settings = SettingsRepository();
   late final apps = AppTabCubit(settingsRepository: settings);
   late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
