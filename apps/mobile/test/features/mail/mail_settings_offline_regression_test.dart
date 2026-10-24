@@ -101,6 +101,31 @@ void main() {
     }
   }
 
+  test('invalidated HTTP success cannot confirm a later cached fallback', () async {
+    when(() => api.getJson(path)).thenAnswer((_) async => {'settings': {'senderName': 'Stored'}});
+    await repository.settings(ws, mailbox);
+    final held = Completer<Map<String, dynamic>>();
+    final entered = Completer<void>();
+    var calls = 0;
+    when(() => api.getJson(path)).thenAnswer((_) {
+      calls++;
+      if (calls == 1) { entered.complete(); return held.future; }
+      throw const ApiException.transport(message: 'Retry offline');
+    });
+    final pending = repository.settings(ws, mailbox);
+    await entered.future;
+    await cache.mutate(ws, () async {});
+    held.complete({'settings': {'senderName': 'Obsolete success'}});
+    final result = await pending;
+    expect(calls, 2);
+    expect(result['settings'], {'senderName': 'Stored'});
+    expect(result['settingsFresh'], isFalse);
+    when(() => api.getJson(path)).thenAnswer((_) async => {'settings': {'senderName': 'Current'}});
+    final current = await repository.settings(ws, mailbox);
+    expect(current['settingsFresh'], isTrue);
+    expect(current['settings'], {'senderName': 'Current'});
+  });
+
   test('ordinary Mail invalidation retains registered settings refresh', () async {
     var calls = 0;
     when(() => api.getJson(path)).thenAnswer((_) async {

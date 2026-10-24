@@ -56,6 +56,7 @@ class MailCache {
     Future<Map<String, dynamic>> Function() fetch, {
     bool forceRefresh = false,
     bool mailboxSettings = false,
+    ValueChanged<bool>? onFreshness,
   }) async {
     if (_userId != null && _userId != _currentUserId()) {
       throw const ApiException(message: 'Account changed', statusCode: 401);
@@ -63,7 +64,11 @@ class MailCache {
     if (_deniedWorkspaces.contains(wsId) && !_disabled) {
       throw const ApiException(message: 'Mail access denied', statusCode: 403);
     }
-    if (!_usable) return await fetch();
+    if (!_usable) {
+      final payload = await fetch();
+      onFreshness?.call(true);
+      return payload;
+    }
     final pathRevision = _pathRevisions[(wsId, path)] ?? 0;
     final originalFetch = fetch;
     fetch = () async {
@@ -94,6 +99,7 @@ class MailCache {
       try {
         final payload = await fetch();
         checkScope();
+        onFreshness?.call(true);
         return payload;
       } on ApiException catch (error) {
         checkScope();
@@ -130,7 +136,10 @@ class MailCache {
           tags: ['mail'],
         );
         checkScope();
-        if (result.hasValue && result.data != null) return result.data!;
+        if (result.hasValue && result.data != null) {
+          onFreshness?.call(!result.isFromCache);
+          return result.data!;
+        }
         final invalidation = _invalidations[wsId] ?? invalidationAtStart;
         if (attempt >= 1 ||
             (invalidation == null &&
@@ -151,7 +160,10 @@ class MailCache {
         // network failure. Auth and permanent errors still surface normally.
         final cached = await snapshot(wsId, path);
         checkScope();
-        if (cached != null) return cached;
+        if (cached != null) {
+          onFreshness?.call(false);
+          return cached;
+        }
       }
       rethrow;
     }

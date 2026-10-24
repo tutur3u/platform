@@ -119,13 +119,10 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
       final result = await _settingsCache.read(
         wsId,
         path,
-        () async {
-          final result = mailSettingsSnapshot(await _fetchSettings(wsId, path));
-          fresh = true;
-          return result;
-        },
+        () async => mailSettingsSnapshot(await _fetchSettings(wsId, path)),
         forceRefresh: true,
         mailboxSettings: true,
+        onFreshness: (value) => fresh = value,
       );
       if (_settingsUserId != null) {
         await _settingsQueue.init();
