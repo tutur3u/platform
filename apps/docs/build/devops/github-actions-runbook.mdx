@@ -1920,8 +1920,8 @@ SDK/pub downloads (Windows retains its deliberate cache-off setup). The wrapper
 resolves identity through the SHA-pinned upstream action before restoring the
 exact cache, then installs that resolved version. SDK keys bind upstream OS,
 channel, version, architecture and release hash; they exclude `pubspec.lock` so
-analysis, test and build jobs share main's SDK archive. Pub download keys still
-include the lock hash. Every ref can restore; only main push/manual runs attach
+analysis, test and build jobs share main's SDK archive. Pub download keys
+(`flutter-pub-v2-`) also exclude the lock hash. Every ref can restore; only main push/manual runs attach
 the cache save post-step, so mobile runs on PRs, feature branches and
 production do not upload duplicate archives. Desktop beta/store-draft and the
 employee schema contract still set up Flutter with upstream caching on their own
