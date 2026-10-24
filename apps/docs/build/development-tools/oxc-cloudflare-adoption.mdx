@@ -1,7 +1,7 @@
 ---
 title: "Oxc and Cloudflare adoption"
 description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
-updatedAt: '2026-10-10'
+updatedAt: '2026-10-24'
 ---
 
 ## Decision and current state
@@ -133,7 +133,17 @@ explicit target identity and isolate discovery before touching app worktrees;
 review any resulting local files. Neither command discovery nor `--dry-run`
 authorizes migration, configuration mutation, resource creation or deployment.
 
-The current foundation does not install cf or convert Worker configurations.
+Cron Control, Devbox Control and Coordination pin `cf@1.0.0-beta.20` and use
+`cloudflare.config.ts`, `vp dev` and `cf workers types`. Their existing per-service
+CI checks qualify configuration and emitted output; this does not qualify legacy
+Void or OpenNext configuration consumers. See the operation matrix for retained
+publication gaps. The package pin requires Node `^22.23 || ^24.22 || ^26.12`;
+the older Node 22.18 discovery minimum does not satisfy that package's engines.
+
+Do not replace `wrangler types --config <emitted-config>` with a bare cf command:
+type generation must read the same Worker identity and preserve the declarations
+consumed by the app. Retain legacy local dev, D1 migration and tail commands until
+their exact configuration, persistence and output contracts pass independently.
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
 
