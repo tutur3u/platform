@@ -674,7 +674,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       ),
       ShellMiniNavItemSpec(
         id: 'tasks',
-        icon: shad.LucideIcons.userCheck,
+        icon: LucideIcons.userCheck,
         label: context.l10n.navTasks,
         selected: state.currentView == TaskBoardDetailView.list,
         callbackToken: 'tasks',

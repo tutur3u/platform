@@ -77,6 +77,7 @@ import '../../../helpers/helpers.dart';
 import '../../assistant/assistant_personal_settings_harness.dart' as personal;
 import '../../assistant/local/assistant_local_chat_harness.dart';
 import '../../assistant/view/background_reply_harness.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 
 part 'settings_compact_harness.dart';
 part 'settings_hidden_recovery_checks.dart';

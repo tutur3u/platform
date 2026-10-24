@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -104,7 +105,7 @@ class CategorySelectorButton extends StatelessWidget {
                 ),
                 const shad.Gap(8),
                 Icon(
-                  shad.LucideIcons.chevronsUpDown,
+                  LucideIcons.chevronsUpDown,
                   size: 14,
                   color: colorScheme.mutedForeground,
                 ),

@@ -64,3 +64,26 @@ test('drops the shadcn import only when the library and parts are clean', () => 
   assert.match(partial.get(lib), /shadcn_flutter/u);
   assert.match(partial.get(lib), /AppGap\(4\)/u);
 });
+
+test('icons-only mode rewrites icons and imports the icon barrel', () => {
+  const lib = path.resolve('/x/lib/icons.dart');
+  const files = {
+    [lib]: `${SHAD}\nfinal g = shad.Gap(4);\nfinal i = shad.LucideIcons.house;\nfinal b = shad.LucideIcons.github;\n`,
+  };
+  const next = codemod([lib], (file) => files[file], { iconsOnly: true }).get(
+    lib
+  );
+  assert.match(next, /LucideIcons\.house/u);
+  assert.match(next, /AppIcons\.github/u);
+  assert.match(next, /shad\.Gap\(4\)/u);
+  assert.match(next, /core\/ui\/icons\/app_icons\.dart/u);
+  // Gap still needs shadcn, so its import stays.
+  assert.match(next, /shadcn_flutter/u);
+  assert.equal(
+    addUiImport(
+      "import 'package:mobile/core/ui/ui.dart';\n",
+      "import 'package:mobile/core/ui/icons/app_icons.dart';"
+    ),
+    "import 'package:mobile/core/ui/ui.dart';\n"
+  );
+});

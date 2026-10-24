@@ -94,12 +94,12 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: false,
           label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-          icon: shad.LucideIcons.squareKanban,
+          icon: LucideIcons.squareKanban,
         ),
         SettingsChoiceOption(
           value: true,
           label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
-          icon: shad.LucideIcons.layoutDashboard,
+          icon: LucideIcons.layoutDashboard,
         ),
       ],
     );
@@ -127,12 +127,12 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: true,
           label: l10n.commonOn,
-          icon: shad.LucideIcons.vibrate,
+          icon: LucideIcons.vibrate,
         ),
         SettingsChoiceOption(
           value: false,
           label: l10n.commonOff,
-          icon: shad.LucideIcons.bellOff,
+          icon: LucideIcons.bellOff,
         ),
       ],
     );
@@ -158,18 +158,18 @@ mixin _SettingsPageActions on State<_SettingsView> {
         SettingsChoiceOption(
           value: 'system',
           label: l10n.settingsLanguageSystem,
-          icon: shad.LucideIcons.monitorSmartphone,
+          icon: LucideIcons.monitorSmartphone,
           description: l10n.settingsLanguageSystemDescription,
         ),
         SettingsChoiceOption(
           value: 'en',
           label: l10n.settingsLanguageEnglish,
-          icon: shad.LucideIcons.languages,
+          icon: LucideIcons.languages,
         ),
         SettingsChoiceOption(
           value: 'vi',
           label: l10n.settingsLanguageVietnamese,
-          icon: shad.LucideIcons.languages,
+          icon: LucideIcons.languages,
         ),
       ],
     );

@@ -3,6 +3,7 @@ import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -96,7 +97,7 @@ class _AccentDot extends StatelessWidget {
       ),
       child: followsTheme
           ? Icon(
-              shad.LucideIcons.sparkles,
+              LucideIcons.sparkles,
               size: 16,
               color: AppearanceContrast.readableOn(
                 color,

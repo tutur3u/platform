@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -22,10 +23,7 @@ class GoalsEmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(
-              shad.LucideIcons.goal,
-              color: theme.colorScheme.mutedForeground,
-            ),
+            Icon(LucideIcons.goal, color: theme.colorScheme.mutedForeground),
             const shad.Gap(8),
             Text(l10n.timerGoalsEmptyTitle),
             const shad.Gap(4),

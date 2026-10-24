@@ -8,6 +8,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -132,7 +133,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     final shellActions = [
       ShellActionSpec(
         id: 'task-boards-filter',
-        icon: shad.LucideIcons.slidersHorizontal,
+        icon: LucideIcons.slidersHorizontal,
         tooltip: _filterLabel(context, taskBoardsState.filter),
         highlighted: taskBoardsState.filter != TaskBoardsFilter.active,
         onPressed: () => _showFilterMenu(context, taskBoardsState.filter),

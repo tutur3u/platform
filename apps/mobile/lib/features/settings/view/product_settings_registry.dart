@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -15,7 +16,6 @@ import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Register only products with real configurable native settings. Each entry
 /// resolves its current scope and reuses the product's quick-settings editor.
@@ -45,7 +45,7 @@ bool _assistantSettingsReady(BuildContext context) {
 final productSettingsRegistry = <ProductSettingsEntry>[
   ProductSettingsEntry(
     id: 'assistant',
-    icon: shad.LucideIcons.sparkles,
+    icon: LucideIcons.sparkles,
     title: (context) => context.l10n.navAssistant,
     visible: _assistantSettingsReady,
     open: (context) async {
@@ -70,14 +70,14 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'calendar',
-    icon: shad.LucideIcons.calendar,
+    icon: LucideIcons.calendar,
     title: (context) => context.l10n.navCalendar,
     visible: (context) => context.read<CalendarSettingsCubit?>() != null,
     open: openCalendarProductSettings,
   ),
   ProductSettingsEntry(
     id: 'finance',
-    icon: shad.LucideIcons.wallet,
+    icon: LucideIcons.wallet,
     title: (context) => context.l10n.navFinance,
     visible: (context) => context.read<FinancePreferencesCubit?>() != null,
     open: (context) => openFinanceProductSettings(
@@ -87,7 +87,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'mail',
-    icon: shad.LucideIcons.mail,
+    icon: LucideIcons.mail,
     title: (context) => context.l10n.mailTitle,
     visible: (context) {
       final user = context.read<AuthCubit>().state.user;

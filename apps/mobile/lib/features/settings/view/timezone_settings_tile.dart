@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
@@ -10,7 +11,6 @@ import 'package:mobile/features/settings/view/timezone_picker_sheet.dart';
 import 'package:mobile/features/settings/view/timezone_rate_limit_message.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimezoneSettingsTile extends StatefulWidget {
   const TimezoneSettingsTile({
@@ -147,7 +147,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
     listener: (_, state) => _syncCooldown(state.retryAt),
     builder: (context, state) => SettingsTile(
       grouped: widget.grouped,
-      icon: shad.LucideIcons.earth,
+      icon: LucideIcons.earth,
       title: widget.workspace
           ? context.l10n.settingsWorkspaceTimezone
           : context.l10n.settingsTimezone,
@@ -192,7 +192,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
                   onPressed: _coolingDown || state.loading || state.saving
                       ? null
                       : () => unawaited(_retry()),
-                  icon: const Icon(shad.LucideIcons.rotateCw),
+                  icon: const Icon(LucideIcons.rotateCw),
                 ),
                 if (state.diagnostics case final diagnostics?)
                   InternalDiagnosticsCopy(
