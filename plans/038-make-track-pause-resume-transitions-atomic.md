@@ -60,7 +60,7 @@ approval migrations before specifying locks and expected-state predicates.
 | Action tests | `bun --cwd apps/track vitest run 'src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/actions/actions.test.ts'` | concurrency/failure cases pass |
 | Existing sessions tests | `bun --cwd apps/track vitest run 'src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/route.test.ts'` | all pass |
 | Track typecheck | `bun run --cwd apps/track type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Track build | `bun run --cwd apps/track build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -124,7 +124,7 @@ and retain threshold and pending-approval behavior.
 - [ ] Duplicate/concurrent requests have deterministic idempotent/conflict behavior.
 - [ ] Manual application-level rollback is removed.
 - [ ] Transaction functions are server-only and validate all affected identities.
-- [ ] DB reset/typegen, tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] DB reset/typegen, tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

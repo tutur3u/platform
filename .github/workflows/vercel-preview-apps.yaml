@@ -24,15 +24,18 @@ jobs:
       deployments: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
           ref: ${{ inputs.preview_ref }}
+          persist-credentials: false
 
       - name: Confirm preview ref
         id: check_commits
+        env:
+          PREVIEW_REF: ${{ inputs.preview_ref }}
         run: |
-          echo "Deploying preview ref ${{ inputs.preview_ref }}."
+          echo "Deploying preview ref ${PREVIEW_REF}."
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
       - name: Keep native Apps outside Vercel publication
@@ -47,11 +50,11 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.1
 

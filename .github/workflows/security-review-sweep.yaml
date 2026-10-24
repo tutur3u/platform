@@ -1,0 +1,66 @@
+name: Security Review Sweep
+
+# Trusted backstop for review revocation. The review relay
+# (security-review-recheck.yaml) is defined by the pull request itself, so a
+# pull request can delete or rename it and a later dismissal would never be
+# signalled. This schedule runs only default-branch code and needs no
+# pull-request-owned workflow. scripts/ci/security-review-sweep.js evaluates
+# every open pull request whose number % 24 equals the UTC hour (each one at
+# least once per 24 scheduled runs; membership by changed paths, never by
+# label), then a bounded pass over pull requests updated since the last
+# successful sweep. It posts a check only when the decision changed, and
+# re-reads the head and reviews right before each post (it spans many pull
+# requests, so it cannot hold their per-PR concurrency groups).
+# GitHub may delay or drop scheduled runs, so this bounds staleness only
+# loosely; native code-owner review remains the primary revocation control
+# (see security-cadence.mdx). Never check out, install or execute pull request
+# content here.
+on:
+  schedule:
+    - cron: "23 * * * *"
+
+concurrency:
+  group: security-review-sweep
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    name: Recompute labeled security reviews
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Labels are cosmetic and never written here, so pull requests are
+    # read-only and issues need no access. actions: read finds the last
+    # successful sweep for the bounded fast path.
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+      pull-requests: read
+    steps:
+      # Scheduled runs always use the latest default-branch commit (GITHUB_SHA).
+      - name: Check out the default-branch classifier only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/security-paths.js
+            scripts/ci/security-review-classification.js
+            scripts/ci/security-review-sweep.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26.12.1
+          package-manager-cache: false
+
+      - name: Recompute changed security review decisions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
+        run: node scripts/ci/security-review-sweep.js
+

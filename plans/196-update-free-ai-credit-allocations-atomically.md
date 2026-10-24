@@ -59,7 +59,7 @@ worktree, and run `bun setup` immediately.
 | Generated diff | `git diff --check -- packages/types/src/supabase.ts` | generated change is well formed and limited to the new private RPC signature |
 | Typecheck | `bun run --cwd apps/infrastructure type-check` | exit 0 |
 | Build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

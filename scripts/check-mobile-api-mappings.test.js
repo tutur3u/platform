@@ -83,6 +83,21 @@ test('extracts configured production satellite origins', () => {
   );
 });
 
+test('configured origins match the complete hostname', () => {
+  assert.deepEqual(
+    [
+      ...collectConfiguredMobileApiApps(`
+    'https://tasks.tuturuuu.com.other.invalid'
+    'https://tasks.tuturuuu.com@other.invalid'
+    'https://other.invalid/https://tasks.tuturuuu.com'
+    'https://tasksXtuturuuu.com'
+    'https://inventory.tuturuuu.com/path?key=value'
+  `),
+    ],
+    ['inventory']
+  );
+});
+
 test('reports mobile routes whose sole satellite owner has no configured host', () => {
   const routesByApp = new Map([
     ['tasks', new Set(['/api/v1/workspaces/:*/tasks'])],

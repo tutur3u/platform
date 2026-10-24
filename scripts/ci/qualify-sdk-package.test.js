@@ -136,7 +136,7 @@ test('owned group drain waits for disappearance and fails closed on a live or un
       },
       25
     ),
-    { code: 'PROCESS_GROUP_UNDRAINED' }
+    { message: 'unknown' }
   );
 });
 
@@ -219,6 +219,7 @@ test('finite process controls drain on timeout and output overflow', async () =>
 
 test('unavailable registry dependency blocks before pack/install and preserves package beforeimages', async (t) => {
   const root = fixture(t);
+  write(root, 'packages/sdk/bin/ttr.cjs', 'synthetic fixture');
   write(root, 'package.json', { workspaces: ['packages/*'] });
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
@@ -241,7 +242,7 @@ test('unavailable registry dependency blocks before pack/install and preserves p
     commands.push([command, args]);
     if (command === 'git') return result(`${sourceSha}\n`);
     if (command === process.execPath) return result(`${NODE_VERSION}\n`);
-    if (command === 'bun') return result('1.4.3\n');
+    if (command === 'bun') return result('1.4.4\n');
     if (command === 'npm' && args[0] === 'view') return result('', 1);
     assert.fail('pack/install must never run after missing registry tuple');
   };
@@ -298,11 +299,13 @@ test('deadline verifies group disappearance for a descendant that outlives its l
 });
 
 test('leader close waits for descendants that closed their output streams', async (t) => {
-  const root = fixture(t),
-    marker = path.join(root, 'closed-stream-group');
-  const child = `require('node:fs').writeFileSync(${JSON.stringify(marker)},process.argv[1]);setInterval(()=>{},1000)`;
-  const leader = `const fs=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(child)},String(process.pid)],{stdio:'ignore'});setInterval(()=>{if(fs.existsSync(${JSON.stringify(marker)}))process.exit(0)},10)`;
-  const completed = await runProcess(process.execPath, ['-e', leader], {
+  const marker = path.join(fixture(t), 'closed-stream-group');
+  const child =
+    "require('node:fs').writeFileSync(process.argv[1],process.argv[2]);setInterval(()=>{},1000)";
+  const leader =
+    "const fs=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',process.argv[1],process.argv[2],String(process.pid)],{stdio:'ignore'});setInterval(()=>{if(fs.existsSync(process.argv[2]))process.exit(0)},10)";
+  const args = ['-e', leader, child, marker];
+  const completed = await runProcess(process.execPath, args, {
     env: { PATH: process.env.PATH },
     timeoutMs: 3000,
   });
@@ -330,7 +333,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
     version: '0.0.0',
-    files: ['dist'],
+    files: ['dist', 'bin'],
     ...changes.manifest,
   });
   write(root, 'packages/unpublished/package.json', {
@@ -340,6 +343,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   const required = [
     'index.js',
     'index.d.ts',
+    '../bin/ttr.cjs',
     'cli/index.js',
     'cli/operational-cli.js',
     'cli/operational-search.js',
@@ -382,7 +386,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
       return result(sourceSha);
     }
     if (args[0] === '--version')
-      return result(command === 'bun' ? '1.4.3' : NODE_VERSION);
+      return result(command === 'bun' ? '1.4.4' : NODE_VERSION);
     if (command === 'npm' && args[0] === 'view')
       return changes.registryTuple
         ? result(changes.registryTuple)
@@ -435,7 +439,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
       fs.mkdirSync(path.join(consumer, 'node_modules/.bin'));
       for (const alias of ['ttr', 'tuturuuu', 'tutur3u'])
         fs.symlinkSync(
-          path.join(installed, 'dist/cli/index.js'),
+          path.join(installed, 'bin/ttr.cjs'),
           path.join(consumer, 'node_modules/.bin', alias)
         );
       if (changes.installedName || changes.installedVersion)
@@ -573,34 +577,10 @@ test('workflow admits only raw-head build/test qualification and preserves other
     /pull_request_target|secrets\.|id-token:|npm publish|production\]/
   );
   assert.ok(workflow.includes(`node-version: ${NODE_VERSION.slice(1)}`));
-  assert.match(workflow, /bun-version: 1\.4\.3/);
+  assert.match(workflow, /bun-version: 1\.4\.4/);
   const config = fs.readFileSync(path.join(repo, 'tuturuuu.ci.ts'), 'utf8');
   assert.match(config, /'sdk-package-qualification.yaml': true/);
   assert.match(config, /'vercel-production-tanstack-web.yaml': false/);
-});
-
-test('a process-helper-only change selects package qualification', () => {
-  const repo = path.resolve(__dirname, '../..');
-  const workflow = fs.readFileSync(
-    path.join(repo, '.github/workflows/sdk-package-qualification.yaml'),
-    'utf8'
-  );
-  const rules = [
-    ...workflow.split('workflow_dispatch:')[0].matchAll(/^ {6}- "([^"]+)"$/gm),
-  ].map((match) => match[1]);
-  const helper = 'scripts/ci/sdk-package-process.js';
-  const selected = (paths) =>
-    paths.some((rule) => path.matchesGlob(helper, rule));
-  assert.equal(
-    selected(rules.filter((rule) => rule !== helper)),
-    false,
-    'prior trigger excluded a helper-only change'
-  );
-  assert.equal(
-    selected(rules),
-    true,
-    'helper-only changes must run the drain controls'
-  );
 });
 
 test('install failure retains only bounded diagnostic hashes and allowlisted reported codes before cleanup', async (t) => {

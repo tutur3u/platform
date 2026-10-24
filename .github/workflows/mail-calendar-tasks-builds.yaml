@@ -2,6 +2,7 @@ name: Mail Calendar Tasks builds
 on:
   pull_request:
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/mail/**'
       - 'apps/calendar/**'
       - 'apps/web/**'
@@ -23,6 +24,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/mail/**'
       - 'apps/calendar/**'
       - 'apps/web/**'
@@ -75,7 +77,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26.12.1
@@ -166,7 +168,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26.12.1
@@ -199,7 +201,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26.12.1
@@ -233,14 +235,14 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26.12.1
       - name: Assert source and toolchain identity
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(bun --version)" = 1.4.3
+          test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v26.12.1
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
@@ -434,14 +436,14 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26.12.1
       - name: Assert restored-job source and toolchain identity
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(bun --version)" = 1.4.3
+          test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v26.12.1
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8

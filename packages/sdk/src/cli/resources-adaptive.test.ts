@@ -9,6 +9,7 @@ import {
 import {
   atomicJson,
   defaultResourceConfig,
+  hostLaneCeiling,
   laneResourceConfig,
   readResourceConfig,
   resourceMaxLanes,
@@ -18,10 +19,10 @@ import { setupResources } from './resources-setup';
 import { newOwner, occupancy, type ResourceOwner } from './resources-slots';
 import {
   bun,
+  crossProcessTimeout,
   exists,
   privateFixtures,
   realNode,
-  until,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -38,9 +39,13 @@ const normal: BurstTelemetry = {
   pressureLevel: 1,
 };
 const fixtures = privateFixtures();
+const jobs = new Map<string, ReturnType<typeof fixtures.laneLaunch>>();
 const queueModule = resolve('src/cli/resources-queue.ts');
 const adaptiveModule = resolve('src/cli/resources-adaptive.ts');
-afterEach(() => fixtures.cleanup());
+afterEach(async () => {
+  await fixtures.cleanup();
+  jobs.clear();
+});
 
 async function home(base: 1 | 2 = 1, max = 3, workers = 3) {
   const path = await fixtures.home(base);
@@ -80,12 +85,18 @@ async function run(
       });
   `
   );
-  return fixtures.laneLaunch(path, [name], runner);
+  const job = fixtures.laneLaunch(path, [name], runner);
+  jobs.set(join(path, name), job);
+  return job;
 }
-const ready = (path: string, name: string) =>
-  until(() => exists(join(path, `${name}.ready`)));
+function waitForProbe(path: string, name: string, extension: string) {
+  const job = jobs.get(join(path, name));
+  if (!job) throw new Error(`No fixture producer for ${name}`);
+  return job.until(() => exists(join(path, `${name}.${extension}`)));
+}
+const ready = (path: string, name: string) => waitForProbe(path, name, 'ready');
 const checked = (path: string, name: string) =>
-  until(() => exists(join(path, `${name}.checked`)));
+  waitForProbe(path, name, 'checked');
 async function finish(
   path: string,
   name: string,
@@ -131,18 +142,33 @@ describe('pure burst telemetry decision', () => {
   });
 });
 
-describe('adaptive configuration and budgets', () => {
-  it('keeps absent maximum equal to base and rejects invalid maxima', async () => {
+describe('adaptive configuration and budgets', {
+  timeout: crossProcessTimeout,
+}, () => {
+  it('keeps absent maximum equal to base and clamps out-of-range maxima', async () => {
     const path = await fixtures.home(2);
     const config = (await readResourceConfig(path))!;
     expect(resourceMaxLanes(config)).toBe(2);
-    for (const maxValidationLanes of [1, 9, 2.5, '3', null]) {
+    for (const [maxValidationLanes, expected] of [
+      [1, 2],
+      [17, 16],
+      [2.5, 2],
+    ] as const) {
+      await atomicJson(join(path, 'config.json'), {
+        ...config,
+        maxValidationLanes,
+      });
+      expect(resourceMaxLanes((await readResourceConfig(path))!)).toBe(
+        expected
+      );
+    }
+    for (const maxValidationLanes of ['3', null]) {
       await atomicJson(join(path, 'config.json'), {
         ...config,
         maxValidationLanes,
       });
       await expect(readResourceConfig(path)).rejects.toThrow(
-        'Invalid resource configuration'
+        'maxValidationLanes must be an integer from 1 to 16'
       );
     }
     await atomicJson(join(path, 'config.json'), {
@@ -172,17 +198,18 @@ describe('adaptive configuration and budgets', () => {
     expect(
       owners.reduce((sum, owner) => sum + (owner.limits?.vitestWorkers ?? 0), 0)
     ).toBe(3);
+    // A spent aggregate budget still admits a pressure-gated lane with one worker.
+    for (const owner of [
+      { ...newOwner('old'), limits: { vitestWorkers: 3, buildJobs: 3 } },
+      newOwner('missing-caps'),
+    ])
+      expect(admissionResourceConfig(config, [owner])).toMatchObject({
+        vitestWorkers: 1,
+        buildJobs: 1,
+      });
     expect(
-      admissionResourceConfig(config, [
-        { ...newOwner('old'), limits: { vitestWorkers: 3, buildJobs: 3 } },
-      ])
-    ).toBeUndefined();
-    expect(
-      admissionResourceConfig(config, [newOwner('missing-caps')])
-    ).toBeUndefined();
-    expect(() => laneResourceConfig({ ...config, vitestWorkers: 4 })).toThrow(
-      'budget'
-    );
+      laneResourceConfig({ ...config, vitestWorkers: 4 }).vitestWorkers
+    ).toBe(1);
   });
   it('keeps fixed setups fixed when reducing base lanes and preserves explicit adaptive ceilings', async () => {
     const path = await home(2, 2, 2);
@@ -208,23 +235,21 @@ describe('adaptive configuration and budgets', () => {
         .maxValidationLanes
     ).toBe(1);
   });
-  it('keeps unequal budgets bounded when the maximum exceeds both totals', () => {
+  it('bounds lanes by the host ceiling when the maximum exceeds both totals', () => {
     const config = {
       ...defaultResourceConfig(),
       maxValidationLanes: 8,
       vitestWorkers: 3,
       buildJobs: 2,
     };
-    const first = admissionResourceConfig(config, [])!;
-    const owners = [{ ...newOwner('first'), limits: first }];
-    const second = admissionResourceConfig(config, owners)!;
-    expect([
-      first.vitestWorkers,
-      first.buildJobs,
-      second.vitestWorkers,
-      second.buildJobs,
-    ]).toEqual([1, 1, 1, 1]);
-    owners.push({ ...newOwner('second'), limits: second });
+    // 24 GiB / 10 CPUs: min(8, 24 / 4, 10 - 2) = 6 lanes.
+    expect(hostLaneCeiling()).toBe(6);
+    const owners: ResourceOwner[] = [];
+    for (let i = 0; i < 6; i++) {
+      const caps = admissionResourceConfig(config, owners)!;
+      expect([caps.vitestWorkers, caps.buildJobs]).toEqual([1, 1]);
+      owners.push({ ...newOwner(`lane-${i}`), limits: caps });
+    }
     expect(admissionResourceConfig(config, owners)).toBeUndefined();
   });
   it('requires idle owners and zero waiters to change the ceiling', async () => {
@@ -279,7 +304,7 @@ describe('adaptive configuration and budgets', () => {
   );
 });
 
-describe('adaptive queue admission', () => {
+describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
   it('keeps fixed base capacity and caps unchanged without probing burst', async () => {
     const path = await home(2, 2, 2);
     const a = await run(path, 'a');
@@ -287,7 +312,7 @@ describe('adaptive queue admission', () => {
     await ready(path, 'a');
     await ready(path, 'b');
     const c = await run(path, 'c');
-    await fixtures.waiting(path, 1);
+    await fixtures.waiting(path, 1, [c]);
     expect(await exists(join(path, 'c.checked'))).toBe(false);
     expect(await exists(join(path, 'c.ready'))).toBe(false);
     await finish(path, 'a', a);
@@ -350,7 +375,7 @@ describe('adaptive queue admission', () => {
     const b = await run(path, 'b');
     await checked(path, 'b');
     const c = await run(path, 'c');
-    await fixtures.waiting(path, 2);
+    await fixtures.waiting(path, 2, [c]);
     expect(await exists(join(path, 'c.checked'))).toBe(false);
     await atomicJson(join(path, 'telemetry.json'), normal);
     await ready(path, 'b');
@@ -392,15 +417,17 @@ describe('adaptive queue admission', () => {
     });
     expect((await resourceQueueStatus(path)).occupied).toBe(0);
   });
-  it('caps adaptive occupancy by worker totals and reports CLI status fields', async () => {
+  it('admits burst lanes past worker totals up to the maximum and reports CLI status fields', async () => {
     const path = await home(1, 3, 2);
     const a = await run(path, 'a');
     await ready(path, 'a');
     const b = await run(path, 'b');
     await ready(path, 'b');
     const c = await run(path, 'c');
-    await fixtures.waiting(path, 1);
-    expect(await exists(join(path, 'c.ready'))).toBe(false);
+    await ready(path, 'c');
+    const d = await run(path, 'd');
+    await fixtures.waiting(path, 1, [d]);
+    expect(await exists(join(path, 'd.ready'))).toBe(false);
     const result = await fixtures.laneLaunch(path, ['status', '--json']).done;
     expect(result.code, result.err).toBe(0);
     const status = JSON.parse(result.out);
@@ -408,19 +435,33 @@ describe('adaptive queue admission', () => {
       status.laneCount,
       status.baseLanes,
       status.maxLanes,
+      status.effectiveLanes,
       status.occupied,
-    ]).toEqual([1, 1, 3, 2]);
+    ]).toEqual([1, 1, 3, 3, 3]);
     expect(status.owner).toEqual(status.owners[0]);
     expect(status.waiting).toHaveLength(1);
     expect(status.limits.vitestWorkers).toBe(2);
+    expect(
+      status.owners.map(
+        (owner: ResourceOwner) =>
+          [owner.limits?.vitestWorkers, owner.limits?.buildJobs] as const
+      )
+    ).toEqual([
+      [1, 1],
+      [1, 1],
+      [1, 1],
+    ]);
     expect(status.burst).toEqual({
       eligible: false,
-      reason: 'Burst lanes or aggregate worker budgets are full',
+      reason: 'Burst lanes are full or above the host lane ceiling',
     });
+    expect(status.ownerDetails).toHaveLength(3);
+    expect(status.waitingDetails).toHaveLength(1);
     await finish(path, 'a', a);
-    await ready(path, 'c');
+    await ready(path, 'd');
     await finish(path, 'b', b);
     await finish(path, 'c', c);
+    await finish(path, 'd', d);
   });
   it('rechecks policy after the async burst probe before claiming', async () => {
     const path = await home();
@@ -445,7 +486,7 @@ describe('adaptive queue admission', () => {
         "const fs=await import('node:fs/promises');await fs.mkdir(path+'/slots/1',{recursive:true});",
     });
     await checked(path, 'b');
-    await fixtures.waiting(path, 1);
+    await fixtures.waiting(path, 1, [b]);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     b.child.kill('SIGTERM');
     expect((await b.done).code).toBe(143);

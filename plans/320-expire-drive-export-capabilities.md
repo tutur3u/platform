@@ -55,7 +55,7 @@ permanent bearer capability.
 | Rust | `(cd apps/backend && cargo test --locked workspaces_storage_export_assetpath)` | focused handler/token tests pass |
 | Backend | `bun check:backend` | exit 0 |
 | Live Web | `bun run build:web` | live consumer compiles |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Size/scope | `wc -l apps/backend/src/workspaces_storage_export_assetpath.rs && git status --short` | Rust root is below 700 lines; only in-scope files changed |
 
 ## Scope

@@ -52,7 +52,7 @@ duplicate `transaction_type = 'deduction'` rows sharing a non-null
 | Database apply | `bun sb:reset` | idempotency migration applies locally |
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | replay/concurrency pgTAP cases pass |
 | Generated types | `bun sb:typegen` | only schema-derived changes |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

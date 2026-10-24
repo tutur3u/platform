@@ -28,7 +28,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(job.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   assert.equal(job.concurrency, undefined);
-  assert.equal(workflow.permissions, undefined);
+  assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
   assert.equal(job.if, undefined);
@@ -114,10 +114,12 @@ function fixture(
     'scripts/ci/resolve-changed-files-core.ts',
     'scripts/ci/github-deployment-markers.ts',
     'scripts/ci/workflow-config-core.ts',
+    'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/overflow-notes-ci.js',
     'scripts/ci/check-workflow-config.ts',
+    'scripts/ci/lockfile-workspace-delta.ts',
     'scripts/ci/mail-calendar-tasks-affected.ts',
     'scripts/ci/release-only-changes.js',
   ]) {
@@ -177,6 +179,7 @@ function fixture(
   if (missingHelper) {
     assert.ok(
       [
+        'mobile-build-selection.ts',
         'production-test-only-paths.ts',
         'workspace-dependency-closure.ts',
       ].includes(missingHelper)
@@ -340,6 +343,7 @@ for (const id of preflightIds) {
 }
 
 for (const missingHelper of [
+  'mobile-build-selection.ts',
   'production-test-only-paths.ts',
   'workspace-dependency-closure.ts',
 ]) {

@@ -22,34 +22,14 @@ jobs:
       workflow_name: turbo-unit-tests.yaml
       check_release_only: true
 
-  duplicate-validation:
-    name: Check completed validation
-    needs: [check-ci]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-please--branches--') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
+  coverage-check-ci:
     permissions:
       contents: read
-      actions: read
-    outputs:
-      run_checks: ${{ steps.proof.outputs.run_checks }}
-    steps:
-      - name: Checkout validation helper
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          sparse-checkout: scripts/ci/check-completed-validation.js
-          sparse-checkout-cone-mode: false
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 26.12.1
-      - name: Prove completed duplicate
-        id: proof
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          WORKFLOW_NAME: turbo-unit-tests.yaml
-        run: node scripts/ci/check-completed-validation.js
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: codecov.yaml
+      check_release_only: true
 
   root-script-tests:
     name: Root script tests (24)
@@ -63,7 +43,7 @@ jobs:
       NODE_PATH: ${{ github.workspace }}/apps/web/node_modules
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 2
@@ -71,10 +51,10 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Use Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
 
@@ -157,10 +137,12 @@ jobs:
       - name: Check wasm Worker target
         run: cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker
 
+  # One first-attempt run serves either switchboard entry. Historical unit-only
+  # receipts cannot prove coverage, so generated pushes also execute fresh shards.
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
-    needs: [check-ci, duplicate-validation]
-    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
+    needs: [check-ci, coverage-check-ci]
+    if: ${{ !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true')) }}
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -180,14 +162,14 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Restore Turbo fallback cache
         uses: ./.github/actions/setup-turbo-fallback-cache
@@ -195,7 +177,7 @@ jobs:
           family: unit-tests-${{ matrix.shard }}
 
       - name: Use Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
 
@@ -216,13 +198,62 @@ jobs:
         # otherwise-fast mocked unit tests during repository-wide test runs.
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4
+          command: node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4 --coverage
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
+      - name: Preserve complete workspace coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-shard-${{ matrix.shard }}
+          path: |
+            apps/*/coverage/**
+            packages/*/coverage/**
+          if-no-files-found: error
+          retention-days: 2
+
+  # Preserve historical coverage check contexts without executing suites again.
+  coverage-shards:
+    name: Coverage shard (${{ matrix.shard }})
+    needs: [coverage-check-ci, test-shards]
+    if: ${{ !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - name: Require shared test execution
+        env:
+          TEST_RESULT: ${{ needs.test-shards.result }}
+        run: test "$TEST_RESULT" = success
+
+  coverage-upload:
+    needs: [coverage-check-ci, test-shards]
+    if: ${{ needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true' && needs.test-shards.result == 'success' }}
+    uses: ./.github/workflows/codecov.yaml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  coverage-result:
+    name: Run tests and collect coverage
+    needs: [coverage-check-ci, test-shards, coverage-shards, coverage-upload]
+    if: ${{ !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require tests and coverage upload
+        env:
+          TEST_RESULT: ${{ needs.test-shards.result }}
+          UPLOAD_RESULT: ${{ needs.coverage-upload.result }}
+          COVERAGE_RESULT: ${{ needs.coverage-shards.result }}
+        run: |
+          test "$TEST_RESULT" = success
+          test "$UPLOAD_RESULT" = success
+          test "$COVERAGE_RESULT" = success
+
   build:
     name: Unit Tests (24)
-    needs: [check-ci, duplicate-validation, test-shards, root-script-tests, backend-source-qualification]
+    needs: [check-ci, test-shards, root-script-tests, backend-source-qualification]
     if: ${{ !cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -232,12 +263,8 @@ jobs:
           ROOT_SCRIPT_RESULT: ${{ needs.root-script-tests.result }}
           RUST_RESULT: ${{ needs.backend-source-qualification.result }}
           RUST_QUALIFICATION_REQUIRED: ${{ (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012') }}
-          DUPLICATE_RESULT: ${{ needs.duplicate-validation.result }}
-          DUPLICATE_RUN_CHECKS: ${{ needs.duplicate-validation.outputs.run_checks }}
         run: |
-          if [ "$DUPLICATE_RESULT" != success ] || [ "$DUPLICATE_RUN_CHECKS" != false ]; then
-            test "$TEST_RESULT" = success
-          fi
+          test "$TEST_RESULT" = success
           test "$ROOT_SCRIPT_RESULT" = success
           if [ "$RUST_QUALIFICATION_REQUIRED" = true ]; then
             test "$RUST_RESULT" = success

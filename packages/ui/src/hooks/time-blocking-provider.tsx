@@ -531,7 +531,7 @@ const TimeBlockingProvider = ({
       if (!plan.id || !user?.id) throw new Error('A plan identity is required');
       return replaceMeetAvailability(plan.id, {
         guestId: user.is_guest ? user.id : undefined,
-        passwordHash: user.is_guest ? user.password_hash : undefined,
+        guestSession: user.is_guest ? user.guest_session : undefined,
         timeblocks: nextTimeblocks.map((timeblock) => ({
           date: timeblock.date,
           start_time: timeblock.start_time,

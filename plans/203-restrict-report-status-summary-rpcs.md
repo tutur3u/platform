@@ -60,7 +60,7 @@ either function.
 | Users-core typecheck | `bun run --cwd packages/users-core type-check` | exit 0 |
 | Rust focused | `cd apps/backend && cargo test workspaces_users_reports_groups::tests` | named new tests exercise both group-list and group-dashboard handlers and assert service-role authorization headers on both RPC requests |
 | Backend contract | `bun check:backend` | Rust/OpenAPI parity passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -92,7 +92,7 @@ apply.
    returns the expected group/user counts and cannot cross the supplied
    workspace predicate.
 4. Run focused/full isolated DB validation, no-diff typegen, users-core and Rust
-   gates, `bun check`, and whitespace verification.
+   gates, `bun validate`, and whitespace verification.
 
 ## Done criteria
 

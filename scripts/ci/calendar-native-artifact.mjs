@@ -11,6 +11,7 @@ import {
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { readRegularFileSync } from '../safe-fs.js';
 import {
   captureNormalization,
   checkNormalization,
@@ -216,7 +217,7 @@ function hashes(app) {
       ),
       'private or legacy artifact forbidden'
     );
-    const bytes = readFileSync(path);
+    const bytes = readRegularFileSync(path);
     if (name.startsWith('dist/client/'))
       assert.ok(
         !bytes.includes(Buffer.from(PRIVATE_CANARY)),
@@ -244,7 +245,7 @@ function createManifest(directory, sha, sealedNormalization) {
     ...(normalization ? { normalization } : {}),
     app: 'calendar',
     sha,
-    bun: '1.4.3',
+    bun: '1.4.4',
     node: process.versions.node,
     config: relative(app, configPath).split(sep).join('/'),
     main: relative(app, main).split(sep).join('/'),

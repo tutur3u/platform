@@ -47,7 +47,7 @@ Tasks app-session audiences; do not invent a new actor path.
 | Route tests | `bun --cwd apps/tasks vitest run 'src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/templates/route.test.ts'` | access, visibility, validation, and export cases pass |
 | Tasks types | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -100,7 +100,7 @@ explicitly.
 ### Step 5: Verify the disclosure boundary
 
 Prove denied callers cannot invoke admin board/label reads or template inserts.
-Run focused tests, Tasks types/build, `bun check`, and whitespace validation.
+Run focused tests, Tasks types/build, `bun validate`, and whitespace validation.
 
 ## Done criteria
 

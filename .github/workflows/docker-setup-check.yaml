@@ -1,5 +1,8 @@
 name: Docker Setup Check
 
+# The Docker runtime is paused (tuturuuu.ci.ts), so every job reports disabled.
+# Trigger only on Docker-owned inputs: shared manifests, bun.lock and root
+# config would allocate a check runner on most PRs to report nothing.
 on:
   pull_request:
     paths:
@@ -8,24 +11,15 @@ on:
       - "apps/backend/**"
       - "apps/hive/Dockerfile"
       - "apps/tanstack-web/**"
-      - "apps/web/package.json"
       - "apps/tanstack-web/package.json"
-      - "apps/hive/package.json"
-      - "apps/hive-realtime/package.json"
-      - "apps/storage-unzip-proxy/package.json"
-      - "apps/supermemory/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "apps/web/docker/*.Dockerfile"
-      # Dependency and workspace changes update bun.lock. A version-only
-      # manifest bump in an unrelated app does not affect the Docker image.
-      - "bun.lock"
       - "docker-bake.web.prod.hcl"
       - "docker-compose.tanstack-dual.yml"
       - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
-      - "package.json"
       - "scripts/check-docker-web.js"
       - "scripts/check-docker-web.test.js"
       - "scripts/buildkit-builder.test.js"
@@ -34,9 +28,7 @@ on:
       - "scripts/docker-web.test.js"
       - "scripts/run-tanstack-e2e-docker.js"
       - "scripts/run-tanstack-e2e-docker.test.js"
-      - "scripts/ci/release-only-changes.*"
       - "scripts/watch-blue-green/**/*.js"
-      - "turbo.json"
   push:
     branches: ["main", "production"]
     paths:
@@ -45,24 +37,15 @@ on:
       - "apps/backend/**"
       - "apps/hive/Dockerfile"
       - "apps/tanstack-web/**"
-      - "apps/web/package.json"
       - "apps/tanstack-web/package.json"
-      - "apps/hive/package.json"
-      - "apps/hive-realtime/package.json"
-      - "apps/storage-unzip-proxy/package.json"
-      - "apps/supermemory/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "apps/web/docker/*.Dockerfile"
-      # Dependency and workspace changes update bun.lock. A version-only
-      # manifest bump in an unrelated app does not affect the Docker image.
-      - "bun.lock"
       - "docker-bake.web.prod.hcl"
       - "docker-compose.tanstack-dual.yml"
       - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
-      - "package.json"
       - "scripts/check-docker-web.js"
       - "scripts/check-docker-web.test.js"
       - "scripts/buildkit-builder.test.js"
@@ -71,9 +54,7 @@ on:
       - "scripts/docker-web.test.js"
       - "scripts/run-tanstack-e2e-docker.js"
       - "scripts/run-tanstack-e2e-docker.test.js"
-      - "scripts/ci/release-only-changes.*"
       - "scripts/watch-blue-green/**/*.js"
-      - "turbo.json"
   workflow_dispatch:
 
 permissions:
@@ -97,7 +78,7 @@ jobs:
       run_checks: ${{ steps.detect.outputs.run_checks }}
     steps:
       - name: Check out code and comparison history
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           sparse-checkout: scripts/ci/release-only-changes.js
@@ -125,10 +106,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -156,7 +137,7 @@ jobs:
           done
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         with:
           driver-opts: image=moby/buildkit:buildx-stable-1
 

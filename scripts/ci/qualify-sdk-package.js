@@ -5,6 +5,7 @@ const { runProcess, drainGroup } = require('./sdk-package-process');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
+const { readPackage } = require('./qualify-sdk-file');
 const os = require('node:os');
 const path = require('node:path');
 const {
@@ -12,6 +13,9 @@ const {
   getWorkspaceVersions,
 } = require('./prepare-npm-package-manifest');
 const {
+  stageSdkRuntime,
+  stageBuildIdentity,
+  checkIdentity,
   registryRewrites,
   requireInstalledDependencies,
 } = require('./sdk-qualification-phase');
@@ -57,13 +61,14 @@ function inventory(root) {
       else {
         if (!stat.isFile())
           fail('UNSAFE_PACKAGE_PATH', 'Nonregular package file');
-        bytes += stat.size;
-        if (files.length >= MAX_FILES || bytes > MAX_BYTES)
+        if (files.length >= MAX_FILES)
           fail('PACKAGE_LIMIT', 'Package bounds exceeded');
+        const data = readPackage(file, MAX_BYTES - bytes, 'PACKAGE_LIMIT');
+        bytes += data.length;
         files.push({
           path: safeMember(path.relative(root, file).split(path.sep).join('/')),
-          bytes: stat.size,
-          sha256: hash(fs.readFileSync(file)),
+          bytes: data.length,
+          sha256: hash(data),
         });
       }
     }
@@ -105,16 +110,6 @@ function checkRegistryTuple(name, version, result) {
   }
   return { name, version, integrity: value.dist.integrity };
 }
-function checkIdentity(expected, value, stage) {
-  if (
-    typeof expected.version !== 'string' ||
-    !value ||
-    value.name !== expected.name ||
-    value.version !== expected.version
-  )
-    fail('PACKAGE_IDENTITY_MISMATCH', `${stage} name/version mismatch`);
-  return { name: value.name, version: value.version };
-}
 function checkPack(result, stagedFiles) {
   const packs = JSON.parse(result.stdout);
   if (result.status !== 0 || !Array.isArray(packs) || packs.length !== 1)
@@ -147,6 +142,7 @@ function checkPack(result, stagedFiles) {
   if (bytes > MAX_BYTES) fail('PACKAGE_LIMIT', 'Package byte bound exceeded');
   for (const required of [
     'package.json',
+    'bin/ttr.cjs',
     'dist/index.js',
     'dist/index.d.ts',
     'dist/cli/index.js',
@@ -214,6 +210,7 @@ async function qualify({
   output,
   sourceSha,
   phase = 'public',
+  packageVersion,
   run = runProcess,
 }) {
   if (!['source', 'public'].includes(phase))
@@ -280,8 +277,8 @@ async function qualify({
       fail('SOURCE_SHA_MISMATCH', 'Checkout SHA mismatch');
     const node = await command(process.execPath, ['--version']);
     const bun = await command('bun', ['--version']);
-    if (node.stdout.trim() !== NODE_VERSION || bun.stdout.trim() !== '1.4.3')
-      fail('RUNTIME_VERSION_MISMATCH', `Require Node ${NODE_VERSION}/Bun1.4.3`);
+    if (node.stdout.trim() !== NODE_VERSION || bun.stdout.trim() !== '1.4.4')
+      fail('RUNTIME_VERSION_MISMATCH', `Require Node ${NODE_VERSION}/Bun1.4.4`);
     receipt.runtimeVersions = {
       node: node.stdout.trim(),
       bun: bun.stdout.trim(),
@@ -303,12 +300,7 @@ async function qualify({
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.copyFileSync(manifestPath, target);
     }
-    const dist = path.join(root, 'packages/sdk/dist');
-    for (const file of inventory(dist)) {
-      const target = path.join(stageSdk, 'dist', file.path);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.copyFileSync(path.join(dist, file.path), target);
-    }
+    stageSdkRuntime(root, stageSdk, inventory);
     for (const name of ['README.md', 'LICENSE']) {
       const source = path.join(root, 'packages/sdk', name);
       if (fs.existsSync(source))
@@ -318,11 +310,16 @@ async function qualify({
       packageDir: 'packages/sdk',
       repoRoot: staging,
     });
-    const identity = JSON.parse(before);
+    const { source, staged: identity } = stageBuildIdentity({
+      before,
+      manifestPath: path.join(stageSdk, 'package.json'),
+      sourceSha,
+      packageVersion,
+    });
     receipt.identities = {
       source: checkIdentity(
-        { name: 'tuturuuu', version: identity.version },
-        identity,
+        { name: 'tuturuuu', version: source.version },
+        source,
         'source'
       ),
       staging: checkIdentity(
@@ -376,9 +373,7 @@ async function qualify({
     const pack = checkPack(packed, stagedFiles);
     receipt.identities.pack = checkIdentity(identity, pack, 'pack');
     const archive = path.join(output, pack.filename);
-    const stat = fs.lstatSync(archive);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_BYTES)
-      fail('PACK_FAILED', 'Invalid packed archive');
+    const archiveBytes = readPackage(archive, MAX_BYTES, 'PACK_FAILED');
     const tarList = await command('tar', ['-tzf', archive]);
     if (tarList.status !== 0)
       fail('PACK_FAILED', 'Unreadable archive inventory');
@@ -424,14 +419,14 @@ async function qualify({
       JSON.parse(extracted.stdout),
       'archive'
     );
-    const integrity = `sha512-${createHash('sha512').update(fs.readFileSync(archive)).digest('base64')}`;
+    const integrity = `sha512-${createHash('sha512').update(archiveBytes).digest('base64')}`;
     if (pack.integrity !== integrity)
       fail('PACK_FAILED', 'Archive integrity mismatch');
     receipt.package = {
       name: pack.name,
       version: pack.version,
       archive: pack.filename,
-      sha256: hash(fs.readFileSync(archive)),
+      sha256: hash(archiveBytes),
       files: pack.files,
       sourceFiles: stagedFiles,
     };
@@ -545,7 +540,7 @@ async function qualify({
     ];
     for (const alias of ['ttr', 'tuturuuu', 'tutur3u']) {
       const bin = path.join(consumer, 'node_modules/.bin', alias);
-      if (fs.realpathSync(bin) !== entry)
+      if (fs.realpathSync(bin) !== path.join(installed, 'bin/ttr.cjs'))
         fail('BIN_RESOLUTION_FAILED', 'Installed bin target mismatch');
       runtimes.push([bin, [], alias]);
     }

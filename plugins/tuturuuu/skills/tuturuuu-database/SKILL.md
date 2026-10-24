@@ -41,7 +41,7 @@ reverted independently.
 - Apply local migrations before typegen when schema changes need generated types.
 - Run `bun sb:typegen` after schema changes once the local database reflects the migration.
 - Run focused tests for affected API routes, helpers, or pgTAP coverage where available.
-- Run `bun check` when TypeScript or root config changed.
+- Run `bun validate` when TypeScript or root config changed.
 - Production migrations run through `.github/workflows/supabase-production.yaml`
   after authorized promotion; do not run `bun sb:push` or `bun sb:linkpush`
   manually. A skipped or failed workflow is a release blocker, not a reason to

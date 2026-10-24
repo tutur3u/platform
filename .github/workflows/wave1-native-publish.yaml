@@ -38,18 +38,18 @@ jobs:
       WRANGLER_SEND_METRICS: 'false'
       WRANGLER_WRITE_LOGS: 'false'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@v7
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.12.1
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: wave1-${{ inputs.app }}-${{ inputs.profile }}-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/native-publish
@@ -76,7 +76,7 @@ jobs:
         run: node scripts/ci/wave1-native-publish.mjs publish "$APP" "$PROFILE" "$SOURCE_SHA"
       - name: Retain sanitized rollback and deployment identity even after failure
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wave1-${{ inputs.app }}-${{ inputs.profile }}-publication-${{ github.sha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/${{ inputs.app }}-${{ inputs.profile }}-publication.json

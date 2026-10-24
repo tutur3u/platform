@@ -49,7 +49,7 @@ owner transfers the paths. Use an isolated worktree and `bun setup`.
 | Full DB | `bun --cwd apps/database scripts/run-supabase.js test db` | all pgTAP pass |
 | Apply/typegen | `bun sb:up && bun sb:typegen` | migration applies; only intended RPC type changes |
 | Typecheck/build | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | both pass |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

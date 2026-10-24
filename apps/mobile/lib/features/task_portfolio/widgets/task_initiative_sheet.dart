@@ -148,10 +148,7 @@ class _TaskInitiativeSheetState extends State<TaskInitiativeSheet> {
                                   textAlign: TextAlign.left,
                                 ),
                               ),
-                              const Icon(
-                                shad.LucideIcons.chevronDown,
-                                size: 16,
-                              ),
+                              const Icon(LucideIcons.chevronDown, size: 16),
                             ],
                           ),
                         ),

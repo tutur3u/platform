@@ -20,6 +20,9 @@ concurrency:
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: desktop-store-draft.yaml
@@ -30,18 +33,16 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && inputs.diagnostics_only && 'desktop-diagnostics' || 'desktop-beta' }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+      - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
       - name: Validate public configuration and packaging helpers
         env:
           DESKTOP_PUBLIC_CONFIG: ${{ vars.DESKTOP_PUBLIC_CONFIG }}
@@ -78,7 +79,7 @@ jobs:
         run: ./scripts/desktop-deployment/verify-windows-store.ps1 -DiagnosticsOnly:($env:STORE_DIAGNOSTICS_ONLY -eq 'true') -Package "$env:RUNNER_TEMP/store-draft/Tuturuuu-windows-store-x64.msix" -ReportDirectory "$env:RUNNER_TEMP/store-validation"
       - name: Upload Windows validation evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-store-validation-${{ github.run_id }}
           path: ${{ runner.temp }}/store-validation/*
@@ -86,7 +87,7 @@ jobs:
           retention-days: 7
       - name: Upload production submission package
         if: success() && !inputs.diagnostics_only
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-store-draft-${{ github.run_id }}
           path: ${{ runner.temp }}/store-draft/*.msix

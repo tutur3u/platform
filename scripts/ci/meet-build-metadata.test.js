@@ -487,7 +487,7 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
     const setup = workflow.jobs[name].steps.find(
       (step) => step.uses === './.github/actions/setup-bun-with-retry'
     );
-    assert.equal(setup.with['bun-version'], '1.4.3');
+    assert.equal(setup.with['bun-version'], '1.4.4');
   }
   const sink = await mkdtemp(join(tmpdir(), 'meet-launcher-command-'));
   try {

@@ -17,6 +17,11 @@ on:
         description: Seed all image profiles on main without database contracts
         type: boolean
         default: false
+      seed_image_catalog:
+        description: Reviewed image catalog for main-only seeding
+        type: choice
+        default: current
+        options: [current, cli-2.121.0]
 env:
   SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
 permissions:
@@ -35,11 +40,11 @@ jobs:
       matrix:
         profile: [contract, contract-http, full]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@v7
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           package-manager-cache: false
@@ -49,6 +54,7 @@ jobs:
         with:
           profile: ${{ matrix.profile }}
           pull-budget-seconds: "600"
+          seed-image-catalog: ${{ inputs.seed_image_catalog || 'current' }}
   cold-warm-corrupt:
     if: inputs.seed_images_only != true
     permissions:
@@ -58,11 +64,11 @@ jobs:
     outputs:
       seed-epoch: ${{ steps.cold.outputs.seed-epoch }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@v7
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           package-manager-cache: false
@@ -72,12 +78,12 @@ jobs:
         with:
           profile: full
       - name: Verify image-pull retry boundaries
-        run: node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
+        run: node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-image-cache-seed.test.js scripts/ci/supabase-image-cache-registry.test.js scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
       - name: Cold baseline from all migrations
         id: cold
         run: node scripts/ci/supabase-baseline.js prepare
       - name: Export pristine baseline for a separate runner
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pristine-supabase-baseline
           path: ${{ runner.temp }}/supabase-baseline
@@ -115,11 +121,11 @@ jobs:
     env:
       SUPABASE_BASELINE_EPOCH: ${{ needs.cold-warm-corrupt.outputs.seed-epoch }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@v7
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           package-manager-cache: false
@@ -128,7 +134,7 @@ jobs:
       - uses: ./.github/actions/cache-supabase-images
         with:
           profile: full
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: pristine-supabase-baseline
           path: ${{ runner.temp }}/supabase-baseline
