@@ -849,6 +849,23 @@ not cap recurring invocation counts, billed rows, response bytes or total spend.
 See the database request deadline section in the Cron Control runbook for controlled
 unit evidence versus hosted scheduling and independent-stop release gates.
 
+Cron Control's scheduled job catalog (`src/jobs.ts`) is default off through the
+`CRON_CONTROL_ENABLED_JOBS` var; disabled ticks must do no storage or network work.
+Keep job decisions in the pure `LedgerCore` so unit tests run without Workers, and
+keep the `cloudflare:workers` Durable Object adapter out of unit-test imports. Count
+claims, writes and processor calls in tests: duplicate slots, Durable Object restart,
+stop racing a retry, failure-budget exhaustion and the concurrency bound. The runtime
+check dispatches scheduled events to a loopback processor; never dispatch the
+immediate-notification trigger there. Add a trigger to both `wrangler.jsonc` and the
+runtime script's expected list. See the runbook's per-job cutover order.
+
+Require a complete JSON object within the 64 KiB outcome cap before accepting
+2xx success. Reject oversized chunks before retaining them; read errors and
+invalid or truncated JSON are unknown, never success. Reconciled claims are
+settled: late completions must not recharge failures or overwrite an unknown
+outcome, including when reconciliation refused a replacement at the budget limit.
+Keep dispatch and restart regressions for both late failure and late success.
+
 ## Native Meet realtime toolchain
 
 For the native Meet realtime Vite+ workspace, keep the original production Wrangler
