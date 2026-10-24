@@ -104,3 +104,14 @@ stack for every edit.
 - Keep Docker setup, the retired Docker cron runner, Rust, and TanStack Start
   inactive: no implementation tests, builds, migration refreshes, or dependency
   updates until explicitly resumed. Validate the pause via policy tests only.
+
+## Shared-secret KDF budgets
+
+- Validate Meet plan existence before reservation or hashing. Creation keys combine
+  plan and source network; IPv6 sources share a canonical /64. Nova aggregates by
+  authenticated user. Keep limits and their rationale in the adaptive-abuse runbook.
+- After verified login and any rehash, refund one target reservation through its
+  single-use expiring receipt. Keep aggregate and creation charges. Verify duplicate
+  refunds and replacement windows against real disposable Redis Lua execution.
+- Keep join-limit retry copy distinct from failed-password copy in all shared
+  English and Vietnamese bundles.
