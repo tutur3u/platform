@@ -1,12 +1,33 @@
 import { constants, type Dirent } from 'node:fs';
-import { open, readdir } from 'node:fs/promises';
+import { lstat, open, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+async function openRegularFile(path: string) {
+  const noFollow = constants.O_NOFOLLOW || 0;
+  const flags = constants.O_RDONLY | noFollow | (constants.O_NONBLOCK || 0);
+  if (noFollow) return open(path, flags);
+  const before = await lstat(path, { bigint: true });
+  if (!before.isFile() || before.ino === 0n)
+    throw new Error('not-a-regular-file');
+  const file = await open(path, flags);
+  try {
+    const after = await file.stat({ bigint: true });
+    if (
+      !after.isFile() ||
+      after.dev !== before.dev ||
+      after.ino !== before.ino
+    ) {
+      throw new Error('file-changed');
+    }
+    return file;
+  } catch (error) {
+    await file.close();
+    throw error;
+  }
+}
+
 export async function readJsonlSnapshot(path: string, minimumMtimeMs: number) {
-  const file = await open(
-    path,
-    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
-  );
+  const file = await openRegularFile(path);
   try {
     const info = await file.stat();
     if (!info.isFile() || info.mtimeMs < minimumMtimeMs) return;
