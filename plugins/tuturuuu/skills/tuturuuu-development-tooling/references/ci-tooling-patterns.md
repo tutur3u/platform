@@ -90,6 +90,20 @@ Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
 
+## Cloudflare backend ownership guard
+
+New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare
+(Cron Control Cron Triggers, Queues, Workflows, Durable Objects) under the
+runaway-work review above. `scripts/ci/cloudflare-backend-ownership.test.js` fails
+on a new Vercel cron, enabled cron-catalog job, live pg_cron job, post-cutoff
+`cron.schedule`, Supabase Edge Function, Trigger.dev config/dependency/import, Next
+`after()` import or `/api/cron` route. A cadence change counts as a new owner.
+Legacy owners live in the shrink-only allowlist with owner/target/plan; the test
+pins the adopted baseline and fails stale entries, so delete an entry when its
+legacy definition is removed. Retained pg_cron jobs need a written pure-database
+justification; `pg_net` callers are not exceptions. Do not extend the baseline to
+admit new work. See `apps/docs/build/devops/cloudflare-backend-ownership.mdx`.
+
 ## Codex plugin native parallel pilot
 
 `codex-plugin.yaml` has one native `parallel` group containing only the MCP and
@@ -175,6 +189,10 @@ fixtures must reject quoted command text, foreign checkouts and mismatched
 conditions. Production-only publication filters retain their release scope.
 See [Node runtime policy](../../../../../apps/docs/build/development-tools/node-runtime.mdx)
 for activation, host custody and separate source, CI and deployed-runtime proof.
+Classify failures from the failed step before adding runtime exceptions: image
+cache throttling precedes contract execution, aggregate tests inherit prerequisite
+failures, and a scope-only CodeQL success does not refresh an uploaded language
+baseline. Compare the analysis SHA/category and reproduce stale assertions on main.
 
 ## Commands And Formatting
 
@@ -319,6 +337,16 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   the runner's signed Ubuntu sources. Preserve signature checks, native browser
   packages and runner-owned browser downloads; vendor-feed setup errors are not
   application failures. Require exact-commit CI to verify runner layout and packages.
+- `ttr storage status|analyze|suggest|prune|fleet` is the machine-wide storage
+  triage path (Mac, devboxes, runners). Measure with APFS private bytes or
+  allocated blocks with hard links once, never `du -L`. `prune` is a dry run
+  until `--apply`, re-verifies hold files (`~/.t3/cleanup/holds.d`), live cwds
+  and worktree state per step, and delegates artifacts and Rust targets to the
+  repo scripts below. Never auto-remove dirty, unmerged, held, busy or primary
+  checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
+  admission in `ttr resources` and the bucketed heartbeat `resources.disk`
+  (strict on web and Worker) keep work off full disks. See
+  `apps/docs/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
@@ -329,6 +357,28 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   source or an unmerged worktree. Confirmed-merged worktrees should be removed
   after main-green, `bun git-sync`, and production verification so their target
   caches disappear with them.
+- `bun worktree:footprint` reports each registered worktree's allocated and
+  APFS-unique size. On macOS Bun `node_modules` are clones of the shared cache,
+  so `du` overstates a fresh worktree about 14x (4.3 GiB vs ~0.3 GiB unique).
+  `bun worktree:prune-artifacts` is a dry run unless `--apply` is passed. It
+  only removes git-ignored, untracked rebuildable outputs (`.turbo`, `.next`,
+  `.open-next`, `dist`, ignored `build`, Flutter `.dart_tool` build output) from
+  linked worktrees that are clean, unheld, idle,
+  and merged into `--base`. Keep `bunfig.toml` `globalStore = false` and the
+  default clonefile backend unless exact-commit CI type-check/build evidence
+  proves otherwise. Explicit holds-file read errors and fatal check-ignore errors
+  fail closed. Holds resolve filesystem aliases; recursive activity scans cap depth
+  at 32 and entries at 10,000, treating incomplete scans as active. Each apply
+  invocation builds a fresh plan. Checkout scans protect `.git` directories/files
+  and bare `HEAD`/`objects` markers, including ancestors inside the worktree.
+  Deletion walks repeat those boundaries and never recursively remove directories.
+  Before deletion, `lsof +D` checks open files and working directories with a
+  five-second forced-kill deadline and 1 MiB output cap. Missing tools, warnings,
+  failures and ambiguous output preserve artifacts as `liveness-unknown`; live
+  users produce `in-use`. Only an empty, warning-free no-match result admits
+  deletion. Locks and holds remain necessary to fence later owner activity.
+  Rust targets remain owned by rust-cache.
+  See `apps/docs/build/development-tools/worktree-disk-usage.mdx`.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next
@@ -699,6 +749,18 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   Turbo. CPU, heap, and concurrency controls are pass-through values. Use a
   transit-only dependency task when downstream tests must invalidate on
   dependency source changes without executing dependency test suites.
+- Keep the Turbo global hash small. Never add workspace packages to root
+  `package.json` dependencies: Turbo hashes the root's workspace closure
+  globally, and the old email-service root dependency busted every task on 11
+  of 40 main commits. Machine paths (`PUB_CACHE`, `LOCALAPPDATA`,
+  `USERPROFILE`) are pass-through only. Hash gitignored files that change
+  results (`.env*` for Vitest `loadEnv`, `.dev.vars*` for `wrangler types` and
+  `cf workers types`), and cache the generated declarations the tsconfig reads
+  (`.cloudflare/types/**` for `cf workers types`).
+  `scripts/ci/turbo-cache-config.test.js` pins these rules. Diagnose misses
+  with `--dry=json` hash comparisons as described in
+  `apps/docs/build/devops/caching.mdx`; never narrow `^type-check`/`^transit`
+  links or exclude upstream `__tests__` to raise a hit rate.
 - Artifact uploads must declare both retention and missing-file behavior.
   Consolidate failure diagnostics per shard or mode, keep package handoff
   tarballs for one day without redundant compression, and cache native
@@ -813,6 +875,32 @@ RPC behavior, without adding immediate re-enqueue feedback. These deadlines do
 not cap recurring invocation counts, billed rows, response bytes or total spend.
 See the database request deadline section in the Cron Control runbook for controlled
 unit evidence versus hosted scheduling and independent-stop release gates.
+
+Cron Control's scheduled job catalog (`src/jobs.ts`) is default off through the
+`CRON_CONTROL_ENABLED_JOBS` var; disabled ticks must do no storage or network work.
+Keep job decisions in the pure `LedgerCore` so unit tests run without Workers, and
+keep the `cloudflare:workers` Durable Object adapter out of unit-test imports. Count
+claims, writes and processor calls in tests: duplicate slots, Durable Object restart,
+stop racing a retry, failure-budget exhaustion and the concurrency bound. The runtime
+check dispatches scheduled events to a loopback processor; never dispatch the
+immediate-notification trigger there. Add a trigger to both `wrangler.jsonc` and the
+runtime script's expected list. See the runbook's per-job cutover order.
+
+Require a complete JSON object within the 64 KiB outcome cap before accepting
+2xx success. Reject oversized chunks before retaining them; read errors and
+invalid or truncated JSON are unknown, never success. Reconciled claims are
+settled: late completions must not recharge failures or overwrite an unknown
+outcome, including when reconciliation refused a replacement at the budget limit.
+Keep dispatch and restart regressions for both late failure and late success.
+
+For checkout expiry, preserve pending obligations with pre-expiry backpressure,
+not truncation. Drain owed invalidations before new expiry, isolate failures and
+persist per-item attempt counts and bounded quarantine. Settle only Inventory's
+explicit per-workspace success receipts. Include claim, pending-work, fence and
+completion RPC waits in the whole-run deadline, with no dependent work after a
+timeout. Run cron-control's independent unit config; test Inventory's receipt
+adapter with its own config. See the processor migration runbook for bounds and
+remaining cross-store crash and hosted-runtime evidence.
 
 ## Native Meet realtime toolchain
 

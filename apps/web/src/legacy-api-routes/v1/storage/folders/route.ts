@@ -11,7 +11,11 @@ import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
+import {
+  encodeStoragePath,
+  sanitizeFolderName,
+  sanitizePath,
+} from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -97,9 +101,9 @@ export const POST = withApiAuth(
 
       // Create an empty placeholder file to represent the folder
       // Supabase Storage doesn't support empty folders, so we use a placeholder
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('workspaces')
-        .upload(folderPath, new Uint8Array(0), {
+        .upload(encodeStoragePath(folderPath), new Uint8Array(0), {
           contentType: 'text/plain',
           upsert: false,
         });
@@ -128,7 +132,7 @@ export const POST = withApiAuth(
         message: 'Folder created successfully',
         data: {
           path: relativePath,
-          fullPath: data.path,
+          fullPath: folderPath,
         },
       });
     } catch (error) {

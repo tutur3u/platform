@@ -160,6 +160,14 @@ the exact source SHA:
 - the SDK qualification receipt (`runtimeVersions.node` with `sourceSha`);
 - the Calendar native artifact receipt (`node` with `sha`).
 
+When qualifying a new pin, inspect the failing step before adding an exception.
+A contract job that stops while filling the Supabase image cache has not exercised
+the schema tests. An aggregate test job may only report a failed root-script
+prerequisite. For CodeQL, check the uploaded analysis SHA and language category;
+a successful scope-only workflow with skipped analysis does not refresh the
+baseline used by the new-result gate. Retest stale assertions against main with
+the same Node binary to separate repository failures from runtime incompatibility.
+
 ## Intentional exceptions
 
 | Surface | Runs | Why | Patched fallback |

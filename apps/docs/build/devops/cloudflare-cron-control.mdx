@@ -1,6 +1,6 @@
 ---
 title: "Cloudflare Cron Control"
-description: "Operate the immediate-notification recovery timer on Cloudflare."
+description: "Operate the immediate-notification timer and the default-off scheduled job catalog on Cloudflare."
 ---
 
 ## Immediate notifications
@@ -24,7 +24,7 @@ secrets. A separate `CRON_CONTROL_DELIVERY_TOKEN` repository secret is
 installed on the Worker and in the web app's production environment to
 authorize the delivery request. CI uses `COLAB_CLOUDFLARE_API_TOKEN` to deploy.
 The Supabase secret key goes only in the `apikey` header for database calls.
-Never add either credential to `wrangler.jsonc` or logs.
+Never add either credential to `cloudflare.config.ts` or logs.
 
 Check the Worker `/health` endpoint and deployment marker after production
 sync. Verify an idle schedule skips the Vercel call, then queue a test
@@ -38,6 +38,120 @@ An `Immediate batch delivery failed: 400` log may mean the web proxy rejected
 the request before the processor ran. Check the proxy response source and the
 Worker user agent, body, and content type. A `401` points to the web and Worker
 delivery tokens being out of sync.
+
+## Scheduled job catalog
+
+Cron Control also owns the schedule for every legacy Vercel Cron job and the
+`fetch-exchange-rates` pg_net job (`src/jobs.ts`). Each job calls the **existing
+authenticated processor** over its current contract: the same route and method,
+`Authorization: Bearer <that project's CRON_SECRET>`, the Cron Control user agent,
+manual redirects and a per-job deadline. The processor keeps its own claims,
+consent and idempotency rules. Cadences match the live legacy owner, not the stale
+source catalogs. See the [background work inventory](/build/devops/background-work-inventory).
+
+**Every job defaults off.** A job runs only when its id is listed in the
+`CRON_CONTROL_ENABLED_JOBS` Worker var (empty in `cloudflare.config.ts`), so enabling one
+is a reviewed configuration change. While a job is off its tick performs no storage
+or network work. Each enabled job also needs its target origin var and secret:
+
+| Target | Origin var | Secret |
+| --- | --- | --- |
+| Web | `WEB_ORIGIN` | `CRON_SECRET_WEB` |
+| Infrastructure (also the Calendar gateway) | `INFRASTRUCTURE_ORIGIN` | `CRON_SECRET_INFRASTRUCTURE` |
+| Inventory | `INVENTORY_ORIGIN` | `CRON_SECRET_INVENTORY` |
+| Pay | `PAY_ORIGIN` | `CRON_SECRET_PAY` |
+| Tasks | `TASKS_ORIGIN` | `CRON_SECRET_TASKS` |
+
+Each secret holds the value the target project already uses for `CRON_SECRET`.
+These secrets and `CRON_CONTROL_OPERATOR_TOKEN` are not in `secrets.required`,
+and the production workflow does not install them yet. Installing them is a
+separate reviewed workflow change or an operator `wrangler secret put`. An enabled
+job whose secret or https origin is missing logs `Cron Control job misconfigured`
+and does nothing.
+
+A job with a Worker port (currently `inventory-checkout-expiry`) runs that port
+instead of its Next route only when its id is also listed in
+`CRON_CONTROL_WORKER_PROCESSORS`, which is empty by default. See
+[processor migration](/build/devops/cloudflare-processor-migration).
+
+### Ledger, claims and stop fence
+
+The `CronLedger` SQLite Durable Object (one instance) stores per-job state:
+last slot, lease expiry, generation, run count, consecutive failures and stop
+state. It has no alarms, so only Cron Triggers start work.
+
+- **Slot claim.** A tick claims `jobId` plus the scheduled minute. A duplicate or
+  late delivery of the same or an older slot is refused, including after a Durable
+  Object restart. A new slot is skipped while the previous run's lease is active.
+- **Bounded work.** At most four processor calls run at once per tick. Claim-fenced
+  and idempotent jobs retry once, after two seconds, and only for a network error,
+  502 or 503. Processor errors, redirects and deadlines are never retried; a
+  deadline is recorded as an unknown outcome. Handover jobs never retry.
+- **Outcomes.** A 2xx needs a complete JSON object summary within 64 KiB.
+  `ok: false` is failed; malformed, truncated, unreadable or oversized summaries
+  are unknown and consume the failure budget without a retry. An absent `ok`
+  field preserves existing JSON-object processor contracts. Bytes exceeding the
+  remaining cap are rejected before retaining the chunk.
+- **Failure budget.** Five consecutive failed or unknown slots stop the job
+  (`failure-budget-exhausted`). A run terminated before it completes leaves an
+  expired lease; the next claim charges it as unknown before admitting a
+  replacement, so repeated terminations exhaust the budget too. The counter
+  survives restarts and resets only on success or operator resume. Settled
+  claims reject late completions, including after reconciliation exhausts the
+  budget; late success cannot overwrite the unknown outcome. The dispatch and
+  ledger unit regressions cover these cases across a simulated restart.
+- **Operator stop.** `POST /control/jobs/<id>/stop` and `/resume`, plus
+  `GET /control/jobs`, require `Authorization: Bearer <CRON_CONTROL_OPERATOR_TOKEN>`
+  (32 characters or more); otherwise every control path returns the same 404 as an
+  unknown route. A stop is checked before every claim and before a retry. Resume
+  starts a new generation, so completions and retries from before the stop are
+  ignored. Resume never enables a job; removing the id from
+  `CRON_CONTROL_ENABLED_JOBS` is the deploy-time stop.
+- **Fail closed.** If the ledger is unavailable, the job is skipped before its
+  processor is called. A lost completion leaves the lease to expire and is then
+  charged as unknown.
+
+### Cost envelope
+
+Ticks fire whether or not jobs are enabled: about 2,020 Worker invocations a day
+across the nine triggers, each a configuration check with no I/O while jobs are off.
+An enabled job adds two Durable Object requests per slot (claim and completion),
+each reading one row and writing at most one, plus one processor request (two
+with a retry). With all 14 jobs enabled that is about 5,800 Durable Object
+requests and writes a day. A persistently failing job makes at most five
+processor calls before it stops, then one read-only claim per later tick.
+These are request counts, not billed usage; the processors' own database,
+provider and email work is unchanged. Moving a schedule does not reduce the
+target project's function invocations; moving its processor does.
+
+### Per-job cutover
+
+Never run both owners unfenced, and never enable a job in production as a side
+effect of another change.
+
+1. Confirm the job's legacy owner, live cadence and last successful run, and that
+   the target secret and origin are installed.
+2. **Claim-fenced or idempotent jobs:** add the id to `CRON_CONTROL_ENABLED_JOBS`
+   in its own reviewed change. After production sync, verify one Cloudflare slot:
+   `GET /control/jobs` shows `lastOutcome: ok`, the processor logs one authenticated
+   call and the domain state reached a terminal result. Overlap with the legacy
+   owner is fenced by the processor's claim or convergence.
+3. **Handover jobs** (`calendar-smart-schedule`, `web-deadline-reminders`,
+   `infrastructure-docker-recovery-alerts`): remove the legacy entry first, confirm
+   its last run, then enable the Cloudflare job and verify one slot.
+4. Remove the legacy entry (`vercel.json` cron, or a new migration calling
+   `cron.unschedule('fetch-exchange-rates')`) in a separate reviewed change, along
+   with its cron-catalog entry. Then delete the matching entries from the
+   [ownership guard](/build/devops/cloudflare-backend-ownership) allowlist.
+5. Roll back by stopping the job through the control endpoint, removing its id,
+   and restoring the legacy entry. Do not replay missed slots blindly: each
+   processor recovers from its own durable state.
+
+Recommended order: `tasks-cleanup-media`, `pay-products`,
+`finance-exchange-rates`, `infrastructure-sync-trust-cache`,
+`calendar-provider-sync`, the claim-fenced Web jobs, `inventory-checkout-expiry`,
+the handover jobs, then `infrastructure-sample-resources` once its retirement
+decision is made.
 
 ## Vite+ toolchain and validation
 
@@ -64,9 +178,17 @@ and `format:check` are available for explicit parity review. Repository Biome
 remains authoritative until the scope's formatting/rule/editor/generator gates
 migrate together. No global formatting or framework migrator is needed.
 
-The runtime fixture uses dummy credentials and tests complete health JSON and
-rejection of HTTP invocation paths. It never dispatches a scheduled event and
-cannot certify database recovery, web delivery, fanout or total-spend bounds.
+The runtime fixture (`scripts/verify-worker-runtime.mjs`, on the shared cf Vite
+harness) uses dummy credentials and checks the source config contract (every
+legacy schedule, jobs default off, the `CronLedger` SQLite export), complete
+health JSON, and rejection of HTTP invocation and unauthenticated control paths.
+The harness accepts only declared secrets and the configured job list, so the
+enabled-job contract (no work while disabled, one call per slot with the
+expected auth, a slot claim that survives a ledger restart, operator
+stop/resume and failure-budget exhaustion) is covered by the `ledger`,
+`dispatch` and `control` unit tests rather than a runtime scheduled event. It
+never dispatches the immediate-notification trigger and cannot certify database
+recovery, web delivery, fanout, hosted schedules or total-spend bounds.
 The existing four unit regressions preserve RPC-before-lookup ordering, idle skip,
 authenticated delivery, redirect rejection and failure short-circuiting with
 mocked downstream calls. A successful hosted schedule and terminal batch status,

@@ -62,6 +62,9 @@ for roles, independent review, publication, receipts and retirement.
   stop fence. Verify operation-count and failure/restart regressions; ingress rate
   limits, billing alerts and per-invocation CPU caps are not total-spend caps.
   Record service-specific cost/stop evidence in the adoption guidance.
+- Put new crons, queues, schedulers and heavy backend work on Cloudflare, not Vercel
+  Cron, Next `after()`, pg_cron, Edge Functions or Trigger.dev; see the shrink-only
+  [ownership guard](apps/docs/build/devops/cloudflare-backend-ownership.mdx).
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
@@ -157,11 +160,10 @@ for roles, independent review, publication, receipts and retirement.
   authorized follow-through; do not stop watches or wait for a user reminder merely
   because CI started. If no admitted work is ready, record the exact blocker,
   owner and resume event. Preserve current-head gates, permissions and frozen work.
-- Keep Rust build storage bounded with `bun rust-cache report` and the
-  repository-owned `prune`/`auto` commands. Inspect the owning worktree first,
-  use an explicit size/age bound, and prune only rebuildable
-  `apps/backend/target` artifacts; never delete source or an unmerged worktree
-  merely to reclaim Rust cache space.
+- Triage machine storage with `ttr storage` (`status`/`analyze`/`suggest`;
+  `prune` is a dry run until `--apply`, and delegates Rust targets to
+  `bun rust-cache`). Apply only explicit size/age bounds to rebuildable output;
+  never delete source, held paths, or a dirty or unmerged worktree for space.
 - Before staging, unstaging, committing, amending, rebasing, or user-requested
   commit-and-push work in a shared checkout, claim the Git commit window with
   `bun git-commit-window claim` or wait with `bun git-commit-window wait`.

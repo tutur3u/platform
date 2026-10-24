@@ -1,5 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "cacheMaxAge": "7d",
+  "cacheMaxSize": "4GB",
   "globalPassThroughEnv": [
     "TMPDIR",
     "TMP",
@@ -59,7 +61,10 @@
     "WORKFLOW_NAME",
     "PROGRAMMING_LOCAL_WORKER_URL",
     "PROGRAMMING_LOCAL_TOKEN_SECRET",
-    "PROGRAMMING_LOCAL_CALLBACK_PORT"
+    "PROGRAMMING_LOCAL_CALLBACK_PORT",
+    "LOCALAPPDATA",
+    "PUB_CACHE",
+    "USERPROFILE"
   ],
   "globalEnv": [
     "MEET_DEPLOYMENT_PROFILE",
@@ -69,10 +74,8 @@
     "NEXT_PUBLIC_SUPABASE_URL",
     "SHOW_TAILWIND_INDICATOR",
     "NEXT_PUBLIC_VERCEL_ENV",
-    "PUB_CACHE",
     "SUPABASE_SECRET_KEY",
     "TANSTACK_WEB_RUNTIME",
-    "LOCALAPPDATA",
     "MODAL_TOKEN_SECRET",
     "ANTHROPIC_API_KEY",
     "MODAL_TOKEN_ID",
@@ -125,8 +128,7 @@
     "TRIGGER_SECRET_KEY",
     "POLAR_ACCESS_TOKEN",
     "POLAR_WEBHOOK_SECRET",
-    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
-    "USERPROFILE"
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY"
   ],
   "tasks": {
     "//#test:apps-native-browser": {
@@ -237,7 +239,8 @@
     "test": {
       "dependsOn": ["transit"],
       "env": ["CHECK_DETAILS", "CI"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
     },
     "test:e2e": {
       "cache": false

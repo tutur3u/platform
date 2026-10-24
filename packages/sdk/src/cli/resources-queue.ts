@@ -14,7 +14,7 @@ import {
   selectBudgetTicket,
   ticketDemand,
 } from './resources-budget';
-import { limitCommand } from './resources-command';
+import { commandCwd, limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
@@ -195,7 +195,8 @@ async function runNested(
   command: string,
   args: string[],
   env: NodeJS.ProcessEnv,
-  parent: ResourceOwner
+  parent: ResourceOwner,
+  onSpawn?: (pid: number) => Promise<void>
 ) {
   const inherited = parent.limits
     ? {
@@ -211,7 +212,9 @@ async function runNested(
   return spawnResourceCommand(
     command,
     limitCommand(command, args, { ...caps, ...parent.limits }),
-    { ...env, ...inherited, [admittedMarker]: parent.token }
+    { ...env, ...inherited, [admittedMarker]: parent.token },
+    false,
+    onSpawn
   );
 }
 // The ticket that may claim the next lane: the FIFO head, or under a budget
@@ -253,13 +256,15 @@ export async function queuedResourceCommand(
   lanes: ValidationLanes = 1,
   pressureProbe: typeof memoryPressure = memoryPressure,
   burstProbe: typeof burstEligibility = burstEligibility,
-  diskCheck: typeof diskGate = diskGate
+  diskCheck: typeof diskGate = diskGate,
+  onSpawn?: (pid: number) => Promise<void>
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
   const originalArgs = [...args];
   const parent = await nestedOwner(home);
-  if (parent) return runNested(home, command, originalArgs, env, parent);
+  if (parent)
+    return runNested(home, command, originalArgs, env, parent, onSpawn);
   const owner = newOwner(
     command.split('/').pop() || command,
     commandSummary(command, originalArgs)
@@ -356,7 +361,7 @@ export async function queuedResourceCommand(
       // head probes; a round without a fresh result never claims.
       const disk =
         (await nextTicket(home)) === ticket
-          ? await diskCheck(process.cwd(), env)
+          ? await diskCheck(commandCwd(originalArgs), env)
           : undefined;
       slot = await withAdmission(
         home,
@@ -505,6 +510,7 @@ export async function queuedResourceCommand(
         });
         stopSampler = startActivitySampler(ownedSlot, owner);
         if (cancelled) signalChild(pid, cancelled);
+        else await onSpawn?.(pid);
       }
     );
     process.stderr.write(`[ttr resources] finished; exit ${code}\n`);

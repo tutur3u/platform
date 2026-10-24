@@ -26,6 +26,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
+import { diskAdmission } from './resources-disk-admission';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -42,6 +43,11 @@ import {
   renderResourceStatus,
   resourceStatusDetails,
 } from './resources-status';
+import {
+  planTurboSummary,
+  reportTurboSummary,
+  snapshotTurboSummaries,
+} from './resources-turbo-summary';
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
@@ -65,6 +71,10 @@ Setup options:
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
+Heavy commands exit 75 when the disk holding their cwd is critical (below
+TTR_STORAGE_MIN_FREE 15G, 5% free or 5% inodes) and print the top
+\`ttr storage suggest\` actions; --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1
+overrides once, and --offload auto then prefers a devbox runner.
 Run options: --tokens N and --memory-gib N declare this job's worker tokens and
 memory under a cross-project budget (default: inferred from the tool).
 Run option: --offload auto|<runner-id> runs the exact pushed commit on a fresh,
@@ -117,6 +127,7 @@ export async function runResourcesCommand(argv: string[]) {
   const allowed: Record<string, string[]> = {
     run: [
       '--ignore-pressure',
+      '--ignore-disk',
       '--offload',
       '--timeout',
       '--hosts',
@@ -197,6 +208,25 @@ export async function runResourcesCommand(argv: string[]) {
     const queued =
       enabled && (shim ? isHeavyCommand(name, command) : trivial === undefined);
     const offload = optionValue(options, '--offload');
+    // Disk headroom gate for heavy work; nested jobs were admitted already,
+    // and --hosts dispatch applies its own local disk gate per placement.
+    let diskCritical = false;
+    const diskGated =
+      queued &&
+      !parent &&
+      !(
+        !shim &&
+        (options.includes('--ignore-disk') || options.includes('--hosts'))
+      );
+    // The queue re-checks disk at dequeue; one override covers both gates.
+    if (!shim && options.includes('--ignore-disk'))
+      env.TTR_RESOURCES_IGNORE_DISK = '1';
+    if (diskGated) {
+      const disk = await diskAdmission({ cwd: commandCwd(command) });
+      if (disk.message)
+        process.stderr.write(`[ttr resources] ${disk.message}\n`);
+      diskCritical = disk.refuse;
+    }
     if (!shim && queued && offload && !parent) {
       const code = await offloadRun({
         home,
@@ -204,11 +234,16 @@ export async function runResourcesCommand(argv: string[]) {
         target: offload,
         argv: [name, ...command],
         timeout: optionValue(options, '--timeout'),
+        saturated: diskCritical,
       });
       if (code !== undefined) {
         process.exitCode = code;
         return;
       }
+    }
+    if (diskCritical) {
+      process.exitCode = 75;
+      return;
     }
     if (enabled && !shim) {
       const bin = await installedResourceShims(home);
@@ -254,16 +289,36 @@ export async function runResourcesCommand(argv: string[]) {
         );
       env[variable] = String(number);
     }
+    // Local turbo runs request a run summary so the cache reuse is reported.
+    const summary = planTurboSummary(
+      name,
+      queued ? command : args,
+      commandCwd(command)
+    );
+    const onSpawn = summary.root
+      ? async () => snapshotTurboSummaries(summary)
+      : undefined;
     process.exitCode = queued
       ? await queuedResourceCommand(
           home,
           real,
-          command,
+          summary.args,
           env,
           !shim && options.includes('--ignore-pressure'),
-          resourceLanes(total)
+          resourceLanes(total),
+          undefined,
+          undefined,
+          undefined,
+          onSpawn
         )
-      : await spawnResourceCommand(trivial ?? real, args, env);
+      : await spawnResourceCommand(
+          trivial ?? real,
+          summary.args,
+          env,
+          false,
+          onSpawn
+        );
+    await reportTurboSummary(summary);
     return;
   }
   if (action === 'offload') {
@@ -496,6 +551,7 @@ export async function offloadRun({
   argv,
   timeout,
   cwd = process.cwd(),
+  saturated = false,
   loadBox = () => import('./resources-box-offload.js'),
   queueStatus = resourceQueueStatus,
 }: {
@@ -505,13 +561,15 @@ export async function offloadRun({
   argv: string[];
   timeout?: string;
   cwd?: string;
+  /** Treat local capacity as exhausted (critical disk) for `auto`. */
+  saturated?: boolean;
   loadBox?: () => Promise<typeof import('./resources-box-offload.js')>;
   queueStatus?: typeof resourceQueueStatus;
 }) {
   const log = (text: string) =>
     process.stderr.write(`[ttr resources] ${text}\n`);
   const explicit = target !== 'auto';
-  if (!explicit) {
+  if (!explicit && !saturated) {
     const state = await queueStatus(home, lanes);
     if (state.occupied < state.effectiveLanes && !state.waiting.length)
       return undefined;

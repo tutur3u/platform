@@ -206,7 +206,6 @@ jobs:
       - name: Approve untouched release PR
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          # Extend when release-please starts committing as another identity;
-          # the script names the login it saw when it skips for this reason.
+          # Preserve the original approval allowlist; neither agents nor vhpx qualify.
           RELEASE_PLEASE_AUTHORS: github-actions[bot]
         run: node scripts/ci/release-please-auto-approve.js --target-branch production

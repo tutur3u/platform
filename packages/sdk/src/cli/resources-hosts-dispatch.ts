@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { DevboxFleetSnapshot } from '../devbox-fleet-types';
+import { gitEntry } from './resources-budget';
+import { commandCwd } from './resources-command';
 import {
   type DiskGate,
   diskGate,
@@ -36,8 +38,9 @@ export function projectIdentity(cwd: string) {
   for (let dir = resolve(cwd); ; dir = dirname(dir)) {
     const git = join(dir, '.git');
     try {
-      if (statSync(git).isDirectory()) return git;
-      const pointer = /^gitdir:\s*(.+)$/mu.exec(readFileSync(git, 'utf8'));
+      const text = gitEntry(git);
+      if (text === undefined) return git;
+      const pointer = /^gitdir:\s*(.+)$/mu.exec(text);
       if (pointer) {
         const gitdir = resolve(dir, pointer[1]!.trim());
         try {
@@ -103,7 +106,7 @@ export async function hostsRun({
   command,
   args,
   jobClass,
-  cwd = process.cwd(),
+  cwd = commandCwd(args),
   env = process.env,
   registry,
   deps,

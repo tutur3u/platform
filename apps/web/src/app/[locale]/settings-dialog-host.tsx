@@ -3,8 +3,9 @@
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useParams, usePathname } from 'next/navigation';
-import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { ComponentType } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
@@ -26,9 +27,6 @@ type SettingsDialogComponent = ComponentType<{
   wsId?: string;
 }>;
 
-const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
-  'tuturuuu:settings-dialog-open-intent';
-
 function getRouteParam(params: Record<string, string | string[]>, key: string) {
   const value = params[key];
   return Array.isArray(value) ? value[0] : value;
@@ -39,6 +37,11 @@ type SettingsOpenIntent = {
   settingsLinkedProvider?: string;
   settingsTab?: string;
 };
+
+const SETTINGS_EXTRA_KEYS = [
+  'settingsBoardId',
+  'settingsLinkedProvider',
+] as const;
 
 let settingsDialogPromise: Promise<SettingsDialogComponent> | null = null;
 
@@ -60,25 +63,18 @@ export function SettingsDialogHost({
 }: SettingsDialogHostProps) {
   const params = useParams<Record<string, string | string[]>>();
   const pathname = usePathname();
-  const [settingsQuery, setSettingsQuery] = useQueryStates(
-    {
-      settingsDialog: parseAsStringLiteral(['open']),
-      settingsTab: parseAsString,
-      settingsBoardId: parseAsString,
-      settingsLinkedProvider: parseAsString,
-    },
-    {
-      history: 'replace',
-      shallow: true,
-      scroll: false,
-    }
-  );
+  const {
+    closeSettings,
+    extras,
+    open: requestedSettingsOpen,
+    openSettings,
+    tab,
+  } = useSettingsDialogUrlState(SETTINGS_EXTRA_KEYS);
 
-  const requestedSettingsOpen = settingsQuery.settingsDialog === 'open';
   const [openIntent, setOpenIntent] = useState<SettingsOpenIntent | null>(null);
-  const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
-  const requestedSettingsBoardId = settingsQuery.settingsBoardId ?? undefined;
-  const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
+  const requestedSettingsTab = tab ?? undefined;
+  const requestedSettingsBoardId = extras.settingsBoardId ?? undefined;
+  const linkedProvider = extras.settingsLinkedProvider ?? undefined;
   const settingsOpen = requestedSettingsOpen || Boolean(openIntent);
   const SettingsDialog = useLazyClientComponent(
     loadSettingsDialog,
@@ -94,7 +90,7 @@ export function SettingsDialogHost({
           ? (event.detail as SettingsOpenIntent)
           : {};
 
-      setOpenIntent({
+      const intent: SettingsOpenIntent = {
         settingsBoardId:
           typeof detail.settingsBoardId === 'string'
             ? detail.settingsBoardId
@@ -107,6 +103,14 @@ export function SettingsDialogHost({
           typeof detail.settingsTab === 'string'
             ? detail.settingsTab
             : undefined,
+      };
+
+      // Local intent state shows the dialog before the URL round-trip; the URL
+      // write keeps the opened tab shareable and lets Back close the dialog.
+      setOpenIntent(intent);
+      openSettings(intent.settingsTab, {
+        settingsBoardId: intent.settingsBoardId ?? null,
+        settingsLinkedProvider: intent.settingsLinkedProvider ?? null,
       });
       preloadSettingsDialog();
     };
@@ -122,13 +126,17 @@ export function SettingsDialogHost({
         handleSettingsIntent
       );
     };
-  }, []);
+  }, [openSettings]);
 
+  // The optimistic intent only bridges the gap until the URL acknowledges the
+  // open. Clear it whenever both exist, independent of the lazy import, so a
+  // later Back (URL closed) cannot leave the dialog open via a stale intent,
+  // including one re-created by a repeated open while already acknowledged.
   useEffect(() => {
-    if (requestedSettingsOpen && SettingsDialog) {
+    if (requestedSettingsOpen && openIntent) {
       setOpenIntent(null);
     }
-  }, [requestedSettingsOpen, SettingsDialog]);
+  }, [openIntent, requestedSettingsOpen]);
 
   const openSettingsDialog = useCallback(() => {
     const routeBoardId = getRouteParam(params, 'boardId');
@@ -137,6 +145,7 @@ export function SettingsDialogHost({
     );
 
     if (shouldOpenBoardSettings) {
+      // The intent listener above writes the board settings URL.
       window.dispatchEvent(
         new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
           detail: {
@@ -145,22 +154,11 @@ export function SettingsDialogHost({
           },
         })
       );
+      return;
     }
 
-    void setSettingsQuery(
-      {
-        settingsDialog: 'open',
-        settingsTab: shouldOpenBoardSettings ? 'task_board' : null,
-        settingsBoardId: shouldOpenBoardSettings ? routeBoardId : null,
-        settingsLinkedProvider: null,
-      },
-      {
-        history: 'replace',
-        shallow: true,
-        scroll: false,
-      }
-    );
-  }, [params, pathname, setSettingsQuery]);
+    openSettings(null);
+  }, [openSettings, params, pathname]);
 
   useSettingsDialogShortcut({
     enabled: Boolean(user),
@@ -170,19 +168,7 @@ export function SettingsDialogHost({
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setOpenIntent(null);
-      void setSettingsQuery(
-        {
-          settingsDialog: null,
-          settingsTab: null,
-          settingsBoardId: null,
-          settingsLinkedProvider: null,
-        },
-        {
-          history: 'replace',
-          shallow: true,
-          scroll: false,
-        }
-      );
+      closeSettings();
     }
   };
 

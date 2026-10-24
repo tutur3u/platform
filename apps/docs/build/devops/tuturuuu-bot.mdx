@@ -1,0 +1,220 @@
+---
+title: 'Tuturuuu Bot'
+description: 'Local agent PR authorship, owner provisioning and credential boundaries.'
+---
+
+`tuturuuu-bot` is a private GitHub App owned by `tutur3u`, installed only on
+`tutur3u/platform`. Its sole purpose is local agent feature-branch pushes and PR
+creation. Release automation retains its own identity and credentials. The App's
+webhook is inactive and it subscribes to no events.
+
+## Owner provisioning checklist
+
+Only the owner performs credential setup, outside agent sessions and recordings.
+
+1. Review `.github/tuturuuu-bot/manifest.json`. Submit that JSON as the `manifest`
+   form field in a **POST** to
+   `https://github.com/organizations/tutur3u/settings/apps/new`, following the
+   [GitHub manifest flow](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest).
+   A GET link does not submit the manifest. Use an owner-controlled form/callback,
+   random `state`, and a local copy with its `redirect_url`; verify callback state.
+   Exchange the temporary code at
+   `POST https://api.github.com/app-manifests/{code}/conversions` within one hour.
+   Route the credential-bearing response directly to the owner's credential
+   manager, never terminal output, git, chat or an agent. No callback service is
+   deployed here. If no trusted callback exists, use **Organization settings →
+   Developer settings → GitHub Apps → New GitHub App**, transcribe the manifest,
+   disable the webhook, select **Only on this account** and generate the key there.
+2. Confirm the available slug is `tuturuuu-bot`, private visibility and exactly
+   the permissions below. Click **Install App → tutur3u → Only select repositories
+   → platform → Install**. Do not select all repositories. Record the numeric App
+   ID and installation ID privately as configuration; these IDs are not secrets.
+3. Import the private key through the owner-controlled Keychain Access interface
+   into a generic password item with service `tuturuuu-bot-private-key`. Do not
+   grant blanket application access. If using `security add-generic-password`,
+   create it **without `-A` or `-T`**; never put the PEM on the command line or in
+   shell history. Remove any automatically trusted applications in Access Control
+   and require confirmation for access. Never click **Always Allow**. Approve
+   **Allow** only for an expected operation after verifying its requester.
+4. Set non-secret `TUTURUUU_BOT_APP_ID` and `TUTURUUU_BOT_INSTALLATION_ID` in the
+   trusted local launcher session. No workflow in this change mints an App token.
+   **Do not create `TUTURUUU_BOT_PRIVATE_KEY` as an Actions repository secret or
+   environment secret.** The key is needed only locally. A repo variable of the
+   same App ID name is unnecessary for this local-only design.
+5. Before any future workflow minting is considered, a dedicated GitHub
+   environment is a **required precondition**: configure its deployment-branch
+   policy for **main and production only**, protect it with owner review, put
+   `TUTURUUU_BOT_PRIVATE_KEY` only in that environment, and require every minting
+   job to declare `environment:`. Never put the key in a repository secret or
+   allow arbitrary branch/fork code to consume it. This is future scope requiring
+   owner approval; creating the environment or changing settings is not done here.
+6. Recommended defense in depth: **platform → Settings → Rules → Rulesets → New
+   tag ruleset**, target the actual release tag patterns (for example `v*` and
+   package-prefixed release tags from Release Please), enable **Restrict updates**
+   and **Restrict deletions**, and keep the App outside bypass lists. Confirm the
+   selected patterns cover real tags and do not block first-time release tag
+   creation. Only the owner applies repo settings; this PR does not apply them.
+7. Add an owner-managed branch ruleset restricting updates to
+   `release-please--branches--*`, with access limited to the intended release
+   writer and no agent-bot bypass. Review creation/deletion protections as well.
+   If the release PAT and agents share `vhpx`, GitHub cannot distinguish their
+   processes through an actor-based ruleset; isolating the release writer's
+   credentials/principal remains necessary. This PR does not apply the ruleset.
+8. Verify a narrowly scoped push to an owned task branch, then PR creation. Check
+   the PR author is `tuturuuu-bot[bot]`, its human approval gate remains required,
+   and the token is revoked. Do not dispatch release/publication jobs to test this
+   local identity. Do not retire `RELEASE_PLEASE_TOKEN`: releases still use it.
+
+## Permissions and retained identities
+
+| App permission | Justification |
+| --- | --- |
+| Contents: write | Local agents push an explicitly named owned task branch. |
+| Pull requests: write | Local agents create PRs. GitHub also permits review APIs at this level; the helper and policy prohibit approval. |
+| Metadata: read | Required repository/installation metadata baseline. |
+
+No issues permission is needed to create PRs. No actions, workflows, checks,
+administration, deployments or secrets permission is granted. The bot is never a
+ruleset bypass actor. The helper cannot push workflow files with this token;
+workflow-changing work needs a separately authorized identity and review.
+
+| Surface | Decision | Scope |
+| --- | --- | --- |
+| Local task-branch pushes and agent PR creation | Use the App via the helper | Explicit contents/pull_requests subset; platform only |
+| `release-please.yaml` | Retain `RELEASE_PLEASE_TOKEN` with existing `github.token` fallback | Existing release PAT includes workflow scope; never substitute the agent App |
+| Package release dispatchers and TestFlight review queue | Retain `github.token` | Existing Actions job permissions; no App key or token minting |
+| Release approval | Preserve main's original author allowlist and job approval token | Only `github-actions[bot]` is eligible; `vhpx` and arbitrary Bot authors remain ineligible |
+| All other workflows and scripts | Retain existing identity | Job-bound tokens, service credentials or owning lane policy |
+
+The release approval guard preserves the original `github-actions[bot]` author
+allowlist, together with release-branch, commit-subject and generated-file gates.
+A `type: Bot` flag does not confer authority. `vhpx`-authored release PRs remain
+ineligible for automatic approval even if an override includes that login.
+The workflow and core pin `RELEASE_PLEASE_AUTHORS` to `github-actions[bot]` only.
+
+GitHub resolves `commit.author.login` from author email, which can be spoofed.
+Matching that login and a generated-looking subject/file set is a heuristic, not
+proof that release automation created or pushed the commit. The owner-managed
+release-branch ruleset and isolated writer credentials are needed to restrict
+who can update the branch. Neither the allowlist nor this PR establishes trusted
+commit provenance. Existing self-review refusal remains a blocked outcome.
+
+## Local usage
+
+Run from trusted code on an owner-controlled macOS host:
+
+```sh
+node scripts/tuturuuu-bot-token.js --permissions contents=write -- git push origin HEAD:chore/my-task
+node scripts/tuturuuu-bot-token.js --permissions contents=read,pull_requests=write -- gh pr create --head chore/my-task --repo tutur3u/platform
+```
+
+Git accepts exactly `git push origin HEAD:<task-branch>`. Task branches use the
+repository's feature/fix/chore/docs and related authored prefixes; names use
+letters, numbers, underscores, hyphens and slash-separated components. The helper
+rejects omitted/multiple refspecs, implicit destinations, protected/release/tag
+refs, deletion refspecs, force options, `--delete`, `-d`, `--mirror`, `--all`,
+`--tags`, `--receive-pack`, `--exec` and all other push flags. Git's normal
+non-fast-forward checks remain in force. The wrapper replaces the `origin` label
+with `https://github.com/tutur3u/platform.git` and sends exactly
+`HEAD:refs/heads/<task-branch>`. It disables automatic tag following with
+`push.followTags=false` and disables local hooks with both `--no-verify` and
+`core.hooksPath=/dev/null`, so pre-push hooks do not receive the child token.
+
+PR creation requires exactly one `--head <task-branch>` using the same task-branch
+validation as pushes. Supported options are parsed before credential access;
+missing/duplicate/ambiguous heads and another repository are refused. The helper
+sets `GH_PROMPT_DISABLED=1` to prevent interactive branch-push prompts. It accepts
+only that `gh pr create` form and the constrained `git push` form. All
+`gh pr review` invocations (including `--approve` and `-a`), token-inspection
+commands, `gh api` and other executables are refused before Keychain access.
+Only explicit `contents` and `pull_requests` scope inputs are accepted; metadata
+read is implicit. It always requests repository `platform` and uses the fixed
+GitHub API origin without redirects or automatic retries.
+
+Private keys are read only with macOS `security find-generic-password`, signed
+in memory and never supplied to the child. File/env private keys and token-printing
+modes are forbidden. Installation tokens go only to the child environment.
+Temporary Git credential config overrides cached personal credentials without
+writing credentials/config to disk. The helper does not call `gh auth login` or
+`gh auth setup-git`. Auth tracing/config override environment variables are stripped.
+`GH_HOST` and the default `GH_REPO` are fixed; pass `--repo tutur3u/platform` to gh.
+No 1Password adapter is implemented.
+
+## Threat model, rotation and revocation
+
+The trusted boundary includes the host user, Keychain ACLs, wrapper source, Node,
+Git, gh, PATH, repository hooks/config, editor and child command. Keychain is not
+an agent sandbox. Same-user processes may prompt for the same key, and a mistaken
+Allow can release it. Never use Always Allow. A compromised same-user tool,
+child, debugger or hook can steal memory/environment credentials. Recommended
+future hardening is a **separate-user or biometric signing broker** that retains
+the private key, requires user presence and enforces repository/permission/request
+policy while returning only short-lived scoped tokens. That broker is not
+implemented here; the current wrapper handles the key in its own process memory.
+
+Child output is inherited, so a compromised child can print credentials. Local
+push hooks are disabled; this does not sandbox the host tools or Git configuration. Never
+use HTTP/shell tracing, credential inspection or commands that persist auth. Error
+messages from signing, Keychain, API response bodies and subprocess exceptions are
+replaced with fixed messages. The wrapper itself never logs or writes the key or
+token. It preserves child status and attempts revocation on normal exit, child
+failure and errors after minting. Requests have 15-second deadlines and the child
+has a 50-minute deadline. Abrupt termination, host/network failure or an unknown
+mint response may leave a token alive until expiry (within one hour). Do not
+blindly replay an unknown push/PR outcome: inspect the remote state first.
+
+For rotation, the owner creates a second key in App settings, privately replaces
+the Keychain item, verifies a scoped operation, then deletes the old App key and
+any temporary download. Removing a private key alone may not revoke issued
+tokens. Explicitly revoke them or suspend the installation if needed. For an
+emergency, **Organization settings → GitHub Apps → tuturuuu-bot → Suspend/Uninstall**,
+delete compromised App keys/Keychain items, review the audit log and reconcile
+writes before resuming. No Actions secret should exist to rotate in this design;
+remove any leftover App repository secret from an earlier owner experiment.
+Owner revocation/setting actions are never performed automatically by agents.
+
+## Human review and follow-up
+
+Bot-authored PRs are normal PRs. `vhpx` is a separate principal, so vhpx's approval
+counts independently subject to repository rules. PR authorship comes from the
+token used at creation; commit coauthor trailers do not determine it. This bootstrap
+PR may use the existing identity until the App is provisioned.
+
+The bot must never approve PRs or be a bypass actor. CODEOWNERS work in #6491
+assigns sensitive paths to human `@vhpx`; it does not remove the App's underlying
+GitHub review capability. After #6456 merges, its classifier lane should add a
+**default-branch-code check that fails any PR approved by `tuturuuu-bot[bot]`**.
+This is a required follow-up, not a guarantee provided here. Classifier files and
+#6456's workflows are untouched.
+
+Other reserved workflows remain owned by their current lanes: discord-modal-deploy,
+supabase-staging, supabase-production, production-package-resume,
+release-please-transient-retry and security-checks/classifier. No App migration is
+planned for them under this narrow purpose. Setup-node and action-hardening changes
+also remain with their owners.
+
+## Inventory and verification
+
+Generate a current audit report on demand:
+
+```sh
+node scripts/ci/tuturuuu-bot-inventory.js > tmp/tuturuuu-bot-inventory.md
+```
+
+The generator prints workflow/script decisions and explicit current scopes. Its
+output is a local report, not a committed snapshot or a global equality CI gate.
+Unrelated workflow/script changes therefore do not make this PR's tests drift.
+Policy tests reject any workflow reference to `TUTURUUU_BOT_` or
+`tuturuuu-bot-token`, including non-minting jobs and comments. Any future Actions
+proposal must separately review this local-only guard and the required environment
+boundary before enabling minting; no workflow is currently authorized to use it.
+
+Run focused tests through the shared resource queue:
+
+```sh
+ttr resources run -- node --test --test-concurrency=2 scripts/ci/tuturuuu-bot-token.test.js scripts/ci/tuturuuu-bot-workflows.test.js scripts/ci/release-please-auto-approve.test.js
+```
+
+Independent security review and exact-head CI remain integration gates. Mocked
+Keychain/API tests do not prove a live installation, owner ACLs, rulesets or a
+future environment's deployment-branch policy.

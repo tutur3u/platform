@@ -212,8 +212,7 @@ export const vercelWorkflowTargets = [
   {
     app: 'shortener',
     appPath: 'apps/shortener',
-    buildInfoApp: 'shortener',
-    framework: 'next',
+    framework: 'tanstack-start',
     packageName: '@tuturuuu/shortener',
     previewWorkflow: 'vercel-preview-shortener.yaml',
     productionWorkflow: 'vercel-production-shortener.yaml',

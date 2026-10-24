@@ -101,6 +101,49 @@ mutex and a fresh pressure probe before launch. Continue lightweight editing. Do
 live lock, or routinely use `TTR_RESOURCES_BYPASS=1` / `--ignore-pressure` to
 avoid waiting. A bypass is a deliberate exception for a known small operation.
 
+Disk admission uses hysteresis. A volume turns `low` below `TTR_STORAGE_MIN_FREE`
+(15G), 5% free or 5% inodes. It recovers only at `TTR_STORAGE_RECOVER_FREE*`
+(default twice each).
+
+While a volume is `low` and automatic reclaim is opted in, admission first
+runs it under the cleanup lease of this storage authority (one OS user's
+`~/.tuturuuu/storage` on one host; not host-wide across OS users):
+
+- It removes only path-bounded trees: idle DerivedData and merged-clean
+  worktree build artifacts. Homebrew, npm, Docker and simulator cleanups are
+  manual only.
+- Right before each item it captures the directory identity, re-checks holds
+  from every project's holds file, a cwd scan of every live process of this
+  user, and `lsof`. Hidden processes of other users (root included) are
+  tolerated only with macOS `private-tree` evidence for the item.
+- It fsyncs an intent receipt before acting and removes only inside the
+  lease guard, which re-validates the lease's fence under the mutation lock.
+- It stops at the recover thresholds.
+
+If the volume is still `low`, the heavy command exits 75. Admission is checked
+before queueing and again right before launch; an unmeasurable volume
+(UNKNOWN) is refused too. The blocker report
+lists skipped items, the largest manual actions with their hold owners, and the
+free space needed to resume. A second orchestrator on the same host gets the
+holder's name instead of a parallel run.
+
+Alerts print once per level. Set `TTR_ORCHESTRATOR_ID` so leases and receipts
+name your orchestrator. Automatic reclaim is off by default: opt in per storage authority with
+`TTR_STORAGE_AUTO_RECLAIM=1` or `1` in `~/.tuturuuu/storage/auto-reclaim`.
+A false value (`0`, `false`, `off`, `no`) in either is a hard kill switch
+for both triggers and manual `ttr storage reclaim --apply`.
+
+`ttr storage reclaim` shows the plan, the lease holder and the last run. A human
+still decides worktrees, `node_modules`, the Bun and pub caches, tmp, evidence,
+volumes, images and held paths, using `ttr storage suggest` / `ttr storage prune`.
+Don't use `--ignore-disk` / `TTR_RESOURCES_IGNORE_DISK=1` for those cases.
+
+With `--offload auto`, the command prefers a devbox runner. Offload skips
+runners whose heartbeat reports critical disk (`blockedBy=low_disk`).
+`ttr storage fleet` lists every runner's reported headroom and marks stale or
+offline runners `unknown`, never healthy. See
+`apps/docs/build/development-tools/machine-storage-health.mdx`.
+
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner
 when local lanes are saturated. `--offload <runner-id>` targets one runner.

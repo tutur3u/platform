@@ -1,6 +1,13 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -12,7 +19,11 @@ import {
   type HostRegistry,
   proposedHostRegistry,
 } from './resources-hosts-config';
-import { type HostDispatchDeps, hostsRun } from './resources-hosts-dispatch';
+import {
+  type HostDispatchDeps,
+  hostsRun,
+  projectIdentity,
+} from './resources-hosts-dispatch';
 import {
   hostLedger,
   hostReservationMarker,
@@ -82,6 +93,22 @@ const quiet: Pick<HostDispatchDeps, 'log' | 'pollMs' | 'localDiskFreeGiB'> = {
   localDiskFreeGiB: async () => 100,
 };
 
+describe('project identity', () => {
+  it('shares one identity between a repository and its linked worktrees', async () => {
+    const root = await home();
+    const repo = join(root, 'repo');
+    const gitdir = join(repo, '.git', 'worktrees', 'lane');
+    await mkdir(gitdir, { recursive: true });
+    await writeFile(join(gitdir, 'commondir'), '../..\n');
+    const worktree = join(root, 'lane');
+    await mkdir(join(worktree, 'src'), { recursive: true });
+    await writeFile(join(worktree, '.git'), `gitdir: ${gitdir}\n`);
+    expect(projectIdentity(join(repo, 'src'))).toBe(join(repo, '.git'));
+    expect(projectIdentity(join(worktree, 'src'))).toBe(join(repo, '.git'));
+    expect(projectIdentity(join(root, 'none'))).toBe(join(root, 'none'));
+  });
+});
+
 describe('--hosts job class (REV-6503-4)', () => {
   it('treats explicit --hosts jobs as heavy unless --class light', () => {
     expect(hostsJobClass(undefined)).toBe('heavy');
@@ -113,7 +140,7 @@ describe('--hosts job class (REV-6503-4)', () => {
       await hostsRun({
         home: path,
         command: 'eslint',
-        args: ['file.ts'],
+        args: ['--cwd', path, 'file.ts'],
         jobClass: 'light',
         registry,
         deps: {
@@ -127,6 +154,8 @@ describe('--hosts job class (REV-6503-4)', () => {
       })
     ).toBe(0);
     expect(gate).toHaveBeenCalledTimes(2);
+    expect(gate).toHaveBeenNthCalledWith(1, path);
+    expect(gate).toHaveBeenNthCalledWith(2, path);
     expect(runLocal).toHaveBeenCalledTimes(1);
   });
 });

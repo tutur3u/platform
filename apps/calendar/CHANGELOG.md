@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/calendar-v0.35.0...calendar-v0.36.0) (2026-10-24)
+
+
+### Features
+
+* **satellite:** shared account, profile and security settings in every app ([#6477](https://github.com/tutur3u/platform/issues/6477)) ([2cd0879](https://github.com/tutur3u/platform/commit/2cd087939043a1dd91d1bfecee3337e4122badae))
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **calendar:** bind provider OAuth state to user and workspace ([#6520](https://github.com/tutur3u/platform/issues/6520)) ([f1685c6](https://github.com/tutur3u/platform/commit/f1685c68630ca83a94125cdc5aceb0874565f80f))
+* **calendar:** DB-backed single-use OAuth state and BASE_URL redirects ([4f203fe](https://github.com/tutur3u/platform/commit/4f203fe6586cbe450c0dac1d1b17059c4fde1d80))
+* **calendar:** fail closed on missing OAuth runtime config in production ([c17943a](https://github.com/tutur3u/platform/commit/c17943a310d3ee7e406c0658e48facb165581ce7))
+* **calendar:** preserve native quota diagnostics and reuse verified actors ([88c464c](https://github.com/tutur3u/platform/commit/88c464c75ca1a51014e360ee92aabea0b16d919c))
+* **calendar:** serve native timezone preferences from Web ([ec94bc2](https://github.com/tutur3u/platform/commit/ec94bc262c9ef7e89339309de1d23ff4045224db)) ([#6573](https://github.com/tutur3u/platform/issues/6573)) ([a1bcec6](https://github.com/tutur3u/platform/commit/a1bcec69510d4efaaee91737a563c00ffc253dd4))
+* **calendar:** single-use OAuth state, Google PKCE, canonical redirects ([ea618ba](https://github.com/tutur3u/platform/commit/ea618ba9bff4674045c94ba3aebe23b983090368))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5)) ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+* **security:** sanitize caught-error logs and widen SAML entity ID schemes ([fe834f3](https://github.com/tutur3u/platform/commit/fe834f3987d5dcb7eb81b8f59c0401bab8a7b109))
+* **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
+* **settings:** open settings dialog from bare settingsTab deep links ([#6466](https://github.com/tutur3u/platform/issues/6466)) ([084040c](https://github.com/tutur3u/platform/commit/084040c40414cc34eeac0204fd2714f8c9df2d9b))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/calendar-v0.34.0...calendar-v0.35.0) (2026-10-17)
 
 

@@ -69,6 +69,10 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tuturuuu\/types$/,
+        replacement: resolve(__dirname, '../../packages/types/src/index.ts'),
+      },
+      {
         find: /^@tuturuuu\/types\/primitives\/(.+)$/,
         replacement: resolve(
           __dirname,

@@ -1,0 +1,191 @@
+---
+title: "Caching"
+description: "Cache layers, keys, trust model, miss debugging, and cost bounds for builds, tests, type checks, and CI."
+updatedAt: "2026-10-23"
+---
+
+Caching makes unchanged work skip. It must never replay a pass for inputs that
+changed. This page covers build and validation caching only. Product runtime
+caching (Next `use cache`, cache tags, CDN or KV) has tenant-isolation rules of
+its own and is out of scope here.
+
+## Cache layers
+
+| Layer | Where it lives | Key | Who may write |
+| --- | --- | --- | --- |
+| Turbo local cache | `.turbo/cache` per checkout, or `TURBO_CACHE_DIR` | Turbo task hash | Any local run |
+| Turbo remote cache | Vercel today; self-hosted Cloudflare R2 Worker planned | Turbo task hash, team-scoped | Trusted `main`/`production` jobs and trusted machines |
+| Turbo fallback archive | GitHub Actions cache (`setup-turbo-fallback-cache`) | OS + arch + family + `turbo.json` + `bun.lock` + SHA | Default-branch jobs only |
+| Bun runtime and packages | GitHub Actions cache (`setup-bun-with-retry`) | Bun version + `bun.lock` | Trusted `main` only |
+| Supabase images and baseline | GitHub Actions cache (`cache-supabase-images`, `setup-supabase-baseline`) | Image pins / migration fingerprint | Trusted `main` only |
+| Tool incremental state | `*.tsbuildinfo`, `.turbo/tsc-build-cache-key.json` | Stored as Turbo outputs | Follows the Turbo cache |
+| Mobile toolchains | Flutter SDK, pub, Gradle, CocoaPods caches | Toolchain version + lockfiles | Today also pull-request refs; must move to `main` only |
+
+The Turbo cache is the only layer that replaces work. Every other layer only
+saves downloads. Restoring an archive is not a task hit: Turbo still verifies
+each task hash. Read `Cached: N cached, M total` in the run output for actual
+reuse.
+
+## How Turbo decides a hit
+
+A task hash combines a global hash and a task hash.
+
+- **Global hash:** `.gitattributes`, the root package's external dependencies,
+  the root package's **workspace dependency closure**, `globalEnv` values,
+  `globalPassThroughEnv` names, and the root `turbo.json` definition. A change
+  to any of these invalidates every task.
+- **Task hash:** the task's resolved `inputs` (default: git-tracked files in the
+  package), its external dependency hash from `bun.lock`, its `env` values, and
+  the hashes of every task it `dependsOn`.
+
+Dependency hashes are what keep caching correct. `type-check` depends on
+`^build` and `^type-check`, and `test` depends on `transit`, which depends on
+`^transit`. A source edit in `packages/utils` therefore invalidates every
+dependent type check and test. Do not narrow these links. In particular, do
+not exclude upstream `__tests__` folders from them:
+`apps/web/src/app/api/v1/sso/routes.test.ts` imports
+`packages/sso/src/__tests__/fixture` by relative path.
+
+## Invariants
+
+`scripts/ci/turbo-cache-config.test.js` enforces these rules:
+
+1. **No root runtime workspace dependencies.** A root
+   `"@tuturuuu/email-service": "workspace:*"` dependency put email-service,
+   utils, types, internal-api and supabase into the global hash, so any edit to
+   them invalidated every task. Root scripts that need a workspace package
+   import its source path instead (see the Docker watcher in
+   `scripts/watch-blue-green/incident-email.js`). The only allowed root
+   workspace link is the `@tuturuuu/typescript-config` dev dependency, which
+   legitimately affects every type check.
+2. **No volatile or machine-specific hashed env.** Never hash run IDs, SHAs,
+   timestamps, `GITHUB_*`/`RUNNER_*`, or machine paths (`PUB_CACHE`,
+   `LOCALAPPDATA`, `USERPROFILE`). Put machine paths in
+   `globalPassThroughEnv`. Only deploy builds hash `PLATFORM_BUILD_*`, because
+   the emitted app embeds that identity. `globalEnv` still hashes runtime
+   secrets such as `OPENAI_API_KEY` and `SUPABASE_SECRET_KEY` into every
+   task, so a shell that exports them gets no hits from CI. Keep them in
+   app `.env` files, not the shell profile. Moving them to task env does not
+   help today, because no-script placeholder `build` tasks would still carry
+   them into every type-check hash.
+3. **No remote-cache credentials in any env list.** `TURBO_TOKEN`, `TURBO_TEAM`,
+   `TURBO_API` and `TURBO_REMOTE_CACHE_SIGNATURE_KEY` stay step-scoped (see
+   `ci-cache-policy.test.js`).
+4. **Caching is opt-out only for an allowlist:** `dev`, persistent `serve:*`
+   tasks, `test:watch`, `test:e2e`, and the runtime browser suite. Every other
+   task declares `outputs`; check-only tasks use `[]`.
+5. **Narrowed `inputs` keep `$TURBO_DEFAULT$`.** Package `turbo.json` files
+   extend `//` and add to inherited inputs with `$TURBO_EXTENDS$`.
+6. **Gitignored files that change results are hashed.** `test` hashes `.env*`
+   because Vitest configs call `loadEnv(process.cwd())`. Packages whose type
+   check runs `wrangler types` or `cf workers types` hash `.dev.vars*` and
+   `.env*`, and cache the generated declarations their tsconfig reads
+   (`worker-configuration.d.ts` or `.cloudflare/types/**`) so a cache hit on
+   a fresh checkout restores them.
+7. **The local cache is bounded:** `cacheMaxAge: "7d"` and
+   `cacheMaxSize: "4GB"`. These settings do not change task hashes.
+
+## Measured effect
+
+A dry-run replay (`turbo run <task> --dry=json`, no task executed) of 40
+consecutive first-parent `main` commits on 2026-10-23 measured the share of
+task hashes that already existed at the parent commit. That share is the hit
+rate a perfectly warm cache seeded by the PR base would give.
+
+| Configuration | type-check | test | build | Commits that miss every task |
+| --- | --- | --- | --- | --- |
+| Before (root email-service dependency) | 64.8% | 64.0% | 64.0% | 11 of 40 |
+| After | 70.3% | 69.2% | 69.2% | 4 of 40 |
+
+The remaining full misses are dependency upgrades and edits to `turbo.json`
+env lists. Both are legitimate global changes. Most other misses are correct
+cascades from shared packages.
+
+The replay is an upper bound. Real CI only reaches it when a warm cache is
+available. In the same week the repository's Actions cache was at its 10 GB
+limit. Pull-request-scoped Flutter SDK (1.6–2.1 GB each) and Gradle (3.6 GB)
+entries evicted the default-branch Turbo fallback and Supabase image archives,
+so branch type checks logged `Cache not found` and ran cold. Mobile toolchain
+caches must restore on pull requests and save only from `main`, like the Bun
+and Supabase caches already do.
+
+## Trust model
+
+- Pull requests, forks and Dependabot get no Turbo remote-cache credentials.
+  They restore only default-branch Actions caches and never save them, which
+  prevents cache poisoning.
+- Trusted `main` and `production` jobs read and write the remote cache.
+- The planned self-hosted cache adds signed artifacts
+  (`TURBO_REMOTE_CACHE_SIGNATURE_KEY`) and read-only tokens for untrusted
+  contexts. Its runbook covers cutover, rollback and cost. Until cutover, the
+  Vercel-backed cache stays the fallback.
+- Local machines use remote credentials only from the user's shell profile or
+  secret store. Never commit them or write them to `.env` files that Turbo
+  hashes.
+
+## Debug a miss
+
+1. Compute hashes without running anything:
+
+   ```bash
+   bun turbo:local run type-check --filter=@tuturuuu/utils --dry=json > /tmp/a.json
+   ```
+
+2. Repeat on the comparison commit, or in the CI environment, then compare
+   `globalCacheInputs`. If `hashOfInternalDependencies` differs, a root
+   workspace dependency changed. If `environmentVariables` differs, a hashed
+   env value differs between the two runs.
+3. For one task, compare `inputs` (file to git hash),
+   `hashOfExternalDependencies`, `environmentVariables.configured`, and the
+   hashes of the tasks listed in `dependencies`. The first differing component
+   is the cause.
+4. In CI, read the run logs. `cache miss, executing <hash>` versus
+   `cache hit, replaying logs <hash>` gives per-task results. The
+   **Turbo fallback archive** step summary shows whether the archive restored
+   at all.
+5. `--summarize` writes `.turbo/runs/<id>.json` with each task's
+   `cache.status`, `local`/`remote` source, and `timeSaved`.
+
+## Run only what changed
+
+Combine affected selection with a warm cache. Unchanged dependency tasks
+replay from the cache, and only the changed packages and their dependents
+execute.
+
+```bash
+TURBO_SCM_BASE=origin/main bun turbo:local run test type-check --affected
+bun turbo:local run test --filter='...[origin/main]'
+```
+
+Both select the packages changed since the base plus their dependents. Turbo
+still schedules their dependency tasks, which are cache hits when nothing
+upstream changed. An edit to a root file (`turbo.json`, root `package.json`,
+`bun.lock` root entries, `.gitattributes`) selects everything; that is
+expected. For a single package, a package-local command such as
+`bun --cwd packages/ai vitest run <file>` avoids Turbo entirely. Queue broad
+runs with `ttr resources run -- <command>`.
+
+### Share the local cache across worktrees
+
+Each worktree has its own `.turbo/cache` by default. Trusted machines can share
+one bounded cache across worktrees by exporting an absolute path in the shell
+profile:
+
+```bash
+export TURBO_CACHE_DIR="$HOME/.cache/turbo/tuturuuu"
+```
+
+Turbo does not coordinate concurrent writers. Entries are keyed by task hash,
+so two worktrees racing on one hash write the same artifact. If a restore ever
+fails, delete that hash's files from the directory and rerun. The `cacheMaxAge`
+and `cacheMaxSize` bounds apply to the shared directory. Do not set
+`TURBO_CACHE_DIR` in CI: the fallback archive action expects `.turbo/cache`.
+
+## Cost bounds
+
+- GitHub Actions cache: 10 GB per repository with least-recently-used
+  eviction. Save only from `main`, keep keys stable, and do not let
+  pull-request refs create multi-GB entries.
+- Local Turbo cache: 7 days and 4 GB per cache directory.
+- Remote cache: request, size, TTL and operation-count bounds for the
+  self-hosted Worker are defined in its runbook.

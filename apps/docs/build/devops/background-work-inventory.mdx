@@ -1,0 +1,143 @@
+---
+title: "Background work inventory"
+description: "Every schedule, pg_cron job, task runner and Next.js continuation, with its overlap safety and Cloudflare target."
+updatedAt: '2026-10-23'
+---
+
+This inventory is the decision table for
+[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership). It
+reflects checked-in source on 2026-10-23. A source definition is not proof that
+a hosted schedule runs or succeeds; confirm hosted state before a cutover.
+
+## Summary
+
+| Owner today | Count | Target |
+| --- | ---: | --- |
+| Vercel Cron (this repository) | 13 | 12 Cron Control → existing processor, 1 Worker processor |
+| Cloudflare Cron Control | 1 | Already on Cloudflare (immediate notifications) |
+| pg_cron, live after migration replay | 8 | 7 retained pure-database maintenance, 1 Cron Control (pg_net HTTP call) |
+| Next.js `after()` continuations | 9 | 7 Queue consumers, 2 `ctx.waitUntil` once Worker-hosted |
+| Next.js cron routes without a hosted schedule | 8 | 7 Cron Control or Queue when scheduled, 1 retire |
+| Workspace managed cron jobs | 1 family | Cron Control drain of the existing claim RPC (no live scheduler) |
+| Trigger.dev tasks | 0 | `packages/trigger` holds Calendar helpers only, no SDK |
+| `packages/workflows` | 0 | Empty SDK placeholder |
+| Supabase Edge Functions | 0 | None; the guard keeps it that way |
+
+Scheduled Vercel opportunities total 2,887 per day in this repository. Moving
+only the schedule does not reduce processor invocations; processor moves do.
+
+## Overlap safety classes
+
+Cutover safety depends on whether two owners can run the same slot without
+duplicating a side effect. Cron Control's slot claim deduplicates its own ticks,
+not a concurrent Vercel tick.
+
+| Class | Meaning | Cutover order |
+| --- | --- | --- |
+| Claim-fenced | The processor atomically claims rows, leases or batches | Enable Cloudflare, verify one cycle, then remove the Vercel entry |
+| Idempotent | Repeat runs converge (upsert, overwrite, delete-if-unreferenced) | Same as claim-fenced; overlap only costs a duplicate run |
+| Handover | A concurrent run can duplicate a notification or email | Remove the old owner first, confirm its last run, then enable Cloudflare |
+
+## Vercel Cron jobs
+
+| Cron Control job | Project and route | Cadence (UTC) | Per day | Touches | Claim/idempotency | Class | Target |
+| --- | --- | --- | ---: | --- | --- | --- | --- |
+| `tasks-cleanup-media` | Tasks `/api/cron/tasks/cleanup-media` | `17 3 * * *` | 1 | Storage list, task/draft reference reads, object delete | Deletes only unreferenced media older than 30 days | Idempotent | Cron Trigger, then Worker processor with a durable cursor |
+| `pay-products` | Pay `/api/cron/payment/products` | `0 */12 * * *` | 2 | Polar catalog reads, product upserts | Upsert by provider ID | Idempotent | Cron Trigger, then Worker processor |
+| `calendar-smart-schedule` | Infrastructure `/api/cron/calendar/smart-schedule` → Calendar | `0 */6 * * *` | 4 | Workspace scheduling recompute | Not verified | Handover | Cron Trigger through the gateway, then Workflow |
+| `infrastructure-sync-trust-cache` | Infrastructure `/api/cron/infrastructure/sync-trust-cache` | `*/10 * * * *` | 144 | Trust RPC read, edge trust-cache writes (32 concurrent) | Overwrite with a 2-hour TTL | Idempotent | Cron Trigger, then Worker processor |
+| `web-notification-batches` | Web `/api/cron/process-notification-batches` | `*/15 * * * *` | 96 | Batches, email and push delivery | Pending-to-processing claim, send reconciliation | Claim-fenced | Cron Trigger, then Queue consumer |
+| `web-report-automation` | Web `/api/cron/process-report-automation` | `*/15 * * * *` | 96 | Report generation and email | Per-report lease and completion RPC | Claim-fenced | Cron Trigger, then Queue consumer |
+| `web-topic-announcements` | Web `/api/cron/process-topic-announcement-queue` | `*/15 * * * *` | 96 | Due announcements and notifications | Conditional queued-to-processing claim | Claim-fenced | Cron Trigger, then Queue consumer |
+| `calendar-provider-sync` | Infrastructure `/api/cron/calendar/provider-sync` → Calendar | `*/15 * * * *` | 96 | Provider APIs and calendar events | Per-workspace sync cooldown | Claim-fenced | Cron Trigger through the gateway, then Queue consumer |
+| `web-post-email-queue` | Web `/api/cron/process-post-email-queue` | `*/30 * * * *` | 48 | Post email queue and delivery | Processing claim; stale-row cleanup | Claim-fenced | Cron Trigger, then Queue consumer |
+| `inventory-checkout-expiry` | Inventory `/api/cron/inventory/checkout-expiry` | `*/5 * * * *` | 288 | Expiry RPC, storefront cache revalidation | `FOR UPDATE SKIP LOCKED` expiry RPC | Claim-fenced | Worker processor (template) |
+| `web-deadline-reminders` | Web `/api/cron/tasks/deadline-reminders` | `*/5 * * * *` | 288 | Tasks, watchers, notifications | Receipt check before send, recorded after send | Handover | Cron Trigger |
+| `infrastructure-docker-recovery-alerts` | Infrastructure `/api/cron/infrastructure/docker-recovery-alerts` | `*/5 * * * *` | 288 | Docker watcher logs, operator email | Persisted watermark | Handover | Cron Trigger; retirement candidate (Docker runner retired) |
+| `infrastructure-sample-resources` | Infrastructure `/api/cron/infrastructure/sample-resources` | `* * * * *` | 1,440 | Docker monitoring snapshot, usage-event insert | Minimum-interval sample check | Idempotent | Cron Trigger; retirement candidate (reads the retired Docker host) |
+
+The Web cron catalog lists deadline reminders every four hours, but the deployed
+Vercel entry runs every five minutes. Preserve the live cadence; do not run
+`sync-web-crons`, which would also drop report automation from the schedule.
+
+## pg_cron jobs
+
+Live jobs after replaying every migration's schedule and unschedule calls.
+`process-notification-batches` was unscheduled by a later migration.
+
+| Job | Cadence | Work | Decision and justification |
+| --- | --- | --- | --- |
+| `fetch-exchange-rates` | `0 6 * * *` | `pg_net` POST to Web `/api/cron/finance/exchange-rates` | Move to Cron Control (`finance-exchange-rates`): Postgres is acting as an HTTP scheduler |
+| `update_expired_sessions_job` | every minute | One UPDATE closing expired Nova sessions | Retain: pure SQL in the database |
+| typing-indicator cleanup (unnamed) | every minute | DELETE stale typing indicators | Retain: pure SQL in the database |
+| `security-budget-cleanup` | every minute | DELETE at most 20,000 expired budget counters | Retain: pure SQL, already bounded |
+| `refresh-posts-dashboard` | `*/10 * * * *` | REFRESH one materialized view | Retain: pure SQL in the database |
+| `cleanup-rate-limits` | `*/15 * * * *` | DELETE expired rate-limit windows | Retain: pure SQL in the database |
+| `normalize-task-sort-keys` | `0 * * * *` | Renumber task sort keys | Retain: pure SQL in the database |
+| `hard-delete-soft-deleted-items` | `5 * * * *` | DELETE tasks and boards soft-deleted over 30 days ago | Retain: pure SQL; storage objects belong to `tasks-cleanup-media` |
+
+**Retained exceptions.** Each retained job runs a single statement against
+Postgres tables with no HTTP, storage or provider side effect. A Cloudflare
+trigger would add a Worker invocation and a service-key HTTP round trip per tick
+to execute the same SQL in the same database: more cost and credential exposure,
+no compute moved off Supabase. Owners should still review the three every-minute
+jobs' cadence. Any job that gains an outbound call loses its exception.
+
+## Next.js `after()` continuations
+
+These run after the response on the hosting function, with no durable owner. A
+crashed or recycled function silently loses them.
+
+| Site | Work | Target |
+| --- | --- | --- |
+| Infrastructure Zalo personal channel route | Phone contact sync job | Queue consumer with persisted job state |
+| Infrastructure and inventory-core Polar product sync helpers | Product catalog sync after webhooks | Queue consumer |
+| Inventory Square webhook route | Catalog sync from Square | Queue consumer |
+| Teach AI feedback route | AI feedback generation | Queue consumer |
+| Web notes voice-jobs route | Voice transcription job (reservation exists) | Queue consumer |
+| Web AI-agent webhook route | Adapter `waitUntil` delivery | Queue consumer |
+| Web accept-invite and decline-invite routes | Invitation notification finalization | `ctx.waitUntil` (bounded, best effort) once Worker-hosted |
+
+## Processors without a hosted schedule
+
+These routes exist but no Vercel entry, pg_cron job or Worker trigger calls
+them. They may have relied on the retired Docker runner; confirm the intended
+owner before scheduling any of them.
+
+| Route | Decision |
+| --- | --- |
+| Pay `payment/orders`, `payment/subscriptions` | Cron Control job if reconciliation is required |
+| Inventory `inventory/polar-product-sync` | Cron Control job if webhook sync is insufficient |
+| Tasks `tasks/generate-embeddings` | Queue consumer for embedding backlog |
+| Web `ai/sync-models`, `discord/daily-report`, `discord/wol/daily/remind` | Cron Control job when an owner confirms the need |
+| Hive `hive/simulate` | Retire: the catalog keeps it disabled |
+
+Workspace managed cron jobs (`workspace_cron_jobs`) have a due-job claim RPC
+but no live scheduler since the Docker runner retired; only run-now routes
+execute them. A Cron Control job draining that claim RPC is the target, gated on
+a product decision because enabling it starts user-defined outbound requests.
+
+## Existing Cloudflare owner
+
+`apps/cron-control` runs every five minutes, requeues stale push batches and
+calls the Web immediate-delivery processor only when a pending immediate batch
+exists. See [Cloudflare Cron Control](/build/devops/cloudflare-cron-control).
+
+## Migration waves
+
+1. **Scheduler move, default off.** Add every Vercel job and the exchange-rate
+   pg_net job to Cron Control with flags off. Enable cheapest first: cleanup
+   media, products, smart schedule, trust cache; then claim-fenced Web jobs;
+   then handover jobs; the every-minute sampler last, after its retirement
+   decision.
+2. **Processor moves.** Start with checkout expiry (atomic RPC), then cleanup
+   media (durable cursor), products and trust cache as Worker processors.
+3. **Queues.** Move notification, email, announcement and report delivery, then
+   the `after()` sites, onto Queue consumers with attempt budgets aligned to
+   their existing claims.
+4. **Retirements.** Decide the Docker-era sampler and alerts and the Hive
+   simulation route with their owners.
+
+Per-job cutover steps live in the
+[Cron Control runbook](/build/devops/cloudflare-cron-control); processor targets
+and cost bounds live in [processor migration](/build/devops/cloudflare-processor-migration).
