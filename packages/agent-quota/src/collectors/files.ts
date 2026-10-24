@@ -1,6 +1,24 @@
-import type { Dirent } from 'node:fs';
-import { readdir } from 'node:fs/promises';
+import { constants, type Dirent } from 'node:fs';
+import { open, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
+export async function readJsonlSnapshot(path: string, minimumMtimeMs: number) {
+  const file = await open(
+    path,
+    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+  );
+  try {
+    const info = await file.stat();
+    if (!info.isFile() || info.mtimeMs < minimumMtimeMs) return;
+    return {
+      mtime: info.mtime,
+      mtimeMs: info.mtimeMs,
+      content: await file.readFile('utf8'),
+    };
+  } finally {
+    await file.close();
+  }
+}
 
 export async function listJsonlFiles(root: string): Promise<string[]> {
   const found: string[] = [];

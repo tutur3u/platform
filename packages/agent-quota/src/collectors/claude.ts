@@ -1,6 +1,5 @@
-import { readFile, stat } from 'node:fs/promises';
 import type { AccountUsage, UsageWindow, WindowKind } from '../types';
-import { listJsonlFiles } from './files';
+import { listJsonlFiles, readJsonlSnapshot } from './files';
 import { claudeProjectsRoot } from './paths';
 
 interface TokenTotals {
@@ -123,11 +122,13 @@ export async function collectClaude(
   const windows: UsageWindow[] = [];
   for (const file of await listJsonlFiles(projectsRoot)) {
     try {
-      const info = await stat(file);
-      if (info.mtimeMs < Date.now() - 24 * 60 * 60 * 1000) continue;
+      const info = await readJsonlSnapshot(
+        file,
+        Date.now() - 24 * 60 * 60 * 1000
+      );
+      if (!info) continue;
       lastMtime = Math.max(lastMtime, info.mtimeMs);
-      const content = await readFile(file, 'utf8');
-      for (const line of content.split('\n')) {
+      for (const line of info.content.split('\n')) {
         const usage = readUsage(line, info.mtime.toISOString());
         if (usage) {
           const timestamp = Date.parse(usage.observedAt);

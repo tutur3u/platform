@@ -161,12 +161,12 @@ whose reusable workflow requests more than its caller grants.
 `scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
 workflow-level write allowlist, and caller and callee grants in both directions.
 
-CodeQL PR uploads are diff-filtered; an analysis with zero uploaded results does
-not prove the local SARIF gate had no findings. The trusted new-alert gate prints
-blocking rule IDs and primary locations, omits message bodies, and escapes workflow
-command characters. A missing category baseline still fails closed. For exact
-CLI reproduction and regression coverage, follow
-[`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
+CodeQL PR uploads are diff-filtered; zero uploaded results do not clear the
+local SARIF gate. Triage at the analyzed SHA and current main: trace validation
+rejections, same-descriptor reads and directory-only fsync before calling an alert real.
+Keep optional-reader defects distinct from default production reachability; test
+replacement negatives without enabling collection. The gate prints escaped rule IDs
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
 
 ## Bun runtime pins
 
