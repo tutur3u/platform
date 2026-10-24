@@ -11,11 +11,6 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/theme/appearance/appearance_scope.dart';
-import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -43,9 +38,10 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+import '../../../helpers/pump_app.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -411,19 +407,7 @@ class _CalendarShellHarness {
       BlocProvider.value(value: title),
       BlocProvider.value(value: assistant),
     ],
-    child: shad.ShadcnApp.router(
-      theme: AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
-      localizationsDelegates: const [
-        ...AppLocalizations.localizationsDelegates,
-        AppShadcnLocalizationsDelegate(),
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: router,
-      builder: (context, child) => AppearanceBackdrop(
-        settings: const AppearanceSettings(),
-        child: ShadcnMaterialBridge(child: child!),
-      ),
-    ),
+    child: shellTestApp(router: router, brightness: brightness),
   );
 
   Future<void> dispose() async {
