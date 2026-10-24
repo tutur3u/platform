@@ -134,34 +134,64 @@ export async function createHabitTracker(
   };
 }
 
-async function findEntryByKey(
-  supabase: TypedSupabaseClient,
-  wsId: string,
-  trackerId: string,
-  actorUserId: string,
-  idempotencyKey: string
-): Promise<KeyedLookup<HabitTrackerEntry>> {
+type ReceiptOutcome = { entry_id: string | null; replayed: boolean };
+// Typed locally, like the key columns above, so the writer compiles against
+// generated declarations that predate the migration.
+type ReceiptRpc = (
+  fn: 'record_habit_tracker_entry_with_receipt',
+  args: {
+    p_ws_id: string;
+    p_tracker_id: string;
+    p_user_id: string;
+    p_idempotency_key: string;
+    p_request_hash: string;
+    p_entry_kind: string;
+    p_entry_date: string;
+    p_occurred_at: string;
+    p_values: Json;
+    p_primary_value: number | null;
+    p_note: string | null;
+    p_tags: string[];
+  }
+) => PromiseLike<{ data: ReceiptOutcome[] | null; error: PostgrestError }>;
+
+/**
+ * The receipt function from migration 20261025034500. Until it reaches an
+ * environment, PostgREST reports it missing and keyed writes fall back to the
+ * unkeyed path instead of failing every request.
+ */
+const isMissingFunction = (error: PostgrestError) =>
+  error?.code === 'PGRST202' || error?.code === '42883';
+
+/** SHA-256 of the operation body, binding a receipt to what was requested. */
+async function entryRequestHash(body: unknown) {
+  const digest = await globalThis.crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(JSON.stringify(body))
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function loadEntry(supabase: TypedSupabaseClient, entryId: string) {
   const { data, error } = await supabase
     .from('workspace_habit_tracker_entries')
     .select('*')
-    .eq('ws_id', wsId)
-    .eq('tracker_id', trackerId)
-    .eq('user_id', actorUserId)
-    .filter('idempotency_key', 'eq', idempotencyKey)
-    .maybeSingle();
-  if (isMissingKeyColumn(error)) return { row: null, columnMissing: true };
-  if (error) {
+    .eq('id', entryId)
+    .single();
+  if (error || !data) {
     throw new HabitTrackerError('Failed to load habit tracker entry', 500);
   }
-  return {
-    row: data ? mapEntryRow(data as Record<string, unknown>) : null,
-    columnMissing: false,
-  };
+  return mapEntryRow(data as Record<string, unknown>);
 }
 
 /**
- * Creates an entry. With `idempotency_key`, a repeated operation for the same
- * tracker member returns the stored entry (`replayed: true`) without writing.
+ * Creates an entry. With `idempotency_key`, the operation is accepted at most
+ * once per tracker member: a database function claims an immutable receipt and
+ * writes the entry in one transaction, so a retried older operation replays
+ * (`replayed: true`) instead of overwriting a newer daily summary, and reusing
+ * a key for a different request is rejected.
  */
 export async function createHabitTrackerEntry(
   supabase: TypedSupabaseClient,
@@ -173,24 +203,79 @@ export async function createHabitTrackerEntry(
   const tracker = await getTrackerOrThrow(supabase, wsId, trackerId);
   const sanitized = sanitizeEntryValues(tracker, input);
   const entryKind = normalizeEntryKind(tracker.tracking_mode);
-  let idempotencyKey = sanitized.entry.idempotency_key;
-  const replay = async () => {
-    if (!idempotencyKey) return null;
-    const found = await findEntryByKey(
-      supabase,
-      wsId,
-      trackerId,
-      actorUserId,
-      idempotencyKey
-    );
-    if (found.columnMissing) idempotencyKey = undefined;
-    return found.row ? { entry: found.row, replayed: true } : null;
-  };
+  const idempotencyKey = sanitized.entry.idempotency_key;
+  const values = serializeEntryValues(sanitized.values);
+  const note = sanitized.entry.note ?? null;
+  const tags = sanitized.entry.tags ?? [];
 
-  const earlier = await replay();
-  if (earlier) return earlier;
-  const keyFields = idempotencyKey ? { idempotency_key: idempotencyKey } : {};
+  if (idempotencyKey) {
+    // occurred_at only binds the receipt when the caller chose it; a default
+    // of "now" would differ on every retry.
+    const requestHash = await entryRequestHash([
+      'habit-tracker-entry:v1',
+      entryKind,
+      sanitized.entry.entry_date,
+      sanitized.entry.occurred_at ?? null,
+      values,
+      sanitized.primaryValue ?? null,
+      note,
+      tags,
+    ]);
+    const rpc = supabase.rpc.bind(supabase) as unknown as ReceiptRpc;
+    const { data, error } = await rpc(
+      'record_habit_tracker_entry_with_receipt',
+      {
+        p_ws_id: wsId,
+        p_tracker_id: trackerId,
+        p_user_id: actorUserId,
+        p_idempotency_key: idempotencyKey,
+        p_request_hash: requestHash,
+        p_entry_kind: entryKind,
+        p_entry_date: sanitized.entry.entry_date,
+        p_occurred_at: sanitized.entry.occurred_at ?? new Date().toISOString(),
+        p_values: values,
+        p_primary_value: sanitized.primaryValue ?? null,
+        p_note: note,
+        p_tags: tags,
+      }
+    );
+    if (!isMissingFunction(error)) {
+      if (error?.code === 'P0409') {
+        throw new HabitTrackerError(
+          'This operation key was already used for a different entry',
+          409
+        );
+      }
+      if (error?.code === 'P0404') {
+        throw new HabitTrackerError('Habit tracker not found', 404);
+      }
+      const outcome = data?.[0];
+      if (error || !outcome) {
+        throw new HabitTrackerError('Failed to save habit tracker entry', 500);
+      }
+      if (!outcome.entry_id) {
+        // The operation was accepted earlier and its entry since deleted; a
+        // late retry must not bring it back.
+        throw new HabitTrackerError(
+          'This operation was already applied and its entry has since been removed',
+          409
+        );
+      }
+      return {
+        entry: await loadEntry(supabase, outcome.entry_id),
+        replayed: outcome.replayed,
+      };
+    }
+  }
+
   const occurredAt = sanitized.entry.occurred_at ?? new Date().toISOString();
+  const fields = {
+    values,
+    primary_value: sanitized.primaryValue,
+    note,
+    tags,
+    occurred_at: occurredAt,
+  };
 
   const updateDailySummary = async () => {
     const { data: existing, error: existingError } = await supabase
@@ -208,25 +293,12 @@ export async function createHabitTrackerEntry(
     }
     if (!existing) return null;
 
-    const changes: EntryUpdate & { idempotency_key?: string } = {
-      values: serializeEntryValues(sanitized.values),
-      primary_value: sanitized.primaryValue,
-      note: sanitized.entry.note ?? null,
-      tags: sanitized.entry.tags ?? [],
-      occurred_at: occurredAt,
-      ...keyFields,
-    };
     const { data, error } = await supabase
       .from('workspace_habit_tracker_entries')
-      .update(changes as EntryUpdate)
+      .update(fields as EntryUpdate)
       .eq('id', existing.id)
       .select('*')
       .single();
-
-    if (error && isUniqueViolation(error)) {
-      const raced = await replay();
-      if (raced) return raced;
-    }
     if (error) {
       throw new HabitTrackerError('Failed to update habit tracker entry', 500);
     }
@@ -241,31 +313,24 @@ export async function createHabitTrackerEntry(
     if (updated) return updated;
   }
 
-  const row: EntryInsert & { idempotency_key?: string } = {
+  const row: EntryInsert = {
     ws_id: wsId,
     tracker_id: trackerId,
     user_id: actorUserId,
     entry_kind: entryKind,
     entry_date: sanitized.entry.entry_date,
-    occurred_at: occurredAt,
-    values: serializeEntryValues(sanitized.values),
-    primary_value: sanitized.primaryValue,
-    note: sanitized.entry.note ?? null,
-    tags: sanitized.entry.tags ?? [],
     created_by: actorUserId,
-    ...keyFields,
+    ...fields,
   };
   const { data, error } = await supabase
     .from('workspace_habit_tracker_entries')
-    .insert(row as EntryInsert)
+    .insert(row)
     .select('*')
     .single();
 
-  if (error && isUniqueViolation(error)) {
-    // A concurrent request with the same key, or the same daily summary day.
-    const raced =
-      (await replay()) ??
-      (entryKind === 'daily_summary' ? await updateDailySummary() : null);
+  if (error && isUniqueViolation(error) && entryKind === 'daily_summary') {
+    // A concurrent unkeyed write created the same daily summary day.
+    const raced = await updateDailySummary();
     if (raced) return raced;
   }
   if (error) {

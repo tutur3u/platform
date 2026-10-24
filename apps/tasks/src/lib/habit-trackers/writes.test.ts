@@ -50,7 +50,12 @@ const entryRow = (overrides: Record<string, unknown> = {}) => ({
 function supabaseMock(options: {
   lookups: Record<string, Result[]>;
   write?: Result;
+  rpc?: Result;
 }) {
+  const rpc = vi.fn(
+    async (_fn: string, _args: Record<string, unknown>) =>
+      options.rpc ?? { data: null, error: null }
+  );
   const insert = vi.fn();
   const update = vi.fn();
   const filters: Array<[string, string, unknown]> = [];
@@ -81,7 +86,8 @@ function supabaseMock(options: {
     return builder;
   };
   return {
-    supabase: { from } as unknown as TypedSupabaseClient,
+    supabase: { from, rpc } as unknown as TypedSupabaseClient,
+    rpc,
     insert,
     update,
     filters,
@@ -174,58 +180,137 @@ describe('createHabitTracker', () => {
 describe('createHabitTrackerEntry', () => {
   const tracker = { data: trackerRow(), error: null };
 
-  it('replays a repeated operation key without writing', async () => {
+  const keyed = {
+    entry_date: '2026-10-25',
+    values: { glasses: 1 },
+    idempotency_key: 'mira:entry-0001',
+  };
+  const rpcArgs = (mock: ReturnType<typeof supabaseMock>, call = 0) =>
+    (
+      mock.rpc.mock.calls[call] as unknown as [string, Record<string, unknown>]
+    )[1];
+
+  it('accepts a keyed operation through the atomic receipt function', async () => {
     const mock = supabaseMock({
-      lookups: {
-        workspace_habit_trackers: [tracker],
-        workspace_habit_tracker_entries: [
-          { data: entryRow({ id: 'stored' }), error: null },
-        ],
-      },
+      lookups: { workspace_habit_trackers: [tracker] },
+      rpc: { data: [{ entry_id: 'created', replayed: false }], error: null },
+      write: { data: entryRow({ id: 'created' }), error: null },
     });
     const result = await createHabitTrackerEntry(
       mock.supabase,
       'ws-1',
       'tracker-1',
       'user-1',
-      {
-        entry_date: '2026-10-25',
-        values: { glasses: 1 },
-        idempotency_key: 'mira:entry-0001',
-      }
+      keyed
+    );
+    expect(result).toMatchObject({ replayed: false, entry: { id: 'created' } });
+    expect(mock.rpc.mock.calls[0]?.[0]).toBe(
+      'record_habit_tracker_entry_with_receipt'
+    );
+    expect(rpcArgs(mock)).toMatchObject({
+      p_ws_id: 'ws-1',
+      p_tracker_id: 'tracker-1',
+      p_user_id: 'user-1',
+      p_idempotency_key: 'mira:entry-0001',
+      p_entry_kind: 'event_log',
+    });
+    expect(rpcArgs(mock).p_request_hash).toMatch(/^[0-9a-f]{64}$/);
+    // The entry is written only inside the function's transaction.
+    expect(mock.insert).not.toHaveBeenCalled();
+    expect(mock.update).not.toHaveBeenCalled();
+  });
+
+  it('replays a repeated operation key without writing', async () => {
+    const mock = supabaseMock({
+      lookups: { workspace_habit_trackers: [tracker] },
+      rpc: { data: [{ entry_id: 'stored', replayed: true }], error: null },
+      write: { data: entryRow({ id: 'stored' }), error: null },
+    });
+    const result = await createHabitTrackerEntry(
+      mock.supabase,
+      'ws-1',
+      'tracker-1',
+      'user-1',
+      keyed
     );
     expect(result).toMatchObject({ replayed: true, entry: { id: 'stored' } });
     expect(mock.insert).not.toHaveBeenCalled();
     expect(mock.update).not.toHaveBeenCalled();
   });
 
-  it('returns the concurrent winner when the keyed insert loses the race', async () => {
+  it('binds the receipt to the request body, not the retry time', async () => {
+    const run = async (input: typeof keyed) => {
+      const mock = supabaseMock({
+        lookups: { workspace_habit_trackers: [{ ...tracker }] },
+        rpc: { data: [{ entry_id: 'e', replayed: false }], error: null },
+        write: { data: entryRow({ id: 'e' }), error: null },
+      });
+      await createHabitTrackerEntry(
+        mock.supabase,
+        'ws-1',
+        'tracker-1',
+        'user-1',
+        input
+      );
+      return rpcArgs(mock).p_request_hash;
+    };
+    const first = await run(keyed);
+    expect(await run(keyed)).toBe(first);
+    expect(await run({ ...keyed, values: { glasses: 2 } })).not.toBe(first);
+  });
+
+  it('rejects a key reused for a different request', async () => {
     const mock = supabaseMock({
-      lookups: {
-        workspace_habit_trackers: [tracker],
-        workspace_habit_tracker_entries: [
-          { data: null, error: null },
-          { data: entryRow({ id: 'winner' }), error: null },
-        ],
-      },
-      write: { data: null, error: { code: '23505' } },
+      lookups: { workspace_habit_trackers: [tracker] },
+      rpc: { data: null, error: { code: 'P0409' } },
+    });
+    await expect(
+      createHabitTrackerEntry(
+        mock.supabase,
+        'ws-1',
+        'tracker-1',
+        'user-1',
+        keyed
+      )
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mock.insert).not.toHaveBeenCalled();
+  });
+
+  it('does not resurrect an accepted entry the user has since deleted', async () => {
+    const mock = supabaseMock({
+      lookups: { workspace_habit_trackers: [tracker] },
+      rpc: { data: [{ entry_id: null, replayed: true }], error: null },
+    });
+    await expect(
+      createHabitTrackerEntry(
+        mock.supabase,
+        'ws-1',
+        'tracker-1',
+        'user-1',
+        keyed
+      )
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mock.insert).not.toHaveBeenCalled();
+  });
+
+  it('falls back to an unkeyed write before the migration is deployed', async () => {
+    const mock = supabaseMock({
+      lookups: { workspace_habit_trackers: [tracker] },
+      rpc: { data: null, error: { code: 'PGRST202' } },
+      write: { data: entryRow(), error: null },
     });
     const result = await createHabitTrackerEntry(
       mock.supabase,
       'ws-1',
       'tracker-1',
       'user-1',
-      {
-        entry_date: '2026-10-25',
-        values: { glasses: 1 },
-        idempotency_key: 'mira:entry-0001',
-      }
+      keyed
     );
-    expect(result).toMatchObject({ replayed: true, entry: { id: 'winner' } });
+    expect(result.replayed).toBe(false);
     expect(mock.insert).toHaveBeenCalledTimes(1);
-    expect(mock.insert.mock.calls[0]?.[1]).toMatchObject({
-      idempotency_key: 'mira:entry-0001',
-    });
+    expect(mock.insert.mock.calls[0]?.[1]).not.toHaveProperty(
+      'idempotency_key'
+    );
   });
 
   it('keeps unkeyed entries unchanged', async () => {
@@ -258,5 +343,6 @@ describe('createHabitTrackerEntry', () => {
       })
     ).rejects.toThrow();
     expect(mock.insert).not.toHaveBeenCalled();
+    expect(mock.rpc).not.toHaveBeenCalled();
   });
 });

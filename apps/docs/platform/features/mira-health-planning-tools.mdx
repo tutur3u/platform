@@ -59,9 +59,10 @@ so trackers created from mobile are named in English.
 
 ## Idempotent writes
 
-Retries and concurrent requests must not duplicate habit data. Two opt-in keys,
-added by migration `20261025034500_add_habit_tracker_idempotency_keys`, enforce
-this in the database:
+Retries and concurrent requests must not duplicate habit data, and a retried
+older operation must not undo a newer one. Migration
+`20261025034500_add_habit_tracker_idempotency_keys` enforces this in the
+database:
 
 - **Tracker `creation_key`.** A partial unique index allows one active,
   unarchived tracker per (workspace, creator, key). Mira creates its Body Weight
@@ -69,10 +70,22 @@ this in the database:
   on one tracker. The Tasks API answers a repeat with the existing tracker and
   `created: false` (HTTP 200); only the request that inserted it reports
   `trackerCreated: true`. Archiving or deactivating the tracker releases the key.
-- **Entry `idempotency_key`.** A partial unique index allows one entry per
-  (tracker, member, key). The Tasks entries API returns the stored entry with
-  `replayed: true` (HTTP 200) instead of writing again, and Mira reports
-  `alreadyLogged: true`.
+- **Entry receipts.** Every accepted keyed entry operation gets an immutable
+  receipt in `workspace_habit_tracker_entry_receipts`, bound to the tracker,
+  member, key and a SHA-256 of the request body. The function
+  `record_habit_tracker_entry_with_receipt` claims the receipt and writes the
+  entry in one transaction, so a crash leaves neither.
+  - A repeated key with the same body returns the entry with `replayed: true`
+    (HTTP 200) without writing, and Mira reports `alreadyLogged: true`.
+  - Daily summaries keep one mutable row per day, but receipts are separate:
+    after A (70) and B (71), retrying A replays and the day stays 71.
+  - Reusing a key for a different body is rejected with HTTP 409.
+  - Deleting an entry keeps its receipt, so a late retry reports 409 instead
+    of bringing the entry back.
+  - Concurrent calls with the same key wait on the receipt key and replay;
+    concurrent calls with different keys for one day serialize on that day's
+    row, and each keeps its receipt.
+  - Receipts and the function are service-role only.
 
 Mira derives entry keys by hashing the operation scope and normalized input:
 
@@ -84,10 +97,13 @@ Mira derives entry keys by hashing the operation scope and normalized input:
   Counters legitimately repeat identical input, so only a retry of the same tool
   call is deduplicated. Without a tool call ID, no key is sent.
 
-Both columns are new and nullable, so existing rows, including duplicate
-trackers already in the data, keep `NULL` keys and cannot violate the indexes.
+The tracker column is new and nullable, so existing rows, including duplicate
+trackers already in the data, keep `NULL` keys and cannot violate the index.
 UI writes send no keys and behave as before. The Tasks API ignores keys while
-the columns are missing, so app and migration rollout order does not matter.
+the column or function is missing, so app and migration rollout order does not
+matter. The migration takes no index on the entries table, validates its check
+constraint separately, and sets a 5-second `lock_timeout` so it fails fast
+rather than queueing writers.
 
 ## Units, bounds and dates
 
@@ -147,10 +163,13 @@ the session cannot verify that permission, the section fails closed.
 - `packages/ai/src/tools/executors/day-overview.test.ts`: timezone bucketing,
   per-section partial failure, calendar fail-closed, caps, date validation and
   capped habit history reported as incomplete instead of zero.
-- `apps/tasks/src/lib/habit-trackers/writes.test.ts`: keyed tracker and entry
-  replay, unique-violation races and the pre-migration fallback.
-- `apps/database/supabase/tests/habit-tracker-idempotency.sql`: the partial
-  unique indexes, key release on archive or deactivation, legacy duplicates and
-  key format checks.
+- `apps/tasks/src/lib/habit-trackers/writes.test.ts`: keyed tracker replay and
+  races, receipt-function calls, request-body binding, key reuse (409), a
+  deleted entry (409) and the pre-migration fallback.
+- `apps/database/supabase/tests/habit-tracker-idempotency.sql`: the tracker
+  index, key release on archive or deactivation and legacy duplicates; for
+  entry receipts, the A/B/A daily retry, different keys on one day, key reuse,
+  event retries, retry after deletion, workspace binding, key format and
+  service-role-only access.
 - `packages/ai/src/tools/mira-tool-discovery.test.ts`: English and Vietnamese
   discovery of the health and planning tools.

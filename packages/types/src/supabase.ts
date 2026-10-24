@@ -42107,7 +42107,6 @@ export type Database = {
           entry_date: string;
           entry_kind: string;
           id: string;
-          idempotency_key: string | null;
           note: string | null;
           occurred_at: string;
           primary_value: number | null;
@@ -42124,7 +42123,6 @@ export type Database = {
           entry_date?: string;
           entry_kind?: string;
           id?: string;
-          idempotency_key?: string | null;
           note?: string | null;
           occurred_at?: string;
           primary_value?: number | null;
@@ -42141,7 +42139,6 @@ export type Database = {
           entry_date?: string;
           entry_kind?: string;
           id?: string;
-          idempotency_key?: string | null;
           note?: string | null;
           occurred_at?: string;
           primary_value?: number | null;
@@ -50376,6 +50373,26 @@ export type Database = {
           p_raw_notification?: Json;
         };
         Returns: string;
+      };
+      record_habit_tracker_entry_with_receipt: {
+        Args: {
+          p_entry_date: string;
+          p_entry_kind: string;
+          p_idempotency_key: string;
+          p_note: string | null;
+          p_occurred_at: string;
+          p_primary_value: number | null;
+          p_request_hash: string;
+          p_tags: string[];
+          p_tracker_id: string;
+          p_user_id: string;
+          p_values: Json;
+          p_ws_id: string;
+        };
+        Returns: {
+          entry_id: string | null;
+          replayed: boolean;
+        }[];
       };
       record_mira_interaction: {
         Args: { p_user_id: string };
