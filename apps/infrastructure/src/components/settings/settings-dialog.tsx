@@ -1,12 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Keyboard, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
+import { Keyboard, Paintbrush, PanelLeft } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
+import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
 import { useSidebar } from '@tuturuuu/satellite/sidebar-context';
 import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
 } from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -20,12 +23,14 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface SettingsDialogProps {
+  centralUrl: string;
   defaultTab?: string;
   user: WorkspaceUser | null;
   wsId?: string;
 }
 
 export function SettingsDialog({
+  centralUrl,
   defaultTab = 'profile',
   user,
   wsId,
@@ -45,18 +50,7 @@ export function SettingsDialog({
 
   const navItems = [
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-    {
-      label: t('settings.user.title'),
-      items: [
-        {
-          description: t('settings.user.profile_description'),
-          icon: User,
-          keywords: ['Profile', 'Account'],
-          label: t('settings.user.profile'),
-          name: 'profile',
-        },
-      ],
-    },
+    createAccountSettingsNavGroup(t),
     {
       label: t('settings.preferences.title'),
       items: [
@@ -100,9 +94,11 @@ export function SettingsDialog({
         wsId={wsId}
       />
 
-      {activeTab === 'profile' && user ? (
-        <SatelliteProfileSettingsPanel user={user} />
-      ) : null}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'appearance' ? (
         <div className="h-full">

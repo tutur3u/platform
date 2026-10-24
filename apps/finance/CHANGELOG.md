@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/finance-v0.34.1...finance-v0.35.0) (2026-10-24)
+
+
+### Features
+
+* **satellite:** shared account, profile and security settings in every app ([#6477](https://github.com/tutur3u/platform/issues/6477)) ([2cd0879](https://github.com/tutur3u/platform/commit/2cd087939043a1dd91d1bfecee3337e4122badae))
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** harden request-keyed records, push previews and key handoff ([#6521](https://github.com/tutur3u/platform/issues/6521)) ([1c7dfb1](https://github.com/tutur3u/platform/commit/1c7dfb13762c6da6b1935e8ea409aa29dce4c747))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
+* **utils:** replace empty earlier duplicates in multi-value query parsing ([b0e6152](https://github.com/tutur3u/platform/commit/b0e61521a9c0a3a5d36b6f05948b9cfcab13fd7a))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.34.1](https://github.com/tutur3u/platform/compare/finance-v0.34.0...finance-v0.34.1) (2026-10-17)
 
 

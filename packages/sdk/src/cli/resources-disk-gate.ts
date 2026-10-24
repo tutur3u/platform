@@ -2,7 +2,7 @@ import { statfs } from 'node:fs/promises';
 
 // Minimal disk headroom gate used at dequeue, just before a queued job spawns.
 // It mirrors Lane ST's storage thresholds (TTR_STORAGE_MIN_FREE, default
-// 15 GiB, and TTR_STORAGE_MIN_FREE_PERCENT, default 5%) without depending on
+// 15 GiB, TTR_STORAGE_MIN_FREE_PERCENT and inode percentage, default 5%) without depending on
 // the storage-* modules, and unlike an enqueue-time check it fails closed: a
 // volume whose free space cannot be read is never admitted.
 const GiB = 1024 ** 3;
@@ -20,17 +20,22 @@ function bytes(value: string | undefined, fallback: number) {
     throw new Error('TTR_STORAGE_MIN_FREE must be a size such as 15g.');
   return Number(match[1]) * units[match[2]!.toLowerCase()]!;
 }
-function percent(value: string | undefined, fallback: number) {
+function percent(
+  value: string | undefined,
+  fallback: number,
+  name = 'TTR_STORAGE_MIN_FREE_PERCENT'
+) {
   if (value === undefined || value === '') return fallback;
   const number = Number(value);
   if (!Number.isFinite(number) || number < 0 || number > 100)
-    throw new Error('TTR_STORAGE_MIN_FREE_PERCENT must be from 0 to 100.');
+    throw new Error(`${name} must be from 0 to 100.`);
   return number;
 }
 
 export interface DiskProbe {
   freeBytes: number;
   totalBytes: number;
+  inodeFreePercent: number | null;
 }
 export async function probeDisk(path: string): Promise<DiskProbe> {
   const info = await statfs(path);
@@ -44,7 +49,15 @@ export async function probeDisk(path: string): Promise<DiskProbe> {
     freeBytes < 0
   )
     throw new Error('statfs returned no usable block counts');
-  return { freeBytes, totalBytes };
+  const files = Number(info.files);
+  const free = Number(info.ffree);
+  if (files > 0 && (!Number.isFinite(free) || free < 0 || free > files))
+    throw new Error('statfs returned no usable inode counts');
+  return {
+    freeBytes,
+    totalBytes,
+    inodeFreePercent: files > 0 ? (free / files) * 100 : null,
+  };
 }
 
 // statfs on a hung volume (stale NFS, failing disk) can block indefinitely
@@ -96,9 +109,15 @@ export async function diskGate(
     return { admit: true, freeGiB: undefined };
   let minBytes: number;
   let minPercent: number;
+  let minInodePercent: number;
   try {
     minBytes = bytes(env.TTR_STORAGE_MIN_FREE, 15 * GiB);
     minPercent = percent(env.TTR_STORAGE_MIN_FREE_PERCENT, 5);
+    minInodePercent = percent(
+      env.TTR_STORAGE_MIN_FREE_INODE_PERCENT,
+      5,
+      'TTR_STORAGE_MIN_FREE_INODE_PERCENT'
+    );
   } catch (error) {
     // Our own fixed messages; they name only the variable, never its value.
     return {
@@ -126,6 +145,15 @@ export async function diskGate(
       admit: false,
       unknown: false,
       reason: `${freeGiB.toFixed(1)} GiB (${freePercent.toFixed(1)}%) free on the job volume is below ${(minBytes / GiB).toFixed(1)} GiB / ${minPercent}%; run ttr storage suggest`,
+    };
+  if (
+    volume.inodeFreePercent !== null &&
+    volume.inodeFreePercent < minInodePercent
+  )
+    return {
+      admit: false,
+      unknown: false,
+      reason: `${volume.inodeFreePercent.toFixed(1)}% free inodes on the job volume is below ${minInodePercent}%; run ttr storage suggest`,
     };
   return { admit: true, freeGiB };
 }

@@ -275,6 +275,17 @@ Prefer remote `ttr box` validation for broad checks; verify the runner's actual
 host because same-machine runners and containers are not resource offload.
 
 
+### Turbo summary ownership
+
+Snapshot `.turbo/runs/` in the spawn hook after admission, never at enqueue or
+plan time. Keep stdout/stderr inherited and finish on process exit; output pipes
+held by an escaped process must not hold a resource lane. Report only one new
+JSON file with an ID matching its basename. Preserve all pre-spawn files, skip
+zero or multiple candidates, and skip a command cancelled before spawn.
+`resources-summary-lifecycle.test.ts` exercises the queued cancellation, spawn
+snapshot and escaped-child boundaries; `resources-turbo-summary.test.ts` covers
+file selection, ID validation and user-owned summaries.
+
 ### Resource offload failure boundary
 
 For `resources run --offload`, permit local fallback only before creation or

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/satellite",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -36,6 +36,7 @@
     "./verify-token-page": "./src/pages/verify-token-page.tsx",
     "./version-badge": "./src/components/version-badge-gate.tsx",
     "./workspace-invitation": "./src/components/workspace-invitation/index.ts",
+    "./account-settings": "./src/components/account-settings/index.ts",
     "./workspace-settings": "./src/components/workspace-settings/index.ts",
     "./i18n": "./src/i18n/routing.ts",
     "./constants": "./src/constants/common.ts",

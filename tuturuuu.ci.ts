@@ -28,6 +28,7 @@ export const ci = {
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
   'apps-cloudflare.yaml': true,
+  'shortener-cloudflare.yaml': true,
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
@@ -115,10 +116,11 @@ export const ci = {
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
-// Admit each app only in an explicitly reviewed wave-1 cutover PR.
+// Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
   calendar: { state: 'held', reason: 'held for wave-1 cutover' },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
+  shortener: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

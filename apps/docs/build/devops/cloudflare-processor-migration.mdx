@@ -1,0 +1,100 @@
+---
+title: "Processor migration to Cloudflare"
+description: "Per-job plan and cost bounds for moving scheduled processors off Vercel, with checkout expiry as the Worker template."
+updatedAt: '2026-10-23'
+---
+
+Moving a job's **schedule** into [Cron Control](/build/devops/cloudflare-cron-control)
+still invokes its Vercel function every slot. Moving its **processor** into a
+Worker, Queue consumer or Workflow removes that invocation. Follow
+[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership) and the
+[runaway-work acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+rules for every move.
+
+## Template: checkout expiry Worker processor
+
+`apps/cron-control/src/processors/checkout-expiry.ts` ports Inventory's
+checkout-expiry processor. It runs only when `inventory-checkout-expiry` is in
+both `CRON_CONTROL_ENABLED_JOBS` and `CRON_CONTROL_WORKER_PROCESSORS`, so the
+schedule can move first and the processor later. Both vars are empty by default.
+
+- **Same claim.** The Worker calls the private `expire_inventory_checkout_sessions`
+  RPC directly with the service key in `apikey`. The RPC locks candidates with
+  `FOR UPDATE SKIP LOCKED` and only moves `reserved` rows, so a concurrent legacy
+  run cannot double-expire a checkout.
+- **Expiry bounds and backpressure.** At most 10 batches of 1,000 rows per slot,
+  one shared `p_now`, 30-second database deadlines and manual redirects. Check the
+  durable stop fence before every batch and revalidation chunk. Active obligations
+  and quarantined work share a 5,000-workspace bound. Reserve room for a worst-case
+  1,000 distinct workspaces before each expiry RPC; stop expiry when capacity is
+  insufficient. Ledger overflow is refused atomically; no oldest-item eviction.
+- **Whole-run deadline.** Claim, HTTP headers/body, pending-ledger RPCs, stop checks
+  and completion share an absolute 240-second deadline inside the 270-second lease.
+  HTTP requests also retain their shorter timeout. A timed-out ledger call can
+  still complete remotely; do not replay it immediately. No dependent operation
+  starts after timeout. Late obligation settlement and retry charges are fenced
+  by the original claim's generation and slot. An unconfirmed completion leaves the claim to be charged
+  as unknown by the next slot rather than reporting success.
+- **Owed work first.** Outstanding revalidation runs before any expiry, with up to
+  120 seconds reserved for that phase. If owed work remains, start no new
+  expiry. Fresh expiries persist obligations before revalidation. Incomplete work,
+  capacity exhaustion and quarantine never count as a successful slot.
+- **Per-workspace receipts.** Next.js owns storefront cache invalidation. The Worker
+  posts at most 100 workspace UUIDs to Inventory's authenticated POST adapter
+  (8 KiB input bound). The adapter uses the throwing invalidation helper, isolates
+  each workspace failure and returns `results: [{ wsId, ok }]`. Only an explicit
+  `ok: true` receipt for a requested workspace settles its obligation. Missing,
+  contradictory, failed or legacy aggregate-only receipts stay owed.
+- **Poison isolation.** A failed chunk does not prevent later chunks from running
+  within the remaining time. Each unconfirmed item gets one durable attempt charge
+  per sweep. After three attempts it moves to bounded `quarantinedWork`; the item
+  is retained, occupies capacity and is not retried automatically. Healthy chunks
+  can still settle. Inspect quarantine through the authenticated ledger status;
+  repair and confirm invalidation before deliberately settling it. Resume alone
+  preserves quarantine. Five failed or unknown slots still stop the entire job.
+
+**Operation envelope.** An idle Worker slot makes five ledger calls (claim, two
+backlog reads, stop check, completion) and one expiry RPC, with no Inventory call.
+A slot makes at most 10 expiry RPCs and 100 revalidation calls (50 owed chunks plus
+50 fresh chunks), with at most three ledger operations per revalidation chunk
+(fence, settle, failure charge). These are conservative source bounds, not billed
+usage or hosted acceptance. Quarantined items have no automatic retries; stopped
+jobs do no processor work. The controlled unit fixtures count requests and cover
+capacity, partial receipts, poison isolation, restart persistence and each stalled
+ledger phase. Hosted stop, database, Next cache freshness and exact-artifact CI
+remain separate gates. Database expiry and recording a ledger obligation are
+separate writes; an interruption between them still requires reconciliation
+before claiming crash-atomic end-to-end invalidation.
+
+**Cutover.** Deploy the Inventory per-workspace receipt adapter before selecting
+this Worker port; an older adapter's aggregate receipt cannot settle work. Both
+Cron Control vars remain empty in source. Enable the job first (it calls the Next route), verify one slot, then
+add it to `CRON_CONTROL_WORKER_PROCESSORS` in a separate change. Verify one slot
+with `detail.expired` and storefront freshness for a test checkout, then remove the
+Vercel cron. Roll back by removing the id from `CRON_CONTROL_WORKER_PROCESSORS`;
+the job returns to calling the Next route.
+
+Regression coverage: `src/processors/checkout-expiry.test.ts` counts RPC and
+revalidation calls for idle, draining, capped, stopped, partially failed, deadline,
+malformed and chunked cases; `src/dispatch.test.ts` proves the port runs only when
+selected; the Inventory route test covers revalidation auth and input bounds.
+
+## Per-job plan
+
+| Job | Processor target | Work bounds to keep | Cost change when moved |
+| --- | --- | --- | --- |
+| `inventory-checkout-expiry` | Worker processor (implemented, off) | 10 × 1,000 rows, revalidation chunks of 100 | −288 Vercel invocations a day |
+| `tasks-cleanup-media` | Worker processor with a durable workspace cursor in the ledger | Page storage listings, bound workspaces per slot, keep the 30-day retention and reference checks | −1 long (300 s) invocation a day; deletes stay idempotent |
+| `pay-products` | Worker processor | Page Polar products at 100, keep upsert by provider id | −2 a day |
+| `infrastructure-sync-trust-cache` | Worker processor writing the trust cache over REST | Keep 32-way write concurrency and the 2-hour TTL | −144 a day |
+| `calendar-provider-sync` | Queue consumer, one message per workspace | Keep the per-workspace cooldown; align Queue retries with it | −96 gateway invocations a day; adds Queue operations per workspace |
+| `calendar-smart-schedule` | Workflow per workspace | Persist step results; finite attempts | −4 a day |
+| `web-notification-batches`, `web-post-email-queue`, `web-topic-announcements`, `web-report-automation` | Queue consumers | Keep the existing row claims and send reconciliation; one attempt budget across Queue and claims | −336 a day; adds Queue operations per batch |
+| `web-deadline-reminders` | Worker processor after the receipt check becomes an atomic claim | Make check-and-record one RPC before porting | −288 a day |
+| `finance-exchange-rates` | Worker processor | One provider call a day | −1 a day |
+| `infrastructure-sample-resources`, `infrastructure-docker-recovery-alerts` | Retire, pending owner decision | They read the retired Docker host | −1,728 a day if retired |
+
+Ports that need Next.js-only effects (cache tags, React email rendering) keep a
+small authenticated adapter in the owning app, called only when work happened,
+until that app itself moves to Cloudflare. Durable business work never relies on
+`ctx.waitUntil`.

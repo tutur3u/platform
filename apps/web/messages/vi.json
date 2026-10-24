@@ -16545,6 +16545,7 @@
     "account": "Tài khoản",
     "account-age": "Tuổi tài khoản",
     "account-description": "Quản lý cài đặt và tùy chọn tài khoản cá nhân của bạn",
+    "account-link-unconfirmed": "Không thể xác nhận đã liên kết tài khoản {provider}. Hãy kiểm tra danh sách tài khoản liên kết bên dưới và thử lại nếu chưa thấy.",
     "account-linked-success": "Đã liên kết tài khoản {provider} thành công",
     "account-security-notice": "Thông báo bảo mật tài khoản",
     "account-security-notice-description": "Bạn phải có ít nhất một tài khoản được liên kết để truy cập hồ sơ của mình. Hãy liên kết thêm tài khoản trước khi hủy liên kết tài khoản hiện tại.",

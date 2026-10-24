@@ -161,6 +161,10 @@ samples at one-minute resolution.
 
 ### Rules For Adding A Cron
 
+New schedules no longer go on Vercel: add them to Cloudflare under
+[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership).
+The rules below still apply to the cadence of any job, wherever it runs.
+
 1. **Prefer a persisted watermark to a fixed lookback.** A job that scans from
    `lastCheckedAt` is cadence-independent: slowing it delays the result but never
    drops work. `docker-recovery-alerts` is the reference implementation, which is
