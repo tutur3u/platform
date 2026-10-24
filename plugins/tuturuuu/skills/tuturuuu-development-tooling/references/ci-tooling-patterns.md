@@ -41,7 +41,11 @@ and environment-restoration regressions without starting a real Worker. Require
 fixtures for all declared secrets, mask declared text bindings from the shell and
 retain only the first prior environment value. Deploy settings snapshots must
 pass before publication and after it; DO publication remains Wrangler until a
-separately reviewed rehearsal receipt permits cf.
+separately reviewed rehearsal receipt permits cf. The retained publisher validates
+its source migration tags against the artifact, checks every ES module stays in
+the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
+allocate one temporary persistence directory per run, retain it across restarts,
+and remove it on failure/close; never reuse the app developer state directory.
 
 Settings preflight tokens need Workers Scripts read coverage on the pinned account,
 plus Zone and Workers Routes read coverage on every target-account zone; narrower
@@ -155,8 +159,9 @@ fleet versions; verify those separately before claiming runtime acceptance.
 ## Commands And Formatting
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
-- For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun check`.
+- For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun validate`.
 - Run `bun check:changed` before every push. It maps changed paths to Biome, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
+- Partition related tests by runner before planning commands: `node:test` imports or the owning package's `node --test` script select native tests; explicit Vitest imports override that package default. Never send the same file to both runners or suppress real failures as empty discovery. Hook mode validates every pushed branch destination from Git stdin; without push refs, local `tmp/` branches may validate a configured tracking branch, printing both names; untracked temporary branches and ordinary invalid local names still fail. Published branch names remain CI-gated.
 - tsrs (Rust TypeScript port) is advisory only: the gate defaults to tsc until seeded-error qualification, and explicit tsrs runs always retain tsc confirmation. Gate each project through TSRS_PROJECTS and print exact diagnostic-key differences as advisory output even when tsc passes. Resolve tsrs only for plans including a qualified project, disable npm lifecycle scripts, and use only an existing TSRS_BIN in hook mode, and `tsrs-shadow.yaml` records main-push parity. Keep `tsc` as the required gate until the [promotion criteria](../../../../../apps/docs/build/development-tools/tsrs-shadow-type-check.mdx#promotion-criteria) hold; tsrs currently tracks TypeScript 7.1 semantics and lacks `--showConfig`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
 - Standalone chat qualification uses verified Node 24.21.0 plus the source Vitest entry directly. Preserve original exit/signal/timeout/group and report gates; passing Web reports or an optional diagnostic comparison never override failure. Require fresh exact-source SQL197/Web9/Dart9 with fixture/database cleanup; see the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx).
@@ -186,6 +191,16 @@ runner execution, archive restores and actual Turbo task hits. Replay historical
 change ranges before estimating skipped allocations; final PR file lists can
 differ from the run's head. Report projected savings separately from observed
 exact-head hosted improvement; never weaken a gate to improve a timing figure.
+
+Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
+switchboard after explicit disable handling. Android remains the portable smoke;
+other platforms retain native-directory checks and all builds on main pushes.
+Only known portable/other-native paths may omit a platform. Unknown/empty inputs,
+dependency manifests and tooling changes run all. Preserve PR triggers/check names
+and include the helper in the reusable switchboard sparse checkout. Verify
+`mobile-build-selection.test.js`, `check-workflow-config.test.js` and
+`runner-efficiency.test.js`; release/production/mobile publication is outside this
+selection policy. See the CI runbook's mobile PR build selection section.
 
 ## Packed SDK install diagnostics
 
@@ -359,6 +374,12 @@ The dedicated preload control has a different scope, with no generic missing-Wor
 and independent proof-phase observations, normalize path roles, mark unknowns/missing fields/truncation and retain full private evidence.
 Preserve primary errors; receipts or observed errors alone never establish closure. Source assertions do not clear runtime NOTPASS.
 
+- Pin every remote `uses:` in workflows and composite actions to a full commit
+  SHA with a trailing `# vX.Y.Z` comment so Dependabot can bump it;
+  `scripts/ci/workflow-action-pins.test.js` enforces this. Resolve a tag with
+  `git ls-remote --tags <repo>` (use the peeled `^{}` SHA). The exception is
+  `supabase-staging.yaml`: Supabase Production authenticates its exact Git
+  blob, so pin it only together with the producer-contract allowlist.
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
 - Workflows that need Bun should use
   `.github/actions/setup-bun-with-retry` instead of `oven-sh/setup-bun`
@@ -391,12 +412,12 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `release-please--branches--production` branch. The helper fetches the bot
   branch, merges without committing, syncs the platform badge version files from
   `platform-version.txt`, runs `bun ff`, stages the resolved merge, then runs
-  `bun check` directly before the merge commit lands. If the staged release
+  `bun validate` directly before the merge commit lands. If the staged release
   merge includes `apps/mobile` paths, the helper also runs `bun check:mobile`.
   If a manual merge is already in progress, run
   `bun release:sync-platform-version` before staging the resolved
   `TUTURUUU_PLATFORM_VERSION` files.
-- A CI job that runs `bun check` (or any turbo `test` task) on a fresh checkout
+- A CI job that runs `bun validate` (or any turbo `test` task) on a fresh checkout
   must first build the dist-only packages, the way `codecov.yaml` and
   `release-please-auto-merge.yaml` do:
   `bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase
@@ -412,7 +433,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   bare `run:` for cacheable turbo tasks.
 - For a CI-only failure, reproduce the affected non-build test with `CI=true`
   and an explicit environment. Require exact-commit clean-checkout CI for build
-  or dependency-output failures; never run local `bun check` or delete shared
+  or dependency-output failures; never run local `bun validate` or delete shared
   `packages/*/dist` to simulate CI. Stale local outputs can conceal missing
   build prerequisites, so inspect the actual CI dependency graph and logs.
 - Tests must pin any environment they depend on rather than inheriting the
@@ -433,7 +454,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `push` workflows, so the `production` push would skip the Vercel production
   planner and the next Release Please run. Gate any workflow that will push
   protected branches on the secret being present, before the expensive steps —
-  discovering it after `bun check` wastes ~40 minutes per run.
+  discovering it after `bun validate` wastes ~40 minutes per run.
 - Any CI job that runs `bun git-release-please` needs a Flutter toolchain
   (`subosito/flutter-action@v2`, pinned to the same version as `mobile.yaml`,
   plus `flutter pub get` in `apps/mobile`). Release Please bumps
@@ -710,7 +731,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   exposes the classic `typescript/lib/typescript.js` file that Next probes
   during build-time TypeScript setup; the native-preview marker uses Next's
   supported native compiler path without reverting the repo to TS6.
-- Do not patch unrelated packages just because `bun check` fails outside the
+- Do not patch unrelated packages just because `bun validate` fails outside the
   owned scope. Run focused verification and report the blocker.
 - Package subpath imports must be covered by the package `exports`; do not
   assume a directory `index.ts` is importable through a bare subpath. For focused
@@ -851,7 +872,7 @@ When temporary-file writes also fail with `Disk quota exceeded` despite free
 space reported by `df`, or Miniflare D1 startup reports `SQLITE_IOERR_WRITE`,
 use one bounded direct validation attempt, pointing the child payload
 `TMPDIR` to a verified private writable directory under the owning program only
-after resource-broker admission. Do not set `TMPDIR` before `bun check`: its
+after resource-broker admission. Do not set `TMPDIR` before `bun validate`: its
 `os.tmpdir()`-based check queue would relocate shared state. Verify the destination
 quota and preserve the original failure, unknown files and live queue owners. A thread
 pool alone passed focused module-loading suites but did not resolve the observed
@@ -988,7 +1009,9 @@ timeout causality remains UNKNOWN; the routing gap is a separate source finding.
 
 Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental Dockerfile pins for Kong/Mailpit/imgproxy. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
 
-Only main pushes/main dispatches save; PRs restore only. Normal misses have three attempts and a two-minute total pull deadline, keeping the 15-minute cross-runner restore budget useful. Throttling and classified transport errors retry; SQL never replays. Summaries expose only known registry hosts and untagged image names. Until main caches exist, hosted registry throttling can still block PRs. Main-only `supabase-baseline.yaml` dispatch with `seed_images_only=true` seeds contract/HTTP/full keys with serial execution and fail-fast disabled, with seven attempts within ten minutes each; it requires working registry access. On a profile miss, restore the exact contract key only if its image set is a strict subset, load/inspect it and pull only missing local images. Apply this to PR misses too; save the complete requested set under its unchanged exact key. Matrix ordering is not guaranteed; rerun a partial seed to reuse completed keys. See the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx) for bootstrap, scope, eviction and Linux reproduction. Run `TMPDIR=/private/tmp node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-registry.test.js scripts/ci/supabase-baseline-key.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js`; local checks do not establish exact-head hosted cache acceptance.
+Paused Docker E2E consumers reuse the shared `full` profile rather than a separate `supabase-docker-v2` archive. Keep the registry benchmark switch and all runtime pause gates intact; this consolidates future cache writes without deleting hosted entries or resuming Docker.
+
+Only main pushes/main dispatches save; PRs restore only. Normal misses have three attempts and a two-minute total pull deadline, keeping the 15-minute cross-runner restore budget useful. Throttling and classified transport errors retry; SQL never replays. Summaries expose only known registry hosts and untagged image names. Trusted 600-second Linux x64 seeds can use the fixed `cli-2.121.0` catalog without future CLI/PR execution; preserve exact ECR tag keys and verify pinned platform/config digests before save. All ten seed-profile services across CLI 2.117.0/2.121.0 have source-allowlisted official GHCR platform/config-identical digests (19 unique tags); they may replace an existing retry slot only after classified ECR throttling; failed alternate transport or verification is terminal. Reject canonical/alternate platform or config disagreement before the alternate pull. No credentials or unreviewed images. Regenerate with `node scripts/ci/supabase-image-cache-registry.js`: anonymous ECR/GHCR manifest metadata only, byte-hashed platform manifests, fixed upstream CLI Dockerfiles, bounded requests and no image layers. Review output before updating seed data; missing/mismatched publications stay ECR-only. Edge-runtime/Logflare/Vector/pooling remain excluded, without cache-key expansion. PR misses remain ECR-only pending separate provenance/no-save review. Hosted registry access and shared-cache retention still need acceptance. Main-only `supabase-baseline.yaml` dispatch with `seed_images_only=true` seeds contract/HTTP/full keys with serial execution and fail-fast disabled, with seven attempts within ten minutes each; it requires working registry access. On a profile miss, restore the exact contract key only if its image set is a strict subset, load/inspect it and pull only missing local images. Apply this to PR misses too; save the complete requested set under its unchanged exact key. Matrix ordering is not guaranteed; rerun a partial seed to reuse completed keys. See the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx) for bootstrap, scope, eviction and Linux reproduction. Run `TMPDIR=/private/tmp node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-image-cache-seed.test.js scripts/ci/supabase-image-cache-registry.test.js scripts/ci/supabase-registry.test.js scripts/ci/supabase-baseline-key.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js`; local checks do not establish exact-head hosted cache acceptance.
 
 ## Wave-1 staging publication admission
 
@@ -1030,6 +1053,61 @@ replay after deleting emitted files; replayed logs alone do not qualify an artif
 Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
 Renovate until an owner qualifies a scoped upgrade. Production jobs require the
 Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.
+
+For retained DO publication, allow only Vite's exact `.vite/manifest.json`
+metadata path outside the qualified module inventory. Test the adapter on real
+emitted output with `cf-wrangler-publication.runtime.mjs`; synthetic bundles miss
+Vite metadata. Keep migration tags and symlink/extra-file refusal checks.
+
+## Aggregate name and native Bun qualification
+
+Use `bun validate` / `bun validate:now` for the existing aggregate runner.
+Do not add a `check` package script: it shadows Bun's native checker. The
+collision regression in `scripts/validate-command.test.js` covers every root
+and workspace manifest through the existing script-test gate. Keep guard,
+format/lint/test, conditional checks, fail-fast/mandatory-Biome handling and
+queue/child-temp semantics intact when changing the entrypoint. Retain legacy
+queue directory/environment identifiers for in-flight runner compatibility;
+process recognition must never identify native `bun check` as an aggregate to
+signal with `--force-now`.
+
+For native checking use `ttr resources run -- bun check --no-script -p <project>`, with `--all` when
+comparing full diagnostic sets. Use the admitted Linux exact-SHA runner and the
+opt-in `scripts/ci/bun-check-qualification.js`; do not add a duplicate gate.
+The wrapper supplies the lane `buildJobs` thread budget if `--threads` is absent
+and clamps explicit values to that budget, preserving smaller requests.
+The aggregate rejects unknown flags before work starts, including `--help` and
+`--dry-run`, with one usage line on stderr and exit 1; resource classification of these flags must not start the aggregate.
+Keep agent permissions scoped: broad Bun or aggregate auto-allows defeat this
+admission boundary.
+The current required compiler is TypeScript 7.0.2; tsrs is an optional shadow.
+A matching no-emit sample is not build/reference/emit equivalence. Preserve
+`run-tsc-build.js`, Meet's producer/cache contract, Wrangler generated ambient
+inputs and Turbo `^build`/`^type-check` until their semantics are separately
+proven. Keep TypeScript for emit and editor tooling. Record versions, lock and
+input-closure hashes, exact commands, negative control detection, diagnostic
+multisets, exit status, RSS and cold/warm/error timings. Never promote on timing
+alone. See the maintained [qualification procedure](../../../../../apps/docs/build/development-tools/overview.mdx#native-checker-qualification).
+
+Bun 1.4.4 and the repository both report TypeScript 7.0.2, but equality on
+prepared no-emit inputs does not establish equality on generated-output
+assertions. In the Meet Worker config, tsc reports TS6305 for missing app
+reference declarations with `disableSourceOfProjectReferenceRedirect: true`;
+Bun reads the source and can pass. Keep the declaration producer and its
+output/cache validation. Run the complete baseline graph before interpreting a
+prepared-closure parity pass. Calendar's boundary producer and generated
+Wrangler ambient declarations also belong to that closure. The opt-in harness
+accepts `--all-projects --runs 1` for complete active-project diagnostic coverage,
+expanding Meet's solution root into concrete app/Worker configs. Keep repeated
+sample benchmarks separate from that one-pass coverage report. A harness exit
+of zero proves negative-control detection, not overall gate equivalence; read
+`sampleParity`, input-closure stability, diagnostics and the explicit verdict.
+
+The native-check inventory reads existing declaration generators, including
+`wrangler types` and `cf types` under any script name; it never invokes them.
+Its compatibility detector and data-only fixture use the `producer-inventory`
+gap admission in the Wrangler allowlist. Retain the visible legacy token and
+remove that admission when no legacy producer needs recognition.
 
 ## Canonical bun.lock
 

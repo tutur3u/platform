@@ -302,6 +302,27 @@ Cache archive restoration is separate from Turbo task reuse. Compare exact-head
 hosted runs before claiming push-to-green savings; removing runner demand does
 not promise a particular hosted queue delay.
 
+### Mobile PR build selection
+
+Ordinary mobile PRs build Android as the portable application smoke. iOS, macOS,
+Linux and Windows builds run when their native directory changes. Dependency
+manifests, localization configuration, workflow/tooling inputs and unrecognized
+paths retain every platform build. Missing or empty changed-file data also runs
+all platforms. Every matching main push retains all five builds; release and
+production workflows are unchanged.
+
+Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
+skips the heavy job before runner allocation; do not remove a required-check
+trigger. `scripts/ci/mobile-build-selection.ts` owns this policy, and its
+`mobile-build-selection.test.js` regression suite exercises portable/native edits,
+shared inputs, explicit disable and protected push behavior. Run it with
+`node --test scripts/ci/mobile-build-selection.test.js` alongside
+`check-workflow-config.test.js` and `runner-efficiency.test.js` after edits.
+
+Compare timestamps from exact run/job inventories before and after rollout.
+Runner-minutes removed are projected demand savings; skipped queued work does
+not establish a guaranteed reduction in wall-clock merge or production delay.
+
 ## Coordination native Worker toolchain
 
 Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
@@ -335,7 +356,7 @@ changing product tests. `df` can show free space while an individual `/tmp`
 write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
 owning program directory can isolate direct validation from that failure. Set
 `TMPDIR` only in the child payload after resource-broker admission. Do not set it
-before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+before `bun validate`: its `os.tmpdir()`-based check queue would move shared state.
 Verify the destination quota and retain the original failure before one bounded
 validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
 but a private `TMPDIR` was also needed for the observed D1 fixture failure;
@@ -565,14 +586,169 @@ used. A trusted save still archives the complete requested image set. Serial
 matrix execution allows reuse of an already completed contract seed; matrix
 ordering is not a dependency guarantee, so rerun the dispatch after a partial seed.
 
-That main-only dispatch allows seven attempts within
-a ten-minute total pull budget per profile and retains 15-minute job limits. It
-still needs a runner with working registry access; if hosted IPs remain throttled,
-this seed cannot succeed there. Use an admitted trusted runner with registry
-access to run the same seeding action, or wait for registry recovery. Do not treat
-a registry switch as a fix or upload unreviewed image archives to the main scope.
-GitHub's cache scope allows PRs to read main caches; eviction or a version/profile
-change requires another successful seed. Exact-head hosted CI remains required.
+That main-only dispatch allows seven attempts within a ten-minute total pull
+budget per profile and retains 15-minute job limits. Only this trusted Linux x64
+seed path can substitute one existing retry slot after an ECR throttle with an
+anonymous pull from a source-allowlisted official `ghcr.io/supabase/*` publication.
+The allowlist covers every image in the current CLI 2.117.0 and fixed CLI 2.121.0
+seed profiles:
+
+| Image | CLI 2.117.0 tag | CLI 2.121.0 tag |
+| --- | --- | --- |
+| gotrue | v2.196.0 | v2.197.0 |
+| imgproxy | v3.8.0 | v3.26.0 |
+| kong | 2.8.1 | 2.8.1 |
+| mailpit | v1.30.2 | v1.31.3 |
+| postgres-meta | v0.99.0 | v0.100.0 |
+| postgres | 17.6.1.167 | 17.11.0.004 |
+| postgrest | v16.2 | v16.4 |
+| realtime | v2.130.0 | v2.143.4 |
+| storage-api | v1.72.1 | v1.82.1 |
+| studio | 2026.08.24-sha-8ec45b2 | 2026.10.12-sha-3699278 |
+
+All 19 unique tags have equal ECR/GHCR OCI index, linux/amd64 manifest and config
+digests. No image in these seed profiles remains ECR-only. Edge-runtime, Logflare,
+Vector and Supavisor are outside both seed profiles because edge runtime,
+analytics and pooling are disabled; their publication identity is not qualified
+here. Do not enable those services or expand cache keys to obtain a fallback.
+Unlisted tags remain ECR-only.
+
+Pulls use the pinned linux/amd64 manifest digest and verify Docker's RepoDigests,
+config ID, OS and architecture before tagging the canonical ECR reference.
+A fallback must agree with a supplied canonical platform/config pin before its
+pull. Alternate transport failure or identity mismatch stops the seed without
+retrying or tagging. Archives retain the unchanged canonical ECR-tag cache key.
+There is no login, additional attempt budget, arbitrary registry input or PR path.
+
+Regenerate the metadata using only anonymous registry manifest GETs:
+
+```sh
+node scripts/ci/supabase-image-cache-registry.js > /tmp/supabase-image-publications.json
+```
+
+This helper reads the two pinned upstream CLI Dockerfiles, selects only the ten
+seed-profile services (excluding alternate Postgres major versions), queries
+ECR/GHCR tags and linux/amd64 manifests, hashes the returned bytes and records
+config digests. It never pulls image layers, logs in, changes source data or runs
+Docker. Each metadata request has a 30-second timeout and at most three attempts
+for HTTP 429/5xx. A missing publication, metadata error or content mismatch exits
+nonzero; resolve it before qualifying an image. Compare both registries' `amd64`
+and `config` fields, then copy the qualified GHCR `index`, `amd64`, `config` and
+fixed repository into `scripts/ci/supabase-image-cache-seed-data.json` fallbacks.
+For fixed catalogs, retain matching canonical pins. Index equality is recorded
+for these tags; platform/config equality is the runtime identity requirement.
+If content differs or a public GHCR publication is absent, leave that image
+ECR-only and document it. Never replace a failed comparison with a tag-only pull.
+Run the image-cache, seed and registry tests after changing the data.
+
+PR cache misses keep their existing ECR-only pull policy. Credentialless,
+digest-pinned read-only fallback is a possible separate change, but must first
+review allowlist provenance in PR-controlled checkouts, keep the two-minute
+budget and terminal verification, and enforce no cache writes or added privileges.
+Removing the trusted-seed guard alone does not preserve the current trust model.
+
+For premerge CLI 2.121.0 cache preparation, the owner may select the fixed
+`seed_image_catalog=cli-2.121.0` dispatch choice together with
+`seed_images_only=true` on main. This reads reviewed source data without running
+the future CLI or checking out PR code. Every catalog image is pulled by its
+reviewed ECR linux/amd64 manifest digest, verified before save, and tagged with
+the original ECR version reference. The exact tag list still goes through the
+existing key function; the catalog does not change consumer keys, archive paths
+or registry identity. An absent selector or `current` retains installed-CLI
+metadata and supplemental version validation. The fixed catalog is Linux x64
+only and requires the existing trusted 600-second seed mode. Update source
+catalogs only after reviewing the upstream CLI list and anonymous index/platform
+manifest metadata, including platform config digests; never accept a caller list.
+
+GitHub's cache scope allows PRs to read main caches. Cache retention is shared
+with Flutter SDK and Bun archives; capacity pressure can evict previously seeded
+images. Before another owner-controlled seed, inspect the exact cache inventory
+and active runs rather than assuming more retries establish retention. Acceptance
+requires exact producer key/ref/size evidence, a fresh consumer's exact hit and
+successful runtime contracts, then retained entries after the ordinary CI wave.
+Source tests and registry metadata parity do not establish hosted alternate
+transport reachability or runtime success. Exact-head hosted CI remains required.
+
+### Repository cache budget
+
+The repository's 10 GiB Actions cache budget uses least-recently-used eviction.
+Cache misses can make Supabase contracts depend on throttled public ECR pulls.
+Keep heavyweight writes on trusted refs; PRs restore the main cache rather than
+creating a copy under every merge ref. This reduces eviction pressure but does
+not reserve capacity or guarantee image retention.
+
+| Cache family | Observed pressure | Save policy |
+| --- | --- | --- |
+| Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
+| Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch, including desktop, release and employee jobs |
+| Bun downloads | About 1 GiB per observed Linux archive | Main push/dispatch only; one v2 archive per OS, architecture and pinned Bun version |
+| CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
+
+These are incident measurements, not fixed sizes or a guaranteed total. New
+Gradle keys use the `gradle-v1-` namespace; their first main push must populate
+them. PRs cannot warm missing heavyweight caches. The static budget gate is
+`node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
+`bun test:scripts`. It inventories every save-capable cache action and setup cache input in
+workflows and composites, checking trusted and untrusted events/refs. Combined `actions/cache` still registers a post-job save when
+`lookup-only` is enabled, so it remains in the inventory. Unknown keys and paths
+have no implicit exemption. The explicit exceptions compare the complete input
+set and workflow/job: small E2E proof JSON, the MCP tooling pip download cache,
+Discord's pruned, lockfile-scoped uv downloads, and Buildx executable binaries.
+Rust Cargo saves and BuildKit layer exports are explicitly inventoried as paused
+source, with switchboard or job-fence checks and an exact scope list. These are
+not claims that retained archives are small or safe to reactivate. Each exception
+has a recorded reason; expanding paths, inputs or export scopes requires review.
+
+Production mobile jobs only restore the Gradle/Pods caches populated by main
+builds. They register no unreachable main-push saves. The paused Docker E2E jobs
+reuse the exact shared `full` Supabase image profile instead of writing a second
+`supabase-docker-v2` archive of every locally present tag. The registry benchmark
+choice and all pause gates remain in place; this source change does not resume
+Docker or establish hosted runtime acceptance. Only these E2E image-warming
+steps continue after a cache or bounded pull failure, allowing baseline/startup
+to pull any missing images. Only general Playwright shard 1 may create and upload
+an archive on trusted main runs; other shards and the cross-app job restore
+without saving. The shared action's `save` input defaults to true, preserving
+strict contract producers. Allowlisted configuration errors, including enabled
+uncached services, emit a warning annotation and step-summary line before the
+helper fails; E2E fallback does not hide that diagnostic. Raw CLI errors remain
+suppressed. Contract workflows keep strict image-cache setup.
+
+The same-day result planner may reuse shard 1's proof and leave a run without a seeder; its fingerprint covers every image-key input, so input changes invalidate that proof, and a manual `supabase-baseline` dispatch with `seed_images_only=true` provides the fallback.
+
+Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
+without a lockfile hash or prefix fallback. This chooses a coarser immutable
+archive over automatic deletion: lockfile changes cannot create new multi-GiB
+archives or race a cleanup job, and no write-scoped API token or cleanup loop is
+needed. Bun still resolves the current lockfile and fetches missing packages;
+newly added downloads do not enter the archive until the pinned Bun version
+changes. This cache therefore drifts behind `bun.lock`: an exact key hit does
+not mean every current dependency is cached, and newly added packages can be
+downloaded on each run until the Bun version changes. Review a deliberate cache
+namespace refresh if a long-lived Bun pin makes this repeated work material;
+there is no scheduled writer or automatic refresh. Install correctness remains
+bound to the current lockfile.
+The runtime binary uses `bun-runtime-v2-<OS>-<architecture>-<pinned Bun version>`
+with no lockfile hash or restore prefix: a lockfile change does not change the
+pinned executable. Old v1 archives receive no
+restores from v2 and age out under LRU; the first trusted v2 warmup and coexistence
+with old entries can still cause eviction. No immediate space reclamation is
+claimed. After confirming that no workflow or action pins Bun 1.4.3, the release owner can perform this
+one-time cleanup without adding a scheduled maintenance loop:
+
+```sh
+rg -n '1\.4\.3' .github/workflows .github/actions --glob '*.yml' --glob '*.yaml'
+gh cache list --repo tutur3u/platform --key bun-deps-v1- --limit 1000 --json id,key,ref,sizeInBytes
+# Review the inventory, then delete each exact retired-version cache ID:
+gh cache delete <cache-id> --repo tutur3u/platform
+```
+
+The search must return no pins. Delete only inventory rows whose keys match
+`bun-deps-v1-*-1.4.3-*`; repeat inventory if its limit is reached. Deleting an
+already absent ID needs no retry. Do not delete Supabase image keys or add cache
+write permissions to PR jobs. Old PR-scoped Gradle/Pods entries will otherwise
+age out; source gating does not remove existing archives.
 
 For Linux reproduction, isolate the Supabase project ID and ports, use a
 scratch-local Bun matching the repository pin, and remove only that project's
@@ -1430,7 +1606,7 @@ runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam
 runs `bun git-release-please` and then `bun git-sync`, the same two commands the
 release flow uses locally, so the scheduled path and the manual path cannot
 drift. Those scripts own the merge rules — platform version sync, conflict
-detection, `bun check`, and fast-forward safety — and are covered by
+detection, `bun validate`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The generated PR must have passing checks, no unresolved active review threads,
@@ -1452,7 +1628,7 @@ use the same step-scoped Turbo remote-cache wrapper.
 
 If another PR lands on `main` during release validation, the push step fetches
 and merges the new head, reinstalls its frozen dependency graph and rebuilds the
-dist-only setup packages before rerunning `bun check`. Affected mobile changes
+dist-only setup packages before rerunning `bun validate`. Affected mobile changes
 also refresh `flutter pub get` before mobile checks. The push retries up to four
 times. An install or setup failure stops the retry; checks must never validate a
 new source commit against dependencies installed for an older checkout. A merge conflict or a push error unrelated to
@@ -1492,12 +1668,12 @@ workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
-`bun check`.
+`bun validate`.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. When a release includes
 mobile changes, `touchesMobile()` in `scripts/git-release-please.js` follows
-`bun check` with `bun check:mobile`; without a toolchain `dart-format`,
+`bun validate` with `bun check:mobile`; without a toolchain `dart-format`,
 `flutter-analyze` and `flutter-test` all exit `127`.
 
 Keep every mobile build/deploy workflow on that same Flutter minor. The mobile

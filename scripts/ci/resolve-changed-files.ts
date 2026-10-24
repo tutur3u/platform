@@ -1,4 +1,10 @@
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -98,8 +104,13 @@ function writeChangedFiles({
 
   mkdirSync(outputDir, { recursive: true });
 
-  const filePath = join(outputDir, `changed-files-${process.pid}.txt`);
-  writeFileSync(filePath, `${result.files.join('\n')}\n`);
+  const directory = mkdtempSync(join(outputDir, 'changed-files-'));
+  chmodSync(directory, 0o700);
+  const filePath = join(directory, 'paths.txt');
+  writeFileSync(filePath, `${result.files.join('\n')}\n`, {
+    flag: 'wx',
+    mode: 0o600,
+  });
 
   return filePath;
 }

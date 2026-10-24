@@ -9,7 +9,8 @@ import {
 import { basename, delimiter, join, resolve } from 'node:path';
 import type { ResourceConfig } from './resources-config';
 
-const heavyTask = /^(test|build|check|check-types|type-check|lint|tc)(:.*)?$/;
+const heavyTask =
+  /^(test|build|validate|check|check-types|type-check|lint|tc)(:.*)?$/;
 const tools = [
   'turbo',
   'vitest',
@@ -33,6 +34,9 @@ export function commandCwd(args: string[], cwd = process.cwd()) {
 }
 
 export function commandTool(name: string, args: string[]) {
+  if (name === 'bun' && basename(args[0] || '') === 'ttr.cjs')
+    return { tool: 'ttr', tail: args.slice(1), offset: 1 };
+
   if (['node', 'bun', 'bunx', 'npx'].includes(name)) {
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]!;
@@ -57,6 +61,19 @@ export function commandTool(name: string, args: string[]) {
     }
   }
   return { tool: name, tail: args, offset: 0 };
+}
+
+function bunTaskIndex(args: string[]) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (['--cwd', '--filter', '-F', '--env-file'].includes(arg)) {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('-') || ['run', 'x', 'exec'].includes(arg)) continue;
+    return i;
+  }
+  return -1;
 }
 
 export function isHeavyCommand(name: string, args: string[]) {
@@ -91,19 +108,13 @@ export function isHeavyCommand(name: string, args: string[]) {
   if (tool === 'node')
     return tail.some((arg) => scripts.includes(basename(arg)));
   if (tool === 'bun') {
-    for (let i = 0; i < tail.length; i++) {
-      const arg = tail[i]!;
-      if (['--cwd', '--filter', '-F', '--env-file'].includes(arg)) {
-        i++;
-        continue;
-      }
-      if (arg.startsWith('-') || ['run', 'x', 'exec'].includes(arg)) continue;
-      return (
-        heavyTask.test(arg) ||
+    const arg = tail[bunTaskIndex(tail)];
+    return (
+      !!arg &&
+      (heavyTask.test(arg) ||
         ['sb:start', 'sb:reset', 'sb:up'].includes(arg) ||
-        scripts.includes(basename(arg))
-      );
-    }
+        scripts.includes(basename(arg)))
+    );
   }
   return false;
 }
@@ -196,6 +207,34 @@ export function limitCommand(
     const cap =
       tool === 'vitest' ? `--maxWorkers=${budget}` : `--jobs=${budget}`;
     limited.splice(divider < 0 ? limited.length : divider, 0, cap);
+    return [...args.slice(0, offset), ...limited];
+  }
+  if (tool === 'bun' && tail[bunTaskIndex(tail)] === 'check') {
+    let budget = config.buildJobs;
+    const limited: string[] = [];
+    for (let i = 0; i < tail.length; i++) {
+      const arg = tail[i]!;
+      if (arg === '--') {
+        limited.push(...tail.slice(i));
+        break;
+      }
+      if (arg === '--threads' || arg.startsWith('--threads=')) {
+        const value =
+          arg === '--threads' ? tail[++i] : arg.slice('--threads='.length);
+        const requested = Number(value);
+        if (!Number.isSafeInteger(requested) || requested < 1)
+          throw new Error('bun check --threads requires a positive integer.');
+        budget = Math.min(budget, requested);
+        continue;
+      }
+      limited.push(arg);
+    }
+    const divider = limited.indexOf('--');
+    limited.splice(
+      divider < 0 ? limited.length : divider,
+      0,
+      `--threads=${budget}`
+    );
     return [...args.slice(0, offset), ...limited];
   }
   if (tool !== 'turbo') return args;

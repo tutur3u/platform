@@ -58,7 +58,7 @@ apply.
 | Focused route | `bun --cwd apps/tasks vitest run 'src/app/api/v1/task-projects/resolve-workspace/route.test.ts'` | all auth, validation, containment, and success cases pass |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -102,7 +102,7 @@ appears in a denial body.
 
 ### Step 3: Run all gates
 
-Run focused tests, Tasks typecheck/build, `bun check`, and whitespace. Confirm
+Run focused tests, Tasks typecheck/build, `bun validate`, and whitespace. Confirm
 only the route/test plus README changed.
 
 ## Done criteria

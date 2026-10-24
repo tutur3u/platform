@@ -62,7 +62,7 @@ role model. No active note currently owns the exact criteria routes.
 | Detail | `bun --cwd apps/nova vitest run 'src/app/api/v1/criteria/[criterionId]/route.test.ts'` | assigned cross-challenge denial and 404 behavior pass |
 | Catalog regression | `bun --cwd apps/nova vitest run src/app/api/v1/challenges/route.test.ts src/app/api/v1/problems/route.test.ts 'src/app/api/v1/problems/[problemId]/route.test.ts'` | Plan 090 behavior remains green |
 | Nova | `bun run --cwd apps/nova type-check && bun run --cwd apps/nova build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

@@ -555,15 +555,18 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
 
   assert.match(workflow, /run-with-backoff\.sh bun install --frozen-lockfile/);
   assert.match(setupAction, /setup-bun-with-backoff\.sh/);
-  assert.match(setupAction, /uses: actions\/cache@v6/);
-  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(setupAction, /uses: actions\/cache@[0-9a-f]{40} # v6\b/);
   assert.match(
     setupAction,
-    /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /uses: actions\/cache\/restore@[0-9a-f]{40} # v6\b/
   );
   assert.match(
     setupAction,
-    /bun-deps-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /bun-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
+  );
+  assert.match(
+    setupAction,
+    /bun-deps-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
   );
   for (const saveStep of [runtimeSaveStep, packageSaveStep]) {
     assert.match(saveStep, /github\.ref == 'refs\/heads\/main'/);
@@ -571,7 +574,7 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   }
   for (const restoreStep of [runtimeRestoreStep, packageRestoreStep]) {
     assert.match(restoreStep, /github\.ref != 'refs\/heads\/main'/);
-    assert.match(restoreStep, /github\.event_name == 'pull_request'/);
+    assert.match(restoreStep, /github\.event_name != 'push'/);
     assert.match(restoreStep, /github\.actor == 'dependabot\[bot\]'/);
   }
   assert.doesNotMatch(setupAction, /node_modules/);
@@ -584,18 +587,14 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(retryScript, /--minimum-release-age=0/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
 
+  const retryScriptPath = path.join(repoRoot, 'scripts/ci/run-with-backoff.sh');
   const failedCommand = spawnSync(
     'bash',
-    [
-      path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
-      'bash',
-      '-c',
-      'exit 37',
-    ],
+    [retryScriptPath, 'bash', '-c', 'exit 37'],
     {
       encoding: 'utf8',
       env: {
-        ...process.env,
+        PATH: process.env.PATH,
         CI_RETRY_MAX_ATTEMPTS: '1',
       },
     }
@@ -617,15 +616,18 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
     'utf8'
   );
 
-  assert.match(setupAction, /uses: actions\/cache@v6/);
-  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(setupAction, /uses: actions\/cache@[0-9a-f]{40} # v6\b/);
+  assert.match(
+    setupAction,
+    /uses: actions\/cache\/restore@[0-9a-f]{40} # v6\b/
+  );
   assert.match(setupAction, /\$\{\{ inputs\.family \}\}/);
   assert.match(setupAction, /hashFiles\('(bun\.lock|turbo\.json)'\)/);
   assert.match(setupAction, /runner\.os/);
   assert.match(setupAction, /runner\.arch/);
   assert.match(setupAction, /github\.event\.pull_request\.base\.sha/);
   assert.match(setupAction, /github\.event\.repository\.default_branch/);
-  assert.match(setupAction, /github\.event_name == 'pull_request'/);
+  assert.match(setupAction, /github\.event_name != 'push'/);
   assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
   assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
@@ -679,7 +681,7 @@ test('paused TanStack migration E2E retains its restartable matrix', () => {
     (step) => step.name === 'Upload migration E2E artifacts'
   );
   assert.ok(artifactStep, 'migration-e2e must upload diagnostics artifacts');
-  assert.equal(artifactStep.uses, 'actions/upload-artifact@v7');
+  assert.match(artifactStep.uses, /^actions\/upload-artifact@[0-9a-f]{40}$/u);
   assert.equal(artifactStep.if, githubExpression('failure()'));
   assert.equal(
     artifactStep.with?.name,
@@ -745,13 +747,12 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     './.github/actions/setup-supabase-cli-with-retry'
   );
   assert.equal(
-    stepNamed('Restore cached Supabase Docker images')?.uses,
-    'actions/cache/restore@v6'
+    stepNamed('Restore shared Supabase images')?.uses,
+    './.github/actions/cache-supabase-images'
   );
-  assert.match(
-    stepNamed('Restore cached Supabase Docker images')?.with?.key || '',
-    /supabase-docker-v2-/u
-  );
+  const imageCache = stepNamed('Restore shared Supabase images')?.with;
+  assert.equal(imageCache.profile, 'full');
+  assert.equal(imageCache.save, 'false');
   assert.equal(
     stepNamed('Install Playwright browser')?.['working-directory'],
     'apps/inventory'
@@ -778,7 +779,10 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     'node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json'
   );
   const artifactStep = stepNamed('Upload cache E2E failure artifact');
-  assert.equal(artifactStep?.uses, 'actions/upload-artifact@v7');
+  assert.match(
+    artifactStep?.uses || '',
+    /^actions\/upload-artifact@[0-9a-f]{40}$/u
+  );
   assert.equal(
     artifactStep?.if,
     githubExpression("failure() && steps.redact-inventory.outcome == 'success'")
@@ -886,7 +890,7 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
     'utf8'
   );
 
-  assert.match(workflow, /uses: actions\/setup-node@v7/);
+  assert.match(workflow, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/);
   assert.match(workflow, /node-version: 24/);
   assert.match(
     workflow,

@@ -3,6 +3,17 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { createRequire } = require('node:module');
 
+function stageSdkRuntime(root, stageSdk, inventory) {
+  for (const folder of ['dist', 'bin']) {
+    const source = path.join(root, 'packages/sdk', folder);
+    for (const file of inventory(source)) {
+      const target = path.join(stageSdk, folder, file.path);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(path.join(source, file.path), target);
+    }
+  }
+}
+
 function registryRewrites(rewrites) {
   return rewrites.filter(({ field }) =>
     ['dependencies', 'peerDependencies', 'optionalDependencies'].includes(field)
@@ -142,6 +153,7 @@ if (require.main === module) {
   console.log(verifyPublishReceipt({ directory, sourceSha, name, version }));
 }
 module.exports = {
+  stageSdkRuntime,
   registryRewrites,
   requireInstalledDependencies,
   workflowPhase,

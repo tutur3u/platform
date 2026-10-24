@@ -63,7 +63,7 @@ G22/database transfer in an isolated worktree; run `bun setup` immediately.
 | Auth regression | `bun --cwd packages/auth vitest run src/api-keys.test.ts` | valid role plus default permissions and no-role defaults remain exact |
 | Full DB/typegen | `bun --cwd apps/database sb:validate:isolated && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/workspace-api-key-role-workspace.sql` | full suite and generated FK shape pass |
 | Route tracking | `bun web:api-routes:check && bun migration:tanstack:manifest && bun check:backend` | first-class sources tracked; unported methods still fall through |
-| Web/repository | `bun run --cwd apps/web build && bun check && git diff --check` | build and all repository gates pass |
+| Web/repository | `bun run --cwd apps/web build && bun validate && git diff --check` | build and all repository gates pass |
 
 ## Scope
 

@@ -11,6 +11,7 @@ import { recommend, SIGNAL_TTL_MS } from './policy';
 import type { PoolSettings } from './pool-settings';
 import { chooseRoleCandidate } from './role-policy';
 import type { AccountUsage, RankedInstance, UsageWindow } from './types';
+import { windowObservationIsFresh } from './window-freshness';
 import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export type WatchVerdict = 'ok' | 'warn' | 'switch-now';
@@ -77,7 +78,6 @@ export function freshRemainingPercent(
   );
   if (!scoped.length) return undefined;
   const isFresh = (window: UsageWindow) => {
-    const observed = Date.parse(window.observedAt);
     const reset = Date.parse(window.resetsAt ?? '');
     return (
       window.authoritative &&
@@ -85,9 +85,7 @@ export function freshRemainingPercent(
       Number.isFinite(window.usedPercent) &&
       window.usedPercent >= 0 &&
       window.usedPercent <= 100 &&
-      Number.isFinite(observed) &&
-      observed <= now.getTime() + 5 * 60_000 &&
-      now.getTime() - observed <= ttlMs &&
+      windowObservationIsFresh(window, now, ttlMs) &&
       Boolean(window.resetsAt) &&
       Number.isFinite(reset) &&
       reset > now.getTime()

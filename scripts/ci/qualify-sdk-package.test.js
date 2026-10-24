@@ -132,7 +132,7 @@ test('owned group drain waits for disappearance and fails closed on a live or un
       },
       25
     ),
-    { code: 'PROCESS_GROUP_UNDRAINED' }
+    { message: 'unknown' }
   );
 });
 
@@ -215,6 +215,7 @@ test('finite process controls drain on timeout and output overflow', async () =>
 
 test('unavailable registry dependency blocks before pack/install and preserves package beforeimages', async (t) => {
   const root = fixture(t);
+  write(root, 'packages/sdk/bin/ttr.cjs', 'synthetic fixture');
   write(root, 'package.json', { workspaces: ['packages/*'] });
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
@@ -294,11 +295,13 @@ test('deadline verifies group disappearance for a descendant that outlives its l
 });
 
 test('leader close waits for descendants that closed their output streams', async (t) => {
-  const root = fixture(t),
-    marker = path.join(root, 'closed-stream-group');
-  const child = `require('node:fs').writeFileSync(${JSON.stringify(marker)},process.argv[1]);setInterval(()=>{},1000)`;
-  const leader = `const fs=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(child)},String(process.pid)],{stdio:'ignore'});setInterval(()=>{if(fs.existsSync(${JSON.stringify(marker)}))process.exit(0)},10)`;
-  const completed = await runProcess(process.execPath, ['-e', leader], {
+  const marker = path.join(fixture(t), 'closed-stream-group');
+  const child =
+    "require('node:fs').writeFileSync(process.argv[1],process.argv[2]);setInterval(()=>{},1000)";
+  const leader =
+    "const fs=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',process.argv[1],process.argv[2],String(process.pid)],{stdio:'ignore'});setInterval(()=>{if(fs.existsSync(process.argv[2]))process.exit(0)},10)";
+  const args = ['-e', leader, child, marker];
+  const completed = await runProcess(process.execPath, args, {
     env: { PATH: process.env.PATH },
     timeoutMs: 3000,
   });
@@ -326,7 +329,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
     version: '0.0.0',
-    files: ['dist'],
+    files: ['dist', 'bin'],
     ...changes.manifest,
   });
   write(root, 'packages/unpublished/package.json', {
@@ -336,6 +339,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   const required = [
     'index.js',
     'index.d.ts',
+    '../bin/ttr.cjs',
     'cli/index.js',
     'cli/operational-cli.js',
     'cli/operational-search.js',
@@ -431,7 +435,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
       fs.mkdirSync(path.join(consumer, 'node_modules/.bin'));
       for (const alias of ['ttr', 'tuturuuu', 'tutur3u'])
         fs.symlinkSync(
-          path.join(installed, 'dist/cli/index.js'),
+          path.join(installed, 'bin/ttr.cjs'),
           path.join(consumer, 'node_modules/.bin', alias)
         );
       if (changes.installedName || changes.installedVersion)

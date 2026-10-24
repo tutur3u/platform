@@ -29,7 +29,7 @@ This section contains tools, guides, and best practices for developing on the Tu
 
 - Formatting and linting are handled by [Biome](https://biomejs.dev/) (`biome.json`),
   not ESLint or Prettier. Use `bun ff` to format, lint, and check in one pass.
-- Run `bun check` before opening a PR — it is the repo's verification gate for
+- Run `bun validate` before opening a PR — it is the repo's verification gate for
   TypeScript, JavaScript, root-script, and config changes (run focused tests first).
 - Default to Server Components in `apps/web`; add `'use client'` only for state,
   browser APIs, or interactivity.
@@ -54,7 +54,7 @@ This section contains tools, guides, and best practices for developing on the Tu
 - Tests run with Vitest. Use `bun test` for the full suite or filter to a single
   workspace (for example `bun --filter @tuturuuu/web test`).
 - Write unit tests for utilities and cover error scenarios.
-- Run focused tests before the full `bun check` gate.
+- Run focused tests before the full `bun validate` gate.
 
 ### Performance
 
@@ -92,7 +92,7 @@ For a broad refresh, also update Rust (`cargo update` in `apps/backend`), Python
 (`flutter pub upgrade --major-versions` in `apps/mobile`). Keep native CocoaPods
 locks aligned with Flutter plugins and retain stable versions when a registry's
 `latest` tag points at a prerelease. The configured npm release-age policy still
-applies. Run `bun check` and affected app builds through `ttr resources run`.
+applies. Run `bun validate` and affected app builds through `ttr resources run`.
 
 Keep React and React DOM aligned at 19.2.8 while React Three Fiber 9.7.0
 requires versions below 19.3. The root overrides also prevent transitive peer
@@ -139,7 +139,7 @@ bun dev:web
 bun test
 
 # Run the full verification gate before a PR
-bun check
+bun validate
 ```
 
 ### Database Commands
@@ -172,9 +172,9 @@ bun sb:reset
 
 ### Common Issues
 
-1. **Build / Check Failures**: Run `bun check` to surface TypeScript and Biome errors, and confirm dependencies are installed with `bun install`
+1. **Build / Check Failures**: Run `bun validate` to surface TypeScript and Biome errors, and confirm dependencies are installed with `bun install`
 2. **Database Issues**: Ensure the local Supabase stack is running (`bun sb:start`) and migrations are applied (`bun sb:up`)
-3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before the full `bun check` gate
+3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before the full `bun validate` gate
 4. **Performance Issues**: Use React DevTools and bundle analyzers
 
 ### Getting Help
@@ -199,15 +199,198 @@ When contributing to the platform:
 When an admitted runner has a constrained `/tmp` user quota, prepare a unique,
 existing current-user directory with mode `0700` on a filesystem with freshly
 verified quota and free-space capacity. Set `TUTURUUU_CHECK_CHILD_TMPDIR` to its
-absolute real path when invoking normal `bun check` through `ttr resources run`.
+absolute real path when invoking normal `bun validate` through `ttr resources run`.
 The option changes `TMPDIR`, `TMP`, and `TEMP` only for validation children.
 Keep the check runner's own `TMPDIR`, `HOME`, and `TTR_RESOURCES_HOME` unchanged;
 both shared queues remain in their original locations. Directory validation
 alone does not establish capacity or authorize cleanup.
 
 Invalid directories fail without falling back to `/tmp`. Child processes carry
-a sentinel preserved through Turbo strict mode that rejects a nested `bun check`
+a sentinel preserved through Turbo strict mode that rejects a nested `bun validate`
 CLI before it creates a queue;
 imports of the check module remain allowed. Run another broad check separately
 through the original queues. This option does not skip checks, change resource
 limits, or turn an incomplete or failing check into a pass.
+
+## Aggregate validation and native Bun type checking
+
+`bun validate` is the repository aggregate (formerly the custom `bun check`
+script). `bun validate:now` retains the explicit `--force-now` queue behavior.
+Both invoke the same `scripts/check.js`; flags, fail-fast handling, mandatory
+Biome follow-through, queues and child-temp isolation are unchanged. The legacy
+`tuturuuu-bun-check` queue directory and environment names stay stable so old
+and new runner processes coordinate during the rename.
+
+The aggregate still covers workspace tests, Turbo type-checking, blocking Biome
+format/lint, source size, public SEO, server console, internal-app-auth, satellite
+cookie auth, offline Worker wiring, multi-account vault ownership, legacy API
+wrappers, mobile iOS settings and API mappings, script tests, next-intl setup,
+translation validity/key parity/sorting/namespaces and migration timestamps.
+Platform release alignment runs for release files; Discord Python validation
+runs for Discord changes. No component was replaced with a type-only command.
+`bun check:changed` remains the separate build-free pre-push gate; other
+`check:*` commands retain their roles.
+
+`ttr resources run -- bun check --no-script -p <project>` explicitly invokes Bun's native type-only
+checker. A package script named `check` takes precedence over native checking;
+`scripts/validate-command.test.js` rejects that name in the root and every
+workspace, including retained inactive workspaces. The test is discovered by
+the existing script-test gate. Native checking is not a substitute for
+`bun validate`, app builds, guards, tests, or declaration generation. The ban on
+local aggregate/build execution applies to `bun validate`; native qualification
+still requires resource admission and a bounded thread count. The resource wrapper
+injects `--threads=<lane buildJobs>` when absent and clamps explicit values to
+that lane limit, preserving smaller requests. The aggregate rejects unknown arguments, including `--help` and
+`--dry-run`, before starting work, prints one usage line to stderr and exits 1; neither flag
+provides an aggregate preview.
+
+The inventory recognizes both `wrangler types` and `cf types` as declaration
+generators, including scripts with custom names. It reads package manifests
+without executing generators. The legacy detector and its data-only regression
+fixture have an explicit `producer-inventory` Wrangler-gap admission.
+
+### Native checker qualification
+
+The required gate remains `tsc` 7.0.2, including `run-tsc-build.js` and its
+cache invalidation. PR #6468 supplies optional tsrs 7.1-dev shadow/advisory pre-push
+comparison; it is not the required CI baseline. Keep both until a replacement
+proves all existing semantics. Do not remove TypeScript: declaration producers
+and editor tooling still require it. Bun 1.4.4 reports TypeScript 7.0.2 through
+`bun -p process.versions.typescript`, matching the repository compiler version.
+It embeds its own compiler and standard library; matching versions alone is not
+proof of diagnostic or build equivalence. The repository Bun pin remains owned
+by the separate Bun upgrade/security lane; this change does not update it.
+Native execution requires Bun 1.4.4, while `validate` works with the existing pin. See [Bun's native checker](https://bun.sh/docs/runtime/check).
+
+There are 89 root/workspace manifests; only the root defined `check` before
+the rename. Active scripts invoke `tsc` from TypeScript 7.0.2, often through
+`run-tsc-build.js`. No active manifest invokes a separate `tsgo` binary; that
+name is recognized by the changed-files project resolver. tsrs is installed
+externally for shadow/pre-push use, not as a workspace dependency.
+
+Run `node scripts/ci/bun-check-inventory.js` to inventory root/workspace scripts,
+resolved type-check projects, inactive workspaces and custom emit/generation
+producers. Turbo's `type-check` still depends on `^build` and `^type-check`.
+Meet has a custom declaration producer; Calendar/Mail split app, boundary and
+Worker configs; several services generate Wrangler ambient declarations before
+checking. Those steps must survive any future switch.
+
+The opt-in Linux harness is `scripts/ci/bun-check-qualification.js --out <private-dir>
+--threads 6 --runs 5 [--tsrs <pinned-binary>]`. Invoke it with `node` inside the
+existing fenced exact-SHA runner after frozen dependency installation. It does
+not create another CI gate. Each report records source SHA, lock hash, versions,
+host/load, exact commands, resolved configs/references, file closures and hashes,
+full diagnostics, exit status, wall time and peak RSS. `--all` disables native
+diagnostic grouping. The known-invalid control adds a fresh `TS2322` assignment
+under `packages/types/src`, requires every checker to report it, and removes the
+file in `finally`; the mutation and source hash are recorded separately.
+
+This harness compares the same **no-emit projection** used by the existing
+shadow: `noEmit=true`, `incremental=false`, `composite=false`. This alone does
+not prove the original build/reference/emit semantics. First runs are process
+cold; subsequent runs use fresh processes with warm OS caches. It does not evict
+shared host caches or claim cold filesystem results. Alternate checker order,
+report all five observations and errors, and compare diagnostic multisets before
+comparing performance. Real diagnostic differences or unverified generated
+closures prohibit gate promotion. Preserve declaration/emit tasks even after
+future diagnostic equivalence is established.
+
+### Bun 1.4.4 evaluation: initial declaration closure
+
+The first exact-source run at `b56c8fde67b487ee07961004feb92930f121b945`
+used `sokora-ubuntu` (Linux x86_64, 20 CPUs), the fenced
+`early-merge-validate.sh` runner, Bun 1.4.4 and Node 24.22.1. Both Bun's embedded
+compiler and the baseline reported TypeScript 7.0.2; the tsrs pin reported
+7.1.0-dev.20260930.4. The frozen `bun.lock` SHA256 was
+`c4687dadb08c5aa33a132d860f8d44a0b7ee2c032ec11c09e5724a4d864999e2`.
+
+All checkers used a six-thread budget (`--threads 6`, `GOMAXPROCS=6`,
+`RAYON_NUM_THREADS=6` as applicable). The four standard Types/Supabase/Internal
+API/Masonry declaration prerequisites were built first. Each paired comparison
+used identical source/dependencies and effective no-emit flags; all 11 recorded
+input closure hashes stayed unchanged. There was one process-cold pass and four
+warm passes per checker, with alternating order, plus five error-control runs.
+The host was shared (initial load averages 9.57/34.93/31.40); these are
+observations, not an adoption or speedup claim. Source-loading inventory had
+already warmed filesystem caches before the first timed compiler process.
+
+| Checker | Process-cold total, s | Warm total median [range], s | Error median [range], s | Peak RSS, MiB |
+| --- | --- | --- | --- | --- |
+| tsc | 38.295 | 37.336 [37.112-37.599] | 0.231 [0.227-0.240] | 7855.8 |
+| bun | 7.337 | 7.346 [7.206-7.493] | 0.071 [0.067-0.072] | 2159.9 |
+| tsrs | 6.520 | 6.216 [6.100-6.310] | 0.066 [0.063-0.072] | 2418.1 |
+
+Totals above sum the 11 project checks sequentially. Peak RSS is the maximum
+single checker process, not summed memory. Warm values summarize four totals;
+error values summarize five runs of the injected Types control only. tsrs and
+Bun did not perform identical validation work on this initial closure, so the
+timing columns must not be used as an equivalence-adjusted performance ratio.
+
+| Project | tsc / Bun / tsrs diagnostics | Bun exact parity |
+| --- | --- | --- |
+| `packages/types/tsconfig.build.json` | 0 / 0 / 0 | yes |
+| `packages/utils/tsconfig.typecheck.json` | 0 / 0 / 0 | yes |
+| `packages/ui/tsconfig.typecheck.json` | 0 / 0 / 20 | yes |
+| `packages/supabase/tsconfig.typecheck.json` | 0 / 0 / 0 | yes |
+| `packages/internal-api/tsconfig.typecheck.json` | 0 / 0 / 0 | yes |
+| `apps/tasks/tsconfig.json` | 0 / 0 / 0 | yes |
+| `apps/calendar/tsconfig.json` | 0 / 0 / 0 | yes |
+| `apps/calendar/tsconfig.worker.json` | 1 / 1 / 1 | yes |
+| `apps/meet/tsconfig.app.json` | 0 / 0 / 0 | yes |
+| `apps/meet/tsconfig.cloudflare.json` | 2 / 0 / 2 | NO |
+| `apps/web/tsconfig.json` | 2 / 2 / 20 | yes |
+
+Every checker reported the injected `TS2322` at the same file, line, column and
+message in all five runs; the control was removed afterward. Existing real
+checkout diagnostics also matched exactly: Calendar Worker reported `TS2307`
+for the absent generated `#calendar-handler` alias, and Web plus SDK reported
+`TS2307` for absent `@tuturuuu/devbox` declarations. These are genuine checkout
+diagnostics, but they are missing generated inputs rather than evidence of a
+fully prepared production type gate.
+
+Meet's Worker config has `disableSourceOfProjectReferenceRedirect: true` and
+references its app declaration producer. With those declarations absent, tsc
+reported two `TS6305` diagnostics for `token.d.ts` and `handler.d.ts`; Bun
+reported none. This is consistent with Bun's documented use of referenced
+source instead of prebuilt declarations. Removing the current gate at this point
+would lose an existing generated-output assertion. tsrs also differed from the
+7.0.2 baseline (20 UI diagnostics and 20 Web diagnostics versus 0 and 2).
+**Native gate promotion remains unqualified.** Retain the authoritative
+producers, emit/declaration validation and existing baseline.
+
+The follow-up uses `--all-projects --runs 1` after running the existing complete
+Turbo type gate, including Meet/Calendar boundary producers, to distinguish
+missing-output differences from source diagnostic differences. This mode covers
+all active inventoried projects and expands Meet's solution root into its two
+concrete configs; inactive TanStack remains excluded. It is coverage evidence,
+not a second performance benchmark or an automatic rollout decision.
+
+### Prepared-closure coverage result
+
+At `612429d21223b91018e632ebd84b6044c19d00ec`, the unchanged authoritative
+Turbo type graph passed on the same Linux host (72 seconds, concurrency 2,
+`GOMAXPROCS=6`). Its declaration and boundary producers prepared the complete
+closure. The subsequent one-pass comparison covered **86 concrete configs from
+79 active workspaces**: all had exact diagnostic parity, zero diagnostics and
+unchanged input-closure hashes. The additional TS2322 negative control also
+matched exactly and failed in both checkers as intended. The lock hash and
+compiler versions matched the earlier run. Inactive TanStack was not executed.
+
+This qualifies the observed **prepared no-emit projection** of those configs.
+It does not establish drop-in equivalence for the complete current gate:
+`composite`/incremental behavior was disabled for the paired measurements,
+Bun intentionally does not enforce the same missing-reference-output behavior,
+and it does not provide emit or the existing producer/cache receipts. Keep the
+TypeScript gate and tsrs shadow; no checker dependency was removed. Before a
+switch, compare unmodified config semantics and preserve the producer/output
+assertions explicitly, including a missing/stale-output regression. Do not
+interpret the prepared all-green result as permission to discard those checks.
+
+The complete build-free pre-push gate passed on Linux for the implementation
+commit, including the changed SDK/Devbox tests and type checks; focused Node
+coverage passed 92 tests on the Mac through resource admission. The installed
+Mac shim and nested workspace CLI had incompatible admission behavior, so that
+owned full-gate invocation was stopped and the remaining checks ran on Linux.
+No installed scheduler was modified. Exact-head hosted CI and independent
+review remain separate delivery gates; no merge or production sync is part of
+this change.

@@ -49,7 +49,7 @@ individual update failures are ignored.
 | Focused route | `bun --cwd apps/tasks vitest run 'src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup/route.test.ts'` | all cases pass |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -111,7 +111,7 @@ response, and retry skips already-cleaned tasks.
 
 ### Step 4: Run all gates
 
-Run focused tests, Tasks typecheck/build, `bun check`, and whitespace.
+Run focused tests, Tasks typecheck/build, `bun validate`, and whitespace.
 
 ## Done criteria
 

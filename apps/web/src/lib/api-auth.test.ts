@@ -236,3 +236,54 @@ describe('withSessionAuth app-session step-up controls', () => {
     expect(mocks.verifyAppSessionRequest).not.toHaveBeenCalled();
   });
 });
+
+describe('withSessionAuth undetermined client IP', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.extractIPFromHeaders.mockReturnValue('unknown');
+    mocks.isIPBlocked.mockResolvedValue(null);
+    mocks.hasAuthenticatedApiSession.mockReturnValue(false);
+  });
+
+  it('block-checks the shared unknown bucket instead of skipping it', async () => {
+    mocks.isIPBlocked.mockResolvedValue({
+      blockLevel: 1,
+      blockedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      id: 'block-1',
+      reason: 'manual',
+    });
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler);
+
+    const response = await route(
+      new NextRequest('https://app.test/api/v1/test', { method: 'GET' })
+    );
+
+    expect(mocks.isIPBlocked).toHaveBeenCalledWith(
+      'unknown',
+      expect.objectContaining({ source: 'api-auth' })
+    );
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('rate-limits the shared unknown bucket for mutations', async () => {
+    mocks.checkRateLimit.mockResolvedValue(
+      NextResponse.json({ error: 'Too Many Requests' }, { status: 429 })
+    );
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler);
+
+    const response = await route(
+      new NextRequest('https://app.test/api/v1/test', { method: 'POST' })
+    );
+
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith(
+      'session:ip:mutate:unknown',
+      expect.anything()
+    );
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+  });
+});

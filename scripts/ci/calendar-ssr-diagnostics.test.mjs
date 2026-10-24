@@ -1,12 +1,5 @@
 import assert from 'node:assert/strict';
-import {
-  mkdtemp,
-  readFile,
-  realpath,
-  rm,
-  stat,
-  symlink,
-} from 'node:fs/promises';
+import { mkdtemp, realpath, rm, stat, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -14,6 +7,7 @@ import {
   CALENDAR_SSR_MARKER,
   projectCalendarSsrError,
 } from '../../apps/calendar/src/runtime/ssr-diagnostics.ts';
+import { readFileSnapshot } from '../safe-fs.js';
 import {
   beginCalendar500Discard,
   CALENDAR_RESPONSE_MARKER,
@@ -323,8 +317,12 @@ test('unknown remains UNKNOWN, records cap and packet writes exclusive private v
         /Invalid rejection counts/
       );
     await writeCalendarSsrPacket(path, packet);
-    assert.equal((await stat(path)).mode & 0o777, 0o600);
-    assert.deepEqual(JSON.parse(await readFile(path, 'utf8')), packet);
+    const { data, stat: info } = await readFileSnapshot(path, {
+      encoding: 'utf8',
+      maxBytes: 32768,
+    });
+    assert.equal(info.mode & 0o777, 0o600);
+    assert.deepEqual(JSON.parse(data), packet);
     await assert.rejects(writeCalendarSsrPacket(path, packet), {
       code: 'EEXIST',
     });

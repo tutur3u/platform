@@ -19,12 +19,12 @@ import {
 } from './resources-status';
 import {
   bun,
+  crossProcessTimeout,
   entry,
   exists,
   privateFixtures,
   processTimeout,
   realNode,
-  until,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -40,7 +40,7 @@ const run = (path: string, source: string, env: NodeJS.ProcessEnv = {}) =>
 const json = async (path: string) => JSON.parse(await readFile(path, 'utf8'));
 afterEach(() => fixtures.cleanup());
 
-describe('nested admission', { timeout: 45_000 }, () => {
+describe('nested admission', { timeout: crossProcessTimeout }, () => {
   it('passes a nested ttr resources run straight through with the admitted marker', async () => {
     const path = await home(1);
     const inner = join(path, 'inner.json');
@@ -74,9 +74,9 @@ describe('nested admission', { timeout: 45_000 }, () => {
       `const fs=require('fs');fs.writeFileSync(${JSON.stringify(join(path, 'outer.ready'))},'');const t=setInterval(()=>{if(!fs.existsSync(${JSON.stringify(go)}))return;clearInterval(t);require('child_process').execFileSync(${JSON.stringify(join(path, 'bin', 'node'))},[${JSON.stringify(check)}],{stdio:'inherit',timeout:${processTimeout}});},20);`
     );
     const parent = run(path, outer);
-    await until(() => exists(join(path, 'outer.ready')));
+    await parent.until(() => exists(join(path, 'outer.ready')));
     const sibling = launch(path, ['run', '--', 'node', '-e', '0']);
-    await waiting(path, 1);
+    await waiting(path, 1, [sibling]);
     await writeFile(go, '');
     const result = await parent.done;
     expect(result.code, result.err).toBe(0);
@@ -129,16 +129,16 @@ describe('nested admission', { timeout: 45_000 }, () => {
   it('rejects stale and copied markers so unrelated jobs keep queueing FIFO', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const { token } = await json(join(path, 'slots', '0', 'owner.json'));
     const copied = launch(path, ['run', '--', 'node', '-e', '0'], path, entry, {
       TTR_RESOURCES_ADMITTED: token,
     });
-    await waiting(path, 1);
+    await waiting(path, 1, [copied]);
     const stale = launch(path, ['run', '--', 'node', '-e', '0'], path, entry, {
       TTR_RESOURCES_ADMITTED: 'stale-token',
     });
-    await waiting(path, 2);
+    await waiting(path, 2, [stale]);
     expect([copied.child.exitCode, stale.child.exitCode]).toEqual([null, null]);
     await release(path, 'a');
     expect((await a.done).code).toBe(0);
@@ -149,7 +149,7 @@ describe('nested admission', { timeout: 45_000 }, () => {
   });
 });
 
-describe('parallelism hygiene', { timeout: 45_000 }, () => {
+describe('parallelism hygiene', { timeout: crossProcessTimeout }, () => {
   it('classifies version, help and read-only commands as trivial', () => {
     for (const [name, args] of [
       ['bun', ['--version']],
@@ -174,7 +174,7 @@ describe('parallelism hygiene', { timeout: 45_000 }, () => {
   it('runs trivial commands immediately while every lane is busy', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const probe = await launch(path, ['run', '--', 'node', '--version']).done;
     expect(probe.code, probe.err).toBe(0);
     expect(probe.out).toMatch(/^v\d+/);
@@ -217,7 +217,7 @@ describe('parallelism hygiene', { timeout: 45_000 }, () => {
   });
 });
 
-describe('owner activity and status', () => {
+describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
   it('parses ps CPU time and accounts for descendants that left the group', () => {
     expect(parseCpuTime('0:01.50')).toBe(1.5);
     expect(parseCpuTime('125:00.00')).toBe(7500);
@@ -261,11 +261,28 @@ describe('owner activity and status', () => {
     expect(idleFor(owner, undefined, { percent: 0, seconds: 9 }, now)).toBe(0);
   });
 
-  it('reports owner command, age, CPU and an idle warning without signalling', async () => {
+  it('renders idle-owner warnings from one CPU snapshot without resampling or signalling', async () => {
     const path = await home(1);
     const slot = join(path, 'slots', '0');
     const idle = spawn('sleep', ['60'], { stdio: 'ignore', detached: true });
+    const probe = vi.spyOn(
+      await import('./resources-activity'),
+      'processCpuTable'
+    );
     try {
+      if (idle.pid === undefined)
+        throw new Error('Sleep fixture did not start');
+      const table = [
+        {
+          pid: idle.pid,
+          parent: process.pid,
+          group: idle.pid,
+          percent: 0,
+          seconds: 0,
+        },
+      ];
+      const busyTable = table.map((row) => ({ ...row, percent: 3 }));
+      probe.mockResolvedValue(busyTable);
       const started = new Date(Date.now() - 12 * 60_000).toISOString();
       const owner = {
         ...newOwner('python3', 'python3 /tmp/check.py'),
@@ -280,18 +297,20 @@ describe('owner activity and status', () => {
         lastActiveAt: started,
       });
       const state = await resourceQueueStatus(path);
-      const details = await resourceStatusDetails(state);
+      const details = await resourceStatusDetails(state, Date.now(), table);
       expect(details.ownerDetails[0]).toMatchObject({
         pid: owner.pid,
         childPid: idle.pid,
         command: 'python3 /tmp/check.py',
-        cpuPercent: 0,
       });
       expect(details.ownerDetails[0]!.elapsedSeconds).toBeGreaterThanOrEqual(
         12 * 60
       );
-      expect(details.warnings).toHaveLength(1);
-      expect(details.warnings[0]).toContain('idle at 0% CPU for 12m');
+      expect(details.ownerDetails[0]!.cpuPercent).toBe(0);
+      expect(details.ownerDetails[0]!.idleSeconds).toBeGreaterThanOrEqual(
+        12 * 60
+      );
+      expect(details.warnings.join('\n')).toContain('idle at 0% CPU');
       const text = renderResourceStatus({
         enabled: true,
         machine: { memoryGiB: 24, cpus: 10 },
@@ -300,10 +319,26 @@ describe('owner activity and status', () => {
         ...details,
       });
       expect(text).toContain('python3 /tmp/check.py');
-      expect(text).toContain('WARNING: Owner PID');
+      expect(text).toContain(`WARNING: Owner PID ${owner.pid}`);
+      const busy = await resourceStatusDetails(state, Date.now(), busyTable);
+      expect(busy.ownerDetails[0]!.cpuPercent).toBe(3);
+      expect(busy.ownerDetails[0]!.idleSeconds).toBe(0);
+      expect(busy.warnings).toEqual([]);
+      expect(probe).not.toHaveBeenCalled();
+      const sampled = await resourceStatusDetails(state);
+      expect(sampled.ownerDetails[0]!.cpuPercent).toBe(3);
+      expect(sampled.warnings).toEqual([]);
+      expect(probe).toHaveBeenCalledTimes(1);
       expect(idle.exitCode).toBeNull();
     } finally {
-      idle.kill();
+      probe.mockRestore();
+      if (idle.exitCode === null && idle.signalCode === null) {
+        const exited = new Promise<void>((resolve) =>
+          idle.once('exit', () => resolve())
+        );
+        idle.kill();
+        await exited;
+      }
     }
   });
 });

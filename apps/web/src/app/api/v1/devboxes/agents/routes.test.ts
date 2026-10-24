@@ -232,6 +232,33 @@ describe('devbox agent routes', () => {
       capabilities
     );
   });
+  it('drops a protocol advertisement from a Judge-only runner', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    const capabilities = {
+      executionMode: 'judge-only',
+      protocols: { commitRun: [1] },
+    };
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith('runner-1', {
+      executionMode: 'judge-only',
+    });
+  });
+  it('keeps a protocol advertisement from a trusted runner', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    const capabilities = {
+      executionMode: 'trusted',
+      protocols: { commitRun: [1] },
+    };
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
   it.each([
     { executionMode: 'root' },
     { executionMode: true },
@@ -239,6 +266,9 @@ describe('devbox agent routes', () => {
     { isolation: { tokenValue: true } },
     { isolation: { checkedAt: 'x'.repeat(101) } },
     { isolation: [] },
+    { protocols: { commitRun: ['1'] } },
+    { protocols: { commitRun: [0] } },
+    { protocols: { shell: [1] } },
   ])(
     'rejects malformed execution mode or isolation reports: %j',
     async (capabilities) => {

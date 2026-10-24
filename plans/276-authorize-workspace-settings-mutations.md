@@ -94,7 +94,7 @@ generated types.
 | Route ownership | `bun web:api-routes:check && bun migration:tanstack:manifest` | legacy wrapper is not recreated and the manifest records the first-class source with unchanged ownership |
 | Type checks | `bun run --cwd apps/web type-check && bun run --cwd apps/contacts type-check` | both callers and the first-class route compile |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/contacts build` | both production builds exit 0 |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 
