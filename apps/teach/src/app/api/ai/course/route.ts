@@ -4,7 +4,7 @@ import { executeConvertFileToMarkdown } from '@tuturuuu/ai/tools/executors/marki
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -305,10 +305,11 @@ export const POST = withSessionAuth(
         );
       }
 
-      const sanitizedStoragePath = sanitizePath(storagePath);
+      const sanitizedStoragePath = sanitizePathStrict(storagePath);
 
       if (
         sanitizedStoragePath === null ||
+        sanitizedStoragePath !== storagePath ||
         !isGroupStoragePath(sanitizedStoragePath, normalizedWsId, groupId)
       ) {
         return NextResponse.json(

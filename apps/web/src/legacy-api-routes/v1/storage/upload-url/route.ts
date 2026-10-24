@@ -11,7 +11,10 @@ import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
+import {
+  sanitizeFilename,
+  sanitizePathStrict,
+} from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -45,11 +48,11 @@ export const POST = withApiAuth(
 
     try {
       // Sanitize the provided path
-      const sanitizedPath = sanitizePath(path);
-      if (sanitizedPath === null) {
+      const sanitizedPath = sanitizePathStrict(path);
+      if (sanitizedPath === null || sanitizedPath !== path) {
         return createErrorResponse(
           'Bad Request',
-          'Invalid path: path contains illegal characters or directory traversal attempts',
+          'Invalid path: path must be an exact relative path without empty segments, leading or trailing separators, illegal characters, or directory traversal',
           400,
           'INVALID_PATH'
         );

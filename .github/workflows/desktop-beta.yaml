@@ -173,7 +173,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev xvfb dbus-x11 xdotool desktop-file-utils
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev libsecret-1-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev xvfb dbus-x11 xdotool desktop-file-utils
       - name: Prepare macOS Firebase inputs
         if: matrix.platform == 'macos'
         run: node scripts/desktop-deployment/prepare-macos.mjs

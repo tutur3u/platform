@@ -30,6 +30,7 @@ const reviewCategories = [
       /(?:^|\/)(?:auth|sso|oauth2?|sessions?|login|logout|sign-?in|sign-?up|mfa|otp|2fa|passkeys?|webauthn)(?:\/|[._-][^/]*$|$)/iu,
       /(?:^|\/)(?:proxy|middleware|api-middleware|authorization)\.(?:c|m)?[jt]s$/u,
       /(?:^|\/)(?:oidc|external-apps)[^/]*\.(?:c|m)?[jt]sx?$/iu,
+      /(?:^|\/)[^/]*-auth\.(?:c|m)?[jt]sx?$/u,
       /^packages\/utils\/src\/(?:user-helper|workspace-user-link|api-proxy-guard|required-mfa)/u,
     ],
   },
@@ -58,6 +59,7 @@ const reviewCategories = [
     patterns: [
       /^apps\/(?:devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
       /^packages\/(?:devbox|trigger|workflows)\//u,
+      /^apps\/(?:web|infrastructure)\/src\/lib\/devboxes\//u,
       /(?:^|\/)Dockerfile[^/]*$/u,
       /(?:^|\/)wrangler\.(?:toml|jsonc?)$/u,
     ],
@@ -114,7 +116,12 @@ const reviewCategories = [
 ];
 
 // Prose and translations describe behavior but cannot change it.
-const reviewExempt = [/\.mdx?$/u, /(?:^|\/)messages\/[^/]+\.json$/u];
+// Review evidence images are inert; .github/screenshots holds PR screenshots.
+const reviewExempt = [
+  /\.mdx?$/u,
+  /(?:^|\/)messages\/[^/]+\.json$/u,
+  /^\.github\/screenshots\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif)$/u,
+];
 
 const dependencyPatterns = [
   /(?:^|\/)package\.json$/u,

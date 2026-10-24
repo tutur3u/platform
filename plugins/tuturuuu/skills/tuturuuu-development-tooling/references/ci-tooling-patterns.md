@@ -90,6 +90,20 @@ Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
 
+## Cloudflare backend ownership guard
+
+New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare
+(Cron Control Cron Triggers, Queues, Workflows, Durable Objects) under the
+runaway-work review above. `scripts/ci/cloudflare-backend-ownership.test.js` fails
+on a new Vercel cron, enabled cron-catalog job, live pg_cron job, post-cutoff
+`cron.schedule`, Supabase Edge Function, Trigger.dev config/dependency/import, Next
+`after()` import or `/api/cron` route. A cadence change counts as a new owner.
+Legacy owners live in the shrink-only allowlist with owner/target/plan; the test
+pins the adopted baseline and fails stale entries, so delete an entry when its
+legacy definition is removed. Retained pg_cron jobs need a written pure-database
+justification; `pg_net` callers are not exceptions. Do not extend the baseline to
+admit new work. See `apps/docs/build/devops/cloudflare-backend-ownership.mdx`.
+
 ## Codex plugin native parallel pilot
 
 `codex-plugin.yaml` has one native `parallel` group containing only the MCP and
@@ -686,6 +700,18 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   Turbo. CPU, heap, and concurrency controls are pass-through values. Use a
   transit-only dependency task when downstream tests must invalidate on
   dependency source changes without executing dependency test suites.
+- Keep the Turbo global hash small. Never add workspace packages to root
+  `package.json` dependencies: Turbo hashes the root's workspace closure
+  globally, and the old email-service root dependency busted every task on 11
+  of 40 main commits. Machine paths (`PUB_CACHE`, `LOCALAPPDATA`,
+  `USERPROFILE`) are pass-through only. Hash gitignored files that change
+  results (`.env*` for Vitest `loadEnv`, `.dev.vars*` for `wrangler types` and
+  `cf workers types`), and cache the generated declarations the tsconfig reads
+  (`.cloudflare/types/**` for `cf workers types`).
+  `scripts/ci/turbo-cache-config.test.js` pins these rules. Diagnose misses
+  with `--dry=json` hash comparisons as described in
+  `apps/docs/build/devops/caching.mdx`; never narrow `^type-check`/`^transit`
+  links or exclude upstream `__tests__` to raise a hit rate.
 - Artifact uploads must declare both retention and missing-file behavior.
   Consolidate failure diagnostics per shard or mode, keep package handoff
   tarballs for one day without redundant compression, and cache native
