@@ -492,25 +492,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveConnect => 'Start live session';
 
   @override
-  String get assistantLiveDescriptionConnecting => 'Creating a direct Gemini Live session for text, audio, and camera input.';
+  String get assistantLiveDescriptionConnecting => 'Connecting your live conversation.';
 
   @override
   String get assistantLiveDescriptionError => 'The live session hit an error. Retry or start a fresh session.';
 
   @override
-  String get assistantLiveDescriptionIdle => 'Start a live session to talk, type, or stream camera context into the same assistant chat.';
+  String get assistantLiveDescriptionIdle => 'Tap the microphone to start talking. Your conversation stays here.';
 
   @override
   String get assistantLiveDescriptionListening => 'Microphone streaming is active. Mira will keep listening for new audio input.';
 
   @override
-  String get assistantLiveDescriptionPreparing => 'Minting an ephemeral token and restoring the last resumable live session.';
+  String get assistantLiveDescriptionPreparing => 'Getting your live conversation ready.';
 
   @override
   String get assistantLiveDescriptionReady => 'Live text and audio are ready. Type a turn, talk, or share your camera feed.';
 
   @override
-  String get assistantLiveDescriptionReconnecting => 'The session is reconnecting with the latest resumable handle and restored history.';
+  String get assistantLiveDescriptionReconnecting => 'Reconnecting your conversation. Your transcript is still here.';
 
   @override
   String get assistantLiveDisconnect => 'End live session';
@@ -525,7 +525,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveHideCamera => 'Hide camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Talk with Mira';
+  String get assistantLiveIdleHeading => 'Ready to talk';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Current access';

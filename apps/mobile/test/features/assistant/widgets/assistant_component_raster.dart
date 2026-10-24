@@ -15,16 +15,23 @@ Future<void> loadAssistantRenderFonts() async {
   }
 }
 
-void configureAssistantRaster(WidgetTester tester) {
-  if (Platform.environment['ASSISTANT_EXPERIENCE_RENDER_DIR'] == null) return;
+void configureAssistantRaster(
+  WidgetTester tester, {
+  String environmentKey = 'ASSISTANT_EXPERIENCE_RENDER_DIR',
+}) {
+  if (Platform.environment[environmentKey] == null) return;
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const ui.Size(390, 844);
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 }
 
-Future<void> renderAssistantComponent(WidgetTester tester, String name) async {
-  final directory = Platform.environment['ASSISTANT_EXPERIENCE_RENDER_DIR'];
+Future<void> renderAssistantComponent(
+  WidgetTester tester,
+  String name, {
+  String environmentKey = 'ASSISTANT_EXPERIENCE_RENDER_DIR',
+}) async {
+  final directory = Platform.environment[environmentKey];
   if (directory == null) return;
   await tester.runAsync(() async {
     await Directory(directory).create(recursive: true);

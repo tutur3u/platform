@@ -236,11 +236,17 @@ void main() {
     );
     expect(surface, findsOneWidget);
     final materialElement = tester.element(surface);
+    final primarySlot = find.byKey(
+      const ValueKey('floating-dock-primary-slot'),
+    );
+    Map<String, Offset>? liveCenters;
     // Exercise the actual cached AssistantPage publisher and its internal
     // composer state, rather than replacing the shell's registered page slot.
     await tester.tap(find.byType(AssistantComposerFab));
     await _pump(tester);
     expect(find.byType(TextField), findsOneWidget);
+    final originalBounds = tester.getRect(surface);
+    final originalPrimaryBounds = tester.getRect(primarySlot);
     assistant.enterLiveMode();
     // Page slots publish after layout; retain identity during that frame too.
     await tester.pump();
@@ -256,14 +262,22 @@ void main() {
       expect(surface, findsOneWidget);
       expect(tester.element(surface), same(materialElement));
       expect(find.byType(ShellDockSurface), findsOneWidget);
-      expect(find.byType(AssistantLiveCallControls), findsNothing);
-      expect(find.byType(MorphingNavigationBar), findsOneWidget);
+      expect(tester.getRect(surface), originalBounds);
+      expect(tester.getRect(primarySlot), originalPrimaryBounds);
+      final centers = {
+        for (final id in ['microphone', 'camera', 'keyboard', 'exit'])
+          id: tester.getCenter(find.byKey(ValueKey('live-control-$id'))),
+      };
+      liveCenters ??= centers;
+      expect(centers, liveCenters);
+      expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+      expect(find.byType(MorphingNavigationBar), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(tester.takeException(), isNull);
     }
-    // The action rail replaces Chat's action after its outgoing transition.
+    // The navigation action keeps the same primary slot in Live.
     expect(find.byType(AssistantLivePrimaryAction), findsOneWidget);
-    expect(find.byTooltip('Call Mira'), findsOneWidget);
+    expect(find.byTooltip('Open mic'), findsOneWidget);
     assistant.toggleComposerNavigation();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
@@ -271,19 +285,22 @@ void main() {
     assistant.toggleComposerNavigation();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
-    expect(find.byType(AssistantLiveCallControls), findsNothing);
-    expect(find.byTooltip('Call Mira'), findsOneWidget);
+    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    expect(find.byTooltip('Open mic'), findsOneWidget);
     assistant.enterFullscreen();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
-    expect(find.byType(AssistantLiveCallControls), findsNothing);
-    expect(find.byTooltip('Call Mira'), findsOneWidget);
-    assistant.exitLiveMode();
+    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    expect(find.byTooltip('Open mic'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('live-control-keyboard')));
     await _pump(tester);
-    await tester.tap(find.byType(AssistantComposerFab));
-    await _pump(tester);
+    expect(assistant.state.isLiveMode, isFalse);
     expect(tester.element(surface), same(materialElement));
     expect(find.byType(TextField), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).focusNode?.hasFocus,
+      isTrue,
+    );
     expect(find.byType(AssistantLiveCallControls), findsNothing);
   });
 

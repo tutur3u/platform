@@ -154,24 +154,8 @@ extension _AssistantPageChrome on _AssistantPageState {
     context.read<AssistantChromeCubit>().toggleComposerNavigation();
   }
 
-  Widget _livePrimaryAction(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) => AssistantLivePrimaryAction(
-    state: liveState,
-    assistantName: _shellCubit.state.soul.name,
-    onCall: () => _handleLiveMicrophoneToggle(wsId, chatState),
-    onCancel: () async {
-      final epoch = _voiceActorScopeEpoch;
-      final attempt = _liveStartGate.currentFor(epoch);
-      await _liveCubit.disconnect(clearSession: true);
-      if (mounted &&
-          epoch == _voiceActorScopeEpoch &&
-          _loadedWorkspaceId == wsId) {
-        _liveStartGate.cancel(attempt);
-      }
-    },
+  Widget _livePrimaryAction() => AssistantLivePrimaryAction(
+    key: const ValueKey('assistant-dock-primary'),
     onNavigation: () {
       _inputFocusNode.unfocus();
       _toggleLiveDockNavigation();
@@ -187,9 +171,27 @@ extension _AssistantPageChrome on _AssistantPageState {
     onMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
     onCamera: _liveCubit.toggleCamera,
     onText: _openChatComposerFromLiveMode,
-    onDisconnect: () =>
-        _liveCubit.disconnect(clearSession: true, finishTurn: true),
+    onDisconnect: () async {
+      if (liveState.isBusy) {
+        await _cancelLiveDockCall(wsId);
+      } else if (liveState.status == AssistantLiveConnectionStatus.connected) {
+        await _liveCubit.disconnect(clearSession: true, finishTurn: true);
+      } else {
+        await _exitLiveMode();
+      }
+    },
   );
+
+  Future<void> _cancelLiveDockCall(String wsId) async {
+    final epoch = _voiceActorScopeEpoch;
+    final attempt = _liveStartGate.currentFor(epoch);
+    await _liveCubit.disconnect(clearSession: true);
+    if (mounted &&
+        epoch == _voiceActorScopeEpoch &&
+        _loadedWorkspaceId == wsId) {
+      _liveStartGate.cancel(attempt);
+    }
+  }
 
   bool _hasLiveAccess(AssistantShellState shellState) {
     return hasAssistantLiveWorkspaceAccess(

@@ -17,12 +17,23 @@ installation, compatibility, preparation recovery, and the separate inference ga
 
 ## Experience
 
-On mobile, entering Live keeps the shell navbar available until an explicit
-**Call Mira** action starts the call. Preparing, connecting, and reconnecting
-show a calling screen with the real connection status and a cancel action;
-microphone/camera/text/end controls appear only after connection. The connected
-controls replace navigation inside the same shell material at the same adaptive
-navbar width. Expanding navigation or ending the call preserves that surface.
+On mobile, Live keeps microphone, camera, keyboard and exit controls in four
+stable slots inside the existing floating navbar. Chat and Live share its width,
+bottom anchor, retained material and side navigation action. The microphone
+starts an idle call; preparing, connecting and reconnecting keep all slots visible
+with truthful disabled states and cancellation. Active media can still be stopped
+during connection. One start intent gets one microphone attempt, so finishing a
+connection cannot undo a mute or retry denied permission. Camera startup requires
+a connection. The keyboard returns to the composer through the existing browsing
+retention preference; the default disconnects. The exit action cancels startup,
+hangs up a connected call or returns to chat after ending.
+
+The same scrollable stage, status and transcript remain mounted across call
+states. The audio blob uses admitted assistant audio and spectrum; reduced motion
+keeps it static. Recovery detail and retry stay inline, and transcript history is
+retained during reconnect and after ending. These mobile rules are covered by
+`assistant_live_dock_lifecycle_test.dart`, `assistant_live_state_presentation_test.dart`
+and `assistant_live_microphone_restart_test.dart`.
 Text chat grows to at most five lines in the dock, then scrolls inside the input.
 The Assistant has no fullscreen/expand draft action. Its single 52dp side action
 remains Send, recording control, or navigation as appropriate. Attachment previews,

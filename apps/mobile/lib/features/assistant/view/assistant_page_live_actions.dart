@@ -110,30 +110,23 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         _chatCubit.state,
         liveState,
       );
-      if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
-        final connecting = _liveCubit.prepareSession(
-          wsId: wsId,
-          chatId: activeChatId,
-          model: assistantLiveModelId,
-        );
-        if (autoStartMicrophone && !_liveCubit.state.isMicrophoneActive) {
-          await Future.wait([connecting, _liveCubit.toggleMicrophone()]);
-        } else {
-          await connecting;
-        }
-      }
-
-      if (!guard.current ||
-          !mounted ||
-          !context.read<AssistantChromeCubit>().state.isLiveMode ||
-          _liveCubit.state.status == AssistantLiveConnectionStatus.error ||
-          _loadedWorkspaceId != wsId) {
-        return;
-      }
-
-      if (!_liveCubit.state.isMicrophoneActive) {
-        await _liveCubit.toggleMicrophone();
-      }
+      await enableAssistantLiveMicrophone(
+        liveCubit: _liveCubit,
+        prepareSession:
+            !isVisibleLiveSession || liveState.status.isDisconnectedOrErrored
+            ? () => _liveCubit.prepareSession(
+                wsId: wsId,
+                chatId: activeChatId,
+                model: assistantLiveModelId,
+              )
+            : null,
+        isCurrent: () =>
+            guard.current &&
+            mounted &&
+            context.read<AssistantChromeCubit>().state.isLiveMode &&
+            _liveCubit.state.status != AssistantLiveConnectionStatus.error &&
+            _loadedWorkspaceId == wsId,
+      );
     } finally {
       _liveStartGate.finish(attempt);
     }
@@ -180,5 +173,25 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       return;
     }
     _restoreComposerAndFocus();
+  }
+}
+
+/// Gives one microphone intent a single attempt across session preparation.
+Future<void> enableAssistantLiveMicrophone({
+  required AssistantLiveCubit liveCubit,
+  required Future<void> Function()? prepareSession,
+  required bool Function() isCurrent,
+}) async {
+  if (prepareSession != null) {
+    final connecting = prepareSession();
+    await Future.wait([
+      connecting,
+      if (!liveCubit.state.isMicrophoneActive) liveCubit.toggleMicrophone(),
+    ]);
+  }
+
+  if (!isCurrent()) return;
+  if (prepareSession == null && !liveCubit.state.isMicrophoneActive) {
+    await liveCubit.toggleMicrophone();
   }
 }

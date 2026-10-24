@@ -492,25 +492,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveConnect => 'Bắt đầu phiên trực tiếp';
 
   @override
-  String get assistantLiveDescriptionConnecting => 'Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.';
+  String get assistantLiveDescriptionConnecting => 'Đang kết nối cuộc trò chuyện trực tiếp.';
 
   @override
   String get assistantLiveDescriptionError => 'Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.';
 
   @override
-  String get assistantLiveDescriptionIdle => 'Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.';
+  String get assistantLiveDescriptionIdle => 'Nhấn micrô để bắt đầu nói. Cuộc trò chuyện của bạn được giữ tại đây.';
 
   @override
   String get assistantLiveDescriptionListening => 'Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.';
 
   @override
-  String get assistantLiveDescriptionPreparing => 'Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.';
+  String get assistantLiveDescriptionPreparing => 'Đang chuẩn bị cuộc trò chuyện trực tiếp của bạn.';
 
   @override
   String get assistantLiveDescriptionReady => 'Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.';
 
   @override
-  String get assistantLiveDescriptionReconnecting => 'Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.';
+  String get assistantLiveDescriptionReconnecting => 'Đang kết nối lại cuộc trò chuyện. Bản ghi của bạn vẫn ở đây.';
 
   @override
   String get assistantLiveDisconnect => 'Kết thúc phiên trực tiếp';
@@ -525,7 +525,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveHideCamera => 'Ẩn camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Trò chuyện với Mira';
+  String get assistantLiveIdleHeading => 'Sẵn sàng trò chuyện';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
