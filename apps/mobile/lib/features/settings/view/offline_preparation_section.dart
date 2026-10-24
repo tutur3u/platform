@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -154,13 +154,13 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
+              child: AppButton.primary(
                 onPressed:
                     enabled && !state.running && !_starting && !_restoring
                     ? _download
                     : null,
-                icon: const Icon(LucideIcons.hardDriveDownload),
-                label: Text(
+                leading: const Icon(LucideIcons.hardDriveDownload),
+                child: Text(
                   widget.productId == null
                       ? l10n.offlinePreparationCacheAll
                       : l10n.offlineRefreshModule,
@@ -170,10 +170,10 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
             if (state.running)
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(
+                child: AppButton.ghost(
                   onPressed: _coordinator.cancel,
-                  icon: const Icon(LucideIcons.pause),
-                  label: Text(l10n.offlinePauseDownloads),
+                  leading: const Icon(LucideIcons.pause),
+                  child: Text(l10n.offlinePauseDownloads),
                 ),
               ),
             if (!state.running &&
@@ -183,7 +183,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 widget.productId == null)
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton(
+                child: AppButton.ghost(
                   onPressed: enabled && !_starting && !_restoring
                       ? () => _download(resume: true)
                       : null,
@@ -208,7 +208,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
               ),
             ],
             for (final (index, id) in ids.indexed) ...[
-              if (index > 0) const Divider(height: 24),
+              if (index > 0) const AppDivider(height: 24),
               _OfflineProductRow(
                 id: id,
                 product:
@@ -320,14 +320,14 @@ class _OfflineProductRow extends StatelessWidget {
             ),
           ),
           if (onOpen != null)
-            IconButton(
+            AppIconButton(
               tooltip: l10n.offlineModuleDetails,
               onPressed: onOpen,
               icon: const Icon(LucideIcons.chevronRight),
             ),
           if (product.status == OfflinePreparationStatus.failed ||
               product.status == OfflinePreparationStatus.unavailable)
-            IconButton(
+            AppIconButton(
               tooltip: l10n.commonRetry,
               onPressed: onRetry,
               icon: const Icon(LucideIcons.rotateCw),

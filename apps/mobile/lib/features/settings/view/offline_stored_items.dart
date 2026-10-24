@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Stored rows only: no pending overlay or network request. The owning module
@@ -34,32 +35,104 @@ class OfflineStoredItems extends StatefulWidget {
 }
 
 class _OfflineStoredItemsState extends State<OfflineStoredItems> {
+  late final ValueNotifier<OfflineStoredItems> _config = ValueNotifier(widget);
+  ModalRoute<dynamic>? _route;
+
+  void _close() {
+    final route = _route;
+    _route = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (route?.isActive ?? false) route!.navigator?.removeRoute(route);
+    });
+  }
+
+  @override
+  void didUpdateWidget(OfflineStoredItems oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId ||
+        oldWidget.workspaceId != widget.workspaceId ||
+        oldWidget.namespace != widget.namespace ||
+        oldWidget.store != widget.store) {
+      _close();
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _config.value = widget;
+    });
+  }
+
+  @override
+  void dispose() {
+    _close();
+    _config.dispose();
+    super.dispose();
+  }
+
+  Future<void> _open() async {
+    await showAppSheet<void>(
+      context: context,
+      size: AppSheetSize.large,
+      builder: (context) {
+        _route = ModalRoute.of(context);
+        return ValueListenableBuilder(
+          valueListenable: _config,
+          builder: (_, config, _) => _OfflineStoredItemsBrowser(config: config),
+        );
+      },
+    );
+    _route = null;
+  }
+
+  @override
+  Widget build(BuildContext context) => AppListTile(
+    title: Text(context.l10n.offlineBrowseStoredItems),
+    trailing: const Icon(LucideIcons.chevronRight),
+    onTap: _open,
+  );
+}
+
+class _OfflineStoredItemsBrowser extends StatefulWidget {
+  const _OfflineStoredItemsBrowser({required this.config});
+  final OfflineStoredItems config;
+
+  @override
+  State<_OfflineStoredItemsBrowser> createState() =>
+      _OfflineStoredItemsBrowserState();
+}
+
+class _OfflineStoredItemsBrowserState
+    extends State<_OfflineStoredItemsBrowser> {
   List<_StoredItem>? _items;
   String _query = '';
   final _searchController = TextEditingController();
   final _expandedIds = <String>{};
   bool _failed = false;
-  bool _expanded = false;
+
   int _generation = 0;
 
   @override
-  void didUpdateWidget(OfflineStoredItems oldWidget) {
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(_OfflineStoredItemsBrowser oldWidget) {
     super.didUpdateWidget(oldWidget);
     final scopeChanged =
-        oldWidget.userId != widget.userId ||
-        oldWidget.workspaceId != widget.workspaceId ||
-        oldWidget.namespace != widget.namespace ||
-        oldWidget.store != widget.store;
+        oldWidget.config.userId != widget.config.userId ||
+        oldWidget.config.workspaceId != widget.config.workspaceId ||
+        oldWidget.config.namespace != widget.config.namespace ||
+        oldWidget.config.store != widget.config.store;
     if (scopeChanged) {
       _items = null;
       _query = '';
       _searchController.clear();
       _expandedIds.clear();
     }
-    if (scopeChanged || oldWidget.revision != widget.revision) {
+    if (scopeChanged || oldWidget.config.revision != widget.config.revision) {
       _items = null;
       _generation++;
-      if (_expanded) unawaited(_load());
+      unawaited(_load());
     }
   }
 
@@ -77,11 +150,11 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
       // applied after its scan, so it cannot bound I/O and would hide matches.
       // Read once per content revision and index labels once; render lazily.
       final items =
-          await (widget.loadItems?.call() ??
-              widget.store.queryReplica(
-                userId: widget.userId,
-                workspaceId: widget.workspaceId,
-                namespace: widget.namespace,
+          await (widget.config.loadItems?.call() ??
+              widget.config.store.queryReplica(
+                userId: widget.config.userId,
+                workspaceId: widget.config.workspaceId,
+                namespace: widget.config.namespace,
               ));
       if (!mounted || generation != _generation) return;
       setState(() => _items = items.map(_StoredItem.new).toList());
@@ -98,43 +171,37 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
     final items = _items
         ?.where((item) => item.searchText.contains(_query))
         .toList();
-    return ExpansionTile(
-      key: ValueKey(('offline-stored-items', widget.namespace)),
-      title: Text(l10n.offlineBrowseStoredItems),
-      onExpansionChanged: (expanded) {
-        _expanded = expanded;
-        if (expanded && _items == null) unawaited(_load());
-      },
-      children: [
-        if (_failed) ...[
-          Text(l10n.offlineInventoryError),
-          TextButton(onPressed: _load, child: Text(l10n.commonRetry)),
-        ] else if (items == null)
-          const LinearProgressIndicator()
-        else ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              key: ValueKey(('offline-item-search', widget.namespace)),
-              controller: _searchController,
-              decoration: InputDecoration(hintText: l10n.offlineSearchItems),
-              onChanged: (value) =>
-                  setState(() => _query = value.toLowerCase().trim()),
+    return AppSheetScaffold(
+      title: widget.config.namespace,
+      search: AppSheetSearch(
+        controller: _searchController,
+        hint: l10n.offlineSearchItems,
+        onChanged: (value) =>
+            setState(() => _query = value.toLowerCase().trim()),
+      ),
+      slivers: [
+        if (_failed)
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                Text(l10n.offlineInventoryError),
+                AppButton.ghost(
+                  onPressed: _load,
+                  child: Text(l10n.commonRetry),
+                ),
+              ],
             ),
+          )
+        else if (items == null)
+          const SliverToBoxAdapter(child: LinearProgressIndicator())
+        else if (items.isEmpty)
+          SliverToBoxAdapter(child: Text(l10n.offlineNoMatchingItems))
+        else
+          SliverList.builder(
+            key: ValueKey(('offline-item-list', widget.config.namespace)),
+            itemCount: items.length,
+            itemBuilder: (context, index) => _itemTile(items[index]),
           ),
-          if (items.isEmpty)
-            Text(l10n.offlineNoMatchingItems)
-          else
-            SizedBox(
-              height: 320,
-              child: ListView.builder(
-                key: ValueKey(('offline-item-list', widget.namespace)),
-                primary: false,
-                itemCount: items.length,
-                itemBuilder: (context, index) => _itemTile(items[index]),
-              ),
-            ),
-        ],
       ],
     );
   }
@@ -145,7 +212,7 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
     if (expanded && item.bytes == null) {
       item.bytes = utf8.encode(jsonEncode(item.record.payload)).length;
     }
-    return ExpansionTile(
+    return AppDisclosure(
       key: ValueKey(('offline-stored-item', item.record.id)),
       initiallyExpanded: expanded,
       title: Text(item.label),

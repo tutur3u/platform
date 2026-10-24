@@ -11,11 +11,14 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_page.dart';
+import 'package:mobile/features/settings/view/offline_search_chrome.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -151,7 +154,10 @@ void main() {
     directory.deleteSync(recursive: true);
   });
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    ShellChromeActionsCubit? chrome,
+  }) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -159,6 +165,8 @@ void main() {
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
+          if (chrome != null)
+            BlocProvider<ShellChromeActionsCubit>.value(value: chrome),
           BlocProvider<AuthCubit>.value(value: auth),
           BlocProvider<WorkspaceCubit>.value(value: workspace),
           BlocProvider<InventoryAccessCubit>.value(value: access),
@@ -216,8 +224,50 @@ void main() {
     },
   );
 
+  testWidgets('navbar search survives scrolling the offline module list', (
+    tester,
+  ) async {
+    final chrome = ShellChromeActionsCubit();
+    await pump(tester, chrome: chrome);
+    tester.view.physicalSize = const Size(390, 600);
+    await tester.pumpAndSettle();
+    const location = '/settings/offline/inventory';
+    expect(chrome.state.resolveForLocation(location), hasLength(1));
+    chrome.state.resolveForLocation(location).single.onPressed!();
+    await tester.pumpAndSettle();
+    final action = chrome.state.resolveForLocation(location).single;
+    action.searchController!.text = 'products';
+    action.onSearchChanged!('products');
+    await tester.pumpAndSettle();
+    final list = find.byType(ListView);
+    final position = tester
+        .state<ScrollableState>(
+          find.descendant(of: list, matching: find.byType(Scrollable)).first,
+        )
+        .position;
+    expect(position.maxScrollExtent, greaterThan(250));
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pumpAndSettle();
+    expect(find.byType(OfflineSearchChrome), findsOneWidget);
+    expect(chrome.state.resolveForLocation(location), hasLength(1));
+    final retained = chrome.state.resolveForLocation(location).single;
+    expect(retained.searchController!.text, 'products');
+    retained.onCloseSearch!();
+    await tester.pumpAndSettle();
+    expect(action.searchController!.text, isEmpty);
+    expect(
+      chrome.state.resolveForLocation(location).single.searchController,
+      isNull,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(chrome.state.resolveForLocation(location), isEmpty);
+    await chrome.close();
+  });
+
   Future<void> browseItems(WidgetTester tester) async {
     await tester.tap(find.text('Browse stored items'));
+    await tester.pump();
     await tester.runAsync(
       () => store.queryReplica(
         namespace: 'inventory.products',
@@ -240,8 +290,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Item ID: synthetic-item'), findsOneWidget);
     expect(find.textContaining('Latest fetch:'), findsWidgets);
-    final search = find.byKey(
-      const ValueKey(('offline-item-search', 'inventory.products')),
+    final search = find.descendant(
+      of: find.byType(AppSheetScaffold),
+      matching: find.byType(AppSearchField),
     );
     await tester.enterText(search, 'not-stored');
     await tester.pumpAndSettle();
@@ -258,8 +309,9 @@ void main() {
   ) async {
     await pump(tester);
     await browseItems(tester);
-    final search = find.byKey(
-      const ValueKey(('offline-item-search', 'inventory.products')),
+    final search = find.descendant(
+      of: find.byType(AppSheetScaffold),
+      matching: find.byType(AppSearchField),
     );
     await tester.enterText(search, 'synthetic-item');
     await tester.pumpAndSettle();

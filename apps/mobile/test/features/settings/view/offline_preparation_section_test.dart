@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -145,8 +146,8 @@ void main() {
       await tester.pump();
       expect(
         tester
-            .widget<FilledButton>(
-              find.byWidgetPredicate((widget) => widget is FilledButton),
+            .widget<AppButton>(
+              find.byWidgetPredicate((widget) => widget is AppButton),
             )
             .onPressed,
         isNull,

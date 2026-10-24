@@ -3,11 +3,10 @@ import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Live light and dark previews: the real Appearance row as it will render
 /// in each mode. Long or enlarged labels wrap instead of truncating.
@@ -19,12 +18,12 @@ class AppearancePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final current = shad.Theme.of(context).brightness;
+    final current = AppTokens.of(context).brightness;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final brightness in const [Brightness.light, Brightness.dark]) ...[
-          if (brightness == Brightness.dark) const shad.Gap(10),
+          if (brightness == Brightness.dark) const AppGap(10),
           _PreviewPane(
             key: ValueKey('appearance-preview-${brightness.name}'),
             settings: settings,
@@ -57,8 +56,8 @@ class _PreviewPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final typography = shad.Theme.of(context).typography;
-    final ring = shad.Theme.of(context).colorScheme.primary;
+    final typography = AppTokens.of(context).typography;
+    final ring = AppTokens.of(context).colorScheme.primary;
     final scheme = AppearanceTheme.colorScheme(settings, brightness);
     final card = settings.hasAmbientBackground
         ? scheme.card.withValues(alpha: settings.surfaceOpacity)
@@ -101,7 +100,7 @@ class _PreviewPane extends StatelessWidget {
                         color: scheme.mutedForeground,
                       ),
                     ),
-                    const shad.Gap(8),
+                    const AppGap(8),
                     DecoratedBox(
                       decoration: BoxDecoration(
                         color: card,
@@ -148,7 +147,7 @@ class _PreviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typography = shad.Theme.of(context).typography;
+    final typography = AppTokens.of(context).typography;
     final titleStyle = typography.base.copyWith(
       fontWeight: FontWeight.w500,
       color: foreground,
@@ -172,7 +171,7 @@ class _PreviewRow extends StatelessWidget {
         return Row(
           children: [
             icon,
-            const shad.Gap(12),
+            const AppGap(12),
             Expanded(
               child: inline
                   ? Text(title, style: titleStyle)
@@ -188,10 +187,10 @@ class _PreviewRow extends StatelessWidget {
                     ),
             ),
             if (inline) ...[
-              const shad.Gap(8),
+              const AppGap(8),
               Text(value, maxLines: 1, style: valueStyle),
             ],
-            const shad.Gap(4),
+            const AppGap(4),
             chevron,
           ],
         );

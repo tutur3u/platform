@@ -582,3 +582,29 @@ Classic light and dark Aurora blobs. `settings_design_checks.dart` covers the ro
 grid. These are widget-level checks. Device visual, battery and frame-time
 acceptance on the exact CI-built artifact remain separate gates.
 
+
+### Custom controls and modal editors
+
+Appearance, Storage and Offline use the shared design-system controls. Appearance
+sliders preview immediately and persist on release. Storage opens as a large
+hosted sheet; its clear confirmation remains disabled during an active download
+and clears data only after explicit confirmation. Back or dismissal cancels the
+confirmation. Back dismisses the current picker or confirmation
+before leaving Settings.
+
+Offline module search lives in the floating navbar. Browsing a stored namespace
+opens a hosted sheet with its own navbar search and lazily rendered record details.
+Search scans all locally retained records in that namespace, without fetching the
+network. An open browser refreshes on a content revision; losing its owning actor,
+workspace or permission dismisses it. Reopening starts a fresh search. The
+standalone preview uses an inline search field when no shell is present.
+
+Assistant quick settings and the central Assistant entry both open hosted sheets.
+Nested personality and memory editors retain account/workspace cancellation and
+write fences. System-owned license and permission screens keep their framework
+or operating-system presentation.
+
+Regression coverage: `settings_appearance_shell_checks.dart`,
+`cache_storage_review_test.dart`, `offline_stored_items_test.dart`,
+`offline_module_page_test.dart`, `offline_search_chrome_test.dart` and
+`settings_assistant_entrypoint_checks.dart`.

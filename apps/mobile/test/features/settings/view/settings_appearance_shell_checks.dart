@@ -126,7 +126,7 @@ void registerSettingsAppearanceShellChecks() {
     await _settle(tester);
     final slider = find.descendant(
       of: find.byKey(const ValueKey('appearance-intensity')),
-      matching: find.byType(Slider),
+      matching: find.byType(AppSlider),
     );
     final before = h.theme.state.appearance.intensity;
     await tester.drag(slider, const Offset(-120, 0));

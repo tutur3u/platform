@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -17,14 +18,13 @@ Future<void> showOfflineChangesSheet(
     if (userId == null || workspaceId == null) return;
     await showScopedSettingsSheet<void>(
       context: context,
+      sheetSize: AppSheetSize.fit,
       builder: (_) =>
           _OfflineChangesSheet(userId: userId, workspaceId: workspaceId),
     );
   } else {
-    await showModalBottomSheet<void>(
+    await showAppSheet<void>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
       builder: (_) => const _OfflineChangesSheet(),
     );
   }
@@ -39,49 +39,37 @@ class _OfflineChangesSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final queue = OfflineMutationQueue.instance;
     final l10n = context.l10n;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.offlineChangesTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            ListenableBuilder(
-              listenable: Listenable.merge([queue.pending, queue.syncingIds]),
-              builder: (context, _) {
-                final records = queue.pending.value
-                    .where(
-                      (record) =>
-                          (userId == null || record.userId == userId) &&
-                          (workspaceId == null ||
-                              record.workspaceId == workspaceId),
-                    )
-                    .toList();
-                if (records.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: Text(l10n.offlineChangesEmpty)),
-                  );
-                }
-                return Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: records.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) =>
-                        _PendingChangeCard(record: records[index]),
-                  ),
-                );
-              },
-            ),
-          ],
+    return AppSheetScaffold(
+      title: l10n.offlineChangesTitle,
+      slivers: [
+        ListenableBuilder(
+          listenable: Listenable.merge([queue.pending, queue.syncingIds]),
+          builder: (context, _) {
+            final records = queue.pending.value
+                .where(
+                  (record) =>
+                      (userId == null || record.userId == userId) &&
+                      (workspaceId == null ||
+                          record.workspaceId == workspaceId),
+                )
+                .toList();
+            if (records.isEmpty) {
+              return SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Center(child: Text(l10n.offlineChangesEmpty)),
+                ),
+              );
+            }
+            return SliverList.separated(
+              itemCount: records.length,
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) =>
+                  _PendingChangeCard(record: records[index]),
+            );
+          },
         ),
-      ),
+      ],
     );
   }
 }
@@ -93,19 +81,19 @@ class _PendingChangeCard extends StatelessWidget {
   Future<void> _retry(BuildContext context) async {
     if (record.status == PendingMutationStatus.conflict) {
       unawaited(AppHaptics.warning());
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showAppDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(dialogContext.l10n.offlineEditConflict),
+        builder: (dialogContext) => AppDialog(
+          title: dialogContext.l10n.offlineEditConflict,
           content: Text(dialogContext.l10n.offlineChangesReview),
           actions: [
-            TextButton(
+            AppButton.ghost(
               onPressed: () => Navigator.pop(dialogContext, false),
               child: Text(
                 MaterialLocalizations.of(dialogContext).cancelButtonLabel,
               ),
             ),
-            FilledButton(
+            AppButton.primary(
               onPressed: () => Navigator.pop(dialogContext, true),
               child: Text(dialogContext.l10n.offlineChangesRetry),
             ),
@@ -124,19 +112,19 @@ class _PendingChangeCard extends StatelessWidget {
 
   Future<void> _discard(BuildContext context) async {
     unawaited(AppHaptics.warning());
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.l10n.offlineChangesDiscard),
+      builder: (dialogContext) => AppDialog(
+        title: dialogContext.l10n.offlineChangesDiscard,
         content: Text(dialogContext.l10n.offlineChangesDiscardConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(
               MaterialLocalizations.of(dialogContext).cancelButtonLabel,
             ),
           ),
-          FilledButton(
+          AppButton.destructive(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(dialogContext.l10n.offlineChangesDiscard),
           ),
@@ -195,7 +183,7 @@ class _PendingChangeCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  AppButton.ghost(
                     onPressed:
                         OfflineMutationQueue.instance.syncingIds.value.contains(
                           record.id,
@@ -206,7 +194,7 @@ class _PendingChangeCard extends StatelessWidget {
                   ),
                   if (record.canRetry &&
                       record.status != PendingMutationStatus.queued)
-                    TextButton(
+                    AppButton.ghost(
                       onPressed: () => _retry(context),
                       child: Text(l10n.offlineChangesRetry),
                     ),
