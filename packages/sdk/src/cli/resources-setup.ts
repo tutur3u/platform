@@ -19,7 +19,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
-import { withAdmission } from './resources-slots';
+import { hasSetupMaintenanceLease, withAdmission } from './resources-slots';
 
 const start = '# >>> ttr resources >>>';
 const end = '# <<< ttr resources <<<';
@@ -167,7 +167,8 @@ interface SetupOptions {
   force?: boolean;
 }
 export async function setupResources(options: SetupOptions) {
-  if (options.dryRun) return prepareResources(options);
+  if (options.dryRun || (await hasSetupMaintenanceLease(options.home)))
+    return prepareResources(options);
   return withAdmission(options.home, () => prepareResources(options));
 }
 async function prepareResources(options: SetupOptions) {

@@ -384,6 +384,79 @@ first. Only after confirming every recorded PID and process group has ended, rem
 lock/guard paths and retry. Do not delete a live owner's lock or partial package
 outputs from another job. These coordination files are ignored by Git.
 
+#### Roll out and recover
+
+The rollout tool is a repository command, so it can update an older global CLI.
+Run it outside an admitted job: its cutover needs an idle queue. Each target uses
+its existing home, global Bun installation, queue, roots and limits. Hosts run
+sequentially; the first failed or unknown result stops the fleet operation and
+lists never-attempted hosts as skipped. SSH receives the requested drain time
+plus a 30-minute operation budget. A disconnected attempt is reconciled from a
+private terminal report when available; otherwise retain its `reportFile` and
+staging paths for inspection. Do not replay an unknown installation.
+
+```sh
+bun sdk:rollout --channel dev --host <host-a> --host <host-b>
+bun sdk:rollout --channel latest --wait-drain 120 --host <host-a>
+bun sdk:rollout --tarball /private/path/tuturuuu-preview.tgz --sha256 <manifest-sha256> --host <host-a>
+```
+
+Review the JSON report and retain its backup directory. The command verifies
+bytes before installation, backs up the previous supplier and scheduler files,
+previews setup, applies setup, and qualifies the global CLI and launchers. It
+holds admission during cutover, never kills owners, and restores the backup on
+failure. Without `--wait-drain`, an occupied queue refuses immediately. A bounded
+wait does not authorize interrupting another job.
+
+Automatic rollout targets must advertise `tuturuuuBuild.rolloutProtocol: 1`.
+The existing 0.28.0 package predates that protocol and is refused before install;
+use the reviewed manual drain/backup procedure for that older target, or wait for
+a maintenance-capable stable release. Newly qualified dev and stable packs carry
+the protocol marker. Every rollout target requires Python 3, preflighted before
+installation, for its OS-released recovery lock. The tool qualifies project root/package metadata, not each
+project's test suite.
+
+Use the generated rollback command in the report to restore the saved supplier
+without downloading it again. Rollback also requires an idle queue. Preserve the
+backup until the host passes qualification; reconcile a failed or interrupted
+rollback before attempting another rollout. Do not change `TTR_RESOURCES_HOME`,
+link a workspace `dist`, or run concurrent global package-manager operations.
+Global installation is required by the same-install trust fence.
+
+A later rollback compares the current global install, configuration and launchers
+with the recorded post-rollout hashes. **Rollback refuses after another global
+package or a root/limit change.** Do not force a whole-install restore over newer
+state; inspect and reconcile that state first. An interrupted rollback retains
+its same-operation recovery fence so it can resume safely.
+
+Candidates install from the stable content-addressed cache at
+`~/.tuturuuu/resources/suppliers/<sha256>.tgz`, separate from backups. Completed
+rollouts prune old completed backups, retaining five recent backups plus the
+current/protected backup. Failed or unknown recovery evidence stays retained.
+Cache pruning preserves archives referenced by the current installation and
+retained backups.
+
+#### Recover a stale admission fence
+
+A dead preparation owner with no `admission/mutation.json` has not changed the
+installation. Preparation has no retained reclaim fence; ordinary admission
+reclaims a dead preparation owner. If a legacy or malformed fence still blocks
+admission, stop new submissions and inspect
+`~/.tuturuuu/resources/admission/owner.json`. Verify the recorded owner PID and
+child PID/process group have ended, the token is unchanged, and `mutation.json`
+is absent. Preserve the owner record and move only that confirmed stale
+`admission/` directory into a private backup before admitting new work. Never
+move a live owner's directory or remove slots, queue tickets or legacy locks.
+
+When `mutation.json` exists, keep admission closed and use the backup path
+recorded there to run its `rollback.sh`. A missing, malformed or ambiguous record
+requires operator investigation; do not clear the fence to bypass it.
+
+
+Promote code by merging the reviewed change and following the existing
+production/Release Please process. Do not promote a dev tarball by moving
+`latest`: stable releases are separately versioned, qualified and published.
+
 #### Operator setup and threat model
 
 Before enabling publication, create GitHub environment `sdk-release-dev` with
