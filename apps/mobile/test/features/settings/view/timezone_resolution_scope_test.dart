@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
@@ -26,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
+import '../../../helpers/timezone_http_harness.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -157,6 +159,9 @@ void main() {
     AuthState? initialAuth,
     Future<String> Function()? deviceLoader,
     bool root = false,
+    TimezoneSettingsRepository? timezoneRepository,
+    SettingsSectionDestination section = SettingsSectionDestination.preferences,
+    ValueNotifier<bool>? showSettings,
   }) async {
     if (initialAuth != null) {
       whenListen(auth, authEvents.stream, initialState: initialAuth);
@@ -177,16 +182,23 @@ void main() {
           ),
         ],
         child: CalendarTimezoneScope(
-          repository: repository,
+          repository: timezoneRepository ?? repository,
           deviceLoader: deviceLoader,
           loadTimeout: const Duration(seconds: 1),
           child: Builder(
             builder: (context) {
               cubit = context.read<TimezoneSettingsCubit>();
               if (root) {
-                return SettingsPage(
-                  section: SettingsSectionDestination.preferences,
+                final page = SettingsPage(
+                  section: section,
                   permissionsRepository: permissions,
+                );
+                if (showSettings == null) return page;
+                return ValueListenableBuilder<bool>(
+                  valueListenable: showSettings,
+                  builder: (_, visible, child) =>
+                      visible ? child! : const SizedBox.shrink(),
+                  child: page,
                 );
               }
               final id = context.watch<AuthCubit>().state.user?.id;
@@ -212,6 +224,92 @@ void main() {
     );
     await tester.pump();
     return cubit;
+  }
+
+  for (final status in [200, 429]) {
+    testWidgets(
+      'cold scope makes two GETs; opening Settings adds none for HTTP $status',
+      (tester) async {
+        final h = TimezoneHttpHarness();
+        addTearDown(h.dispose);
+        final showSettings = ValueNotifier(false);
+        addTearDown(showSettings.dispose);
+        h.respond = (_) async => status == 200
+            ? TimezoneHttpHarness.json({'timezone': 'UTC'})
+            : http.Response('{}', 429, headers: {'retry-after': '60'});
+        final cubit = await mount(
+          tester,
+          initialAuth: _signedIn('synthetic-actor'),
+          root: true,
+          section: SettingsSectionDestination.overview,
+          timezoneRepository: h.repository,
+          deviceLoader: () async => 'UTC',
+          showSettings: showSettings,
+        );
+        await tester.pumpAndSettle();
+        expect(h.requests, hasLength(2));
+        expect(h.refreshes, 0);
+        expect(
+          h.requests.every(
+            (r) => !r.headers.containsKey('x-tuturuuu-offline-download'),
+          ),
+          isTrue,
+        );
+        expect(find.text('Personal timezone'), findsNothing);
+        showSettings.value = true;
+        await tester.pumpAndSettle();
+        expect(find.text('Personal timezone'), findsOneWidget);
+        expect(find.text('Workspace timezone'), findsOneWidget);
+        expect(cubit.state.failed, status == 429);
+        if (status == 429) {
+          expect(find.text('Unknown'), findsNWidgets(2));
+        }
+        final expectedRequests = [
+          'GET /api/v1/users/calendar-settings',
+          'GET /api/v1/workspaces/ws/calendar-settings',
+        ];
+        expect(
+          h.requests.map((r) => '${r.method} ${r.url.path}'),
+          expectedRequests,
+        );
+        expect(
+          h.requests.every(
+            (r) => r.headers['authorization'] == 'Bearer synthetic-access',
+          ),
+          isTrue,
+        );
+        for (var revision = 0; revision < 3; revision++) {
+          workspaceEvents.add(
+            WorkspaceState(
+              status: WorkspaceStatus.loaded,
+              currentWorkspace: Workspace(id: 'ws', name: 'Name $revision'),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+        showSettings.value = false;
+        await tester.pumpAndSettle();
+        showSettings.value = true;
+        await tester.pumpAndSettle();
+        if (status == 429) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+        }
+        await tester.pump(const Duration(seconds: 61));
+        await tester.pumpAndSettle();
+        expect(
+          h.requests.map((r) => '${r.method} ${r.url.path}'),
+          expectedRequests,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        expect(h.refreshes, 0);
+      },
+    );
   }
 
   testWidgets('real root auth arrival resolves both rows without false UTC', (

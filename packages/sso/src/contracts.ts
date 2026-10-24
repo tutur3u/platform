@@ -38,9 +38,29 @@ export const samlIdSchema = z
   .string()
   .regex(/^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/)
   .brand<'SamlId'>();
+// SAML entity IDs are arbitrary absolute URIs (SAML Core 8.3.6), so any RFC 3986
+// scheme is accepted except script, data and local-file schemes. Entity IDs
+// are identifiers only; links and navigation use https-only endpoint fields.
+const ENTITY_ID_SCHEME = /^[A-Za-z][A-Za-z0-9+.-]*:/;
+const BLOCKED_ENTITY_ID_SCHEMES = new Set([
+  'javascript:',
+  'data:',
+  'vbscript:',
+  'file:',
+]);
+const hasControlOrSpace = (s: string) =>
+  Array.from(s).some((character) => {
+    const code = character.codePointAt(0) ?? 0;
+    return (
+      code <= 0x20 || (code >= 0x7f && code <= 0x9f) || /\s/u.test(character)
+    );
+  });
 export const entityIdSchema = xmlText.refine((s) => {
+  const scheme = ENTITY_ID_SCHEME.exec(s)?.[0].toLowerCase();
+  if (!scheme || BLOCKED_ENTITY_ID_SCHEMES.has(scheme) || hasControlOrSpace(s))
+    return false;
   try {
-    return new URL(s).protocol !== 'javascript:' && !/\s/.test(s);
+    return new URL(s).protocol === scheme;
   } catch {
     return false;
   }

@@ -71,4 +71,4 @@ bun test <session-tests> <auth-exchange-tests> <invitation-tests> <member-tests>
 ```
 
 For `apps/web` TypeScript, JavaScript, docs, or repo-config changes, finish with
-`bun check` unless an unrelated pre-existing blocker prevents it.
+`bun validate` unless an unrelated pre-existing blocker prevents it.

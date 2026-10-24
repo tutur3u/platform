@@ -60,7 +60,7 @@ Do not start while `20260709-123138-claude-finance-inventory-migration.md` is
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/referral-settings-transition.sql && bun --cwd apps/database sb:validate:isolated` | exact migration semantics, rollback, serialization, and ACLs pass; full suite green |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/referral-settings-transition.sql` | generated types include the private RPC with no unrelated drift |
 | Inventory | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

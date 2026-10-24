@@ -64,7 +64,7 @@ needs six scalars, not twelve independent auth/data round trips.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/contacts-user-statistics.test.sql --typegen packages/types/src/supabase.ts` | six exact counts, time boundary, tenant isolation, ACL tests pass |
 | Types | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot" && bun run --cwd apps/contacts type-check` | a second isolated typegen is byte-identical to the intentional generated diff; Contacts compiles |
 | Contacts build | `bun run --cwd apps/contacts build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 
@@ -89,7 +89,7 @@ cleanup elsewhere; dashboard redesign.
 3. Resolve auth once at the page boundary, call the focused service once, and
    render presentational cards from its result. Delete per-card database/auth
    access without changing their UX contract.
-4. Run isolated DB/typegen, focused tests, Contacts typecheck/build, `bun check`,
+4. Run isolated DB/typegen, focused tests, Contacts typecheck/build, `bun validate`,
    whitespace, and exact-scope review.
 
 ## Done criteria

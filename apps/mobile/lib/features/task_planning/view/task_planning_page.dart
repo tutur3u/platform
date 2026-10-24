@@ -4,10 +4,8 @@ import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_label.dart';
@@ -134,8 +132,6 @@ class TaskPlanningView extends StatefulWidget {
 }
 
 class _TaskPlanningViewState extends State<TaskPlanningView> {
-  static const double _fabContentBottomPadding = 96;
-
   _TaskPlanningTab _activeTab = _TaskPlanningTab.estimates;
   late final WorkspacePermissionsRepository _permissionsRepository;
   late final TaskRepository _taskRepository;

@@ -55,7 +55,7 @@ Crawler UI.
 | Web tests | `bun --cwd apps/web vitest run 'src/app/[locale]/(dashboard)/[wsId]/workflow-route-redirects.test.ts' 'src/app/[locale]/(dashboard)/[wsId]/navigation-visibility.test.ts'` | both legacy redirects and navigation absence pass |
 | TanStack | `bun --cwd apps/tanstack-web vitest run 'src/routes/crawler-workflow-redirects.test.ts' && bun --cwd apps/tanstack-web run build` | redirect tests and build pass |
 | Web | `bun run build:web` | navigation and redirect pages compile |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only declared route/navigation/artifact/test paths changed |
 
 ## Scope
@@ -96,7 +96,7 @@ paths; changing permissions; new dependencies.
 - [ ] Neither navigation nor either legacy path claims pipeline/queue behavior.
 - [ ] Every old URL reaches canonical Crawlers with the frozen query mapping.
 - [ ] No pipeline/queue route queries `crawled_urls` or renders the Crawler page.
-- [ ] Manifest/route tree, Web/TanStack builds, tests, `bun check`, and scope pass.
+- [ ] Manifest/route tree, Web/TanStack builds, tests, `bun validate`, and scope pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

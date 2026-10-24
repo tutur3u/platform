@@ -136,7 +136,7 @@ and never print production identities.
    Expected: all commands exit 0; generated diffs are limited to affected DB
    types and the one moved route. Never apply production SQL.
 
-7. **Run final gates.** Run focused pgTAP and Vitest suites, then `bun check`,
+7. **Run final gates.** Run focused pgTAP and Vitest suites, then `bun validate`,
    `bun run --cwd apps/web build`, and `git diff --check`; expect both Bun
    commands to exit 0 and no whitespace output.
 
@@ -147,7 +147,7 @@ and never print production identities.
   exercise role-derived permissions.
 - [ ] Existing invalid rows are measured without identities and never
   automatically deleted.
-- [ ] Local migration, pgTAP, route/helper tests, manifests, `bun check`, and
+- [ ] Local migration, pgTAP, route/helper tests, manifests, `bun validate`, and
   the Web build and `git diff --check` pass.
 
 ## STOP conditions

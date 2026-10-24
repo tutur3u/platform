@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/ui/icons/app_icons.dart';
 
 // GENERATED FILE - DO NOT EDIT BY HAND.
 // Source: packages/types/src/supabase.ts platform_icon enum
@@ -1679,3043 +1679,3043 @@ IconData? resolvePlatformIconData(String? key) {
   if (key == null || key.isEmpty) return null;
   switch (key) {
     case 'AArrowDown':
-      return shad.LucideIcons.aArrowDown;
+      return LucideIcons.aArrowDown;
     case 'AArrowUp':
-      return shad.LucideIcons.aArrowUp;
+      return LucideIcons.aArrowUp;
     case 'ALargeSmall':
-      return shad.LucideIcons.aLargeSmall;
+      return LucideIcons.aLargeSmall;
     case 'Accessibility':
-      return shad.LucideIcons.accessibility;
+      return LucideIcons.accessibility;
     case 'Activity':
-      return shad.LucideIcons.activity;
+      return LucideIcons.activity;
     case 'AirVent':
-      return shad.LucideIcons.airVent;
+      return LucideIcons.airVent;
     case 'Airplay':
-      return shad.LucideIcons.airplay;
+      return LucideIcons.airplay;
     case 'AlarmClock':
-      return shad.LucideIcons.alarmClock;
+      return LucideIcons.alarmClock;
     case 'AlarmClockCheck':
-      return shad.LucideIcons.alarmClockCheck;
+      return LucideIcons.alarmClockCheck;
     case 'AlarmClockMinus':
-      return shad.LucideIcons.alarmClockMinus;
+      return LucideIcons.alarmClockMinus;
     case 'AlarmClockOff':
-      return shad.LucideIcons.alarmClockOff;
+      return LucideIcons.alarmClockOff;
     case 'AlarmClockPlus':
-      return shad.LucideIcons.alarmClockPlus;
+      return LucideIcons.alarmClockPlus;
     case 'AlarmSmoke':
-      return shad.LucideIcons.alarmSmoke;
+      return LucideIcons.alarmSmoke;
     case 'Album':
-      return shad.LucideIcons.album;
+      return LucideIcons.album;
     case 'AlignCenterHorizontal':
-      return shad.LucideIcons.alignCenterHorizontal;
+      return LucideIcons.alignCenterHorizontal;
     case 'AlignCenterVertical':
-      return shad.LucideIcons.alignCenterVertical;
+      return LucideIcons.alignCenterVertical;
     case 'AlignEndHorizontal':
-      return shad.LucideIcons.alignEndHorizontal;
+      return LucideIcons.alignEndHorizontal;
     case 'AlignEndVertical':
-      return shad.LucideIcons.alignEndVertical;
+      return LucideIcons.alignEndVertical;
     case 'AlignHorizontalDistributeCenter':
-      return shad.LucideIcons.alignHorizontalDistributeCenter;
+      return LucideIcons.alignHorizontalDistributeCenter;
     case 'AlignHorizontalDistributeEnd':
-      return shad.LucideIcons.alignHorizontalDistributeEnd;
+      return LucideIcons.alignHorizontalDistributeEnd;
     case 'AlignHorizontalDistributeStart':
-      return shad.LucideIcons.alignHorizontalDistributeStart;
+      return LucideIcons.alignHorizontalDistributeStart;
     case 'AlignHorizontalJustifyCenter':
-      return shad.LucideIcons.alignHorizontalJustifyCenter;
+      return LucideIcons.alignHorizontalJustifyCenter;
     case 'AlignHorizontalJustifyEnd':
-      return shad.LucideIcons.alignHorizontalJustifyEnd;
+      return LucideIcons.alignHorizontalJustifyEnd;
     case 'AlignHorizontalJustifyStart':
-      return shad.LucideIcons.alignHorizontalJustifyStart;
+      return LucideIcons.alignHorizontalJustifyStart;
     case 'AlignHorizontalSpaceAround':
-      return shad.LucideIcons.alignHorizontalSpaceAround;
+      return LucideIcons.alignHorizontalSpaceAround;
     case 'AlignHorizontalSpaceBetween':
-      return shad.LucideIcons.alignHorizontalSpaceBetween;
+      return LucideIcons.alignHorizontalSpaceBetween;
     case 'AlignStartHorizontal':
-      return shad.LucideIcons.alignStartHorizontal;
+      return LucideIcons.alignStartHorizontal;
     case 'AlignStartVertical':
-      return shad.LucideIcons.alignStartVertical;
+      return LucideIcons.alignStartVertical;
     case 'AlignVerticalDistributeCenter':
-      return shad.LucideIcons.alignVerticalDistributeCenter;
+      return LucideIcons.alignVerticalDistributeCenter;
     case 'AlignVerticalDistributeEnd':
-      return shad.LucideIcons.alignVerticalDistributeEnd;
+      return LucideIcons.alignVerticalDistributeEnd;
     case 'AlignVerticalDistributeStart':
-      return shad.LucideIcons.alignVerticalDistributeStart;
+      return LucideIcons.alignVerticalDistributeStart;
     case 'AlignVerticalJustifyCenter':
-      return shad.LucideIcons.alignVerticalJustifyCenter;
+      return LucideIcons.alignVerticalJustifyCenter;
     case 'AlignVerticalJustifyEnd':
-      return shad.LucideIcons.alignVerticalJustifyEnd;
+      return LucideIcons.alignVerticalJustifyEnd;
     case 'AlignVerticalJustifyStart':
-      return shad.LucideIcons.alignVerticalJustifyStart;
+      return LucideIcons.alignVerticalJustifyStart;
     case 'AlignVerticalSpaceAround':
-      return shad.LucideIcons.alignVerticalSpaceAround;
+      return LucideIcons.alignVerticalSpaceAround;
     case 'AlignVerticalSpaceBetween':
-      return shad.LucideIcons.alignVerticalSpaceBetween;
+      return LucideIcons.alignVerticalSpaceBetween;
     case 'Ambulance':
-      return shad.LucideIcons.ambulance;
+      return LucideIcons.ambulance;
     case 'Ampersand':
-      return shad.LucideIcons.ampersand;
+      return LucideIcons.ampersand;
     case 'Ampersands':
-      return shad.LucideIcons.ampersands;
+      return LucideIcons.ampersands;
     case 'Amphora':
-      return shad.LucideIcons.amphora;
+      return LucideIcons.amphora;
     case 'Anchor':
-      return shad.LucideIcons.anchor;
+      return LucideIcons.anchor;
     case 'Angry':
-      return shad.LucideIcons.angry;
+      return LucideIcons.angry;
     case 'Annoyed':
-      return shad.LucideIcons.annoyed;
+      return LucideIcons.annoyed;
     case 'Antenna':
-      return shad.LucideIcons.antenna;
+      return LucideIcons.antenna;
     case 'Anvil':
-      return shad.LucideIcons.anvil;
+      return LucideIcons.anvil;
     case 'Aperture':
-      return shad.LucideIcons.aperture;
+      return LucideIcons.aperture;
     case 'AppWindow':
-      return shad.LucideIcons.appWindow;
+      return LucideIcons.appWindow;
     case 'AppWindowMac':
-      return shad.LucideIcons.appWindowMac;
+      return LucideIcons.appWindowMac;
     case 'Apple':
-      return shad.LucideIcons.apple;
+      return LucideIcons.apple;
     case 'Archive':
-      return shad.LucideIcons.archive;
+      return LucideIcons.archive;
     case 'ArchiveRestore':
-      return shad.LucideIcons.archiveRestore;
+      return LucideIcons.archiveRestore;
     case 'ArchiveX':
-      return shad.LucideIcons.archiveX;
+      return LucideIcons.archiveX;
     case 'Armchair':
-      return shad.LucideIcons.armchair;
+      return LucideIcons.armchair;
     case 'ArrowBigDown':
-      return shad.LucideIcons.arrowBigDown;
+      return LucideIcons.arrowBigDown;
     case 'ArrowBigDownDash':
-      return shad.LucideIcons.arrowBigDownDash;
+      return LucideIcons.arrowBigDownDash;
     case 'ArrowBigLeft':
-      return shad.LucideIcons.arrowBigLeft;
+      return LucideIcons.arrowBigLeft;
     case 'ArrowBigLeftDash':
-      return shad.LucideIcons.arrowBigLeftDash;
+      return LucideIcons.arrowBigLeftDash;
     case 'ArrowBigRight':
-      return shad.LucideIcons.arrowBigRight;
+      return LucideIcons.arrowBigRight;
     case 'ArrowBigRightDash':
-      return shad.LucideIcons.arrowBigRightDash;
+      return LucideIcons.arrowBigRightDash;
     case 'ArrowBigUp':
-      return shad.LucideIcons.arrowBigUp;
+      return LucideIcons.arrowBigUp;
     case 'ArrowBigUpDash':
-      return shad.LucideIcons.arrowBigUpDash;
+      return LucideIcons.arrowBigUpDash;
     case 'ArrowDown':
-      return shad.LucideIcons.arrowDown;
+      return LucideIcons.arrowDown;
     case 'ArrowDown01':
-      return shad.LucideIcons.arrowDown01;
+      return LucideIcons.arrowDown01;
     case 'ArrowDown10':
-      return shad.LucideIcons.arrowDown10;
+      return LucideIcons.arrowDown10;
     case 'ArrowDownAZ':
-      return shad.LucideIcons.arrowDownAZ;
+      return LucideIcons.arrowDownAZ;
     case 'ArrowDownFromLine':
-      return shad.LucideIcons.arrowDownFromLine;
+      return LucideIcons.arrowDownFromLine;
     case 'ArrowDownLeft':
-      return shad.LucideIcons.arrowDownLeft;
+      return LucideIcons.arrowDownLeft;
     case 'ArrowDownNarrowWide':
-      return shad.LucideIcons.arrowDownNarrowWide;
+      return LucideIcons.arrowDownNarrowWide;
     case 'ArrowDownRight':
-      return shad.LucideIcons.arrowDownRight;
+      return LucideIcons.arrowDownRight;
     case 'ArrowDownToDot':
-      return shad.LucideIcons.arrowDownToDot;
+      return LucideIcons.arrowDownToDot;
     case 'ArrowDownToLine':
-      return shad.LucideIcons.arrowDownToLine;
+      return LucideIcons.arrowDownToLine;
     case 'ArrowDownUp':
-      return shad.LucideIcons.arrowDownUp;
+      return LucideIcons.arrowDownUp;
     case 'ArrowDownWideNarrow':
-      return shad.LucideIcons.arrowDownWideNarrow;
+      return LucideIcons.arrowDownWideNarrow;
     case 'ArrowDownZA':
-      return shad.LucideIcons.arrowDownZA;
+      return LucideIcons.arrowDownZA;
     case 'ArrowLeft':
-      return shad.LucideIcons.arrowLeft;
+      return LucideIcons.arrowLeft;
     case 'ArrowLeftFromLine':
-      return shad.LucideIcons.arrowLeftFromLine;
+      return LucideIcons.arrowLeftFromLine;
     case 'ArrowLeftRight':
-      return shad.LucideIcons.arrowLeftRight;
+      return LucideIcons.arrowLeftRight;
     case 'ArrowLeftToLine':
-      return shad.LucideIcons.arrowLeftToLine;
+      return LucideIcons.arrowLeftToLine;
     case 'ArrowRight':
-      return shad.LucideIcons.arrowRight;
+      return LucideIcons.arrowRight;
     case 'ArrowRightFromLine':
-      return shad.LucideIcons.arrowRightFromLine;
+      return LucideIcons.arrowRightFromLine;
     case 'ArrowRightLeft':
-      return shad.LucideIcons.arrowRightLeft;
+      return LucideIcons.arrowRightLeft;
     case 'ArrowRightToLine':
-      return shad.LucideIcons.arrowRightToLine;
+      return LucideIcons.arrowRightToLine;
     case 'ArrowUp':
-      return shad.LucideIcons.arrowUp;
+      return LucideIcons.arrowUp;
     case 'ArrowUp01':
-      return shad.LucideIcons.arrowUp01;
+      return LucideIcons.arrowUp01;
     case 'ArrowUp10':
-      return shad.LucideIcons.arrowUp10;
+      return LucideIcons.arrowUp10;
     case 'ArrowUpAZ':
-      return shad.LucideIcons.arrowUpAZ;
+      return LucideIcons.arrowUpAZ;
     case 'ArrowUpDown':
-      return shad.LucideIcons.arrowUpDown;
+      return LucideIcons.arrowUpDown;
     case 'ArrowUpFromDot':
-      return shad.LucideIcons.arrowUpFromDot;
+      return LucideIcons.arrowUpFromDot;
     case 'ArrowUpFromLine':
-      return shad.LucideIcons.arrowUpFromLine;
+      return LucideIcons.arrowUpFromLine;
     case 'ArrowUpLeft':
-      return shad.LucideIcons.arrowUpLeft;
+      return LucideIcons.arrowUpLeft;
     case 'ArrowUpNarrowWide':
-      return shad.LucideIcons.arrowUpNarrowWide;
+      return LucideIcons.arrowUpNarrowWide;
     case 'ArrowUpRight':
-      return shad.LucideIcons.arrowUpRight;
+      return LucideIcons.arrowUpRight;
     case 'ArrowUpToLine':
-      return shad.LucideIcons.arrowUpToLine;
+      return LucideIcons.arrowUpToLine;
     case 'ArrowUpWideNarrow':
-      return shad.LucideIcons.arrowUpWideNarrow;
+      return LucideIcons.arrowUpWideNarrow;
     case 'ArrowUpZA':
-      return shad.LucideIcons.arrowUpZA;
+      return LucideIcons.arrowUpZA;
     case 'ArrowsUpFromLine':
-      return shad.LucideIcons.arrowsUpFromLine;
+      return LucideIcons.arrowsUpFromLine;
     case 'Asterisk':
-      return shad.LucideIcons.asterisk;
+      return LucideIcons.asterisk;
     case 'AtSign':
-      return shad.LucideIcons.atSign;
+      return LucideIcons.atSign;
     case 'Atom':
-      return shad.LucideIcons.atom;
+      return LucideIcons.atom;
     case 'AudioLines':
-      return shad.LucideIcons.audioLines;
+      return LucideIcons.audioLines;
     case 'AudioWaveform':
-      return shad.LucideIcons.audioWaveform;
+      return LucideIcons.audioWaveform;
     case 'Award':
-      return shad.LucideIcons.award;
+      return LucideIcons.award;
     case 'Axe':
-      return shad.LucideIcons.axe;
+      return LucideIcons.axe;
     case 'Axis3d':
-      return shad.LucideIcons.axis3d;
+      return LucideIcons.axis3d;
     case 'Baby':
-      return shad.LucideIcons.baby;
+      return LucideIcons.baby;
     case 'Backpack':
-      return shad.LucideIcons.backpack;
+      return LucideIcons.backpack;
     case 'Badge':
-      return shad.LucideIcons.badge;
+      return LucideIcons.badge;
     case 'BadgeAlert':
-      return shad.LucideIcons.badgeAlert;
+      return LucideIcons.badgeAlert;
     case 'BadgeCent':
-      return shad.LucideIcons.badgeCent;
+      return LucideIcons.badgeCent;
     case 'BadgeCheck':
-      return shad.LucideIcons.badgeCheck;
+      return LucideIcons.badgeCheck;
     case 'BadgeDollarSign':
-      return shad.LucideIcons.badgeDollarSign;
+      return LucideIcons.badgeDollarSign;
     case 'BadgeEuro':
-      return shad.LucideIcons.badgeEuro;
+      return LucideIcons.badgeEuro;
     case 'BadgeIndianRupee':
-      return shad.LucideIcons.badgeIndianRupee;
+      return LucideIcons.badgeIndianRupee;
     case 'BadgeInfo':
-      return shad.LucideIcons.badgeInfo;
+      return LucideIcons.badgeInfo;
     case 'BadgeJapaneseYen':
-      return shad.LucideIcons.badgeJapaneseYen;
+      return LucideIcons.badgeJapaneseYen;
     case 'BadgeMinus':
-      return shad.LucideIcons.badgeMinus;
+      return LucideIcons.badgeMinus;
     case 'BadgePercent':
-      return shad.LucideIcons.badgePercent;
+      return LucideIcons.badgePercent;
     case 'BadgePlus':
-      return shad.LucideIcons.badgePlus;
+      return LucideIcons.badgePlus;
     case 'BadgePoundSterling':
-      return shad.LucideIcons.badgePoundSterling;
+      return LucideIcons.badgePoundSterling;
     case 'BadgeRussianRuble':
-      return shad.LucideIcons.badgeRussianRuble;
+      return LucideIcons.badgeRussianRuble;
     case 'BadgeSwissFranc':
-      return shad.LucideIcons.badgeSwissFranc;
+      return LucideIcons.badgeSwissFranc;
     case 'BadgeX':
-      return shad.LucideIcons.badgeX;
+      return LucideIcons.badgeX;
     case 'BaggageClaim':
-      return shad.LucideIcons.baggageClaim;
+      return LucideIcons.baggageClaim;
     case 'Ban':
-      return shad.LucideIcons.ban;
+      return LucideIcons.ban;
     case 'Banana':
-      return shad.LucideIcons.banana;
+      return LucideIcons.banana;
     case 'Bandage':
-      return shad.LucideIcons.bandage;
+      return LucideIcons.bandage;
     case 'Banknote':
-      return shad.LucideIcons.banknote;
+      return LucideIcons.banknote;
     case 'Barcode':
-      return shad.LucideIcons.barcode;
+      return LucideIcons.barcode;
     case 'Baseline':
-      return shad.LucideIcons.baseline;
+      return LucideIcons.baseline;
     case 'Bath':
-      return shad.LucideIcons.bath;
+      return LucideIcons.bath;
     case 'Battery':
-      return shad.LucideIcons.battery;
+      return LucideIcons.battery;
     case 'BatteryCharging':
-      return shad.LucideIcons.batteryCharging;
+      return LucideIcons.batteryCharging;
     case 'BatteryFull':
-      return shad.LucideIcons.batteryFull;
+      return LucideIcons.batteryFull;
     case 'BatteryLow':
-      return shad.LucideIcons.batteryLow;
+      return LucideIcons.batteryLow;
     case 'BatteryMedium':
-      return shad.LucideIcons.batteryMedium;
+      return LucideIcons.batteryMedium;
     case 'BatteryPlus':
-      return shad.LucideIcons.batteryPlus;
+      return LucideIcons.batteryPlus;
     case 'BatteryWarning':
-      return shad.LucideIcons.batteryWarning;
+      return LucideIcons.batteryWarning;
     case 'Beaker':
-      return shad.LucideIcons.beaker;
+      return LucideIcons.beaker;
     case 'Bean':
-      return shad.LucideIcons.bean;
+      return LucideIcons.bean;
     case 'BeanOff':
-      return shad.LucideIcons.beanOff;
+      return LucideIcons.beanOff;
     case 'Bed':
-      return shad.LucideIcons.bed;
+      return LucideIcons.bed;
     case 'BedDouble':
-      return shad.LucideIcons.bedDouble;
+      return LucideIcons.bedDouble;
     case 'BedSingle':
-      return shad.LucideIcons.bedSingle;
+      return LucideIcons.bedSingle;
     case 'Beef':
-      return shad.LucideIcons.beef;
+      return LucideIcons.beef;
     case 'Beer':
-      return shad.LucideIcons.beer;
+      return LucideIcons.beer;
     case 'BeerOff':
-      return shad.LucideIcons.beerOff;
+      return LucideIcons.beerOff;
     case 'Bell':
-      return shad.LucideIcons.bell;
+      return LucideIcons.bell;
     case 'BellDot':
-      return shad.LucideIcons.bellDot;
+      return LucideIcons.bellDot;
     case 'BellElectric':
-      return shad.LucideIcons.bellElectric;
+      return LucideIcons.bellElectric;
     case 'BellMinus':
-      return shad.LucideIcons.bellMinus;
+      return LucideIcons.bellMinus;
     case 'BellOff':
-      return shad.LucideIcons.bellOff;
+      return LucideIcons.bellOff;
     case 'BellPlus':
-      return shad.LucideIcons.bellPlus;
+      return LucideIcons.bellPlus;
     case 'BellRing':
-      return shad.LucideIcons.bellRing;
+      return LucideIcons.bellRing;
     case 'BetweenHorizontalEnd':
-      return shad.LucideIcons.betweenHorizontalEnd;
+      return LucideIcons.betweenHorizontalEnd;
     case 'BetweenHorizontalStart':
-      return shad.LucideIcons.betweenHorizontalStart;
+      return LucideIcons.betweenHorizontalStart;
     case 'BetweenVerticalEnd':
-      return shad.LucideIcons.betweenVerticalEnd;
+      return LucideIcons.betweenVerticalEnd;
     case 'BetweenVerticalStart':
-      return shad.LucideIcons.betweenVerticalStart;
+      return LucideIcons.betweenVerticalStart;
     case 'BicepsFlexed':
-      return shad.LucideIcons.bicepsFlexed;
+      return LucideIcons.bicepsFlexed;
     case 'Bike':
-      return shad.LucideIcons.bike;
+      return LucideIcons.bike;
     case 'Binary':
-      return shad.LucideIcons.binary;
+      return LucideIcons.binary;
     case 'Binoculars':
-      return shad.LucideIcons.binoculars;
+      return LucideIcons.binoculars;
     case 'Biohazard':
-      return shad.LucideIcons.biohazard;
+      return LucideIcons.biohazard;
     case 'Bird':
-      return shad.LucideIcons.bird;
+      return LucideIcons.bird;
     case 'Bitcoin':
-      return shad.LucideIcons.bitcoin;
+      return LucideIcons.bitcoin;
     case 'Blend':
-      return shad.LucideIcons.blend;
+      return LucideIcons.blend;
     case 'Blinds':
-      return shad.LucideIcons.blinds;
+      return LucideIcons.blinds;
     case 'Blocks':
-      return shad.LucideIcons.blocks;
+      return LucideIcons.blocks;
     case 'Bluetooth':
-      return shad.LucideIcons.bluetooth;
+      return LucideIcons.bluetooth;
     case 'BluetoothConnected':
-      return shad.LucideIcons.bluetoothConnected;
+      return LucideIcons.bluetoothConnected;
     case 'BluetoothOff':
-      return shad.LucideIcons.bluetoothOff;
+      return LucideIcons.bluetoothOff;
     case 'BluetoothSearching':
-      return shad.LucideIcons.bluetoothSearching;
+      return LucideIcons.bluetoothSearching;
     case 'Bold':
-      return shad.LucideIcons.bold;
+      return LucideIcons.bold;
     case 'Bolt':
-      return shad.LucideIcons.bolt;
+      return LucideIcons.bolt;
     case 'Bomb':
-      return shad.LucideIcons.bomb;
+      return LucideIcons.bomb;
     case 'Bone':
-      return shad.LucideIcons.bone;
+      return LucideIcons.bone;
     case 'Book':
-      return shad.LucideIcons.book;
+      return LucideIcons.book;
     case 'BookA':
-      return shad.LucideIcons.bookA;
+      return LucideIcons.bookA;
     case 'BookAudio':
-      return shad.LucideIcons.bookAudio;
+      return LucideIcons.bookAudio;
     case 'BookCheck':
-      return shad.LucideIcons.bookCheck;
+      return LucideIcons.bookCheck;
     case 'BookCopy':
-      return shad.LucideIcons.bookCopy;
+      return LucideIcons.bookCopy;
     case 'BookDashed':
-      return shad.LucideIcons.bookDashed;
+      return LucideIcons.bookDashed;
     case 'BookDown':
-      return shad.LucideIcons.bookDown;
+      return LucideIcons.bookDown;
     case 'BookHeadphones':
-      return shad.LucideIcons.bookHeadphones;
+      return LucideIcons.bookHeadphones;
     case 'BookHeart':
-      return shad.LucideIcons.bookHeart;
+      return LucideIcons.bookHeart;
     case 'BookImage':
-      return shad.LucideIcons.bookImage;
+      return LucideIcons.bookImage;
     case 'BookKey':
-      return shad.LucideIcons.bookKey;
+      return LucideIcons.bookKey;
     case 'BookLock':
-      return shad.LucideIcons.bookLock;
+      return LucideIcons.bookLock;
     case 'BookMarked':
-      return shad.LucideIcons.bookMarked;
+      return LucideIcons.bookMarked;
     case 'BookMinus':
-      return shad.LucideIcons.bookMinus;
+      return LucideIcons.bookMinus;
     case 'BookOpen':
-      return shad.LucideIcons.bookOpen;
+      return LucideIcons.bookOpen;
     case 'BookOpenCheck':
-      return shad.LucideIcons.bookOpenCheck;
+      return LucideIcons.bookOpenCheck;
     case 'BookOpenText':
-      return shad.LucideIcons.bookOpenText;
+      return LucideIcons.bookOpenText;
     case 'BookPlus':
-      return shad.LucideIcons.bookPlus;
+      return LucideIcons.bookPlus;
     case 'BookText':
-      return shad.LucideIcons.bookText;
+      return LucideIcons.bookText;
     case 'BookType':
-      return shad.LucideIcons.bookType;
+      return LucideIcons.bookType;
     case 'BookUp':
-      return shad.LucideIcons.bookUp;
+      return LucideIcons.bookUp;
     case 'BookUp2':
-      return shad.LucideIcons.bookUp2;
+      return LucideIcons.bookUp2;
     case 'BookUser':
-      return shad.LucideIcons.bookUser;
+      return LucideIcons.bookUser;
     case 'BookX':
-      return shad.LucideIcons.bookX;
+      return LucideIcons.bookX;
     case 'Bookmark':
-      return shad.LucideIcons.bookmark;
+      return LucideIcons.bookmark;
     case 'BookmarkCheck':
-      return shad.LucideIcons.bookmarkCheck;
+      return LucideIcons.bookmarkCheck;
     case 'BookmarkMinus':
-      return shad.LucideIcons.bookmarkMinus;
+      return LucideIcons.bookmarkMinus;
     case 'BookmarkPlus':
-      return shad.LucideIcons.bookmarkPlus;
+      return LucideIcons.bookmarkPlus;
     case 'BookmarkX':
-      return shad.LucideIcons.bookmarkX;
+      return LucideIcons.bookmarkX;
     case 'BoomBox':
-      return shad.LucideIcons.boomBox;
+      return LucideIcons.boomBox;
     case 'Bot':
-      return shad.LucideIcons.bot;
+      return LucideIcons.bot;
     case 'BotMessageSquare':
-      return shad.LucideIcons.botMessageSquare;
+      return LucideIcons.botMessageSquare;
     case 'BotOff':
-      return shad.LucideIcons.botOff;
+      return LucideIcons.botOff;
     case 'Box':
-      return shad.LucideIcons.box;
+      return LucideIcons.box;
     case 'Boxes':
-      return shad.LucideIcons.boxes;
+      return LucideIcons.boxes;
     case 'Braces':
-      return shad.LucideIcons.braces;
+      return LucideIcons.braces;
     case 'Brackets':
-      return shad.LucideIcons.brackets;
+      return LucideIcons.brackets;
     case 'Brain':
-      return shad.LucideIcons.brain;
+      return LucideIcons.brain;
     case 'BrainCircuit':
-      return shad.LucideIcons.brainCircuit;
+      return LucideIcons.brainCircuit;
     case 'BrainCog':
-      return shad.LucideIcons.brainCog;
+      return LucideIcons.brainCog;
     case 'BrickWall':
-      return shad.LucideIcons.brickWall;
+      return LucideIcons.brickWall;
     case 'Briefcase':
-      return shad.LucideIcons.briefcase;
+      return LucideIcons.briefcase;
     case 'BriefcaseBusiness':
-      return shad.LucideIcons.briefcaseBusiness;
+      return LucideIcons.briefcaseBusiness;
     case 'BriefcaseConveyorBelt':
-      return shad.LucideIcons.briefcaseConveyorBelt;
+      return LucideIcons.briefcaseConveyorBelt;
     case 'BriefcaseMedical':
-      return shad.LucideIcons.briefcaseMedical;
+      return LucideIcons.briefcaseMedical;
     case 'BringToFront':
-      return shad.LucideIcons.bringToFront;
+      return LucideIcons.bringToFront;
     case 'Brush':
-      return shad.LucideIcons.brush;
+      return LucideIcons.brush;
     case 'Bug':
-      return shad.LucideIcons.bug;
+      return LucideIcons.bug;
     case 'BugOff':
-      return shad.LucideIcons.bugOff;
+      return LucideIcons.bugOff;
     case 'BugPlay':
-      return shad.LucideIcons.bugPlay;
+      return LucideIcons.bugPlay;
     case 'Building':
-      return shad.LucideIcons.building;
+      return LucideIcons.building;
     case 'Building2':
-      return shad.LucideIcons.building2;
+      return LucideIcons.building2;
     case 'Bus':
-      return shad.LucideIcons.bus;
+      return LucideIcons.bus;
     case 'BusFront':
-      return shad.LucideIcons.busFront;
+      return LucideIcons.busFront;
     case 'Cable':
-      return shad.LucideIcons.cable;
+      return LucideIcons.cable;
     case 'CableCar':
-      return shad.LucideIcons.cableCar;
+      return LucideIcons.cableCar;
     case 'Cake':
-      return shad.LucideIcons.cake;
+      return LucideIcons.cake;
     case 'CakeSlice':
-      return shad.LucideIcons.cakeSlice;
+      return LucideIcons.cakeSlice;
     case 'Calculator':
-      return shad.LucideIcons.calculator;
+      return LucideIcons.calculator;
     case 'Calendar':
-      return shad.LucideIcons.calendar;
+      return LucideIcons.calendar;
     case 'Calendar1':
-      return shad.LucideIcons.calendar1;
+      return LucideIcons.calendar1;
     case 'CalendarArrowDown':
-      return shad.LucideIcons.calendarArrowDown;
+      return LucideIcons.calendarArrowDown;
     case 'CalendarArrowUp':
-      return shad.LucideIcons.calendarArrowUp;
+      return LucideIcons.calendarArrowUp;
     case 'CalendarCheck':
-      return shad.LucideIcons.calendarCheck;
+      return LucideIcons.calendarCheck;
     case 'CalendarCheck2':
-      return shad.LucideIcons.calendarCheck2;
+      return LucideIcons.calendarCheck2;
     case 'CalendarClock':
-      return shad.LucideIcons.calendarClock;
+      return LucideIcons.calendarClock;
     case 'CalendarCog':
-      return shad.LucideIcons.calendarCog;
+      return LucideIcons.calendarCog;
     case 'CalendarDays':
-      return shad.LucideIcons.calendarDays;
+      return LucideIcons.calendarDays;
     case 'CalendarFold':
-      return shad.LucideIcons.calendarFold;
+      return LucideIcons.calendarFold;
     case 'CalendarHeart':
-      return shad.LucideIcons.calendarHeart;
+      return LucideIcons.calendarHeart;
     case 'CalendarMinus':
-      return shad.LucideIcons.calendarMinus;
+      return LucideIcons.calendarMinus;
     case 'CalendarMinus2':
-      return shad.LucideIcons.calendarMinus2;
+      return LucideIcons.calendarMinus2;
     case 'CalendarOff':
-      return shad.LucideIcons.calendarOff;
+      return LucideIcons.calendarOff;
     case 'CalendarPlus':
-      return shad.LucideIcons.calendarPlus;
+      return LucideIcons.calendarPlus;
     case 'CalendarPlus2':
-      return shad.LucideIcons.calendarPlus2;
+      return LucideIcons.calendarPlus2;
     case 'CalendarRange':
-      return shad.LucideIcons.calendarRange;
+      return LucideIcons.calendarRange;
     case 'CalendarSearch':
-      return shad.LucideIcons.calendarSearch;
+      return LucideIcons.calendarSearch;
     case 'CalendarSync':
-      return shad.LucideIcons.calendarSync;
+      return LucideIcons.calendarSync;
     case 'CalendarX':
-      return shad.LucideIcons.calendarX;
+      return LucideIcons.calendarX;
     case 'CalendarX2':
-      return shad.LucideIcons.calendarX2;
+      return LucideIcons.calendarX2;
     case 'Camera':
-      return shad.LucideIcons.camera;
+      return LucideIcons.camera;
     case 'CameraOff':
-      return shad.LucideIcons.cameraOff;
+      return LucideIcons.cameraOff;
     case 'Candy':
-      return shad.LucideIcons.candy;
+      return LucideIcons.candy;
     case 'CandyCane':
-      return shad.LucideIcons.candyCane;
+      return LucideIcons.candyCane;
     case 'CandyOff':
-      return shad.LucideIcons.candyOff;
+      return LucideIcons.candyOff;
     case 'Cannabis':
-      return shad.LucideIcons.cannabis;
+      return LucideIcons.cannabis;
     case 'Captions':
-      return shad.LucideIcons.captions;
+      return LucideIcons.captions;
     case 'CaptionsOff':
-      return shad.LucideIcons.captionsOff;
+      return LucideIcons.captionsOff;
     case 'Car':
-      return shad.LucideIcons.car;
+      return LucideIcons.car;
     case 'CarFront':
-      return shad.LucideIcons.carFront;
+      return LucideIcons.carFront;
     case 'CarTaxiFront':
-      return shad.LucideIcons.carTaxiFront;
+      return LucideIcons.carTaxiFront;
     case 'Caravan':
-      return shad.LucideIcons.caravan;
+      return LucideIcons.caravan;
     case 'Carrot':
-      return shad.LucideIcons.carrot;
+      return LucideIcons.carrot;
     case 'CaseLower':
-      return shad.LucideIcons.caseLower;
+      return LucideIcons.caseLower;
     case 'CaseSensitive':
-      return shad.LucideIcons.caseSensitive;
+      return LucideIcons.caseSensitive;
     case 'CaseUpper':
-      return shad.LucideIcons.caseUpper;
+      return LucideIcons.caseUpper;
     case 'CassetteTape':
-      return shad.LucideIcons.cassetteTape;
+      return LucideIcons.cassetteTape;
     case 'Cast':
-      return shad.LucideIcons.cast;
+      return LucideIcons.cast;
     case 'Castle':
-      return shad.LucideIcons.castle;
+      return LucideIcons.castle;
     case 'Cat':
-      return shad.LucideIcons.cat;
+      return LucideIcons.cat;
     case 'Cctv':
-      return shad.LucideIcons.cctv;
+      return LucideIcons.cctv;
     case 'ChartArea':
-      return shad.LucideIcons.chartArea;
+      return LucideIcons.chartArea;
     case 'ChartBar':
-      return shad.LucideIcons.chartBar;
+      return LucideIcons.chartBar;
     case 'ChartBarBig':
-      return shad.LucideIcons.chartBarBig;
+      return LucideIcons.chartBarBig;
     case 'ChartBarDecreasing':
-      return shad.LucideIcons.chartBarDecreasing;
+      return LucideIcons.chartBarDecreasing;
     case 'ChartBarIncreasing':
-      return shad.LucideIcons.chartBarIncreasing;
+      return LucideIcons.chartBarIncreasing;
     case 'ChartBarStacked':
-      return shad.LucideIcons.chartBarStacked;
+      return LucideIcons.chartBarStacked;
     case 'ChartCandlestick':
-      return shad.LucideIcons.chartCandlestick;
+      return LucideIcons.chartCandlestick;
     case 'ChartColumn':
-      return shad.LucideIcons.chartColumn;
+      return LucideIcons.chartColumn;
     case 'ChartColumnBig':
-      return shad.LucideIcons.chartColumnBig;
+      return LucideIcons.chartColumnBig;
     case 'ChartColumnDecreasing':
-      return shad.LucideIcons.chartColumnDecreasing;
+      return LucideIcons.chartColumnDecreasing;
     case 'ChartColumnIncreasing':
-      return shad.LucideIcons.chartColumnIncreasing;
+      return LucideIcons.chartColumnIncreasing;
     case 'ChartColumnStacked':
-      return shad.LucideIcons.chartColumnStacked;
+      return LucideIcons.chartColumnStacked;
     case 'ChartGantt':
-      return shad.LucideIcons.chartGantt;
+      return LucideIcons.chartGantt;
     case 'ChartLine':
-      return shad.LucideIcons.chartLine;
+      return LucideIcons.chartLine;
     case 'ChartNetwork':
-      return shad.LucideIcons.chartNetwork;
+      return LucideIcons.chartNetwork;
     case 'ChartNoAxesColumn':
-      return shad.LucideIcons.chartNoAxesColumn;
+      return LucideIcons.chartNoAxesColumn;
     case 'ChartNoAxesColumnDecreasing':
-      return shad.LucideIcons.chartNoAxesColumnDecreasing;
+      return LucideIcons.chartNoAxesColumnDecreasing;
     case 'ChartNoAxesColumnIncreasing':
-      return shad.LucideIcons.chartNoAxesColumnIncreasing;
+      return LucideIcons.chartNoAxesColumnIncreasing;
     case 'ChartNoAxesCombined':
-      return shad.LucideIcons.chartNoAxesCombined;
+      return LucideIcons.chartNoAxesCombined;
     case 'ChartNoAxesGantt':
-      return shad.LucideIcons.chartNoAxesGantt;
+      return LucideIcons.chartNoAxesGantt;
     case 'ChartPie':
-      return shad.LucideIcons.chartPie;
+      return LucideIcons.chartPie;
     case 'ChartScatter':
-      return shad.LucideIcons.chartScatter;
+      return LucideIcons.chartScatter;
     case 'ChartSpline':
-      return shad.LucideIcons.chartSpline;
+      return LucideIcons.chartSpline;
     case 'Check':
-      return shad.LucideIcons.check;
+      return LucideIcons.check;
     case 'CheckCheck':
-      return shad.LucideIcons.checkCheck;
+      return LucideIcons.checkCheck;
     case 'ChefHat':
-      return shad.LucideIcons.chefHat;
+      return LucideIcons.chefHat;
     case 'Cherry':
-      return shad.LucideIcons.cherry;
+      return LucideIcons.cherry;
     case 'ChevronDown':
-      return shad.LucideIcons.chevronDown;
+      return LucideIcons.chevronDown;
     case 'ChevronFirst':
-      return shad.LucideIcons.chevronFirst;
+      return LucideIcons.chevronFirst;
     case 'ChevronLast':
-      return shad.LucideIcons.chevronLast;
+      return LucideIcons.chevronLast;
     case 'ChevronLeft':
-      return shad.LucideIcons.chevronLeft;
+      return LucideIcons.chevronLeft;
     case 'ChevronRight':
-      return shad.LucideIcons.chevronRight;
+      return LucideIcons.chevronRight;
     case 'ChevronUp':
-      return shad.LucideIcons.chevronUp;
+      return LucideIcons.chevronUp;
     case 'ChevronsDown':
-      return shad.LucideIcons.chevronsDown;
+      return LucideIcons.chevronsDown;
     case 'ChevronsDownUp':
-      return shad.LucideIcons.chevronsDownUp;
+      return LucideIcons.chevronsDownUp;
     case 'ChevronsLeft':
-      return shad.LucideIcons.chevronsLeft;
+      return LucideIcons.chevronsLeft;
     case 'ChevronsLeftRight':
-      return shad.LucideIcons.chevronsLeftRight;
+      return LucideIcons.chevronsLeftRight;
     case 'ChevronsLeftRightEllipsis':
-      return shad.LucideIcons.chevronsLeftRightEllipsis;
+      return LucideIcons.chevronsLeftRightEllipsis;
     case 'ChevronsRight':
-      return shad.LucideIcons.chevronsRight;
+      return LucideIcons.chevronsRight;
     case 'ChevronsRightLeft':
-      return shad.LucideIcons.chevronsRightLeft;
+      return LucideIcons.chevronsRightLeft;
     case 'ChevronsUp':
-      return shad.LucideIcons.chevronsUp;
+      return LucideIcons.chevronsUp;
     case 'ChevronsUpDown':
-      return shad.LucideIcons.chevronsUpDown;
+      return LucideIcons.chevronsUpDown;
     case 'Church':
-      return shad.LucideIcons.church;
+      return LucideIcons.church;
     case 'Cigarette':
-      return shad.LucideIcons.cigarette;
+      return LucideIcons.cigarette;
     case 'CigaretteOff':
-      return shad.LucideIcons.cigaretteOff;
+      return LucideIcons.cigaretteOff;
     case 'Circle':
-      return shad.LucideIcons.circle;
+      return LucideIcons.circle;
     case 'CircleAlert':
-      return shad.LucideIcons.circleAlert;
+      return LucideIcons.circleAlert;
     case 'CircleArrowDown':
-      return shad.LucideIcons.circleArrowDown;
+      return LucideIcons.circleArrowDown;
     case 'CircleArrowLeft':
-      return shad.LucideIcons.circleArrowLeft;
+      return LucideIcons.circleArrowLeft;
     case 'CircleArrowOutDownLeft':
-      return shad.LucideIcons.circleArrowOutDownLeft;
+      return LucideIcons.circleArrowOutDownLeft;
     case 'CircleArrowOutDownRight':
-      return shad.LucideIcons.circleArrowOutDownRight;
+      return LucideIcons.circleArrowOutDownRight;
     case 'CircleArrowOutUpLeft':
-      return shad.LucideIcons.circleArrowOutUpLeft;
+      return LucideIcons.circleArrowOutUpLeft;
     case 'CircleArrowOutUpRight':
-      return shad.LucideIcons.circleArrowOutUpRight;
+      return LucideIcons.circleArrowOutUpRight;
     case 'CircleArrowRight':
-      return shad.LucideIcons.circleArrowRight;
+      return LucideIcons.circleArrowRight;
     case 'CircleArrowUp':
-      return shad.LucideIcons.circleArrowUp;
+      return LucideIcons.circleArrowUp;
     case 'CircleCheck':
-      return shad.LucideIcons.circleCheck;
+      return LucideIcons.circleCheck;
     case 'CircleCheckBig':
-      return shad.LucideIcons.circleCheckBig;
+      return LucideIcons.circleCheckBig;
     case 'CircleChevronDown':
-      return shad.LucideIcons.circleChevronDown;
+      return LucideIcons.circleChevronDown;
     case 'CircleChevronLeft':
-      return shad.LucideIcons.circleChevronLeft;
+      return LucideIcons.circleChevronLeft;
     case 'CircleChevronRight':
-      return shad.LucideIcons.circleChevronRight;
+      return LucideIcons.circleChevronRight;
     case 'CircleChevronUp':
-      return shad.LucideIcons.circleChevronUp;
+      return LucideIcons.circleChevronUp;
     case 'CircleDashed':
-      return shad.LucideIcons.circleDashed;
+      return LucideIcons.circleDashed;
     case 'CircleDivide':
-      return shad.LucideIcons.circleDivide;
+      return LucideIcons.circleDivide;
     case 'CircleDollarSign':
-      return shad.LucideIcons.circleDollarSign;
+      return LucideIcons.circleDollarSign;
     case 'CircleDot':
-      return shad.LucideIcons.circleDot;
+      return LucideIcons.circleDot;
     case 'CircleDotDashed':
-      return shad.LucideIcons.circleDotDashed;
+      return LucideIcons.circleDotDashed;
     case 'CircleEllipsis':
-      return shad.LucideIcons.circleEllipsis;
+      return LucideIcons.circleEllipsis;
     case 'CircleEqual':
-      return shad.LucideIcons.circleEqual;
+      return LucideIcons.circleEqual;
     case 'CircleFadingArrowUp':
-      return shad.LucideIcons.circleFadingArrowUp;
+      return LucideIcons.circleFadingArrowUp;
     case 'CircleFadingPlus':
-      return shad.LucideIcons.circleFadingPlus;
+      return LucideIcons.circleFadingPlus;
     case 'CircleGauge':
-      return shad.LucideIcons.circleGauge;
+      return LucideIcons.circleGauge;
     case 'CircleMinus':
-      return shad.LucideIcons.circleMinus;
+      return LucideIcons.circleMinus;
     case 'CircleOff':
-      return shad.LucideIcons.circleOff;
+      return LucideIcons.circleOff;
     case 'CircleParking':
-      return shad.LucideIcons.circleParking;
+      return LucideIcons.circleParking;
     case 'CircleParkingOff':
-      return shad.LucideIcons.circleParkingOff;
+      return LucideIcons.circleParkingOff;
     case 'CirclePause':
-      return shad.LucideIcons.circlePause;
+      return LucideIcons.circlePause;
     case 'CirclePercent':
-      return shad.LucideIcons.circlePercent;
+      return LucideIcons.circlePercent;
     case 'CirclePlay':
-      return shad.LucideIcons.circlePlay;
+      return LucideIcons.circlePlay;
     case 'CirclePlus':
-      return shad.LucideIcons.circlePlus;
+      return LucideIcons.circlePlus;
     case 'CirclePower':
-      return shad.LucideIcons.circlePower;
+      return LucideIcons.circlePower;
     case 'CircleSlash':
-      return shad.LucideIcons.circleSlash;
+      return LucideIcons.circleSlash;
     case 'CircleSlash2':
-      return shad.LucideIcons.circleSlash2;
+      return LucideIcons.circleSlash2;
     case 'CircleSmall':
-      return shad.LucideIcons.circleSmall;
+      return LucideIcons.circleSmall;
     case 'CircleStop':
-      return shad.LucideIcons.circleStop;
+      return LucideIcons.circleStop;
     case 'CircleUser':
-      return shad.LucideIcons.circleUser;
+      return LucideIcons.circleUser;
     case 'CircleUserRound':
-      return shad.LucideIcons.circleUserRound;
+      return LucideIcons.circleUserRound;
     case 'CircleX':
-      return shad.LucideIcons.circleX;
+      return LucideIcons.circleX;
     case 'CircuitBoard':
-      return shad.LucideIcons.circuitBoard;
+      return LucideIcons.circuitBoard;
     case 'Citrus':
-      return shad.LucideIcons.citrus;
+      return LucideIcons.citrus;
     case 'Clapperboard':
-      return shad.LucideIcons.clapperboard;
+      return LucideIcons.clapperboard;
     case 'Clipboard':
-      return shad.LucideIcons.clipboard;
+      return LucideIcons.clipboard;
     case 'ClipboardCheck':
-      return shad.LucideIcons.clipboardCheck;
+      return LucideIcons.clipboardCheck;
     case 'ClipboardCopy':
-      return shad.LucideIcons.clipboardCopy;
+      return LucideIcons.clipboardCopy;
     case 'ClipboardList':
-      return shad.LucideIcons.clipboardList;
+      return LucideIcons.clipboardList;
     case 'ClipboardMinus':
-      return shad.LucideIcons.clipboardMinus;
+      return LucideIcons.clipboardMinus;
     case 'ClipboardPaste':
-      return shad.LucideIcons.clipboardPaste;
+      return LucideIcons.clipboardPaste;
     case 'ClipboardPen':
-      return shad.LucideIcons.clipboardPen;
+      return LucideIcons.clipboardPen;
     case 'ClipboardPenLine':
-      return shad.LucideIcons.clipboardPenLine;
+      return LucideIcons.clipboardPenLine;
     case 'ClipboardPlus':
-      return shad.LucideIcons.clipboardPlus;
+      return LucideIcons.clipboardPlus;
     case 'ClipboardType':
-      return shad.LucideIcons.clipboardType;
+      return LucideIcons.clipboardType;
     case 'ClipboardX':
-      return shad.LucideIcons.clipboardX;
+      return LucideIcons.clipboardX;
     case 'Clock':
-      return shad.LucideIcons.clock;
+      return LucideIcons.clock;
     case 'Clock1':
-      return shad.LucideIcons.clock1;
+      return LucideIcons.clock1;
     case 'Clock10':
-      return shad.LucideIcons.clock10;
+      return LucideIcons.clock10;
     case 'Clock11':
-      return shad.LucideIcons.clock11;
+      return LucideIcons.clock11;
     case 'Clock12':
-      return shad.LucideIcons.clock12;
+      return LucideIcons.clock12;
     case 'Clock2':
-      return shad.LucideIcons.clock2;
+      return LucideIcons.clock2;
     case 'Clock3':
-      return shad.LucideIcons.clock3;
+      return LucideIcons.clock3;
     case 'Clock4':
-      return shad.LucideIcons.clock4;
+      return LucideIcons.clock4;
     case 'Clock5':
-      return shad.LucideIcons.clock5;
+      return LucideIcons.clock5;
     case 'Clock6':
-      return shad.LucideIcons.clock6;
+      return LucideIcons.clock6;
     case 'Clock7':
-      return shad.LucideIcons.clock7;
+      return LucideIcons.clock7;
     case 'Clock8':
-      return shad.LucideIcons.clock8;
+      return LucideIcons.clock8;
     case 'Clock9':
-      return shad.LucideIcons.clock9;
+      return LucideIcons.clock9;
     case 'ClockAlert':
-      return shad.LucideIcons.clockAlert;
+      return LucideIcons.clockAlert;
     case 'ClockArrowDown':
-      return shad.LucideIcons.clockArrowDown;
+      return LucideIcons.clockArrowDown;
     case 'ClockArrowUp':
-      return shad.LucideIcons.clockArrowUp;
+      return LucideIcons.clockArrowUp;
     case 'Cloud':
-      return shad.LucideIcons.cloud;
+      return LucideIcons.cloud;
     case 'CloudAlert':
-      return shad.LucideIcons.cloudAlert;
+      return LucideIcons.cloudAlert;
     case 'CloudCog':
-      return shad.LucideIcons.cloudCog;
+      return LucideIcons.cloudCog;
     case 'CloudDownload':
-      return shad.LucideIcons.cloudDownload;
+      return LucideIcons.cloudDownload;
     case 'CloudDrizzle':
-      return shad.LucideIcons.cloudDrizzle;
+      return LucideIcons.cloudDrizzle;
     case 'CloudFog':
-      return shad.LucideIcons.cloudFog;
+      return LucideIcons.cloudFog;
     case 'CloudHail':
-      return shad.LucideIcons.cloudHail;
+      return LucideIcons.cloudHail;
     case 'CloudLightning':
-      return shad.LucideIcons.cloudLightning;
+      return LucideIcons.cloudLightning;
     case 'CloudMoon':
-      return shad.LucideIcons.cloudMoon;
+      return LucideIcons.cloudMoon;
     case 'CloudMoonRain':
-      return shad.LucideIcons.cloudMoonRain;
+      return LucideIcons.cloudMoonRain;
     case 'CloudOff':
-      return shad.LucideIcons.cloudOff;
+      return LucideIcons.cloudOff;
     case 'CloudRain':
-      return shad.LucideIcons.cloudRain;
+      return LucideIcons.cloudRain;
     case 'CloudRainWind':
-      return shad.LucideIcons.cloudRainWind;
+      return LucideIcons.cloudRainWind;
     case 'CloudSnow':
-      return shad.LucideIcons.cloudSnow;
+      return LucideIcons.cloudSnow;
     case 'CloudSun':
-      return shad.LucideIcons.cloudSun;
+      return LucideIcons.cloudSun;
     case 'CloudSunRain':
-      return shad.LucideIcons.cloudSunRain;
+      return LucideIcons.cloudSunRain;
     case 'CloudUpload':
-      return shad.LucideIcons.cloudUpload;
+      return LucideIcons.cloudUpload;
     case 'Cloudy':
-      return shad.LucideIcons.cloudy;
+      return LucideIcons.cloudy;
     case 'Clover':
-      return shad.LucideIcons.clover;
+      return LucideIcons.clover;
     case 'Club':
-      return shad.LucideIcons.club;
+      return LucideIcons.club;
     case 'Code':
-      return shad.LucideIcons.code;
+      return LucideIcons.code;
     case 'CodeXml':
-      return shad.LucideIcons.codeXml;
+      return LucideIcons.codeXml;
     case 'Codepen':
-      return shad.LucideIcons.codepen;
+      return AppIcons.codepen;
     case 'Codesandbox':
-      return shad.LucideIcons.codesandbox;
+      return AppIcons.codesandbox;
     case 'Coffee':
-      return shad.LucideIcons.coffee;
+      return LucideIcons.coffee;
     case 'Cog':
-      return shad.LucideIcons.cog;
+      return LucideIcons.cog;
     case 'Coins':
-      return shad.LucideIcons.coins;
+      return LucideIcons.coins;
     case 'Columns2':
-      return shad.LucideIcons.columns2;
+      return LucideIcons.columns2;
     case 'Columns3':
-      return shad.LucideIcons.columns3;
+      return LucideIcons.columns3;
     case 'Columns4':
-      return shad.LucideIcons.columns4;
+      return LucideIcons.columns4;
     case 'Combine':
-      return shad.LucideIcons.combine;
+      return LucideIcons.combine;
     case 'Command':
-      return shad.LucideIcons.command;
+      return LucideIcons.command;
     case 'Compass':
-      return shad.LucideIcons.compass;
+      return LucideIcons.compass;
     case 'Component':
-      return shad.LucideIcons.component;
+      return LucideIcons.component;
     case 'Computer':
-      return shad.LucideIcons.computer;
+      return LucideIcons.computer;
     case 'ConciergeBell':
-      return shad.LucideIcons.conciergeBell;
+      return LucideIcons.conciergeBell;
     case 'Cone':
-      return shad.LucideIcons.cone;
+      return LucideIcons.cone;
     case 'Construction':
-      return shad.LucideIcons.construction;
+      return LucideIcons.construction;
     case 'Contact':
-      return shad.LucideIcons.contact;
+      return LucideIcons.contact;
     case 'ContactRound':
-      return shad.LucideIcons.contactRound;
+      return LucideIcons.contactRound;
     case 'Container':
-      return shad.LucideIcons.container;
+      return LucideIcons.container;
     case 'Contrast':
-      return shad.LucideIcons.contrast;
+      return LucideIcons.contrast;
     case 'Cookie':
-      return shad.LucideIcons.cookie;
+      return LucideIcons.cookie;
     case 'CookingPot':
-      return shad.LucideIcons.cookingPot;
+      return LucideIcons.cookingPot;
     case 'Copy':
-      return shad.LucideIcons.copy;
+      return LucideIcons.copy;
     case 'CopyCheck':
-      return shad.LucideIcons.copyCheck;
+      return LucideIcons.copyCheck;
     case 'CopyMinus':
-      return shad.LucideIcons.copyMinus;
+      return LucideIcons.copyMinus;
     case 'CopyPlus':
-      return shad.LucideIcons.copyPlus;
+      return LucideIcons.copyPlus;
     case 'CopySlash':
-      return shad.LucideIcons.copySlash;
+      return LucideIcons.copySlash;
     case 'CopyX':
-      return shad.LucideIcons.copyX;
+      return LucideIcons.copyX;
     case 'Copyleft':
-      return shad.LucideIcons.copyleft;
+      return LucideIcons.copyleft;
     case 'Copyright':
-      return shad.LucideIcons.copyright;
+      return LucideIcons.copyright;
     case 'CornerDownLeft':
-      return shad.LucideIcons.cornerDownLeft;
+      return LucideIcons.cornerDownLeft;
     case 'CornerDownRight':
-      return shad.LucideIcons.cornerDownRight;
+      return LucideIcons.cornerDownRight;
     case 'CornerLeftDown':
-      return shad.LucideIcons.cornerLeftDown;
+      return LucideIcons.cornerLeftDown;
     case 'CornerLeftUp':
-      return shad.LucideIcons.cornerLeftUp;
+      return LucideIcons.cornerLeftUp;
     case 'CornerRightDown':
-      return shad.LucideIcons.cornerRightDown;
+      return LucideIcons.cornerRightDown;
     case 'CornerRightUp':
-      return shad.LucideIcons.cornerRightUp;
+      return LucideIcons.cornerRightUp;
     case 'CornerUpLeft':
-      return shad.LucideIcons.cornerUpLeft;
+      return LucideIcons.cornerUpLeft;
     case 'CornerUpRight':
-      return shad.LucideIcons.cornerUpRight;
+      return LucideIcons.cornerUpRight;
     case 'Cpu':
-      return shad.LucideIcons.cpu;
+      return LucideIcons.cpu;
     case 'CreativeCommons':
-      return shad.LucideIcons.creativeCommons;
+      return LucideIcons.creativeCommons;
     case 'CreditCard':
-      return shad.LucideIcons.creditCard;
+      return LucideIcons.creditCard;
     case 'Croissant':
-      return shad.LucideIcons.croissant;
+      return LucideIcons.croissant;
     case 'Crop':
-      return shad.LucideIcons.crop;
+      return LucideIcons.crop;
     case 'Cross':
-      return shad.LucideIcons.cross;
+      return LucideIcons.cross;
     case 'Crosshair':
-      return shad.LucideIcons.crosshair;
+      return LucideIcons.crosshair;
     case 'Crown':
-      return shad.LucideIcons.crown;
+      return LucideIcons.crown;
     case 'Cuboid':
-      return shad.LucideIcons.cuboid;
+      return LucideIcons.cuboid;
     case 'CupSoda':
-      return shad.LucideIcons.cupSoda;
+      return LucideIcons.cupSoda;
     case 'Currency':
-      return shad.LucideIcons.currency;
+      return LucideIcons.currency;
     case 'Cylinder':
-      return shad.LucideIcons.cylinder;
+      return LucideIcons.cylinder;
     case 'Dam':
-      return shad.LucideIcons.dam;
+      return LucideIcons.dam;
     case 'Database':
-      return shad.LucideIcons.database;
+      return LucideIcons.database;
     case 'DatabaseBackup':
-      return shad.LucideIcons.databaseBackup;
+      return LucideIcons.databaseBackup;
     case 'DatabaseZap':
-      return shad.LucideIcons.databaseZap;
+      return LucideIcons.databaseZap;
     case 'Delete':
-      return shad.LucideIcons.delete;
+      return LucideIcons.delete;
     case 'Dessert':
-      return shad.LucideIcons.dessert;
+      return LucideIcons.dessert;
     case 'Diameter':
-      return shad.LucideIcons.diameter;
+      return LucideIcons.diameter;
     case 'Diamond':
-      return shad.LucideIcons.diamond;
+      return LucideIcons.diamond;
     case 'DiamondMinus':
-      return shad.LucideIcons.diamondMinus;
+      return LucideIcons.diamondMinus;
     case 'DiamondPercent':
-      return shad.LucideIcons.diamondPercent;
+      return LucideIcons.diamondPercent;
     case 'DiamondPlus':
-      return shad.LucideIcons.diamondPlus;
+      return LucideIcons.diamondPlus;
     case 'Dice1':
-      return shad.LucideIcons.dice1;
+      return LucideIcons.dice1;
     case 'Dice2':
-      return shad.LucideIcons.dice2;
+      return LucideIcons.dice2;
     case 'Dice3':
-      return shad.LucideIcons.dice3;
+      return LucideIcons.dice3;
     case 'Dice4':
-      return shad.LucideIcons.dice4;
+      return LucideIcons.dice4;
     case 'Dice5':
-      return shad.LucideIcons.dice5;
+      return LucideIcons.dice5;
     case 'Dice6':
-      return shad.LucideIcons.dice6;
+      return LucideIcons.dice6;
     case 'Dices':
-      return shad.LucideIcons.dices;
+      return LucideIcons.dices;
     case 'Diff':
-      return shad.LucideIcons.diff;
+      return LucideIcons.diff;
     case 'Disc':
-      return shad.LucideIcons.disc;
+      return LucideIcons.disc;
     case 'Disc2':
-      return shad.LucideIcons.disc2;
+      return LucideIcons.disc2;
     case 'Disc3':
-      return shad.LucideIcons.disc3;
+      return LucideIcons.disc3;
     case 'DiscAlbum':
-      return shad.LucideIcons.discAlbum;
+      return LucideIcons.discAlbum;
     case 'Divide':
-      return shad.LucideIcons.divide;
+      return LucideIcons.divide;
     case 'Dna':
-      return shad.LucideIcons.dna;
+      return LucideIcons.dna;
     case 'DnaOff':
-      return shad.LucideIcons.dnaOff;
+      return LucideIcons.dnaOff;
     case 'Dock':
-      return shad.LucideIcons.dock;
+      return LucideIcons.dock;
     case 'Dog':
-      return shad.LucideIcons.dog;
+      return LucideIcons.dog;
     case 'DollarSign':
-      return shad.LucideIcons.dollarSign;
+      return LucideIcons.dollarSign;
     case 'Donut':
-      return shad.LucideIcons.donut;
+      return LucideIcons.donut;
     case 'DoorClosed':
-      return shad.LucideIcons.doorClosed;
+      return LucideIcons.doorClosed;
     case 'DoorOpen':
-      return shad.LucideIcons.doorOpen;
+      return LucideIcons.doorOpen;
     case 'Dot':
-      return shad.LucideIcons.dot;
+      return LucideIcons.dot;
     case 'Download':
-      return shad.LucideIcons.download;
+      return LucideIcons.download;
     case 'DraftingCompass':
-      return shad.LucideIcons.draftingCompass;
+      return LucideIcons.draftingCompass;
     case 'Drama':
-      return shad.LucideIcons.drama;
+      return LucideIcons.drama;
     case 'Dribbble':
-      return shad.LucideIcons.dribbble;
+      return AppIcons.dribbble;
     case 'Drill':
-      return shad.LucideIcons.drill;
+      return LucideIcons.drill;
     case 'Droplet':
-      return shad.LucideIcons.droplet;
+      return LucideIcons.droplet;
     case 'DropletOff':
-      return shad.LucideIcons.dropletOff;
+      return LucideIcons.dropletOff;
     case 'Droplets':
-      return shad.LucideIcons.droplets;
+      return LucideIcons.droplets;
     case 'Drum':
-      return shad.LucideIcons.drum;
+      return LucideIcons.drum;
     case 'Drumstick':
-      return shad.LucideIcons.drumstick;
+      return LucideIcons.drumstick;
     case 'Dumbbell':
-      return shad.LucideIcons.dumbbell;
+      return LucideIcons.dumbbell;
     case 'Ear':
-      return shad.LucideIcons.ear;
+      return LucideIcons.ear;
     case 'EarOff':
-      return shad.LucideIcons.earOff;
+      return LucideIcons.earOff;
     case 'Earth':
-      return shad.LucideIcons.earth;
+      return LucideIcons.earth;
     case 'EarthLock':
-      return shad.LucideIcons.earthLock;
+      return LucideIcons.earthLock;
     case 'Eclipse':
-      return shad.LucideIcons.eclipse;
+      return LucideIcons.eclipse;
     case 'Egg':
-      return shad.LucideIcons.egg;
+      return LucideIcons.egg;
     case 'EggFried':
-      return shad.LucideIcons.eggFried;
+      return LucideIcons.eggFried;
     case 'EggOff':
-      return shad.LucideIcons.eggOff;
+      return LucideIcons.eggOff;
     case 'Ellipsis':
-      return shad.LucideIcons.ellipsis;
+      return LucideIcons.ellipsis;
     case 'EllipsisVertical':
-      return shad.LucideIcons.ellipsisVertical;
+      return LucideIcons.ellipsisVertical;
     case 'Equal':
-      return shad.LucideIcons.equal;
+      return LucideIcons.equal;
     case 'EqualApproximately':
-      return shad.LucideIcons.equalApproximately;
+      return LucideIcons.equalApproximately;
     case 'EqualNot':
-      return shad.LucideIcons.equalNot;
+      return LucideIcons.equalNot;
     case 'Eraser':
-      return shad.LucideIcons.eraser;
+      return LucideIcons.eraser;
     case 'EthernetPort':
-      return shad.LucideIcons.ethernetPort;
+      return LucideIcons.ethernetPort;
     case 'Euro':
-      return shad.LucideIcons.euro;
+      return LucideIcons.euro;
     case 'Expand':
-      return shad.LucideIcons.expand;
+      return LucideIcons.expand;
     case 'ExternalLink':
-      return shad.LucideIcons.externalLink;
+      return LucideIcons.externalLink;
     case 'Eye':
-      return shad.LucideIcons.eye;
+      return LucideIcons.eye;
     case 'EyeClosed':
-      return shad.LucideIcons.eyeClosed;
+      return LucideIcons.eyeClosed;
     case 'EyeOff':
-      return shad.LucideIcons.eyeOff;
+      return LucideIcons.eyeOff;
     case 'Facebook':
-      return shad.LucideIcons.facebook;
+      return AppIcons.facebook;
     case 'Factory':
-      return shad.LucideIcons.factory;
+      return LucideIcons.factory;
     case 'Fan':
-      return shad.LucideIcons.fan;
+      return LucideIcons.fan;
     case 'FastForward':
-      return shad.LucideIcons.fastForward;
+      return LucideIcons.fastForward;
     case 'Feather':
-      return shad.LucideIcons.feather;
+      return LucideIcons.feather;
     case 'Fence':
-      return shad.LucideIcons.fence;
+      return LucideIcons.fence;
     case 'FerrisWheel':
-      return shad.LucideIcons.ferrisWheel;
+      return LucideIcons.ferrisWheel;
     case 'Figma':
-      return shad.LucideIcons.figma;
+      return AppIcons.figma;
     case 'File':
-      return shad.LucideIcons.file;
+      return LucideIcons.file;
     case 'FileArchive':
-      return shad.LucideIcons.fileArchive;
+      return LucideIcons.fileArchive;
     case 'FileAxis3d':
-      return shad.LucideIcons.fileAxis3d;
+      return LucideIcons.fileAxis3d;
     case 'FileBadge':
-      return shad.LucideIcons.fileBadge;
+      return LucideIcons.fileBadge;
     case 'FileBox':
-      return shad.LucideIcons.fileBox;
+      return LucideIcons.fileBox;
     case 'FileChartColumn':
-      return shad.LucideIcons.fileChartColumn;
+      return LucideIcons.fileChartColumn;
     case 'FileChartColumnIncreasing':
-      return shad.LucideIcons.fileChartColumnIncreasing;
+      return LucideIcons.fileChartColumnIncreasing;
     case 'FileChartLine':
-      return shad.LucideIcons.fileChartLine;
+      return LucideIcons.fileChartLine;
     case 'FileChartPie':
-      return shad.LucideIcons.fileChartPie;
+      return LucideIcons.fileChartPie;
     case 'FileCheck':
-      return shad.LucideIcons.fileCheck;
+      return LucideIcons.fileCheck;
     case 'FileClock':
-      return shad.LucideIcons.fileClock;
+      return LucideIcons.fileClock;
     case 'FileCode':
-      return shad.LucideIcons.fileCode;
+      return LucideIcons.fileCode;
     case 'FileCog':
-      return shad.LucideIcons.fileCog;
+      return LucideIcons.fileCog;
     case 'FileDiff':
-      return shad.LucideIcons.fileDiff;
+      return LucideIcons.fileDiff;
     case 'FileDigit':
-      return shad.LucideIcons.fileDigit;
+      return LucideIcons.fileDigit;
     case 'FileDown':
-      return shad.LucideIcons.fileDown;
+      return LucideIcons.fileDown;
     case 'FileHeart':
-      return shad.LucideIcons.fileHeart;
+      return LucideIcons.fileHeart;
     case 'FileImage':
-      return shad.LucideIcons.fileImage;
+      return LucideIcons.fileImage;
     case 'FileInput':
-      return shad.LucideIcons.fileInput;
+      return LucideIcons.fileInput;
     case 'FileKey':
-      return shad.LucideIcons.fileKey;
+      return LucideIcons.fileKey;
     case 'FileLock':
-      return shad.LucideIcons.fileLock;
+      return LucideIcons.fileLock;
     case 'FileMinus':
-      return shad.LucideIcons.fileMinus;
+      return LucideIcons.fileMinus;
     case 'FileMusic':
-      return shad.LucideIcons.fileMusic;
+      return LucideIcons.fileMusic;
     case 'FileOutput':
-      return shad.LucideIcons.fileOutput;
+      return LucideIcons.fileOutput;
     case 'FilePen':
-      return shad.LucideIcons.filePen;
+      return LucideIcons.filePen;
     case 'FilePenLine':
-      return shad.LucideIcons.filePenLine;
+      return LucideIcons.filePenLine;
     case 'FilePlus':
-      return shad.LucideIcons.filePlus;
+      return LucideIcons.filePlus;
     case 'FileScan':
-      return shad.LucideIcons.fileScan;
+      return LucideIcons.fileScan;
     case 'FileSearch':
-      return shad.LucideIcons.fileSearch;
+      return LucideIcons.fileSearch;
     case 'FileSliders':
-      return shad.LucideIcons.fileSliders;
+      return LucideIcons.fileSliders;
     case 'FileSpreadsheet':
-      return shad.LucideIcons.fileSpreadsheet;
+      return LucideIcons.fileSpreadsheet;
     case 'FileStack':
-      return shad.LucideIcons.fileStack;
+      return LucideIcons.fileStack;
     case 'FileSymlink':
-      return shad.LucideIcons.fileSymlink;
+      return LucideIcons.fileSymlink;
     case 'FileTerminal':
-      return shad.LucideIcons.fileTerminal;
+      return LucideIcons.fileTerminal;
     case 'FileText':
-      return shad.LucideIcons.fileText;
+      return LucideIcons.fileText;
     case 'FileType':
-      return shad.LucideIcons.fileType;
+      return LucideIcons.fileType;
     case 'FileUp':
-      return shad.LucideIcons.fileUp;
+      return LucideIcons.fileUp;
     case 'FileUser':
-      return shad.LucideIcons.fileUser;
+      return LucideIcons.fileUser;
     case 'FileVolume':
-      return shad.LucideIcons.fileVolume;
+      return LucideIcons.fileVolume;
     case 'FileX':
-      return shad.LucideIcons.fileX;
+      return LucideIcons.fileX;
     case 'Files':
-      return shad.LucideIcons.files;
+      return LucideIcons.files;
     case 'Film':
-      return shad.LucideIcons.film;
+      return LucideIcons.film;
     case 'FireExtinguisher':
-      return shad.LucideIcons.fireExtinguisher;
+      return LucideIcons.fireExtinguisher;
     case 'Fish':
-      return shad.LucideIcons.fish;
+      return LucideIcons.fish;
     case 'FishOff':
-      return shad.LucideIcons.fishOff;
+      return LucideIcons.fishOff;
     case 'FishSymbol':
-      return shad.LucideIcons.fishSymbol;
+      return LucideIcons.fishSymbol;
     case 'Flag':
-      return shad.LucideIcons.flag;
+      return LucideIcons.flag;
     case 'FlagOff':
-      return shad.LucideIcons.flagOff;
+      return LucideIcons.flagOff;
     case 'FlagTriangleLeft':
-      return shad.LucideIcons.flagTriangleLeft;
+      return LucideIcons.flagTriangleLeft;
     case 'FlagTriangleRight':
-      return shad.LucideIcons.flagTriangleRight;
+      return LucideIcons.flagTriangleRight;
     case 'Flame':
-      return shad.LucideIcons.flame;
+      return LucideIcons.flame;
     case 'FlameKindling':
-      return shad.LucideIcons.flameKindling;
+      return LucideIcons.flameKindling;
     case 'Flashlight':
-      return shad.LucideIcons.flashlight;
+      return LucideIcons.flashlight;
     case 'FlashlightOff':
-      return shad.LucideIcons.flashlightOff;
+      return LucideIcons.flashlightOff;
     case 'FlaskConical':
-      return shad.LucideIcons.flaskConical;
+      return LucideIcons.flaskConical;
     case 'FlaskConicalOff':
-      return shad.LucideIcons.flaskConicalOff;
+      return LucideIcons.flaskConicalOff;
     case 'FlaskRound':
-      return shad.LucideIcons.flaskRound;
+      return LucideIcons.flaskRound;
     case 'FlipHorizontal':
-      return shad.LucideIcons.flipHorizontal;
+      return LucideIcons.flipHorizontal;
     case 'FlipHorizontal2':
-      return shad.LucideIcons.flipHorizontal2;
+      return LucideIcons.flipHorizontal2;
     case 'FlipVertical':
-      return shad.LucideIcons.flipVertical;
+      return LucideIcons.flipVertical;
     case 'FlipVertical2':
-      return shad.LucideIcons.flipVertical2;
+      return LucideIcons.flipVertical2;
     case 'Flower':
-      return shad.LucideIcons.flower;
+      return LucideIcons.flower;
     case 'Flower2':
-      return shad.LucideIcons.flower2;
+      return LucideIcons.flower2;
     case 'Focus':
-      return shad.LucideIcons.focus;
+      return LucideIcons.focus;
     case 'FoldHorizontal':
-      return shad.LucideIcons.foldHorizontal;
+      return LucideIcons.foldHorizontal;
     case 'FoldVertical':
-      return shad.LucideIcons.foldVertical;
+      return LucideIcons.foldVertical;
     case 'Folder':
-      return shad.LucideIcons.folder;
+      return LucideIcons.folder;
     case 'FolderArchive':
-      return shad.LucideIcons.folderArchive;
+      return LucideIcons.folderArchive;
     case 'FolderCheck':
-      return shad.LucideIcons.folderCheck;
+      return LucideIcons.folderCheck;
     case 'FolderClock':
-      return shad.LucideIcons.folderClock;
+      return LucideIcons.folderClock;
     case 'FolderClosed':
-      return shad.LucideIcons.folderClosed;
+      return LucideIcons.folderClosed;
     case 'FolderCode':
-      return shad.LucideIcons.folderCode;
+      return LucideIcons.folderCode;
     case 'FolderCog':
-      return shad.LucideIcons.folderCog;
+      return LucideIcons.folderCog;
     case 'FolderDot':
-      return shad.LucideIcons.folderDot;
+      return LucideIcons.folderDot;
     case 'FolderDown':
-      return shad.LucideIcons.folderDown;
+      return LucideIcons.folderDown;
     case 'FolderGit':
-      return shad.LucideIcons.folderGit;
+      return LucideIcons.folderGit;
     case 'FolderGit2':
-      return shad.LucideIcons.folderGit2;
+      return LucideIcons.folderGit2;
     case 'FolderHeart':
-      return shad.LucideIcons.folderHeart;
+      return LucideIcons.folderHeart;
     case 'FolderInput':
-      return shad.LucideIcons.folderInput;
+      return LucideIcons.folderInput;
     case 'FolderKanban':
-      return shad.LucideIcons.folderKanban;
+      return LucideIcons.folderKanban;
     case 'FolderKey':
-      return shad.LucideIcons.folderKey;
+      return LucideIcons.folderKey;
     case 'FolderLock':
-      return shad.LucideIcons.folderLock;
+      return LucideIcons.folderLock;
     case 'FolderMinus':
-      return shad.LucideIcons.folderMinus;
+      return LucideIcons.folderMinus;
     case 'FolderOpen':
-      return shad.LucideIcons.folderOpen;
+      return LucideIcons.folderOpen;
     case 'FolderOpenDot':
-      return shad.LucideIcons.folderOpenDot;
+      return LucideIcons.folderOpenDot;
     case 'FolderOutput':
-      return shad.LucideIcons.folderOutput;
+      return LucideIcons.folderOutput;
     case 'FolderPen':
-      return shad.LucideIcons.folderPen;
+      return LucideIcons.folderPen;
     case 'FolderPlus':
-      return shad.LucideIcons.folderPlus;
+      return LucideIcons.folderPlus;
     case 'FolderRoot':
-      return shad.LucideIcons.folderRoot;
+      return LucideIcons.folderRoot;
     case 'FolderSearch':
-      return shad.LucideIcons.folderSearch;
+      return LucideIcons.folderSearch;
     case 'FolderSearch2':
-      return shad.LucideIcons.folderSearch2;
+      return LucideIcons.folderSearch2;
     case 'FolderSymlink':
-      return shad.LucideIcons.folderSymlink;
+      return LucideIcons.folderSymlink;
     case 'FolderSync':
-      return shad.LucideIcons.folderSync;
+      return LucideIcons.folderSync;
     case 'FolderTree':
-      return shad.LucideIcons.folderTree;
+      return LucideIcons.folderTree;
     case 'FolderUp':
-      return shad.LucideIcons.folderUp;
+      return LucideIcons.folderUp;
     case 'FolderX':
-      return shad.LucideIcons.folderX;
+      return LucideIcons.folderX;
     case 'Folders':
-      return shad.LucideIcons.folders;
+      return LucideIcons.folders;
     case 'Footprints':
-      return shad.LucideIcons.footprints;
+      return LucideIcons.footprints;
     case 'Forklift':
-      return shad.LucideIcons.forklift;
+      return LucideIcons.forklift;
     case 'Forward':
-      return shad.LucideIcons.forward;
+      return LucideIcons.forward;
     case 'Frame':
-      return shad.LucideIcons.frame;
+      return LucideIcons.frame;
     case 'Framer':
-      return shad.LucideIcons.framer;
+      return AppIcons.framer;
     case 'Frown':
-      return shad.LucideIcons.frown;
+      return LucideIcons.frown;
     case 'Fuel':
-      return shad.LucideIcons.fuel;
+      return LucideIcons.fuel;
     case 'Fullscreen':
-      return shad.LucideIcons.fullscreen;
+      return LucideIcons.fullscreen;
     case 'GalleryHorizontal':
-      return shad.LucideIcons.galleryHorizontal;
+      return LucideIcons.galleryHorizontal;
     case 'GalleryHorizontalEnd':
-      return shad.LucideIcons.galleryHorizontalEnd;
+      return LucideIcons.galleryHorizontalEnd;
     case 'GalleryThumbnails':
-      return shad.LucideIcons.galleryThumbnails;
+      return LucideIcons.galleryThumbnails;
     case 'GalleryVertical':
-      return shad.LucideIcons.galleryVertical;
+      return LucideIcons.galleryVertical;
     case 'GalleryVerticalEnd':
-      return shad.LucideIcons.galleryVerticalEnd;
+      return LucideIcons.galleryVerticalEnd;
     case 'Gamepad':
-      return shad.LucideIcons.gamepad;
+      return LucideIcons.gamepad;
     case 'Gamepad2':
-      return shad.LucideIcons.gamepad2;
+      return LucideIcons.gamepad2;
     case 'Gauge':
-      return shad.LucideIcons.gauge;
+      return LucideIcons.gauge;
     case 'Gavel':
-      return shad.LucideIcons.gavel;
+      return LucideIcons.gavel;
     case 'Gem':
-      return shad.LucideIcons.gem;
+      return LucideIcons.gem;
     case 'Ghost':
-      return shad.LucideIcons.ghost;
+      return LucideIcons.ghost;
     case 'Gift':
-      return shad.LucideIcons.gift;
+      return LucideIcons.gift;
     case 'GitBranch':
-      return shad.LucideIcons.gitBranch;
+      return LucideIcons.gitBranch;
     case 'GitBranchPlus':
-      return shad.LucideIcons.gitBranchPlus;
+      return LucideIcons.gitBranchPlus;
     case 'GitCommitHorizontal':
-      return shad.LucideIcons.gitCommitHorizontal;
+      return LucideIcons.gitCommitHorizontal;
     case 'GitCommitVertical':
-      return shad.LucideIcons.gitCommitVertical;
+      return LucideIcons.gitCommitVertical;
     case 'GitCompare':
-      return shad.LucideIcons.gitCompare;
+      return LucideIcons.gitCompare;
     case 'GitCompareArrows':
-      return shad.LucideIcons.gitCompareArrows;
+      return LucideIcons.gitCompareArrows;
     case 'GitFork':
-      return shad.LucideIcons.gitFork;
+      return LucideIcons.gitFork;
     case 'GitGraph':
-      return shad.LucideIcons.gitGraph;
+      return LucideIcons.gitGraph;
     case 'GitMerge':
-      return shad.LucideIcons.gitMerge;
+      return LucideIcons.gitMerge;
     case 'GitPullRequest':
-      return shad.LucideIcons.gitPullRequest;
+      return LucideIcons.gitPullRequest;
     case 'GitPullRequestArrow':
-      return shad.LucideIcons.gitPullRequestArrow;
+      return LucideIcons.gitPullRequestArrow;
     case 'GitPullRequestClosed':
-      return shad.LucideIcons.gitPullRequestClosed;
+      return LucideIcons.gitPullRequestClosed;
     case 'GitPullRequestCreate':
-      return shad.LucideIcons.gitPullRequestCreate;
+      return LucideIcons.gitPullRequestCreate;
     case 'GitPullRequestCreateArrow':
-      return shad.LucideIcons.gitPullRequestCreateArrow;
+      return LucideIcons.gitPullRequestCreateArrow;
     case 'GitPullRequestDraft':
-      return shad.LucideIcons.gitPullRequestDraft;
+      return LucideIcons.gitPullRequestDraft;
     case 'Github':
-      return shad.LucideIcons.github;
+      return AppIcons.github;
     case 'Gitlab':
-      return shad.LucideIcons.gitlab;
+      return AppIcons.gitlab;
     case 'GlassWater':
-      return shad.LucideIcons.glassWater;
+      return LucideIcons.glassWater;
     case 'Glasses':
-      return shad.LucideIcons.glasses;
+      return LucideIcons.glasses;
     case 'Globe':
-      return shad.LucideIcons.globe;
+      return LucideIcons.globe;
     case 'GlobeLock':
-      return shad.LucideIcons.globeLock;
+      return LucideIcons.globeLock;
     case 'Goal':
-      return shad.LucideIcons.goal;
+      return LucideIcons.goal;
     case 'GraduationCap':
-      return shad.LucideIcons.graduationCap;
+      return LucideIcons.graduationCap;
     case 'Grape':
-      return shad.LucideIcons.grape;
+      return LucideIcons.grape;
     case 'Grid2x2':
-      return shad.LucideIcons.grid2x2;
+      return LucideIcons.grid2x2;
     case 'Grid2x2Check':
-      return shad.LucideIcons.grid2x2Check;
+      return LucideIcons.grid2x2Check;
     case 'Grid2x2Plus':
-      return shad.LucideIcons.grid2x2Plus;
+      return LucideIcons.grid2x2Plus;
     case 'Grid2x2X':
-      return shad.LucideIcons.grid2x2X;
+      return LucideIcons.grid2x2X;
     case 'Grid3x3':
-      return shad.LucideIcons.grid3x3;
+      return LucideIcons.grid3x3;
     case 'Grip':
-      return shad.LucideIcons.grip;
+      return LucideIcons.grip;
     case 'GripHorizontal':
-      return shad.LucideIcons.gripHorizontal;
+      return LucideIcons.gripHorizontal;
     case 'GripVertical':
-      return shad.LucideIcons.gripVertical;
+      return LucideIcons.gripVertical;
     case 'Group':
-      return shad.LucideIcons.group;
+      return LucideIcons.group;
     case 'Guitar':
-      return shad.LucideIcons.guitar;
+      return LucideIcons.guitar;
     case 'Ham':
-      return shad.LucideIcons.ham;
+      return LucideIcons.ham;
     case 'Hammer':
-      return shad.LucideIcons.hammer;
+      return LucideIcons.hammer;
     case 'Hand':
-      return shad.LucideIcons.hand;
+      return LucideIcons.hand;
     case 'HandCoins':
-      return shad.LucideIcons.handCoins;
+      return LucideIcons.handCoins;
     case 'HandHeart':
-      return shad.LucideIcons.handHeart;
+      return LucideIcons.handHeart;
     case 'HandHelping':
-      return shad.LucideIcons.handHelping;
+      return LucideIcons.handHelping;
     case 'HandMetal':
-      return shad.LucideIcons.handMetal;
+      return LucideIcons.handMetal;
     case 'HandPlatter':
-      return shad.LucideIcons.handPlatter;
+      return LucideIcons.handPlatter;
     case 'Handshake':
-      return shad.LucideIcons.handshake;
+      return LucideIcons.handshake;
     case 'HardDrive':
-      return shad.LucideIcons.hardDrive;
+      return LucideIcons.hardDrive;
     case 'HardDriveDownload':
-      return shad.LucideIcons.hardDriveDownload;
+      return LucideIcons.hardDriveDownload;
     case 'HardDriveUpload':
-      return shad.LucideIcons.hardDriveUpload;
+      return LucideIcons.hardDriveUpload;
     case 'HardHat':
-      return shad.LucideIcons.hardHat;
+      return LucideIcons.hardHat;
     case 'Hash':
-      return shad.LucideIcons.hash;
+      return LucideIcons.hash;
     case 'Haze':
-      return shad.LucideIcons.haze;
+      return LucideIcons.haze;
     case 'HdmiPort':
-      return shad.LucideIcons.hdmiPort;
+      return LucideIcons.hdmiPort;
     case 'Heading':
-      return shad.LucideIcons.heading;
+      return LucideIcons.heading;
     case 'Heading1':
-      return shad.LucideIcons.heading1;
+      return LucideIcons.heading1;
     case 'Heading2':
-      return shad.LucideIcons.heading2;
+      return LucideIcons.heading2;
     case 'Heading3':
-      return shad.LucideIcons.heading3;
+      return LucideIcons.heading3;
     case 'Heading4':
-      return shad.LucideIcons.heading4;
+      return LucideIcons.heading4;
     case 'Heading5':
-      return shad.LucideIcons.heading5;
+      return LucideIcons.heading5;
     case 'Heading6':
-      return shad.LucideIcons.heading6;
+      return LucideIcons.heading6;
     case 'HeadphoneOff':
-      return shad.LucideIcons.headphoneOff;
+      return LucideIcons.headphoneOff;
     case 'Headphones':
-      return shad.LucideIcons.headphones;
+      return LucideIcons.headphones;
     case 'Headset':
-      return shad.LucideIcons.headset;
+      return LucideIcons.headset;
     case 'Heart':
-      return shad.LucideIcons.heart;
+      return LucideIcons.heart;
     case 'HeartCrack':
-      return shad.LucideIcons.heartCrack;
+      return LucideIcons.heartCrack;
     case 'HeartHandshake':
-      return shad.LucideIcons.heartHandshake;
+      return LucideIcons.heartHandshake;
     case 'HeartOff':
-      return shad.LucideIcons.heartOff;
+      return LucideIcons.heartOff;
     case 'HeartPulse':
-      return shad.LucideIcons.heartPulse;
+      return LucideIcons.heartPulse;
     case 'Heater':
-      return shad.LucideIcons.heater;
+      return LucideIcons.heater;
     case 'Hexagon':
-      return shad.LucideIcons.hexagon;
+      return LucideIcons.hexagon;
     case 'Highlighter':
-      return shad.LucideIcons.highlighter;
+      return LucideIcons.highlighter;
     case 'History':
-      return shad.LucideIcons.history;
+      return LucideIcons.history;
     case 'Hop':
-      return shad.LucideIcons.hop;
+      return LucideIcons.hop;
     case 'HopOff':
-      return shad.LucideIcons.hopOff;
+      return LucideIcons.hopOff;
     case 'Hospital':
-      return shad.LucideIcons.hospital;
+      return LucideIcons.hospital;
     case 'Hotel':
-      return shad.LucideIcons.hotel;
+      return LucideIcons.hotel;
     case 'Hourglass':
-      return shad.LucideIcons.hourglass;
+      return LucideIcons.hourglass;
     case 'House':
-      return shad.LucideIcons.house;
+      return LucideIcons.house;
     case 'HousePlug':
-      return shad.LucideIcons.housePlug;
+      return LucideIcons.housePlug;
     case 'HousePlus':
-      return shad.LucideIcons.housePlus;
+      return LucideIcons.housePlus;
     case 'HouseWifi':
-      return shad.LucideIcons.houseWifi;
+      return LucideIcons.houseWifi;
     case 'IceCreamBowl':
-      return shad.LucideIcons.iceCreamBowl;
+      return LucideIcons.iceCreamBowl;
     case 'IceCreamCone':
-      return shad.LucideIcons.iceCreamCone;
+      return LucideIcons.iceCreamCone;
     case 'IdCard':
-      return shad.LucideIcons.idCard;
+      return LucideIcons.idCard;
     case 'Image':
-      return shad.LucideIcons.image;
+      return LucideIcons.image;
     case 'ImageDown':
-      return shad.LucideIcons.imageDown;
+      return LucideIcons.imageDown;
     case 'ImageMinus':
-      return shad.LucideIcons.imageMinus;
+      return LucideIcons.imageMinus;
     case 'ImageOff':
-      return shad.LucideIcons.imageOff;
+      return LucideIcons.imageOff;
     case 'ImagePlay':
-      return shad.LucideIcons.imagePlay;
+      return LucideIcons.imagePlay;
     case 'ImagePlus':
-      return shad.LucideIcons.imagePlus;
+      return LucideIcons.imagePlus;
     case 'ImageUp':
-      return shad.LucideIcons.imageUp;
+      return LucideIcons.imageUp;
     case 'ImageUpscale':
-      return shad.LucideIcons.imageUpscale;
+      return LucideIcons.imageUpscale;
     case 'Images':
-      return shad.LucideIcons.images;
+      return LucideIcons.images;
     case 'Import':
-      return shad.LucideIcons.import;
+      return LucideIcons.import;
     case 'Inbox':
-      return shad.LucideIcons.inbox;
+      return LucideIcons.inbox;
     case 'IndianRupee':
-      return shad.LucideIcons.indianRupee;
+      return LucideIcons.indianRupee;
     case 'Infinity':
-      return shad.LucideIcons.infinity;
+      return LucideIcons.infinity;
     case 'Info':
-      return shad.LucideIcons.info;
+      return LucideIcons.info;
     case 'InspectionPanel':
-      return shad.LucideIcons.inspectionPanel;
+      return LucideIcons.inspectionPanel;
     case 'Instagram':
-      return shad.LucideIcons.instagram;
+      return AppIcons.instagram;
     case 'Italic':
-      return shad.LucideIcons.italic;
+      return LucideIcons.italic;
     case 'IterationCcw':
-      return shad.LucideIcons.iterationCcw;
+      return LucideIcons.iterationCcw;
     case 'IterationCw':
-      return shad.LucideIcons.iterationCw;
+      return LucideIcons.iterationCw;
     case 'JapaneseYen':
-      return shad.LucideIcons.japaneseYen;
+      return LucideIcons.japaneseYen;
     case 'Joystick':
-      return shad.LucideIcons.joystick;
+      return LucideIcons.joystick;
     case 'Kanban':
-      return shad.LucideIcons.kanban;
+      return LucideIcons.kanban;
     case 'Key':
-      return shad.LucideIcons.key;
+      return LucideIcons.key;
     case 'KeyRound':
-      return shad.LucideIcons.keyRound;
+      return LucideIcons.keyRound;
     case 'KeySquare':
-      return shad.LucideIcons.keySquare;
+      return LucideIcons.keySquare;
     case 'Keyboard':
-      return shad.LucideIcons.keyboard;
+      return LucideIcons.keyboard;
     case 'KeyboardMusic':
-      return shad.LucideIcons.keyboardMusic;
+      return LucideIcons.keyboardMusic;
     case 'KeyboardOff':
-      return shad.LucideIcons.keyboardOff;
+      return LucideIcons.keyboardOff;
     case 'Lamp':
-      return shad.LucideIcons.lamp;
+      return LucideIcons.lamp;
     case 'LampCeiling':
-      return shad.LucideIcons.lampCeiling;
+      return LucideIcons.lampCeiling;
     case 'LampDesk':
-      return shad.LucideIcons.lampDesk;
+      return LucideIcons.lampDesk;
     case 'LampFloor':
-      return shad.LucideIcons.lampFloor;
+      return LucideIcons.lampFloor;
     case 'LampWallDown':
-      return shad.LucideIcons.lampWallDown;
+      return LucideIcons.lampWallDown;
     case 'LampWallUp':
-      return shad.LucideIcons.lampWallUp;
+      return LucideIcons.lampWallUp;
     case 'LandPlot':
-      return shad.LucideIcons.landPlot;
+      return LucideIcons.landPlot;
     case 'Landmark':
-      return shad.LucideIcons.landmark;
+      return LucideIcons.landmark;
     case 'Languages':
-      return shad.LucideIcons.languages;
+      return LucideIcons.languages;
     case 'Laptop':
-      return shad.LucideIcons.laptop;
+      return LucideIcons.laptop;
     case 'LaptopMinimal':
-      return shad.LucideIcons.laptopMinimal;
+      return LucideIcons.laptopMinimal;
     case 'LaptopMinimalCheck':
-      return shad.LucideIcons.laptopMinimalCheck;
+      return LucideIcons.laptopMinimalCheck;
     case 'Lasso':
-      return shad.LucideIcons.lasso;
+      return LucideIcons.lasso;
     case 'LassoSelect':
-      return shad.LucideIcons.lassoSelect;
+      return LucideIcons.lassoSelect;
     case 'Laugh':
-      return shad.LucideIcons.laugh;
+      return LucideIcons.laugh;
     case 'Layers':
-      return shad.LucideIcons.layers;
+      return LucideIcons.layers;
     case 'Layers2':
-      return shad.LucideIcons.layers2;
+      return LucideIcons.layers2;
     case 'LayoutDashboard':
-      return shad.LucideIcons.layoutDashboard;
+      return LucideIcons.layoutDashboard;
     case 'LayoutGrid':
-      return shad.LucideIcons.layoutGrid;
+      return LucideIcons.layoutGrid;
     case 'LayoutList':
-      return shad.LucideIcons.layoutList;
+      return LucideIcons.layoutList;
     case 'LayoutPanelLeft':
-      return shad.LucideIcons.layoutPanelLeft;
+      return LucideIcons.layoutPanelLeft;
     case 'LayoutPanelTop':
-      return shad.LucideIcons.layoutPanelTop;
+      return LucideIcons.layoutPanelTop;
     case 'LayoutTemplate':
-      return shad.LucideIcons.layoutTemplate;
+      return LucideIcons.layoutTemplate;
     case 'Leaf':
-      return shad.LucideIcons.leaf;
+      return LucideIcons.leaf;
     case 'LeafyGreen':
-      return shad.LucideIcons.leafyGreen;
+      return LucideIcons.leafyGreen;
     case 'Lectern':
-      return shad.LucideIcons.lectern;
+      return LucideIcons.lectern;
     case 'Library':
-      return shad.LucideIcons.library;
+      return LucideIcons.library;
     case 'LibraryBig':
-      return shad.LucideIcons.libraryBig;
+      return LucideIcons.libraryBig;
     case 'LifeBuoy':
-      return shad.LucideIcons.lifeBuoy;
+      return LucideIcons.lifeBuoy;
     case 'Ligature':
-      return shad.LucideIcons.ligature;
+      return LucideIcons.ligature;
     case 'Lightbulb':
-      return shad.LucideIcons.lightbulb;
+      return LucideIcons.lightbulb;
     case 'LightbulbOff':
-      return shad.LucideIcons.lightbulbOff;
+      return LucideIcons.lightbulbOff;
     case 'Link':
-      return shad.LucideIcons.link;
+      return LucideIcons.link;
     case 'Link2':
-      return shad.LucideIcons.link2;
+      return LucideIcons.link2;
     case 'Link2Off':
-      return shad.LucideIcons.link2Off;
+      return LucideIcons.link2Off;
     case 'Linkedin':
-      return shad.LucideIcons.linkedin;
+      return AppIcons.linkedin;
     case 'List':
-      return shad.LucideIcons.list;
+      return LucideIcons.list;
     case 'ListCheck':
-      return shad.LucideIcons.listCheck;
+      return LucideIcons.listCheck;
     case 'ListChecks':
-      return shad.LucideIcons.listChecks;
+      return LucideIcons.listChecks;
     case 'ListCollapse':
-      return shad.LucideIcons.listCollapse;
+      return LucideIcons.listCollapse;
     case 'ListEnd':
-      return shad.LucideIcons.listEnd;
+      return LucideIcons.listEnd;
     case 'ListFilter':
-      return shad.LucideIcons.listFilter;
+      return LucideIcons.listFilter;
     case 'ListFilterPlus':
-      return shad.LucideIcons.listFilterPlus;
+      return LucideIcons.listFilterPlus;
     case 'ListMinus':
-      return shad.LucideIcons.listMinus;
+      return LucideIcons.listMinus;
     case 'ListMusic':
-      return shad.LucideIcons.listMusic;
+      return LucideIcons.listMusic;
     case 'ListOrdered':
-      return shad.LucideIcons.listOrdered;
+      return LucideIcons.listOrdered;
     case 'ListPlus':
-      return shad.LucideIcons.listPlus;
+      return LucideIcons.listPlus;
     case 'ListRestart':
-      return shad.LucideIcons.listRestart;
+      return LucideIcons.listRestart;
     case 'ListStart':
-      return shad.LucideIcons.listStart;
+      return LucideIcons.listStart;
     case 'ListTodo':
-      return shad.LucideIcons.listTodo;
+      return LucideIcons.listTodo;
     case 'ListTree':
-      return shad.LucideIcons.listTree;
+      return LucideIcons.listTree;
     case 'ListVideo':
-      return shad.LucideIcons.listVideo;
+      return LucideIcons.listVideo;
     case 'ListX':
-      return shad.LucideIcons.listX;
+      return LucideIcons.listX;
     case 'Loader':
-      return shad.LucideIcons.loader;
+      return LucideIcons.loader;
     case 'LoaderCircle':
-      return shad.LucideIcons.loaderCircle;
+      return LucideIcons.loaderCircle;
     case 'LoaderPinwheel':
-      return shad.LucideIcons.loaderPinwheel;
+      return LucideIcons.loaderPinwheel;
     case 'Locate':
-      return shad.LucideIcons.locate;
+      return LucideIcons.locate;
     case 'LocateFixed':
-      return shad.LucideIcons.locateFixed;
+      return LucideIcons.locateFixed;
     case 'LocateOff':
-      return shad.LucideIcons.locateOff;
+      return LucideIcons.locateOff;
     case 'Lock':
-      return shad.LucideIcons.lock;
+      return LucideIcons.lock;
     case 'LockKeyhole':
-      return shad.LucideIcons.lockKeyhole;
+      return LucideIcons.lockKeyhole;
     case 'LockKeyholeOpen':
-      return shad.LucideIcons.lockKeyholeOpen;
+      return LucideIcons.lockKeyholeOpen;
     case 'LockOpen':
-      return shad.LucideIcons.lockOpen;
+      return LucideIcons.lockOpen;
     case 'LogIn':
-      return shad.LucideIcons.logIn;
+      return LucideIcons.logIn;
     case 'LogOut':
-      return shad.LucideIcons.logOut;
+      return LucideIcons.logOut;
     case 'Logs':
-      return shad.LucideIcons.logs;
+      return LucideIcons.logs;
     case 'Lollipop':
-      return shad.LucideIcons.lollipop;
+      return LucideIcons.lollipop;
     case 'Luggage':
-      return shad.LucideIcons.luggage;
+      return LucideIcons.luggage;
     case 'Magnet':
-      return shad.LucideIcons.magnet;
+      return LucideIcons.magnet;
     case 'Mail':
-      return shad.LucideIcons.mail;
+      return LucideIcons.mail;
     case 'MailCheck':
-      return shad.LucideIcons.mailCheck;
+      return LucideIcons.mailCheck;
     case 'MailMinus':
-      return shad.LucideIcons.mailMinus;
+      return LucideIcons.mailMinus;
     case 'MailOpen':
-      return shad.LucideIcons.mailOpen;
+      return LucideIcons.mailOpen;
     case 'MailPlus':
-      return shad.LucideIcons.mailPlus;
+      return LucideIcons.mailPlus;
     case 'MailSearch':
-      return shad.LucideIcons.mailSearch;
+      return LucideIcons.mailSearch;
     case 'MailWarning':
-      return shad.LucideIcons.mailWarning;
+      return LucideIcons.mailWarning;
     case 'MailX':
-      return shad.LucideIcons.mailX;
+      return LucideIcons.mailX;
     case 'Mailbox':
-      return shad.LucideIcons.mailbox;
+      return LucideIcons.mailbox;
     case 'Mails':
-      return shad.LucideIcons.mails;
+      return LucideIcons.mails;
     case 'Map':
-      return shad.LucideIcons.map;
+      return LucideIcons.map;
     case 'MapPin':
-      return shad.LucideIcons.mapPin;
+      return LucideIcons.mapPin;
     case 'MapPinCheck':
-      return shad.LucideIcons.mapPinCheck;
+      return LucideIcons.mapPinCheck;
     case 'MapPinCheckInside':
-      return shad.LucideIcons.mapPinCheckInside;
+      return LucideIcons.mapPinCheckInside;
     case 'MapPinHouse':
-      return shad.LucideIcons.mapPinHouse;
+      return LucideIcons.mapPinHouse;
     case 'MapPinMinus':
-      return shad.LucideIcons.mapPinMinus;
+      return LucideIcons.mapPinMinus;
     case 'MapPinMinusInside':
-      return shad.LucideIcons.mapPinMinusInside;
+      return LucideIcons.mapPinMinusInside;
     case 'MapPinOff':
-      return shad.LucideIcons.mapPinOff;
+      return LucideIcons.mapPinOff;
     case 'MapPinPlus':
-      return shad.LucideIcons.mapPinPlus;
+      return LucideIcons.mapPinPlus;
     case 'MapPinPlusInside':
-      return shad.LucideIcons.mapPinPlusInside;
+      return LucideIcons.mapPinPlusInside;
     case 'MapPinX':
-      return shad.LucideIcons.mapPinX;
+      return LucideIcons.mapPinX;
     case 'MapPinXInside':
-      return shad.LucideIcons.mapPinXInside;
+      return LucideIcons.mapPinXInside;
     case 'MapPinned':
-      return shad.LucideIcons.mapPinned;
+      return LucideIcons.mapPinned;
     case 'MapPlus':
-      return shad.LucideIcons.mapPlus;
+      return LucideIcons.mapPlus;
     case 'Mars':
-      return shad.LucideIcons.mars;
+      return LucideIcons.mars;
     case 'MarsStroke':
-      return shad.LucideIcons.marsStroke;
+      return LucideIcons.marsStroke;
     case 'Martini':
-      return shad.LucideIcons.martini;
+      return LucideIcons.martini;
     case 'Maximize':
-      return shad.LucideIcons.maximize;
+      return LucideIcons.maximize;
     case 'Maximize2':
-      return shad.LucideIcons.maximize2;
+      return LucideIcons.maximize2;
     case 'Medal':
-      return shad.LucideIcons.medal;
+      return LucideIcons.medal;
     case 'Megaphone':
-      return shad.LucideIcons.megaphone;
+      return LucideIcons.megaphone;
     case 'MegaphoneOff':
-      return shad.LucideIcons.megaphoneOff;
+      return LucideIcons.megaphoneOff;
     case 'Meh':
-      return shad.LucideIcons.meh;
+      return LucideIcons.meh;
     case 'MemoryStick':
-      return shad.LucideIcons.memoryStick;
+      return LucideIcons.memoryStick;
     case 'Menu':
-      return shad.LucideIcons.menu;
+      return LucideIcons.menu;
     case 'Merge':
-      return shad.LucideIcons.merge;
+      return LucideIcons.merge;
     case 'MessageCircle':
-      return shad.LucideIcons.messageCircle;
+      return LucideIcons.messageCircle;
     case 'MessageCircleCode':
-      return shad.LucideIcons.messageCircleCode;
+      return LucideIcons.messageCircleCode;
     case 'MessageCircleDashed':
-      return shad.LucideIcons.messageCircleDashed;
+      return LucideIcons.messageCircleDashed;
     case 'MessageCircleHeart':
-      return shad.LucideIcons.messageCircleHeart;
+      return LucideIcons.messageCircleHeart;
     case 'MessageCircleMore':
-      return shad.LucideIcons.messageCircleMore;
+      return LucideIcons.messageCircleMore;
     case 'MessageCircleOff':
-      return shad.LucideIcons.messageCircleOff;
+      return LucideIcons.messageCircleOff;
     case 'MessageCirclePlus':
-      return shad.LucideIcons.messageCirclePlus;
+      return LucideIcons.messageCirclePlus;
     case 'MessageCircleReply':
-      return shad.LucideIcons.messageCircleReply;
+      return LucideIcons.messageCircleReply;
     case 'MessageCircleWarning':
-      return shad.LucideIcons.messageCircleWarning;
+      return LucideIcons.messageCircleWarning;
     case 'MessageCircleX':
-      return shad.LucideIcons.messageCircleX;
+      return LucideIcons.messageCircleX;
     case 'MessageSquare':
-      return shad.LucideIcons.messageSquare;
+      return LucideIcons.messageSquare;
     case 'MessageSquareCode':
-      return shad.LucideIcons.messageSquareCode;
+      return LucideIcons.messageSquareCode;
     case 'MessageSquareDashed':
-      return shad.LucideIcons.messageSquareDashed;
+      return LucideIcons.messageSquareDashed;
     case 'MessageSquareDiff':
-      return shad.LucideIcons.messageSquareDiff;
+      return LucideIcons.messageSquareDiff;
     case 'MessageSquareDot':
-      return shad.LucideIcons.messageSquareDot;
+      return LucideIcons.messageSquareDot;
     case 'MessageSquareHeart':
-      return shad.LucideIcons.messageSquareHeart;
+      return LucideIcons.messageSquareHeart;
     case 'MessageSquareLock':
-      return shad.LucideIcons.messageSquareLock;
+      return LucideIcons.messageSquareLock;
     case 'MessageSquareMore':
-      return shad.LucideIcons.messageSquareMore;
+      return LucideIcons.messageSquareMore;
     case 'MessageSquareOff':
-      return shad.LucideIcons.messageSquareOff;
+      return LucideIcons.messageSquareOff;
     case 'MessageSquarePlus':
-      return shad.LucideIcons.messageSquarePlus;
+      return LucideIcons.messageSquarePlus;
     case 'MessageSquareQuote':
-      return shad.LucideIcons.messageSquareQuote;
+      return LucideIcons.messageSquareQuote;
     case 'MessageSquareReply':
-      return shad.LucideIcons.messageSquareReply;
+      return LucideIcons.messageSquareReply;
     case 'MessageSquareShare':
-      return shad.LucideIcons.messageSquareShare;
+      return LucideIcons.messageSquareShare;
     case 'MessageSquareText':
-      return shad.LucideIcons.messageSquareText;
+      return LucideIcons.messageSquareText;
     case 'MessageSquareWarning':
-      return shad.LucideIcons.messageSquareWarning;
+      return LucideIcons.messageSquareWarning;
     case 'MessageSquareX':
-      return shad.LucideIcons.messageSquareX;
+      return LucideIcons.messageSquareX;
     case 'MessagesSquare':
-      return shad.LucideIcons.messagesSquare;
+      return LucideIcons.messagesSquare;
     case 'Mic':
-      return shad.LucideIcons.mic;
+      return LucideIcons.mic;
     case 'MicOff':
-      return shad.LucideIcons.micOff;
+      return LucideIcons.micOff;
     case 'MicVocal':
-      return shad.LucideIcons.micVocal;
+      return LucideIcons.micVocal;
     case 'Microchip':
-      return shad.LucideIcons.microchip;
+      return LucideIcons.microchip;
     case 'Microscope':
-      return shad.LucideIcons.microscope;
+      return LucideIcons.microscope;
     case 'Microwave':
-      return shad.LucideIcons.microwave;
+      return LucideIcons.microwave;
     case 'Milestone':
-      return shad.LucideIcons.milestone;
+      return LucideIcons.milestone;
     case 'Milk':
-      return shad.LucideIcons.milk;
+      return LucideIcons.milk;
     case 'MilkOff':
-      return shad.LucideIcons.milkOff;
+      return LucideIcons.milkOff;
     case 'Minimize':
-      return shad.LucideIcons.minimize;
+      return LucideIcons.minimize;
     case 'Minimize2':
-      return shad.LucideIcons.minimize2;
+      return LucideIcons.minimize2;
     case 'Minus':
-      return shad.LucideIcons.minus;
+      return LucideIcons.minus;
     case 'Monitor':
-      return shad.LucideIcons.monitor;
+      return LucideIcons.monitor;
     case 'MonitorCheck':
-      return shad.LucideIcons.monitorCheck;
+      return LucideIcons.monitorCheck;
     case 'MonitorCog':
-      return shad.LucideIcons.monitorCog;
+      return LucideIcons.monitorCog;
     case 'MonitorDot':
-      return shad.LucideIcons.monitorDot;
+      return LucideIcons.monitorDot;
     case 'MonitorDown':
-      return shad.LucideIcons.monitorDown;
+      return LucideIcons.monitorDown;
     case 'MonitorOff':
-      return shad.LucideIcons.monitorOff;
+      return LucideIcons.monitorOff;
     case 'MonitorPause':
-      return shad.LucideIcons.monitorPause;
+      return LucideIcons.monitorPause;
     case 'MonitorPlay':
-      return shad.LucideIcons.monitorPlay;
+      return LucideIcons.monitorPlay;
     case 'MonitorSmartphone':
-      return shad.LucideIcons.monitorSmartphone;
+      return LucideIcons.monitorSmartphone;
     case 'MonitorSpeaker':
-      return shad.LucideIcons.monitorSpeaker;
+      return LucideIcons.monitorSpeaker;
     case 'MonitorStop':
-      return shad.LucideIcons.monitorStop;
+      return LucideIcons.monitorStop;
     case 'MonitorUp':
-      return shad.LucideIcons.monitorUp;
+      return LucideIcons.monitorUp;
     case 'MonitorX':
-      return shad.LucideIcons.monitorX;
+      return LucideIcons.monitorX;
     case 'Moon':
-      return shad.LucideIcons.moon;
+      return LucideIcons.moon;
     case 'MoonStar':
-      return shad.LucideIcons.moonStar;
+      return LucideIcons.moonStar;
     case 'Mountain':
-      return shad.LucideIcons.mountain;
+      return LucideIcons.mountain;
     case 'MountainSnow':
-      return shad.LucideIcons.mountainSnow;
+      return LucideIcons.mountainSnow;
     case 'Mouse':
-      return shad.LucideIcons.mouse;
+      return LucideIcons.mouse;
     case 'MouseOff':
-      return shad.LucideIcons.mouseOff;
+      return LucideIcons.mouseOff;
     case 'MousePointer':
-      return shad.LucideIcons.mousePointer;
+      return LucideIcons.mousePointer;
     case 'MousePointer2':
-      return shad.LucideIcons.mousePointer2;
+      return LucideIcons.mousePointer2;
     case 'MousePointerBan':
-      return shad.LucideIcons.mousePointerBan;
+      return LucideIcons.mousePointerBan;
     case 'MousePointerClick':
-      return shad.LucideIcons.mousePointerClick;
+      return LucideIcons.mousePointerClick;
     case 'Move':
-      return shad.LucideIcons.move;
+      return LucideIcons.move;
     case 'Move3d':
-      return shad.LucideIcons.move3d;
+      return LucideIcons.move3d;
     case 'MoveDiagonal':
-      return shad.LucideIcons.moveDiagonal;
+      return LucideIcons.moveDiagonal;
     case 'MoveDiagonal2':
-      return shad.LucideIcons.moveDiagonal2;
+      return LucideIcons.moveDiagonal2;
     case 'MoveDown':
-      return shad.LucideIcons.moveDown;
+      return LucideIcons.moveDown;
     case 'MoveDownLeft':
-      return shad.LucideIcons.moveDownLeft;
+      return LucideIcons.moveDownLeft;
     case 'MoveDownRight':
-      return shad.LucideIcons.moveDownRight;
+      return LucideIcons.moveDownRight;
     case 'MoveHorizontal':
-      return shad.LucideIcons.moveHorizontal;
+      return LucideIcons.moveHorizontal;
     case 'MoveLeft':
-      return shad.LucideIcons.moveLeft;
+      return LucideIcons.moveLeft;
     case 'MoveRight':
-      return shad.LucideIcons.moveRight;
+      return LucideIcons.moveRight;
     case 'MoveUp':
-      return shad.LucideIcons.moveUp;
+      return LucideIcons.moveUp;
     case 'MoveUpLeft':
-      return shad.LucideIcons.moveUpLeft;
+      return LucideIcons.moveUpLeft;
     case 'MoveUpRight':
-      return shad.LucideIcons.moveUpRight;
+      return LucideIcons.moveUpRight;
     case 'MoveVertical':
-      return shad.LucideIcons.moveVertical;
+      return LucideIcons.moveVertical;
     case 'Music':
-      return shad.LucideIcons.music;
+      return LucideIcons.music;
     case 'Music2':
-      return shad.LucideIcons.music2;
+      return LucideIcons.music2;
     case 'Music3':
-      return shad.LucideIcons.music3;
+      return LucideIcons.music3;
     case 'Music4':
-      return shad.LucideIcons.music4;
+      return LucideIcons.music4;
     case 'Navigation':
-      return shad.LucideIcons.navigation;
+      return LucideIcons.navigation;
     case 'Navigation2':
-      return shad.LucideIcons.navigation2;
+      return LucideIcons.navigation2;
     case 'Navigation2Off':
-      return shad.LucideIcons.navigation2Off;
+      return LucideIcons.navigation2Off;
     case 'NavigationOff':
-      return shad.LucideIcons.navigationOff;
+      return LucideIcons.navigationOff;
     case 'Network':
-      return shad.LucideIcons.network;
+      return LucideIcons.network;
     case 'Newspaper':
-      return shad.LucideIcons.newspaper;
+      return LucideIcons.newspaper;
     case 'Nfc':
-      return shad.LucideIcons.nfc;
+      return LucideIcons.nfc;
     case 'NonBinary':
-      return shad.LucideIcons.nonBinary;
+      return LucideIcons.nonBinary;
     case 'Notebook':
-      return shad.LucideIcons.notebook;
+      return LucideIcons.notebook;
     case 'NotebookPen':
-      return shad.LucideIcons.notebookPen;
+      return LucideIcons.notebookPen;
     case 'NotebookTabs':
-      return shad.LucideIcons.notebookTabs;
+      return LucideIcons.notebookTabs;
     case 'NotebookText':
-      return shad.LucideIcons.notebookText;
+      return LucideIcons.notebookText;
     case 'NotepadText':
-      return shad.LucideIcons.notepadText;
+      return LucideIcons.notepadText;
     case 'NotepadTextDashed':
-      return shad.LucideIcons.notepadTextDashed;
+      return LucideIcons.notepadTextDashed;
     case 'Nut':
-      return shad.LucideIcons.nut;
+      return LucideIcons.nut;
     case 'NutOff':
-      return shad.LucideIcons.nutOff;
+      return LucideIcons.nutOff;
     case 'Octagon':
-      return shad.LucideIcons.octagon;
+      return LucideIcons.octagon;
     case 'OctagonAlert':
-      return shad.LucideIcons.octagonAlert;
+      return LucideIcons.octagonAlert;
     case 'OctagonMinus':
-      return shad.LucideIcons.octagonMinus;
+      return LucideIcons.octagonMinus;
     case 'OctagonPause':
-      return shad.LucideIcons.octagonPause;
+      return LucideIcons.octagonPause;
     case 'OctagonX':
-      return shad.LucideIcons.octagonX;
+      return LucideIcons.octagonX;
     case 'Omega':
-      return shad.LucideIcons.omega;
+      return LucideIcons.omega;
     case 'Option':
-      return shad.LucideIcons.option;
+      return LucideIcons.option;
     case 'Orbit':
-      return shad.LucideIcons.orbit;
+      return LucideIcons.orbit;
     case 'Origami':
-      return shad.LucideIcons.origami;
+      return LucideIcons.origami;
     case 'Package':
-      return shad.LucideIcons.package;
+      return LucideIcons.package;
     case 'Package2':
-      return shad.LucideIcons.package2;
+      return LucideIcons.package2;
     case 'PackageCheck':
-      return shad.LucideIcons.packageCheck;
+      return LucideIcons.packageCheck;
     case 'PackageMinus':
-      return shad.LucideIcons.packageMinus;
+      return LucideIcons.packageMinus;
     case 'PackageOpen':
-      return shad.LucideIcons.packageOpen;
+      return LucideIcons.packageOpen;
     case 'PackagePlus':
-      return shad.LucideIcons.packagePlus;
+      return LucideIcons.packagePlus;
     case 'PackageSearch':
-      return shad.LucideIcons.packageSearch;
+      return LucideIcons.packageSearch;
     case 'PackageX':
-      return shad.LucideIcons.packageX;
+      return LucideIcons.packageX;
     case 'PaintBucket':
-      return shad.LucideIcons.paintBucket;
+      return LucideIcons.paintBucket;
     case 'PaintRoller':
-      return shad.LucideIcons.paintRoller;
+      return LucideIcons.paintRoller;
     case 'Paintbrush':
-      return shad.LucideIcons.paintbrush;
+      return LucideIcons.paintbrush;
     case 'PaintbrushVertical':
-      return shad.LucideIcons.paintbrushVertical;
+      return LucideIcons.paintbrushVertical;
     case 'Palette':
-      return shad.LucideIcons.palette;
+      return LucideIcons.palette;
     case 'PanelBottom':
-      return shad.LucideIcons.panelBottom;
+      return LucideIcons.panelBottom;
     case 'PanelBottomClose':
-      return shad.LucideIcons.panelBottomClose;
+      return LucideIcons.panelBottomClose;
     case 'PanelBottomDashed':
-      return shad.LucideIcons.panelBottomDashed;
+      return LucideIcons.panelBottomDashed;
     case 'PanelBottomOpen':
-      return shad.LucideIcons.panelBottomOpen;
+      return LucideIcons.panelBottomOpen;
     case 'PanelLeft':
-      return shad.LucideIcons.panelLeft;
+      return LucideIcons.panelLeft;
     case 'PanelLeftClose':
-      return shad.LucideIcons.panelLeftClose;
+      return LucideIcons.panelLeftClose;
     case 'PanelLeftDashed':
-      return shad.LucideIcons.panelLeftDashed;
+      return LucideIcons.panelLeftDashed;
     case 'PanelLeftOpen':
-      return shad.LucideIcons.panelLeftOpen;
+      return LucideIcons.panelLeftOpen;
     case 'PanelRight':
-      return shad.LucideIcons.panelRight;
+      return LucideIcons.panelRight;
     case 'PanelRightClose':
-      return shad.LucideIcons.panelRightClose;
+      return LucideIcons.panelRightClose;
     case 'PanelRightDashed':
-      return shad.LucideIcons.panelRightDashed;
+      return LucideIcons.panelRightDashed;
     case 'PanelRightOpen':
-      return shad.LucideIcons.panelRightOpen;
+      return LucideIcons.panelRightOpen;
     case 'PanelTop':
-      return shad.LucideIcons.panelTop;
+      return LucideIcons.panelTop;
     case 'PanelTopClose':
-      return shad.LucideIcons.panelTopClose;
+      return LucideIcons.panelTopClose;
     case 'PanelTopDashed':
-      return shad.LucideIcons.panelTopDashed;
+      return LucideIcons.panelTopDashed;
     case 'PanelTopOpen':
-      return shad.LucideIcons.panelTopOpen;
+      return LucideIcons.panelTopOpen;
     case 'PanelsLeftBottom':
-      return shad.LucideIcons.panelsLeftBottom;
+      return LucideIcons.panelsLeftBottom;
     case 'PanelsRightBottom':
-      return shad.LucideIcons.panelsRightBottom;
+      return LucideIcons.panelsRightBottom;
     case 'PanelsTopLeft':
-      return shad.LucideIcons.panelsTopLeft;
+      return LucideIcons.panelsTopLeft;
     case 'Paperclip':
-      return shad.LucideIcons.paperclip;
+      return LucideIcons.paperclip;
     case 'Parentheses':
-      return shad.LucideIcons.parentheses;
+      return LucideIcons.parentheses;
     case 'ParkingMeter':
-      return shad.LucideIcons.parkingMeter;
+      return LucideIcons.parkingMeter;
     case 'PartyPopper':
-      return shad.LucideIcons.partyPopper;
+      return LucideIcons.partyPopper;
     case 'Pause':
-      return shad.LucideIcons.pause;
+      return LucideIcons.pause;
     case 'PawPrint':
-      return shad.LucideIcons.pawPrint;
+      return LucideIcons.pawPrint;
     case 'PcCase':
-      return shad.LucideIcons.pcCase;
+      return LucideIcons.pcCase;
     case 'Pen':
-      return shad.LucideIcons.pen;
+      return LucideIcons.pen;
     case 'PenLine':
-      return shad.LucideIcons.penLine;
+      return LucideIcons.penLine;
     case 'PenOff':
-      return shad.LucideIcons.penOff;
+      return LucideIcons.penOff;
     case 'PenTool':
-      return shad.LucideIcons.penTool;
+      return LucideIcons.penTool;
     case 'Pencil':
-      return shad.LucideIcons.pencil;
+      return LucideIcons.pencil;
     case 'PencilLine':
-      return shad.LucideIcons.pencilLine;
+      return LucideIcons.pencilLine;
     case 'PencilOff':
-      return shad.LucideIcons.pencilOff;
+      return LucideIcons.pencilOff;
     case 'PencilRuler':
-      return shad.LucideIcons.pencilRuler;
+      return LucideIcons.pencilRuler;
     case 'Pentagon':
-      return shad.LucideIcons.pentagon;
+      return LucideIcons.pentagon;
     case 'Percent':
-      return shad.LucideIcons.percent;
+      return LucideIcons.percent;
     case 'PersonStanding':
-      return shad.LucideIcons.personStanding;
+      return LucideIcons.personStanding;
     case 'PhilippinePeso':
-      return shad.LucideIcons.philippinePeso;
+      return LucideIcons.philippinePeso;
     case 'Phone':
-      return shad.LucideIcons.phone;
+      return LucideIcons.phone;
     case 'PhoneCall':
-      return shad.LucideIcons.phoneCall;
+      return LucideIcons.phoneCall;
     case 'PhoneForwarded':
-      return shad.LucideIcons.phoneForwarded;
+      return LucideIcons.phoneForwarded;
     case 'PhoneIncoming':
-      return shad.LucideIcons.phoneIncoming;
+      return LucideIcons.phoneIncoming;
     case 'PhoneMissed':
-      return shad.LucideIcons.phoneMissed;
+      return LucideIcons.phoneMissed;
     case 'PhoneOff':
-      return shad.LucideIcons.phoneOff;
+      return LucideIcons.phoneOff;
     case 'PhoneOutgoing':
-      return shad.LucideIcons.phoneOutgoing;
+      return LucideIcons.phoneOutgoing;
     case 'Pi':
-      return shad.LucideIcons.pi;
+      return LucideIcons.pi;
     case 'Piano':
-      return shad.LucideIcons.piano;
+      return LucideIcons.piano;
     case 'Pickaxe':
-      return shad.LucideIcons.pickaxe;
+      return LucideIcons.pickaxe;
     case 'PictureInPicture':
-      return shad.LucideIcons.pictureInPicture;
+      return LucideIcons.pictureInPicture;
     case 'PictureInPicture2':
-      return shad.LucideIcons.pictureInPicture2;
+      return LucideIcons.pictureInPicture2;
     case 'PiggyBank':
-      return shad.LucideIcons.piggyBank;
+      return LucideIcons.piggyBank;
     case 'Pilcrow':
-      return shad.LucideIcons.pilcrow;
+      return LucideIcons.pilcrow;
     case 'PilcrowLeft':
-      return shad.LucideIcons.pilcrowLeft;
+      return LucideIcons.pilcrowLeft;
     case 'PilcrowRight':
-      return shad.LucideIcons.pilcrowRight;
+      return LucideIcons.pilcrowRight;
     case 'Pill':
-      return shad.LucideIcons.pill;
+      return LucideIcons.pill;
     case 'PillBottle':
-      return shad.LucideIcons.pillBottle;
+      return LucideIcons.pillBottle;
     case 'Pin':
-      return shad.LucideIcons.pin;
+      return LucideIcons.pin;
     case 'PinOff':
-      return shad.LucideIcons.pinOff;
+      return LucideIcons.pinOff;
     case 'Pipette':
-      return shad.LucideIcons.pipette;
+      return LucideIcons.pipette;
     case 'Pizza':
-      return shad.LucideIcons.pizza;
+      return LucideIcons.pizza;
     case 'Plane':
-      return shad.LucideIcons.plane;
+      return LucideIcons.plane;
     case 'PlaneLanding':
-      return shad.LucideIcons.planeLanding;
+      return LucideIcons.planeLanding;
     case 'PlaneTakeoff':
-      return shad.LucideIcons.planeTakeoff;
+      return LucideIcons.planeTakeoff;
     case 'Play':
-      return shad.LucideIcons.play;
+      return LucideIcons.play;
     case 'Plug':
-      return shad.LucideIcons.plug;
+      return LucideIcons.plug;
     case 'Plug2':
-      return shad.LucideIcons.plug2;
+      return LucideIcons.plug2;
     case 'PlugZap':
-      return shad.LucideIcons.plugZap;
+      return LucideIcons.plugZap;
     case 'Plus':
-      return shad.LucideIcons.plus;
+      return LucideIcons.plus;
     case 'Pocket':
-      return shad.LucideIcons.pocket;
+      return AppIcons.pocket;
     case 'PocketKnife':
-      return shad.LucideIcons.pocketKnife;
+      return LucideIcons.pocketKnife;
     case 'Podcast':
-      return shad.LucideIcons.podcast;
+      return LucideIcons.podcast;
     case 'Pointer':
-      return shad.LucideIcons.pointer;
+      return LucideIcons.pointer;
     case 'PointerOff':
-      return shad.LucideIcons.pointerOff;
+      return LucideIcons.pointerOff;
     case 'Popcorn':
-      return shad.LucideIcons.popcorn;
+      return LucideIcons.popcorn;
     case 'Popsicle':
-      return shad.LucideIcons.popsicle;
+      return LucideIcons.popsicle;
     case 'PoundSterling':
-      return shad.LucideIcons.poundSterling;
+      return LucideIcons.poundSterling;
     case 'Power':
-      return shad.LucideIcons.power;
+      return LucideIcons.power;
     case 'PowerOff':
-      return shad.LucideIcons.powerOff;
+      return LucideIcons.powerOff;
     case 'Presentation':
-      return shad.LucideIcons.presentation;
+      return LucideIcons.presentation;
     case 'Printer':
-      return shad.LucideIcons.printer;
+      return LucideIcons.printer;
     case 'PrinterCheck':
-      return shad.LucideIcons.printerCheck;
+      return LucideIcons.printerCheck;
     case 'Projector':
-      return shad.LucideIcons.projector;
+      return LucideIcons.projector;
     case 'Proportions':
-      return shad.LucideIcons.proportions;
+      return LucideIcons.proportions;
     case 'Puzzle':
-      return shad.LucideIcons.puzzle;
+      return LucideIcons.puzzle;
     case 'Pyramid':
-      return shad.LucideIcons.pyramid;
+      return LucideIcons.pyramid;
     case 'QrCode':
-      return shad.LucideIcons.qrCode;
+      return LucideIcons.qrCode;
     case 'Quote':
-      return shad.LucideIcons.quote;
+      return LucideIcons.quote;
     case 'Rabbit':
-      return shad.LucideIcons.rabbit;
+      return LucideIcons.rabbit;
     case 'Radar':
-      return shad.LucideIcons.radar;
+      return LucideIcons.radar;
     case 'Radiation':
-      return shad.LucideIcons.radiation;
+      return LucideIcons.radiation;
     case 'Radical':
-      return shad.LucideIcons.radical;
+      return LucideIcons.radical;
     case 'Radio':
-      return shad.LucideIcons.radio;
+      return LucideIcons.radio;
     case 'RadioReceiver':
-      return shad.LucideIcons.radioReceiver;
+      return LucideIcons.radioReceiver;
     case 'RadioTower':
-      return shad.LucideIcons.radioTower;
+      return LucideIcons.radioTower;
     case 'Radius':
-      return shad.LucideIcons.radius;
+      return LucideIcons.radius;
     case 'RailSymbol':
-      return shad.LucideIcons.railSymbol;
+      return AppIcons.railSymbol;
     case 'Rainbow':
-      return shad.LucideIcons.rainbow;
+      return LucideIcons.rainbow;
     case 'Rat':
-      return shad.LucideIcons.rat;
+      return LucideIcons.rat;
     case 'Ratio':
-      return shad.LucideIcons.ratio;
+      return LucideIcons.ratio;
     case 'Receipt':
-      return shad.LucideIcons.receipt;
+      return LucideIcons.receipt;
     case 'ReceiptCent':
-      return shad.LucideIcons.receiptCent;
+      return LucideIcons.receiptCent;
     case 'ReceiptEuro':
-      return shad.LucideIcons.receiptEuro;
+      return LucideIcons.receiptEuro;
     case 'ReceiptIndianRupee':
-      return shad.LucideIcons.receiptIndianRupee;
+      return LucideIcons.receiptIndianRupee;
     case 'ReceiptJapaneseYen':
-      return shad.LucideIcons.receiptJapaneseYen;
+      return LucideIcons.receiptJapaneseYen;
     case 'ReceiptPoundSterling':
-      return shad.LucideIcons.receiptPoundSterling;
+      return LucideIcons.receiptPoundSterling;
     case 'ReceiptRussianRuble':
-      return shad.LucideIcons.receiptRussianRuble;
+      return LucideIcons.receiptRussianRuble;
     case 'ReceiptSwissFranc':
-      return shad.LucideIcons.receiptSwissFranc;
+      return LucideIcons.receiptSwissFranc;
     case 'ReceiptText':
-      return shad.LucideIcons.receiptText;
+      return LucideIcons.receiptText;
     case 'RectangleEllipsis':
-      return shad.LucideIcons.rectangleEllipsis;
+      return LucideIcons.rectangleEllipsis;
     case 'RectangleHorizontal':
-      return shad.LucideIcons.rectangleHorizontal;
+      return LucideIcons.rectangleHorizontal;
     case 'RectangleVertical':
-      return shad.LucideIcons.rectangleVertical;
+      return LucideIcons.rectangleVertical;
     case 'Recycle':
-      return shad.LucideIcons.recycle;
+      return LucideIcons.recycle;
     case 'Redo':
-      return shad.LucideIcons.redo;
+      return LucideIcons.redo;
     case 'Redo2':
-      return shad.LucideIcons.redo2;
+      return LucideIcons.redo2;
     case 'RedoDot':
-      return shad.LucideIcons.redoDot;
+      return LucideIcons.redoDot;
     case 'RefreshCcw':
-      return shad.LucideIcons.refreshCcw;
+      return LucideIcons.refreshCcw;
     case 'RefreshCcwDot':
-      return shad.LucideIcons.refreshCcwDot;
+      return LucideIcons.refreshCcwDot;
     case 'RefreshCw':
-      return shad.LucideIcons.refreshCw;
+      return LucideIcons.refreshCw;
     case 'RefreshCwOff':
-      return shad.LucideIcons.refreshCwOff;
+      return LucideIcons.refreshCwOff;
     case 'Refrigerator':
-      return shad.LucideIcons.refrigerator;
+      return LucideIcons.refrigerator;
     case 'Regex':
-      return shad.LucideIcons.regex;
+      return LucideIcons.regex;
     case 'RemoveFormatting':
-      return shad.LucideIcons.removeFormatting;
+      return LucideIcons.removeFormatting;
     case 'Repeat':
-      return shad.LucideIcons.repeat;
+      return LucideIcons.repeat;
     case 'Repeat1':
-      return shad.LucideIcons.repeat1;
+      return LucideIcons.repeat1;
     case 'Repeat2':
-      return shad.LucideIcons.repeat2;
+      return LucideIcons.repeat2;
     case 'Replace':
-      return shad.LucideIcons.replace;
+      return LucideIcons.replace;
     case 'ReplaceAll':
-      return shad.LucideIcons.replaceAll;
+      return LucideIcons.replaceAll;
     case 'Reply':
-      return shad.LucideIcons.reply;
+      return LucideIcons.reply;
     case 'ReplyAll':
-      return shad.LucideIcons.replyAll;
+      return LucideIcons.replyAll;
     case 'Rewind':
-      return shad.LucideIcons.rewind;
+      return LucideIcons.rewind;
     case 'Ribbon':
-      return shad.LucideIcons.ribbon;
+      return LucideIcons.ribbon;
     case 'Rocket':
-      return shad.LucideIcons.rocket;
+      return LucideIcons.rocket;
     case 'RockingChair':
-      return shad.LucideIcons.rockingChair;
+      return LucideIcons.rockingChair;
     case 'RollerCoaster':
-      return shad.LucideIcons.rollerCoaster;
+      return LucideIcons.rollerCoaster;
     case 'Rotate3d':
-      return shad.LucideIcons.rotate3d;
+      return LucideIcons.rotate3d;
     case 'RotateCcw':
-      return shad.LucideIcons.rotateCcw;
+      return LucideIcons.rotateCcw;
     case 'RotateCcwSquare':
-      return shad.LucideIcons.rotateCcwSquare;
+      return LucideIcons.rotateCcwSquare;
     case 'RotateCw':
-      return shad.LucideIcons.rotateCw;
+      return LucideIcons.rotateCw;
     case 'RotateCwSquare':
-      return shad.LucideIcons.rotateCwSquare;
+      return LucideIcons.rotateCwSquare;
     case 'Route':
-      return shad.LucideIcons.route;
+      return LucideIcons.route;
     case 'RouteOff':
-      return shad.LucideIcons.routeOff;
+      return LucideIcons.routeOff;
     case 'Router':
-      return shad.LucideIcons.router;
+      return LucideIcons.router;
     case 'Rows2':
-      return shad.LucideIcons.rows2;
+      return LucideIcons.rows2;
     case 'Rows3':
-      return shad.LucideIcons.rows3;
+      return LucideIcons.rows3;
     case 'Rows4':
-      return shad.LucideIcons.rows4;
+      return LucideIcons.rows4;
     case 'Rss':
-      return shad.LucideIcons.rss;
+      return LucideIcons.rss;
     case 'Ruler':
-      return shad.LucideIcons.ruler;
+      return LucideIcons.ruler;
     case 'RussianRuble':
-      return shad.LucideIcons.russianRuble;
+      return LucideIcons.russianRuble;
     case 'Sailboat':
-      return shad.LucideIcons.sailboat;
+      return LucideIcons.sailboat;
     case 'Salad':
-      return shad.LucideIcons.salad;
+      return LucideIcons.salad;
     case 'Sandwich':
-      return shad.LucideIcons.sandwich;
+      return LucideIcons.sandwich;
     case 'Satellite':
-      return shad.LucideIcons.satellite;
+      return LucideIcons.satellite;
     case 'SatelliteDish':
-      return shad.LucideIcons.satelliteDish;
+      return LucideIcons.satelliteDish;
     case 'Save':
-      return shad.LucideIcons.save;
+      return LucideIcons.save;
     case 'SaveAll':
-      return shad.LucideIcons.saveAll;
+      return LucideIcons.saveAll;
     case 'SaveOff':
-      return shad.LucideIcons.saveOff;
+      return LucideIcons.saveOff;
     case 'Scale':
-      return shad.LucideIcons.scale;
+      return LucideIcons.scale;
     case 'Scale3d':
-      return shad.LucideIcons.scale3d;
+      return LucideIcons.scale3d;
     case 'Scaling':
-      return shad.LucideIcons.scaling;
+      return LucideIcons.scaling;
     case 'Scan':
-      return shad.LucideIcons.scan;
+      return LucideIcons.scan;
     case 'ScanBarcode':
-      return shad.LucideIcons.scanBarcode;
+      return LucideIcons.scanBarcode;
     case 'ScanEye':
-      return shad.LucideIcons.scanEye;
+      return LucideIcons.scanEye;
     case 'ScanFace':
-      return shad.LucideIcons.scanFace;
+      return LucideIcons.scanFace;
     case 'ScanHeart':
-      return shad.LucideIcons.scanHeart;
+      return LucideIcons.scanHeart;
     case 'ScanLine':
-      return shad.LucideIcons.scanLine;
+      return LucideIcons.scanLine;
     case 'ScanQrCode':
-      return shad.LucideIcons.scanQrCode;
+      return LucideIcons.scanQrCode;
     case 'ScanSearch':
-      return shad.LucideIcons.scanSearch;
+      return LucideIcons.scanSearch;
     case 'ScanText':
-      return shad.LucideIcons.scanText;
+      return LucideIcons.scanText;
     case 'School':
-      return shad.LucideIcons.school;
+      return LucideIcons.school;
     case 'Scissors':
-      return shad.LucideIcons.scissors;
+      return LucideIcons.scissors;
     case 'ScissorsLineDashed':
-      return shad.LucideIcons.scissorsLineDashed;
+      return LucideIcons.scissorsLineDashed;
     case 'ScreenShare':
-      return shad.LucideIcons.screenShare;
+      return LucideIcons.screenShare;
     case 'ScreenShareOff':
-      return shad.LucideIcons.screenShareOff;
+      return LucideIcons.screenShareOff;
     case 'Scroll':
-      return shad.LucideIcons.scroll;
+      return LucideIcons.scroll;
     case 'ScrollText':
-      return shad.LucideIcons.scrollText;
+      return LucideIcons.scrollText;
     case 'Search':
-      return shad.LucideIcons.search;
+      return LucideIcons.search;
     case 'SearchCheck':
-      return shad.LucideIcons.searchCheck;
+      return LucideIcons.searchCheck;
     case 'SearchCode':
-      return shad.LucideIcons.searchCode;
+      return LucideIcons.searchCode;
     case 'SearchSlash':
-      return shad.LucideIcons.searchSlash;
+      return LucideIcons.searchSlash;
     case 'SearchX':
-      return shad.LucideIcons.searchX;
+      return LucideIcons.searchX;
     case 'Section':
-      return shad.LucideIcons.section;
+      return LucideIcons.section;
     case 'Send':
-      return shad.LucideIcons.send;
+      return LucideIcons.send;
     case 'SendHorizontal':
-      return shad.LucideIcons.sendHorizontal;
+      return LucideIcons.sendHorizontal;
     case 'SendToBack':
-      return shad.LucideIcons.sendToBack;
+      return LucideIcons.sendToBack;
     case 'SeparatorHorizontal':
-      return shad.LucideIcons.separatorHorizontal;
+      return LucideIcons.separatorHorizontal;
     case 'SeparatorVertical':
-      return shad.LucideIcons.separatorVertical;
+      return LucideIcons.separatorVertical;
     case 'Server':
-      return shad.LucideIcons.server;
+      return LucideIcons.server;
     case 'ServerCog':
-      return shad.LucideIcons.serverCog;
+      return LucideIcons.serverCog;
     case 'ServerCrash':
-      return shad.LucideIcons.serverCrash;
+      return LucideIcons.serverCrash;
     case 'ServerOff':
-      return shad.LucideIcons.serverOff;
+      return LucideIcons.serverOff;
     case 'Settings':
-      return shad.LucideIcons.settings;
+      return LucideIcons.settings;
     case 'Settings2':
-      return shad.LucideIcons.settings2;
+      return LucideIcons.settings2;
     case 'Shapes':
-      return shad.LucideIcons.shapes;
+      return LucideIcons.shapes;
     case 'Share':
-      return shad.LucideIcons.share;
+      return LucideIcons.share;
     case 'Share2':
-      return shad.LucideIcons.share2;
+      return LucideIcons.share2;
     case 'Sheet':
-      return shad.LucideIcons.sheet;
+      return LucideIcons.sheet;
     case 'Shell':
-      return shad.LucideIcons.shell;
+      return LucideIcons.shell;
     case 'Shield':
-      return shad.LucideIcons.shield;
+      return LucideIcons.shield;
     case 'ShieldAlert':
-      return shad.LucideIcons.shieldAlert;
+      return LucideIcons.shieldAlert;
     case 'ShieldBan':
-      return shad.LucideIcons.shieldBan;
+      return LucideIcons.shieldBan;
     case 'ShieldCheck':
-      return shad.LucideIcons.shieldCheck;
+      return LucideIcons.shieldCheck;
     case 'ShieldEllipsis':
-      return shad.LucideIcons.shieldEllipsis;
+      return LucideIcons.shieldEllipsis;
     case 'ShieldHalf':
-      return shad.LucideIcons.shieldHalf;
+      return LucideIcons.shieldHalf;
     case 'ShieldMinus':
-      return shad.LucideIcons.shieldMinus;
+      return LucideIcons.shieldMinus;
     case 'ShieldOff':
-      return shad.LucideIcons.shieldOff;
+      return LucideIcons.shieldOff;
     case 'ShieldPlus':
-      return shad.LucideIcons.shieldPlus;
+      return LucideIcons.shieldPlus;
     case 'ShieldUser':
-      return shad.LucideIcons.shieldUser;
+      return LucideIcons.shieldUser;
     case 'ShieldX':
-      return shad.LucideIcons.shieldX;
+      return LucideIcons.shieldX;
     case 'Ship':
-      return shad.LucideIcons.ship;
+      return LucideIcons.ship;
     case 'ShipWheel':
-      return shad.LucideIcons.shipWheel;
+      return LucideIcons.shipWheel;
     case 'Shirt':
-      return shad.LucideIcons.shirt;
+      return LucideIcons.shirt;
     case 'ShoppingBag':
-      return shad.LucideIcons.shoppingBag;
+      return LucideIcons.shoppingBag;
     case 'ShoppingBasket':
-      return shad.LucideIcons.shoppingBasket;
+      return LucideIcons.shoppingBasket;
     case 'ShoppingCart':
-      return shad.LucideIcons.shoppingCart;
+      return LucideIcons.shoppingCart;
     case 'Shovel':
-      return shad.LucideIcons.shovel;
+      return LucideIcons.shovel;
     case 'ShowerHead':
-      return shad.LucideIcons.showerHead;
+      return LucideIcons.showerHead;
     case 'Shrink':
-      return shad.LucideIcons.shrink;
+      return LucideIcons.shrink;
     case 'Shrub':
-      return shad.LucideIcons.shrub;
+      return LucideIcons.shrub;
     case 'Shuffle':
-      return shad.LucideIcons.shuffle;
+      return LucideIcons.shuffle;
     case 'Sigma':
-      return shad.LucideIcons.sigma;
+      return LucideIcons.sigma;
     case 'Signal':
-      return shad.LucideIcons.signal;
+      return LucideIcons.signal;
     case 'SignalHigh':
-      return shad.LucideIcons.signalHigh;
+      return LucideIcons.signalHigh;
     case 'SignalLow':
-      return shad.LucideIcons.signalLow;
+      return LucideIcons.signalLow;
     case 'SignalMedium':
-      return shad.LucideIcons.signalMedium;
+      return LucideIcons.signalMedium;
     case 'SignalZero':
-      return shad.LucideIcons.signalZero;
+      return LucideIcons.signalZero;
     case 'Signature':
-      return shad.LucideIcons.signature;
+      return LucideIcons.signature;
     case 'Signpost':
-      return shad.LucideIcons.signpost;
+      return LucideIcons.signpost;
     case 'SignpostBig':
-      return shad.LucideIcons.signpostBig;
+      return LucideIcons.signpostBig;
     case 'Siren':
-      return shad.LucideIcons.siren;
+      return LucideIcons.siren;
     case 'SkipBack':
-      return shad.LucideIcons.skipBack;
+      return LucideIcons.skipBack;
     case 'SkipForward':
-      return shad.LucideIcons.skipForward;
+      return LucideIcons.skipForward;
     case 'Skull':
-      return shad.LucideIcons.skull;
+      return LucideIcons.skull;
     case 'Slack':
-      return shad.LucideIcons.slack;
+      return AppIcons.slack;
     case 'Slash':
-      return shad.LucideIcons.slash;
+      return LucideIcons.slash;
     case 'Slice':
-      return shad.LucideIcons.slice;
+      return LucideIcons.slice;
     case 'SlidersHorizontal':
-      return shad.LucideIcons.slidersHorizontal;
+      return LucideIcons.slidersHorizontal;
     case 'SlidersVertical':
-      return shad.LucideIcons.slidersVertical;
+      return LucideIcons.slidersVertical;
     case 'Smartphone':
-      return shad.LucideIcons.smartphone;
+      return LucideIcons.smartphone;
     case 'SmartphoneCharging':
-      return shad.LucideIcons.smartphoneCharging;
+      return LucideIcons.smartphoneCharging;
     case 'SmartphoneNfc':
-      return shad.LucideIcons.smartphoneNfc;
+      return LucideIcons.smartphoneNfc;
     case 'Smile':
-      return shad.LucideIcons.smile;
+      return LucideIcons.smile;
     case 'SmilePlus':
-      return shad.LucideIcons.smilePlus;
+      return LucideIcons.smilePlus;
     case 'Snail':
-      return shad.LucideIcons.snail;
+      return LucideIcons.snail;
     case 'Snowflake':
-      return shad.LucideIcons.snowflake;
+      return LucideIcons.snowflake;
     case 'Sofa':
-      return shad.LucideIcons.sofa;
+      return LucideIcons.sofa;
     case 'Soup':
-      return shad.LucideIcons.soup;
+      return LucideIcons.soup;
     case 'Space':
-      return shad.LucideIcons.space;
+      return LucideIcons.space;
     case 'Spade':
-      return shad.LucideIcons.spade;
+      return LucideIcons.spade;
     case 'Sparkle':
-      return shad.LucideIcons.sparkle;
+      return LucideIcons.sparkle;
     case 'Sparkles':
-      return shad.LucideIcons.sparkles;
+      return LucideIcons.sparkles;
     case 'Speaker':
-      return shad.LucideIcons.speaker;
+      return LucideIcons.speaker;
     case 'Speech':
-      return shad.LucideIcons.speech;
+      return LucideIcons.speech;
     case 'SpellCheck':
-      return shad.LucideIcons.spellCheck;
+      return LucideIcons.spellCheck;
     case 'SpellCheck2':
-      return shad.LucideIcons.spellCheck2;
+      return LucideIcons.spellCheck2;
     case 'Spline':
-      return shad.LucideIcons.spline;
+      return LucideIcons.spline;
     case 'Split':
-      return shad.LucideIcons.split;
+      return LucideIcons.split;
     case 'SprayCan':
-      return shad.LucideIcons.sprayCan;
+      return LucideIcons.sprayCan;
     case 'Sprout':
-      return shad.LucideIcons.sprout;
+      return LucideIcons.sprout;
     case 'Square':
-      return shad.LucideIcons.square;
+      return LucideIcons.square;
     case 'SquareActivity':
-      return shad.LucideIcons.squareActivity;
+      return LucideIcons.squareActivity;
     case 'SquareArrowDown':
-      return shad.LucideIcons.squareArrowDown;
+      return LucideIcons.squareArrowDown;
     case 'SquareArrowDownLeft':
-      return shad.LucideIcons.squareArrowDownLeft;
+      return LucideIcons.squareArrowDownLeft;
     case 'SquareArrowDownRight':
-      return shad.LucideIcons.squareArrowDownRight;
+      return LucideIcons.squareArrowDownRight;
     case 'SquareArrowLeft':
-      return shad.LucideIcons.squareArrowLeft;
+      return LucideIcons.squareArrowLeft;
     case 'SquareArrowOutDownLeft':
-      return shad.LucideIcons.squareArrowOutDownLeft;
+      return LucideIcons.squareArrowOutDownLeft;
     case 'SquareArrowOutDownRight':
-      return shad.LucideIcons.squareArrowOutDownRight;
+      return LucideIcons.squareArrowOutDownRight;
     case 'SquareArrowOutUpLeft':
-      return shad.LucideIcons.squareArrowOutUpLeft;
+      return LucideIcons.squareArrowOutUpLeft;
     case 'SquareArrowOutUpRight':
-      return shad.LucideIcons.squareArrowOutUpRight;
+      return LucideIcons.squareArrowOutUpRight;
     case 'SquareArrowRight':
-      return shad.LucideIcons.squareArrowRight;
+      return LucideIcons.squareArrowRight;
     case 'SquareArrowUp':
-      return shad.LucideIcons.squareArrowUp;
+      return LucideIcons.squareArrowUp;
     case 'SquareArrowUpLeft':
-      return shad.LucideIcons.squareArrowUpLeft;
+      return LucideIcons.squareArrowUpLeft;
     case 'SquareArrowUpRight':
-      return shad.LucideIcons.squareArrowUpRight;
+      return LucideIcons.squareArrowUpRight;
     case 'SquareAsterisk':
-      return shad.LucideIcons.squareAsterisk;
+      return LucideIcons.squareAsterisk;
     case 'SquareBottomDashedScissors':
-      return shad.LucideIcons.squareBottomDashedScissors;
+      return LucideIcons.squareBottomDashedScissors;
     case 'SquareChartGantt':
-      return shad.LucideIcons.squareChartGantt;
+      return LucideIcons.squareChartGantt;
     case 'SquareCheck':
-      return shad.LucideIcons.squareCheck;
+      return LucideIcons.squareCheck;
     case 'SquareCheckBig':
-      return shad.LucideIcons.squareCheckBig;
+      return LucideIcons.squareCheckBig;
     case 'SquareChevronDown':
-      return shad.LucideIcons.squareChevronDown;
+      return LucideIcons.squareChevronDown;
     case 'SquareChevronLeft':
-      return shad.LucideIcons.squareChevronLeft;
+      return LucideIcons.squareChevronLeft;
     case 'SquareChevronRight':
-      return shad.LucideIcons.squareChevronRight;
+      return LucideIcons.squareChevronRight;
     case 'SquareChevronUp':
-      return shad.LucideIcons.squareChevronUp;
+      return LucideIcons.squareChevronUp;
     case 'SquareCode':
-      return shad.LucideIcons.squareCode;
+      return LucideIcons.squareCode;
     case 'SquareDashed':
-      return shad.LucideIcons.squareDashed;
+      return LucideIcons.squareDashed;
     case 'SquareDashedBottom':
-      return shad.LucideIcons.squareDashedBottom;
+      return LucideIcons.squareDashedBottom;
     case 'SquareDashedBottomCode':
-      return shad.LucideIcons.squareDashedBottomCode;
+      return LucideIcons.squareDashedBottomCode;
     case 'SquareDashedKanban':
-      return shad.LucideIcons.squareDashedKanban;
+      return LucideIcons.squareDashedKanban;
     case 'SquareDashedMousePointer':
-      return shad.LucideIcons.squareDashedMousePointer;
+      return LucideIcons.squareDashedMousePointer;
     case 'SquareDivide':
-      return shad.LucideIcons.squareDivide;
+      return LucideIcons.squareDivide;
     case 'SquareDot':
-      return shad.LucideIcons.squareDot;
+      return LucideIcons.squareDot;
     case 'SquareEqual':
-      return shad.LucideIcons.squareEqual;
+      return LucideIcons.squareEqual;
     case 'SquareFunction':
-      return shad.LucideIcons.squareFunction;
+      return LucideIcons.squareFunction;
     case 'SquareKanban':
-      return shad.LucideIcons.squareKanban;
+      return LucideIcons.squareKanban;
     case 'SquareLibrary':
-      return shad.LucideIcons.squareLibrary;
+      return LucideIcons.squareLibrary;
     case 'SquareM':
-      return shad.LucideIcons.squareM;
+      return LucideIcons.squareM;
     case 'SquareMenu':
-      return shad.LucideIcons.squareMenu;
+      return LucideIcons.squareMenu;
     case 'SquareMinus':
-      return shad.LucideIcons.squareMinus;
+      return LucideIcons.squareMinus;
     case 'SquareMousePointer':
-      return shad.LucideIcons.squareMousePointer;
+      return LucideIcons.squareMousePointer;
     case 'SquareParking':
-      return shad.LucideIcons.squareParking;
+      return LucideIcons.squareParking;
     case 'SquareParkingOff':
-      return shad.LucideIcons.squareParkingOff;
+      return LucideIcons.squareParkingOff;
     case 'SquarePen':
-      return shad.LucideIcons.squarePen;
+      return LucideIcons.squarePen;
     case 'SquarePercent':
-      return shad.LucideIcons.squarePercent;
+      return LucideIcons.squarePercent;
     case 'SquarePi':
-      return shad.LucideIcons.squarePi;
+      return LucideIcons.squarePi;
     case 'SquarePilcrow':
-      return shad.LucideIcons.squarePilcrow;
+      return LucideIcons.squarePilcrow;
     case 'SquarePlay':
-      return shad.LucideIcons.squarePlay;
+      return LucideIcons.squarePlay;
     case 'SquarePlus':
-      return shad.LucideIcons.squarePlus;
+      return LucideIcons.squarePlus;
     case 'SquarePower':
-      return shad.LucideIcons.squarePower;
+      return LucideIcons.squarePower;
     case 'SquareRadical':
-      return shad.LucideIcons.squareRadical;
+      return LucideIcons.squareRadical;
     case 'SquareRoundCorner':
-      return shad.LucideIcons.squareRoundCorner;
+      return LucideIcons.squareRoundCorner;
     case 'SquareScissors':
-      return shad.LucideIcons.squareScissors;
+      return LucideIcons.squareScissors;
     case 'SquareSigma':
-      return shad.LucideIcons.squareSigma;
+      return LucideIcons.squareSigma;
     case 'SquareSlash':
-      return shad.LucideIcons.squareSlash;
+      return LucideIcons.squareSlash;
     case 'SquareSplitHorizontal':
-      return shad.LucideIcons.squareSplitHorizontal;
+      return LucideIcons.squareSplitHorizontal;
     case 'SquareSplitVertical':
-      return shad.LucideIcons.squareSplitVertical;
+      return LucideIcons.squareSplitVertical;
     case 'SquareSquare':
-      return shad.LucideIcons.squareSquare;
+      return LucideIcons.squareSquare;
     case 'SquareStack':
-      return shad.LucideIcons.squareStack;
+      return LucideIcons.squareStack;
     case 'SquareTerminal':
-      return shad.LucideIcons.squareTerminal;
+      return LucideIcons.squareTerminal;
     case 'SquareUser':
-      return shad.LucideIcons.squareUser;
+      return LucideIcons.squareUser;
     case 'SquareUserRound':
-      return shad.LucideIcons.squareUserRound;
+      return LucideIcons.squareUserRound;
     case 'SquareX':
-      return shad.LucideIcons.squareX;
+      return LucideIcons.squareX;
     case 'Squircle':
-      return shad.LucideIcons.squircle;
+      return LucideIcons.squircle;
     case 'Squirrel':
-      return shad.LucideIcons.squirrel;
+      return LucideIcons.squirrel;
     case 'Stamp':
-      return shad.LucideIcons.stamp;
+      return LucideIcons.stamp;
     case 'Star':
-      return shad.LucideIcons.star;
+      return LucideIcons.star;
     case 'StarHalf':
-      return shad.LucideIcons.starHalf;
+      return LucideIcons.starHalf;
     case 'StarOff':
-      return shad.LucideIcons.starOff;
+      return LucideIcons.starOff;
     case 'StepBack':
-      return shad.LucideIcons.stepBack;
+      return LucideIcons.stepBack;
     case 'StepForward':
-      return shad.LucideIcons.stepForward;
+      return LucideIcons.stepForward;
     case 'Stethoscope':
-      return shad.LucideIcons.stethoscope;
+      return LucideIcons.stethoscope;
     case 'Sticker':
-      return shad.LucideIcons.sticker;
+      return LucideIcons.sticker;
     case 'StickyNote':
-      return shad.LucideIcons.stickyNote;
+      return LucideIcons.stickyNote;
     case 'Store':
-      return shad.LucideIcons.store;
+      return LucideIcons.store;
     case 'StretchHorizontal':
-      return shad.LucideIcons.stretchHorizontal;
+      return LucideIcons.stretchHorizontal;
     case 'StretchVertical':
-      return shad.LucideIcons.stretchVertical;
+      return LucideIcons.stretchVertical;
     case 'Strikethrough':
-      return shad.LucideIcons.strikethrough;
+      return LucideIcons.strikethrough;
     case 'Subscript':
-      return shad.LucideIcons.subscript;
+      return LucideIcons.subscript;
     case 'Sun':
-      return shad.LucideIcons.sun;
+      return LucideIcons.sun;
     case 'SunDim':
-      return shad.LucideIcons.sunDim;
+      return LucideIcons.sunDim;
     case 'SunMedium':
-      return shad.LucideIcons.sunMedium;
+      return LucideIcons.sunMedium;
     case 'SunMoon':
-      return shad.LucideIcons.sunMoon;
+      return LucideIcons.sunMoon;
     case 'SunSnow':
-      return shad.LucideIcons.sunSnow;
+      return LucideIcons.sunSnow;
     case 'Sunrise':
-      return shad.LucideIcons.sunrise;
+      return LucideIcons.sunrise;
     case 'Sunset':
-      return shad.LucideIcons.sunset;
+      return LucideIcons.sunset;
     case 'Superscript':
-      return shad.LucideIcons.superscript;
+      return LucideIcons.superscript;
     case 'SwatchBook':
-      return shad.LucideIcons.swatchBook;
+      return LucideIcons.swatchBook;
     case 'SwissFranc':
-      return shad.LucideIcons.swissFranc;
+      return LucideIcons.swissFranc;
     case 'SwitchCamera':
-      return shad.LucideIcons.switchCamera;
+      return LucideIcons.switchCamera;
     case 'Sword':
-      return shad.LucideIcons.sword;
+      return LucideIcons.sword;
     case 'Swords':
-      return shad.LucideIcons.swords;
+      return LucideIcons.swords;
     case 'Syringe':
-      return shad.LucideIcons.syringe;
+      return LucideIcons.syringe;
     case 'Table':
-      return shad.LucideIcons.table;
+      return LucideIcons.table;
     case 'Table2':
-      return shad.LucideIcons.table2;
+      return LucideIcons.table2;
     case 'TableCellsMerge':
-      return shad.LucideIcons.tableCellsMerge;
+      return LucideIcons.tableCellsMerge;
     case 'TableCellsSplit':
-      return shad.LucideIcons.tableCellsSplit;
+      return LucideIcons.tableCellsSplit;
     case 'TableColumnsSplit':
-      return shad.LucideIcons.tableColumnsSplit;
+      return LucideIcons.tableColumnsSplit;
     case 'TableOfContents':
-      return shad.LucideIcons.tableOfContents;
+      return LucideIcons.tableOfContents;
     case 'TableProperties':
-      return shad.LucideIcons.tableProperties;
+      return LucideIcons.tableProperties;
     case 'TableRowsSplit':
-      return shad.LucideIcons.tableRowsSplit;
+      return LucideIcons.tableRowsSplit;
     case 'Tablet':
-      return shad.LucideIcons.tablet;
+      return LucideIcons.tablet;
     case 'TabletSmartphone':
-      return shad.LucideIcons.tabletSmartphone;
+      return LucideIcons.tabletSmartphone;
     case 'Tablets':
-      return shad.LucideIcons.tablets;
+      return LucideIcons.tablets;
     case 'Tag':
-      return shad.LucideIcons.tag;
+      return LucideIcons.tag;
     case 'Tags':
-      return shad.LucideIcons.tags;
+      return LucideIcons.tags;
     case 'Tally1':
-      return shad.LucideIcons.tally1;
+      return LucideIcons.tally1;
     case 'Tally2':
-      return shad.LucideIcons.tally2;
+      return LucideIcons.tally2;
     case 'Tally3':
-      return shad.LucideIcons.tally3;
+      return LucideIcons.tally3;
     case 'Tally4':
-      return shad.LucideIcons.tally4;
+      return LucideIcons.tally4;
     case 'Tally5':
-      return shad.LucideIcons.tally5;
+      return LucideIcons.tally5;
     case 'Tangent':
-      return shad.LucideIcons.tangent;
+      return LucideIcons.tangent;
     case 'Target':
-      return shad.LucideIcons.target;
+      return LucideIcons.target;
     case 'Telescope':
-      return shad.LucideIcons.telescope;
+      return LucideIcons.telescope;
     case 'Tent':
-      return shad.LucideIcons.tent;
+      return LucideIcons.tent;
     case 'TentTree':
-      return shad.LucideIcons.tentTree;
+      return LucideIcons.tentTree;
     case 'Terminal':
-      return shad.LucideIcons.terminal;
+      return LucideIcons.terminal;
     case 'TestTube':
-      return shad.LucideIcons.testTube;
+      return LucideIcons.testTube;
     case 'TestTubeDiagonal':
-      return shad.LucideIcons.testTubeDiagonal;
+      return LucideIcons.testTubeDiagonal;
     case 'TestTubes':
-      return shad.LucideIcons.testTubes;
+      return LucideIcons.testTubes;
     case 'TextCursor':
-      return shad.LucideIcons.textCursor;
+      return LucideIcons.textCursor;
     case 'TextCursorInput':
-      return shad.LucideIcons.textCursorInput;
+      return LucideIcons.textCursorInput;
     case 'TextQuote':
-      return shad.LucideIcons.textQuote;
+      return LucideIcons.textQuote;
     case 'TextSearch':
-      return shad.LucideIcons.textSearch;
+      return LucideIcons.textSearch;
     case 'TextSelect':
-      return shad.LucideIcons.textSelect;
+      return LucideIcons.textSelect;
     case 'Theater':
-      return shad.LucideIcons.theater;
+      return LucideIcons.theater;
     case 'Thermometer':
-      return shad.LucideIcons.thermometer;
+      return LucideIcons.thermometer;
     case 'ThermometerSnowflake':
-      return shad.LucideIcons.thermometerSnowflake;
+      return LucideIcons.thermometerSnowflake;
     case 'ThermometerSun':
-      return shad.LucideIcons.thermometerSun;
+      return LucideIcons.thermometerSun;
     case 'ThumbsDown':
-      return shad.LucideIcons.thumbsDown;
+      return LucideIcons.thumbsDown;
     case 'ThumbsUp':
-      return shad.LucideIcons.thumbsUp;
+      return LucideIcons.thumbsUp;
     case 'Ticket':
-      return shad.LucideIcons.ticket;
+      return LucideIcons.ticket;
     case 'TicketCheck':
-      return shad.LucideIcons.ticketCheck;
+      return LucideIcons.ticketCheck;
     case 'TicketMinus':
-      return shad.LucideIcons.ticketMinus;
+      return LucideIcons.ticketMinus;
     case 'TicketPercent':
-      return shad.LucideIcons.ticketPercent;
+      return LucideIcons.ticketPercent;
     case 'TicketPlus':
-      return shad.LucideIcons.ticketPlus;
+      return LucideIcons.ticketPlus;
     case 'TicketSlash':
-      return shad.LucideIcons.ticketSlash;
+      return LucideIcons.ticketSlash;
     case 'TicketX':
-      return shad.LucideIcons.ticketX;
+      return LucideIcons.ticketX;
     case 'Tickets':
-      return shad.LucideIcons.tickets;
+      return LucideIcons.tickets;
     case 'TicketsPlane':
-      return shad.LucideIcons.ticketsPlane;
+      return LucideIcons.ticketsPlane;
     case 'Timer':
-      return shad.LucideIcons.timer;
+      return LucideIcons.timer;
     case 'TimerOff':
-      return shad.LucideIcons.timerOff;
+      return LucideIcons.timerOff;
     case 'TimerReset':
-      return shad.LucideIcons.timerReset;
+      return LucideIcons.timerReset;
     case 'ToggleLeft':
-      return shad.LucideIcons.toggleLeft;
+      return LucideIcons.toggleLeft;
     case 'ToggleRight':
-      return shad.LucideIcons.toggleRight;
+      return LucideIcons.toggleRight;
     case 'Toilet':
-      return shad.LucideIcons.toilet;
+      return LucideIcons.toilet;
     case 'Tornado':
-      return shad.LucideIcons.tornado;
+      return LucideIcons.tornado;
     case 'Torus':
-      return shad.LucideIcons.torus;
+      return LucideIcons.torus;
     case 'Touchpad':
-      return shad.LucideIcons.touchpad;
+      return LucideIcons.touchpad;
     case 'TouchpadOff':
-      return shad.LucideIcons.touchpadOff;
+      return LucideIcons.touchpadOff;
     case 'TowerControl':
-      return shad.LucideIcons.towerControl;
+      return LucideIcons.towerControl;
     case 'ToyBrick':
-      return shad.LucideIcons.toyBrick;
+      return LucideIcons.toyBrick;
     case 'Tractor':
-      return shad.LucideIcons.tractor;
+      return LucideIcons.tractor;
     case 'TrafficCone':
-      return shad.LucideIcons.trafficCone;
+      return LucideIcons.trafficCone;
     case 'TrainFront':
-      return shad.LucideIcons.trainFront;
+      return LucideIcons.trainFront;
     case 'TrainFrontTunnel':
-      return shad.LucideIcons.trainFrontTunnel;
+      return LucideIcons.trainFrontTunnel;
     case 'TrainTrack':
-      return shad.LucideIcons.trainTrack;
+      return LucideIcons.trainTrack;
     case 'TramFront':
-      return shad.LucideIcons.tramFront;
+      return LucideIcons.tramFront;
     case 'Transgender':
-      return shad.LucideIcons.transgender;
+      return LucideIcons.transgender;
     case 'Trash':
-      return shad.LucideIcons.trash;
+      return LucideIcons.trash;
     case 'Trash2':
-      return shad.LucideIcons.trash2;
+      return LucideIcons.trash2;
     case 'TreeDeciduous':
-      return shad.LucideIcons.treeDeciduous;
+      return LucideIcons.treeDeciduous;
     case 'TreePalm':
-      return shad.LucideIcons.treePalm;
+      return LucideIcons.treePalm;
     case 'TreePine':
-      return shad.LucideIcons.treePine;
+      return LucideIcons.treePine;
     case 'Trees':
-      return shad.LucideIcons.trees;
+      return LucideIcons.trees;
     case 'Trello':
-      return shad.LucideIcons.trello;
+      return AppIcons.trello;
     case 'TrendingDown':
-      return shad.LucideIcons.trendingDown;
+      return LucideIcons.trendingDown;
     case 'TrendingUp':
-      return shad.LucideIcons.trendingUp;
+      return LucideIcons.trendingUp;
     case 'TrendingUpDown':
-      return shad.LucideIcons.trendingUpDown;
+      return LucideIcons.trendingUpDown;
     case 'Triangle':
-      return shad.LucideIcons.triangle;
+      return LucideIcons.triangle;
     case 'TriangleAlert':
-      return shad.LucideIcons.triangleAlert;
+      return LucideIcons.triangleAlert;
     case 'TriangleDashed':
-      return shad.LucideIcons.triangleDashed;
+      return LucideIcons.triangleDashed;
     case 'TriangleRight':
-      return shad.LucideIcons.triangleRight;
+      return LucideIcons.triangleRight;
     case 'Trophy':
-      return shad.LucideIcons.trophy;
+      return LucideIcons.trophy;
     case 'Truck':
-      return shad.LucideIcons.truck;
+      return LucideIcons.truck;
     case 'Turtle':
-      return shad.LucideIcons.turtle;
+      return LucideIcons.turtle;
     case 'Tv':
-      return shad.LucideIcons.tv;
+      return LucideIcons.tv;
     case 'TvMinimal':
-      return shad.LucideIcons.tvMinimal;
+      return LucideIcons.tvMinimal;
     case 'TvMinimalPlay':
-      return shad.LucideIcons.tvMinimalPlay;
+      return LucideIcons.tvMinimalPlay;
     case 'Twitch':
-      return shad.LucideIcons.twitch;
+      return AppIcons.twitch;
     case 'Twitter':
-      return shad.LucideIcons.twitter;
+      return AppIcons.twitter;
     case 'Type':
-      return shad.LucideIcons.type;
+      return LucideIcons.type;
     case 'TypeOutline':
-      return shad.LucideIcons.typeOutline;
+      return LucideIcons.typeOutline;
     case 'Umbrella':
-      return shad.LucideIcons.umbrella;
+      return LucideIcons.umbrella;
     case 'UmbrellaOff':
-      return shad.LucideIcons.umbrellaOff;
+      return LucideIcons.umbrellaOff;
     case 'Underline':
-      return shad.LucideIcons.underline;
+      return LucideIcons.underline;
     case 'Undo':
-      return shad.LucideIcons.undo;
+      return LucideIcons.undo;
     case 'Undo2':
-      return shad.LucideIcons.undo2;
+      return LucideIcons.undo2;
     case 'UndoDot':
-      return shad.LucideIcons.undoDot;
+      return LucideIcons.undoDot;
     case 'UnfoldHorizontal':
-      return shad.LucideIcons.unfoldHorizontal;
+      return LucideIcons.unfoldHorizontal;
     case 'UnfoldVertical':
-      return shad.LucideIcons.unfoldVertical;
+      return LucideIcons.unfoldVertical;
     case 'Ungroup':
-      return shad.LucideIcons.ungroup;
+      return LucideIcons.ungroup;
     case 'University':
-      return shad.LucideIcons.university;
+      return LucideIcons.university;
     case 'Unlink':
-      return shad.LucideIcons.unlink;
+      return LucideIcons.unlink;
     case 'Unlink2':
-      return shad.LucideIcons.unlink2;
+      return LucideIcons.unlink2;
     case 'Unplug':
-      return shad.LucideIcons.unplug;
+      return LucideIcons.unplug;
     case 'Upload':
-      return shad.LucideIcons.upload;
+      return LucideIcons.upload;
     case 'Usb':
-      return shad.LucideIcons.usb;
+      return LucideIcons.usb;
     case 'User':
-      return shad.LucideIcons.user;
+      return LucideIcons.user;
     case 'UserCheck':
-      return shad.LucideIcons.userCheck;
+      return LucideIcons.userCheck;
     case 'UserCog':
-      return shad.LucideIcons.userCog;
+      return LucideIcons.userCog;
     case 'UserMinus':
-      return shad.LucideIcons.userMinus;
+      return LucideIcons.userMinus;
     case 'UserPen':
-      return shad.LucideIcons.userPen;
+      return LucideIcons.userPen;
     case 'UserPlus':
-      return shad.LucideIcons.userPlus;
+      return LucideIcons.userPlus;
     case 'UserRound':
-      return shad.LucideIcons.userRound;
+      return LucideIcons.userRound;
     case 'UserRoundCheck':
-      return shad.LucideIcons.userRoundCheck;
+      return LucideIcons.userRoundCheck;
     case 'UserRoundCog':
-      return shad.LucideIcons.userRoundCog;
+      return LucideIcons.userRoundCog;
     case 'UserRoundMinus':
-      return shad.LucideIcons.userRoundMinus;
+      return LucideIcons.userRoundMinus;
     case 'UserRoundPen':
-      return shad.LucideIcons.userRoundPen;
+      return LucideIcons.userRoundPen;
     case 'UserRoundPlus':
-      return shad.LucideIcons.userRoundPlus;
+      return LucideIcons.userRoundPlus;
     case 'UserRoundSearch':
-      return shad.LucideIcons.userRoundSearch;
+      return LucideIcons.userRoundSearch;
     case 'UserRoundX':
-      return shad.LucideIcons.userRoundX;
+      return LucideIcons.userRoundX;
     case 'UserSearch':
-      return shad.LucideIcons.userSearch;
+      return LucideIcons.userSearch;
     case 'UserX':
-      return shad.LucideIcons.userX;
+      return LucideIcons.userX;
     case 'Users':
-      return shad.LucideIcons.users;
+      return LucideIcons.users;
     case 'UsersRound':
-      return shad.LucideIcons.usersRound;
+      return LucideIcons.usersRound;
     case 'Utensils':
-      return shad.LucideIcons.utensils;
+      return LucideIcons.utensils;
     case 'UtensilsCrossed':
-      return shad.LucideIcons.utensilsCrossed;
+      return LucideIcons.utensilsCrossed;
     case 'UtilityPole':
-      return shad.LucideIcons.utilityPole;
+      return LucideIcons.utilityPole;
     case 'Variable':
-      return shad.LucideIcons.variable;
+      return LucideIcons.variable;
     case 'Vault':
-      return shad.LucideIcons.vault;
+      return LucideIcons.vault;
     case 'Vegan':
-      return shad.LucideIcons.vegan;
+      return LucideIcons.vegan;
     case 'VenetianMask':
-      return shad.LucideIcons.venetianMask;
+      return LucideIcons.venetianMask;
     case 'Venus':
-      return shad.LucideIcons.venus;
+      return LucideIcons.venus;
     case 'VenusAndMars':
-      return shad.LucideIcons.venusAndMars;
+      return LucideIcons.venusAndMars;
     case 'Vibrate':
-      return shad.LucideIcons.vibrate;
+      return LucideIcons.vibrate;
     case 'VibrateOff':
-      return shad.LucideIcons.vibrateOff;
+      return LucideIcons.vibrateOff;
     case 'Video':
-      return shad.LucideIcons.video;
+      return LucideIcons.video;
     case 'VideoOff':
-      return shad.LucideIcons.videoOff;
+      return LucideIcons.videoOff;
     case 'Videotape':
-      return shad.LucideIcons.videotape;
+      return LucideIcons.videotape;
     case 'View':
-      return shad.LucideIcons.view;
+      return LucideIcons.view;
     case 'Voicemail':
-      return shad.LucideIcons.voicemail;
+      return LucideIcons.voicemail;
     case 'Volleyball':
-      return shad.LucideIcons.volleyball;
+      return LucideIcons.volleyball;
     case 'Volume':
-      return shad.LucideIcons.volume;
+      return LucideIcons.volume;
     case 'Volume1':
-      return shad.LucideIcons.volume1;
+      return LucideIcons.volume1;
     case 'Volume2':
-      return shad.LucideIcons.volume2;
+      return LucideIcons.volume2;
     case 'VolumeOff':
-      return shad.LucideIcons.volumeOff;
+      return LucideIcons.volumeOff;
     case 'VolumeX':
-      return shad.LucideIcons.volumeX;
+      return LucideIcons.volumeX;
     case 'Vote':
-      return shad.LucideIcons.vote;
+      return LucideIcons.vote;
     case 'Wallet':
-      return shad.LucideIcons.wallet;
+      return LucideIcons.wallet;
     case 'WalletCards':
-      return shad.LucideIcons.walletCards;
+      return LucideIcons.walletCards;
     case 'WalletMinimal':
-      return shad.LucideIcons.walletMinimal;
+      return LucideIcons.walletMinimal;
     case 'Wallpaper':
-      return shad.LucideIcons.wallpaper;
+      return LucideIcons.wallpaper;
     case 'Wand':
-      return shad.LucideIcons.wand;
+      return LucideIcons.wand;
     case 'WandSparkles':
-      return shad.LucideIcons.wandSparkles;
+      return LucideIcons.wandSparkles;
     case 'Warehouse':
-      return shad.LucideIcons.warehouse;
+      return LucideIcons.warehouse;
     case 'WashingMachine':
-      return shad.LucideIcons.washingMachine;
+      return LucideIcons.washingMachine;
     case 'Watch':
-      return shad.LucideIcons.watch;
+      return LucideIcons.watch;
     case 'Waves':
-      return shad.LucideIcons.waves;
+      return LucideIcons.waves;
     case 'WavesLadder':
-      return shad.LucideIcons.wavesLadder;
+      return LucideIcons.wavesLadder;
     case 'Waypoints':
-      return shad.LucideIcons.waypoints;
+      return LucideIcons.waypoints;
     case 'Webcam':
-      return shad.LucideIcons.webcam;
+      return LucideIcons.webcam;
     case 'Webhook':
-      return shad.LucideIcons.webhook;
+      return LucideIcons.webhook;
     case 'WebhookOff':
-      return shad.LucideIcons.webhookOff;
+      return LucideIcons.webhookOff;
     case 'Weight':
-      return shad.LucideIcons.weight;
+      return LucideIcons.weight;
     case 'Wheat':
-      return shad.LucideIcons.wheat;
+      return LucideIcons.wheat;
     case 'WheatOff':
-      return shad.LucideIcons.wheatOff;
+      return LucideIcons.wheatOff;
     case 'WholeWord':
-      return shad.LucideIcons.wholeWord;
+      return LucideIcons.wholeWord;
     case 'Wifi':
-      return shad.LucideIcons.wifi;
+      return LucideIcons.wifi;
     case 'WifiHigh':
-      return shad.LucideIcons.wifiHigh;
+      return LucideIcons.wifiHigh;
     case 'WifiLow':
-      return shad.LucideIcons.wifiLow;
+      return LucideIcons.wifiLow;
     case 'WifiOff':
-      return shad.LucideIcons.wifiOff;
+      return LucideIcons.wifiOff;
     case 'WifiZero':
-      return shad.LucideIcons.wifiZero;
+      return LucideIcons.wifiZero;
     case 'Wind':
-      return shad.LucideIcons.wind;
+      return LucideIcons.wind;
     case 'WindArrowDown':
-      return shad.LucideIcons.windArrowDown;
+      return LucideIcons.windArrowDown;
     case 'Wine':
-      return shad.LucideIcons.wine;
+      return LucideIcons.wine;
     case 'WineOff':
-      return shad.LucideIcons.wineOff;
+      return LucideIcons.wineOff;
     case 'Workflow':
-      return shad.LucideIcons.workflow;
+      return LucideIcons.workflow;
     case 'Worm':
-      return shad.LucideIcons.worm;
+      return LucideIcons.worm;
     case 'Wrench':
-      return shad.LucideIcons.wrench;
+      return LucideIcons.wrench;
     case 'X':
-      return shad.LucideIcons.x;
+      return LucideIcons.x;
     case 'Youtube':
-      return shad.LucideIcons.youtube;
+      return AppIcons.youtube;
     case 'Zap':
-      return shad.LucideIcons.zap;
+      return LucideIcons.zap;
     case 'ZapOff':
-      return shad.LucideIcons.zapOff;
+      return LucideIcons.zapOff;
     case 'ZoomIn':
-      return shad.LucideIcons.zoomIn;
+      return LucideIcons.zoomIn;
     case 'ZoomOut':
-      return shad.LucideIcons.zoomOut;
+      return LucideIcons.zoomOut;
     default:
       return null;
   }

@@ -231,7 +231,8 @@ test('legacy workflow controls pass under the feedback dispatch environment', ()
     ],
     {
       encoding: 'utf8',
-      timeout: 30000,
+      // The spawned legacy suite takes ~15s alone; leave headroom under load.
+      timeout: 60000,
       maxBuffer: 1024 * 1024,
       env,
     }

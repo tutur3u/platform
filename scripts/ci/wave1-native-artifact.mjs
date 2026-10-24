@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readRegularFileSync, writeExclusiveFileSync } from '../safe-fs.js';
 import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 import { assertMailNodeImports } from './mail-node-imports.mjs';
 import { profileFor, publicationConfig } from './wave1-native-profile.mjs';
@@ -45,12 +46,10 @@ export function inventory(root) {
       for (const entry of readdirSync(path).sort()) visit(resolve(path, entry));
     } else {
       assert.ok(stat.isFile(), 'Nonregular artifact file');
-      bytes += stat.size;
-      assert.ok(
-        bytes <= 1024 ** 3 && ++count <= 50000,
-        'Artifact budget exceeded'
-      );
-      files[name] = digest(readFileSync(path));
+      assert.ok(++count <= 50000, 'Artifact budget exceeded');
+      const data = readRegularFileSync(path, { maxBytes: 1024 ** 3 - bytes });
+      bytes += data.length;
+      files[name] = digest(data);
     }
   }
   visit(root);
@@ -105,7 +104,7 @@ export function prepare(appRoot, app, environment, subdomain, sha) {
     main: relative(dirname(config), main),
     assets: relative(dirname(config), assets),
   });
-  writeFileSync(config, `${JSON.stringify(declared, null, 2)}\n`);
+  writeExclusiveFileSync(config, `${JSON.stringify(declared, null, 2)}\n`);
   const receipt = {
     schema: 1,
     sha,

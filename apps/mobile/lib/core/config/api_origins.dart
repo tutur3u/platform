@@ -145,10 +145,13 @@ class ApiOrigins {
       // shared handlers available to the mobile Supabase Bearer session.
       return ApiOrigin.platform;
     }
-    if (RegExp(
-          r'^/api/v1/(?:calendar|users/calendar-settings)(?:/|$)',
-        ).hasMatch(path) ||
-        _matchesWorkspaceV1(path, r'calendar(?:-settings)?(?:/|$)')) {
+    if (RegExp(r'^/api/v1/users/calendar-settings/?$').hasMatch(path) ||
+        _matchesWorkspaceV1(path, r'calendar-settings/?$')) {
+      // Platform is the Web app at tuturuuu.com; preferences bypass Calendar.
+      return ApiOrigin.platform;
+    }
+    if (RegExp(r'^/api/v1/calendar(?:/|$)').hasMatch(path) ||
+        _matchesWorkspaceV1(path, r'calendar(?:/|$)')) {
       return ApiOrigin.calendar;
     }
     if (_matchesWorkspaceV1(

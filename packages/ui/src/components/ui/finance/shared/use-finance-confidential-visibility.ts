@@ -24,8 +24,9 @@ const getCookie = (name: string): string | null => {
 const setCookie = (name: string, value: string, days = 365) => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  const secure = window.location.protocol === 'https:' ? ';Secure' : '';
   // biome-ignore lint/suspicious/noDocumentCookie: Used for finance numbers visibility persistence.
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secure}`;
 };
 
 export function useFinanceConfidentialVisibility() {

@@ -60,7 +60,7 @@ production database.
 | Python types | `cd apps/discord && uv run mypy .` | exit 0 |
 | Local migration | `bun sb:reset` | exit 0; new migration and pgTAP load |
 | Database tests | `bun sb:test` | exit 0, including Discord replay tests |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -127,7 +127,7 @@ two concurrent requests racing for the same id.
 
 Apply the migration locally, run pgTAP, then Python tests/lint/types. Run
 `bun sb:typegen` only after the local schema is current and only if generated
-types are actually consumed. Finish with `bun check` and whitespace validation.
+types are actually consumed. Finish with `bun validate` and whitespace validation.
 
 ## Done criteria
 
@@ -137,7 +137,7 @@ types are actually consumed. Finish with `bun check` and whitespace validation.
       mutation and still receives a valid acknowledgement.
 - [ ] Claim-store failure is fail-closed for mutation-bearing interactions.
 - [ ] The replay store contains no request body, token, signature, or identity.
-- [ ] Migration, pgTAP, Python tests/lint/types, `bun check`, and whitespace pass.
+- [ ] Migration, pgTAP, Python tests/lint/types, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

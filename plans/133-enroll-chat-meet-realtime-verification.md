@@ -25,7 +25,7 @@
 Chat and Meet realtime are production sidecars with health checks and automatic
 restart, but neither directory has a package manifest. Turbo therefore omits
 their source from root tests and typechecks, allowing a deployed transport
-regression or TypeScript error while `bun check` stays green. Hive realtime
+regression or TypeScript error while `bun validate` stays green. Hive realtime
 already demonstrates the expected private-workspace contract.
 
 ## Current state
@@ -61,7 +61,7 @@ design context, not active ownership; do not edit or revive it.
 | Discovery | `bun turbo:local run test type-check --filter=@tuturuuu/chat-realtime --filter=@tuturuuu/meet-realtime` | four workspace tasks execute and pass |
 | Docker contract | `node --test scripts/check-docker-web.test.js && node scripts/check-docker-web.js` | both new manifests are copied; contract passes |
 | Frozen install | `bun install --frozen-lockfile` | exit 0; no lockfile diff afterward |
-| Repository | `bun check` | root discovers and passes both workspaces |
+| Repository | `bun validate` | root discovers and passes both workspaces |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -123,7 +123,7 @@ source untouched.
 ### Step 4: Prove canonical discovery
 
 Run scoped Turbo tasks, direct suites, Docker contract, frozen install, and
-`bun check`. Confirm Turbo logs name both new workspaces and status contains
+`bun validate`. Confirm Turbo logs name both new workspaces and status contains
 only scoped manifests/config/tests/seams/Dockerfiles/lockfile.
 
 ## Done criteria

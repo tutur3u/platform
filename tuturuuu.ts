@@ -1,3 +1,4 @@
+import { getMobileBuildDecision } from './scripts/ci/mobile-build-selection.ts';
 import { isVerifiedProductionTestPath } from './scripts/ci/production-test-only-paths.ts';
 import { buildWorkspaceDependencyClosure } from './scripts/ci/workspace-dependency-closure.ts';
 import { ci } from './tuturuuu.ci.ts';
@@ -510,6 +511,13 @@ export function getWorkflowDecision({
       shouldRun: true,
     };
   }
+
+  const mobileDecision = getMobileBuildDecision({
+    changedFiles,
+    eventName,
+    workflowName,
+  });
+  if (mobileDecision) return mobileDecision;
 
   if (databaseMigrationWorkflows.has(workflowName)) {
     const normalizedChangedFiles =

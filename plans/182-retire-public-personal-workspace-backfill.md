@@ -49,7 +49,7 @@ docs, scripts, and external/operator runbooks for supported use before removal.
 | Focused DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/personal-workspace-backfill-retirement.sql` | function/ACL absence assertions pass |
 | Full DB | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Isolated types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/personal-workspace-backfill-retirement.sql` | only the retired RPC type disappears |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

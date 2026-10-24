@@ -1,5 +1,6 @@
 import type { Polar, Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
 function privateSchema(supabase: TypedSupabaseClient) {
@@ -56,7 +57,7 @@ export async function hasActiveSubscription(
 
   if (!workspace) {
     console.error(
-      `Workspace ${wsId} not found, cannot check active subscriptions`
+      `Workspace ${sanitizeLogValue(wsId)} not found, cannot check active subscriptions`
     );
 
     return { hasWorkspace: false, hasActive: false, subscription: null };
@@ -85,7 +86,10 @@ export async function hasActiveSubscription(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Error checking active subscriptions:', errorMessage);
+    console.error(
+      'Error checking active subscriptions:',
+      sanitizeLogValue(errorMessage)
+    );
     // Fail-closed: treat API errors as "active" to prevent duplicate subscriptions
     return { hasWorkspace: true, hasActive: true, subscription: null };
   }
@@ -106,14 +110,14 @@ export async function createFreeSubscription(
 
   if (!hasWorkspace) {
     console.error(
-      `Workspace ${wsId} not found, cannot create free subscription`
+      `Workspace ${sanitizeLogValue(wsId)} not found, cannot create free subscription`
     );
     return { status: 'error', message: 'Workspace not found' };
   }
 
   if (hasActive && subscription) {
     console.log(
-      `Workspace ${wsId} already has an active subscription, skipping free subscription creation`
+      `Workspace ${sanitizeLogValue(wsId)} already has an active subscription, skipping free subscription creation`
     );
     return { status: 'already_active', subscription };
   }
@@ -136,7 +140,7 @@ export async function createFreeSubscription(
 
   if (!workspace) {
     console.error(
-      `Workspace not found for wsId ${wsId}, cannot create free subscription`
+      `Workspace not found for wsId ${sanitizeLogValue(wsId)}, cannot create free subscription`
     );
     return { status: 'error', message: 'Workspace not found' };
   }
@@ -173,7 +177,7 @@ export async function createFreeSubscription(
   if (!freeProduct) {
     console.error('No active free-tier product configured', {
       hint: FREE_PRODUCT_MISSING_HINT,
-      wsId,
+      wsId: sanitizeLogValue(wsId),
     });
     return {
       status: 'error',
@@ -191,15 +195,15 @@ export async function createFreeSubscription(
     });
 
     console.log(
-      `Created free subscription ${subscription.id} for workspace ${wsId}`
+      `Created free subscription ${subscription.id} for workspace ${sanitizeLogValue(wsId)}`
     );
 
     return { status: 'created', subscription };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Failed to create free subscription', {
-      error: errorMessage,
-      wsId,
+      error: sanitizeLogValue(errorMessage),
+      wsId: sanitizeLogValue(wsId),
     });
     return { status: 'error', message: errorMessage };
   }

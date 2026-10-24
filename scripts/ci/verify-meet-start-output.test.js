@@ -12,6 +12,7 @@ const {
   symlinkSync,
   writeFileSync,
 } = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('../safe-fs');
 const { tmpdir } = require('node:os');
 const { join } = require('node:path');
 const test = require('node:test');
@@ -626,8 +627,9 @@ test('capture remeasures complete loader/materializer state exactly twice', (t) 
         probe.typedSourceIdentity = typedPath;
         probe.materialized.hash = hash(readFileSync(inputPath));
         const typed = probe.loaderSelection.typedConfig;
-        typed.exists = existsSync(typedPath);
-        typed.hash = typed.exists ? hash(readFileSync(typedPath)) : null;
+        const typedBytes = readOptionalFileSync(typedPath);
+        typed.exists = typedBytes !== undefined;
+        typed.hash = typed.exists ? hash(typedBytes) : null;
         probe.loaderSelection.legacyJsonExists = existsSync(
           join(app, 'wrangler.json')
         );
@@ -643,7 +645,8 @@ test('capture remeasures complete loader/materializer state exactly twice', (t) 
         if (snapshots === 1) {
           if (change === 'input-race') writeFileSync(inputPath, '{}');
           if (change === 'materializer') writeFileSync(chunkPath, 'changed');
-          if (change === 'typed-bytes') writeFileSync(typedPath, 'changed');
+          if (change === 'typed-bytes')
+            atomicWriteFileSync(typedPath, 'changed');
           if (change === 'typed-remove') rmSync(typedPath);
           if (change === 'legacy-json')
             writeFileSync(join(app, 'wrangler.json'), '{}');

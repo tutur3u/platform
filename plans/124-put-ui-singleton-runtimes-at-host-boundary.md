@@ -72,7 +72,7 @@ before dependency commands. Never manually edit dependency fields; use Bun.
 | Package typecheck | `bun run --cwd packages/ui type-check` | exit 0 |
 | Release tooling | `node --test scripts/ci/package-release-readiness.test.js scripts/ci/prepare-npm-package-manifest.test.js` | all tests pass |
 | Workspace dependency gate | `node --test scripts/check-workspace-dependencies.test.js` | all tests pass |
-| Workspace gate | `bun check` | exit 0 |
+| Workspace gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -205,7 +205,7 @@ temporary directory remains.
 ### Step 5: Run all package and repository gates
 
 Run the focused contract, full package test/typecheck, release-tool tests,
-workspace-dependency test, `bun check`, and `git diff --check`. Inspect status:
+workspace-dependency test, `bun validate`, and `git diff --check`. Inspect status:
 only the in-scope manifest, README, focused test, mechanical lockfile changes,
 and advisor status row may differ.
 

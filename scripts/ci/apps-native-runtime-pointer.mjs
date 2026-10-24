@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import { lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { lstatSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+
+import { readRegularFileSync } from '../safe-fs.js';
 
 const pointers = [
   '.wrangler/deploy/config.json',
@@ -58,7 +60,9 @@ export function readNativeRuntimeConfig(directory) {
     lstatSync(pointer).isFile(),
     'Deploy pointer must be a regular file'
   );
-  const redirect = JSON.parse(readFileSync(pointer, 'utf8'));
+  const redirect = JSON.parse(
+    readRegularFileSync(pointer, { encoding: 'utf8' })
+  );
   assert.ok(
     redirect && typeof redirect === 'object' && !Array.isArray(redirect),
     'Unexpected deploy metadata'
@@ -86,7 +90,9 @@ export function readNativeRuntimeConfig(directory) {
     lstatSync(configPath).isFile(),
     'Emitted config must be a regular file'
   );
-  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const config = JSON.parse(
+    readRegularFileSync(configPath, { encoding: 'utf8' })
+  );
   assert.ok(
     config && typeof config === 'object' && !Array.isArray(config),
     'Invalid config object'

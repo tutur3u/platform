@@ -71,7 +71,7 @@ database/type ownership transfer; run `bun setup` immediately.
 | Type generation | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/push-notification-dashboard-metrics.sql` | generated RPC signature passes |
 | Infrastructure types/build | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | exit 0 |
 | Internal API | `bun run --cwd packages/internal-api type-check` | unchanged response type compiles |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

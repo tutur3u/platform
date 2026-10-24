@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_settings_chrome.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
+import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -28,6 +29,8 @@ class MailSettingsHub extends StatefulWidget {
 
 class _MailSettingsHubState extends State<MailSettingsHub> {
   late final MailRepository _repository = widget.repository ?? MailRepository();
+  // Device gestures are editable from central Settings too.
+  final _swipePreferences = MailSwipePreferences();
   List<Map<String, dynamic>> _mailboxes = [];
   bool _busy = true;
   bool _failed = false;
@@ -35,12 +38,14 @@ class _MailSettingsHubState extends State<MailSettingsHub> {
   @override
   void initState() {
     super.initState();
+    unawaited(_swipePreferences.load());
     unawaited(_load());
   }
 
   @override
   void dispose() {
     if (widget.repository == null) _repository.dispose();
+    _swipePreferences.dispose();
     super.dispose();
   }
 
@@ -73,6 +78,7 @@ class _MailSettingsHubState extends State<MailSettingsHub> {
           repository: _repository,
           workspaceId: widget.workspaceId,
           mailboxId: box['id'] as String,
+          swipePreferences: _swipePreferences,
           canManage: ['owner', 'admin'].contains(box['role']),
           shellLocations: widget.locations,
           isScopeCurrent: () => widget.isScopeCurrent() && isCurrent(),
