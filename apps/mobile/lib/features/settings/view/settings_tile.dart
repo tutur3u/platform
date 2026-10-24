@@ -104,6 +104,9 @@ class SettingsTile extends StatelessWidget {
                             width(end, endStyle) >=
                         titleWidth;
                 final endBelow = end.isNotEmpty && !endInline;
+                // With a value line under the title, the trailing value sits
+                // on the title line only, so the value keeps the full width.
+                final endInTitle = endInline && hasSupportingLine;
                 final supporting = hasSupportingLine || endBelow;
                 return Row(
                   crossAxisAlignment: supporting && trailingWidth == null
@@ -125,26 +128,30 @@ class SettingsTile extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Wrap(
-                              spacing: 8,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(title, style: titleStyle),
-                                if (badge case final label?)
-                                  DecoratedBox(
-                                    decoration: ShapeDecoration(
-                                      color: theme.colorScheme.primary,
-                                      shape: const StadiumBorder(),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
+                            _withTitleEnd(
+                              endInTitle ? end : null,
+                              endStyle,
+                              Wrap(
+                                spacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(title, style: titleStyle),
+                                  if (badge case final label?)
+                                    DecoratedBox(
+                                      decoration: ShapeDecoration(
+                                        color: theme.colorScheme.primary,
+                                        shape: const StadiumBorder(),
                                       ),
-                                      child: Text(label, style: badgeStyle),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        child: Text(label, style: badgeStyle),
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                             if (endBelow) ...[
                               const shad.Gap(2),
@@ -186,7 +193,7 @@ class SettingsTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (endInline)
+                    if (endInline && !endInTitle)
                       SizedBox(
                         height: SettingsRowLayout.actionWidth,
                         child: Align(
@@ -235,3 +242,16 @@ class SettingsTile extends StatelessWidget {
     );
   }
 }
+
+/// Places [end] flush right on the title line, or returns [title] alone.
+Widget _withTitleEnd(String? end, TextStyle style, Widget title) => end == null
+    ? title
+    : Row(
+        children: [
+          Expanded(child: title),
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Text(end, maxLines: 1, style: style),
+          ),
+        ],
+      );

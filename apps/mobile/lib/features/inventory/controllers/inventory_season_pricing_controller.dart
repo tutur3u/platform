@@ -6,7 +6,7 @@ import 'package:mobile/data/models/inventory/inventory_sales_period.dart';
 import 'package:mobile/data/models/inventory/inventory_season_price.dart';
 import 'package:mobile/data/sources/inventory_sale_journal.dart';
 
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 part 'inventory_season_pricing_recovery.dart';

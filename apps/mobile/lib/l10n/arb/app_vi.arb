@@ -779,13 +779,6 @@
       }
     }
   },
-  "@settingsTimezoneEffective": {
-    "placeholders": {
-      "timezone": {
-        "type": "String"
-      }
-    }
-  },
   "@settingsWorkspaceMembersActiveSection": {
     "placeholders": {
       "count": {
@@ -3517,7 +3510,8 @@
   "settingsTimezoneAccountPending": "Đang chờ tài khoản của bạn.",
   "settingsTimezoneAuto": "Tự động",
   "settingsTimezoneDescription": "Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.",
-  "settingsTimezoneEffective": "Múi giờ áp dụng: {timezone}",
+  "settingsTimezoneAutoShort": "Tự động",
+  "settingsTimezoneCityHoChiMinh": "TP. Hồ Chí Minh",
   "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.",
   "settingsTimezoneLoading": "Đang xác định múi giờ…",
   "settingsTimezoneRateLimited": "Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.",

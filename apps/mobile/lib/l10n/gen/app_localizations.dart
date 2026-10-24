@@ -14125,11 +14125,17 @@ abstract class AppLocalizations {
   /// **'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.'**
   String get settingsTimezoneDescription;
 
-  /// No description provided for @settingsTimezoneEffective.
+  /// No description provided for @settingsTimezoneAutoShort.
   ///
   /// In en, this message translates to:
-  /// **'Effective timezone: {timezone}'**
-  String settingsTimezoneEffective(String timezone);
+  /// **'Auto'**
+  String get settingsTimezoneAutoShort;
+
+  /// No description provided for @settingsTimezoneCityHoChiMinh.
+  ///
+  /// In en, this message translates to:
+  /// **'Ho Chi Minh City'**
+  String get settingsTimezoneCityHoChiMinh;
 
   /// No description provided for @settingsTimezoneError.
   ///

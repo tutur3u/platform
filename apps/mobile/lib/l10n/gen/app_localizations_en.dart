@@ -7410,9 +7410,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneDescription => 'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.';
 
   @override
-  String settingsTimezoneEffective(String timezone) {
-    return 'Effective timezone: $timezone';
-  }
+  String get settingsTimezoneAutoShort => 'Auto';
+
+  @override
+  String get settingsTimezoneCityHoChiMinh => 'Ho Chi Minh City';
 
   @override
   String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';

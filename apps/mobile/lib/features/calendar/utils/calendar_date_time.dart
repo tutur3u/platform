@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
-import 'package:timezone/data/latest.dart' as data;
+import 'package:timezone/data/latest_all.dart' as data;
 import 'package:timezone/timezone.dart' as tz;
 
 /// An immutable date/wall-clock carrier; UTC avoids device DST arithmetic.

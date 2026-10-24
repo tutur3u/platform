@@ -7312,9 +7312,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneDescription => 'Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.';
 
   @override
-  String settingsTimezoneEffective(String timezone) {
-    return 'Múi giờ áp dụng: $timezone';
-  }
+  String get settingsTimezoneAutoShort => 'Tự động';
+
+  @override
+  String get settingsTimezoneCityHoChiMinh => 'TP. Hồ Chí Minh';
 
   @override
   String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Hãy thử lại hoặc sửa tùy chọn đã tải.';

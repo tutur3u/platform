@@ -1,29 +1,34 @@
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+/// Settings row geometry, expressed in the design foundation's tokens.
 abstract final class SettingsRowLayout {
   /// Horizontal padding inside a grouped card.
-  static const double inset = 16;
+  static const double inset = AppLayout.rowHorizontalPadding;
   static const double iconWidth = 24;
   static const double textGap = 14;
   static const double actionWidth = 44;
-  static const double minHeight = 56;
+  static const double minHeight = AppLayout.rowMinHeight;
 
   /// Captions sit just inside the card edge.
   static const double captionInset = 4;
   static const double cardRadius = 24;
-  static const double groupGap = 24;
+  static const double groupGap = AppLayout.sectionGap;
 
   /// Inset dividers align with the title column, not the icon.
   static const double textColumn = inset + iconWidth + textGap;
 
+  /// Page padding for settings lists: the foundation's page top gap, and the
+  /// shell's dock clearance (published as `MediaQuery.padding.bottom`) plus
+  /// the standard scroll end gap, so the last row always clears the dock.
   static EdgeInsets scrollPadding(BuildContext context, double horizontal) =>
       EdgeInsets.fromLTRB(
         horizontal,
-        10,
+        AppLayout.pageTop,
         horizontal,
-        32 + MediaQuery.paddingOf(context).bottom,
+        MediaQuery.paddingOf(context).bottom + AppLayout.scrollEndGap,
       );
 
   /// Single-line width of [text] as rendered here: the inherited text style
