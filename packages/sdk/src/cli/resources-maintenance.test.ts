@@ -71,8 +71,18 @@ it('queue admission never uses the setup capability or enters an occupied mutex'
 it('a dead rollout leaves admission closed rather than reclaiming an interrupted installation', async () => {
   const { home, file, owner } = await fixture();
   await writeFile(file, JSON.stringify({ ...owner, pid: 2147483647 }));
+  await writeFile(
+    join(home, 'admission/mutation.json'),
+    JSON.stringify({ token: owner.token })
+  );
   await expect(withAdmission(home, async () => 'unsafe')).rejects.toThrow(
     'Interrupted SDK rollout'
   );
   expect(JSON.parse(await readFile(file, 'utf8')).token).toBe(owner.token);
+});
+
+it('reclaims a dead preparation lease with no mutation marker or backup', async () => {
+  const { home, file, owner } = await fixture();
+  await writeFile(file, JSON.stringify({ ...owner, pid: 2147483647 }));
+  expect(await withAdmission(home, async () => 'admitted')).toBe('admitted');
 });

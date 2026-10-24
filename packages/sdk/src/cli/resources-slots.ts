@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import {
   link,
+  lstat,
   mkdir,
   open,
   readdir,
@@ -176,10 +177,18 @@ async function reclaimMutex(path: string) {
   if (before.kind === 'invalid')
     throw new Error('Malformed admission mutex; admission is closed.');
   if (before.kind === 'owner' && ownerAlive(before.owner)) return;
-  if (before.kind === 'owner' && before.owner.tool === 'rollout')
-    throw new Error(
-      'Interrupted SDK rollout; admission remains closed. Run its backed-up rollback.sh before admitting work.'
-    );
+  if (before.kind === 'owner' && before.owner.tool === 'rollout') {
+    const mutated = await lstat(join(path, 'mutation.json'))
+      .then(() => true)
+      .catch((error) => {
+        if (errno(error, 'ENOENT')) return false;
+        throw error;
+      });
+    if (mutated)
+      throw new Error(
+        'Interrupted SDK rollout; admission remains closed. Run its backed-up rollback.sh before admitting work.'
+      );
+  }
   if (
     before.kind === 'missing' &&
     Date.now() - (await stat(path)).mtimeMs <= initializationGrace

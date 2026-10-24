@@ -195,7 +195,7 @@ test('holds the existing admission mutex, qualifies all roots and preserves poli
     'add',
     '-g',
     '--ignore-scripts',
-    path.join(result.backup, 'supplier.tgz'),
+    path.join(f.home, 'suppliers', `${f.options.sha256}.tgz`),
   ]);
   fs.rmSync(f.options.tarball);
   assert.equal(fs.existsSync(install.args.at(-1)), true);
@@ -207,7 +207,7 @@ test('holds the existing admission mutex, qualifies all roots and preserves poli
     f.options.sha256
   );
   assert.equal(fs.statSync(install.args.at(-1)).mode & 0o777, 0o600);
-  assert.equal(result.supplierTarball, install.args.at(-1));
+  assert.equal(result.candidateTarball, install.args.at(-1));
   const setup = f.calls.filter((call) => call.args.includes('setup'));
   assert.ok(setup[0].args.includes('--dry-run'));
   assert.equal(setup[1].args.includes('--dry-run'), false);
@@ -254,14 +254,14 @@ test('busy queue, mismatched checksum and workspace supplier refuse before mutat
     ),
     /mismatch/
   );
+  const queue = path.join(f.home, 'queue');
+  fs.mkdirSync(queue);
+  fs.writeFileSync(path.join(queue, 'waiting-ticket'), 'existing owner');
   await assert.rejects(
-    worker(f.options, {
-      userHome: f.userHome,
-      env: {},
-      run: async () => JSON.stringify({ ...idle, waiting: [{}] }),
-    }),
+    worker(f.options, { userHome: f.userHome, env: {}, run: f.invoke }),
     /not drained/
   );
+  fs.rmSync(queue, { recursive: true });
   assert.equal(fs.existsSync(path.join(f.home, 'admission')), false);
   fs.unlinkSync(path.join(f.userHome, '.bun/bin/ttr'));
   const outside = path.join(f.userHome, 'workspace.cjs');
@@ -405,6 +405,10 @@ test('interrupted recovery can be rerun using the same operation token and backu
   fs.mkdirSync(path.join(f.home, 'admission'));
   fs.writeFileSync(path.join(f.home, 'admission/reclaim'), 'durable stop');
   fs.writeFileSync(
+    path.join(f.home, 'admission/mutation.json'),
+    JSON.stringify({ token, backup, phase: 'install' })
+  );
+  fs.writeFileSync(
     path.join(f.home, 'admission/owner.json'),
     JSON.stringify({
       scheduler: 2,
@@ -500,7 +504,13 @@ test('fleet rollout preserves failed worker evidence, stops sequentially, and re
   );
   t.after(() => fs.rmSync(result.staging, { recursive: true, force: true }));
   assert.equal(result.status, 'failed');
-  assert.equal(result.reports.length, 1);
+  assert.equal(result.reports.length, 2);
+  assert.deepEqual(result.reports[1], {
+    host: 'skr-sonha',
+    status: 'skipped',
+    reason: 'not-attempted',
+    blockedBy: 'skr-studio',
+  });
   assert.equal(result.reports[0].backup, '/private/backup');
   assert.equal(result.reports[0].rollback, 'blocked-active-child');
   assert.equal(result.reports[0].staging, '/tmp/ttr-rollout.ABCDEFGHIJ');

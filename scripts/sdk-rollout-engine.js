@@ -7,7 +7,6 @@ const { setTimeout: sleep } = require('node:timers/promises');
 
 const {
   run,
-  quote,
   hash,
   verifyBytes,
   atomicJson,
@@ -15,6 +14,17 @@ const {
   alive,
   groupAlive,
 } = require('./sdk-rollout-artifact');
+const {
+  assertFilesystemIdle,
+  copyMaterialized,
+  restore,
+  backupInstallation,
+  recordPostState,
+  assertRollbackState,
+  retainCandidate,
+  pruneRetention,
+  fenceMutation,
+} = require('./sdk-rollout-state');
 function assertIdle(status) {
   if (
     !status ||
@@ -97,9 +107,10 @@ function trustedGlobal(userHome) {
     );
   return { root, manifest, entry };
 }
-async function lease(home, waitDrain, invoke, cli) {
+async function lease(home, waitDrain, _invoke, _cli, cancelled = () => false) {
   const deadline = Date.now() + waitDrain * 1000;
   for (;;) {
+    if (cancelled()) throw new Error('Rollout interrupted before installation');
     // Atomic mkdir shares the scheduler's existing admission mutex. Never reclaim
     // another owner's mutex, tickets or slots.
     const directory = path.join(home, 'admission');
@@ -107,12 +118,6 @@ async function lease(home, waitDrain, invoke, cli) {
     try {
       fs.mkdirSync(directory, { mode: 0o700 });
       held = true;
-      // Retain the existing scheduler's exclusive reclaim fence. Even pre-dev
-      // suppliers cannot reclaim this directory after a rollout process crash.
-      fs.writeFileSync(path.join(directory, 'reclaim'), String(process.pid), {
-        mode: 0o600,
-        flag: 'wx',
-      });
       const token = crypto.randomUUID();
       atomicJson(path.join(directory, 'owner.json'), {
         scheduler: 2,
@@ -122,13 +127,9 @@ async function lease(home, waitDrain, invoke, cli) {
         tool: 'rollout',
         queuedAt: new Date().toISOString(),
       });
-      assertIdle(
-        JSON.parse(
-          await invoke(cli, ['resources', 'status', '--json'], {
-            timeoutMs: 10_000,
-          })
-        )
-      );
+      assertFilesystemIdle(home);
+      if (cancelled())
+        throw new Error('Rollout interrupted before installation');
       return {
         token,
         release: () => {
@@ -151,120 +152,6 @@ async function lease(home, waitDrain, invoke, cli) {
       await sleep(Math.min(1000, Math.max(1, deadline - Date.now())));
     }
   }
-}
-function copyMaterialized(
-  source,
-  target,
-  ancestry = new Set(),
-  budget = { files: 0, bytes: 0 }
-) {
-  const real = fs.realpathSync(source);
-  const info = fs.statSync(real);
-  budget.files++;
-  budget.bytes += info.isFile() ? info.size : 0;
-  if (budget.files > 500_000 || budget.bytes > 5 * 1024 ** 3)
-    throw new Error(
-      'Global backup exceeds 500000 entries or 5 GiB; no installation attempted'
-    );
-  if (info.isDirectory()) {
-    if (ancestry.has(real))
-      throw new Error(
-        'Cycle in global installation; no installation attempted'
-      );
-    const next = new Set(ancestry).add(real);
-    fs.mkdirSync(target, { mode: info.mode & 0o777 });
-    for (const entry of fs.readdirSync(real))
-      copyMaterialized(
-        path.join(real, entry),
-        path.join(target, entry),
-        next,
-        budget
-      );
-  } else if (info.isFile()) {
-    fs.copyFileSync(real, target, fs.constants.COPYFILE_EXCL);
-    fs.chmodSync(target, info.mode & 0o777);
-  } else throw new Error('Unsupported special file in global installation');
-}
-function restore(backup) {
-  const manifest = readJson(path.join(backup, 'restore.json'));
-  for (const item of manifest.files) {
-    fs.rmSync(item.target, { recursive: true, force: true });
-    fs.cpSync(path.join(backup, item.saved), item.target, {
-      recursive: true,
-      dereference: false,
-      preserveTimestamps: true,
-    });
-  }
-  for (const alias of manifest.globalAliases || []) {
-    fs.rmSync(alias.target, { force: true });
-    fs.symlinkSync(alias.entry, alias.target);
-  }
-}
-function backupInstallation(userHome, resourceHome, supplier) {
-  const backup = path.join(
-    resourceHome,
-    'backups',
-    `${new Date().toISOString().replaceAll(/[:.]/g, '-')}-${crypto.randomUUID()}`
-  );
-  fs.mkdirSync(backup, { recursive: true, mode: 0o700 });
-  const targets = [
-    path.join(userHome, '.bun/install/global'),
-    path.join(resourceHome, 'config.json'),
-    path.join(resourceHome, 'install.json'),
-    path.join(resourceHome, 'bin'),
-  ];
-  // Bin aliases are included because Bun can change them independently of global.
-  for (const alias of ['ttr', 'tuturuuu', 'tutur3u'])
-    targets.push(path.join(userHome, '.bun/bin', alias));
-  const files = [];
-  for (const [index, target] of targets.entries()) {
-    if (!fs.existsSync(target))
-      throw new Error('Required installation backup path missing');
-    const saved = `saved-${index}`;
-    if (index === 0) copyMaterialized(target, path.join(backup, saved));
-    else
-      fs.cpSync(target, path.join(backup, saved), {
-        recursive: true,
-        dereference: false,
-        preserveTimestamps: true,
-      });
-    files.push({ target, saved });
-  }
-  fs.writeFileSync(
-    path.join(backup, 'restore.json'),
-    JSON.stringify({
-      files,
-      globalAliases: ['ttr', 'tuturuuu', 'tutur3u'].map((alias) => ({
-        target: path.join(userHome, '.bun/bin', alias),
-        entry: path.resolve(
-          path.join(userHome, '.bun/install/global/node_modules/tuturuuu'),
-          supplier.manifest.bin[alias] || supplier.manifest.bin.ttr
-        ),
-      })),
-    }),
-    { mode: 0o600 }
-  );
-  fs.writeFileSync(
-    path.join(backup, 'supplier.json'),
-    JSON.stringify({
-      version: supplier.manifest.version,
-      entry: supplier.entry,
-      entrySha256: hash(fs.readFileSync(supplier.entry)),
-    }),
-    { mode: 0o600 }
-  );
-  for (const name of [
-    'sdk-rollout.js',
-    'sdk-rollout-artifact.js',
-    'sdk-rollout-engine.js',
-  ])
-    fs.copyFileSync(path.join(__dirname, name), path.join(backup, name));
-  fs.writeFileSync(
-    path.join(backup, 'rollback.sh'),
-    `#!/bin/sh\nset -eu\nexec "$HOME/.bun/bin/bun" ${quote(path.join(backup, 'sdk-rollout.js'))} --rollback ${quote(backup)}\n`,
-    { mode: 0o700 }
-  );
-  return backup;
 }
 async function qualify(context) {
   const { userHome, home, cli, invoke, config, env } = context;
@@ -348,22 +235,36 @@ async function worker(options, dependencies = {}) {
   const cli = path.join(userHome, '.bun/bin/ttr');
   const supplier = trustedGlobal(userHome);
   verifyBytes(fs.readFileSync(options.tarball), options);
-  const lock = await lease(home, options.waitDrain, invoke, cli);
+  let lock;
   let interrupted = false;
   const onSignal = () => {
     interrupted = true;
   };
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
     process.on(signal, onSignal);
+  try {
+    lock = await lease(
+      home,
+      options.waitDrain,
+      invoke,
+      cli,
+      () => interrupted || dependencies.cancelled?.()
+    );
+  } catch (error) {
+    for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
+      process.removeListener(signal, onSignal);
+    throw error;
+  }
   const checkedInvoke = async (command, args, settings = {}) => {
     if (interrupted)
       throw new Error(
         'Rollout interrupted; restoring the previous installation'
       );
     const file = path.join(home, 'admission/owner.json');
-    let unsettled = false;
+    let operationError;
+    let result;
     try {
-      return await invoke(command, args, {
+      result = await invoke(command, args, {
         ...settings,
         onSpawn: (pid) => {
           const owner = readJson(file);
@@ -373,13 +274,20 @@ async function worker(options, dependencies = {}) {
         },
       });
     } catch (error) {
-      unsettled = error.unsettled === true;
-      throw error;
-    } finally {
-      const owner = readJson(file);
-      if (!unsettled) delete owner.childPid;
-      atomicJson(file, owner);
+      operationError = error;
     }
+    try {
+      const owner = readJson(file);
+      if (!operationError?.unsettled) delete owner.childPid;
+      atomicJson(file, owner);
+    } catch (cleanupError) {
+      if (operationError) {
+        operationError.unsettled = true;
+        operationError.cleanupError = cleanupError.message;
+      } else operationError = Object.assign(cleanupError, { unsettled: true });
+    }
+    if (operationError) throw operationError;
+    return result;
   };
   const report = {
     schemaVersion: 1,
@@ -404,15 +312,12 @@ async function worker(options, dependencies = {}) {
       JSON.stringify({ token: lock.token }),
       { mode: 0o600 }
     );
-    const supplierTarball = path.join(report.backup, 'supplier.tgz');
-    fs.copyFileSync(
-      options.tarball,
-      supplierTarball,
-      fs.constants.COPYFILE_EXCL
-    );
-    fs.chmodSync(supplierTarball, 0o600);
-    verifyBytes(fs.readFileSync(supplierTarball), options);
-    report.supplierTarball = supplierTarball;
+    const supplierTarball = retainCandidate(home, options.tarball, options);
+    report.candidateTarball = supplierTarball;
+    atomicJson(path.join(report.backup, 'candidate.json'), {
+      path: supplierTarball,
+      sha256: options.sha256,
+    });
     const releaseRecoveryPreflight = await recoveryLock(report.backup);
     await releaseRecoveryPreflight();
     const env = {
@@ -420,6 +325,7 @@ async function worker(options, dependencies = {}) {
       TTR_RESOURCES_MAINTENANCE: lock.token,
       PATH: `${path.join(userHome, '.bun/bin')}:/usr/bin:/bin:/usr/sbin:/sbin`,
     };
+    fenceMutation(home, lock.token, report.backup, 'install');
     mutationStarted = true;
     await checkedInvoke(
       path.join(userHome, '.bun/bin/bun'),
@@ -481,14 +387,17 @@ async function worker(options, dependencies = {}) {
       throw new Error(
         'Rollout interrupted; restoring the previous installation'
       );
+    recordPostState(report.backup);
     report.status = 'qualified';
   } catch (error) {
     report.error = error.message;
+    if (error.cleanupError) report.cleanupErrors = [error.cleanupError];
     if (error.unsettled) report.rollback = 'blocked-active-child';
     else if (mutationStarted) {
       try {
         restore(report.backup);
         verifyRestored(userHome, report.backup);
+        recordPostState(report.backup, 'restored-state.json');
         report.rollback = 'restored';
       } catch (rollbackError) {
         report.rollback = 'failed';
@@ -496,20 +405,31 @@ async function worker(options, dependencies = {}) {
       }
     }
   } finally {
-    if (slot && report.rollback !== 'blocked-active-child') {
-      if (readJson(path.join(slot, 'owner.json')).token !== lock.token) {
+    const cleanup = (action) => {
+      try {
+        action();
+      } catch (error) {
+        report.cleanupErrors ??= [];
+        report.cleanupErrors.push(error.message);
+        report.status = 'failed';
         report.rollback = 'failed';
-        report.error = 'Qualification owner changed; maintenance remains held';
-      } else fs.rmSync(slot, { recursive: true });
-    }
-    if (report.backup)
-      fs.writeFileSync(
-        path.join(report.backup, 'report.json'),
-        JSON.stringify(report, null, 2),
-        { mode: 0o600 }
-      );
+      }
+    };
+    if (slot && report.rollback !== 'blocked-active-child')
+      cleanup(() => {
+        if (readJson(path.join(slot, 'owner.json')).token !== lock.token)
+          throw new Error(
+            'Qualification owner changed; maintenance remains held'
+          );
+        fs.rmSync(slot, { recursive: true });
+      });
+    if (report.backup) cleanup(() => pruneRetention(home, report.backup));
     if (!['failed', 'blocked-active-child'].includes(report.rollback))
-      lock.release();
+      cleanup(() => lock.release());
+    if (report.backup)
+      cleanup(() =>
+        atomicJson(path.join(report.backup, 'report.json'), report)
+      );
     for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
       process.removeListener(signal, onSignal);
   }
@@ -567,9 +487,7 @@ async function recoveryLock(backup) {
 }
 async function rollback(backup, dependencies = {}) {
   const userHome = dependencies.userHome || os.homedir();
-  const invoke = dependencies.run || run;
   const home = path.join(userHome, '.tuturuuu/resources');
-  const cli = path.join(userHome, '.bun/bin/ttr');
   const admission = path.join(home, 'admission');
   const releaseRecovery = await recoveryLock(backup);
   try {
@@ -587,6 +505,15 @@ async function rollback(backup, dependencies = {}) {
         throw new Error(
           'The maintenance holder or its child may still be active; do not replay rollback'
         );
+      const markerPath = path.join(admission, 'mutation.json');
+      const marker = fs.existsSync(markerPath) ? readJson(markerPath) : null;
+      const matchingMutation =
+        marker?.token === old.token && marker?.backup === backup;
+      if (!(matchingMutation && marker.phase === 'rollback'))
+        assertRollbackState(
+          backup,
+          matchingMutation && marker.phase === 'install'
+        );
       // flock serializes recovery takeover and is released by the OS on crash.
       // Retain the original operation token so this backup remains retryable.
       const token = old.token;
@@ -599,6 +526,7 @@ async function rollback(backup, dependencies = {}) {
         queuedAt: new Date().toISOString(),
       });
       lock = {
+        token,
         release: () => {
           if (readJson(path.join(admission, 'owner.json')).token !== token)
             throw new Error('Recovery lease changed');
@@ -611,19 +539,17 @@ async function rollback(backup, dependencies = {}) {
         readJson(path.join(slot, 'owner.json')).token === old.token
       )
         fs.rmSync(slot, { recursive: true });
-      for (const directory of ['slots', 'queue']) {
-        const location = path.join(home, directory);
-        if (fs.existsSync(location) && fs.readdirSync(location).length)
-          throw new Error(
-            'Queue state remains; recovery stays fenced for operator inspection'
-          );
-      }
-      if (fs.existsSync(path.join(home, 'lock')))
-        throw new Error('Legacy queue state remains; recovery stays fenced');
-    } else lock = await lease(home, 0, invoke, cli);
+      assertFilesystemIdle(home);
+    } else {
+      assertRollbackState(backup, false);
+      lock = await lease(home, 0, undefined, undefined);
+      assertRollbackState(backup, false);
+    }
     try {
+      fenceMutation(home, lock.token, backup, 'rollback');
       restore(backup);
       verifyRestored(userHome, backup);
+      recordPostState(backup, 'restored-state.json');
     } catch (error) {
       throw new Error(
         `Rollback failed; admission remains closed: ${error.message}`
