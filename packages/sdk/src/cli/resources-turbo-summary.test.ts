@@ -1,20 +1,12 @@
-import {
-  mkdir,
-  mkdtemp,
-  readdir,
-  rm,
-  utimes,
-  writeFile,
-} from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { spawnResourceCommand } from './resources-queue';
 import {
   formatDuration,
   planTurboSummary,
-  recordTurboSummaryOutput,
   reportTurboSummary,
+  snapshotTurboSummaries,
   summarizeTurboRun,
 } from './resources-turbo-summary';
 
@@ -54,7 +46,7 @@ afterEach(async () => {
 describe('planTurboSummary', () => {
   it('adds --summarize after run for direct and script turbo invocations', async () => {
     const root = await turboRoot();
-    expect(planTurboSummary('turbo', ['run', 'test'], root, 1).args).toEqual([
+    expect(planTurboSummary('turbo', ['run', 'test'], root).args).toEqual([
       'run',
       '--summarize=true',
       'test',
@@ -137,85 +129,43 @@ describe('summarizeTurboRun', () => {
 });
 
 describe('reportTurboSummary', () => {
-  it('never reports or removes a pre-existing summary within the timestamp allowance', async () => {
+  it('preserves summaries present at spawn, including ones saved while queued', async () => {
     const root = await turboRoot();
-    const path = join(root, '.turbo', 'runs', 'previous.json');
-    await writeFile(path, JSON.stringify(hitAndMiss));
-    const plan = planTurboSummary('turbo', ['run', 'test'], root, Date.now());
-    const lines: string[] = [];
-    await reportTurboSummary(plan, (line) => lines.push(line));
-    expect(lines).toEqual([]);
-    expect(await readdir(join(root, '.turbo', 'runs'))).toEqual([
-      'previous.json',
-    ]);
-  });
-
-  it('reports and removes the summary it requested', async () => {
-    const root = await turboRoot();
-    const plan = planTurboSummary('turbo', ['run', 'test'], root, Date.now());
     const runs = join(root, '.turbo', 'runs');
+    const plan = planTurboSummary('turbo', ['run', 'test'], root);
     await writeFile(
-      join(runs, 'a.json'),
-      JSON.stringify({ id: 'a', ...hitAndMiss })
+      join(runs, 'other.json'),
+      JSON.stringify({ id: 'other', ...hitAndMiss })
     );
-    recordTurboSummaryOutput(
-      plan,
-      'stdout',
-      Buffer.from(` Summary: ${join(runs, 'a.json')}\n`)
+    snapshotTurboSummaries(plan);
+    await writeFile(
+      join(runs, 'mine.json'),
+      JSON.stringify({ id: 'mine', ...hitAndMiss })
     );
     const lines: string[] = [];
     await reportTurboSummary(plan, (line) => lines.push(line));
     expect(lines).toEqual([
       '[ttr resources] turbo cache: 2/3 tasks cached (local 1, remote 1); 1 executed in 2.5s; saved ~1m02s\n',
     ]);
-    expect(await readdir(runs)).toEqual([]);
+    expect(await readdir(runs)).toEqual(['other.json']);
   });
 
-  it('keeps user summaries, ignores older runs and skips ambiguous runs', async () => {
+  it('never reports or removes a recent pre-existing summary', async () => {
     const root = await turboRoot();
     const runs = join(root, '.turbo', 'runs');
-    const old = join(runs, 'old.json');
-    await writeFile(old, JSON.stringify(hitAndMiss));
-    const past = new Date(Date.now() - 60_000);
-    await utimes(old, past, past);
-
-    const userPlan = planTurboSummary(
-      'turbo',
-      ['run', 'test', '--summarize'],
-      root,
-      Date.now()
-    );
     await writeFile(
-      join(runs, 'mine.json'),
-      JSON.stringify({ id: 'mine', ...hitAndMiss })
+      join(runs, 'previous.json'),
+      JSON.stringify({ id: 'previous', ...hitAndMiss })
     );
-    recordTurboSummaryOutput(
-      userPlan,
-      'stdout',
-      Buffer.from(` Summary: ${join(runs, 'mine.json')}\n`)
-    );
+    const plan = planTurboSummary('turbo', ['run', 'test'], root);
+    snapshotTurboSummaries(plan);
     const lines: string[] = [];
-    await reportTurboSummary(userPlan, (line) => lines.push(line));
-    expect(lines).toHaveLength(1);
-    expect((await readdir(runs)).sort()).toEqual(['mine.json', 'old.json']);
-
-    const ownedPlan = planTurboSummary(
-      'turbo',
-      ['run', 'test'],
-      root,
-      Date.now()
-    );
-    await writeFile(join(runs, 'other.json'), JSON.stringify(hitAndMiss));
-    await reportTurboSummary(ownedPlan, (line) => lines.push(line));
-    expect(lines).toHaveLength(1);
-    expect((await readdir(runs)).sort()).toEqual([
-      'mine.json',
-      'old.json',
-      'other.json',
-    ]);
+    await reportTurboSummary(plan, (line) => lines.push(line));
+    expect(lines).toEqual([]);
+    expect(await readdir(runs)).toEqual(['previous.json']);
   });
 
-  it('reads only the summary named by this process, even with concurrent files', async () => {
+  it('preserves another run when the command never spawned', async () => {
     const root = await turboRoot();
     const plan = planTurboSummary('turbo', ['run', 'test'], root);
     const runs = join(root, '.turbo', 'runs');
@@ -226,45 +176,63 @@ describe('reportTurboSummary', () => {
     const lines: string[] = [];
     await reportTurboSummary(plan, (line) => lines.push(line));
     expect(lines).toEqual([]);
+    expect(await readdir(runs)).toEqual(['other.json']);
+  });
+
+  it('keeps a user-requested summary', async () => {
+    const root = await turboRoot();
+    const plan = planTurboSummary(
+      'turbo',
+      ['run', 'test', '--summarize'],
+      root
+    );
+    snapshotTurboSummaries(plan);
+    const runs = join(root, '.turbo', 'runs');
     await writeFile(
       join(runs, 'mine.json'),
       JSON.stringify({ id: 'mine', ...hitAndMiss })
     );
-    recordTurboSummaryOutput(
-      plan,
-      'stdout',
-      Buffer.from(` Summary: ${join(runs, 'mine')}`)
-    );
-    recordTurboSummaryOutput(plan, 'stdout', Buffer.from('.json\n'));
-    await reportTurboSummary(plan, (line) => lines.push(line));
-    expect(lines).toHaveLength(1);
-    expect(await readdir(runs)).toEqual(['other.json']);
-  });
-
-  it('observes the spawned command output before reading its summary', async () => {
-    const root = await turboRoot();
-    const plan = planTurboSummary('turbo', ['run', 'test'], root);
-    const path = join(root, '.turbo', 'runs', 'spawned.json');
-    const script = `require('node:fs').writeFileSync(${JSON.stringify(path)}, ${JSON.stringify(JSON.stringify({ id: 'spawned', ...hitAndMiss }))}); process.stdout.write(${JSON.stringify(` Summary: ${path}\n`)});`;
-    expect(
-      await spawnResourceCommand(
-        process.execPath,
-        ['-e', script],
-        process.env,
-        false,
-        undefined,
-        (stream, chunk) => recordTurboSummaryOutput(plan, stream, chunk)
-      )
-    ).toBe(0);
     const lines: string[] = [];
     await reportTurboSummary(plan, (line) => lines.push(line));
     expect(lines).toHaveLength(1);
-    expect(await readdir(join(root, '.turbo', 'runs'))).toEqual([]);
+    expect(await readdir(runs)).toEqual(['mine.json']);
+  });
+
+  it('skips reporting and deleting when multiple files appeared after spawn', async () => {
+    const root = await turboRoot();
+    const plan = planTurboSummary('turbo', ['run', 'test'], root);
+    snapshotTurboSummaries(plan);
+    const runs = join(root, '.turbo', 'runs');
+    for (const id of ['mine', 'other'])
+      await writeFile(
+        join(runs, `${id}.json`),
+        JSON.stringify({ id, ...hitAndMiss })
+      );
+    const lines: string[] = [];
+    await reportTurboSummary(plan, (line) => lines.push(line));
+    expect(lines).toEqual([]);
+    expect((await readdir(runs)).sort()).toEqual(['mine.json', 'other.json']);
+  });
+
+  it('skips a file whose JSON id differs from its basename', async () => {
+    const root = await turboRoot();
+    const plan = planTurboSummary('turbo', ['run', 'test'], root);
+    snapshotTurboSummaries(plan);
+    const runs = join(root, '.turbo', 'runs');
+    await writeFile(
+      join(runs, 'mine.json'),
+      JSON.stringify({ id: 'other', ...hitAndMiss })
+    );
+    const lines: string[] = [];
+    await reportTurboSummary(plan, (line) => lines.push(line));
+    expect(lines).toEqual([]);
+    expect(await readdir(runs)).toEqual(['mine.json']);
   });
 
   it('never throws for missing or partial summaries', async () => {
     const root = await turboRoot();
-    const plan = planTurboSummary('turbo', ['run', 'test'], root, Date.now());
+    const plan = planTurboSummary('turbo', ['run', 'test'], root);
+    snapshotTurboSummaries(plan);
     await writeFile(join(root, '.turbo', 'runs', 'partial.json'), '{"tasks":');
     await expect(reportTurboSummary(plan, () => {})).resolves.toBeUndefined();
     await rm(join(root, '.turbo'), { recursive: true });

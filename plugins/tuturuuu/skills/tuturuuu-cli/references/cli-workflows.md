@@ -277,12 +277,14 @@ host because same-machine runners and containers are not resource offload.
 
 ### Turbo summary ownership
 
-Identify the run summary by the exact path printed on the owned child's output,
-then validate its JSON run ID. Snapshot pre-existing names before launch and
-never delete those files. Timestamp proximity and a single new directory entry
-do not establish process ownership. Missing output identity skips the report.
-`resources-turbo-summary.test.ts` covers recent pre-existing files, concurrent
-runs, fragmented output and the spawned-process output boundary.
+Snapshot `.turbo/runs/` in the spawn hook after admission, never at enqueue or
+plan time. Keep stdout/stderr inherited and finish on process exit; output pipes
+held by an escaped process must not hold a resource lane. Report only one new
+JSON file with an ID matching its basename. Preserve all pre-spawn files, skip
+zero or multiple candidates, and skip a command cancelled before spawn.
+`resources-summary-lifecycle.test.ts` exercises the queued cancellation, spawn
+snapshot and escaped-child boundaries; `resources-turbo-summary.test.ts` covers
+file selection, ID validation and user-owned summaries.
 
 ### Resource offload failure boundary
 

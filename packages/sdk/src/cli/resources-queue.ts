@@ -101,8 +101,7 @@ export async function spawnResourceCommand(
   args: string[],
   env: NodeJS.ProcessEnv,
   owned = false,
-  onSpawn?: (pid: number) => Promise<void>,
-  onOutput?: (stream: 'stdout' | 'stderr', chunk: Buffer) => void
+  onSpawn?: (pid: number) => Promise<void>
 ) {
   return new Promise<number>((resolve, reject) => {
     // An owned group waits on fd 3 until its PID receipt is durable. If the
@@ -117,25 +116,10 @@ export async function spawnResourceCommand(
       ? spawn(process.execPath, ['-e', launcher], {
           env,
           shell: false,
-          stdio: [
-            'inherit',
-            onOutput ? 'pipe' : 'inherit',
-            onOutput ? 'pipe' : 'inherit',
-            'pipe',
-          ],
+          stdio: ['inherit', 'inherit', 'inherit', 'pipe'],
           detached: true,
         })
-      : spawn(command, args, {
-          env,
-          shell: false,
-          stdio: onOutput ? ['inherit', 'pipe', 'pipe'] : 'inherit',
-        });
-    if (onOutput) {
-      for (const stream of ['stdout', 'stderr'] as const) {
-        child[stream]?.on('data', (chunk: Buffer) => onOutput(stream, chunk));
-        child[stream]?.pipe(process[stream], { end: false });
-      }
-    }
+      : spawn(command, args, { env, shell: false, stdio: 'inherit' });
     const gate = owned ? child.stdio[3] : undefined;
     if (gate)
       gate.on('error', () => {
@@ -181,7 +165,7 @@ export async function spawnResourceCommand(
       clean();
       reject(error);
     });
-    child.once(onOutput ? 'close' : 'exit', (code, signal) => {
+    child.once('exit', (code, signal) => {
       void (async () => {
         try {
           if (owned && child.pid)
@@ -211,7 +195,8 @@ async function runNested(
   command: string,
   args: string[],
   env: NodeJS.ProcessEnv,
-  parent: ResourceOwner
+  parent: ResourceOwner,
+  onSpawn?: (pid: number) => Promise<void>
 ) {
   const inherited = parent.limits
     ? {
@@ -227,7 +212,9 @@ async function runNested(
   return spawnResourceCommand(
     command,
     limitCommand(command, args, { ...caps, ...parent.limits }),
-    { ...env, ...inherited, [admittedMarker]: parent.token }
+    { ...env, ...inherited, [admittedMarker]: parent.token },
+    false,
+    onSpawn
   );
 }
 // The ticket that may claim the next lane: the FIFO head, or under a budget
@@ -270,13 +257,14 @@ export async function queuedResourceCommand(
   pressureProbe: typeof memoryPressure = memoryPressure,
   burstProbe: typeof burstEligibility = burstEligibility,
   diskCheck: typeof diskGate = diskGate,
-  onOutput?: (stream: 'stdout' | 'stderr', chunk: Buffer) => void
+  onSpawn?: (pid: number) => Promise<void>
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
   const originalArgs = [...args];
   const parent = await nestedOwner(home);
-  if (parent) return runNested(home, command, originalArgs, env, parent);
+  if (parent)
+    return runNested(home, command, originalArgs, env, parent, onSpawn);
   const owner = newOwner(
     command.split('/').pop() || command,
     commandSummary(command, originalArgs)
@@ -522,8 +510,8 @@ export async function queuedResourceCommand(
         });
         stopSampler = startActivitySampler(ownedSlot, owner);
         if (cancelled) signalChild(pid, cancelled);
-      },
-      onOutput
+        else await onSpawn?.(pid);
+      }
     );
     process.stderr.write(`[ttr resources] finished; exit ${code}\n`);
     return cancelled ? signalCodes[cancelled] : code;
