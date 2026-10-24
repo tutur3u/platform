@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart' show NumberFormat;
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
-class AppSlider extends StatelessWidget {
+class AppSlider extends StatefulWidget {
   const AppSlider({
     required this.value,
     required this.onChanged,
@@ -25,6 +26,18 @@ class AppSlider extends StatelessWidget {
   final ValueChanged<double>? onChanged;
   final ValueChanged<double>? onChangeEnd;
 
+  @override
+  State<AppSlider> createState() => _AppSliderState();
+}
+
+class _AppSliderState extends State<AppSlider> {
+  bool _focused = false;
+  double get min => widget.min;
+  double get max => widget.max;
+  double get value => widget.value;
+  int? get divisions => widget.divisions;
+  ValueChanged<double>? get onChanged => widget.onChanged;
+  ValueChanged<double>? get onChangeEnd => widget.onChangeEnd;
   double _snap(double next) {
     final clamped = next.clamp(min, max);
     final steps = divisions;
@@ -56,11 +69,15 @@ class AppSlider extends StatelessWidget {
     }
 
     String format(double next) =>
-        semanticFormatter?.call(next) ??
-        '${((next - min) / (max - min) * 100).round()}%';
+        widget.semanticFormatter?.call(next) ??
+        NumberFormat.percentPattern(
+          Localizations.localeOf(context).toString(),
+        ).format((next - min) / (max - min));
     return Semantics(
+      container: true,
       slider: true,
-      label: label,
+      label: widget.label,
+      enabled: onChanged != null,
       value: format(value),
       increasedValue: format(_snap(value + step)),
       decreasedValue: format(_snap(value - step)),
@@ -68,6 +85,7 @@ class AppSlider extends StatelessWidget {
       onDecrease: onChanged == null ? null : () => adjust(-step),
       child: FocusableActionDetector(
         enabled: onChanged != null,
+        onShowFocusHighlight: (focused) => setState(() => _focused = focused),
         shortcuts: const {
           SingleActivator(LogicalKeyboardKey.arrowRight):
               DirectionalFocusIntent(TraversalDirection.right),
@@ -148,6 +166,13 @@ class AppSlider extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: c.card,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            if (_focused)
+                              BoxShadow(
+                                color: c.ring.withValues(alpha: .4),
+                                spreadRadius: 4,
+                              ),
+                          ],
                           border: Border.all(
                             color: onChanged == null
                                 ? c.mutedForeground

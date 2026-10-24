@@ -8,6 +8,7 @@ class AppChip extends StatelessWidget {
   const AppChip({
     required this.label,
     this.selected,
+    this.inMutuallyExclusiveGroup = false,
     this.onSelected,
     this.onPressed,
     this.avatar,
@@ -15,11 +16,23 @@ class AppChip extends StatelessWidget {
     this.deleteTooltip,
     this.tooltip,
     super.key,
-  });
+  }) : assert(
+         onSelected == null || selected != null,
+         'onSelected requires selected',
+       ),
+       assert(
+         onPressed == null || selected == null,
+         'Action chips cannot have selected',
+       ),
+       assert(
+         onSelected == null || onPressed == null,
+         'Choose one activation callback',
+       );
   final Widget label;
 
   /// Null for display/action chips; a bool identifies a selectable choice.
   final bool? selected;
+  final bool inMutuallyExclusiveGroup;
   final ValueChanged<bool>? onSelected;
   final VoidCallback? onPressed;
   final Widget? avatar;
@@ -37,17 +50,21 @@ class AppChip extends StatelessWidget {
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? c.primary : c.muted,
+        color: isSelected ? c.accent : c.muted,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: isSelected ? c.primary : c.border),
       ),
       child: DefaultTextStyle.merge(
         style: tokens.typography.small.copyWith(
-          color: isSelected ? c.primaryForeground : c.foreground,
+          color: isSelected ? c.accentForeground : c.foreground,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isSelected) ...[
+              const Icon(LucideIcons.check, size: 16),
+              const SizedBox(width: 6),
+            ],
             if (avatar != null) ...[
               SizedBox.square(dimension: 18, child: avatar),
               const SizedBox(width: 6),
@@ -64,6 +81,7 @@ class AppChip extends StatelessWidget {
           child: Semantics(
             container: true,
             selected: selected,
+            inMutuallyExclusiveGroup: inMutuallyExclusiveGroup,
             button: activate != null || selected != null,
             enabled: activate != null || selected != null
                 ? activate != null

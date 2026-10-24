@@ -386,3 +386,14 @@ see `app_dialog_layout_test.dart` and the unchanged Assistant rename retry tests
 
 `AppChip.selected` is null for display/action chips and a bool for selectable
 choices. Disabled choices retain their selected and disabled accessibility states.
+
+Dialog and fit-sheet hosts consume keyboard insets once. Their content receives
+those consumed insets so an AppSheetScaffold cannot add the same clearance twice.
+Phone regression coverage in `app_phone_picker_test.dart` exercises picker results,
+system Back and tappable OK/Save actions at 390×844 with a 300dp keyboard.
+
+Chip activation callbacks are exclusive: onSelected requires a boolean selected;
+onPressed requires selected to be null. Single-choice groups set
+inMutuallyExclusiveGroup. Selected choices show a check on a tonal surface.
+AppTextFormField synchronizes controller edits with validation and restores the
+initial text on Form.reset; `app_form_field_lifecycle_test.dart` covers both.

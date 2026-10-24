@@ -44,17 +44,44 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
   late final TextEditingController _owned = TextEditingController(
     text: widget.initialValue,
   );
+  final _field = GlobalKey<FormFieldState<String>>();
+  late final String _initialText = _controller.text;
   TextEditingController get _controller => widget.controller ?? _owned;
+
+  void _syncValue() {
+    if (_field.currentState?.value != _controller.text) {
+      _field.currentState?.didChange(_controller.text);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_syncValue);
+  }
+
+  @override
+  void didUpdateWidget(AppTextFormField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      (oldWidget.controller ?? _owned).removeListener(_syncValue);
+      _controller.addListener(_syncValue);
+      _syncValue();
+    }
+  }
 
   @override
   void dispose() {
+    _controller.removeListener(_syncValue);
     _owned.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => FormField<String>(
-    initialValue: _controller.text,
+    key: _field,
+    initialValue: _initialText,
+    onReset: () => _controller.text = _initialText,
     validator: widget.validator,
     onSaved: widget.onSaved,
     enabled: widget.enabled,
@@ -71,10 +98,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
       maxLength: widget.maxLength,
       keyboardType: widget.keyboardType,
       textCapitalization: widget.textCapitalization,
-      onChanged: (value) {
-        field.didChange(value);
-        widget.onChanged?.call(value);
-      },
+      onChanged: widget.onChanged,
     ),
   );
 }

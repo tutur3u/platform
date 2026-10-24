@@ -17,6 +17,7 @@ class AppSwitch extends StatelessWidget {
     final c = AppTokens.of(context).colorScheme;
     void toggle() => onChanged?.call(!value);
     return Semantics(
+      container: true,
       label: semanticLabel,
       toggled: value,
       enabled: onChanged != null,

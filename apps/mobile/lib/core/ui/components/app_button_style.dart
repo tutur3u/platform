@@ -111,6 +111,7 @@ class AppButtonFrame extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     this.tooltip,
     this.busy = false,
     super.key,
@@ -123,6 +124,7 @@ class AppButtonFrame extends StatelessWidget {
   final AppButtonShape shape;
   final FocusNode? focusNode;
   final String? semanticLabel;
+  final bool? selected;
   final String? tooltip;
   final bool busy;
 
@@ -171,6 +173,7 @@ class AppButtonFrame extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
+      selected: selected,
       enabled: enabled,
       label: semanticLabel,
       child: tooltip == null

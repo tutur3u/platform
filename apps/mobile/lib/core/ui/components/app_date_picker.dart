@@ -80,7 +80,22 @@ class _AppDatePickerState extends State<AppDatePicker> {
                       ),
                     );
                     if (year == null || !mounted) return;
-                    setState(() => _month = DateTime(year, _month.month));
+                    final month = DateTime(year, _month.month);
+                    final first = DateTime(
+                      widget.firstDate.year,
+                      widget.firstDate.month,
+                    );
+                    final last = DateTime(
+                      widget.lastDate.year,
+                      widget.lastDate.month,
+                    );
+                    setState(
+                      () => _month = month.isBefore(first)
+                          ? first
+                          : month.isAfter(last)
+                          ? last
+                          : month,
+                    );
                   },
                   child: Text(m.formatMonthYear(_month)),
                 ),
@@ -129,16 +144,12 @@ class _AppDatePickerState extends State<AppDatePicker> {
     if (day < 1 || day > days) return const SizedBox(height: 48);
     final date = DateTime(_month.year, _month.month, day);
     final selected = DateUtils.isSameDay(date, widget.initialDate);
-    return Semantics(
-      label: m.formatFullDate(date),
+    return AppButton(
+      semanticLabel: m.formatFullDate(date),
       selected: selected,
-      child: AppButton(
-        variant: selected ? AppButtonVariant.primary : AppButtonVariant.ghost,
-        onPressed: _allowed(date)
-            ? () => Navigator.of(context).pop(date)
-            : null,
-        child: Text(m.formatDecimal(day)),
-      ),
+      variant: selected ? AppButtonVariant.primary : AppButtonVariant.ghost,
+      onPressed: _allowed(date) ? () => Navigator.of(context).pop(date) : null,
+      child: Text(m.formatDecimal(day)),
     );
   }
 }

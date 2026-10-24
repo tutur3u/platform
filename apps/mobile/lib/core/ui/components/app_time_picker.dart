@@ -120,6 +120,7 @@ class _AppTimePickerState extends State<AppTimePicker> {
                           : m.postMeridiemAbbreviation,
                     ),
                     selected: _period == period,
+                    inMutuallyExclusiveGroup: true,
                     onSelected: (_) => setState(() => _period = period),
                   ),
               ],

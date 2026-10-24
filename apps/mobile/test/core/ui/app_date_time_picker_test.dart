@@ -100,4 +100,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected, const TimeOfDay(hour: 0, minute: 5));
   });
+  testWidgets('year jumps clamp the visible month to the allowed date range', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AppScaffold(
+          child: AppDatePicker(
+            initialDate: DateTime(2025, 6, 15),
+            firstDate: DateTime(2024, 10, 20),
+            lastDate: DateTime(2026, 2, 10),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('June 2025'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2024'));
+    await tester.pumpAndSettle();
+    expect(find.text('October 2024'), findsOneWidget);
+    final day = tester.widget<AppButton>(find.widgetWithText(AppButton, '20'));
+    expect(day.semanticLabel, contains('October'));
+    expect(day.onPressed, isNotNull);
+    await tester.tap(find.text('October 2024'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2026'));
+    await tester.pumpAndSettle();
+    expect(find.text('February 2026'), findsOneWidget);
+  });
 }

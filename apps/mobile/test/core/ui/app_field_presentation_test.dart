@@ -56,6 +56,7 @@ void main() {
           body: AppChip(
             avatar: const CircleAvatar(),
             label: const Text('Calendar'),
+            selected: false,
             onSelected: (_) {},
           ),
         ),

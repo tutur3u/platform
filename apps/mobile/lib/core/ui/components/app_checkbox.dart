@@ -29,6 +29,7 @@ class AppCheckbox extends StatelessWidget {
           : value != true,
     );
     return Semantics(
+      container: true,
       label: semanticLabel,
       checked: value == true,
       mixed: value == null,
