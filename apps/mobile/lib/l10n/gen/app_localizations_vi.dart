@@ -6986,16 +6986,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsDataStatusRefreshing => 'Đang làm mới';
 
   @override
-  String get settingsDefaultTaskBoardNavigation => 'Mở bảng Tasks theo mặc định';
+  String get settingsDefaultTaskBoardNavigation => 'Mở bảng Công việc theo mặc định';
 
   @override
   String get settingsDefaultTaskBoardNavigationBoardPicker => 'Bộ chọn bảng';
 
   @override
-  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Bảng Tasks';
+  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Bảng Công việc';
 
   @override
-  String get settingsDefaultTaskBoardNavigationDescription => 'Mở thẳng bảng Tasks cá nhân từ Bảng. Công việc luôn mở chế độ danh sách của bảng.';
+  String get settingsDefaultTaskBoardNavigationDescription => 'Mở thẳng bảng Công việc cá nhân từ Bảng. Công việc luôn mở chế độ danh sách của bảng.';
 
   @override
   String get settingsDefaultWorkspace => 'Không gian mặc định';
@@ -7048,7 +7048,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsFirstDaySunday => 'Chủ nhật';
 
   @override
-  String get settingsGeneralGroup => 'Cá nhân hóa';
+  String get settingsGeneralGroup => 'Chung';
 
   @override
   String get settingsHaptics => 'Phản hồi rung';
@@ -10833,4 +10833,127 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsTimezonePickerSearchHint => 'Tìm thành phố, khu vực hoặc độ lệch GMT';
+
+  @override
+  String get settingsAppsGroup => 'Ứng dụng';
+
+  @override
+  String get settingsSearchPlaceholder => 'Tìm trong cài đặt';
+
+  @override
+  String settingsSearchNoResults(String query) {
+    return 'Không có cài đặt nào khớp với “$query”.';
+  }
+
+  @override
+  String settingsSearchResults(int count) {
+    return '$count kết quả';
+  }
+
+  @override
+  String get settingsAppOfflineData => 'Dữ liệu ngoại tuyến';
+
+  @override
+  String get settingsAppOfflineDataDescription => 'Chuẩn bị và xem dữ liệu thiết bị này lưu ngoại tuyến';
+
+  @override
+  String get settingsAppBoardsGroup => 'Bảng';
+
+  @override
+  String get settingsAppWeekGroup => 'Tuần';
+
+  @override
+  String get settingsAppConnectionsGroup => 'Lịch đã kết nối';
+
+  @override
+  String get settingsAppPrivacyGroup => 'Quyền riêng tư';
+
+  @override
+  String get settingsAppFocusGroup => 'Tập trung';
+
+  @override
+  String get settingsAppRequestsGroup => 'Yêu cầu';
+
+  @override
+  String settingsPomodoroSummary(int focus, int shortBreak) {
+    return 'Tập trung $focus phút · nghỉ $shortBreak phút';
+  }
+
+  @override
+  String settingsRequestThresholdSummary(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Mục cũ hơn $days ngày cần phê duyệt',
+      zero: 'Mọi mục bị bỏ lỡ đều cần phê duyệt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsFirstDaySummary(String day) {
+    return 'Ngày đầu tuần: $day';
+  }
+
+  @override
+  String get settingsMailSummary => 'Hộp thư, cách đọc và thao tác vuốt';
+
+  @override
+  String get settingsAssistantSummary => 'Tính cách, bộ nhớ và mô hình trên thiết bị';
+
+  @override
+  String get settingsTimeZoneGroup => 'Múi giờ';
+
+  @override
+  String settingsAppSettingsFor(String app) {
+    return 'Cài đặt $app';
+  }
+
+  @override
+  String get settingsApprovalThreshold => 'Ngưỡng phê duyệt';
+
+  @override
+  String get settingsPomodoroTitle => 'Pomodoro';
+
+  @override
+  String get settingsRequireApproval => 'Yêu cầu phê duyệt';
+
+  @override
+  String get settingsApprovalOlderThan => 'Với mục cũ hơn';
+
+  @override
+  String get settingsDaysUnit => 'ngày';
+
+  @override
+  String get settingsStatusChangeWindow => 'Thời gian đổi trạng thái';
+
+  @override
+  String get settingsFooterDevice => 'Lưu trên thiết bị này.';
+
+  @override
+  String get settingsFooterFirstDay => 'Lưu vào tài khoản của bạn trên mọi thiết bị. Tự động dùng mặc định của không gian làm việc.';
+
+  @override
+  String get settingsFooterWorkspace => 'Áp dụng cho mọi người trong không gian làm việc này.';
+
+  @override
+  String get settingsFooterCalendarAccounts => 'Các tài khoản lịch đã kết nối với không gian làm việc này.';
+
+  @override
+  String get settingsFooterOffline => 'Dữ liệu lưu trên thiết bị này để dùng ngoại tuyến.';
+
+  @override
+  String get settingsTasksSummaryBoardView => 'Xem dạng bảng';
+
+  @override
+  String get settingsTasksSummaryBoardList => 'Danh sách bảng';
+
+  @override
+  String get settingsFinanceAmountsShown => 'Đang hiện số tiền';
+
+  @override
+  String get settingsFinanceAmountsHidden => 'Đang ẩn số tiền';
+
+  @override
+  String get settingsSearchBrowserTerm => 'trình duyệt';
 }

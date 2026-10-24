@@ -23,6 +23,16 @@ class ShellChromeConfig {
         navMode: ShellNavMode.miniApp,
       );
     }
+    if (matchedLocation.startsWith('${Routes.settingsApps}/')) {
+      final title = switch (matchedLocation.split('/').last) {
+        'tasks' => l10n.navTasks,
+        'calendar' => l10n.navCalendar,
+        'finance' => l10n.navFinance,
+        'timer' => l10n.timerTitle,
+        _ => l10n.settingsAppsGroup,
+      };
+      return ShellChromeConfig(title: title, navMode: ShellNavMode.miniApp);
+    }
     if (matchedLocation.startsWith('${Routes.settingsOffline}/')) {
       final module = matchedLocation.split('/').last;
       final title = switch (module) {

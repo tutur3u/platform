@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
+import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
@@ -357,6 +358,7 @@ GoRouter createAppRouter(
             path: Routes.notificationsArchive,
             builder: (context, state) => const NotificationsPage.archive(),
           ),
+          ...appSettingsAliasRoutes(),
           ...AppRegistry.routes,
           GoRoute(
             path: Routes.habits,
