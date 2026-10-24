@@ -113,4 +113,107 @@ void registerTimezonePickerChecks() {
     expect(h.actions.state.topmostModalOwner, isNull);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Android predictive back commit closes only the picker', (
+    tester,
+  ) async {
+    final h = await open(tester);
+    const codec = StandardMethodCodec();
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    Future<void> gesture(String method, [Object? arguments]) =>
+        messenger.handlePlatformMessage(
+          SystemChannels.backGesture.name,
+          codec.encodeMethodCall(MethodCall(method, arguments)),
+          (_) {},
+        );
+    final event = {
+      'touchOffset': [10.0, 400.0],
+      'progress': 0.0,
+      'swipeEdge': 0,
+    };
+    await gesture('startBackGesture', event);
+    await gesture('updateBackGestureProgress', {...event, 'progress': 0.6});
+    await gesture('commitBackGesture');
+    await _settle(tester);
+    expect(picker, findsNothing);
+    expect(h.router.state.matchedLocation, Routes.settings);
+    expect(h.actions.state.topmostModalOwner, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('MainActivity hasModal reports the open picker', (tester) async {
+    await open(tester);
+    const codec = StandardMethodCodec();
+    Future<Object?> hasModal() async {
+      ByteData? reply;
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(
+            'mobile/shell_back',
+            codec.encodeMethodCall(const MethodCall('hasModal')),
+            (data) => reply = data,
+          );
+      return codec.decodeEnvelope(reply!);
+    }
+
+    expect(await hasModal(), isTrue);
+    await tester.binding.handlePopRoute();
+    await _settle(tester);
+    expect(picker, findsNothing);
+    expect(await hasModal(), isFalse);
+  });
+
+  testWidgets('dragging the sheet down dismisses without saving', (
+    tester,
+  ) async {
+    final h = await open(tester);
+    final handle = find.descendant(
+      of: picker,
+      matching: find.text('Personal timezone'),
+    );
+    await tester.fling(handle, const Offset(0, 600), 2000);
+    await _settle(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(picker, findsNothing);
+    expect(h.router.state.matchedLocation, Routes.settings);
+    expect(h.actions.state.topmostModalOwner, isNull);
+    verifyNever(() => h.timezone.save(any()));
+  });
+
+  testWidgets('search focus moves to the navbar and is released on Back', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.tap(find.byTooltip(searchHint));
+    await _settle(tester);
+    final field = find.descendant(
+      of: shellQuery,
+      matching: find.byType(EditableText),
+    );
+    expect(
+      tester.state<EditableTextState>(field).widget.focusNode.hasFocus,
+      isTrue,
+    );
+    expect(tester.testTextInput.isVisible, isTrue);
+    await tester.binding.handlePopRoute();
+    await _settle(tester);
+    expect(shellQuery, findsNothing);
+    final focused = FocusManager.instance.primaryFocus?.context;
+    expect(focused == null || focused.mounted, isTrue);
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
+  testWidgets('a deep link away closes the picker and its registrations', (
+    tester,
+  ) async {
+    final h = await open(tester);
+    h.router.go(Routes.home);
+    await _settle(tester);
+    expect(picker, findsNothing);
+    expect(h.actions.state.topmostModalOwner, isNull);
+    h.router.go(Routes.settings);
+    await _settle(tester);
+    expect(picker, findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
