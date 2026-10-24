@@ -4630,5 +4630,12 @@
   "feedbackSubjectRequired": "Nhập tiêu đề từ 1–160 ký tự.",
   "feedbackDetailsRequired": "Nhập chi tiết từ 1–8000 ký tự.",
   "profileMediaNetworkError": "Không thể kết nối. Kiểm tra kết nối và thử lại.",
-  "profileMediaUploadExpired": "Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh."
+  "profileMediaUploadExpired": "Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.",
+  "settingsTimezonePickerAll": "Tất cả múi giờ",
+  "settingsTimezonePickerAutoPersonal": "Dùng múi giờ của không gian làm việc, hoặc của thiết bị này nếu không gian làm việc chưa đặt.",
+  "settingsTimezonePickerAutoWorkspace": "Thành viên chưa đặt múi giờ cá nhân sẽ dùng múi giờ thiết bị của họ.",
+  "settingsTimezonePickerAutoResolved": "Hiện tại: {timezone}.",
+  "settingsTimezonePickerCurrent": "Đang dùng",
+  "settingsTimezonePickerEmpty": "Không có múi giờ nào khớp với “{query}”.",
+  "settingsTimezonePickerSearchHint": "Tìm thành phố, khu vực hoặc độ lệch GMT"
 }

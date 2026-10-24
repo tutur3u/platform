@@ -62,9 +62,8 @@ class _SettingsHarness {
       const Stream<ShellProfileState>.empty(),
       initialState: const ShellProfileState(),
     );
-    when(
-      () => calendar.loadWorkspacePreference(any()),
-    ).thenAnswer((_) async {});
+    when(() => calendar.loadWorkspacePreference(any()))
+        .thenAnswer((_) async {});
     when(timezone.reload).thenAnswer((_) async {});
     when(
       () => timezone.save(
@@ -172,7 +171,13 @@ class _SettingsHarness {
   late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   late final GoRouter router;
 
-  Future<void> pump(WidgetTester tester, {double scale = 1}) async {
+  /// [shellChrome] provides the chrome actions registry, as the app does, so
+  /// sheets register dynamic search and modal Back with the shell.
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    bool shellChrome = false,
+  }) async {
     await apps.recordAppOrigin(Routes.apps);
     if (assistantPageBuilder != null) await experiments.load();
     await tester.pumpWidget(
@@ -187,10 +192,10 @@ class _SettingsHarness {
           BlocProvider.value(value: finance),
           BlocProvider.value(value: theme),
           BlocProvider.value(value: locale),
-          if (assistantPageBuilder != null) ...[
+          if (assistantPageBuilder != null || shellChrome)
             BlocProvider.value(value: actions),
+          if (assistantPageBuilder != null)
             BlocProvider.value(value: experiments),
-          ],
           BlocProvider(create: (_) => ShellMiniNavCubit()),
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
           BlocProvider(create: (_) => AssistantChromeCubit()),
@@ -216,9 +221,8 @@ class _SettingsHarness {
             routerConfig: router,
             // Mirrors App: the appearance backdrop sits outside the bridge.
             builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(scale)),
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
               child: RepaintBoundary(
                 key: const ValueKey('synthetic-settings-render'),
                 child: AppearanceBackdrop(
