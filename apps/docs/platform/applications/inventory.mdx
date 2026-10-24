@@ -675,3 +675,19 @@ to pass all 28 checks plus season concurrency, strict SQL packets, generated typ
 and owned cleanup. Local source and mock checks do not establish PostgreSQL
 acceptance. Compare the retained same-schema failing count with the new candidate
 before declaring the fixture repair verified.
+
+
+## Checkout expiry invalidation receipts
+
+The Cron Control checkout Worker remains off by default. When separately enabled,
+it records owed storefront invalidations and sends workspace batches to Inventory's
+cron-authenticated checkout-expiry POST adapter. That adapter reports each workspace
+as successful only after its throwing invalidation helper finishes. One workspace
+failure does not prevent attempts for the other workspaces. Worker obligations clear
+only on matching success receipts; failed or missing receipts remain owed, and
+three unsuccessful attempts quarantine the item without discarding it. Quarantine
+and incomplete work keep the slot unsuccessful and preserve the durable job stop
+budget. The existing GET expiry path and other best-effort cache helpers retain
+their behavior. The route and Worker checkout-expiry regressions cover receipts,
+partial progress, backpressure and bounded retries; hosted cache freshness remains
+separate acceptance. See the [processor runbook](/build/devops/cloudflare-processor-migration).

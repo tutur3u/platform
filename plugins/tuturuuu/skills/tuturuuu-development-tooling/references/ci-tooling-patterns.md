@@ -844,6 +844,15 @@ settled: late completions must not recharge failures or overwrite an unknown
 outcome, including when reconciliation refused a replacement at the budget limit.
 Keep dispatch and restart regressions for both late failure and late success.
 
+For checkout expiry, preserve pending obligations with pre-expiry backpressure,
+not truncation. Drain owed invalidations before new expiry, isolate failures and
+persist per-item attempt counts and bounded quarantine. Settle only Inventory's
+explicit per-workspace success receipts. Include claim, pending-work, fence and
+completion RPC waits in the whole-run deadline, with no dependent work after a
+timeout. Run cron-control's independent unit config; test Inventory's receipt
+adapter with its own config. See the processor migration runbook for bounds and
+remaining cross-store crash and hosted-runtime evidence.
+
 ## Native Meet realtime toolchain
 
 For the native Meet realtime Vite+ workspace, keep the original production Wrangler

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   expireCheckoutReservations: vi.fn(),
   safelyRevalidateWorkspaceStorefronts: vi.fn(),
+  revalidateWorkspaceStorefronts: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
@@ -11,6 +12,8 @@ vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
+  revalidateWorkspaceStorefronts: (...args: unknown[]) =>
+    mocks.revalidateWorkspaceStorefronts(...args),
   safelyRevalidateWorkspaceStorefronts: (...args: unknown[]) =>
     mocks.safelyRevalidateWorkspaceStorefronts(...args),
 }));
@@ -116,14 +119,33 @@ describe('inventory checkout expiry cron', () => {
       await expect(response.json()).resolves.toEqual({
         ok: true,
         revalidated: 1,
+        results: [{ wsId: WS, ok: true }],
       });
-      expect(mocks.safelyRevalidateWorkspaceStorefronts).toHaveBeenCalledTimes(
-        1
-      );
-      expect(mocks.safelyRevalidateWorkspaceStorefronts).toHaveBeenCalledWith(
-        WS
-      );
+      expect(mocks.revalidateWorkspaceStorefronts).toHaveBeenCalledTimes(1);
+      expect(mocks.revalidateWorkspaceStorefronts).toHaveBeenCalledWith(WS);
       expect(mocks.expireCheckoutReservations).not.toHaveBeenCalled();
+    });
+
+    it('reports a failed invalidation and continues with the next workspace', async () => {
+      const next = '00000000-0000-4000-8000-000000000002';
+      mocks.revalidateWorkspaceStorefronts
+        .mockRejectedValueOnce(new Error('invalidation failed'))
+        .mockResolvedValueOnce(undefined);
+      mocks.safelyRevalidateWorkspaceStorefronts.mockResolvedValue(undefined);
+      const response = await post(
+        JSON.stringify({ revalidateWorkspaceIds: [WS, next] })
+      );
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        ok: false,
+        revalidated: 1,
+        results: [
+          { wsId: WS, ok: false },
+          { wsId: next, ok: true },
+        ],
+      });
+      expect(mocks.revalidateWorkspaceStorefronts).toHaveBeenCalledTimes(2);
+      expect(mocks.safelyRevalidateWorkspaceStorefronts).not.toHaveBeenCalled();
     });
 
     it.each([

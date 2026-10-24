@@ -5,6 +5,7 @@ import {
   type JobState,
   LedgerCore,
   type LedgerStore,
+  type PendingClaim,
 } from './ledger';
 
 // One SQLite row per job. Each RPC runs synchronously against storage, so a
@@ -52,6 +53,14 @@ export class CronLedger extends DurableObject<unknown> {
     this.#core.addPendingWork(jobId, items);
   }
 
+  failPendingWork(jobId: string, items: string[], claim?: PendingClaim) {
+    return this.#core.failPendingWork(jobId, items, claim);
+  }
+
+  quarantinedWork(jobId: string) {
+    return this.#core.quarantinedWork(jobId);
+  }
+
   checkFence(jobId: string, generation: number) {
     return this.#core.checkFence(jobId, generation);
   }
@@ -60,8 +69,8 @@ export class CronLedger extends DurableObject<unknown> {
     return this.#core.pendingWork(jobId);
   }
 
-  settlePendingWork(jobId: string, items: string[]) {
-    this.#core.settlePendingWork(jobId, items);
+  settlePendingWork(jobId: string, items: string[], claim?: PendingClaim) {
+    this.#core.settlePendingWork(jobId, items, claim);
   }
 
   claim(input: ClaimInput) {

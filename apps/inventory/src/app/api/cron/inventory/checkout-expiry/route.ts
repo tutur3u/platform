@@ -1,5 +1,5 @@
 import { expireCheckoutReservations } from '@tuturuuu/inventory-core/commerce/checkouts';
-import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
+import { revalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -93,8 +93,22 @@ export async function POST(request: NextRequest) {
   }
 
   const unique = [...new Set(workspaceIds as string[])];
+  const results: { wsId: string; ok: boolean }[] = [];
   for (const wsId of unique) {
-    await safelyRevalidateWorkspaceStorefronts(wsId);
+    try {
+      await revalidateWorkspaceStorefronts(wsId);
+      results.push({ wsId, ok: true });
+    } catch (error) {
+      console.error('Checkout expiry storefront invalidation failed', {
+        error,
+        wsId,
+      });
+      results.push({ wsId, ok: false });
+    }
   }
-  return NextResponse.json({ ok: true, revalidated: unique.length });
+  return NextResponse.json({
+    ok: results.every((result) => result.ok),
+    revalidated: results.filter((result) => result.ok).length,
+    results,
+  });
 }

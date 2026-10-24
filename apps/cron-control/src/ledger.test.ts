@@ -185,3 +185,39 @@ it.each(['failed', 'ok'] as const)(
     });
   }
 );
+
+it('persists per-item attempts and quarantine across restarts without discarding other work', () => {
+  const { store } = ledger();
+  const core = new LedgerCore(store);
+  core.addPendingWork('job', ['poison', 'healthy']);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const restarted = new LedgerCore(store);
+    expect(restarted.failPendingWork('job', ['poison', 'poison'])).toEqual(
+      attempt === 2 ? ['poison'] : []
+    );
+  }
+  const restarted = new LedgerCore(store);
+  expect(restarted.pendingWork('job')).toEqual(['healthy']);
+  expect(restarted.quarantinedWork('job')).toEqual(['poison']);
+  restarted.addPendingWork('job', ['poison']);
+  expect(restarted.pendingWork('job')).toEqual(['healthy']);
+  restarted.settlePendingWork('job', ['healthy']);
+  restarted.resume('job');
+  expect(restarted.quarantinedWork('job')).toEqual(['poison']);
+});
+
+it('fences late obligation settlement and failure charges from an earlier slot', () => {
+  const { core } = ledger();
+  claim(core, SLOT);
+  core.addPendingWork('job', ['workspace']);
+  claim(core, NEXT_SLOT, 2_000);
+  const snapshot = core.status().job;
+  core.settlePendingWork('job', ['workspace'], { generation: 1, slot: SLOT });
+  core.failPendingWork('job', ['workspace'], { generation: 1, slot: SLOT });
+  expect(core.status().job).toEqual(snapshot);
+  core.settlePendingWork('job', ['workspace'], {
+    generation: 1,
+    slot: NEXT_SLOT,
+  });
+  expect(core.pendingWork('job')).toEqual([]);
+});

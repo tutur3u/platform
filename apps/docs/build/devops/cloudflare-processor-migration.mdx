@@ -22,34 +22,53 @@ schedule can move first and the processor later. Both vars are empty by default.
   RPC directly with the service key in `apikey`. The RPC locks candidates with
   `FOR UPDATE SKIP LOCKED` and only moves `reserved` rows, so a concurrent legacy
   run cannot double-expire a checkout.
-- **Same bounds.** At most 10 batches of 1,000 rows per slot, one shared `p_now`,
-  30-second database deadlines and manual redirects. The ledger stop fence is
-  checked before every batch after the first.
-- **One deadline inside the lease.** A Worker processor gets an absolute deadline
-  30 seconds before its slot lease expires (240 seconds for checkout expiry's
-  270-second lease). Every request uses its fixed timeout capped by the time left,
-  and none starts with under a second remaining, so the run always finishes and
-  records its outcome before a later slot can claim.
-- **Next-only side effect.** Storefront payloads are cached for a year and
-  invalidated by tag inside the Next.js host. When rows expire, the Worker posts
-  their workspace ids, 100 per request, to `POST /api/cron/inventory/checkout-expiry`
-  with Inventory's cron secret. That handler only revalidates; it accepts at most
-  100 UUIDs in an 8 KiB body. Committed expiries are revalidated even if a later
-  batch fails. Affected workspace ids are persisted on the job's ledger row as a
-  pending obligation before revalidation, and each accepted chunk settles its
-  ids. A failed or deadline-deferred revalidation fails (or defers) the slot, and
-  every later sweep retries the outstanding obligations first, so a storefront is
-  never left stale after a transient Inventory error.
-- **Outcomes.** A database deadline is `unknown`; HTTP errors, redirects and an
-  unexpected RPC shape are `failed`. Worker processors run once per slot: the next
-  slot is the retry, and five consecutive failed slots stop the job.
+- **Expiry bounds and backpressure.** At most 10 batches of 1,000 rows per slot,
+  one shared `p_now`, 30-second database deadlines and manual redirects. Check the
+  durable stop fence before every batch and revalidation chunk. Active obligations
+  and quarantined work share a 5,000-workspace bound. Reserve room for a worst-case
+  1,000 distinct workspaces before each expiry RPC; stop expiry when capacity is
+  insufficient. Ledger overflow is refused atomically; no oldest-item eviction.
+- **Whole-run deadline.** Claim, HTTP headers/body, pending-ledger RPCs, stop checks
+  and completion share an absolute 240-second deadline inside the 270-second lease.
+  HTTP requests also retain their shorter timeout. A timed-out ledger call can
+  still complete remotely; do not replay it immediately. No dependent operation
+  starts after timeout. Late obligation settlement and retry charges are fenced
+  by the original claim's generation and slot. An unconfirmed completion leaves the claim to be charged
+  as unknown by the next slot rather than reporting success.
+- **Owed work first.** Outstanding revalidation runs before any expiry, with up to
+  120 seconds reserved for that phase. If owed work remains, start no new
+  expiry. Fresh expiries persist obligations before revalidation. Incomplete work,
+  capacity exhaustion and quarantine never count as a successful slot.
+- **Per-workspace receipts.** Next.js owns storefront cache invalidation. The Worker
+  posts at most 100 workspace UUIDs to Inventory's authenticated POST adapter
+  (8 KiB input bound). The adapter uses the throwing invalidation helper, isolates
+  each workspace failure and returns `results: [{ wsId, ok }]`. Only an explicit
+  `ok: true` receipt for a requested workspace settles its obligation. Missing,
+  contradictory, failed or legacy aggregate-only receipts stay owed.
+- **Poison isolation.** A failed chunk does not prevent later chunks from running
+  within the remaining time. Each unconfirmed item gets one durable attempt charge
+  per sweep. After three attempts it moves to bounded `quarantinedWork`; the item
+  is retained, occupies capacity and is not retried automatically. Healthy chunks
+  can still settle. Inspect quarantine through the authenticated ledger status;
+  repair and confirm invalidation before deliberately settling it. Resume alone
+  preserves quarantine. Five failed or unknown slots still stop the entire job.
 
-**Cost.** An idle slot is two ledger requests and one RPC, with no Vercel call:
-at 288 slots a day that removes 288 Inventory function invocations and adds 288
-database RPCs (the Next route made the same RPC). A full slot is at most 10 RPCs
-plus one revalidation request per 100 affected workspaces.
+**Operation envelope.** An idle Worker slot makes five ledger calls (claim, two
+backlog reads, stop check, completion) and one expiry RPC, with no Inventory call.
+A slot makes at most 10 expiry RPCs and 100 revalidation calls (50 owed chunks plus
+50 fresh chunks), with at most three ledger operations per revalidation chunk
+(fence, settle, failure charge). These are conservative source bounds, not billed
+usage or hosted acceptance. Quarantined items have no automatic retries; stopped
+jobs do no processor work. The controlled unit fixtures count requests and cover
+capacity, partial receipts, poison isolation, restart persistence and each stalled
+ledger phase. Hosted stop, database, Next cache freshness and exact-artifact CI
+remain separate gates. Database expiry and recording a ledger obligation are
+separate writes; an interruption between them still requires reconciliation
+before claiming crash-atomic end-to-end invalidation.
 
-**Cutover.** Enable the job first (it calls the Next route), verify one slot, then
+**Cutover.** Deploy the Inventory per-workspace receipt adapter before selecting
+this Worker port; an older adapter's aggregate receipt cannot settle work. Both
+Cron Control vars remain empty in source. Enable the job first (it calls the Next route), verify one slot, then
 add it to `CRON_CONTROL_WORKER_PROCESSORS` in a separate change. Verify one slot
 with `detail.expired` and storefront freshness for a test checkout, then remove the
 Vercel cron. Roll back by removing the id from `CRON_CONTROL_WORKER_PROCESSORS`;

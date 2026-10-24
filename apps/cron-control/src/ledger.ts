@@ -20,6 +20,8 @@ export interface JobState {
    * storefront revalidation after checkout expiry); later runs retry it.
    */
   pendingWork?: string[];
+  pendingAttempts?: Record<string, number>;
+  quarantinedWork?: string[];
 }
 
 export type ClaimResult =
@@ -44,11 +46,23 @@ export interface CompleteInput {
   slot: string;
 }
 
+export type PendingClaim = Pick<CompleteInput, 'generation' | 'slot'>;
+
 export interface Ledger {
   addPendingWork(jobId: string, items: string[]): Promise<void>;
+  failPendingWork(
+    jobId: string,
+    items: string[],
+    claim?: PendingClaim
+  ): Promise<string[]>;
+  quarantinedWork(jobId: string): Promise<string[]>;
   checkFence(jobId: string, generation: number): Promise<boolean>;
   pendingWork(jobId: string): Promise<string[]>;
-  settlePendingWork(jobId: string, items: string[]): Promise<void>;
+  settlePendingWork(
+    jobId: string,
+    items: string[],
+    claim?: PendingClaim
+  ): Promise<void>;
   claim(input: ClaimInput): Promise<ClaimResult>;
   complete(input: CompleteInput): Promise<JobState>;
   resume(jobId: string): Promise<JobState>;
@@ -62,9 +76,10 @@ export interface LedgerStore {
   write(jobId: string, state: JobState): void;
 }
 
-// Bounds one job's stored obligations; the oldest are dropped (and logged)
-// only if a backlog ever exceeds it.
+// Active obligations and dead letters share one bound; expiry reserves capacity
+// before its database RPC. Neither queue may evict an owed invalidation.
 export const MAX_PENDING_WORK = 5_000;
+export const MAX_PENDING_ATTEMPTS = 3;
 
 export function initialJobState(): JobState {
   return {
@@ -209,27 +224,78 @@ export class LedgerCore {
   addPendingWork(jobId: string, items: string[]) {
     const state = this.#read(jobId);
     const current = state.pendingWork ?? [];
-    const merged = [...new Set([...current, ...items])];
+    const quarantined = new Set(state.quarantinedWork ?? []);
+    const merged = [
+      ...new Set([...current, ...items.filter((id) => !quarantined.has(id))]),
+    ];
+    if (merged.length + quarantined.size > MAX_PENDING_WORK)
+      throw new RangeError('Cron Control pending work capacity exhausted');
     if (merged.length === current.length) return;
-    const dropped = merged.length - MAX_PENDING_WORK;
-    if (dropped > 0)
-      console.error('Cron Control dropped pending work over the bound', {
-        dropped,
-        jobId,
-      });
-    this.store.write(jobId, {
-      ...state,
-      pendingWork: merged.slice(Math.max(0, dropped)),
-    });
+    this.store.write(jobId, { ...state, pendingWork: merged });
   }
 
-  settlePendingWork(jobId: string, items: string[]) {
+  quarantinedWork(jobId: string): string[] {
+    return this.#read(jobId).quarantinedWork ?? [];
+  }
+
+  failPendingWork(
+    jobId: string,
+    items: string[],
+    claim?: PendingClaim
+  ): string[] {
     const state = this.#read(jobId);
+    if (
+      claim &&
+      (state.generation !== claim.generation || state.lastSlot !== claim.slot)
+    )
+      return [];
+    const failed = new Set(items);
+    const attempts = { ...state.pendingAttempts };
+    const moved: string[] = [];
+    for (const id of state.pendingWork ?? []) {
+      if (!failed.has(id)) continue;
+      attempts[id] = (attempts[id] ?? 0) + 1;
+      if (attempts[id] >= MAX_PENDING_ATTEMPTS) {
+        moved.push(id);
+        delete attempts[id];
+      }
+    }
+    const dead = new Set([...(state.quarantinedWork ?? []), ...moved]);
+    this.store.write(jobId, {
+      ...state,
+      pendingAttempts: attempts,
+      pendingWork: (state.pendingWork ?? []).filter((id) => !dead.has(id)),
+      quarantinedWork: [...dead],
+    });
+    return moved;
+  }
+
+  settlePendingWork(jobId: string, items: string[], claim?: PendingClaim) {
+    const state = this.#read(jobId);
+    if (
+      claim &&
+      (state.generation !== claim.generation || state.lastSlot !== claim.slot)
+    )
+      return;
     const done = new Set(items);
     const current = state.pendingWork ?? [];
     const remaining = current.filter((item) => !done.has(item));
-    if (remaining.length === current.length) return;
-    this.store.write(jobId, { ...state, pendingWork: remaining });
+    const quarantined = (state.quarantinedWork ?? []).filter(
+      (id) => !done.has(id)
+    );
+    if (
+      remaining.length === current.length &&
+      quarantined.length === (state.quarantinedWork ?? []).length
+    )
+      return;
+    const attempts = { ...state.pendingAttempts };
+    for (const id of done) delete attempts[id];
+    this.store.write(jobId, {
+      ...state,
+      pendingWork: remaining,
+      pendingAttempts: attempts,
+      quarantinedWork: quarantined,
+    });
   }
 }
 
@@ -256,10 +322,13 @@ export function memoryLedgerStore() {
 export function localLedger(core: LedgerCore): Ledger {
   return {
     addPendingWork: async (jobId, items) => core.addPendingWork(jobId, items),
+    failPendingWork: async (jobId, items, claim) =>
+      core.failPendingWork(jobId, items, claim),
+    quarantinedWork: async (jobId) => core.quarantinedWork(jobId),
     checkFence: async (jobId, generation) => core.checkFence(jobId, generation),
     pendingWork: async (jobId) => core.pendingWork(jobId),
-    settlePendingWork: async (jobId, items) =>
-      core.settlePendingWork(jobId, items),
+    settlePendingWork: async (jobId, items, claim) =>
+      core.settlePendingWork(jobId, items, claim),
     claim: async (input) => core.claim(input),
     complete: async (input) => core.complete(input),
     resume: async (jobId) => core.resume(jobId),
