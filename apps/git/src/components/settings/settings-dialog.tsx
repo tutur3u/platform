@@ -10,6 +10,7 @@ import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-sett
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
 
@@ -23,6 +24,7 @@ export function SettingsDialog({
   user: WorkspaceUser | null;
   wsId?: string;
 }) {
+  const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const navItems = [
     createAccountSettingsNavGroup(t),
