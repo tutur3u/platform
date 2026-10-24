@@ -57,7 +57,7 @@ leaderboards are creator-managed; workspace-wide GET visibility remains in scope
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | owner policies pass |
 | Database types | `bun sb:typegen` | generated types remain current |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

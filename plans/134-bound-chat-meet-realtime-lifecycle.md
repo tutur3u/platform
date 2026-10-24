@@ -56,7 +56,7 @@ and preserve reconnect/admission semantics.
 | Meet lifecycle | `bun --cwd apps/meet-realtime vitest run tests/server.test.ts tests/lifecycle.test.ts` | expiry/multi-socket/reconnect/timer cases pass |
 | Typechecks | `bun run --cwd apps/chat-realtime type-check && bun run --cwd apps/meet-realtime type-check` | both exit 0 |
 | Docker contract | `node --test scripts/check-docker-web.test.js && node scripts/check-docker-web.js` | unchanged production wiring passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -119,7 +119,7 @@ eviction, repeated stop, and no duplicate intervals.
 
 ### Step 4: Run all gates
 
-Run both suites/typechecks, Docker contract, `bun check`, and whitespace.
+Run both suites/typechecks, Docker contract, `bun validate`, and whitespace.
 
 ## Done criteria
 

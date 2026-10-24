@@ -42,7 +42,7 @@ function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
  * Whether trusted accounts/locations get scaled read limits (and verified
  * sessions get their own per-session bucket) at the edge. Default on; set
  * `API_PROXY_EDGE_TRUST_ENABLED=0` to disable trust uplift and fall back to
- * legacy per-IP keying without a deploy.
+ * per-IP keying for cache-based identities without a deploy.
  */
 function edgeTrustEnabled(): boolean {
   return isEnvFlagEnabled('API_PROXY_EDGE_TRUST_ENABLED');
@@ -87,6 +87,9 @@ export type TrustedProxyBypassRule = {
 };
 
 export type GuardOptions = {
+  /** Reuse the actor already verified by the MFA guard for opted-in routes. */
+  useVerifiedBearerActor?: boolean;
+  diagnosticPolicyName?: string;
   additionalRoutePolicies?: ProxyRoutePolicy[];
   prefixBase: string;
   routePolicies?: ProxyRoutePolicy[];
@@ -789,18 +792,6 @@ export function hasAuthenticatedApiSession(req: NextRequest): boolean {
   return false;
 }
 
-function getCallerClass(req: NextRequest): CallerClass {
-  // Intentionally always 'anonymous'. Auth headers/cookies are forgeable at the
-  // edge (we can't verify signatures cheaply here), so presence alone must never
-  // grant an elevated proxy budget — real per-user enforcement happens
-  // downstream. Per-session proxy buckets and higher read throughput for
-  // genuinely trusted accounts/locations are granted instead via the
-  // server-written trust cache (see resolveProxyIdentity +
-  // getCachedTrustEntries), which cannot be forged.
-  void req;
-  return 'anonymous';
-}
-
 /**
  * Edge-safe stable subject hash. MUST stay byte-identical to
  * `reputation.ts hashStableSubject` (sha256 hex, sliced to 24 chars) so that
@@ -1092,8 +1083,16 @@ export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
 ): Promise<NextResponse | null> {
+  let authenticatedActor: string | null = null;
   if (!isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)) {
-    const assurance = await enforceRequiredMfaRequest(req);
+    const assurance = await enforceRequiredMfaRequest(
+      req,
+      options.useVerifiedBearerActor
+        ? (userId) => {
+            authenticatedActor = userId;
+          }
+        : undefined
+    );
     if (assurance) return assurance;
   }
   const payloadResponse = await guardApiProxyBody(req, options.maxPayloadBytes);
@@ -1116,7 +1115,8 @@ export async function guardApiProxyRequest(
       trustedBypassRules
     )
   ) {
-    const callerClass = getCallerClass(req);
+    // Credential presence alone never grants an authenticated budget.
+    const callerClass: CallerClass = 'anonymous';
     const ip = extractIPFromRequest(req.headers);
     const identity = await resolveProxyIdentity(req, ip);
     const routePolicy = getRoutePolicy(req, routePolicies);
@@ -1145,6 +1145,11 @@ export async function guardApiProxyRequest(
 
           return buildRateLimitResponse(429, retryAfter, {
             'X-Proxy-Block-Reason': 'ip-already-blocked',
+            'X-RateLimit-Policy': 'proxy-ip-block',
+            'X-RateLimit-Caller-Class': authenticatedActor
+              ? 'authenticated'
+              : 'unknown',
+            'X-RateLimit-Window': 'unknown',
           });
         }
       }
@@ -1152,17 +1157,8 @@ export async function guardApiProxyRequest(
 
     const isRead = req.method === 'GET' || req.method === 'HEAD';
 
-    // Resolve server-verified session keying for reads and mutations, but apply
-    // trust uplift to read limits only. Account trust (session key) and location
-    // trust (cidr/ip keys) are distinguished so that:
-    //   * a server-verified SESSION (cache entry keyed on the real cookie's
-    //     hash — unforgeable) gets its OWN per-session bucket, so signed-in
-    //     teammates behind one NAT no longer collide; and
-    //   * a trusted LOCATION (office cidr/ip) uplifts the shared per-IP bucket
-    //     for the whole team without any per-request credential.
-    // Untrusted traffic keeps legacy per-IP keying, preserving single-IP abuse
-    // caps. A forged cookie hashes to a key with no cache entry, so it cannot
-    // escape the shared IP bucket.
+    // Verified actors can be keyed before a downstream route warms session trust.
+    // Cached sessions retain their own buckets; location uplift applies to reads.
     let trustEntry: CachedTrustEntry | null = null;
     let sessionScoped = false;
     if (abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()) {
@@ -1180,8 +1176,6 @@ export async function guardApiProxyRequest(
       sessionScoped = !!identity.sessionKey && !!sessionEntry;
 
       if (isRead) {
-        // Location/workspace trust applies to the shared per-IP bucket for the
-        // whole team; session trust applies to the per-session bucket.
         const locationEntry = combineTrustEntries([
           identity.cidrKey ? entries.get(identity.cidrKey) : undefined,
           identity.ipKey ? entries.get(identity.ipKey) : undefined,
@@ -1194,16 +1188,15 @@ export async function guardApiProxyRequest(
       }
     }
 
-    // Server-verified sessions key per-session; everyone else keys per-IP.
-    const limiterId =
-      sessionScoped && identity.sessionKey
+    const limiterId = authenticatedActor
+      ? `user:${authenticatedActor}`
+      : sessionScoped && identity.sessionKey
         ? identity.sessionKey
         : identity.ipKey;
 
     if (abuseProtectionControls.rateLimitsEnabled && limiterId) {
-      const effectiveCallerClass: CallerClass = sessionScoped
-        ? 'authenticated'
-        : callerClass;
+      const effectiveCallerClass: CallerClass =
+        authenticatedActor || sessionScoped ? 'authenticated' : callerClass;
       const baseRateLimits = getEffectiveRateLimits(
         routePolicy,
         effectiveCallerClass
@@ -1265,7 +1258,8 @@ export async function guardApiProxyRequest(
             'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
             'X-RateLimit-Caller-Class': effectiveCallerClass,
             'X-RateLimit-Window': window,
-            'X-RateLimit-Policy': routePolicy.key,
+            'X-RateLimit-Policy':
+              options.diagnosticPolicyName ?? routePolicy.key,
           });
         }
       }

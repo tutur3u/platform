@@ -359,3 +359,31 @@ fork the SDK to make publication pass. Capture hosted resource/version identity
 and rollback before cutover. Follow the [Meet verification contract](../../../../../apps/docs/platform/applications/meet.mdx)
 for signed-in page/RPC/browser and hosted media acceptance; source review is not
 runtime proof.
+
+### Meet admission versus transport readiness
+
+When a join appears stuck, inspect the admission message separately from socket
+status. `ready` with `admission: waiting` is a host decision still pending; do not
+retry the join automatically or report it as a transport error. Socket OPEN alone
+is not protocol readiness. Bound token resolution and the ready handshake, abort
+expired requests, and ignore their late results. Preserve denial/removal/ended
+messages before a delayed close event; terminal UI must retain the reason. Reset
+the retry budget only after 30 seconds of stable protocol-ready transport, not on
+each ready message. Allow the first pending reconnect with normal backoff; limit subsequent attempts
+to once per minute. Measure stability and throttling with a monotonic clock:
+the server currently re-notifies managers even for an existing waiting entry.
+This client bound is not cross-tab or cross-reload server deduplication.
+
+Run the Meet core `signaling-readiness`, `signaling-transport`, `join-flow` and
+`call-state` suites through resource admission. Capture an authorized signed-in
+browser's first failing request before attributing a production incident to these
+states. The public room document's HTTP 200 and realtime health endpoint do not
+prove admission, SFU or TURN. See the [Meet call decision](../../../../../apps/docs/platform/features/meet-calls.mdx#joining-and-admission-feedback)
+for the timeouts, bilingual UI and scope. Use disposable UI fixtures for screenshots
+when no authorized test account is available, and label that evidence accordingly.
+
+For a Meet `__name is not defined` page exception, inspect the inline script before
+attributing it to signaling. A keepNames-transformed function serialized by
+next-themes can reference helpers outside its serialized body. Preserve the
+Meet-specific literal bootstrap and test its execution without helper globals;
+do not disable function naming globally or treat a theme test as call acceptance.

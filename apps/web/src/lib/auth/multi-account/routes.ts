@@ -6,6 +6,62 @@ const NON_PERSISTABLE_ROUTE_SEGMENTS = new Set([
   'login',
   'onboarding',
 ]);
+export const WEB_WORKSPACE_ROUTE_SEGMENTS = new Set([
+  'ai',
+  'ai-chat',
+  'api-keys',
+  'billing',
+  'calendar',
+  'changelog',
+  'chat',
+  'crawlers',
+  'cron',
+  'datasets',
+  'diet',
+  'documents',
+  'drive',
+  'epm',
+  'external-projects',
+  'feedback',
+  'finance',
+  'forms',
+  'habits',
+  'hive',
+  'inquiries',
+  'integrations',
+  'inventory',
+  'link-shortener',
+  'members',
+  'mail',
+  'memories',
+  'meet',
+  'metrics',
+  'mind',
+  'mira',
+  'models',
+  'notes',
+  'notifications',
+  'personal-journal',
+  'pipelines',
+  'polls',
+  'posts',
+  'progress',
+  'qr-generator',
+  'queues',
+  'readings',
+  'roles',
+  'secrets',
+  'settings',
+  'sso',
+  'tasks',
+  'time-tracker',
+  'usage',
+  'users',
+  'whiteboards',
+  'workforce',
+  'workouts',
+  'workspace-setup',
+]);
 
 function safeDecode(value: string) {
   try {
@@ -29,10 +85,60 @@ function getPrimaryRouteSegment(path: string) {
     : firstSegment;
 }
 
+function isWorkspaceSegment(segment: string) {
+  return (
+    segment === 'personal' ||
+    segment === 'internal' ||
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(
+      segment
+    )
+  );
+}
+
+function getWorkspaceHomeFallback(path: string) {
+  const [pathname = ''] = path.split(/[?#]/, 1);
+  const segments = pathname.split('/').filter(Boolean);
+  const locale = LOCALE_ROUTE_SEGMENTS.has(segments[0] ?? '')
+    ? segments.shift()
+    : undefined;
+  const workspaceSegment = segments[0] ?? '';
+  const routeSegment = segments[1] ?? '';
+
+  if (
+    !routeSegment ||
+    !isWorkspaceSegment(workspaceSegment) ||
+    WEB_WORKSPACE_ROUTE_SEGMENTS.has(routeSegment)
+  ) {
+    return null;
+  }
+
+  return `/${[locale, workspaceSegment].filter(Boolean).join('/')}`;
+}
+
+export function isWebOriginRequest(
+  request: Pick<Request, 'headers'>,
+  configuredWebOrigin: string
+) {
+  const requestOrigin = request.headers.get('origin');
+
+  if (!requestOrigin) {
+    return false;
+  }
+
+  try {
+    return (
+      new URL(requestOrigin).origin === new URL(configuredWebOrigin).origin
+    );
+  } catch {
+    return false;
+  }
+}
+
 function toSameOriginPath(value: string, origin: string) {
   if (value.startsWith('/') && !value.startsWith('//')) {
     const url = new URL(value, origin);
-    return `${url.pathname}${url.search}${url.hash}`;
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    return path.startsWith('//') || path.startsWith('/\\') ? null : path;
   }
 
   try {
@@ -42,7 +148,8 @@ function toSameOriginPath(value: string, origin: string) {
       (url.protocol === 'http:' || url.protocol === 'https:') &&
       url.origin === origin
     ) {
-      return `${url.pathname}${url.search}${url.hash}`;
+      const path = `${url.pathname}${url.search}${url.hash}`;
+      return path.startsWith('//') || path.startsWith('/\\') ? null : path;
     }
   } catch {
     return null;
@@ -79,6 +186,10 @@ export function isPersistableMultiAccountRoutePath(route: string | null) {
     return false;
   }
 
+  if (getWorkspaceHomeFallback(route)) {
+    return false;
+  }
+
   const segment = getPrimaryRouteSegment(route);
 
   return !segment || !NON_PERSISTABLE_ROUTE_SEGMENTS.has(segment);
@@ -99,9 +210,9 @@ export function normalizePersistableMultiAccountRoute(
  *
  * An explicit `targetRoute` is a navigation instruction, not something we store,
  * so the persistable filter must not apply to it — `/login` and `/add-account`
- * are non-persistable precisely because they are transient, and running the
- * target through that filter silently replaced a pending authentication flow
- * with the dashboard. Only the stored fallback stays filtered.
+ * are non-persistable precisely because they are transient. Mail-only folder
+ * workspace routes are still mapped to their workspace home when Web does not
+ * own the route.
  */
 export function resolveMultiAccountSwitchRedirect(
   payload: { lastRoute?: string | null; targetRoute?: string | null },
@@ -113,9 +224,27 @@ export function resolveMultiAccountSwitchRedirect(
     ''
   );
 
+  const targetHome = getWorkspaceHomeFallback(target);
+  if (targetHome) {
+    return targetHome;
+  }
+
+  if (target) {
+    return target;
+  }
+
+  const lastRoute = normalizeMultiAccountRedirectPath(
+    payload.lastRoute,
+    request,
+    ''
+  );
+  const lastRouteHome = getWorkspaceHomeFallback(lastRoute);
+  if (lastRouteHome && isPersistableMultiAccountRoutePath(lastRouteHome)) {
+    return lastRouteHome;
+  }
+
   return (
-    target ||
-    normalizePersistableMultiAccountRoute(payload.lastRoute, request, '/') ||
+    normalizePersistableMultiAccountRoute(payload.lastRoute, request, '/') ??
     '/'
   );
 }

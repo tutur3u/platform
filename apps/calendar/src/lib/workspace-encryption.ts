@@ -20,6 +20,10 @@ import {
   getMasterKey,
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
+import {
+  sanitizeLogError,
+  sanitizeLogValue,
+} from '@tuturuuu/utils/log-sanitizer';
 import { clampWorkspaceCalendarPlaintextForEncryptedStorage } from '@/lib/calendar/sync-field-limits';
 import {
   checkProviderSyncBudget,
@@ -93,14 +97,17 @@ export async function getOrCreateWorkspaceKey(
     if (insertError) {
       if (providerSyncSignal())
         throw new Error('Calendar encryption key creation failed');
-      console.error('Failed to create workspace encryption key:', insertError);
+      console.error(
+        'Failed to create workspace encryption key:',
+        sanitizeLogError(insertError)
+      );
       return null;
     }
 
     return newKey;
   } catch (error) {
     if (providerSyncSignal()) throw error;
-    console.warn('Encryption not available:', error);
+    console.warn('Encryption not available:', sanitizeLogError(error));
     return null;
   }
 }
@@ -133,7 +140,7 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
     return await decryptWorkspaceKey(key, masterKey);
   } catch (error) {
     if (providerSyncSignal()) throw error;
-    console.warn('Failed to get workspace key:', error);
+    console.warn('Failed to get workspace key:', sanitizeLogError(error));
     return null;
   }
 }
@@ -222,7 +229,7 @@ export async function decryptEventsFromStorage<
     // this app's runtime (it must match apps/web). Without it getWorkspaceKey()
     // returns null and events stay encrypted, so name the env var so ops can act.
     console.error(
-      `Encrypted calendar events found for workspace ${wsId} but no encryption key is available. ` +
+      `Encrypted calendar events found for workspace ${sanitizeLogValue(wsId)} but no encryption key is available. ` +
         'Set ENCRYPTION_MASTER_KEY in this app to the same value as apps/web so getWorkspaceKey() can derive the workspace key; ' +
         'returning events undecrypted.'
     );
@@ -408,7 +415,7 @@ export async function encryptGoogleSyncEvents<
     if (error) {
       console.warn(
         `Failed to check encrypted events batch ${i / BATCH_SIZE + 1}:`,
-        error
+        sanitizeLogError(error)
       );
       // Continue with other batches instead of returning early
       continue;

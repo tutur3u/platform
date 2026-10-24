@@ -47,7 +47,7 @@ the request fails downstream.
 | --- | --- | --- |
 | Focused tests | `bun --cwd packages/ai vitest run src/generate/route.test.ts` | boundary and early-rejection cases pass |
 | AI typecheck | `bun run --cwd packages/ai type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -108,7 +108,7 @@ valid current payloads reach the existing provider path unchanged.
 ### Step 4: Document and run gates
 
 Update the generate reference with limits, rejection status, and a client
-remediation note. Run focused tests, typecheck, `bun check`, and the Web build
+remediation note. Run focused tests, typecheck, `bun validate`, and the Web build
 because the live route contract changed.
 
 ## Done criteria
@@ -118,7 +118,7 @@ because the live route contract changed.
       persistence, including when `Content-Length` is absent or dishonest.
 - [ ] Oversized input is rejected, never silently truncated.
 - [ ] Public docs state exact limits and status semantics.
-- [ ] Focused tests, typecheck, `bun check`, Web build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, Web build, and whitespace pass.
 
 ## STOP conditions
 

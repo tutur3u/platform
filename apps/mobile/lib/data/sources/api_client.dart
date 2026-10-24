@@ -12,6 +12,7 @@ import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/data/sources/api_multipart_file.dart';
 import 'package:mobile/data/sources/api_rate_limit_diagnostics.dart';
 import 'package:mobile/data/sources/api_verification.dart';
+import 'package:mobile/data/sources/native_integrity/native_integrity_client.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/scoped_stream_error.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -22,6 +23,7 @@ export 'api_exception.dart';
 export 'api_multipart_file.dart';
 
 part 'api_client_mutations.dart';
+part 'api_client_integrity.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
 ///
@@ -34,12 +36,14 @@ class ApiClient {
     DateTime Function()? clock,
     Duration requestTimeout = const Duration(seconds: 30),
     String? expectedUserId,
+    NativeIntegrityClient? nativeIntegrity,
   }) : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
        _client = httpClient ?? http.Client(),
        _authClient = authClient,
        _expectedUserId = expectedUserId,
        _clock = clock ?? DateTime.now,
-       _requestTimeout = requestTimeout;
+       _requestTimeout = requestTimeout,
+       _nativeIntegrity = nativeIntegrity ?? NativeIntegrityClient();
 
   static final Object _expectedUserKey = Object();
 
@@ -62,6 +66,7 @@ class ApiClient {
   );
 
   final http.Client _client;
+  final NativeIntegrityClient _nativeIntegrity;
   final SupabaseClient? _authClient;
   // A queued operation keeps its owner across all requests and async gaps.
   final String? _expectedUserId;
@@ -197,6 +202,9 @@ class ApiClient {
     String path, {
     bool requiresAuth = true,
   }) async {
+    if (requiresAuth && NativeIntegrityClient.protects(path)) {
+      return _handleResponse(await _requestWithIntegrity('GET', path));
+    }
     final url = _url(path);
 
     final response = await _performRequest(() async {

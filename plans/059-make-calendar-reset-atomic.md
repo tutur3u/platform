@@ -59,7 +59,7 @@ which system calendars must survive.
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | transaction/rollback cases pass |
 | Database types | `bun sb:typegen` | generated RPC types are current |
 | Calendar typecheck | `bun run --cwd apps/calendar type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

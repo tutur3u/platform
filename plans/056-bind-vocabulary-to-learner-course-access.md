@@ -59,7 +59,7 @@ workspace members learner content access.
 | Typechecks | `bun run --cwd apps/learn type-check && bun run --cwd packages/education-core type-check` | both exit 0 |
 | Internal API typecheck | `bun run --cwd packages/internal-api type-check` | exit 0 |
 | Auth guard | `node scripts/check-internal-app-auth.js` | no satellite auth regression |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Learn build | `bun run --cwd apps/learn build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

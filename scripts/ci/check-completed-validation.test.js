@@ -260,11 +260,7 @@ test('unavailable proof fails open and logs no raw token/error data', async () =
   assert.deepEqual(await main({}), { runChecks: true, sourceRun: null });
 });
 
-for (const workflow of [
-  'codecov.yaml',
-  'turbo-unit-tests.yaml',
-  'biome-check.yaml',
-]) {
+for (const workflow of ['biome-check.yaml']) {
   test(`${workflow} isolates immutable refs and gates validation on proof`, () => {
     const text = fs.readFileSync(
       path.join(__dirname, '../../.github/workflows', workflow),

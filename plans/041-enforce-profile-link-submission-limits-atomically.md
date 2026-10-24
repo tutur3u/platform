@@ -60,7 +60,7 @@ transaction. Do not start while G22 retains generated-artifact ownership.
 | Wrapper check | `bun web:api-routes:check` | exit 0 |
 | Manifest | `bun migration:tanstack:manifest` | exit 0 |
 | Migration check | `bun migration:tanstack:check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -122,7 +122,7 @@ Create a first-class-source override entry and regenerate the manifest.
 - [ ] Profile mutation and submission provenance commit together or not at all.
 - [ ] The transaction function is service-role-only and revalidates all identities.
 - [ ] Route/migration tracking is first-class and current.
-- [ ] DB reset/typegen, tests, route checks, `bun check`, build, and whitespace pass.
+- [ ] DB reset/typegen, tests, route checks, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

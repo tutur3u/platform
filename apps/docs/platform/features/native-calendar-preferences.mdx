@@ -1,0 +1,65 @@
+---
+title: Native Calendar preferences
+description: Web ownership, authorization and protection for native timezone settings.
+---
+
+Personal calendar preferences are scoped to the authenticated user. Settings
+updates accept supported IANA timezone names or `auto` inheritance; invalid
+names and fixed-offset strings are rejected before storage. Workspace
+calendar settings are readable by members, but updates require
+`manage_workspace_settings`. Check that permission explicitly on the owning
+PATCH route: a verified signed app session can use an admin-backed database
+client, so membership and table RLS alone do not enforce editing rights.
+
+Native personal/workspace preference GET/PATCH requests default to Web at
+`tuturuuu.com` for `/api/v1/users/calendar-settings` and
+`/api/v1/workspaces/:wsId/calendar-settings`. This product decision applies to
+mobile Settings > Calendar & timezone and all native consumers of those
+preferences. Web serves these routes locally with no Calendar rewrite; Calendar
+and Web use shared settings logic with identity injected by each adapter.
+Supabase Bearer verification, MFA, membership, `manage_workspace_settings`, value
+validation, dedicated preference quotas, IP blocks and diagnostic headers remain
+required. Existing environment origin overrides remain supported.
+
+Intentional exceptions: existing Calendar browser/app-session clients retain
+Calendar's routes, published older mobile builds retain Infrastructure's gateway
+allowlist, and other native Calendar APIs keep their gateway routing. Retaining
+the gateway requires its private-credential hosting exception until those builds
+are retired. New mobile preferences do not require Turnstile or a WebView by default.
+Optional Apple App Attest and Android Play Integrity use a server mode defaulting
+to `off`. `monitor` verifies available proofs and records scalar verdicts without
+blocking existing auth/MFA/quota/permission controls. Turnstile is a bot-abuse
+speed bump, not native attestation; it is separately disabled by default and
+requires operator-owned unsupported-actor eligibility. Live Apple or verified
+Play capability bars that downgrade while native proofs remain valid across an
+actor's devices. Headers and User-Agent claims cannot grant eligibility.
+
+`enforce` stays inactive pending provider/device/fallback and older-client
+acceptance. The guard also covers existing Web browser/server consumers without
+proofs; their proof coverage or a separately reviewed trusted-browser policy is
+mandatory before activation. Missing headers never grant an exemption. Proofs
+never replace workspace authorization or hosting clearance. See the
+[native integrity rollout](/build/devops/calendar-native-api-protection#native-integrity-rollout-default-off)
+for exact configuration, capacity, retention/deletion and rollback gates.
+The [regression inventory](/build/devops/calendar-native-api-protection#regression-evidence)
+links shared-domain, Web auth/guard/header, rewrite ownership and Flutter origin
+coverage for this decision; provider configuration and device acceptance are
+separate release evidence.
+
+Native preference GETs and PATCHes use the actor already verified by the shared MFA guard, without another authentication request. Their quota must not depend on a warm session
+trust cache: a cold/rotated credential previously fell into the shared anonymous IP bucket
+and could receive 429 before Calendar authenticated it. Actor keys also survive token rotation. The exact preference routes use a dedicated bucket, separate from unrelated gateway traffic. Personal/workspace GETs share 600/minute, 6,000/hour, 40,000/day by default; saves share
+60/minute, 300/hour, 2,000/day. Anonymous IP limits and existing overrides remain unchanged.
+MFA, IP blocks, downstream authentication and workspace permissions remain enforced.
+`api-proxy-calendar-preference-reads.test.ts` covers a cold-cache Settings open after shared-IP
+exhaustion, forged credentials, MFA rejection, actor isolation and rotation; the mutation
+regression covers independent bounded save budgets. Fixtures use the real shared guard/MFA
+adapter with synthetic provider/quota boundaries. `preference-guard.test.ts` checks route
+boundaries; `gateway.test.ts` checks upstream diagnostics. Mobile makes one personal and one
+workspace GET on scope mount; tile rebuilds do not load. `timezone_resolution_scope_test.dart`
+covers request counts, rebuilds and cooldown. English/Vietnamese notices retain Retry-After
+and known safe limiter details, without private bodies or arbitrary headers. Retry is explicit
+and preserves the timezone/endpoint (`timezone_settings_http_widget_test.dart`).
+See [Native Calendar API protection](/build/devops/calendar-native-api-protection) for the full limiter inventory,
+read-only WAF policy audit, exact operator items and native attestation design. An unclassified device 429 does not prove the cold-cache mechanism.
+Correlate owning host/path and safe metadata; never log credentials, bodies, actor/workspace IDs or IPs here.

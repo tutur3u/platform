@@ -28,7 +28,7 @@ class _ViewModeSelector extends StatelessWidget {
             ),
             const shad.Gap(4),
             Icon(
-              shad.LucideIcons.chevronDown,
+              LucideIcons.chevronDown,
               size: 12,
               color: theme.colorScheme.mutedForeground,
             ),
@@ -104,7 +104,7 @@ class _ViewModeSheet extends StatelessWidget {
                       ),
                       if (selected)
                         Icon(
-                          shad.LucideIcons.check,
+                          LucideIcons.check,
                           size: 18,
                           color: theme.colorScheme.primary,
                         ),

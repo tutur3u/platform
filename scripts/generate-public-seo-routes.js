@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('./safe-fs');
 const path = require('node:path');
 const { parse } = require('@babel/parser');
 
@@ -182,7 +183,7 @@ function generate({ root = ROOT, check = false } = {}) {
   const output = path.join(root, OUTPUT);
   const content = `${JSON.stringify(routes, null, 2)}\n`;
   if (check) {
-    if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== content) {
+    if (readOptionalFileSync(output, { encoding: 'utf8' }) !== content) {
       throw new Error(
         'Public SEO routes are stale. Run node scripts/generate-public-seo-routes.js.'
       );
@@ -196,8 +197,8 @@ function generate({ root = ROOT, check = false } = {}) {
     }
   } else {
     fs.mkdirSync(path.dirname(output), { recursive: true });
-    if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== content)
-      fs.writeFileSync(output, content);
+    if (readOptionalFileSync(output, { encoding: 'utf8' }) !== content)
+      atomicWriteFileSync(output, content);
   }
   return routes;
 }

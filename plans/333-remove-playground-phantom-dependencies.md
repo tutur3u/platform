@@ -53,7 +53,7 @@ package hygiene without changing runtime behavior.
 | Manifest absence | `rg -n '"@tuturuuu/supabase"|"dayjs"' apps/playground/package.json` | no matches |
 | Typecheck | `bun --cwd apps/playground run type-check` | exits 0 |
 | Build | `bun --cwd apps/playground run build` | production build passes |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only Playground manifest, `bun.lock`, and plan status changed |
 
 ## Suggested executor toolkit
@@ -96,7 +96,7 @@ to reachability/metadata caused by that removal.
 
 ### Step 3: Prove the app remains executable
 
-Run Playground typecheck and real build, then `bun check`, scope, and whitespace.
+Run Playground typecheck and real build, then `bun validate`, scope, and whitespace.
 Do not add compatibility packages or imports merely to retain a phantom edge.
 
 ## Test plan
@@ -111,7 +111,7 @@ Do not add compatibility packages or imports merely to retain a phantom edge.
 - [ ] Playground declares neither `@tuturuuu/supabase` nor `dayjs`.
 - [ ] No source/config/dynamic consumer was removed or changed.
 - [ ] Bun produced only explainable manifest/lockfile changes.
-- [ ] Playground typecheck/build, `bun check`, scope, and whitespace pass.
+- [ ] Playground typecheck/build, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

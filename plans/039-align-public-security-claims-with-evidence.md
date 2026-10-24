@@ -56,7 +56,7 @@ named human control owner to approve exact wording.
 | Focused test | `bun --cwd apps/web vitest run 'src/app/[locale]/(marketing)/security/components/defence-grid.test.tsx'` | unsupported-claim assertions pass |
 | Translation sort | `bun i18n:sort` | exit 0; message files sorted |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -110,7 +110,7 @@ future copy cannot silently reintroduce unsupported guarantees.
 - Add a focused static/component assertion under the security page proving the
   rendered copy contains neither `end-to-end encryption` nor a reward promise
   unless an approved policy explicitly supports them.
-- Verify English and Vietnamese key parity and link targets through `bun check`.
+- Verify English and Vietnamese key parity and link targets through `bun validate`.
 - Manually inspect the rendered page only if the executor has an approved local
   browser workflow; absence of browser access does not waive build/type gates.
 
@@ -120,7 +120,7 @@ future copy cannot silently reintroduce unsupported guarantees.
       unsupported claims are removed or narrowed.
 - [ ] Encryption wording matches the actual server-decryptable implementation.
 - [ ] Researcher wording matches the published responsible-disclosure policy.
-- [ ] Both locales, tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Both locales, tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

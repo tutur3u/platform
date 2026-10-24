@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
@@ -157,12 +158,12 @@ class _HistoryTabState extends State<HistoryTab> {
                   firstDayOfWeek: firstDayOfWeek,
                 );
               },
-              child: CustomScrollView(
+              child: AppPageScrollView(
                 controller: _scrollController,
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: HistoryPeriodControls(
                         viewMode: state.historyViewMode,
                         anchorDate: anchorDate,
@@ -199,7 +200,7 @@ class _HistoryTabState extends State<HistoryTab> {
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: HistoryStatsAccordion(
                         isOpen: state.isHistoryStatsAccordionOpen,
                         onToggle: () {
@@ -213,7 +214,10 @@ class _HistoryTabState extends State<HistoryTab> {
                   if (state.isHistoryLoading && sessions.isEmpty)
                     const SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+                        padding: EdgeInsets.only(
+                          top: AppSpacing.xxl,
+                          bottom: AppSpacing.lg,
+                        ),
                         child: Center(child: NovaLoadingIndicator()),
                       ),
                     )
@@ -221,14 +225,17 @@ class _HistoryTabState extends State<HistoryTab> {
                     if (state.isHistoryLoading)
                       const SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          padding: EdgeInsets.only(bottom: AppSpacing.sm),
                           child: NovaLoadingIndicator(size: 20),
                         ),
                       ),
                     if (sessions.isEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.xxl,
+                            bottom: AppSpacing.lg,
+                          ),
                           child: Column(
                             children: [
                               Icon(
@@ -249,7 +256,10 @@ class _HistoryTabState extends State<HistoryTab> {
                     for (final entry in grouped) ...[
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.lg,
+                            bottom: AppSpacing.xs,
+                          ),
                           child: Text(
                             entry.label,
                             style: theme.typography.small.copyWith(
@@ -284,7 +294,7 @@ class _HistoryTabState extends State<HistoryTab> {
                     if (state.historyHasMore && !state.isHistoryLoadingMore)
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          padding: const EdgeInsets.only(top: AppSpacing.sm),
                           child: shad.OutlineButton(
                             onPressed: () {
                               unawaited(
@@ -302,7 +312,7 @@ class _HistoryTabState extends State<HistoryTab> {
                     if (!state.historyHasMore && sessions.length > 10)
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          padding: const EdgeInsets.only(top: AppSpacing.md),
                           child: Text(
                             l10n.timerHistoryEndOfList,
                             style: theme.typography.small.copyWith(
@@ -313,7 +323,6 @@ class _HistoryTabState extends State<HistoryTab> {
                         ),
                       ),
                   ],
-                  const SliverToBoxAdapter(child: SizedBox(height: 96)),
                 ],
               ),
             ),

@@ -53,7 +53,7 @@ blocked while `20260707-141449-codex-g22-time-roles-templates.md` owns
 | Manifest | `bun migration:tanstack:manifest` | first-class source IDs recorded |
 | Migration check | `bun migration:tanstack:check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

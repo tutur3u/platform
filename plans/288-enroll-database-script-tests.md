@@ -20,7 +20,7 @@
 
 ## Why this matters
 
-Canonical `bun check` discovers script tests only through
+Canonical `bun validate` discovers script tests only through
 `scripts/run-script-tests.js`. That runner hardcodes four database files and
 silently omits three executable suites, so regressions in local Supabase docs,
 bundled CLI resolution, and post-reset retry handling can merge green.
@@ -45,7 +45,7 @@ bundled CLI resolution, and post-reset retry handling can merge green.
   explicit individual database filename returns, or an excluded fixture is
   enrolled.
 - Preserve the existing `node --test` runner, sorted paths, `--list`, root
-  `test:scripts`, `bun check`, and CI wiring. Do not create a second canonical
+  `test:scripts`, `bun validate`, and CI wiring. Do not create a second canonical
   database test gate.
 
 ## Commands and expected results
@@ -56,7 +56,7 @@ bundled CLI resolution, and post-reset retry handling can merge green.
 | Runner contract | `node --test scripts/run-script-tests.test.js` | directory discovery, exclusions, and repo inventory pass |
 | Database suites | `node --test apps/database/scripts/*.test.js` | all seven database script files execute under Node and pass |
 | Canonical script suite | `bun run test:scripts` | every discovered repository script test passes |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 
@@ -78,7 +78,7 @@ non-hermetic database integration/pgTAP suites; changing Plan 004's runner.
    Add a red fixture/repository contract proving full eligible discovery,
    deterministic sorting, exclusions, and no duplicate paths.
 4. Run the focused runner, all seven database files through Node, canonical
-   `test:scripts`, `bun check`, whitespace, and exact-scope review.
+   `test:scripts`, `bun validate`, whitespace, and exact-scope review.
 
 ## Done criteria
 

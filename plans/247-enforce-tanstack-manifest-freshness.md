@@ -24,7 +24,7 @@
 ## Why this matters
 
 The repository already has a precise checker for route inventory, ownership,
-method, progress, and accepted-removal drift, but neither canonical `bun check`
+method, progress, and accepted-removal drift, but neither canonical `bun validate`
 nor the Rust/TanStack workflow invokes it. A route or override can therefore
 merge with a stale generated manifest, after which migration dashboards,
 cutover decisions, and mobile mapping consume plausible but incorrect ownership
@@ -79,7 +79,7 @@ migration docs. Obtain workflow transfer from
 | Canonical gate tests | `node --test scripts/check.test.js scripts/tanstack-migration-manifest.test.js scripts/tanstack-migration-progress.test.js` | job registration and stale/current fixtures pass |
 | Workflow contract | `node --test scripts/ci/check-workflow-config.test.js` | Rust/TanStack workflow contains both freshness steps before TanStack typecheck |
 | YAML | `ruby -e "require 'yaml'; YAML.load_file('.github/workflows/rust-backend.yml')"` | exits 0 |
-| Repository | `bun check && git diff --check` | all gates pass, including both new canonical freshness jobs |
+| Repository | `bun validate && git diff --check` | all gates pass, including both new canonical freshness jobs |
 | Scope | `git status --short` | only approved implementation paths are modified; generated manifest/README are unchanged |
 
 ## Scope
@@ -123,7 +123,7 @@ deployment jobs, or Plan 161's ownership model.
    command with `--allow-legacy`; the other invokes the exact README command.
    Give them distinct stable names and concise success summaries. Do not
    condition them on changed paths; existing stale generated state must block
-   any `bun check`.
+   any `bun validate`.
    **Verify:** add `scripts/check.test.js` assertions modeled on
    `assertCheckBeforeScriptTests` proving both names, exact arguments,
    unconditional inclusion, and ordering; Canonical gate tests pass.
@@ -135,7 +135,7 @@ deployment jobs, or Plan 161's ownership model.
    workflow and assert the exact two commands occur before the typecheck step;
    Workflow contract and YAML commands pass.
 4. If the migration architecture doc currently describes freshness as manual,
-   update only that focused statement to name automatic `bun check` and
+   update only that focused statement to name automatic `bun validate` and
    Rust/TanStack CI enforcement. Do not change route counts, ownership claims,
    or migration direction.
    **Verify:** `rg -n 'migration:tanstack:check|check-readme|manifest freshness' apps/docs/platform/architecture/tanstack-rust-migration.mdx`
@@ -166,12 +166,12 @@ deployment jobs, or Plan 161's ownership model.
 - In `scripts/ci/check-workflow-config.test.js`, assert both commands and their
   ordering before TanStack typecheck so a future workflow refactor cannot drop
   them silently.
-- Run full `bun check` to prove the canonical invocation executes both jobs on
+- Run full `bun validate` to prove the canonical invocation executes both jobs on
   the clean current snapshot.
 
 ## Done criteria
 
-- [ ] Every `bun check` validates route-manifest and README-dashboard freshness
+- [ ] Every `bun validate` validates route-manifest and README-dashboard freshness
       against live routes and overrides.
 - [ ] Rust/TanStack CI runs the same two read-only checks before app typecheck.
 - [ ] Stale route ownership and stale README fixtures fail deterministically;

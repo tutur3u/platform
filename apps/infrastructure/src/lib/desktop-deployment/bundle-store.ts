@@ -162,7 +162,7 @@ async function fetchOnce({
       ])
     );
     assertDesktopSigningResources(platform, profile.files, scalars);
-    const certificate = inspectDesktopCertificate({
+    const certificate = await inspectDesktopCertificate({
       platform,
       bytes: values.get(profile.files[0])!,
       password:

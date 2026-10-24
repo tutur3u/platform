@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import policy from '../ci/release-note-policy.js';
+import normalizer from '../ci/normalize-release-notes.js';
 import { appleGet, listIosPrereleaseVersionRecords } from './build-name.mjs';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
@@ -25,13 +25,6 @@ function compareVersions(a, b) {
     if (left[i] !== right[i]) return left[i] - right[i];
   }
   return 0;
-}
-
-function readableSubject(subject) {
-  return subject
-    .replace(/^\w+(?:\([^)]*\))?!?:\s*/u, '')
-    .replace(/\s*\(#\d+\)$/u, '')
-    .trim();
 }
 
 function historyBaseTag(version, sha, git) {
@@ -70,17 +63,21 @@ function historyBaseTag(version, sha, git) {
 export function changesBetween(fromSha, toSha, git = execFileSync) {
   const lines = git(
     'git',
-    ['log', '--format=%s', `${fromSha}..${toSha}`, '--', 'apps/mobile'],
+    [
+      'log',
+      '--no-merges',
+      '--format=%s',
+      `${fromSha}..${toSha}`,
+      '--',
+      'apps/mobile',
+    ],
     { cwd: repoRoot, encoding: 'utf8' }
   ).split('\n');
-  return [
-    ...new Set(
-      lines
-        .filter((line) => !policy.isReleaseBookkeeping(line))
-        .map(readableSubject)
-        .filter(Boolean)
-    ),
-  ];
+  return normalizer
+    .normalizeMobileReleaseNotes(lines.join('\n'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => line.slice(2));
 }
 
 async function githubGet(path, token) {
