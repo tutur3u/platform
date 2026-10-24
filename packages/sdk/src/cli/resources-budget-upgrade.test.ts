@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { limitCommand } from './resources-command';
 import { atomicJson, readResourceConfig } from './resources-config';
 import { occupancy, withAdmission } from './resources-slots';
-import { exists, privateFixtures, until } from './resources-test-fixtures';
+import { exists, privateFixtures } from './resources-test-fixtures';
 
 const fixtures = privateFixtures(true);
 afterEach(() => fixtures.cleanup());
@@ -70,7 +70,7 @@ await withAdmission(${JSON.stringify(home)},async()=>{throw new Error('published
 `
     );
     const publisher = fixtures.launch(home, [], home, runner);
-    await until(() => exists(ready));
+    await publisher.until(() => exists(ready));
     publisher.child.kill('SIGKILL');
     await publisher.done;
     expect(publisher.child.signalCode).toBe('SIGKILL');

@@ -1561,11 +1561,14 @@ A shared host (for example skr-studio, shared by Tuturuuu and Upskii) can carry 
 
 **Fairness, borrowing and reclaim**
 - Each project keeps FIFO order, and only its oldest ticket competes.
-- A head that fits inside its own share wins first, least-used share first. A project with unused share therefore reclaims it on its next admission.
-- A head that would exceed its share may borrow only when `borrow` is on, the global ceiling still fits, and no project with unused share has a head waiting that fits its share.
+- With `borrow: false`, demand and worker caps clamp to the project share as well as the host ceiling. A request outside configured project roots, or with no positive lane/token/memory share, fails before enqueueing with guidance to use a configured root or enable borrowing. It cannot block the FIFO forever.
+- In-share heads reclaim capacity first, least-used share first. Ordinary borrowers yield to reclaim.
+- A head that cannot fit even its empty project share gets age priority over younger in-share heads. If necessary, it reserves capacity and waits for running work to drain; younger small requests cannot refill that reservation. Older in-share heads retain reclaim priority. This includes unassigned `other` borrowers when borrowing is enabled.
 - If a reclaiming head fits its project share but cannot yet fit the host, new admissions stop until enough capacity drains. Smaller borrowers cannot continually refill its reserved capacity.
 - Running jobs, borrowers included, are never preempted.
 - Nested commands inside an admitted job still run under its owner (verified ancestry), so reentrancy is unaffected.
+
+Change budget ceilings and shares only while idle. Tickets that exceed a subsequently reduced host ceiling must be cancelled and requeued. Owners without explicit demand are charged the maximum of their recorded Vitest/build worker limits (at least one token), plus memory proportional to the host memory-per-token ratio. This is an estimate, not an RSS measurement.
 
 **Status.** `ttr resources status --json` adds `budget`:
 - `ceiling`, `used` and `borrow`;
@@ -1577,47 +1580,17 @@ Process identity recovery remains tracked in [#6561](https://github.com/tutur3u/
 
 #### Studio rollout: 0.28.0 single slot to the budget release
 
-Run this only when Mastermind and Upskii have agreed a quiet window. The agent that prepared it does not change Studio's live config.
+Run this only when Mastermind and Upskii have agreed a quiet window. The preparing agent does not change Studio's live config. Use the single [budget protocol rollout and rollback procedure](#budget-scheduler-rollout-and-rollback) below; install through the owning Bun global path, preserving existing roots and shell settings. A separate npm-prefix install is a different owner and cannot refresh the global launchers.
 
-1. **Pin the artifact.**
-   - Fetch the exact release with `npm pack tuturuuu@<version>` and record `sha256sum` of the tarball.
-   - Check it against `npm view tuturuuu@<version> dist.integrity`.
-   - Install into a versioned owner path, for example `npm install --prefix ~/.tuturuuu/cli/<version> ./tuturuuu-<version>.tgz`, and keep the 0.28.0 install alongside it for rollback.
-   - Point `~/.tuturuuu/bin/ttr` at the new `node_modules/.bin/ttr` with an atomic symlink swap.
-   - Every `ttr` that shares the resources home must move together. Check this with `which -a ttr` for the interactive user, launchd services and GitHub Actions runner environments.
-2. **Drain, don't delete.**
-   - Stop starting new heavy work: pause new lanes and runner pickups by coordination.
-   - Do not `disable`, because shims would then run unmanaged.
-   - Wait until `ttr resources status --json` shows no `owners` and an empty `waiting`. Existing owners and tickets finish on 0.28.0. Never remove tickets or slot directories by hand.
-3. **Swap the binary while idle.**
-   - Check `ttr --version` and `ttr resources status`; the old config still has at most 2 lanes.
-   - Run `ttr resources setup --root <tuturuuu root> --root <upskii root> --shell none` to regenerate shims for the new entry point. Setup keeps the existing config, including a `budget` block.
-   - Only after every `ttr` on the host is the new version, continue. 0.28.0 rejects `validationLanes` above 2, and fails closed at 12 lanes. In a one- or two-lane home it ignores the budget, so the new scheduler publishes `slots/budget-v3` under the admission mutex before every admission action, including upgrades performed before a budget is configured. Version 0.28.0 rejects that unknown slot name before starting work, even after every new owner has drained. The fence is first written to a staging file outside `slots/`, then linked atomically into place under the admission lock. A crashed writer can leave an ignored staging file but cannot publish an empty fence. Never remove this persistent fence during normal operation.
-4. **Remove the shim-in-`~/.zshenv` exposure.**
-   - `~/.zshenv` runs for every zsh, including `ssh host 'cmd'` and `zsh -c`. Move the managed block to `~/.zshrc` (interactive shells only), or guard it with `[[ -o interactive ]]`.
-   - The release also never admits `ttr` through its own shim, and verified ancestry lets nested shims pass, so the guard is defence in depth.
-   - Decide explicitly how runner jobs are counted: wrap heavy steps in `ttr resources run`, or put the shim directory on the runner service's PATH. Anything left unmanaged (GitHub Actions jobs, direct SSH work and its fan-out) is invisible to the budget, and is only seen through memory pressure and load.
-5. **Write the config atomically** (temporary file plus rename, mode 0600), with a backup of the old file kept for rollback:
-   - `roots` and `repositories`: both projects;
-   - `turboConcurrency: 1`, `vitestWorkers: 2`, `buildJobs: 4`;
-   - `validationLanes: 2` (the first ramp step), `maxValidationLanes: 12`;
-   - the `budget` block above (12/24/320 ceiling, 6/12/160 shares, `borrow: true`).
-   - Confirm with `ttr resources status --json` that `budget.projects` lists both projects and that a Tuturuuu and an Upskii worktree resolve to the right project, using a trivial `ttr resources run --tokens 1 -- true` from each.
-6. **Ramp by two lanes.** Raise `validationLanes` 2 → 4 → 6 → 8 → 10 → 12. Lanes above the base are already admitted only through pressure- and load-gated bursts.
-   - Lane changes are refused while owners or waiters exist, so each step needs an idle window.
-   - Before each step, measure over at least 15 minutes of normal load:
-     - `memory_pressure | tail -1` (stay "normal");
-     - `sysctl -n vm.loadavg` (1-minute load below 0.7 × 32 ≈ 22);
-     - idle CPU from `top -l 2 -n 0 | grep "CPU usage"` (at least 30%);
-     - `ttr resources status --json | jq .budget` (tokens below the ceiling);
-     - the wall time of a fixed probe suite, which must not regress.
-   - Count unmanaged fan-out too: `ps -axo pid,ppid,%cpu,rss,command | grep -E 'Runner.Worker|vitest|turbo|next build|cargo'`.
-   - If the current work already spends the budget, or pressure rises, drain before raising. Lanes are a ceiling, not a reason to start heavy work.
-7. **Rollback** (idle only):
-   - restore the backed-up config first, because 0.28.0 rejects more than 2 lanes and ignores `budget`;
-   - after confirming all brokers, children and waiters have drained, remove only the documented `slots/budget-v3` marker as part of the owner-authorized downgrade; restoring config alone does not remove it;
-   - swap the `ttr` symlink back to the pinned 0.28.0 path;
-   - rerun `setup --shell none`.
+After upgrading every client and launcher, write the proposed config atomically while idle (temporary file plus rename, mode 0600), keeping its backup:
+- preserve both projects' `roots` and `repositories`;
+- `turboConcurrency: 1`, `vitestWorkers: 2`, `buildJobs: 4`;
+- start at `validationLanes: 2`, with `maxValidationLanes: 12`;
+- use the budget above: 12 lanes / 24 tokens / 320 GiB, with 6/12/160 shares and `borrow: true`.
+
+Confirm each project's identity from a worktree with a trivial `~/.bun/bin/ttr resources run --tokens 1 -- true`, then inspect `resources status --json`. Decide how runner work is counted: explicit admission or the shim directory on its service PATH. Direct SSH work and other unmanaged fan-out are invisible to the budget; inspect them separately. Preserve the saved shell policy: `.zshenv` also runs in noninteractive zsh, so it must be neutralised during rollback before the fence is removed.
+
+Ramp the base 2 → 4 → 6 → 8 → 10 → 12 only through idle, atomic config updates; `setup --lanes` accepts at most 8. Bursts above the base still require pressure and load eligibility. Before each step, measure at least 15 minutes of normal load: normal memory pressure, one-minute load below 0.7 × CPU count, at least 30% idle CPU, budget use below its ceiling, and no regression in a fixed probe suite. Count unmanaged runner/SSH fan-out as well. More lanes are a ceiling, not a reason to start heavy work. For any downgrade, follow the canonical rollback below rather than removing the marker first.
 
 ### Multi-host weighted admission
 
@@ -1709,15 +1682,21 @@ Protocol 3 permanently fences legacy clients on the first normal admission, even
 
 Before rollout, fix [PID start identity #6561](https://github.com/tutur3u/platform/issues/6561) before enabling budgets on long-uptime Studio hosts: PID reuse can retain a dead reservation and stall every project. Source review and a package build do not publish or activate the new scheduler.
 
-1. Pause new admissions across every project/runner sharing each resource home. Drain all owners and queued tickets, and retain a copy of the current config, roots, shell settings and worker/lane limits.
-2. Publish the budget-capable `ttr` through the maintained SDK release and exact-source package qualification workflows. Upgrade **every** global install to that published version (`bun add -g tuturuuu@<published-budget-version>`). Do not let a new client admit work yet. Adopt the trusted global repo wrapper and remove confirmed stale/orphan workspace aliases using the incident procedure.
-3. Using each upgraded owning global CLI, refresh shims with the **existing roots** and shell settings: `~/.bun/bin/ttr resources setup --root <existing-root-1> --root <existing-root-2> --shell <existing-shell>`. Setup is an installation transaction: it does not publish the fence. It refuses a source/consumer installation attempting to replace an older foreign owner, and requires an idle queue when refreshing old shims even if worker policy is unchanged. A verified same-global release upgrade is permitted.
-4. Verify the installed global version and all launcher targets; new launchers carry `# Resource scheduler protocol: 3`. Inspect `resources status --json` and keep every home idle until every install and shim is upgraded. The first admission checks local launchers before publication, but cannot inventory other hosts or hidden old CLI copies for the operator.
-5. Configure project budgets while idle, then resume new-client admissions. The first normal admission fsyncs its complete staging file, atomically links `slots/budget-v3`, and prints a one-time upgrade/rollback warning. Later admissions reuse the marker and sweep stale staging files. Removing the budget config does not remove the fence.
+1. Pause admissions across every project and runner sharing the home. Drain all owners and queued tickets. Save the config, roots, shell settings, worker/lane limits and the exact legacy supplier version for rollback. Take exclusive operator custody before changing installations.
+2. Publish the qualified budget-capable release through the maintained SDK workflows. Upgrade **every** owning global install with `~/.bun/bin/bun add -g tuturuuu@<published-budget-version>`. Inventory interactive shells, runner services, PATH aliases, caches and other hosts; do not admit new work yet. Remove only confirmed stale workspace aliases using the incident procedure.
+3. Use each upgraded owning global CLI to refresh launchers with the **existing roots and shell settings**: `~/.bun/bin/ttr resources setup --root <existing-root-1> --root <existing-root-2> --shell <existing-shell>`. Setup does not publish the fence. It requires an idle queue when refreshing legacy launchers and refuses a foreign installation; a verified same-global release upgrade is permitted. Do not install this release into a separate npm-prefix path for setup.
+4. Verify every global version and launcher target. New launchers carry `# Resource scheduler protocol: 3`. The preflight checks known launcher files in this local resource home only. It does **not** inventory global installations, PATH aliases, cached binaries, running processes or other hosts; operator inventory is required even if the preflight passes.
+5. Configure budgets atomically while idle, then resume admissions. The first new-version admission fsyncs its staging file, atomically links `slots/budget-v3`, and prints upgrade/rollback guidance once. Later admissions reuse the marker and sweep stale staging files. Removing the budget config does not remove this persistent fence.
 
-For an intentional rollback, take exclusive operator custody and stop all new clients, shims and background admissions. Disable automatic admission with the **new** CLI and wait for zero owners and zero tickets; explicit `run` must also remain stopped. Restore a saved legacy-compatible config with no budget and at most two base/burst lanes, preserving the existing roots. Inspect and remove only empty high-numbered slot directories with `rmdir`; never delete owners or tickets to manufacture an idle state.
+For rollback, perform these steps under exclusive operator custody:
 
-While that home remains idle, remove **only** `<resource-home>/slots/budget-v3` with `rm -- <resource-home>/slots/budget-v3`. Do not delete the slots tree. Downgrade every global install to the intended legacy version, then refresh its shims through that owning CLI using the saved roots/settings before resuming. No new-version admission may occur after marker removal, because it will republish the fence. A private real-0.28 negative control verifies that marker removal restores legacy admission, so leaving active budgets or reservations in place during removal is unsafe.
+1. Stop every runner pickup, shell and explicit `run` that could start new work. With the **new** CLI, run `resources disable`, then verify zero owners, occupied slots and waiting tickets. Disabling alone is insufficient: it would let shims run unmanaged, so all work must remain stopped.
+2. While the fence still exists, use the **new** CLI's `resources uninstall` to remove managed launchers and shell hooks, including `.zshenv` activation. Verify the shim files and managed shell blocks are gone, preserving unrelated shell content. Complete all new-version mutations now; even disable/uninstall can enter the admission lock and publish the fence.
+3. Restore the saved config with admission disabled, no budget and at most two base/burst lanes, preserving roots. Downgrade **every** global install with `~/.bun/bin/bun add -g tuturuuu@<saved-legacy-version>` while work remains stopped. Verify the selected legacy binary version without invoking new-version resource commands.
+4. Inspect high-numbered slot directories and remove only empty ones with `rmdir`. Never delete owners or tickets to manufacture idleness. Remove **only** `<resource-home>/slots/budget-v3` with `rm -- <resource-home>/slots/budget-v3`; do not delete the slots tree.
+5. Use the selected legacy owning CLI's `resources setup` with the saved roots, shell and worker/lane settings. Verify a controlled legacy admission and a fresh noninteractive shell invocation succeed without recreating the marker, then resume work. No new-version admission or mutation may occur after marker removal: it would republish the fence.
+
+Private rollback evidence exercises disable, uninstall, shell-hook removal, legacy-compatible config restore, empty-slot removal, marker removal and restored direct/shell admissions using the real published 0.28.0 supplier. It simulates supplier selection in a disposable home; it does not perform or authorise a shared global upgrade or downgrade.
 
 Regression coverage: `resources-budget-publish.test.ts` proves fsync-before-link, one-time warning, fast reuse and stale-stage cleanup. `resources-budget-upgrade.test.ts` kills a publisher with an empty stage and verifies recovery. `resources-budget-rollout.test.ts` covers legacy preflight, installation-only setup, same-global versus consumer identity and idle upgrade. Native worker charging/caps retain positive lower `--test-concurrency`, while zero/auto uses the configured cap (`resources-node-budget.test.ts`).
 

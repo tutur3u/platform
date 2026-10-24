@@ -38,7 +38,7 @@ const ownerSchema = z.object({
     })
     .optional(),
   // Declared budget demand (project share, worker tokens, memory). Older
-  // schedulers strip it; owners without it count as one unassigned token.
+  // schedulers strip it; owners without it retain their recorded worker cost.
   demand: z
     .object({
       project: z.string().min(1),

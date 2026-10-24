@@ -228,6 +228,7 @@ function chooseTicket(
       path: entry.path,
       queuedAt: entry.owner.queuedAt,
       demand: entry.owner.demand,
+      limits: entry.owner.limits,
     })),
     owners
   ).selected?.path;

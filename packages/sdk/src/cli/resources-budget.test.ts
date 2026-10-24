@@ -304,14 +304,16 @@ describe('borrowing and reclaim', () => {
     expect(select(budget, [big], owners(['upskii', 12])).selected).toBe(big);
   });
 
-  it('unassigned work only borrows idle capacity', () => {
+  it('ages unassigned borrowing without bypassing an older share owner', () => {
     const budget = studio();
+    const olderOwner = ticket('tuturuuu', 2);
     const stray = ticket('other', 2);
     expect(select(budget, [stray], []).selected).toBe(stray);
+    expect(select(budget, [stray, olderOwner], []).selected).toBe(olderOwner);
     expect(
       select(budget, [stray, ticket('tuturuuu', 2)], []).selected?.demand
         ?.project
-    ).toBe('tuturuuu');
+    ).toBe('other');
     expect(
       select(studio({ borrow: false }), [stray], []).selected
     ).toBeUndefined();

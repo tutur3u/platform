@@ -8,7 +8,6 @@ import {
   exists,
   privateFixtures,
   processTimeout,
-  until,
   workerProbe,
 } from './resources-test-fixtures';
 
@@ -60,25 +59,25 @@ describe('cross-project budget admission', { timeout: 60_000 }, () => {
     // a1 fills project a's token share and records its granted workers.
     const probe = await workerProbe(path, 'vitest', 'a1');
     const a1 = job(path, a, 2, [probe, 'run']);
-    await until(() => exists(join(path, 'a1.json')));
+    await a1.until(() => exists(join(path, 'a1.json')));
     const granted = JSON.parse(await readFile(join(path, 'a1.json'), 'utf8'));
     expect(granted.vitest).toBe('2');
     expect(granted.args).toContain('--maxWorkers=2');
     // a2 exceeds a's share; b is idle, so it borrows and fills the budget.
     const a2 = job(path, a, 2, ['node', await held(path, 'a2')]);
-    await until(() => exists(join(path, 'a2.ready')));
+    await a2.until(() => exists(join(path, 'a2.ready')));
     expect((await project(path, 'a')).borrowing.tokens).toBe(2);
     expect((await budget(path)).used).toMatchObject({ lanes: 2, tokens: 4 });
     // a3 (older, would borrow again) and then b1 (inside b's share) queue.
     const a3 = job(path, a, 2, ['node', await held(path, 'a3')]);
-    await until(async () => (await project(path, 'a')).waiting === 1);
+    await a3.until(async () => (await project(path, 'a')).waiting === 1);
     const b1 = job(path, b, 1, ['node', await held(path, 'b1')]);
-    await until(async () => (await project(path, 'b')).waiting === 1);
+    await b1.until(async () => (await project(path, 'b')).waiting === 1);
     // The borrower ends: b reclaims its share ahead of the older a3, and a3
     // (2 more tokens) no longer fits, so it keeps waiting.
     await release(path, 'a2');
     expect((await a2.done).code).toBe(0);
-    await until(() => exists(join(path, 'b1.ready')));
+    await b1.until(() => exists(join(path, 'b1.ready')));
     expect(await exists(join(path, 'a3.ready'))).toBe(false);
     const reclaimed = await budget(path);
     expect(reclaimed.used).toMatchObject({ lanes: 2, tokens: 3 });
@@ -88,7 +87,7 @@ describe('cross-project budget admission', { timeout: 60_000 }, () => {
     // When a1 ends, a3 fits a's own share again and is admitted.
     await release(path, 'a1');
     expect((await a1.done).code).toBe(0);
-    await until(() => exists(join(path, 'a3.ready')));
+    await a3.until(() => exists(join(path, 'a3.ready')));
     for (const name of ['a3', 'b1']) await release(path, name);
     for (const done of [a3, b1]) expect((await done.done).code).toBe(0);
     expect((await budget(path)).used).toMatchObject({ lanes: 0, tokens: 0 });
@@ -97,19 +96,19 @@ describe('cross-project budget admission', { timeout: 60_000 }, () => {
   it('leaves free tokens idle until a reclaiming head can start', async () => {
     const { path, a, b } = await budgetHome();
     const a1 = job(path, a, 2, ['node', await held(path, 'drain-a1')]);
-    await until(() => exists(join(path, 'drain-a1.ready')));
+    await a1.until(() => exists(join(path, 'drain-a1.ready')));
     const a2 = job(path, a, 1, ['node', await held(path, 'drain-a2')]);
-    await until(() => exists(join(path, 'drain-a2.ready')));
+    await a2.until(() => exists(join(path, 'drain-a2.ready')));
     const b1 = job(path, b, 2, ['node', await held(path, 'drain-b1')]);
-    await until(async () => (await project(path, 'b')).waiting === 1);
+    await b1.until(async () => (await project(path, 'b')).waiting === 1);
     const a3 = job(path, a, 1, ['node', await held(path, 'drain-a3')]);
-    await until(async () => (await project(path, 'a')).waiting === 1);
+    await a3.until(async () => (await project(path, 'a')).waiting === 1);
     expect((await budget(path)).used.tokens).toBe(3);
     expect(await exists(join(path, 'drain-a3.ready'))).toBe(false);
     await release(path, 'drain-a1');
     expect((await a1.done).code).toBe(0);
-    await until(() => exists(join(path, 'drain-b1.ready')));
-    await until(() => exists(join(path, 'drain-a3.ready')));
+    await b1.until(() => exists(join(path, 'drain-b1.ready')));
+    await a3.until(() => exists(join(path, 'drain-a3.ready')));
     for (const name of ['drain-a2', 'drain-b1', 'drain-a3'])
       await release(path, name);
     for (const child of [a2, b1, a3]) expect((await child.done).code).toBe(0);
@@ -121,8 +120,8 @@ describe('cross-project budget admission', { timeout: 60_000 }, () => {
       job(path, a, 2, ['node', await held(path, 'f1')]),
       job(path, b, 1, ['node', await held(path, 'f2')]),
     ];
-    await until(() => exists(join(path, 'f1.ready')));
-    await until(() => exists(join(path, 'f2.ready')));
+    await fill[0]!.until(() => exists(join(path, 'f1.ready')));
+    await fill[1]!.until(() => exists(join(path, 'f2.ready')));
     const nested = join(path, 'nested.json');
     const outer = await fixtures.script(
       path,

@@ -154,7 +154,7 @@ export function inferTokens(
   if (tool === 'cargo') return defaults.buildJobs;
   return 1;
 }
-// A ticket's declared demand, clamped to what the whole budget can ever hold.
+// Clamp to the host, and to the project's share when it cannot borrow.
 export function ticketDemand(
   budget: ResourceBudget,
   input: {
@@ -166,9 +166,21 @@ export function ticketDemand(
   }
 ): Demand {
   const env = input.env ?? {};
+  const project = projectFor(budget, input.cwd);
+  let tokenCeiling = budget.tokens;
+  let memoryCeiling = budget.memoryGiB;
+  if (!budget.borrow) {
+    const own = budget.projects.find((entry) => entry.id === project);
+    if (!own || own.lanes < 1 || own.tokens < 1 || own.memoryGiB <= 0)
+      throw new Error(
+        `${project} has no usable project share and borrowing is off. Use a configured project root with positive lane, token and memory shares, or enable borrowing.`
+      );
+    tokenCeiling = Math.min(tokenCeiling, own.tokens);
+    memoryCeiling = Math.min(memoryCeiling, own.memoryGiB);
+  }
   const explicit = Number(env.TTR_RESOURCES_TOKENS);
   const tokens = Math.min(
-    budget.tokens,
+    tokenCeiling,
     Math.max(
       1,
       Number.isInteger(explicit) && explicit > 0
@@ -179,31 +191,44 @@ export function ticketDemand(
   const perToken = budget.memoryGiB / budget.tokens;
   const memory = Number(env.TTR_RESOURCES_MEMORY_GIB);
   return {
-    project: projectFor(budget, input.cwd),
+    project,
     tokens,
     memoryGiB: Math.min(
-      budget.memoryGiB,
+      memoryCeiling,
       Number.isFinite(memory) && memory > 0 ? memory : tokens * perToken
     ),
   };
 }
 
-export interface BudgetEntry {
+interface BudgetOwner {
+  demand?: Demand;
+  limits?: { vitestWorkers: number; buildJobs: number };
+}
+export interface BudgetEntry extends BudgetOwner {
   path: string;
   queuedAt: string;
-  demand?: Demand;
 }
 type Use = { lanes: number; tokens: number; memoryGiB: number };
 const zero = (): Use => ({ lanes: 0, tokens: 0, memoryGiB: 0 });
-// Owners admitted before the budget existed (or nested legacy owners) count
-// as one unassigned lane with a single token.
-const demandOf = (entry: { demand?: Demand }): Demand =>
-  entry.demand ?? { project: unassignedProject, tokens: 1, memoryGiB: 0 };
-export function budgetUsage(owners: { demand?: Demand }[]) {
+// Preserve the caps a legacy owner actually received, even above today's ceiling.
+function demandOf(entry: BudgetOwner, budget: ResourceBudget): Demand {
+  if (entry.demand) return entry.demand;
+  const tokens = Math.max(
+    1,
+    entry.limits?.vitestWorkers ?? 1,
+    entry.limits?.buildJobs ?? 1
+  );
+  return {
+    project: unassignedProject,
+    tokens,
+    memoryGiB: (tokens * budget.memoryGiB) / budget.tokens,
+  };
+}
+export function budgetUsage(owners: BudgetOwner[], budget: ResourceBudget) {
   const total = zero();
   const byProject = new Map<string, Use>();
   for (const owner of owners) {
-    const demand = demandOf(owner);
+    const demand = demandOf(owner, budget);
     const use = byProject.get(demand.project) ?? zero();
     for (const target of [total, use]) {
       target.lanes += 1;
@@ -226,45 +251,53 @@ const utilisation = (use: Use, limit: Use) =>
     limit.tokens ? use.tokens / limit.tokens : 1,
     limit.memoryGiB ? use.memoryGiB / limit.memoryGiB : 1
   );
+const byAge = (a: BudgetEntry, b: BudgetEntry) =>
+  Date.parse(a.queuedAt) - Date.parse(b.queuedAt) ||
+  a.path.localeCompare(b.path);
 
 /**
  * Which waiter may claim the next lane. Each project keeps FIFO order, and
  * only its oldest ticket competes. A head that fits inside its own share wins
- * first, the least-used share first, so a project reclaims its unused share
- * as soon as it has work. A head that would exceed its share may borrow only
- * when borrowing is on, the global ceiling still fits, and no project with
- * unused share has a head waiting that fits it. Running owners are never
- * preempted; reclaim happens through new admissions only.
+ * first, the least-used share first. A request that cannot fit even an empty
+ * project share gets age priority over younger reclaimers and drains host
+ * capacity if needed. Ordinary borrowers still yield to share reclaim.
+ * Running owners are never preempted.
  */
 export function selectBudgetTicket(
   budget: ResourceBudget,
   waiting: BudgetEntry[],
-  owners: { demand?: Demand }[]
+  owners: BudgetOwner[]
 ): { selected?: BudgetEntry; blocked: Record<string, string> } {
-  const usage = budgetUsage(owners);
+  const usage = budgetUsage(owners, budget);
+  const demandFor = (entry: BudgetOwner) => demandOf(entry, budget);
   const heads = new Map<string, BudgetEntry>();
-  for (const entry of [...waiting].sort(
-    (a, b) =>
-      Date.parse(a.queuedAt) - Date.parse(b.queuedAt) ||
-      a.path.localeCompare(b.path)
-  )) {
-    const id = demandOf(entry).project;
+  for (const entry of [...waiting].sort(byAge)) {
+    const id = demandFor(entry).project;
     if (!heads.has(id)) heads.set(id, entry);
   }
   const blocked: Record<string, string> = {};
   for (const entry of waiting)
     if (![...heads.values()].includes(entry))
       blocked[entry.path] =
-        `waiting behind an older ${demandOf(entry).project} ticket`;
+        `waiting behind an older ${demandFor(entry).project} ticket`;
   const ceiling: Use = budget;
   const own: BudgetEntry[] = [];
   const borrowers: BudgetEntry[] = [];
+  const oversized: BudgetEntry[] = [];
   for (const [id, entry] of heads) {
-    const demand = demandOf(entry);
+    const demand = demandFor(entry);
     const use = usage.byProject.get(id) ?? zero();
+    const share = shareOf(budget, id);
+    if (!fits(zero(), demand, ceiling)) {
+      blocked[entry.path] =
+        'ticket exceeds the current host ceiling; cancel and requeue with current policy';
+      continue;
+    }
     // Reclaim priority is decided before global fit: otherwise small borrowers
     // can refill every freed token and the share owner never gets capacity.
-    if (fits(use, demand, shareOf(budget, id))) own.push(entry);
+    if (fits(use, demand, share)) own.push(entry);
+    else if (budget.borrow && !fits(zero(), demand, share))
+      oversized.push(entry);
     else if (!fits(usage.total, demand, ceiling))
       blocked[entry.path] = 'the host budget is fully used';
     else if (budget.borrow) borrowers.push(entry);
@@ -272,26 +305,41 @@ export function selectBudgetTicket(
   }
   const byPriority = (a: BudgetEntry, b: BudgetEntry) => {
     const ua = utilisation(
-      usage.byProject.get(demandOf(a).project) ?? zero(),
-      shareOf(budget, demandOf(a).project)
+      usage.byProject.get(demandFor(a).project) ?? zero(),
+      shareOf(budget, demandFor(a).project)
     );
     const ub = utilisation(
-      usage.byProject.get(demandOf(b).project) ?? zero(),
-      shareOf(budget, demandOf(b).project)
+      usage.byProject.get(demandFor(b).project) ?? zero(),
+      shareOf(budget, demandFor(b).project)
     );
-    return ua - ub || Date.parse(a.queuedAt) - Date.parse(b.queuedAt);
+    return ua - ub || byAge(a, b);
   };
-  own.sort(byPriority);
-  if (own[0]) {
-    for (const entry of [...own.slice(1), ...borrowers])
-      blocked[entry.path] = 'another project is reclaiming its share first';
-    if (!fits(usage.total, demandOf(own[0]), ceiling)) {
-      blocked[own[0].path] = 'draining the host budget for share reclaim';
+  const oldestOversized = oversized.sort(byAge)[0];
+  const reclaim = own
+    .filter((entry) => !oldestOversized || byAge(entry, oldestOversized) < 0)
+    .sort(byPriority)[0];
+  if (reclaim) {
+    for (const entry of [...own, ...borrowers, ...oversized])
+      if (entry !== reclaim)
+        blocked[entry.path] = 'another project is reclaiming its share first';
+    if (!fits(usage.total, demandFor(reclaim), ceiling)) {
+      blocked[reclaim.path] = 'draining the host budget for share reclaim';
       return { blocked };
     }
-    return { selected: own[0], blocked };
+    return { selected: reclaim, blocked };
   }
-  borrowers.sort((a, b) => Date.parse(a.queuedAt) - Date.parse(b.queuedAt));
+  if (oldestOversized) {
+    for (const entry of [...own, ...borrowers, ...oversized])
+      if (entry !== oldestOversized)
+        blocked[entry.path] = 'an older oversized borrower goes first';
+    if (!fits(usage.total, demandFor(oldestOversized), ceiling)) {
+      blocked[oldestOversized.path] =
+        'draining the host budget for an older oversized borrower';
+      return { blocked };
+    }
+    return { selected: oldestOversized, blocked };
+  }
+  borrowers.sort(byAge);
   for (const entry of borrowers.slice(1))
     blocked[entry.path] = 'an older borrower goes first';
   return { selected: borrowers[0], blocked };
@@ -301,14 +349,16 @@ export function selectBudgetTicket(
 // (use above share) and waiters.
 export function budgetStatus(
   budget: ResourceBudget,
-  owners: { demand?: Demand }[],
-  waiting: { demand?: Demand }[]
+  owners: BudgetOwner[],
+  waiting: BudgetOwner[]
 ) {
-  const usage = budgetUsage(owners);
+  const usage = budgetUsage(owners, budget);
   const ids = [
     ...budget.projects.map((entry) => entry.id),
     ...(usage.byProject.has(unassignedProject) ||
-    waiting.some((entry) => demandOf(entry).project === unassignedProject)
+    waiting.some(
+      (entry) => demandOf(entry, budget).project === unassignedProject
+    )
       ? [unassignedProject]
       : []),
   ];
@@ -336,8 +386,9 @@ export function budgetStatus(
           tokens: Math.max(0, used.tokens - limit.tokens),
           memoryGiB: Math.max(0, used.memoryGiB - limit.memoryGiB),
         },
-        waiting: waiting.filter((entry) => demandOf(entry).project === id)
-          .length,
+        waiting: waiting.filter(
+          (entry) => demandOf(entry, budget).project === id
+        ).length,
       };
     }),
   };
