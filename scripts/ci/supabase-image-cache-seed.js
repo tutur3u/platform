@@ -1,10 +1,8 @@
 const { spawnSync } = require('node:child_process');
 const data = require('./supabase-image-cache-seed-data.json');
 
-// Official GoTrue publications have identical OCI indexes on ECR and GHCR.
-// https://github.com/supabase/auth/blob/master/.github/workflows/publish.yml
-// Catalog tags: CLI v2.121.0 pkg/config/templates/Dockerfile.
-// Index/platform/config digests were resolved by anonymous manifest GETs.
+// Official GHCR publications are qualified against canonical ECR content.
+// Regenerate metadata with supabase-image-cache-registry.js; see the CI runbook.
 function seedCatalog(
   name,
   { trusted, budget, registry, platform, arch, profile }
