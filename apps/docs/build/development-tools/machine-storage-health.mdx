@@ -66,8 +66,9 @@ starting points, not measured fleet values; tune them per host.
 ## Disk-aware admission
 
 `ttr resources` checks the volume holding a heavy command's working directory
-before queueing it. Once queued, the lane queue re-checks free disk at dequeue
-(`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`) and holds the job,
+before queueing it. Once queued, the lane queue re-checks free disk and inodes
+at dequeue (`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`, and
+`TTR_STORAGE_MIN_FREE_INODE_PERCENT`) and holds the job,
 failing closed, until headroom returns.
 
 - **`low`:** while the volume is in the hysteresis `low` state, automatic
@@ -90,7 +91,8 @@ failing closed, until headroom returns.
 - `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides both checks
   once. Prefer reclaiming space.
 - `--hosts` dispatch skips the queue-time refusal; it applies its own local
-  disk gate per placement.
+  disk gate per placement, including inode pressure. Both placement and dequeue
+  probe the command directory selected by `--cwd`, `--dir` or `-C`.
 - With `--offload auto`, a critical local disk counts as saturated, so the
   exact pushed commit runs on a devbox runner when one is eligible.
 - Commands nested inside an admitted job are not checked again.
