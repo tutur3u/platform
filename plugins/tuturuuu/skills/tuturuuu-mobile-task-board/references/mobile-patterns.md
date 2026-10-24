@@ -123,6 +123,12 @@ localization changes.
 - Settings groups are rounded cards (`SettingsGroup`, `SettingsCaption`) with
   dividers at `SettingsRowLayout.textColumn`. Use `SettingsRowLayout.groupFill`
   for grouped fills so ambient appearances get the translucent card.
+- App settings have one editor, under Settings > Apps. Register the app in
+  `product_settings_registry.dart` with a value summary and search keywords.
+  Add its routed sub-screen id to `Routes.centralAppSettingsIds`. Point the
+  in-app gear at `Routes.settingsAppPath(id)` and reload on return; do not add
+  another settings sheet. Keep permission gates on the central row, such as the
+  Timer threshold.
 - Appearance colours live only in `core/theme/appearance/appearance_palettes.dart`.
   Read derived tokens via `AppTokens.of(context)`, and keep
   `appearance_contrast_test.dart` green when adding a palette or accent.

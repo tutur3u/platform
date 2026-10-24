@@ -4673,5 +4673,8 @@
   "settingsTasksSummaryBoardList": "Danh sách bảng",
   "settingsFinanceAmountsShown": "Đang hiện số tiền",
   "settingsFinanceAmountsHidden": "Đang ẩn số tiền",
-  "settingsSearchBrowserTerm": "trình duyệt"
+  "settingsSearchBrowserTerm": "trình duyệt",
+  "profilePhoto": "Ảnh đại diện",
+  "profileCoverBanner": "Ảnh bìa",
+  "profileMediaSet": "Đã đặt"
 }
