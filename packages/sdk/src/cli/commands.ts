@@ -4,7 +4,6 @@ import type {
   WorkspaceTaskApiTask,
   WorkspaceTasksResponse,
 } from '@tuturuuu/internal-api/tasks';
-import packageJson from '../../package.json';
 import { TuturuuuUserClient } from '../platform';
 import {
   type FlagValue,
@@ -20,6 +19,7 @@ import {
   readTokenFromStdin,
   receiveTokenFromBrowser,
 } from './auth';
+import { versionDescription } from './build-identity';
 import { runCalendarFeedbackDispatch } from './calendar-feedback-dispatch';
 import { readCommandConfig } from './command-config';
 import {
@@ -1998,7 +1998,7 @@ export async function runCli(argv = process.argv.slice(2)) {
     commandSeparatorIndex >= 0 ? argv.slice(0, commandSeparatorIndex) : argv;
 
   if (globalArgs.includes('-v') || globalArgs.includes('--version')) {
-    process.stdout.write(`${packageJson.version}\n`);
+    process.stdout.write(`${versionDescription()}\n`);
     return;
   }
 

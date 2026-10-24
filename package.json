@@ -119,6 +119,7 @@
     "dev": "bun turbo:local run dev --parallel --filter='!@tuturuuu/tanstack-web'",
     "validate": "node scripts/check.js",
     "validate:now": "node scripts/check.js --force-now",
+    "sdk:dev-pack": "node scripts/ci/sdk-dev-pack.js",
     "check:changed": "node scripts/check-changed.js",
     "check:source-size": "node scripts/check-source-size.js",
     "check:workspace-members": "node scripts/check-workspace-member-type-guard.js",

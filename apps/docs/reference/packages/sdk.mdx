@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-06-30'
+updatedAt: '2026-10-24'
 ---
 
 # Tuturuuu SDK
@@ -331,6 +331,68 @@ do not paper over the failure by reintroducing a long-lived `NPM_TOKEN`. After
 confirming a trusted-publisher release works end to end, the npm package
 settings should keep `Require two-factor authentication and disallow tokens`
 enabled so the package cannot be published with classic tokens.
+
+### Dev channel and private previews
+
+The stable channel remains Release Please plus the production release workflow.
+The dev channel builds each SDK change on `main`, or a manual dispatch of
+`release-sdk-dev.yaml` on `main`. It qualifies the portable package, publishes
+`X.Y.Z-dev.<run-number>.<sha7>` under npm's `dev` tag with provenance, and uploads
+the tarball, qualification receipt and `manifest.json`. It never updates `latest`.
+The manifest records the version, full source SHA, SHA-256, npm integrity and
+shasum. `ttr --version` and `ttr resources status --json` report the installed
+channel and source SHA. Older stable packages without build metadata report an
+unknown source; do not infer a source SHA from their version.
+
+Branch Actions builds are deliberately refused. This repository is public, so
+Actions artifacts are not a private distribution boundary. For premerge work,
+build a clean committed checkout privately on Thanh, then transfer the tarball
+and manifest over SSH. Do not upload unmerged previews to public Actions artifacts
+or publish them to npm. Checksums establish byte identity, not code approval.
+
+#### Cut a build
+
+For the main channel, dispatch the workflow after its operator setup below:
+
+```sh
+gh workflow run release-sdk-dev.yaml --ref main
+```
+
+For a private premerge preview, use a clean checkout in an admitted Thanh root.
+Use Node 24.21.0 and Bun 1.4.4, matching public package qualification. Do not build
+on the M4 while its resource hold applies.
+
+```sh
+# On Thanh, inside the admitted clean checkout:
+~/.bun/bin/ttr resources run -- bun sdk:dev-pack
+```
+
+The command prints JSON containing the output directory and checksum manifest.
+Its default version uses a timestamp as the dev run number outside Actions.
+Keep the `internalOnly: true` manifest and tarball private. The command builds the
+portable SDK and dependencies, then runs the same public consumer/compiled-CLI
+qualification and receipt verification as the official release. Missing registry
+dependencies stop qualification; they are not replaced with workspace links.
+
+#### Operator setup and threat model
+
+Before enabling publication, create GitHub environment `sdk-release-dev` with
+an explicit deployment branch restriction allowing only `main`. Add an additive
+npm trusted publisher for `tuturuuu`: GitHub Actions, owner `tutur3u`, repository
+`platform`, workflow `release-sdk-dev.yaml`, environment `sdk-release-dev`.
+Keep the existing production publisher unchanged. Use GitHub-hosted publish
+runners; do not add a registry token or secrets to artifacts. See
+[npm trusted publishers](https://docs.npmjs.com/trusted-publishers/).
+
+The trust boundary is reviewed main source, a nonprivileged build/qualification
+job, and an isolated OIDC publish job that treats artifacts only as data. The
+publish job has no checkout, builds, dependency installation or lifecycle scripts.
+The environment restriction prevents a modified branch workflow from obtaining
+matching publish authority. A checksum prevents corrupt or substituted bytes
+when its expected value arrives through a trusted channel; it does not make
+unreviewed code safe. Installing a private preview grants that code the host
+user's authority. Backups may contain private scheduler configuration: keep them
+on the target with private permissions and never commit or upload them.
 
 ### Devbox Setup
 

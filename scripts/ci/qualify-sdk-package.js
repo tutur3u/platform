@@ -14,6 +14,8 @@ const {
 } = require('./prepare-npm-package-manifest');
 const {
   stageSdkRuntime,
+  stageBuildIdentity,
+  checkIdentity,
   registryRewrites,
   requireInstalledDependencies,
 } = require('./sdk-qualification-phase');
@@ -103,16 +105,6 @@ function checkRegistryTuple(name, version, result) {
     );
   }
   return { name, version, integrity: value.dist.integrity };
-}
-function checkIdentity(expected, value, stage) {
-  if (
-    typeof expected.version !== 'string' ||
-    !value ||
-    value.name !== expected.name ||
-    value.version !== expected.version
-  )
-    fail('PACKAGE_IDENTITY_MISMATCH', `${stage} name/version mismatch`);
-  return { name: value.name, version: value.version };
 }
 function checkPack(result, stagedFiles) {
   const packs = JSON.parse(result.stdout);
@@ -214,6 +206,7 @@ async function qualify({
   output,
   sourceSha,
   phase = 'public',
+  packageVersion,
   run = runProcess,
 }) {
   if (!['source', 'public'].includes(phase))
@@ -313,11 +306,16 @@ async function qualify({
       packageDir: 'packages/sdk',
       repoRoot: staging,
     });
-    const identity = JSON.parse(before);
+    const { source, staged: identity } = stageBuildIdentity({
+      before,
+      manifestPath: path.join(stageSdk, 'package.json'),
+      sourceSha,
+      packageVersion,
+    });
     receipt.identities = {
       source: checkIdentity(
-        { name: 'tuturuuu', version: identity.version },
-        identity,
+        { name: 'tuturuuu', version: source.version },
+        source,
         'source'
       ),
       staging: checkIdentity(
