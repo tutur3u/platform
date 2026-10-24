@@ -153,3 +153,18 @@ that guard requires `--force`. Setup normalizes token paths before both the
 overwrite guard and registration. Cover these boundaries with
 `devbox-repair.test.ts` and `devbox-isolation.test.ts`; confirm refusal occurs
 before credential issuance or file changes.
+
+
+## Command-line injection triage
+
+General jobs are intentionally arbitrary execution for authenticated root-workspace
+members. Trace submission authorization, private-table/RPC access, runner token
+verification and Judge/playground routing before classifying a launcher alert.
+`shell: false` protects literal argv but does not sandbox an explicit interpreter
+or project script. Exact-commit origin reachability proves provenance, not safety.
+The launcher rejects malformed executable names and NUL arguments; do not turn
+these guardrails into a claimed executable allowlist. Use the SDK process-group,
+runner-trust and commit-run tests, and the API runs authorization tests. Separate
+source evidence from deployed grants, pool configuration and token custody.
+See `apps/docs/build/development-tools/remote-devboxes.mdx`, section
+“Trusted command execution boundary”, for the complete boundary and exceptions.
