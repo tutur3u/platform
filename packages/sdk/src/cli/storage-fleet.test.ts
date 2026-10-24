@@ -27,6 +27,7 @@ function runner(
     resource_limits: null,
     capabilities: {
       executionMode: 'trusted',
+      protocols: { commitRun: [1] },
       os: { hostname: `${id}.local`, platform: 'linux' },
       ...(disk === undefined ? {} : { resources: { disk } }),
     },

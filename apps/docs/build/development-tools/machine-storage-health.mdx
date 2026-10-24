@@ -53,14 +53,17 @@ values fall back to the default with a warning.
 ## Disk-aware admission
 
 `ttr resources` checks the volume holding a heavy command's working directory
-before queueing it, and again with a fresh probe after the command claims its
-slot and right before it starts (a queued command may wait a long time). At
-`critical` it refuses with exit code 75 and prints the top non-high actions
-from the last `ttr storage suggest`; at `low` it warns and continues. A failed
-probe is UNKNOWN and is refused too, with the probe error and the override.
+before queueing it. At `critical` it refuses with exit code 75 and prints the
+top non-high actions from the last `ttr storage suggest`; at `low` it warns and
+continues. A failed probe is UNKNOWN and is refused too, with the probe error
+and the override. Once queued, the lane queue re-checks free disk at dequeue
+(`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`) and holds the job,
+failing closed, until headroom returns.
 
-- `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides once. Prefer
-  reclaiming space.
+- `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides both checks
+  once. Prefer reclaiming space.
+- `--hosts` dispatch skips the queue-time refusal; it applies its own local
+  disk gate per placement.
 - With `--offload auto`, a critical local disk counts as saturated, so the
   exact pushed commit runs on a devbox runner when one is eligible.
 - Commands nested inside an admitted job are not checked again.
@@ -94,13 +97,13 @@ transport.
 | `node-modules-stale` | Bun stores with far more `.bun` entries than `bun.lock` packages (diverged private clones) | moderate | named, one `--path` |
 | `build-artifacts` | `.turbo`, `.next`, `.open-next`, `dist`, `build`, `.dart_tool` in checkouts | safe | default, via `bun worktree:prune-artifacts` |
 | `rust-target` | `apps/backend/target` | safe | default, via `bun rust-cache prune` |
-| `bun-cache`, `npm-cache`, `pub-cache` | Package manager caches | moderate / safe | named only |
+| `bun-cache`, `npm-cache`, `pub-cache` | Package manager caches. The npm cache root is resolved once (`npm_config_cache`, then `npm config get cache`, then `~/.npm`); `prune` measures that root's `_cacache` and runs `npm cache clean --force --cache <root>` only on a directory owned by you | moderate / safe | named only |
 | `xcode-derived-data` | DerivedData project folders idle past `--older-than` | safe | default |
 | `xcode-simulators` | Simulators for uninstalled runtimes, each deleted by its own UDID (`xcrun simctl delete <udid>`, never `delete unavailable`) | safe | default |
 | `homebrew-cache` | `brew cleanup --prune=<days>` (also removes old formula versions) | safe | named only |
 | `docker` | Build cache older than the age bound; unused images. Verified local daemon only | safe / moderate | named only |
 | `supabase-volumes` | Supabase CLI local volumes | high | only `--name <volume>`, never attached |
-| `tmp-old` | User-owned tmp dirs idle past the age bound, at least 25 MiB | moderate | named only |
+| `tmp-old` | Identified tool scratch dirs (mktemp, `tmp-*`, Vitest, Turbo, Bun, `ttr-*` and similar) directly under a tmp root, idle past the age bound, at least 25 MiB, with no git checkout, linked worktree or bare repository inside | moderate | named only |
 | `xcode-device-support`, `gradle`, `playwright` | Rebuildable but costly | moderate | manual command only |
 | `trash`, `xcode-archives`, `android-sdk` AVDs, `vm-disks` | User data, signed builds, emulator state, VM images | high | never |
 

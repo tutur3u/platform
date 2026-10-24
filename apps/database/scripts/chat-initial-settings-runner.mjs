@@ -1,6 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import {
@@ -137,9 +144,15 @@ export function fixtureCleanupSql(marker) {
   `;
 }
 function boundedJson(file) {
-  if (statSync(file).size > 1024 * 1024)
-    throw new Error('Chat artifact exceeds bound');
-  return JSON.parse(readFileSync(file, 'utf8'));
+  const fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile() || stat.size > 1024 * 1024)
+      throw new Error('Chat artifact exceeds bound');
+    return JSON.parse(readFileSync(fd, 'utf8'));
+  } finally {
+    closeSync(fd);
+  }
 }
 function processReceipt(result, withOutput = false, withDart = false) {
   const receipt = {

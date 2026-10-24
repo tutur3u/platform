@@ -73,7 +73,7 @@ For each commit:
 6. Let commit hooks run unless proof-gated no-verify evidence is complete.
 
 `git commit --no-verify` is allowed only when the current agent can prove the
-exact staged files would pass the checks normally covered by `bun check`: it
+exact staged files would pass the checks normally covered by `bun validate`: it
 must own every staged path, record the separated checks it ran, explain why
 those checks cover every touched file, and list unrelated dirty files excluded
 from the claim. If ownership is unclear, proof is incomplete, or affected checks

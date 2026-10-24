@@ -53,7 +53,7 @@ type owners release or transfer their exact paths.
 | Focused tests | `bun --cwd apps/nova vitest run src/lib/leaderboard/loader.test.ts` | user/team ranking and bounded-query cases pass |
 | Nova types | `bun run --cwd apps/nova type-check` | exit 0 |
 | Nova build | `bun run --cwd apps/nova build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -129,7 +129,7 @@ loads even with large synthetic cardinality. pgTAP must prove `PUBLIC`, `anon`,
 and `authenticated` cannot execute either function and that a nonexistent or
 ineligible verified actor is rejected. App tests must prove cookie-only auth is
 not substituted for the Nova app session and the request cannot override
-`p_actor_id`. Run tests, typecheck, the real Nova build, `bun check`, and
+`p_actor_id`. Run tests, typecheck, the real Nova build, `bun validate`, and
 whitespace validation.
 
 ## Done criteria

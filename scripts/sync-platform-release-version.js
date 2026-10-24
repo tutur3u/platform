@@ -140,7 +140,7 @@ function checkPlatformReleaseVersion(options = {}) {
       [
         'Platform release version files are not aligned:',
         ...errors.map((error) => `- ${error}`),
-        'Run `bun release:sync-platform-version` after merging a release-please branch, then rerun `bun check`.',
+        'Run `bun release:sync-platform-version` after merging a release-please branch, then rerun `bun validate`.',
       ].join('\n')
     );
   }

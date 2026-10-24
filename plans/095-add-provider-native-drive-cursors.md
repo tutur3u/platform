@@ -49,7 +49,7 @@ the Inventory/shared-storage boundary. Obtain exact transfer before editing.
 | Backend gate | `bun check:backend` | backend/OpenAPI checks pass |
 | Wrapper/manifest | `bun web:api-routes:check && bun migration:tanstack:manifest && bun migration:tanstack:check` | no route-tracking drift |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/drive build` | both exit 0 |
-| Repository | `bun check` | exit 0 or documented unrelated blocker |
+| Repository | `bun validate` | exit 0 or documented unrelated blocker |
 
 ## Scope
 
@@ -89,7 +89,7 @@ run `bun setup`. Commit `perf(storage): add provider-native directory cursors`.
 - [ ] Provider requests and memory per page are bounded.
 - [ ] Drive advances by cursor/`hasMore`, never an incorrect page-local total.
 - [ ] Web, Rust, OpenAPI, and typed internal API expose one compatible contract.
-- [ ] Provider/Drive tests, route tracking, builds, and `bun check` pass.
+- [ ] Provider/Drive tests, route tracking, builds, and `bun validate` pass.
 
 ## STOP conditions
 

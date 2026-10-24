@@ -59,7 +59,7 @@ silently return unsearched data.
 | TanStack | `bun --cwd apps/tanstack-web vitest run src/components/changelog src/routes/changelog-pagination.test.tsx` | bounded initial/load-more/error/grouping behavior passes |
 | Rust | `cd apps/backend && cargo test changelog` | parser, query, projection, order, filters, errors, and envelopes pass |
 | Apps | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/tanstack-web type-check && bun run --cwd apps/infrastructure build && bun run --cwd apps/tanstack-web build` | both apps compile/build |
-| Backend/repository | `bun check:backend && bun check && git diff --check` | OpenAPI/backend, canonical, and whitespace gates pass |
+| Backend/repository | `bun check:backend && bun validate && git diff --check` | OpenAPI/backend, canonical, and whitespace gates pass |
 
 ## Scope
 

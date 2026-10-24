@@ -147,7 +147,7 @@ route-manifest regeneration and lockfile/staging work.
 | Source contract | `test ! -d apps/web/src/lib/post-email-queue && test ! -d apps/infrastructure/src/lib/post-email-queue && ! rg -n "from ['\"]@/" packages/users-core/src/lib/post-email-queue.ts packages/users-core/src/lib/post-email-queue` | both copy directories are absent and the host-alias search has no output |
 | Route ownership | `bun web:api-routes:check && bun migration:tanstack:manifest && git diff --exit-code -- apps/tanstack-web/migration/route-overrides.json` | no legacy wrapper returns; manifest records the first-class source; overrides remain unchanged |
 | Types/builds | `bun run --cwd packages/users-core type-check && bun run --cwd apps/web type-check && bun run --cwd apps/infrastructure type-check && bun run --cwd apps/web build && bun run --cwd apps/infrastructure build` | package and both operational hosts compile/build |
-| Repository | `bun check && git diff --check` | all canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all canonical gates pass; whitespace output is empty |
 
 ## Scope
 

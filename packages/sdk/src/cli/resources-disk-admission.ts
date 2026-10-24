@@ -79,24 +79,3 @@ export async function diskAdmission({
     ].join('\n'),
   };
 }
-
-/**
- * The launch-time gate: queued commands are re-admitted against a fresh probe
- * after they claim a slot and right before they start, so a volume that
- * filled while they waited refuses them (exit 75).
- */
-export function launchDiskGate(
-  cwd: string,
-  admit: typeof diskAdmission = diskAdmission,
-  write: (message: string) => void = (message) =>
-    process.stderr.write(`[ttr resources] ${message}\n`)
-) {
-  return async () => {
-    const disk = await admit({ cwd });
-    if (disk.refuse) {
-      if (disk.message) write(disk.message);
-      return 75;
-    }
-    return null;
-  };
-}

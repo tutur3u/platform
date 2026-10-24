@@ -258,14 +258,21 @@ describe('machine cache fences after review', () => {
     expect(calls.some((argv) => argv[0] === 'bun')).toBe(false);
   });
 
-  it('treats an unreadable process list as busy', () => {
+  it('treats an unreadable process list as busy', async () => {
     const failing: Exec = () => ({
       status: 1,
       stdout: '',
       stderr: 'ps: denied',
     });
+    const cacheRoot = await mkdtemp(join(tmpdir(), 'ttr-npm-busy-'));
+    roots.push(cacheRoot);
+    await mkdir(join(cacheRoot, '_cacache'));
     const result = options({
-      report: report('', [], [item({ category: 'npm-cache', path: '/npm' })]),
+      report: report(
+        '',
+        [],
+        [item({ category: 'npm-cache', path: join(cacheRoot, '_cacache') })]
+      ),
       categories: ['npm-cache'],
       exec: failing,
     });

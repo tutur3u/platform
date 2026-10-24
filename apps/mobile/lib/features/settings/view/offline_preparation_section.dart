@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -143,7 +144,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                   message: l10n.offlinePreparationDescription,
                   triggerMode: TooltipTriggerMode.tap,
                   child: Icon(
-                    Icons.info_outline_rounded,
+                    LucideIcons.info,
                     size: 20,
                     semanticLabel: l10n.offlinePreparationDescription,
                   ),
@@ -158,7 +159,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                     enabled && !state.running && !_starting && !_restoring
                     ? _download
                     : null,
-                icon: const Icon(Icons.download_for_offline_outlined),
+                icon: const Icon(LucideIcons.hardDriveDownload),
                 label: Text(
                   widget.productId == null
                       ? l10n.offlinePreparationCacheAll
@@ -171,7 +172,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: _coordinator.cancel,
-                  icon: const Icon(Icons.pause),
+                  icon: const Icon(LucideIcons.pause),
                   label: Text(l10n.offlinePauseDownloads),
                 ),
               ),
@@ -288,11 +289,11 @@ class _OfflineProductRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(switch (product.status) {
-            OfflinePreparationStatus.downloading => Icons.downloading_rounded,
-            OfflinePreparationStatus.ready => Icons.offline_pin_outlined,
-            OfflinePreparationStatus.failed => Icons.error_outline_rounded,
-            OfflinePreparationStatus.unavailable => Icons.cloud_off_outlined,
-            OfflinePreparationStatus.queued => Icons.download_outlined,
+            OfflinePreparationStatus.downloading => LucideIcons.cloudDownload,
+            OfflinePreparationStatus.ready => LucideIcons.hardDriveDownload,
+            OfflinePreparationStatus.failed => LucideIcons.circleAlert,
+            OfflinePreparationStatus.unavailable => LucideIcons.cloudOff,
+            OfflinePreparationStatus.queued => LucideIcons.download,
           }, size: 20),
           const SizedBox(width: 12),
           Expanded(
@@ -322,14 +323,14 @@ class _OfflineProductRow extends StatelessWidget {
             IconButton(
               tooltip: l10n.offlineModuleDetails,
               onPressed: onOpen,
-              icon: const Icon(Icons.chevron_right),
+              icon: const Icon(LucideIcons.chevronRight),
             ),
           if (product.status == OfflinePreparationStatus.failed ||
               product.status == OfflinePreparationStatus.unavailable)
             IconButton(
               tooltip: l10n.commonRetry,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const Icon(LucideIcons.rotateCw),
             ),
         ],
       ),

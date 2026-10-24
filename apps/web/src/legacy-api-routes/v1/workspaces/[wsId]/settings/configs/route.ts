@@ -194,20 +194,22 @@ export async function GET(req: NextRequest, { params }: Params) {
     const configMap = new Map<string, string>(
       (configs ?? []).map((config) => [config.id, config.value])
     );
-    const result: Record<string, string | null> = {};
+    const result = new Map<string, string | null>();
     for (const id of ids) {
       if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
-        result[id] =
+        result.set(
+          id,
           defaultIncludedGroups.data.length > 0
             ? defaultIncludedGroups.data.join(',')
-            : null;
+            : null
+        );
         continue;
       }
 
-      result[id] = configMap.get(id) ?? null;
+      result.set(id, configMap.get(id) ?? null);
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(Object.fromEntries(result));
   } catch (error) {
     console.error('Error in workspace configs API:', error);
     return NextResponse.json(
@@ -291,7 +293,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    const parsedUpdates: WorkspaceConfigUpdates = {};
+    // Keys come from the request body: collect them in a Map so a key such as
+    // `__proto__` stays an own property of the RPC payload.
+    const updateEntries = new Map<string, string>();
 
     for (const [key, value] of parsedEntries) {
       if (typeof value !== 'string') {
@@ -312,10 +316,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
         );
       }
 
-      parsedUpdates[key] = value;
+      updateEntries.set(key, value);
     }
 
-    if (Object.keys(parsedUpdates).length === 0) {
+    const parsedUpdates: WorkspaceConfigUpdates =
+      Object.fromEntries(updateEntries);
+
+    if (updateEntries.size === 0) {
       return NextResponse.json(
         { error: 'No updates provided' },
         { status: 400 }
@@ -323,8 +330,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     const needsApprovalActor =
-      parsedUpdates.ENABLE_POST_APPROVAL !== undefined ||
-      parsedUpdates.ENABLE_REPORT_APPROVAL !== undefined;
+      updateEntries.has('ENABLE_POST_APPROVAL') ||
+      updateEntries.has('ENABLE_REPORT_APPROVAL');
 
     let actorVirtualUserId: string | undefined;
 

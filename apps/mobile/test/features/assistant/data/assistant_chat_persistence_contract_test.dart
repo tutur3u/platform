@@ -664,7 +664,7 @@ void main() {
               containsAllInOrder([
                 'saved-user-message',
                 'start',
-                'saved-message',
+                'saved-messages',
               ]),
             );
             expect(actualEvents.last, isA<AssistantDoneStreamEvent>());

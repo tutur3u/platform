@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -106,7 +107,7 @@ class _TaskLinkField extends StatelessWidget {
                           ),
                           const shad.Gap(8),
                           Icon(
-                            shad.LucideIcons.chevronsUpDown,
+                            LucideIcons.chevronsUpDown,
                             size: 14,
                             color: colorScheme.mutedForeground,
                           ),
@@ -207,7 +208,7 @@ class _ClearButton extends StatelessWidget {
           border: Border(left: BorderSide(color: colorScheme.border)),
         ),
         child: Icon(
-          shad.LucideIcons.x,
+          LucideIcons.x,
           size: 14,
           color: colorScheme.mutedForeground,
         ),
@@ -256,118 +257,115 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
     final theme = shad.Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Toggle row
-          InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    shad.LucideIcons.settings2,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Toggle row
+        InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.settings2,
+                  size: 14,
+                  color: colorScheme.mutedForeground,
+                ),
+                const shad.Gap(6),
+                Text(
+                  l10n.timerAdvanced,
+                  style: theme.typography.small.copyWith(
+                    color: colorScheme.mutedForeground,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                AnimatedRotation(
+                  turns: _expanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    LucideIcons.chevronDown,
                     size: 14,
                     color: colorScheme.mutedForeground,
                   ),
-                  const shad.Gap(6),
-                  Text(
-                    l10n.timerAdvanced,
-                    style: theme.typography.small.copyWith(
-                      color: colorScheme.mutedForeground,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      shad.LucideIcons.chevronDown,
-                      size: 14,
-                      color: colorScheme.mutedForeground,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
 
-          // Expandable content
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOut,
-            child: _expanded
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const shad.Gap(4),
+        // Expandable content
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          child: _expanded
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const shad.Gap(4),
 
-                      // Description field
-                      Text(
-                        l10n.timerSessionDescription,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.mutedForeground,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    // Description field
+                    Text(
+                      l10n.timerSessionDescription,
+                      style: theme.typography.small.copyWith(
+                        color: colorScheme.mutedForeground,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const shad.Gap(6),
-                      shad.TextField(
-                        selectionControls: platformTextSelectionControls(),
-                        contextMenuBuilder: platformTextContextMenuBuilder(),
-                        controller: _descController,
-                        hintText: l10n.timerSessionDescription,
-                        maxLines: 4,
-                        minLines: 2,
-                        onChanged: widget.onDescriptionChanged,
-                      ),
-                      const shad.Gap(12),
+                    ),
+                    const shad.Gap(6),
+                    shad.TextField(
+                      selectionControls: platformTextSelectionControls(),
+                      contextMenuBuilder: platformTextContextMenuBuilder(),
+                      controller: _descController,
+                      hintText: l10n.timerSessionDescription,
+                      maxLines: 4,
+                      minLines: 2,
+                      onChanged: widget.onDescriptionChanged,
+                    ),
+                    const shad.Gap(12),
 
-                      // Category (optional)
-                      Text(
-                        l10n.timerCategory,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.mutedForeground,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    // Category (optional)
+                    Text(
+                      l10n.timerCategory,
+                      style: theme.typography.small.copyWith(
+                        color: colorScheme.mutedForeground,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const shad.Gap(6),
-                      CategorySelectorButton(
-                        categories: widget.categories,
-                        selectedCategoryId: widget.selectedCategoryId,
-                        onTap: widget.onOpenCategoryPicker,
-                      ),
-                      const shad.Gap(12),
+                    ),
+                    const shad.Gap(6),
+                    CategorySelectorButton(
+                      categories: widget.categories,
+                      selectedCategoryId: widget.selectedCategoryId,
+                      onTap: widget.onOpenCategoryPicker,
+                    ),
+                    const shad.Gap(12),
 
-                      // Task link field
-                      Text(
-                        l10n.timerLinkTask,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.mutedForeground,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    // Task link field
+                    Text(
+                      l10n.timerLinkTask,
+                      style: theme.typography.small.copyWith(
+                        color: colorScheme.mutedForeground,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const shad.Gap(6),
-                      _TaskLinkField(
-                        taskId: widget.initialTaskId,
-                        taskName: widget.initialTaskName,
-                        ticketLabel: widget.initialTaskTicketLabel,
-                        placeholder: l10n.timerTaskIdPlaceholder,
-                        onTap: widget.onOpenTaskPicker,
-                        onClear: widget.onClearTask,
-                      ),
-                      const shad.Gap(12),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
+                    ),
+                    const shad.Gap(6),
+                    _TaskLinkField(
+                      taskId: widget.initialTaskId,
+                      taskName: widget.initialTaskName,
+                      ticketLabel: widget.initialTaskTicketLabel,
+                      placeholder: l10n.timerTaskIdPlaceholder,
+                      onTap: widget.onOpenTaskPicker,
+                      onClear: widget.onClearTask,
+                    ),
+                    const shad.Gap(12),
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }

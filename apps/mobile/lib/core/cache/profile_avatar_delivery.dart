@@ -92,7 +92,16 @@ Future<void> deliverProfileAvatar({
     throw const ApiException.transport(message: 'Avatar upload timed out');
   }
   if (uploaded.statusCode < 200 || uploaded.statusCode >= 300) {
-    throw profileUploadHttpFailure(uploaded);
+    final failure = profileUploadHttpFailure(uploaded);
+    if (banner && uploaded.statusCode == 401) {
+      throw ApiException(
+        message: 'Banner upload ticket is invalid or expired',
+        statusCode: 401,
+        code: 'PROFILE_UPLOAD_TICKET_EXPIRED',
+        retryAfter: failure.retryAfter,
+      );
+    }
+    throw failure;
   }
   if (banner) {
     await api.postJson(ProfileEndpoints.banner, {

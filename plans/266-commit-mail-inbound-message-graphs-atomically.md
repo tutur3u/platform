@@ -90,7 +90,7 @@ partial provider-identity rows before adding replay repair semantics.
 | Focused database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/mail-inbound-message-graph.sql` | pgTAP proves transaction, replay, counters, ACLs, and rollback |
 | Full database/typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP passes and generated types reflect only the RPC |
 | Mail checks | `bun type-check:mail && bun --cwd apps/mail run build` | types and real Next build pass |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 

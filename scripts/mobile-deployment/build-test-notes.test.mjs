@@ -24,7 +24,7 @@ const history = {
 test('renders only exact version notes, excluding later unshipped changes', () => {
   assert.equal(
     renderBuildTestNotes(history, identity),
-    'Please test 0.20.4:\n- add scoped timezone settings and preserve calendar instants'
+    'Please test 0.20.4:\n- Add scoped timezone settings and preserve calendar instants'
   );
 });
 for (const field of ['version', 'number', 'sourceSha']) {
@@ -327,7 +327,7 @@ test('complete history fits or defers, never silently drops later changes', () =
       { ...history, releases: [{ version: identity.version, changes }] },
       identity
     );
-  assert.equal(notes(['one', 'two']), 'Please test 0.20.4:\n- one\n- two');
+  assert.equal(notes(['one', 'two']), 'Please test 0.20.4:\n- One\n- Two');
   assert.throws(() => notes(['x'.repeat(4001)]), BetaHistoryUnavailableError);
   assert.throws(
     () => notes(['one', 'x'.repeat(4001)]),
@@ -422,7 +422,7 @@ test('exact build notes omit merge bookkeeping from an older original artifact',
   };
   assert.equal(
     renderBuildTestNotes(original, identity),
-    `Please test ${identity.version}:\n- merge duplicate contacts`
+    `Please test ${identity.version}:\n- Merge duplicate contacts`
   );
   assert.throws(
     () =>
@@ -459,7 +459,7 @@ test('repairs only known bookkeeping in existing English metadata, preserving ge
   const write = api.calls.find((call) => call.options.method === 'PATCH');
   assert.equal(
     JSON.parse(write.options.body).data.attributes.whatsNew,
-    'Please test 0.20.4:\n- merge duplicate contacts'
+    'Please test 0.20.4:\n- Merge duplicate contacts'
   );
   assert.equal(api.calls.filter((call) => call.options.method).length, 1);
 });
@@ -505,5 +505,111 @@ test('a generated header alone loads genuine build-specific notes', async () => 
   assert.equal(
     JSON.parse(write.options.body).data.attributes.whatsNew,
     'Please test 0.20.4:\n- Keyboard navigation'
+  );
+});
+
+test('repairs the exact retained 0.25.4 screenshot notes on retry', async () => {
+  const api = localizationApi({
+    id: 'english',
+    attributes: {
+      locale: 'en-US',
+      whatsNew:
+        'Please test 0.25.4:\n- Merge main into feat/feedback-mobile-submit-20261022\n- retain uncertain submissions and compare omitted media\n- connect secure mobile submission and private media\n- retain completed replies across reload and follow-up',
+    },
+  });
+  const loadNotes = () => {
+    throw new Error('Must retain original build notes');
+  };
+  assert.equal(
+    await ensureBuildWhatsNew(api.apple, 'build', loadNotes),
+    'filled'
+  );
+  const saved = await api.apple(
+    '/v1/builds/build/betaBuildLocalizations?limit=200'
+  );
+  assert.equal(
+    saved.data.find((item) => item.id === 'english').attributes.whatsNew,
+    'Please test 0.25.4:\n- Retain uncertain submissions and compare omitted media\n- Connect secure mobile submission and private media\n- Retain completed replies across reload and follow-up'
+  );
+  assert.equal(
+    saved.data.find((item) => item.id === 'vi').attributes.whatsNew,
+    'Existing Vietnamese notes'
+  );
+  assert.equal(
+    await ensureBuildWhatsNew(api.apple, 'build', loadNotes),
+    'preserved'
+  );
+  assert.equal(api.calls.filter(({ options }) => options.method).length, 1);
+});
+
+for (const prose of [
+  'Please verify iOS and eBay sign-in. PR #42 is the test plan.',
+  'Please test 0.25.4:\nCheck iOS and eBay sign-in.\n- keep this manually written bullet',
+]) {
+  test(`removes mobile noise without normalizing manual prose: ${prose}`, async () => {
+    const api = localizationApi({
+      id: 'english',
+      attributes: {
+        locale: 'en-US',
+        whatsNew: `${prose}\n- Merge main into feat/feedback-mobile-submit-20261022\n- ci(mobile): update deployment`,
+      },
+    });
+    await ensureBuildWhatsNew(api.apple, 'build', () => {
+      throw new Error('Preserve manual notes');
+    });
+    const write = api.calls.find(({ options }) => options.method === 'PATCH');
+    assert.equal(
+      JSON.parse(write.options.body).data.attributes.whatsNew,
+      prose
+    );
+  });
+}
+
+test('retained generated notes use mobile priority, deduplication and reference cleanup', async () => {
+  const api = localizationApi({
+    id: 'english',
+    attributes: {
+      locale: 'en-US',
+      whatsNew: [
+        'Please test 0.25.4:',
+        '- fix(web): retain keyboard focus (#12)',
+        '- feat(mobile): connect secure submission PR #6419',
+        '- connect secure submission',
+        '- docs(mobile): update instructions',
+        '- fix/mobile-feedback',
+      ].join('\n'),
+    },
+  });
+  await ensureBuildWhatsNew(api.apple, 'build', () => {
+    throw new Error('Retain existing build');
+  });
+  const write = api.calls.find(({ options }) => options.method === 'PATCH');
+  assert.equal(
+    JSON.parse(write.options.body).data.attributes.whatsNew,
+    'Please test 0.25.4:\n- Connect secure submission\n- Retain keyboard focus'
+  );
+});
+
+test('reread cleans the latest notes instead of overwriting concurrent product edits', async () => {
+  const latest =
+    'Please test 0.25.4:\n- Merge main into feat/feedback-mobile-submit-20261022\n- retain the latest reply';
+  const api = localizationApi({
+    id: 'english',
+    attributes: { locale: 'en-US', whatsNew: latest },
+  });
+  let reads = 0;
+  const apple = async (path, options = {}) => {
+    if (!options.method && ++reads === 1) return { data: [] };
+    return api.apple(path, options);
+  };
+  await ensureBuildWhatsNew(
+    apple,
+    'build',
+    async () => 'Please test 0.25.4:\n- Original artifact change'
+  );
+  const write = api.calls.find(({ options }) => options.method === 'PATCH');
+  assert.equal(
+    JSON.parse(write.options.body).data.attributes.whatsNew,
+    'Please test 0.25.4:\n- Retain the latest reply'
   );
 });

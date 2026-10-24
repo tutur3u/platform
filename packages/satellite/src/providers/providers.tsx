@@ -4,7 +4,7 @@ import {
 } from '@tuturuuu/utils/launchable-apps';
 import { connection } from 'next/server';
 import { NextIntlClientProvider } from 'next-intl';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider as DefaultThemeProvider } from 'next-themes';
 import { type ReactNode, Suspense } from 'react';
 import { getSatelliteAppSessionUser } from '../auth';
 import { SatelliteVersionBadge } from '../components/version-badge-gate';
@@ -15,11 +15,13 @@ export function Providers({
   children,
   currentApp,
   loadingFallback = null,
+  themeProvider: ThemeProvider = DefaultThemeProvider,
 }: {
   appName?: string;
   children: ReactNode;
   currentApp?: LaunchableAppSlug;
   loadingFallback?: ReactNode;
+  themeProvider?: typeof DefaultThemeProvider;
 }) {
   const launchableApp =
     currentApp ??

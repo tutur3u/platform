@@ -76,7 +76,7 @@ explicit versioned compatibility decision.
 | Existing Inventory | `bun --cwd apps/inventory vitest run 'src/app/api/v1/workspaces/[wsId]/inventory/categories/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/inventory/warehouses/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/inventory/suppliers/route.test.ts' src/__tests__/inventory-item-workspace-scope.test.ts` | maintained setup and compatibility item behavior pass |
 | Mobile analysis | `cd apps/mobile && flutter analyze lib/data/repositories/inventory_repository.dart` | the existing name-only callers remain valid |
 | Types/build | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | Inventory compiles and builds |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 
@@ -102,7 +102,7 @@ artifacts; migration of callers to new URLs.
    extra fields never reach insert. Preserve the current authorization and
    success/database-error envelopes exactly.
 4. Run caller inventory, focused and maintained route suites, Mobile analysis,
-   Inventory typecheck/build, `bun check`, whitespace, and exact-scope review.
+   Inventory typecheck/build, `bun validate`, whitespace, and exact-scope review.
 
 ## Test plan
 
@@ -119,7 +119,7 @@ artifacts; migration of callers to new URLs.
 - [ ] No compatibility setup POST spreads caller data into an insert.
 - [ ] Only a bounded nonempty `name` plus server-derived `ws_id` can be stored.
 - [ ] All existing supported callers and GET/item contracts remain unchanged.
-- [ ] Focused/existing tests, Mobile analysis, typecheck, build, `bun check`,
+- [ ] Focused/existing tests, Mobile analysis, typecheck, build, `bun validate`,
       and whitespace pass.
 - [ ] No database, generated type, Rust, Mobile, Contacts, or route artifact changed.
 

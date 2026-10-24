@@ -42,7 +42,7 @@ export function createLegacyActionPorts({
       const participant = args[1];
       if (
         participant.userType === 'GUEST' &&
-        (!participant.guestId || !participant.guestPasswordHash)
+        (!participant.guestId || !participant.guestSession)
       )
         return { error: 'Unauthorized' };
       const denied =
@@ -62,7 +62,7 @@ export function createLegacyActionPorts({
       const participant = args[1];
       if (
         participant.userType === 'GUEST' &&
-        (!participant.guestId || !participant.guestPasswordHash)
+        (!participant.guestId || !participant.guestSession)
       )
         return { error: 'Unauthorized' };
       const denied =

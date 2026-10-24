@@ -365,7 +365,9 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                 dayColumnWidth: dayColumnWidth,
                 contentWidth: dayAreaWidth,
                 viewportWidth: viewportWidth,
-                fallbackOffset: _bufferDays * dayColumnWidth,
+                fallbackOffset: _gridController.hasClients
+                    ? _gridController.offset
+                    : _bufferDays * dayColumnWidth,
                 expanded: _allDayExpanded,
                 onToggle: () =>
                     setState(() => _allDayExpanded = !_allDayExpanded),

@@ -52,7 +52,7 @@ minimized projection.
 | Focused database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/finance-creator-rpc-privileges.sql` | focused pgTAP passes on a disposable stack |
 | Full database | `bun --cwd apps/database sb:validate:isolated` | full pgTAP exits 0 on the Plan 154 baseline |
 | Generated types | `git diff --exit-code -- packages/types/src/supabase.ts` | no diff; signatures did not change |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Suggested executor toolkit
@@ -122,7 +122,7 @@ Do not include real identity values in fixtures or output.
 
 ### Step 4: Run final gates
 
-Run the generated-type no-diff check, `bun check`, and whitespace check. Confirm
+Run the generated-type no-diff check, `bun validate`, and whitespace check. Confirm
 only the unique migration, focused pgTAP file, and reviewer-owned index row
 changed.
 

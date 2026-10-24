@@ -32,6 +32,7 @@ import {
   resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
+import { isDelegatedCommand, runDelegatedCommand } from './delegated-commands';
 import { runDevboxCommandWithSession } from './devbox-session';
 import { runExternalCommand } from './external-admin';
 import { runFeedbackCli } from './feedback';
@@ -1991,10 +1992,7 @@ async function runRelationshipsCliCommand(context: WorkspaceCommandContext) {
 }
 
 export async function runCli(argv = process.argv.slice(2)) {
-  if (argv[0] === 'resources')
-    return (await import('./resources.js')).runResourcesCommand(argv.slice(1));
-  if (argv[0] === 'storage')
-    return (await import('./storage.js')).runStorageCommand(argv.slice(1));
+  if (isDelegatedCommand(argv[0])) return runDelegatedCommand(argv);
   const commandSeparatorIndex = argv.indexOf('--');
   const globalArgs =
     commandSeparatorIndex >= 0 ? argv.slice(0, commandSeparatorIndex) : argv;

@@ -53,7 +53,7 @@ no authoritative writer.
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | all pgTAP passes |
 | Type generation | `bun sb:typegen` | generated types match local schema |
 | Inventory typecheck/build | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | both exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -139,7 +139,7 @@ and no public lifecycle insertion.
 ### Step 5: Run all gates
 
 Apply/test/typegen locally, inspect generated diff, then run Inventory
-typecheck/build, `bun check`, and whitespace.
+typecheck/build, `bun validate`, and whitespace.
 
 ## Done criteria
 

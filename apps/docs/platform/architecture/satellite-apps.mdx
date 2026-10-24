@@ -134,7 +134,7 @@ vi.mock('next/server', async (importOriginal) => ({
 ```
 
 <Note>
-`bun check` does not compile Next apps, so it cannot see any of this. Require
+`bun validate` does not compile Next apps, so it cannot see any of this. Require
 the app's real build in CI on the exact PR head when you change routes, pages,
 or dependencies. Do not run builds on this machine.
 </Note>
@@ -209,7 +209,7 @@ handler fixtures do not establish hosted Redis or browser behavior.
 A registered satellite must resolve the acting user from Tuturuuu app-session
 auth — never from `@tuturuuu/utils/user-helper`, whose `getCurrentUser` /
 `getCurrentWorkspaceUser` read Supabase auth directly. The `internal-app-auth`
-guard in `bun check` enforces this.
+guard in `bun validate` enforces this.
 
 When a shared helper needs the actor, give it an **injectable** `userId` instead
 of letting it resolve one:
