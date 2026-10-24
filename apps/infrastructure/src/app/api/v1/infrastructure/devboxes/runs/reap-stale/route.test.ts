@@ -18,7 +18,7 @@ import { POST } from './route';
 const request = () =>
   new Request(
     'http://localhost/api/v1/infrastructure/devboxes/runs/reap-stale',
-    { method: 'POST' }
+    { method: 'POST', headers: { origin: 'http://localhost' } }
   );
 
 describe('stale devbox run reaper route', () => {

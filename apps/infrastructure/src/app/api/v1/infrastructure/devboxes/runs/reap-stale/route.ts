@@ -10,6 +10,17 @@ export async function POST(request: Request) {
   const authorization = await authorizeDevboxRootAdmin(request);
   if (!authorization.ok) return authorization.response;
 
+  const origin = request.headers.get('origin');
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (
+    (origin
+      ? origin !== new URL(request.url).origin
+      : authorization.authentication !== 'cli') ||
+    (fetchSite && fetchSite !== 'same-origin')
+  ) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const result = await reapStaleDevboxRuns();
     if (result.reaped > 0)

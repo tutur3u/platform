@@ -17,6 +17,18 @@ up Tuturuuu devbox runners.
 - For local app validation, make sure `apps/web` is running against local
   Supabase env and that the CLI config base URL points at that app.
 
+## Manual stale-run recovery
+
+For manual stale-run recovery, use the Infrastructure app's
+`POST /api/v1/infrastructure/devboxes/runs/reap-stale`. Its browser actor resolves
+through `resolveSatelliteRequestActor(request, 'infra')`; do not verify an
+Infrastructure app-session token solely with the platform-target CLI verifier.
+The root membership and secrets/roles permission gate also applies to CLI access
+bearer tokens. Browser mutations require the exact request Origin and reject
+cross-site fetch metadata. Only a verified CLI bearer may omit Origin, not an
+ambient CLI cookie. Regression coverage is colocated in the reaper's
+`access.test.ts`; see the [remote devbox runbook](../../../../../apps/docs/build/development-tools/remote-devboxes.mdx).
+
 ## Temporary Runner Smoke
 
 Use a unique, disposable runner name:

@@ -557,11 +557,20 @@ workspace membership plus `manage_workspace_secrets` or `manage_workspace_roles`
 Each call reaps at most 200 runs across all runners and returns
 `{ limit, reaped }`. There is deliberately no `/api/cron` route for it.
 
+Browser operators authenticate with the Infrastructure app-session audience
+`infra`. The manual POST requires an `Origin` matching the request URL exactly
+and rejects a supplied `Sec-Fetch-Site` other than `same-origin`. Forwarded hosts
+do not expand the allowed origin. CLI access bearer tokens retain the same
+root permission gate as runner drain and may omit `Origin`; a supplied origin
+must still match. A CLI token in a cookie does not receive that exemption.
+
 Adding a Cloudflare Cron Control trigger is a follow-up under the billable-work
 rules: bounded calls/retries, idempotent progress, terminal scheduling and a
 tested durable stop fence. Do not add a Vercel cron or pg_cron entry. Regression
 coverage lives in `apps/database/supabase/tests/devbox-stale-run-reaper.sql`
-and the route test.
+and `apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runs/reap-stale/`
+(`route.test.ts` and `access.test.ts`). The access tests exercise real signed
+app-session and CLI tokens with fixture permission and storage boundaries.
 
 ## Judge setup
 
