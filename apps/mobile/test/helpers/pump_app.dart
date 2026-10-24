@@ -43,6 +43,44 @@ extension PumpApp on WidgetTester {
     );
   }
 
+  /// Pumps the app shell around [router]; [wrap] adds providers above it.
+  Future<void> pumpAppRouter(
+    GoRouter router, {
+    Widget Function(Widget app)? wrap,
+  }) {
+    final app = shad.ShadcnApp.router(
+      theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        AppShadcnLocalizationsDelegate(),
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+      builder: ShadcnMaterialBridge.appBuilder,
+    );
+    return pumpWidget(wrap == null ? app : wrap(app));
+  }
+
+  /// Pumps [home] in the default appearance theme for [brightness];
+  /// [wrap] adds providers above the app.
+  Future<void> pumpThemedHome(
+    Widget home, {
+    Brightness brightness = Brightness.light,
+    Widget Function(Widget app)? wrap,
+  }) {
+    final app = shad.ShadcnApp(
+      theme: AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        AppShadcnLocalizationsDelegate(),
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
+      home: home,
+    );
+    return pumpWidget(wrap == null ? app : wrap(app));
+  }
+
   Future<void> drainShadToastTimers() async {
     await pump(const Duration(seconds: 6));
     await pump(const Duration(milliseconds: 50));

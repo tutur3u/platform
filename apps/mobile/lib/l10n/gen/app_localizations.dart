@@ -20982,6 +20982,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'browser'**
   String get settingsSearchBrowserTerm;
+
+  /// No description provided for @profilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get profilePhoto;
+
+  /// No description provided for @profileCoverBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover banner'**
+  String get profileCoverBanner;
+
+  /// No description provided for @profileMediaSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get profileMediaSet;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

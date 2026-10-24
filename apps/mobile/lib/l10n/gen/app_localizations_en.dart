@@ -11091,4 +11091,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSearchBrowserTerm => 'browser';
+
+  @override
+  String get profilePhoto => 'Photo';
+
+  @override
+  String get profileCoverBanner => 'Cover banner';
+
+  @override
+  String get profileMediaSet => 'Set';
 }

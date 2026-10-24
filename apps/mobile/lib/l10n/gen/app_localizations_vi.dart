@@ -10956,4 +10956,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSearchBrowserTerm => 'trình duyệt';
+
+  @override
+  String get profilePhoto => 'Ảnh đại diện';
+
+  @override
+  String get profileCoverBanner => 'Ảnh bìa';
+
+  @override
+  String get profileMediaSet => 'Đã đặt';
 }

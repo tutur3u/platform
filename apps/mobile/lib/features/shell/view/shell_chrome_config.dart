@@ -75,7 +75,7 @@ class ShellChromeConfig {
       Routes.taskEstimates => l10n.taskPlanningTitle,
       Routes.taskPortfolio => l10n.taskPlanningTitle,
       Routes.profileRoot => l10n.profileTitle,
-      Routes.profileEdit || Routes.settingsProfile => l10n.settingsNavYou,
+      Routes.profileEdit || Routes.settingsProfile => l10n.settingsProfileEdit,
       Routes.profileAccounts ||
       Routes.settingsAccounts => l10n.authManageAccounts,
       Routes.settingsOffline => l10n.offlineSectionTitle,
