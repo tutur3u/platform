@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/supabase-v0.6.0...supabase-v0.6.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/supabase-v0.5.2...supabase-v0.6.0) (2026-10-17)
 
 

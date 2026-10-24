@@ -5,18 +5,15 @@
 
 ### Features
 
-* **security:** add staged native integrity verification ([b9155e4](https://github.com/tutur3u/platform/commit/b9155e45bba5486b9943a4dc3e9cb9b2aedb8b14))
-* **security:** add staged native integrity verification ([#6575](https://github.com/tutur3u/platform/issues/6575)) ([332368d](https://github.com/tutur3u/platform/commit/332368dd35586096f314355eb6bc8f7904ed0868))
+* **security:** add staged native integrity verification ([b9155e4](https://github.com/tutur3u/platform/commit/b9155e45bba5486b9943a4dc3e9cb9b2aedb8b14)) ([#6575](https://github.com/tutur3u/platform/issues/6575)) ([332368d](https://github.com/tutur3u/platform/commit/332368dd35586096f314355eb6bc8f7904ed0868))
 
 
 ### Bug Fixes
 
 * **calendar:** preserve native quota diagnostics and reuse verified actors ([88c464c](https://github.com/tutur3u/platform/commit/88c464c75ca1a51014e360ee92aabea0b16d919c))
-* **calendar:** serve native timezone preferences from Web ([ec94bc2](https://github.com/tutur3u/platform/commit/ec94bc262c9ef7e89339309de1d23ff4045224db))
-* **calendar:** serve native timezone preferences from Web ([#6573](https://github.com/tutur3u/platform/issues/6573)) ([a1bcec6](https://github.com/tutur3u/platform/commit/a1bcec69510d4efaaee91737a563c00ffc253dd4))
+* **calendar:** serve native timezone preferences from Web ([ec94bc2](https://github.com/tutur3u/platform/commit/ec94bc262c9ef7e89339309de1d23ff4045224db)) ([#6573](https://github.com/tutur3u/platform/issues/6573)) ([a1bcec6](https://github.com/tutur3u/platform/commit/a1bcec69510d4efaaee91737a563c00ffc253dd4))
 * **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
-* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e))
-* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e)) ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
 * **security:** harden regexes, escaping and key handling in shared packages ([d518804](https://github.com/tutur3u/platform/commit/d518804d9fe811cfba3a1ff04a6f253d4fa44c1d))
 * **security:** prevent native integrity fallback downgrades ([c1d5f41](https://github.com/tutur3u/platform/commit/c1d5f41c9b197dbe62e33e3cce49a7c00c5c0ebf))
 * **security:** repair native integrity CI and merge main ([667bfef](https://github.com/tutur3u/platform/commit/667bfef571dbb5b0e201bfa48ba3ed4000b7c522))

@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/sdk-v0.28.0...sdk-v0.29.0) (2026-10-24)
+
+
+### Features
+
+* **devbox:** stop whole job process groups and support remote stop ([#6446](https://github.com/tutur3u/platform/issues/6446)) ([cd4dcd0](https://github.com/tutur3u/platform/commit/cd4dcd0f52fb4396a342b32af93516891b3bcb86))
+* **sdk:** add cross-project worker-token budgets to ttr resources ([9e7129d](https://github.com/tutur3u/platform/commit/9e7129d1d965a4f91227958a7d0f3f9c43edb1f2)) ([#6558](https://github.com/tutur3u/platform/issues/6558)) ([bb0b74f](https://github.com/tutur3u/platform/commit/bb0b74f78a9f5d74b5b3f67562378c0e17aeab64))
+* **sdk:** add guarded global supplier rollout ([9256482](https://github.com/tutur3u/platform/commit/9256482a957f79e3e2938b0bd2cda10795e49a42))
+* **sdk:** add trusted dev package channel ([f31cd78](https://github.com/tutur3u/platform/commit/f31cd78319289dea17eb99e01c4445b3e27df41b))
+* **sdk:** add trusted dev packages and channel identity ([#6590](https://github.com/tutur3u/platform/issues/6590)) ([62d7dfc](https://github.com/tutur3u/platform/commit/62d7dfc7778d37691b55755c70f4c1d2a6d903b6))
+* **sdk:** add weighted multi-host admission to ttr resources ([#6503](https://github.com/tutur3u/platform/issues/6503)) ([80e46a8](https://github.com/tutur3u/platform/commit/80e46a84c06f251df4488d0272ff8f08bf5d473c))
+* **sdk:** automate guarded global supplier rollout and recovery ([#6591](https://github.com/tutur3u/platform/issues/6591)) ([fb1bd34](https://github.com/tutur3u/platform/commit/fb1bd34ab7c9cce1057fb850494b66de9eb00643))
+* **sdk:** honour an operator host preference order in --hosts admission ([#6513](https://github.com/tutur3u/platform/issues/6513)) ([2ea0e1c](https://github.com/tutur3u/platform/commit/2ea0e1cbef093a57c943e8b1f95a115eca6e7d3d))
+* **sdk:** offload saturated resource runs to trusted devbox runners ([#6454](https://github.com/tutur3u/platform/issues/6454)) ([59bce45](https://github.com/tutur3u/platform/commit/59bce451809baf5f62185d172833a99fb5ad0a7c))
+* **sdk:** run an exact pushed commit on trusted devbox runners ([#6452](https://github.com/tutur3u/platform/issues/6452)) ([bd19b4e](https://github.com/tutur3u/platform/commit/bd19b4ed8b59c4648ad1300edc9444e5d1443306))
+* **sdk:** separate devbox trust tiers on the runner ([#6451](https://github.com/tutur3u/platform/issues/6451)) ([c8b7297](https://github.com/tutur3u/platform/commit/c8b72976f4fb301476fbb825aea109a17f448523))
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **devbox:** cancel lost offload creates by key and page logs by run cursor ([aace86b](https://github.com/tutur3u/platform/commit/aace86bdbdef0f44ae31562c61dd2174463a384c))
+* **devbox:** fence keyed creates and enforce the commit-run protocol server-side ([d0dd8c6](https://github.com/tutur3u/platform/commit/d0dd8c6b34e0270e46e595c60bd230dcb1644693))
+* **devbox:** offload only to runners advertising the commit-run protocol ([72561cc](https://github.com/tutur3u/platform/commit/72561cce0da3c59c6ea52f994ac1815ff555c827))
+* **resources:** fence workspace admission and preserve global upgrades ([#6568](https://github.com/tutur3u/platform/issues/6568)) ([68f0638](https://github.com/tutur3u/platform/commit/68f0638fed3bd404916bf0a966b7d163791421a2))
+* **resources:** fence workspace bins and preserve global upgrades ([2b2c631](https://github.com/tutur3u/platform/commit/2b2c63171449a8896b9ff20472bfd284f771cc9d))
+* **resources:** preserve ownership through protocol upgrades ([25139cf](https://github.com/tutur3u/platform/commit/25139cf6b69a1d24b9fa5a4e945a72d66473ca32))
+* **resources:** reject cache takeover and orphan CLI aliases ([89a0fc3](https://github.com/tutur3u/platform/commit/89a0fc3364d4b0ad37967c7ccd30dbd6387b2f2f))
+* **resources:** trust global CLI and fence cross-install setup ([8a4ef11](https://github.com/tutur3u/platform/commit/8a4ef11d2f66ba9c8c93400096616a51e0266153))
+* **sdk:** admit ambiguous Node resource invocations ([f4c67b2](https://github.com/tutur3u/platform/commit/f4c67b2066318fc77221edd2522229baaab3ec13))
+* **sdk:** admit and cap config-driven Node tests ([dc13a70](https://github.com/tutur3u/platform/commit/dc13a70f17f509b0869a47f284cccccc0340d8bf))
+* **sdk:** cap the public Playwright test CLI entrypoint ([2b81ea5](https://github.com/tutur3u/platform/commit/2b81ea574d25e65ef53c8f761426049cd37c2cda))
+* **sdk:** drain oversized budget heads and reconcile rollback ([e4f5989](https://github.com/tutur3u/platform/commit/e4f59898bf0e22d5a5a75825a643052ac8e69578))
+* **sdk:** exclude shared test fixtures from the portable build ([acf283d](https://github.com/tutur3u/platform/commit/acf283dbf182a074ad4b3b8919c0b60a8b343c68)) ([#6586](https://github.com/tutur3u/platform/issues/6586)) ([a240202](https://github.com/tutur3u/platform/commit/a240202cf9a03d701902a915558566aa993839d8))
+* **sdk:** fail toward admission for ambiguous Node option values ([83961be](https://github.com/tutur3u/platform/commit/83961be640281145987ac3b985a77196a4518aa9))
+* **sdk:** fence upgrades atomically and cap ambiguous test workers ([3058bca](https://github.com/tutur3u/platform/commit/3058bcae38718db8a7642126c0bd9c1355a0c64c))
+* **sdk:** harden rollout recovery and fleet outcome reporting ([bc98c9e](https://github.com/tutur3u/platform/commit/bc98c9e6cad9c68bed7a39f9d4ca4c27be18c821))
+* **sdk:** harden ttr resources nested admission and trivial bypass ([#6492](https://github.com/tutur3u/platform/issues/6492)) ([bb5ac64](https://github.com/tutur3u/platform/commit/bb5ac64ffbff72f3a17af3a2ef09e221ff1e1a40))
+* **sdk:** hoist regex test so CodeQL can parse portable-build ([8291a33](https://github.com/tutur3u/platform/commit/8291a33a7a1406d357e240a60dbb03ebec6437e4)) ([#6543](https://github.com/tutur3u/platform/issues/6543)) ([8bfff65](https://github.com/tutur3u/platform/commit/8bfff658698cd1fe79a2e15f095296bdfbee83d0))
+* **sdk:** identify unmanaged launchers before budget upgrade checks ([c61ad90](https://github.com/tutur3u/platform/commit/c61ad909048fb6d1839bfc719b4350c520213bb8))
+* **sdk:** isolate version probes and serialize dev publication ([dde6fec](https://github.com/tutur3u/platform/commit/dde6fec7a7b1dafb0c377da441400cef5bc6b05d))
+* **sdk:** merge Node hardening and gate budget rollout ([94717f3](https://github.com/tutur3u/platform/commit/94717f37aad0cd030fa56a930e541dbc278683c7))
+* **sdk:** never admit ttr through its own bun shim ([28d8d35](https://github.com/tutur3u/platform/commit/28d8d358a59b00085e5cf6f207a6344cd9c57469))
+* **sdk:** preserve version contracts and recover dev packing safely ([107e5fd](https://github.com/tutur3u/platform/commit/107e5fddfd5bb588922276dcfa1da74c4e0c7bca))
+* **sdk:** recognise the shipped CLI admission boundary ([ae48013](https://github.com/tutur3u/platform/commit/ae4801366b6ca72bc88dd50d5edf83fd986eb75d))
+* **sdk:** reconcile resource fixtures and portable qualification ([e273523](https://github.com/tutur3u/platform/commit/e273523db0dd1fc62bff1e1ffa9e172b7e9a63fc))
+* **sdk:** remove orphaned Judge containers and drop bare-pid kills ([#6461](https://github.com/tutur3u/platform/issues/6461)) ([78f2aa0](https://github.com/tutur3u/platform/commit/78f2aa01c51b5c58aef9f494fc76f0e717fde113))
+* **sdk:** reserve reclaim capacity and enforce budget workers ([8e24af8](https://github.com/tutur3u/platform/commit/8e24af893bd66bf5634d535e7879ca41ed245f2b))
+* **sdk:** validate trusted devbox executable input ([8319562](https://github.com/tutur3u/platform/commit/83195629745a9524fa3170bc7ddb31453fb35f20)) ([#6583](https://github.com/tutur3u/platform/issues/6583)) ([52c7c3d](https://github.com/tutur3u/platform/commit/52c7c3df008ee20b95f24e0213427dc5ad44be70))
+* **security:** correct SDK atomic file typing ([87c7532](https://github.com/tutur3u/platform/commit/87c7532260f81ba8b1361919acb1c7d2107b0389))
+* **security:** harden SDK file and token handling ([1a91433](https://github.com/tutur3u/platform/commit/1a91433743d4de9d5c6888e448d373acd7209eb7)) ([#6526](https://github.com/tutur3u/platform/issues/6526)) ([a9e410b](https://github.com/tutur3u/platform/commit/a9e410b8ecee04b3794a949fd47fb517b94173a5))
+* **security:** repair native integrity CI and merge main ([667bfef](https://github.com/tutur3u/platform/commit/667bfef571dbb5b0e201bfa48ba3ed4000b7c522))
+* **tooling:** clamp native checker threads and print concise usage ([dc5d608](https://github.com/tutur3u/platform/commit/dc5d608c72582c3c6fc64310055f396ab23a5a75))
+* **tooling:** enforce validation arguments and native checker admission ([6e787d1](https://github.com/tutur3u/platform/commit/6e787d1d34ca54e5015a98b4fa4438f68de8dc5e))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/sdk-v0.27.0...sdk-v0.28.0) (2026-10-17)
 
 

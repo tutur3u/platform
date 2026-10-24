@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/turnstile-v0.1.3...turnstile-v0.2.0) (2026-10-24)
+
+
+### Features
+
+* **security:** add staged native integrity verification ([b9155e4](https://github.com/tutur3u/platform/commit/b9155e45bba5486b9943a4dc3e9cb9b2aedb8b14)) ([#6575](https://github.com/tutur3u/platform/issues/6575)) ([332368d](https://github.com/tutur3u/platform/commit/332368dd35586096f314355eb6bc8f7904ed0868))
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+
 ## [0.1.3](https://github.com/tutur3u/platform/compare/turnstile-v0.1.2...turnstile-v0.1.3) (2026-09-20)
 
 

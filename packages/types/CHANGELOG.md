@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/types-v0.36.0...types-v0.37.0) (2026-10-24)
+
+
+### Features
+
+* **devbox:** separate runner trust pools and add an observable drain ([#6450](https://github.com/tutur3u/platform/issues/6450)) ([64401ab](https://github.com/tutur3u/platform/commit/64401abf6f74b9c008d020ed0428ec043d23fc6d))
+* **sdk:** offload saturated resource runs to trusted devbox runners ([#6454](https://github.com/tutur3u/platform/issues/6454)) ([59bce45](https://github.com/tutur3u/platform/commit/59bce451809baf5f62185d172833a99fb5ad0a7c))
+
+
+### Bug Fixes
+
+* **auth:** add per-account MFA verification limits ([95205fe](https://github.com/tutur3u/platform/commit/95205fe35733b55c9eb1d6cf03f47ec3ba2318f0)) ([#6555](https://github.com/tutur3u/platform/issues/6555)) ([b4d67f0](https://github.com/tutur3u/platform/commit/b4d67f008ac7f9a2e103d4f35d039175acc0bf5b))
+* **database:** scope email helper to the current caller ([cf7f104](https://github.com/tutur3u/platform/commit/cf7f10431776bb03389439c4698c87cb6269b586)) ([#6550](https://github.com/tutur3u/platform/issues/6550)) ([f261aa0](https://github.com/tutur3u/platform/commit/f261aa03faa17c834a649f6d2cccb5dc9f84bdd8))
+* **database:** tighten notification email access ([4b4e13b](https://github.com/tutur3u/platform/commit/4b4e13bb352c1b370bfcda02836be563b7cf05a5)) ([#6552](https://github.com/tutur3u/platform/issues/6552)) ([d9161cc](https://github.com/tutur3u/platform/commit/d9161ccb52569144418f18a7afc11a19ef6eb4c7))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **devbox:** cancel lost offload creates by key and page logs by run cursor ([aace86b](https://github.com/tutur3u/platform/commit/aace86bdbdef0f44ae31562c61dd2174463a384c))
+* **devbox:** roll out the run log cursor without a long table lock ([6b6b09e](https://github.com/tutur3u/platform/commit/6b6b09e2bda26e6ea5596b4a62877a82b66df3cc))
+* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e)) ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/types-v0.35.0...types-v0.36.0) (2026-10-22)
 
 

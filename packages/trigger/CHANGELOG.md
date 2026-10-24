@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/trigger-v0.4.0...trigger-v0.4.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/trigger-v0.3.3...trigger-v0.4.0) (2026-10-04)
 
 

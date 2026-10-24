@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.10](https://github.com/tutur3u/platform/compare/users-ui-v0.7.9...users-ui-v0.7.10) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+
 ## [0.7.9](https://github.com/tutur3u/platform/compare/users-ui-v0.7.8...users-ui-v0.7.9) (2026-10-17)
 
 

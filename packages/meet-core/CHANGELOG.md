@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.2](https://github.com/tutur3u/platform/compare/meet-core-v1.4.1...meet-core-v1.4.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **meet:** clarify join states and repair theme initialization ([#6506](https://github.com/tutur3u/platform/issues/6506)) ([f641b5b](https://github.com/tutur3u/platform/commit/f641b5b7def874eeeb4f8562429bd2584aa7eb07))
+* **security:** harden regexes, escaping and key handling in shared packages ([d518804](https://github.com/tutur3u/platform/commit/d518804d9fe811cfba3a1ff04a6f253d4fa44c1d))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+
 ## [1.4.1](https://github.com/tutur3u/platform/compare/meet-core-v1.4.0...meet-core-v1.4.1) (2026-10-17)
 
 
