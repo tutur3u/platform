@@ -42,6 +42,15 @@ const hostSchema = z
       light: z.number().int().min(1).max(64),
       heavy: z.number().int().min(1).max(64),
     }),
+    // Operator preference: lower ranks are tried first among hosts that are
+    // already eligible and have capacity. An ordering hint only: it never
+    // admits a stale, degraded, low-disk or full host. Unranked hosts follow
+    // ranked ones.
+    preference: z.number().int().min(1).max(99).optional(),
+    // A runner whose 1-minute load per CPU reaches this is degraded and not
+    // admitted (runner telemetry `resources.loadAverage` / `cpu.cores`).
+    // Defaults to 1.
+    maxLoadPerCpu: z.number().positive().max(16).optional(),
   })
   .refine((host) => host.kind === 'local' || Boolean(host.runnerId), {
     message: 'runner hosts need runnerId',
@@ -133,6 +142,8 @@ export function proposedHostRegistry(
           heavy: { cpus: 2, memoryGiB: 5 },
         },
         workers: { light: 1, heavy: 2 },
+        // Operator order: skr-studio (1) > skr-sonha (2) > Linux (3) > M4.
+        preference: 4,
       },
       {
         id: 'skr-linux-lan',
@@ -146,6 +157,8 @@ export function proposedHostRegistry(
           heavy: { cpus: 5, memoryGiB: 6 },
         },
         workers: { light: 1, heavy: 5 },
+        preference: 3,
+        maxLoadPerCpu: 1,
       },
     ],
   };

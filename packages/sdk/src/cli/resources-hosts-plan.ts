@@ -173,6 +173,7 @@ export function planAdmissions(
     const reasons: string[] = [];
     let best: HostSpec | undefined;
     let bestScore = -Infinity;
+    let bestRank = Infinity;
     for (const host of options) {
       const current = usage.get(host.id)!;
       const reason = hostBlocker(host, states[host.id], current, waiter);
@@ -186,9 +187,13 @@ export function planAdmissions(
         host.weights[waiter.jobClass].cpus;
       const score =
         waiter.jobClass === 'light' && host.kind === 'local' ? Infinity : left;
-      if (score > bestScore) {
+      // The operator's preference orders hosts that already passed every
+      // eligibility and capacity check; the capacity score breaks ties.
+      const rank = host.preference ?? Infinity;
+      if (rank < bestRank || (rank === bestRank && score > bestScore)) {
         best = host;
         bestScore = score;
+        bestRank = rank;
       }
     }
     if (!best) {

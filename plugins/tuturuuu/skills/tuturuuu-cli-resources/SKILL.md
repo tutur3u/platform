@@ -134,6 +134,10 @@ activate it from an agent session.
   transport. Stale or unreachable runners and unknown disk are never admitted.
 - Reservations are created only inside the admission mutex and released on
   cancel or owner death. Project-only locks never count as host admission.
+- Optional per-host `preference` (lower first) orders only eligible hosts
+  with capacity; degraded (load per CPU >= `maxLoadPerCpu`, default 1),
+  stale, low-disk or full preferred hosts are skipped, never forced. Operator
+  order: skr-studio > skr-sonha > skr-linux-lan > M4.
 - Fairness is by repository share with a bypass bound (`maxBypass`), so no
   waiter starves.
 - Every lane-queued job re-checks disk at dequeue: `TTR_STORAGE_MIN_FREE`

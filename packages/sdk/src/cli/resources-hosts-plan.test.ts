@@ -118,6 +118,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
         executionMode: 'trusted',
         protocols: { commitRun: [1] },
         disk: { freeGiB: 400 },
+        resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
       },
       drain_requested_at: null,
       activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
@@ -172,6 +173,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
             executionMode: 'trusted',
             protocols: { commitRun: [] },
             disk: { freeGiB: 400 },
+            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
           },
         }),
       ]),
@@ -197,6 +199,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
           capabilities: {
             executionMode: 'trusted',
             protocols: { commitRun: [1] },
+            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
           },
         }),
       ]),
