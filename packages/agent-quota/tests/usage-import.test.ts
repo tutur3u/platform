@@ -552,7 +552,7 @@ describe('Usage UI and typed manual observations', () => {
     });
     expect(event.clearedAt).toBeUndefined();
   });
-  it('rejects future checkedAt and reset timestamps that do not follow checkedAt', () => {
+  it('rejects future checkedAt and unparseable reset timestamps', () => {
     const imported = (checkedAt: string, resetsAt: string) => ({
       provenance: 'sanitized registry fixture',
       providers: [
@@ -584,7 +584,138 @@ describe('Usage UI and typed manual observations', () => {
         imported('2026-10-23T05:30:00Z', '2026-10-23T05:30:00Z'),
         now
       )
+    ).not.toThrow();
+    expect(() =>
+      validateUsageImport(
+        imported('2026-10-23T05:30:00Z', 'not-a-reset-time'),
+        now
+      )
     ).toThrow('usage-import-reset-invalid');
+  });
+  it('imports an expired weekly window as UNKNOWN without dropping its provider', () => {
+    const checkedAt = '2026-10-24T08:49:38Z';
+    const at = new Date('2026-10-24T08:51:13Z');
+    const value = validateUsageImport(
+      {
+        provenance: 'sanitized registry fixture',
+        providers: [
+          {
+            instanceId: 'claude_kv',
+            driver: 'claudeAgent',
+            usageLimits: {
+              checkedAt,
+              windows: [
+                {
+                  id: 'seven_day_fable',
+                  kind: 'weekly',
+                  label: 'Weekly · Fable',
+                  usedPercent: 4,
+                  resetsAt: '2026-10-24T08:00:00Z',
+                },
+              ],
+            },
+          },
+          {
+            instanceId: 'codex_ai4ed',
+            driver: 'codex',
+            usageLimits: {
+              checkedAt,
+              windows: [
+                {
+                  id: 'weekly',
+                  kind: 'weekly',
+                  label: 'Weekly',
+                  usedPercent: 20,
+                  resetsAt: '2026-10-25T08:00:00Z',
+                },
+              ],
+            },
+          },
+        ],
+      },
+      at
+    );
+    const imported = applyImportedUsage(
+      [
+        { ...account('claude_kv'), models: ['claude-fable-5-1'] },
+        {
+          ...account('codex_ai4ed'),
+          provider: 'codex',
+          models: ['gpt-6.1-sol'],
+        },
+      ],
+      value
+    );
+    const fable = recommend({
+      accounts: imported,
+      active: [],
+      task: { model: 'claude-fable-5-1' },
+      now: at,
+    }).ranked.find((row) => row.instanceId === 'claude_kv');
+    const codex = recommend({
+      accounts: imported,
+      active: [],
+      task: { model: 'gpt-6.1-sol' },
+      now: at,
+    }).ranked.find((row) => row.instanceId === 'codex_ai4ed');
+
+    expect(imported[0]?.windows[0]?.resetsAt).toBe('2026-10-24T08:00:00Z');
+    expect(fable).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(fable?.reasons.map((reason) => reason.code)).toContain(
+      'reset-expired'
+    );
+    expect(codex).toMatchObject({ state: 'healthy', eligible: true });
+  });
+  it('does not let an expired Fable window establish Opus weekly scope', () => {
+    const at = new Date('2026-10-24T08:51:13Z');
+    const value = validateUsageImport(
+      {
+        provenance: 'sanitized registry fixture',
+        providers: [
+          {
+            instanceId: 'claude_kv',
+            driver: 'claudeAgent',
+            usageLimits: {
+              checkedAt: '2026-10-24T08:49:38Z',
+              windows: [
+                {
+                  id: 'seven_day_fable',
+                  kind: 'weekly',
+                  label: 'Weekly · Fable',
+                  usedPercent: 4,
+                  resetsAt: '2026-10-24T08:00:00Z',
+                },
+              ],
+            },
+          },
+        ],
+      },
+      at
+    );
+    const imported = applyImportedUsage(
+      [
+        {
+          ...account('claude_kv'),
+          models: ['claude-opus-5-5', 'claude-fable-5-1'],
+        },
+      ],
+      value
+    );
+    const opus = recommend({
+      accounts: imported,
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now: at,
+    }).ranked[0];
+
+    expect(imported[0]?.windows[0]?.scope).toEqual({
+      kind: 'models',
+      modelFamilies: ['fable'],
+    });
+    expect(opus).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(opus?.reasons.map((reason) => reason.code)).toContain(
+      'no-usage-signal'
+    );
   });
   it('uses the same five-minute future bound for validation and merge', () => {
     const future = {
