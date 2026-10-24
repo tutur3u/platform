@@ -287,7 +287,7 @@ void main() {
     },
   );
 
-  testWidgets('connection completion does not retry denied microphone intent', (
+  testWidgets('denied microphone waits for the next explicit navbar tap', (
     tester,
   ) async {
     final fixture = _Fixture();
@@ -335,6 +335,21 @@ void main() {
     );
     expect(permissionRequests, 1);
     expect(fixture.captures, 0);
+    expect(fixture.stops, stopsAfterDenial);
+    when(fixture.recorder.ensurePermission).thenAnswer((_) async {
+      permissionRequests++;
+      return true;
+    });
+    await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+    await tester.pump();
+    expect(permissionRequests, 2);
+    expect(fixture.captures, 1);
+    expect(fixture.cubit.state.isMicrophoneActive, isTrue);
+    expect(
+      fixture.cubit.state.microphonePermission,
+      AssistantLivePermissionState.granted,
+    );
+    expect(fixture.microphoneStartCompletions, 2);
     expect(fixture.stops, stopsAfterDenial);
     expect(tester.takeException(), isNull);
   });

@@ -622,6 +622,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     unawaited(stopScreenSharing());
     if (!preserveDrafts) {
       _microphoneVersion++;
+      _startingMicrophone = false;
       _startupAudio.clear();
       unawaited(_stopRecorderSafely());
       emit(state.copyWith(isMicrophoneActive: false, audioLevel: 0));
