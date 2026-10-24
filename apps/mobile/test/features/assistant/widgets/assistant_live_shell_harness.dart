@@ -60,7 +60,7 @@ class LiveShellFrame {
 }
 
 class LiveShellTestController extends ValueNotifier<LiveShellFrame> {
-  LiveShellTestController(LiveShellFrame value) : super(value);
+  LiveShellTestController(super._value);
   final slots = ShellDockSlotController();
   final scroll = ScrollController();
   final input = TextEditingController();
