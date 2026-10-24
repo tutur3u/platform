@@ -10,7 +10,13 @@ function ledger() {
 }
 
 function claim(core: LedgerCore, slot = SLOT, now = 0) {
-  return core.claim({ jobId: 'job', leaseMs: 1_000, now, slot });
+  return core.claim({
+    jobId: 'job',
+    leaseMs: 1_000,
+    maxConsecutiveFailures: 3,
+    now,
+    slot,
+  });
 }
 
 function complete(
@@ -111,8 +117,45 @@ it('ignores a completion for a slot that is no longer current', () => {
   const { core } = ledger();
   claim(core, SLOT, 0);
   claim(core, NEXT_SLOT, 5_000);
+  // The abandoned SLOT run was charged once when NEXT_SLOT reconciled it;
+  // its late completion is ignored rather than charged again.
   expect(complete(core, 'failed', SLOT)).toMatchObject({
-    consecutiveFailures: 0,
+    consecutiveFailures: 1,
+    lastOutcome: 'unknown',
     lastSlot: NEXT_SLOT,
+  });
+});
+
+it('repeated termination across restarts exhausts the durable budget', () => {
+  const { store } = memoryLedgerStore();
+  const slotFor = (day: number) => `2026-10-${23 + day}T03:17:00.000Z`;
+  // Each claim is abandoned (the run is terminated before it completes) and
+  // the next tick runs on a fresh Durable Object instance over the same store.
+  for (let day = 0; day < 3; day++)
+    expect(
+      new LedgerCore(store).claim({
+        jobId: 'job',
+        leaseMs: 1_000,
+        maxConsecutiveFailures: 3,
+        now: day * 10_000,
+        slot: slotFor(day),
+      })
+    ).toMatchObject({ granted: true });
+  const restarted = new LedgerCore(store);
+  expect(
+    restarted.claim({
+      jobId: 'job',
+      leaseMs: 1_000,
+      maxConsecutiveFailures: 3,
+      now: 3 * 10_000,
+      slot: slotFor(3),
+    })
+  ).toEqual({ granted: false, reason: 'stopped' });
+  expect(restarted.status().job).toMatchObject({
+    consecutiveFailures: 3,
+    lastOutcome: 'unknown',
+    leaseUntil: 0,
+    stopReason: 'failure-budget-exhausted',
+    stopped: true,
   });
 });

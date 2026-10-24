@@ -10651,5 +10651,33 @@
     "try_different_search_term": "Thử từ khóa tìm kiếm khác",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "satellite-account-settings": {
+    "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
+    "title": "Tài khoản",
+    "preferences": "Tùy chọn",
+    "profile": "Hồ sơ",
+    "profile_description": "Quản lý tên, ảnh đại diện và email của bạn",
+    "accounts": "Các tài khoản",
+    "accounts_description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng",
+    "security": "Bảo mật",
+    "security_description": "Mật khẩu, xác thực hai lớp, passkey và phương thức đăng nhập",
+    "sessions": "Phiên & Thiết bị",
+    "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
+    "appearance": "Giao diện",
+    "appearance_description": "Chủ đề và ngôn ngữ",
+    "managed_centrally_title": "Được quản lý trong tài khoản Tuturuuu của bạn",
+    "managed_centrally_description": "Để bảo vệ bạn, các thay đổi về {section} được thực hiện trong Tuturuuu, nơi có thể yêu cầu bạn xác minh danh tính. Thay đổi sẽ áp dụng cho mọi ứng dụng Tuturuuu.",
+    "signed_in_as": "Đang đăng nhập với {email}",
+    "open_in_tuturuuu": "Mở trong Tuturuuu",
+    "accounts_switch": "Chuyển đổi giữa các tài khoản đã đăng nhập",
+    "accounts_add": "Thêm tài khoản khác",
+    "accounts_remove": "Xóa một tài khoản khỏi trình duyệt này",
+    "security_password": "Đổi hoặc đặt lại mật khẩu",
+    "security_two_factor": "Xác thực hai lớp bằng ứng dụng xác thực",
+    "security_passkeys": "Passkey",
+    "security_linked_identities": "Phương thức đăng nhập đã liên kết",
+    "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
+    "sessions_revoke": "Đăng xuất khỏi các thiết bị khác"
   }
 }

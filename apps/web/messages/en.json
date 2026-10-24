@@ -16538,6 +16538,7 @@
     "account": "Account",
     "account-age": "Account Age",
     "account-description": "Manage your personal account settings and preferences",
+    "account-link-unconfirmed": "Couldn't confirm that your {provider} account was linked. Check your linked accounts below and try again if it's missing.",
     "account-linked-success": "{provider} account linked successfully",
     "account-security-notice": "Account Security Notice",
     "account-security-notice-description": "You must have at least one linked account to access your profile. Link additional accounts before unlinking your current one.",

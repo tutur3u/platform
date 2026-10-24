@@ -202,6 +202,51 @@ it('persistent failure stops the job after a bounded number of slots', async () 
   });
 });
 
+it('a 200 reporting ok:false is a failed run that exhausts the budget', async () => {
+  const h = harness(() =>
+    Response.json({ ok: false, failed: 2, processed: 2 }, { status: 200 })
+  );
+  const enabled = {
+    ...env,
+    CRON_CONTROL_ENABLED_JOBS: 'calendar-provider-sync',
+  };
+  const QUARTER_HOUR = 15 * 60_000;
+  const reports = [];
+  for (let tick = 0; tick < MAX_CONSECUTIVE_FAILURES + 3; tick++)
+    reports.push(
+      ...(await dispatchScheduledJobs(
+        '*/15 * * * *',
+        T0 + tick * QUARTER_HOUR,
+        enabled,
+        h.deps
+      ))
+    );
+  expect(reports[0]).toMatchObject({ outcome: 'failed', status: 200 });
+  expect(h.calls).toHaveLength(MAX_CONSECUTIVE_FAILURES);
+  expect(h.core.status()['calendar-provider-sync']).toMatchObject({
+    stopReason: 'failure-budget-exhausted',
+    stopped: true,
+  });
+});
+
+it('keeps status-based success for ok:true, non-JSON and oversized bodies', async () => {
+  const bodies = [
+    JSON.stringify({ ok: true }),
+    'done',
+    JSON.stringify({ ok: false, padding: 'x'.repeat(70 * 1024) }),
+  ];
+  for (const body of bodies) {
+    const h = harness(() => new Response(body, { status: 200 }));
+    const [report] = await dispatchScheduledJobs(
+      DAILY,
+      T0,
+      { ...env, CRON_CONTROL_ENABLED_JOBS: 'tasks-cleanup-media' },
+      h.deps
+    );
+    expect(report).toMatchObject({ outcome: 'ok', status: 200 });
+  }
+});
+
 it('bounds concurrent processor calls within one tick', async () => {
   let active = 0;
   let peak = 0;

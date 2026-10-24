@@ -75,6 +75,48 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
 
 type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
 
+// Processor bodies are bounded summaries. Some report partial failure with a
+// 200 and `{ ok: false }` (Calendar provider sync), so read at most this many
+// bytes and treat an explicit `ok: false` as a failed run. Anything else,
+// including non-JSON or oversized bodies, keeps the status-based outcome.
+export const MAX_OUTCOME_BODY_BYTES = 64 * 1024;
+
+async function reportsFailure(response: Response) {
+  const reader = response.body?.getReader();
+  if (!reader) return false;
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (size <= MAX_OUTCOME_BODY_BYTES) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      size += value.byteLength;
+    }
+  } catch {
+    return false;
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+  if (size > MAX_OUTCOME_BODY_BYTES) return false;
+  try {
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    const body = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+    return (
+      typeof body === 'object' &&
+      body !== null &&
+      (body as { ok?: unknown }).ok === false
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function invoke(
   cronJob: CronJob,
   target: { secret: string; url: URL },
@@ -102,9 +144,12 @@ async function invoke(
       return { result: 'unknown' };
     return { result: 'retryable' };
   }
-  // Processor bodies are summaries; do not buffer them.
+  if (response.ok)
+    return {
+      result: (await reportsFailure(response)) ? 'failed' : 'ok',
+      status: response.status,
+    };
   await response.body?.cancel().catch(() => undefined);
-  if (response.ok) return { result: 'ok', status: response.status };
   if (response.status === 502 || response.status === 503)
     return { result: 'retryable', status: response.status };
   return { result: 'failed', status: response.status };
@@ -132,6 +177,7 @@ async function runJob(
   const claim = await ledger.claim({
     jobId: cronJob.id,
     leaseMs: leaseMs(cronJob),
+    maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
     now: deps.now(),
     slot,
   });

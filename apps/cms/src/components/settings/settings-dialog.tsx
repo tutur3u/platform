@@ -1,13 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Gamepad2,
-  Keyboard,
-  Paintbrush,
-  PanelLeft,
-  User,
-} from '@tuturuuu/icons';
+import { Gamepad2, Keyboard, Paintbrush, PanelLeft } from '@tuturuuu/icons';
 import {
   ENABLE_CMS_GAMES_CONFIG_ID,
   getOptionalWorkspaceConfig,
@@ -15,8 +9,11 @@ import {
 } from '@tuturuuu/internal-api/workspace-configs';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
+import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -39,6 +36,7 @@ import { isCmsGamesConfigEnabled } from '@/lib/cms-games-shared';
 interface SettingsDialogProps {
   wsId?: string;
   user: WorkspaceUser | null;
+  centralUrl: string;
   defaultTab?: string;
 }
 
@@ -74,6 +72,7 @@ function CmsGamesSetting({
 export function SettingsDialog({
   wsId,
   user,
+  centralUrl,
   defaultTab = 'cms_general',
 }: SettingsDialogProps) {
   const t = useTranslations();
@@ -173,18 +172,7 @@ export function SettingsDialog({
       ],
     },
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-    {
-      label: t('settings.user.title'),
-      items: [
-        {
-          name: 'profile',
-          label: t('settings.user.profile'),
-          icon: User,
-          description: t('settings.user.profile_description'),
-          keywords: ['Profile'],
-        },
-      ],
-    },
+    createAccountSettingsNavGroup(t),
     {
       label: t('settings.preferences.title'),
       items: [
@@ -263,9 +251,11 @@ export function SettingsDialog({
         </div>
       )}
 
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'appearance' && (
         <div className="h-full">
