@@ -1226,13 +1226,20 @@ The room Durable Object posts each checkpoint to the platform API from a Worker
 `fetch`, which carries no `User-Agent`. The web API proxy treats an anonymous
 `/api/*` request without one as scanner traffic (HTTP 400, with an egress IP
 block on repeat), so an unidentified checkpoint never reaches its route and the
-room keeps retrying and re-announcing "backup delayed". Every Worker-to-platform
-call therefore sends the shared service headers from
-`packages/realtime/src/core/service-request.ts`, and the checkpoint route passes
-the private RPC status through (a `40001` conflict is HTTP 409, not 503) so the
-room reports a real conflict instead of an endless delay. Regression coverage:
+room keeps retrying and re-announcing "backup delayed". Behind that guard, the
+proxy's account-assurance step treats every other bearer token as a Supabase
+access token and answers 401 before the route runs, which rejects the Worker's
+HMAC ticket just the same. Every Worker-to-platform call therefore sends the
+shared service headers from `packages/realtime/src/core/service-request.ts`, and
+the proxy's default trusted-bypass rules exempt exactly the two checkpoint routes
+when the bearer verifies as an unexpired realtime service ticket
+(`packages/utils/src/realtime-service-ticket.ts`; the route verifies the ticket
+again). The checkpoint route passes the private RPC status through (a `40001`
+conflict is HTTP 409, not 503) so the room reports a real conflict instead of an
+endless delay. Regression coverage:
 `apps/meet-realtime/src/channel-checkpoint-request.test.ts` (request identity and
-status mapping in the Durable Object) and
+status mapping in the Durable Object), `realtime-service-ticket.test.ts` (proxy
+exemption bounds) and
 `apps/web/src/app/api/v1/realtime/documents/checkpoint/route.test.ts`.
 
 The shared document surface is the panel itself: padding lives on the editable
