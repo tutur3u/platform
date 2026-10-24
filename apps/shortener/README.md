@@ -17,6 +17,13 @@ the last Vercel deployment until a reviewed cutover admits this app.
 `next.config.ts` and `src/i18n/` stay only for the repository SEO and next-intl
 registries; they are not the active runtime.
 
+## Environment
+
+`env.example` is the tracked placeholder template. For local development, copy
+it to `.env` and fill the required values privately. Keep `.env` out of Git.
+Void supports one local `.env` file and rejects `.env.example` and other dotenv
+variants; the non-dot template is not loaded as configuration.
+
 ## Commands
 
 - `bun run dev` serves the Worker locally through Void on port 3002.
