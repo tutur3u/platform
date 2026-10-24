@@ -7,6 +7,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Localization Generation**: Run `flutter gen-l10n` after ARB changes.
 - **Clean Pass**: `bun check:mobile` is mandatory for mobile changes. It runs format, analyze, and test.
 - **Analyze Info = CI Failure**: Treat `flutter analyze` info-level lints as blocking in this workspace; fix them in touched files before finishing.
+- **Widget Fixture Cleanup**: Dispose `tester.ensureSemantics()` handles and restore debug platform overrides in `try/finally` before the test body returns; Flutter checks these invariants before `addTearDown`. When a transport contract changes, migrate widget fixtures as well as repository tests, preserving held-response and duplicate-write assertions. See [fixture lifecycle guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-widget-fixtures-current).
 - **Flutter L10n Asset Formatting**: Do not send `.arb` files through `dart format`; format only Dart sources and regenerate `flutter gen-l10n` after ARB edits.
 - **Flutter Analyze Ignore Hygiene**: Avoid speculative `ignore_for_file` directives. `flutter analyze` reports `unnecessary_ignore` as a failing issue during `bun check:mobile`.
 - **Import Order Lints Can Still Block Delivery**: For new large mobile screens, expect `flutter analyze` style infos such as `directives_ordering`, deprecated form-field APIs, and constructor parameter-order lints to fail `bun check:mobile`. Do not stop at “no errors”; keep touched files info-clean.
