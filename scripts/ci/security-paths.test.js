@@ -79,8 +79,20 @@ test('ordinary product, docs and translation changes need no security review', (
     'apps/docs/platform/architecture/authentication.mdx',
     'apps/web/messages/en.json',
     'README.md',
+    '.github/screenshots/mobile-settings-apps/settings-root.png',
   ]) {
     assert.deepEqual(categoriesOf([filePath]), [], filePath);
+  }
+});
+
+test('only inert screenshot images are exempt under .github', () => {
+  for (const filePath of [
+    '.github/screenshots/run.sh',
+    '.github/screenshots/x.svg',
+    '.github/workflows/screenshot.png.yml',
+    '.github/screenshots.png',
+  ]) {
+    assert.deepEqual(categoriesOf([filePath]), ['ci'], filePath);
   }
 });
 

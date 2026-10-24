@@ -114,7 +114,12 @@ const reviewCategories = [
 ];
 
 // Prose and translations describe behavior but cannot change it.
-const reviewExempt = [/\.mdx?$/u, /(?:^|\/)messages\/[^/]+\.json$/u];
+// Review evidence images are inert; .github/screenshots holds PR screenshots.
+const reviewExempt = [
+  /\.mdx?$/u,
+  /(?:^|\/)messages\/[^/]+\.json$/u,
+  /^\.github\/screenshots\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif)$/u,
+];
 
 const dependencyPatterns = [
   /(?:^|\/)package\.json$/u,
