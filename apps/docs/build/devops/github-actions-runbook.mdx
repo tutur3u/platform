@@ -302,6 +302,27 @@ Cache archive restoration is separate from Turbo task reuse. Compare exact-head
 hosted runs before claiming push-to-green savings; removing runner demand does
 not promise a particular hosted queue delay.
 
+### Mobile PR build selection
+
+Ordinary mobile PRs build Android as the portable application smoke. iOS, macOS,
+Linux and Windows builds run when their native directory changes. Dependency
+manifests, localization configuration, workflow/tooling inputs and unrecognized
+paths retain every platform build. Missing or empty changed-file data also runs
+all platforms. Every matching main push retains all five builds; release and
+production workflows are unchanged.
+
+Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
+skips the heavy job before runner allocation; do not remove a required-check
+trigger. `scripts/ci/mobile-build-selection.ts` owns this policy, and its
+`mobile-build-selection.test.js` regression suite exercises portable/native edits,
+shared inputs, explicit disable and protected push behavior. Run it with
+`node --test scripts/ci/mobile-build-selection.test.js` alongside
+`check-workflow-config.test.js` and `runner-efficiency.test.js` after edits.
+
+Compare timestamps from exact run/job inventories before and after rollout.
+Runner-minutes removed are projected demand savings; skipped queued work does
+not establish a guaranteed reduction in wall-clock merge or production delay.
+
 ## Coordination native Worker toolchain
 
 Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
