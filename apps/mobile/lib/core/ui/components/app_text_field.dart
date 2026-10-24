@@ -18,6 +18,8 @@ class AppTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.onTap,
+    this.onTapOutside,
+    this.borderless = false,
     this.keyboardType,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
@@ -46,6 +48,8 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTap;
+  final TapRegionCallback? onTapOutside;
+  final bool borderless;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
@@ -69,7 +73,7 @@ class AppTextField extends StatelessWidget {
     OutlineInputBorder outline(Color color, [double width = 1]) =>
         OutlineInputBorder(
           borderRadius: tokens.borderRadiusLg,
-          borderSide: filled && width == 1
+          borderSide: borderless || (filled && width == 1)
               ? BorderSide.none
               : BorderSide(color: color, width: width),
         );
@@ -80,6 +84,7 @@ class AppTextField extends StatelessWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       onTap: onTap,
+      onTapOutside: onTapOutside,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       textCapitalization: textCapitalization,
