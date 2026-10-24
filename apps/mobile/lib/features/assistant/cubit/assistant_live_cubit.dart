@@ -409,14 +409,16 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _clearDrafts();
     emit(
       state.copyWith(
-        status: AssistantLiveConnectionStatus.disconnected,
+        status: retainFailure
+            ? AssistantLiveConnectionStatus.error
+            : AssistantLiveConnectionStatus.disconnected,
         hasEnded: finishTurn,
         sessionHandle: clearSession ? null : state.sessionHandle,
         isInterrupted: false,
         audioLevel: 0,
         assistantAudioLevel: 0,
         isAssistantSpeaking: false,
-        clearError: !finishTurn,
+        clearError: !finishTurn && !retainFailure,
       ),
     );
     if (sessionCleanupFailure != null) throw sessionCleanupFailure;
