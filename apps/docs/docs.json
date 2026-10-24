@@ -330,6 +330,7 @@
                 "group": "DevOps & Deployment",
                 "pages": [
                   "build/devops/overview",
+                  "build/devops/tuturuuu-bot",
                   "build/devops/active-runtime",
                   "build/devops/wave1-native-cutover",
                   "build/devops/apps-viteplus-cloudflare",

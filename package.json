@@ -69,6 +69,7 @@
     "clean": "rm -rf bun.lock && find . -name node_modules -prune -o \\( -name .next -o -name .turbo \\) -type d -exec rm -rf {} + && bunx npkill --delete-all -y",
     "clean:dev:web": "node scripts/clean-web-dev-cache.js",
     "apple:p8-jwt": "node scripts/apple-p8-jwt-signer.js",
+    "bot:token": "node scripts/tuturuuu-bot-token.js",
     "android:self-sign": "node scripts/android-self-sign.js",
     "prepare": "node scripts/install-git-hooks.js",
     "git-release-please": "node scripts/git-release-please.js",
