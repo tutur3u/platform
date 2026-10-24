@@ -3291,7 +3291,6 @@
   "reminders3h": "3 hours before",
   "remindersAllDayEvent": "All-day event: {title}",
   "remindersCalendarTiming": "Calendar: {when}",
-  "remindersDescription": "Task deadlines and calendar events, kept ready on this device.",
   "remindersEnableNotifications": "Enable notifications",
   "remindersEventTitle": "Calendar events",
   "remindersIn12h": "In 12 hours",

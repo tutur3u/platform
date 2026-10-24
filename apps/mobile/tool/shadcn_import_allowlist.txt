@@ -112,7 +112,6 @@ lib/features/profile/view/profile_timeline_date_strip.dart
 lib/features/profile/view/profile_timeline_days.dart
 lib/features/profile/view/profile_timeline_section.dart
 lib/features/profile/view/workspace_activity_section.dart
-lib/features/reminders/reminder_settings_page.dart
 lib/features/security/account/account_security_page.dart
 lib/features/security/device_mfa/device_mfa_panel.dart
 lib/features/security/device_mfa/device_mfa_sheet.dart

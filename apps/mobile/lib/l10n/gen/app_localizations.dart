@@ -12829,12 +12829,6 @@ abstract class AppLocalizations {
   /// **'Calendar: {when}'**
   String remindersCalendarTiming(String when);
 
-  /// No description provided for @remindersDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Task deadlines and calendar events, kept ready on this device.'**
-  String get remindersDescription;
-
   /// No description provided for @remindersEnableNotifications.
   ///
   /// In en, this message translates to:

@@ -3294,7 +3294,6 @@
   "reminders3h": "Trước 3 giờ",
   "remindersAllDayEvent": "Sự kiện cả ngày: {title}",
   "remindersCalendarTiming": "Lịch: {when}",
-  "remindersDescription": "Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.",
   "remindersEnableNotifications": "Bật thông báo",
   "remindersEventTitle": "Sự kiện lịch",
   "remindersIn12h": "Còn 12 giờ",
