@@ -42,6 +42,11 @@ import {
   renderResourceStatus,
   resourceStatusDetails,
 } from './resources-status';
+import {
+  planTurboSummary,
+  reportTurboSummary,
+  snapshotTurboSummaries,
+} from './resources-turbo-summary';
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
@@ -254,16 +259,36 @@ export async function runResourcesCommand(argv: string[]) {
         );
       env[variable] = String(number);
     }
+    // Local turbo runs request a run summary so the cache reuse is reported.
+    const summary = planTurboSummary(
+      name,
+      queued ? command : args,
+      commandCwd(command)
+    );
+    const onSpawn = summary.root
+      ? async () => snapshotTurboSummaries(summary)
+      : undefined;
     process.exitCode = queued
       ? await queuedResourceCommand(
           home,
           real,
-          command,
+          summary.args,
           env,
           !shim && options.includes('--ignore-pressure'),
-          resourceLanes(total)
+          resourceLanes(total),
+          undefined,
+          undefined,
+          undefined,
+          onSpawn
         )
-      : await spawnResourceCommand(trivial ?? real, args, env);
+      : await spawnResourceCommand(
+          trivial ?? real,
+          summary.args,
+          env,
+          false,
+          onSpawn
+        );
+    await reportTurboSummary(summary);
     return;
   }
   if (action === 'offload') {
