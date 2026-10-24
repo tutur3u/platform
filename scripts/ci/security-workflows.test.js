@@ -13,6 +13,18 @@ const classifier = readWorkflow('security-review-classifier.yaml');
 const codeql = readWorkflow('codeql.yml');
 const checks = readWorkflow('security-checks.yaml');
 
+test('dependency audit pins the Bun version and its official linux-x64 archive checksum together', () => {
+  assert.deepEqual(
+    { version: checks.env.BUN_VERSION, sha256: checks.env.BUN_SHA256 },
+    {
+      version: '1.4.4',
+      sha256:
+        'bf8ccbfb2b0b80159e0f9a6d15c55317add8077534dbc6130a3edb52fccb395c',
+    },
+    'Upgrade both pins from the release SHASUMS256.txt for bun-linux-x64.zip'
+  );
+});
+
 test('security review classifier never touches pull request content', () => {
   assert.deepEqual(Object.keys(triggers(classifier)), ['pull_request_target']);
   for (const type of ['opened', 'synchronize', 'edited', 'unlabeled']) {
