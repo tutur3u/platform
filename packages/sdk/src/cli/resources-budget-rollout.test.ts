@@ -45,7 +45,7 @@ it('refuses old launcher owners before workload or setup can publish the fence',
     const file = join(path, 'bin', name);
     await writeFile(
       file,
-      (await readFile(file, 'utf8')).replace(budgetLauncherProtocol + '\n', '')
+      (await readFile(file, 'utf8')).replace(`${budgetLauncherProtocol}\n`, '')
     );
   }
   const before = await readFile(join(path, 'bin/node'), 'utf8');
@@ -92,7 +92,7 @@ it('permits a verified same-global upgrade but refuses a consumer cache install'
     const file = join(path, 'bin', name);
     await writeFile(
       file,
-      (await readFile(file, 'utf8')).replace(budgetLauncherProtocol + '\n', '')
+      (await readFile(file, 'utf8')).replace(`${budgetLauncherProtocol}\n`, '')
     );
   }
   await expect(assertBudgetSetupOwner(path, at('0.29.0+b'))).resolves.toBe(
@@ -113,7 +113,7 @@ it('requires an idle queue even when a same-install shim upgrade preserves the w
     const file = join(path, 'bin', name);
     await writeFile(
       file,
-      (await readFile(file, 'utf8')).replace(budgetLauncherProtocol + '\n', '')
+      (await readFile(file, 'utf8')).replace(`${budgetLauncherProtocol}\n`, '')
     );
   }
   const before = await readFile(join(path, 'bin/node'), 'utf8');
