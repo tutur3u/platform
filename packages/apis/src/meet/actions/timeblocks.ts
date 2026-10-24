@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { revalidatePath } from 'next/cache';
+import { resolveMeetGuestFromSession } from '../guest-session';
 
 export async function getTimeblocks(planId: string) {
   const sbAdmin = await createAdminClient();
@@ -46,7 +47,8 @@ export async function getTimeblocks(planId: string) {
 export interface CreateTimeblocksInput {
   timeblocks?: Timeblock[];
   timeblock?: Timeblock;
-  password_hash?: string;
+  /** Server-issued guest session from `guestLogin`, never a stored hash. */
+  guest_session?: string;
   user_id?: string;
 }
 
@@ -58,8 +60,8 @@ export async function createTimeblocks(
 
   const timeblocks =
     input.timeblocks || (input.timeblock ? [input.timeblock] : []);
-  const passwordHash = input.password_hash;
-  const userType = passwordHash ? 'guest' : 'user';
+  const guestSession = input.guest_session;
+  const userType = guestSession ? 'guest' : 'user';
 
   if (!timeblocks || timeblocks.length === 0) {
     return { error: 'Invalid request' };
@@ -119,16 +121,16 @@ export async function createTimeblocks(
       },
     };
   } else {
-    if (!input.user_id || !passwordHash) {
-      return { error: 'Missing user_id or password_hash for guest user' };
+    if (!input.user_id || !guestSession) {
+      return { error: 'Missing user_id or guest_session for guest user' };
     }
 
-    const { data: guest } = await sbAdmin
-      .from('meet_together_guests')
-      .select('id')
-      .eq('id', input.user_id)
-      .eq('password_hash', passwordHash)
-      .maybeSingle();
+    const guest = await resolveMeetGuestFromSession(
+      sbAdmin,
+      planId,
+      guestSession,
+      input.user_id
+    );
 
     if (!guest) {
       return { error: 'Unauthorized' };
@@ -166,7 +168,8 @@ export async function createTimeblocks(
 }
 
 export interface DeleteTimeblockInput {
-  password_hash?: string;
+  /** Server-issued guest session from `guestLogin`, never a stored hash. */
+  guest_session?: string;
   user_id?: string;
 }
 
@@ -177,8 +180,8 @@ export async function deleteTimeblock(
 ) {
   const supabase = await createClient();
 
-  const passwordHash = input.password_hash;
-  const userType = passwordHash ? 'guest' : 'user';
+  const guestSession = input.guest_session;
+  const userType = guestSession ? 'guest' : 'user';
 
   // Check if plan is confirmed
   const sbAdmin = await createAdminClient();
@@ -215,17 +218,16 @@ export async function deleteTimeblock(
   } else {
     const userId = input.user_id;
 
-    if (!userId || !passwordHash) {
-      return { error: 'Missing user_id or password_hash for guest user' };
+    if (!userId || !guestSession) {
+      return { error: 'Missing user_id or guest_session for guest user' };
     }
 
-    const { data: guest } = await sbAdmin
-      .from('meet_together_guests')
-      .select('id')
-      .eq('plan_id', planId)
-      .eq('id', userId)
-      .eq('password_hash', passwordHash)
-      .maybeSingle();
+    const guest = await resolveMeetGuestFromSession(
+      sbAdmin,
+      planId,
+      guestSession,
+      userId
+    );
 
     if (!guest) {
       return { error: 'Unauthorized' };

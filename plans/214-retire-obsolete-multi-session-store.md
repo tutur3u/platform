@@ -34,7 +34,7 @@ hashes are unchanged; focused tests pass (23 passed, 1 skipped); auth and Web
 typechecks pass. The serialized Web build made no progress for more than five
 minutes on its first attempt. Its permitted host retry then failed at unchanged
 `packages/utils/src/i18n-root-locale.ts:2` with Next's `root-params` invalid-
-import/missing-`locale` contract. Per STOP, `bun check`, final whitespace,
+import/missing-`locale` contract. Per STOP, `bun validate`, final whitespace,
 staging, and commit were not run. Preserve the worktree until the base build
 blocker is repaired. Plan 216 has since repaired and verified that contract in
 final corrective commit `3a09b070ab`, integrated in verified main
@@ -79,7 +79,7 @@ completed worktrees/branches under the post-merge cleanup rule.
 | Absence/exports | `test ! -e packages/auth/src/multi-session && test ! -e apps/web/SECURE_EMAIL_IMPLEMENTATION.md && ! rg -n 'multi-session' packages/auth/src/index.ts packages/auth/package.json` | exit 0 |
 | Focused regression | `bun --cwd apps/web vitest run src/__tests__/account-switcher-context.test.tsx src/__tests__/account-switcher-modal.test.tsx` | server-vault switching and legacy-key cleanup pass |
 | Auth/Web | `bun run --cwd packages/auth type-check && bun run --cwd apps/web type-check && bun run --cwd apps/web build` | all exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

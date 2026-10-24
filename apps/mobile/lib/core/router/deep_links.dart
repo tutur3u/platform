@@ -376,6 +376,9 @@ String _settingsLocation(List<String> segments) {
   if (segments.length > 1 && segments[1] == 'preferences') {
     return Routes.settingsPreferences;
   }
+  if (segments.length > 1 && segments[1] == 'appearance') {
+    return Routes.settingsAppearance;
+  }
   if (segments.length > 1 && segments[1] == 'experiments') {
     return Routes.settingsExperiments;
   }

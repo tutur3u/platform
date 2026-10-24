@@ -152,7 +152,7 @@ export function privateFixtures(ignorePressure = false) {
     return script(
       path,
       name,
-      `const fs=require('fs');const base=${JSON.stringify(join(path, name))};fs.writeFileSync(base+'.ready','');${drain ? "process.on('SIGTERM',()=>fs.writeFileSync(base+'.signal',''));" : ''}const timer=setInterval(()=>{if(fs.existsSync(base+'.release')){clearInterval(timer);process.exit(0)}},10);`
+      `const fs=require('fs');const base=${jsLiteral(join(path, name))};fs.writeFileSync(base+'.ready','');${drain ? "process.on('SIGTERM',()=>fs.writeFileSync(base+'.signal',''));" : ''}const timer=setInterval(()=>{if(fs.existsSync(base+'.release')){clearInterval(timer);process.exit(0)}},10);`
     );
   }
   function launch(
@@ -306,7 +306,7 @@ export async function workerProbe(
   await writeFile(
     path,
     `#!${realNode}
-const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
+const fs=require('node:fs');fs.writeFileSync(${jsLiteral(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
   );
   await chmod(path, 0o700);
   return path;

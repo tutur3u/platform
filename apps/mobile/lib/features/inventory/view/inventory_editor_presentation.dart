@@ -16,7 +16,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
       child: _loading
           ? const Center(child: NovaLoadingIndicator())
           : ListView(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
               physics: const BouncingScrollPhysics(),
               children: [
                 if (_loadedProduct case final product?

@@ -54,7 +54,7 @@ transfer their paths.
 | Mobile generation/analysis | `cd apps/mobile && dart run build_runner build --delete-conflicting-outputs && flutter analyze` | generated clients and analysis pass |
 | Mobile tests | `cd apps/mobile && flutter test test/features/time_tracker` | single-transition behavior passes |
 | App builds | `bun run --cwd apps/track build && bun run --cwd apps/web build` | both apps compile |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -116,7 +116,7 @@ gates.
 - [ ] Replacement validation and insertion succeed or prior timers remain unchanged.
 - [ ] Concurrent/retried starts yield one deterministic active replacement.
 - [ ] Track, Web, Mira, and mobile use one transition contract.
-- [ ] Migration, typegen, route tracking, builds, focused tests, `bun check`, and whitespace pass.
+- [ ] Migration, typegen, route tracking, builds, focused tests, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

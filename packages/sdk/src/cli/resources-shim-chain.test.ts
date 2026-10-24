@@ -5,9 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { commandTool, isHeavyCommand } from './resources-command';
 import { resourceQueueStatus } from './resources-queue';
 import {
-  fixturePath,
+  bun,
   privateFixtures,
   processTimeout,
+  realNode,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -73,6 +74,9 @@ describe('nested shim chain from skr-studio', { timeout: 60_000 }, () => {
     // PATH it starts through the bun shim (hop 2 of the incident).
     const tools = join(path, 'tools');
     await mkdir(tools);
+    await symlink(bun, join(tools, 'bun'));
+    await symlink(bun, join(tools, 'bunx'));
+    await symlink(realNode, join(tools, 'node'));
     const ttr = join(tools, 'ttr');
     await writeFile(
       ttr,
@@ -117,7 +121,7 @@ writeFileSync(${JSON.stringify(ran)},JSON.stringify({argv:process.argv.slice(2),
       {
         env: {
           ...process.env,
-          PATH: [tools, fixturePath].join(delimiter),
+          PATH: [tools, '/usr/bin', '/bin'].join(delimiter),
           TTR_RESOURCES_HOME: path,
           TTR_RESOURCES_IGNORE_DISK: '1',
         },

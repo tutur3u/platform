@@ -23,6 +23,7 @@ export async function GET(request: Request, { params }: Params) {
       .from('nova_sessions')
       .select('*')
       .eq('id', sessionId)
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
@@ -80,19 +81,30 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
-    if (body.startTime !== undefined) updateData.start_time = body.startTime;
+    // Participants may only end their own session. Moving a session to
+    // another challenge, rewriting its start or reopening it would bypass the
+    // challenge access checks applied when the session was created.
+    if (
+      body.challengeId !== undefined ||
+      body.startTime !== undefined ||
+      (body.status !== undefined && body.status !== 'ENDED')
+    ) {
+      return NextResponse.json(
+        { message: 'Only ending a session is supported' },
+        { status: 400 }
+      );
+    }
+
+    const updateData: { end_time?: string; status?: string } = {};
     if (body.endTime !== undefined) updateData.end_time = body.endTime;
     if (body.status !== undefined) updateData.status = body.status;
-    if (body.challengeId !== undefined)
-      updateData.challenge_id = body.challengeId;
-    updateData.user_id = user.id;
 
     const { data: updatedSession, error: updateError } = await supabase
       .schema('private')
       .from('nova_sessions')
       .update(updateData)
       .eq('id', sessionId)
+      .eq('user_id', user.id)
       .select()
       .single();
 
@@ -134,7 +146,8 @@ export async function DELETE(request: Request, { params }: Params) {
       .schema('private')
       .from('nova_sessions')
       .delete()
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('user_id', user.id);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);

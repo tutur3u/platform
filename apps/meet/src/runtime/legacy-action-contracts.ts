@@ -4,7 +4,7 @@ const id = z.string();
 const participant = z.object({
   userType: z.enum(['PLATFORM', 'GUEST']),
   guestId: z.string().optional(),
-  guestPasswordHash: z.string().optional(),
+  guestSession: z.string().max(2048).optional(),
 });
 
 export const legacyActionSchemas = {

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -92,7 +93,10 @@ Future<T?> showAdaptiveSheet<T>({
 }
 
 Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
-  if (child is AppDialogScaffold || surface.a == 0) return child;
+  // Modal content keeps opaque scaffolds when pages use an ambient theme.
+  if (child is AppDialogScaffold || surface.a == 0) {
+    return AppearanceScope.opaqueScaffolds(child);
+  }
   return ClipRRect(
     borderRadius: BorderRadius.circular(24),
     child: BackdropFilter(
@@ -101,7 +105,7 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
         color: surface.withValues(
           alpha: MediaQuery.highContrastOf(context) ? 1 : 0.88,
         ),
-        child: child,
+        child: AppearanceScope.opaqueScaffolds(child),
       ),
     ),
   );
@@ -136,7 +140,7 @@ Future<void> showAdaptiveDrawer({
           }
           return true;
         },
-        child: builder(drawerContext),
+        child: AppearanceScope.opaqueScaffolds(builder(drawerContext)),
       ),
     );
     return;
@@ -161,7 +165,7 @@ Future<void> showAdaptiveDrawer({
               color: shad.Theme.of(dialogContext).colorScheme.background,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
-              child: builder(dialogContext),
+              child: AppearanceScope.opaqueScaffolds(builder(dialogContext)),
             ),
           ),
         ),

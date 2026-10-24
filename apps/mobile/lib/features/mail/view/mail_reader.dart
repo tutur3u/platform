@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -26,6 +27,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
 
 part 'mail_reader_chrome.dart';
+
+/// Keeps the end of long messages clear of the floating Mail dock and its
+/// reader actions, on top of the shell dock clearance.
+const double _mailReaderEndGap = 128;
 
 class MailReader extends StatefulWidget {
   const MailReader({
@@ -363,127 +368,137 @@ class _MailReaderState extends State<MailReader> {
                     ),
                   ],
                 ),
-          body: ListView(
-            padding: EdgeInsets.only(
-              // Keep the end of long messages clear of the floating Mail dock.
-              bottom: 128 + MediaQuery.paddingOf(context).bottom,
-            ),
-            children: [
-              for (final message in _messages)
-                Card(
-                  color: Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  margin: const EdgeInsets.only(bottom: 6),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ExpansionTile(
-                          key: _threadExpansionKey(message),
-                          initiallyExpanded:
-                              _expandedMessages[message['id']] ??
-                              (!widget.thread ||
-                                  message['id'] == _messages.last['id']),
-                          onExpansionChanged: (expanded) =>
-                              _expandedMessages[message['id'] as String] =
-                                  expanded,
-                          tilePadding: EdgeInsets.zero,
-                          dense: true,
-                          title: Text(
-                            message['fromName'] as String? ??
-                                message['fromAddress'] as String,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            [
-                              if (message['fromName'] != null)
-                                message['fromAddress'] as String,
-                              ...mailRows(message['recipients'])
-                                  .where((r) => r['kind'] == 'to')
-                                  .take(1)
-                                  .map((r) => r['address'] as String),
-                              if (mailMessageDate(message) != null)
-                                formatMailMessageDate(
-                                  context,
-                                  mailMessageDate(message)!,
-                                ),
-                            ].join(' · '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          children: [
-                            MailMessageDetails(message: message),
-                            MailMessageContent(
-                              key: ValueKey(message['id']),
-                              repository: widget.repository,
-                              workspaceId: widget.workspaceId,
-                              mailboxId: widget.mailboxId,
-                              message: message,
-                              threadId: _id,
-                              showControls: !sharedShell,
-                              imagesVisible:
-                                  sharedShell || widget.notificationEntry
-                                  ? _showImages
-                                  : null,
-                              onImagesChanged: widget.notificationEntry
-                                  ? (_) => _toggleReaderImages()
-                                  : null,
+          body: LayoutBuilder(
+            builder: (context, constraints) => ListView(
+              padding: AppPageInsets.of(
+                context,
+                width: constraints.maxWidth,
+                kind: AppPageKind.reading,
+                endGap: _mailReaderEndGap,
+              ),
+              children: [
+                for (final message in _messages)
+                  Card(
+                    color: Colors.transparent,
+                    surfaceTintColor: Colors.transparent,
+                    margin: const EdgeInsets.only(bottom: 6),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ExpansionTile(
+                            key: _threadExpansionKey(message),
+                            initiallyExpanded:
+                                _expandedMessages[message['id']] ??
+                                (!widget.thread ||
+                                    message['id'] == _messages.last['id']),
+                            onExpansionChanged: (expanded) =>
+                                _expandedMessages[message['id'] as String] =
+                                    expanded,
+                            tilePadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              message['fromName'] as String? ??
+                                  message['fromAddress'] as String,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            for (final file in mailRows(message['attachments']))
-                              ListTile(
-                                leading: const Icon(Icons.attach_file),
-                                title: Text(file['filename'] as String),
-                                onTap: _busy || !canPreviewMailAttachment(file)
-                                    ? null
-                                    : () => _openChild(
-                                        MailAttachmentPreview(
-                                          repository: widget.repository,
-                                          workspaceId: widget.workspaceId,
-                                          mailboxId: widget.mailboxId,
-                                          messageId: message['id'] as String,
-                                          file: file,
-                                        ),
-                                      ),
-                                trailing: IconButton(
-                                  tooltip: l10n.mailDownload,
-                                  onPressed: _busy
+                            subtitle: Text(
+                              [
+                                if (message['fromName'] != null)
+                                  message['fromAddress'] as String,
+                                ...mailRows(message['recipients'])
+                                    .where((r) => r['kind'] == 'to')
+                                    .take(1)
+                                    .map((r) => r['address'] as String),
+                                if (mailMessageDate(message) != null)
+                                  formatMailMessageDate(
+                                    context,
+                                    mailMessageDate(message)!,
+                                  ),
+                              ].join(' · '),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            children: [
+                              MailMessageDetails(message: message),
+                              MailMessageContent(
+                                key: ValueKey(message['id']),
+                                repository: widget.repository,
+                                workspaceId: widget.workspaceId,
+                                mailboxId: widget.mailboxId,
+                                message: message,
+                                threadId: _id,
+                                showControls: !sharedShell,
+                                imagesVisible:
+                                    sharedShell || widget.notificationEntry
+                                    ? _showImages
+                                    : null,
+                                onImagesChanged: widget.notificationEntry
+                                    ? (_) => _toggleReaderImages()
+                                    : null,
+                              ),
+                              for (final file in mailRows(
+                                message['attachments'],
+                              ))
+                                ListTile(
+                                  leading: const Icon(Icons.attach_file),
+                                  title: Text(file['filename'] as String),
+                                  onTap:
+                                      _busy || !canPreviewMailAttachment(file)
                                       ? null
-                                      : () => _download(message, file),
-                                  icon: const Icon(Icons.download_outlined),
+                                      : () => _openChild(
+                                          MailAttachmentPreview(
+                                            repository: widget.repository,
+                                            workspaceId: widget.workspaceId,
+                                            mailboxId: widget.mailboxId,
+                                            messageId: message['id'] as String,
+                                            file: file,
+                                          ),
+                                        ),
+                                  trailing: IconButton(
+                                    tooltip: l10n.mailDownload,
+                                    onPressed: _busy
+                                        ? null
+                                        : () => _download(message, file),
+                                    icon: const Icon(Icons.download_outlined),
+                                  ),
                                 ),
-                              ),
-                            if (widget.canSend && !sharedShell)
-                              Wrap(
-                                spacing: 8,
-                                children: [
-                                  TextButton(
-                                    onPressed: () => _reply(message),
-                                    child: Text(l10n.mailReply),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => _reply(message, all: true),
-                                    child: Text(l10n.mailReplyAll),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        _reply(message, forward: true),
-                                    child: Text(l10n.mailForward),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ],
+                              if (widget.canSend && !sharedShell)
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () => _reply(message),
+                                      child: Text(l10n.mailReply),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          _reply(message, all: true),
+                                      child: Text(l10n.mailReplyAll),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          _reply(message, forward: true),
+                                      child: Text(l10n.mailForward),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

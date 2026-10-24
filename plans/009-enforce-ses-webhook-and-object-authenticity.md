@@ -68,7 +68,7 @@ fixtures do not need a production runtime bypass.
 | Inbound unit tests | `bun --cwd apps/mail vitest run src/lib/mail/inbound/sns.test.ts src/lib/mail/inbound/ingest.test.ts` | exit 0; authenticity and object-boundary cases pass |
 | Route tests | `bun --cwd apps/mail vitest run src/app/api/v1/webhooks/mail/ses/route.test.ts` | exit 0; unauthenticated envelopes never call ingestion |
 | Mail typecheck | `bun type-check:mail` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Mail build | `bun run --cwd apps/mail build` | exit 0; Next compiles the changed route |
 | Whitespace | `git diff --check` | exit 0, no output |
 
@@ -172,7 +172,7 @@ must use synthetic domains, ARNs, buckets, keys, and message contents.
 - [ ] S3 reads use only the configured bucket and optional configured prefix.
 - [ ] Unauthenticated/invalid envelopes cannot call ingestion, admin persistence,
   or S3.
-- [ ] Focused tests, Mail typecheck, `bun check`, the Mail build, and
+- [ ] Focused tests, Mail typecheck, `bun validate`, the Mail build, and
   `git diff --check` pass.
 - [ ] `git status --short` contains only the seven allowed implementation paths
   plus the plan index status update.

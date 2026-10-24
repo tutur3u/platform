@@ -841,6 +841,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
 
   @override
+  String get assistantMessageDelivered => 'Đã gửi';
+
+  @override
+  String get assistantMessageRead => 'Đã đọc';
+
+  @override
   String get assistantMessageActionsTitle => 'Thao tác tin nhắn';
 
   @override
@@ -949,7 +955,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSendAction => 'Gửi tin nhắn';
 
   @override
-  String get assistantSettingsTitle => 'Cài đặt Mira';
+  String get assistantSettingsTitle => 'Cài đặt Trợ lý';
 
   @override
   String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';
@@ -6817,6 +6823,133 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAppVersion => 'Phiên bản ứng dụng';
 
   @override
+  String get appearanceAccentAmber => 'Hổ phách';
+
+  @override
+  String get appearanceAccentBlue => 'Xanh dương';
+
+  @override
+  String get appearanceAccentGreen => 'Xanh lá';
+
+  @override
+  String get appearanceAccentIndigo => 'Chàm';
+
+  @override
+  String get appearanceAccentNeutral => 'Trung tính';
+
+  @override
+  String get appearanceAccentOrange => 'Cam';
+
+  @override
+  String get appearanceAccentRose => 'Hồng';
+
+  @override
+  String get appearanceAccentTeal => 'Xanh mòng két';
+
+  @override
+  String get appearanceAccentTheme => 'Theo chủ đề';
+
+  @override
+  String get appearanceAccentTitle => 'Màu nhấn';
+
+  @override
+  String get appearanceAccentViolet => 'Tím';
+
+  @override
+  String get appearanceAnimate => 'Nền chuyển động';
+
+  @override
+  String get appearanceAnimateDescription => 'Các đốm màu trôi chậm. Tốn thêm một chút pin.';
+
+  @override
+  String get appearanceAnimateReducedMotion => 'Tùy chọn Giảm chuyển động đang bật nên nền sẽ đứng yên.';
+
+  @override
+  String get appearanceBackgroundBlobs => 'Đốm màu';
+
+  @override
+  String get appearanceBackgroundGradient => 'Dải màu';
+
+  @override
+  String get appearanceBackgroundSolid => 'Trơn';
+
+  @override
+  String get appearanceBackgroundTitle => 'Nền';
+
+  @override
+  String get appearanceIntensity => 'Cường độ';
+
+  @override
+  String get appearanceModeTitle => 'Chế độ';
+
+  @override
+  String get appearanceNew => 'Mới';
+
+  @override
+  String get appearancePreviewTitle => 'Xem trước';
+
+  @override
+  String get appearanceReset => 'Khôi phục mặc định';
+
+  @override
+  String get appearanceResetDone => 'Đã khôi phục giao diện mặc định';
+
+  @override
+  String get appearanceSoftness => 'Độ mềm';
+
+  @override
+  String get appearanceSurfaceOpacity => 'Độ đục của thẻ';
+
+  @override
+  String get appearanceSurfacesTitle => 'Bề mặt';
+
+  @override
+  String get appearanceThemeAurora => 'Cực quang';
+
+  @override
+  String get appearanceThemeBlossom => 'Hoa đào';
+
+  @override
+  String get appearanceThemeClassic => 'Cổ điển';
+
+  @override
+  String get appearanceThemeEmber => 'Than hồng';
+
+  @override
+  String get appearanceThemeForest => 'Rừng xanh';
+
+  @override
+  String get appearanceThemeMono => 'Đơn sắc';
+
+  @override
+  String get appearanceThemeOcean => 'Đại dương';
+
+  @override
+  String get appearanceThemeSunset => 'Hoàng hôn';
+
+  @override
+  String get appearanceThemesTitle => 'Chủ đề';
+
+  @override
+  String get settingsAppearance => 'Giao diện';
+
+  @override
+  String get settingsProfileEdit => 'Sửa hồ sơ';
+
+  @override
+  String get settingsProfileManageWorkspace => 'Không gian';
+
+  @override
+  String settingsProfileWorkspaceCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'không gian',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsAppearanceLanguage => 'Giao diện và ngôn ngữ';
 
   @override
@@ -7191,6 +7324,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
+
+  @override
+  String settingsTimezoneRateLimitedDetails(Object details) {
+    return 'Chi tiết giới hạn: $details';
+  }
+
+  @override
+  String get settingsTimezoneRateLimitedChallenge => 'Phản hồi cho biết có thử thách bảo mật của Vercel. Vui lòng liên hệ hỗ trợ nếu tình trạng này tiếp diễn.';
+
+  @override
+  String get settingsTimezoneRateLimitedUpstream => 'Phản hồi này không xác định giới hạn của ứng dụng. Phản hồi có thể đến từ dịch vụ thượng nguồn hoặc lớp biên mạng; chưa rõ nguồn chính xác.';
+
+  @override
+  String settingsTimezoneRateLimitedRetryAfter(int seconds) {
+    return 'Máy chủ yêu cầu chờ $seconds giây trước khi thử lại.';
+  }
 
   @override
   String get settingsTimezoneRetry => 'Thử lại múi giờ';
@@ -10650,4 +10799,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get feedbackDetailsRequired => 'Nhập chi tiết từ 1–8000 ký tự.';
+
+  @override
+  String get profileMediaNetworkError => 'Không thể kết nối. Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get profileMediaUploadExpired => 'Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh.';
 }

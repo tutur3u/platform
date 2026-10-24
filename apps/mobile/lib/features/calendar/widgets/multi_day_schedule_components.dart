@@ -411,18 +411,74 @@ class _MultiDayAllDayRowState extends State<_MultiDayAllDayRow> {
   double? _lastHeight;
   double _startHeight = 0;
 
-  Object _identity(AllDaySpan span) => (
+  Map<CalendarEvent, Object> _identities = {};
+  Map<Object, AllDaySpan> _identitySpans = {};
+
+  Object _eventSource(CalendarEvent event) =>
+      (widget.scope, event.wsId, event.provider, event.sourceCalendarId);
+
+  Iterable<String> _constituentIds(AllDaySpan span) =>
+      span.isMerged ? span.mergedEventIds : [span.event.id];
+
+  Object _eventId(CalendarEvent event) => (
     widget.scope,
-    span.event.wsId,
-    span.event.id,
-    span.event.startAt,
-    span.event.endAt,
+    event.wsId,
+    event.provider,
+    event.sourceCalendarId,
+    event.id,
   );
+
+  Object _identity(AllDaySpan span) => _identities[span.event]!;
+
+  void _reconcileIdentities() {
+    final remaining = Map.of(_identities);
+    final next = <CalendarEvent, Object>{};
+    // Match unchanged occurrences before reconciling edits to their dates.
+    for (final span in widget.layout.spans) {
+      final event = span.event;
+      final matches = remaining.keys.where(
+        (previous) =>
+            _eventId(previous) == _eventId(event) &&
+            previous.startAt == event.startAt &&
+            previous.endAt == event.endAt,
+      );
+      if (matches.isNotEmpty) {
+        next[event] = remaining.remove(matches.first)!;
+      }
+    }
+    for (final span in widget.layout.spans) {
+      final event = span.event;
+      if (next.containsKey(event)) continue;
+      final matches = remaining.keys.where(
+        (previous) => _eventId(previous) == _eventId(event),
+      );
+      if (matches.length == 1) {
+        next[event] = remaining.remove(matches.single)!;
+        continue;
+      }
+      final constituents = _constituentIds(span).toSet();
+      final mergedMatches = remaining.keys.where((previous) {
+        final previousSpan = _identitySpans[remaining[previous]]!;
+        return (span.isMerged || previousSpan.isMerged) &&
+            _eventSource(previous) == _eventSource(event) &&
+            _constituentIds(previousSpan).any(constituents.contains);
+      });
+      next[event] = mergedMatches.length == 1
+          ? remaining.remove(mergedMatches.single)!
+          : Object();
+    }
+    _identities = next;
+    _identitySpans = {
+      for (final span in widget.layout.spans) next[span.event]!: span,
+    };
+  }
 
   @override
   void didUpdateWidget(_MultiDayAllDayRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.scope != widget.scope) {
+      _identities = {};
+      _identitySpans = {};
       _targets = {};
       _paintedTops = {};
       _previousTops = {};
@@ -432,6 +488,7 @@ class _MultiDayAllDayRowState extends State<_MultiDayAllDayRow> {
 
   @override
   Widget build(BuildContext context) {
+    _reconcileIdentities();
     final rowHeight = _MultiDayAllDayRow.rowHeight(context);
     final rows = math.min(
       widget.layout.maxRow + 1,

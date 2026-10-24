@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
+import { hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
@@ -118,10 +118,9 @@ export async function PUT(request: Request, { params }: Params) {
 
     if (body.password !== undefined) {
       if (body.password !== null) {
-        const passwordSalt = generateSalt();
-        const passwordHash = await hashPassword(body.password, passwordSalt);
-        updateData.password_hash = passwordHash;
-        updateData.password_salt = passwordSalt;
+        // The scrypt encoding embeds its own salt.
+        updateData.password_hash = await hashPassword(body.password);
+        updateData.password_salt = null;
       } else {
         updateData.password_hash = null;
         updateData.password_salt = null;

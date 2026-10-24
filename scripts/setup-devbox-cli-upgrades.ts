@@ -30,8 +30,9 @@ async function main() {
     )
   )
     throw new Error('Pass explicit --runner UUIDs');
-  const cli = Bun.which('ttr');
-  if (!cli) throw new Error('Install and log into ttr first');
+  const cli = join(homedir(), '.bun', 'bin', 'ttr');
+  if (!(await Bun.file(cli).exists()))
+    throw new Error('Install and log into ~/.bun/bin/ttr first');
   const directory = join(homedir(), '.tuturuuu', 'devbox-upgrades');
   const script = join(directory, 'devbox-cli-upgrades.ts');
   const plist = join(homedir(), 'Library', 'LaunchAgents', `${label}.plist`);
@@ -90,7 +91,7 @@ async function main() {
 <plist version="1.0"><dict>
 <key>Label</key><string>${label}</string>
 <key>ProgramArguments</key><array>${command.map((arg) => `<string>${xml(arg)}</string>`).join('')}</array>
-<key>EnvironmentVariables</key><dict><key>TUTURUUU_UPGRADE_CLI</key><string>${xml(cli)}</string><key>PATH</key><string>${xml(`${dirname(cli)}:${dirname(process.execPath)}:/usr/bin:/bin`)}</string></dict>
+<key>EnvironmentVariables</key><dict><key>PATH</key><string>${xml(`${dirname(cli)}:${dirname(process.execPath)}:/usr/bin:/bin`)}</string></dict>
 <key>StartInterval</key><integer>86400</integer><key>RunAtLoad</key><true/>
 <key>StandardOutPath</key><string>${xml(join(directory, 'stdout.log'))}</string>
 <key>StandardErrorPath</key><string>${xml(join(directory, 'stderr.log'))}</string>

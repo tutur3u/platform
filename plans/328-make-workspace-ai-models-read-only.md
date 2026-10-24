@@ -60,7 +60,7 @@ contract exists, the only truthful product is the already-useful read-only list.
 | Route inventory | `find 'apps/web/src/app/[locale]/(dashboard)/[wsId]/(ai)/models' -maxdepth 2 -type f -print | sort` | only the read-only page, columns, and intentional focused tests/helpers remain; no detail route appears |
 | Web | `bun --cwd apps/web run type-check && bun --cwd apps/web run build` | typecheck and production build pass |
 | Migration guard | `bun migration:tanstack:check` | existing list-page tracking remains current without artifact edits |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only the four model files/test and plan status changed |
 
 ## Suggested executor toolkit
@@ -127,7 +127,7 @@ mutation contract to preserve.
 
 ### Step 4: Run Web and repository gates
 
-Run focused tests, Web typecheck/build, migration tracking check, `bun check`,
+Run focused tests, Web typecheck/build, migration tracking check, `bun validate`,
 scope inspection, and whitespace validation. Confirm the route manifest did not
 change because the list route still exists at the same path.
 
@@ -147,7 +147,7 @@ change because the list route still exists at the same path.
 - [ ] It exposes no create, edit, delete, or nonexistent detail affordance.
 - [ ] The Models directory contains no workspace-user API call or mutation form/action module.
 - [ ] No model API/schema/permission or route-migration artifact is invented.
-- [ ] Focused tests, Web typecheck/build, migration check, `bun check`, scope, and whitespace pass.
+- [ ] Focused tests, Web typecheck/build, migration check, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

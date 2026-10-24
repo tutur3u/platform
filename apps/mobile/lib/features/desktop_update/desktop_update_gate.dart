@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/desktop_update/desktop_installer.dart';
 import 'package:mobile/features/desktop_update/desktop_release.dart';
@@ -161,10 +162,13 @@ class _DesktopUpdateGateState extends State<DesktopUpdateGate> {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
               child: Wrap(
-                spacing: 12,
-                runSpacing: 8,
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.sm,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(

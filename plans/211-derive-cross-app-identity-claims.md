@@ -81,7 +81,7 @@ immediately in an isolated worktree.
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/cross-app-token-identity.sql` | generated contract is current |
 | Route tracking | `bun web:api-routes:check && bun migration:tanstack:manifest` | no wrapper regeneration; first-class source is recorded |
 | Builds/backend | `bun run --cwd apps/web build && bun run --cwd packages/auth type-check && bun run --cwd packages/tasks-api type-check && bun check:backend` | all exit 0; route remains correctly classified |
-| Repository | `bun check && git diff --check` | all gates pass; no whitespace errors |
+| Repository | `bun validate && git diff --check` | all gates pass; no whitespace errors |
 
 ## Scope
 

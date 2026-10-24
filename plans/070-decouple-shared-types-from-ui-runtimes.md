@@ -60,7 +60,7 @@ workflow before changing dependency fields.
 | Publication tests | `node --test scripts/ci/package-release-readiness.test.js scripts/ci/prepare-npm-package-manifest.test.js` | package manifest preparation remains valid |
 | Prepared-manifest check | `types_pack_dir="$(mktemp -d)"; mkdir "$types_pack_dir/types"; cp packages/types/package.json "$types_pack_dir/types/package.json"; node scripts/ci/prepare-npm-package-manifest.js "$types_pack_dir/types"` | temporary prepared copy retains core dependency and React peer without React DOM/Tiptap React |
 | Dependency tests | `node --test scripts/check-workspace-dependencies.test.js` | workspace graph remains valid |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -122,7 +122,7 @@ behavioral proof. Do not add a synthetic runtime test that imports React.
 - [ ] React is a peer/dev-time declaration contract, not a direct production dependency.
 - [ ] React DOM and Tiptap React are absent from the package manifest and prepared package.
 - [ ] Lockfile diff is limited to the declared dependency moves.
-- [ ] Package build/typecheck, publication/dependency tests, representative consumer, `bun check`, and whitespace pass.
+- [ ] Package build/typecheck, publication/dependency tests, representative consumer, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

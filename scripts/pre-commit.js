@@ -92,7 +92,7 @@ function runPreCommit({ execFile = execFileSync, spawn = spawnSync } = {}) {
 
   const stagedFiles = getStagedFiles(execFile);
   const shouldRunMobileCheck = touchesMobile(stagedFiles);
-  const commands = [['bun', ['check']]];
+  const commands = [['bun', ['validate']]];
 
   if (shouldRunMobileCheck) {
     commands.push(['bun', ['check:mobile']]);

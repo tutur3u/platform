@@ -50,7 +50,7 @@ Confirm the live cron owner/role before changing ACLs.
 | Focused DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/task-sort-normalization-privileges.sql` | ACL, cron, and ordering assertions pass |
 | Full DB | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Types | `git diff --exit-code -- packages/types/src/supabase.ts` | no signature drift |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

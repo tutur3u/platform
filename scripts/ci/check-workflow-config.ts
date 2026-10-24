@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { getWorkflowDecision } from '../../tuturuuu.ts';
+import { getMailCalendarTasksAffected } from './mail-calendar-tasks-affected.ts';
 import {
   readWorkspaceManifests,
   splitChangedFiles,
@@ -118,7 +119,17 @@ function main(args = process.argv.slice(2)) {
     }
   }
 
+  const affectedJobs =
+    workflowName === 'mail-calendar-tasks-builds.yaml'
+      ? getMailCalendarTasksAffected({
+          changedFiles,
+          eventName: parsedArgs.eventName ?? process.env.GITHUB_EVENT_NAME,
+          workspaceManifests,
+        })
+      : {};
+
   appendGithubOutput({
+    affected_jobs: JSON.stringify(affectedJobs),
     reason: decision.reason,
     should_run: String(decision.shouldRun),
   });
