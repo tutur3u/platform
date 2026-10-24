@@ -25,7 +25,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff",
     "test": "vitest run",
     "build:legacy": "next build --turbopack",
-    "cf:typegen": "wrangler types --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts",
+    "cf:typegen": "node ../../scripts/ci/calendar-cf-types.mjs",
     "type-check:app": "tsc --noEmit --project tsconfig.json",
     "type-check:boundary": "tsc --project tsconfig.boundary.json",
     "type-check:worker": "tsc --noEmit --project tsconfig.worker.json",

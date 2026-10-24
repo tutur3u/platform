@@ -121,8 +121,11 @@ named environments remain rejected by the existing artifact profile.
 
 Only after declaration parity and unchanged hashes for the bundle, assets,
 emitted config and deploy pointer does the helper atomically replace
-`cloudflare-env.d.ts`. Concurrent edits and partial, empty or symlinked producer
-output fail without replacing prior declarations. Its disposable config is
+`cloudflare-env.d.ts`. Exclusive directory custody serializes supported generators
+through comparison and replacement; an existing lock fails closed. Detected edits
+and partial, empty or symlinked producer output preserve prior declarations. This
+is cooperative publication custody; do not edit the destination during generation.
+Its disposable config is
 removed; the output remains self-contained when the sealed artifact is restored.
 The JSON receipt records source/tool versions and before/after artifact digests.
 
