@@ -29,7 +29,6 @@ const digest = (value) =>
 // only HTTP status, numeric error codes, our own request path and fields
 // validated against a fixed shape, so no encoding of a credential can leak.
 const CLOUDFLARE_ID = /^[0-9a-f]{32}$/;
-const ZONE_NAME = /^(?=.{1,253}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 const TOKEN_STATUSES = new Set(['active', 'disabled', 'expired']);
 
 // node:assert appends actual values to custom messages; compare without a diff.
@@ -195,10 +194,11 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   const account = encodeURIComponent(accountId);
   const script = `/accounts/${account}/workers/scripts/${encodeURIComponent(identity.name)}`;
   let requests = 0;
-  // Paths carry only account/zone IDs; zone names label route requests.
-  async function get(path, label = '') {
+  // Diagnostics name a request by a display path built only from trusted
+  // config (account, Worker) and constants; zones appear as ordinals.
+  async function get(path, display = path) {
     assert.ok(++requests <= 28, 'settings snapshot request budget exceeded');
-    const target = `GET ${path}${label}`;
+    const target = `GET ${display}`;
     const response = await fetchImpl(
       `https://api.cloudflare.com/client/v4${path}`,
       {
@@ -224,8 +224,8 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
     );
     return body.result;
   }
-  async function list(path, label) {
-    const items = await get(path, label);
+  async function list(path, display) {
+    const items = await get(path, display);
     assert.ok(
       Array.isArray(items) && items.length < 50,
       'settings snapshot refuses unbounded/truncated list'
@@ -240,11 +240,15 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   const zones = await list(`/zones?account.id=${account}&per_page=50`);
   assert.ok(zones.length <= 20, 'settings snapshot supports at most 20 zones');
   const zoneRoutes = [];
-  for (const zone of zones) {
-    assert.ok(CLOUDFLARE_ID.test(zone?.id), 'zone list returned an invalid id');
+  for (const [index, zone] of zones.entries()) {
+    const ordinal = `zone #${index + 1}`;
+    assert.ok(
+      CLOUDFLARE_ID.test(zone?.id),
+      `zone list returned an invalid id for ${ordinal}`
+    );
     for (const route of await list(
       `/zones/${zone.id}/workers/routes`,
-      ZONE_NAME.test(zone.name) ? ` (zone ${zone.name})` : ''
+      `/zones/<${ordinal}>/workers/routes`
     ))
       zoneRoutes.push({ zone: zone.id, route });
   }
@@ -260,18 +264,17 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   };
 }
 
-const REVIEWED_BINDING_ATTRIBUTES = {
-  plain_text: new Set(['name', 'type', 'text']),
-  secret_text: new Set(['name', 'type']),
+// Maps and Sets only: binding names such as `__proto__` must not reach an
+// object prototype chain.
+const REVIEWED_BINDING_ATTRIBUTES = new Map([
+  ['plain_text', new Set(['name', 'type', 'text'])],
+  ['secret_text', new Set(['name', 'type'])],
   // namespace_id is assigned by Cloudflare; script_name is checked below.
-  durable_object_namespace: new Set([
-    'name',
-    'type',
-    'class_name',
-    'script_name',
-    'namespace_id',
-  ]),
-};
+  [
+    'durable_object_namespace',
+    new Set(['name', 'type', 'class_name', 'script_name', 'namespace_id']),
+  ],
+]);
 
 /** Summarize text and Durable Object bindings; text values keep only a digest. */
 function verifyBindings(settings, identity) {
@@ -280,62 +283,77 @@ function verifyBindings(settings, identity) {
     Array.isArray(bindings) && bindings.length < 100,
     'binding list unavailable'
   );
+  const declaredVars = new Set(Object.keys(identity.vars ?? {}));
+  const declaredObjects = new Set(Object.keys(identity.durableObjects ?? {}));
   const declared = declaredNames(identity);
-  const names = new Map();
-  const vars = {};
-  const durableObjects = {};
+  const seen = new Set();
+  const vars = new Map();
+  const durableObjects = new Map();
   for (const [index, binding] of bindings.entries()) {
-    const name = bindingLabel(binding.name, declared, index);
-    if (typeof binding.name === 'string') names.set(binding.name, name);
+    const name = bindingLabel(binding?.name, declared, index);
+    assert.ok(
+      typeof binding?.name === 'string' && !seen.has(binding.name),
+      `unnamed or duplicate binding ${name}`
+    );
+    seen.add(binding.name);
+    const reviewed = REVIEWED_BINDING_ATTRIBUTES.get(binding.type);
+    assert.ok(
+      reviewed,
+      `unreviewed ${typeLabel(binding.type)} binding ${name}`
+    );
     // Routing attributes (environment, dispatch namespace, ...) are not part
     // of the reviewed identity; any present one fails instead of being dropped.
-    const reviewed = REVIEWED_BINDING_ATTRIBUTES[binding.type];
-    if (reviewed)
-      for (const [attribute, value] of Object.entries(binding))
-        assert.ok(
-          reviewed.has(attribute) || value === undefined || value === null,
-          `unreviewed ${attributeLabel(attribute)} on ${typeLabel(binding.type)} binding ${name}`
-        );
+    for (const [attribute, value] of Object.entries(binding))
+      assert.ok(
+        reviewed.has(attribute) || value === undefined || value === null,
+        `unreviewed ${attributeLabel(attribute)} on ${typeLabel(binding.type)} binding ${name}`
+      );
     switch (binding.type) {
       case 'plain_text':
-        vars[binding.name] = binding.text;
+        // Undeclared names fail before anything is accumulated.
+        assert.ok(
+          declaredVars.has(binding.name),
+          `undeclared plain_text binding ${name}`
+        );
+        vars.set(binding.name, binding.text);
         break;
       case 'secret_text':
-        // Declared secret names are checked through the secrets endpoint.
+        // Secret values are never read; declared names are checked through
+        // the secrets endpoint, which tolerates operator-installed extras.
         break;
-      case 'durable_object_namespace':
+      default:
+        assert.ok(
+          declaredObjects.has(binding.name),
+          `undeclared durable_object_namespace binding ${name}`
+        );
         assert.ok(
           binding.script_name === undefined ||
             binding.script_name === identity.name,
           `Durable Object binding ${name} targets another Worker`
         );
-        durableObjects[binding.name] = { className: binding.class_name };
-        break;
-      default:
-        assert.fail(`unreviewed ${typeLabel(binding.type)} binding ${name}`);
+        durableObjects.set(binding.name, { className: binding.class_name });
     }
   }
-  // Name only the differing vars: assertion diffs would print text values.
-  const expected = identity.vars ?? {};
-  const differing = [
-    ...new Set([...Object.keys(vars), ...Object.keys(expected)]),
-  ]
-    .filter((name) => vars[name] !== expected[name])
-    .map((name) => names.get(name) ?? name)
+  // Every accumulated name is declared, so differing names are trusted text;
+  // values are never printed.
+  const differing = [...declaredVars]
+    .filter((name) => !vars.has(name) || vars.get(name) !== identity.vars[name])
     .sort();
   assert.ok(
     differing.length === 0,
     `Worker vars differ: ${differing.join(', ')}`
   );
+  const observedObjects = canonical(Object.fromEntries(durableObjects));
   same(
-    canonical(durableObjects),
+    observedObjects,
     canonical(identity.durableObjects ?? {}),
     'Durable Object bindings differ'
   );
+  const sortedVars = [...vars].sort(([a], [b]) => a.localeCompare(b));
   return {
-    vars: Object.keys(vars).sort(),
-    varsHash: digest(vars),
-    durableObjects: canonical(durableObjects),
+    vars: sortedVars.map(([name]) => name),
+    varsHash: digest(sortedVars),
+    durableObjects: observedObjects,
   };
 }
 

@@ -35,6 +35,13 @@ function bindingsFor(identity) {
   ];
 }
 
+/** Target bindings with extra attributes on the declared WEB_ORIGIN var. */
+function withWebOrigin(attributes) {
+  return bindingsFor(plan.target).map((binding) =>
+    binding.name === 'WEB_ORIGIN' ? { ...binding, ...attributes } : binding
+  );
+}
+
 /** Fake read-only API whose live Worker matches `identity` (plus overrides). */
 function liveWorker(identity, { settings = {}, ...overrides } = {}) {
   const responses = {
@@ -323,10 +330,7 @@ test('server-provided binding identifiers never reach output', async () => {
   for (const bindings of [
     [...bindingsFor(plan.target), { name: echo, type: echo }],
     [...bindingsFor(plan.target), { name: echo, type: 'plain_text', text: '' }],
-    [
-      ...bindingsFor(plan.target),
-      { name: 'WEB_ORIGIN', type: 'plain_text', text: 'x', [echo]: echo },
-    ],
+    withWebOrigin({ [echo]: echo }),
     bindingsFor(plan.target).map((binding) =>
       binding.type === 'durable_object_namespace'
         ? { ...binding, class_name: echo }
@@ -345,7 +349,7 @@ test('server-provided binding identifiers never reach output', async () => {
     );
   assert.deepEqual(messages, [
     'unreviewed <unknown type> binding <undeclared binding #12>',
-    'Worker vars differ: <undeclared binding #12>',
+    'undeclared plain_text binding <undeclared binding #12>',
     'unreviewed <unknown attribute> on plain_text binding WEB_ORIGIN',
     'Durable Object bindings differ',
   ]);
@@ -357,20 +361,22 @@ test('identifier-shaped credentials used as binding names are never printed', as
   const encoded = Buffer.from(token).toString('base64url');
   const outputs = [];
   for (const name of [token, encoded])
-    for (const extra of [
-      { name, type: 'plain_text', text: '' },
-      { name, type: 'kv_namespace', namespace_id: name },
-      { name, type: 'durable_object_namespace', class_name: 'CronLedger' },
-      { name: 'WEB_ORIGIN', type: 'plain_text', text: 'x', [name]: true },
+    for (const bindings of [
+      [...bindingsFor(plan.target), { name, type: 'plain_text', text: '' }],
+      [
+        ...bindingsFor(plan.target),
+        { name, type: 'kv_namespace', namespace_id: name },
+      ],
+      [
+        ...bindingsFor(plan.target),
+        { name, type: 'durable_object_namespace', class_name: 'CronLedger' },
+      ],
+      withWebOrigin({ [name]: true }),
     ])
       await assert.rejects(
         captureAfter({
           plan,
-          ...credentials(
-            liveWorker(plan.target, {
-              settings: { bindings: [...bindingsFor(plan.target), extra] },
-            })
-          ),
+          ...credentials(liveWorker(plan.target, { settings: { bindings } })),
         }),
         (error) => {
           outputs.push(error.message);
@@ -383,9 +389,48 @@ test('identifier-shaped credentials used as binding names are never printed', as
   assert.equal(outputs.length, 8);
   assert.ok(
     outputs.every((message) =>
-      /<undeclared binding #12>|<unknown attribute>|^Durable Object bindings differ$/.test(
-        message
-      )
+      /<undeclared binding #12>|<unknown attribute>/.test(message)
     )
   );
+});
+
+test('prototype-shaped binding names cannot bypass verification', async () => {
+  const messages = [];
+  for (const name of ['__proto__', 'constructor', 'prototype'])
+    for (const extra of [
+      { name, type: 'plain_text', text: 'https://evil.example' },
+      { name, type: 'durable_object_namespace', class_name: 'CronLedger' },
+    ]) {
+      const bindings = [...bindingsFor(plan.target), extra];
+      // Both the target check and the first-transition `before` must fail.
+      await assert.rejects(
+        captureAfter({
+          plan,
+          ...credentials(liveWorker(plan.target, { settings: { bindings } })),
+        }),
+        (error) => {
+          messages.push(error.message);
+          return true;
+        }
+      );
+      await assert.rejects(
+        captureBefore({
+          plan,
+          ...credentials(
+            liveWorker(plan.previous, {
+              settings: { bindings: [...bindingsFor(plan.previous), extra] },
+            })
+          ),
+        }),
+        /match no recorded transition stage/
+      );
+    }
+  assert.deepEqual(messages, [
+    'undeclared plain_text binding <undeclared binding #12>',
+    'undeclared durable_object_namespace binding <undeclared binding #12>',
+    'undeclared plain_text binding <undeclared binding #12>',
+    'undeclared durable_object_namespace binding <undeclared binding #12>',
+    'undeclared plain_text binding <undeclared binding #12>',
+    'undeclared durable_object_namespace binding <undeclared binding #12>',
+  ]);
 });

@@ -241,14 +241,16 @@ fail before publication; do not bypass that gate to deploy.
 
 Each snapshot phase first logs the token's id and status from
 `/user/tokens/verify` (or the account-owned token endpoint); this diagnostic cannot
-fail the job. A failed read prints its HTTP status, numeric Cloudflare error codes,
-its request path and the zone name for route lists, so a `403` shows which token
-and zone lack access. Diagnostics never print free-form server text (error
-messages, bodies, JSON parse errors or assertion diffs of live values): token id,
-status and zone name print only when they match a fixed shape, and binding names
-only when the baseline already declares them (others print as
-`<undeclared binding #n>`). The CLI prints only its own assertion messages and the
-name of any other error. Compare that id with the token listed in the Cloudflare
+fail the job. A failed read prints its HTTP status, numeric Cloudflare error codes
+and a request path built only from the pinned account, the Worker name and zone
+ordinals (`/zones/<zone #n>/workers/routes`), so a `403` shows which token and zone
+lack access. Diagnostics never print response-derived text (error messages, bodies,
+zone names or IDs, JSON parse errors or assertion diffs of live values). The token
+id and status print only when they match a fixed shape, and binding names only when
+the baseline already declares them (others print as `<undeclared binding #n>`).
+Undeclared text or Durable Object bindings fail before they are recorded; undeclared
+secret bindings are tolerated because their values are never read. The CLI prints
+only its own assertion messages and the name of any other error. Compare that id with the token listed in the Cloudflare
 dashboard before changing the GitHub secret.
 
 Cloudflare documents the accepted permissions for

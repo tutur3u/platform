@@ -174,7 +174,7 @@ function assertNoServerText(outputs) {
     assert.ok(!text.includes(TOKEN.slice(start, start + 8)));
 }
 
-test('a denied request prints only status, numeric codes, path and zone', async () => {
+test('a denied request prints only status, numeric codes and a zone ordinal', async () => {
   const api = fixture({ zones: [{ id: ZONE, name: 'example.com' }] });
   const denied = async (url, init) =>
     url.endsWith('/workers/routes')
@@ -192,8 +192,8 @@ test('a denied request prints only status, numeric codes, path and zone', async 
     (error) => {
       assert.equal(
         error.message,
-        `settings snapshot HTTP 403 for GET /zones/${ZONE}/workers/routes ` +
-          '(zone example.com) (codes 10000)'
+        'settings snapshot HTTP 403 for GET /zones/<zone #1>/workers/routes ' +
+          '(codes 10000)'
       );
       return true;
     }
@@ -254,7 +254,7 @@ test('no server-provided string reaches output in any token encoding', async () 
   );
   assert.match(outputs[1], /API failed for GET .* \(codes 7003\)$/);
   assert.match(outputs[2], /workers\/routes \(codes 10000\)$/);
-  assert.equal(outputs[3], 'zone list returned an invalid id');
+  assert.equal(outputs[3], 'zone list returned an invalid id for zone #1');
   assert.equal(outputs[4], 'cron schedules differ');
   assert.equal(outputs[5], 'compatibility date differs');
   assert.equal(outputs[6], 'unexpected Worker custom domains');
