@@ -163,6 +163,19 @@ manifest metadata. Preserve historical observations, intentional version fixture
 and paused runtime source. Repository pins do not establish installed host or
 fleet versions; verify those separately before claiming runtime acceptance.
 
+## Node runtime pins and validation selection
+
+Use `.node-version` for supported setup-node jobs. After rebasing workflow changes,
+run `node scripts/ci/node-version-pin.js --write`, then the pin, selection and
+production-migration-target tests with the exact private Node binary. The planner
+and guard share checkout identity, job-scoped Vercel and byte-pinned staging
+exceptions. Keep pin consumers' validation event filters and the Cloudflare
+affected-path set aligned; a file input needs both selection layers. Negative
+fixtures must reject quoted command text, foreign checkouts and mismatched
+conditions. Production-only publication filters retain their release scope.
+See [Node runtime policy](../../../../../apps/docs/build/development-tools/node-runtime.mdx)
+for activation, host custody and separate source, CI and deployed-runtime proof.
+
 ## Commands And Formatting
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
@@ -1055,6 +1068,20 @@ at each caller boundary and reject references elsewhere, including the actual
 production token name `CLOUDFLARE_API_TOKEN`. The wave-1 permission and publisher
 secret tests cover these boundaries; protected concurrency tests preserve the
 non-cancelling durable-attempt publication queue.
+
+## Node.js runtime pin
+
+The root `.node-version` is the only Node release source. A `setup-node` step
+uses `node-version-file` only when its checkout is the workflow's own commit and
+is not sparse. Other steps use the literal pin: pre-checkout jobs, sparse
+checkouts, and checkouts of a PR head, `production`, a workflow-run head or an
+input SHA, all of which may predate the file.
+
+Vercel build/deploy jobs stay on Node 24 because that is their function runtime.
+The input-SHA employee schema qualification also stays on 24, because it binds
+a Node 24 identity. `node-version-pin.test.js` enforces the literals and the
+exception list. Receipts record the runtime they actually used, never a
+hard-coded version. See [Node.js runtime pin](../../../../../apps/docs/build/development-tools/node-runtime.mdx).
 
 Include `.cloudflare/output/**` in Turbo build outputs. Validate a real cache-hit
 replay after deleting emitted files; replayed logs alone do not qualify an artifact.

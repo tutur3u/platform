@@ -16,6 +16,7 @@ on:
       - "apps/database/scripts/tutoring-absence-credit-contract.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/tutoring-absence-credit-contract.yaml"
+      - ".node-version"
   push:
     branches: [main, production]
     paths:
@@ -31,6 +32,7 @@ on:
       - "apps/database/scripts/tutoring-absence-credit-contract.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/tutoring-absence-credit-contract.yaml"
+      - ".node-version"
   workflow_dispatch:
 permissions:
   contents: read
@@ -68,7 +70,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile

@@ -13,6 +13,7 @@ on:
       - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
       - 'scripts/ci/fixtures/cf-worker-parity/coordination.json'
       - 'tuturuuu.ci.ts'
+      - '.node-version'
   push:
     branches: [main]
     paths:
@@ -27,6 +28,7 @@ on:
       - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
       - 'scripts/ci/fixtures/cf-worker-parity/coordination.json'
       - 'tuturuuu.ci.ts'
+      - '.node-version'
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -59,7 +61,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - run: bun x --no-install cf workers types
         working-directory: apps/coordination
@@ -132,7 +134,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - name: Capture and verify settings before publication
         env:

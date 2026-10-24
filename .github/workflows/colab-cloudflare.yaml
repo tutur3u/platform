@@ -15,6 +15,7 @@ on:
       - 'tuturuuu.ci.ts'
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
+      - '.node-version'
   pull_request:
     paths:
       - 'apps/colab/**'
@@ -28,6 +29,7 @@ on:
       - 'tuturuuu.ci.ts'
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
+      - '.node-version'
   workflow_dispatch:
   workflow_call:
 
@@ -61,7 +63,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - run: bun run test
         working-directory: packages/multiplayer
@@ -103,7 +105,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:

@@ -14,6 +14,7 @@ on:
       - "scripts/desktop-deployment/**"
       - ".github/workflows/desktop-beta.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
+      - ".node-version"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -49,7 +50,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: node --test scripts/desktop-deployment/*.test.mjs
 
   windows-dry-run:
@@ -66,7 +67,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version-file: .node-version
       - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
@@ -114,7 +115,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version-file: .node-version
       - id: platforms
         env:
           DESKTOP_BETA_PLATFORMS: ${{ vars.DESKTOP_BETA_PLATFORMS }}
@@ -148,7 +149,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version-file: .node-version
       - name: Require desktop signing configuration
         if: matrix.platform != 'windows'
         shell: bash
@@ -278,7 +279,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version-file: .node-version
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: desktop-beta-*

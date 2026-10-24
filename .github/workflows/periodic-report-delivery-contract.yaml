@@ -16,6 +16,7 @@ on:
       - 'scripts/ci/supabase-image-cache*'
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
+      - '.node-version'
   push:
     branches: [main, production]
     paths:
@@ -30,6 +31,7 @@ on:
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
       - 'tuturuuu.ci.ts'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read
@@ -67,7 +69,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile

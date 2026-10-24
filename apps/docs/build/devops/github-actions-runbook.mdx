@@ -48,7 +48,7 @@ exact-source CI and admitted runtime acceptance remain separate evidence.
 
 `mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
 Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
-uses a separate native job on Bun 1.4.4 and Node 24.22.0: build shared dependencies,
+uses a separate native job on Bun 1.4.4 and Node 26.12.1: build shared dependencies,
 run owning Calendar/Web/Tasks UI tests, build with the official Void plugin,
 discover `.wrangler/deploy/config.json`, then generate emitted `CloudflareEnv` bindings in fresh runner scratch because Wrangler rejects the handwritten stub.
 Only successful, regular, nonempty, nonsymlink output replaces stable `cloudflare-env.d.ts`; own scratch is cleaned on success/failure.
@@ -140,7 +140,7 @@ registry/planner. Calendar has no Meet immediate/no-staging exception. Do not us
 raw Void deploy, create resources, or add a second provider scheduler.
 
 For standalone chat initial-settings qualification, launch the source-owned Vitest entry
-directly with verified Node 24.21.0. Require primary exit zero, no signal or timeout,
+directly with verified Node 24.22.1. Require primary exit zero, no signal or timeout,
 and the owned group stopped; nine passing assertions cannot override SIGABRT or failure.
 The optional process comparison defaults off and never qualifies failure; require the same source/control/run binding, SQL197, Web9, Dart9 and fixture/database
 cleanup in a fresh exact-source hosted run. Synthetic ports do not prove runtime.

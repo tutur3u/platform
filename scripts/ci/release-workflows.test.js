@@ -636,7 +636,7 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
 
   for (const job of [formatJob, lintJob]) {
     assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
-    assert.match(job, /node-version: 24/u);
+    assert.match(job, /node-version-file: \.node-version\n/u);
     assert.match(job, /printf '%s\\n' "\$biome_output"/u);
     assert.match(job, /Biome exit code \$biome_exit_code/u);
     assert.match(
