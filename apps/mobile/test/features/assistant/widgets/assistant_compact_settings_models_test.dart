@@ -66,6 +66,45 @@ void main() {
     }
   }
 
+  for (final locale in ['en', 'vi']) {
+    for (final scale in [1.0, 2.0]) {
+      for (final selected in [false, true]) {
+        testWidgets('installed model $locale $scale selected=$selected', (tester) async {
+          tester.view.physicalSize = const Size(320, 844);
+          tester.view.devicePixelRatio = 1;
+          tester.platformDispatcher.localesTestValue = [Locale(locale)];
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          var removals = 0;
+          var selections = 0;
+          await tester.pumpApp(Material(child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(child: AssistantLocalModelTile(
+              model: assistantLocalModels.first, installed: true,
+              selected: selected, enabled: true, canRemove: true,
+              onSelect: () => selections++, onRemove: () => removals++,
+              onInstall: () => fail('Reinstalled'), onLicense: () {}, onSource: () {},
+            )),
+          )));
+          final l = tester.element(find.byType(AssistantLocalModelTile)).l10n;
+          expect(find.byTooltip(l.assistantLocalUse), selected ? findsNothing : findsOneWidget);
+          if (!selected) {
+            expect(find.byIcon(LucideIcons.arrowRight), findsOneWidget);
+            await tester.tap(find.byTooltip(l.assistantLocalUse));
+            expect(selections, 1);
+          }
+          await tester.tap(find.byTooltip(l.assistantLocalRemove));
+          expect(removals, 1);
+          expect(find.byType(AppDialog), findsNothing);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
   testWidgets('installed model keeps selection and removal controls', (
     tester,
   ) async {
@@ -92,17 +131,14 @@ void main() {
     final l = tester.element(find.byType(AssistantLocalModelTile)).l10n;
     await tester.tap(find.byTooltip(l.assistantLocalUse));
     expect(selected, 1);
-    await tester.tap(find.byTooltip(l.assistantSettingInfo(model.name)));
-    await tester.pumpAndSettle();
-    expect(find.text(l.assistantLocalDownloadSource), findsOneWidget);
-    await tester.tap(find.text(l.assistantLocalRemove));
+    await tester.tap(find.byTooltip(l.assistantLocalRemove));
     await tester.pumpAndSettle();
     expect(removed, 1);
     expect(find.byType(AppDialog), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('busy model cannot select or remove through its info dialog', (
+  testWidgets('busy model cannot select or remove', (
     tester,
   ) async {
     final model = assistantLocalModels[1];
@@ -125,9 +161,9 @@ void main() {
     await tester.pumpAndSettle();
     final l = tester.element(find.byType(AssistantLocalModelTile)).l10n;
     await tester.tap(find.byTooltip(l.assistantLocalUse));
+    await tester.tap(find.byTooltip(l.assistantLocalRemove));
     await tester.tap(find.byTooltip(l.assistantSettingInfo(model.name)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(l.assistantLocalRemove));
     expect(find.byType(AppDialog), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

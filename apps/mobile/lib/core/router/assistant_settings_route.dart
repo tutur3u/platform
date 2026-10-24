@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
+import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -22,7 +25,8 @@ class _AssistantSettingsRouteState extends State<AssistantSettingsRoute> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthCubit>().state;
-    final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
+    final workspaces = context.watch<WorkspaceCubit>().state;
+    final workspace = workspaces.currentWorkspace;
     final scope = (auth.user?.id, auth.status, workspace?.id);
     if (_scope != scope) {
       _scope = scope;
@@ -30,7 +34,22 @@ class _AssistantSettingsRouteState extends State<AssistantSettingsRoute> {
     }
     final revision = _revision;
     if (auth.status != AuthStatus.authenticated || workspace == null) {
-      return const SizedBox.shrink();
+      final loading = auth.status == AuthStatus.unknown || auth.isLoading ||
+          (auth.status == AuthStatus.authenticated &&
+              (workspaces.status == WorkspaceStatus.initial ||
+               workspaces.status == WorkspaceStatus.loading));
+      return AssistantSettingsRouteFrame(
+        title: context.l10n.assistantSettingsTitle,
+        locations: {Routes.settingsAppPath('assistant')},
+        child: Center(
+          child: loading
+              ? Semantics(label: context.l10n.commonLoading,
+                  child: const NovaLoadingIndicator(size: 20))
+              : Text(workspaces.status == WorkspaceStatus.error
+                  ? context.l10n.assistantPersonalSettingsError
+                  : context.l10n.workspaceSelectEmpty),
+        ),
+      );
     }
     return MultiBlocListener(
       listeners: [

@@ -156,23 +156,56 @@ void main() {
     expect(cubit.state.snapshot!.soul.name, 'Saved');
   });
 
-  test(
-    'late refresh cannot overwrite an edit begun from cached personality',
-    () async {
-      final held = Completer<AssistantPersonalSettingsSnapshot>();
-      repository.read = () => held.future;
-      final displayed = cubit.stream.firstWhere(
-        (state) => state.snapshot != null,
-      );
-      final loading = cubit.load();
-      await displayed;
-      expect(await cubit.saveSoul(const AssistantSoul(name: 'Saved')), isTrue);
-      held.complete(snapshot);
-      await loading;
-      expect(cubit.state.snapshot!.soul.name, 'Saved');
-      expect(cubit.state.snapshot!.memoryEnabled, isNull);
-    },
-  );
+  test('cached personality cannot supersede fresh untouched fields', () async {
+    final held = Completer<AssistantPersonalSettingsSnapshot>();
+    repository.read = () => held.future;
+    final displayed = cubit.stream.firstWhere((state) => state.snapshot != null);
+    final loading = cubit.load();
+    await displayed;
+    expect(cubit.state.canEditSoul, isFalse);
+    expect(await cubit.saveSoul(const AssistantSoul(name: 'Saved')), isFalse);
+    expect(repository.writes, 0);
+    expect(cubit.state.loading, isTrue);
+    const freshSoul = AssistantSoul(name: 'Web', tone: 'warm',
+      personality: 'Fresh personality', boundaries: 'Fresh boundaries', chatTone: 'brief');
+    final fresh = AssistantPersonalSettingsSnapshot(soul: freshSoul,
+      memoryEnabled: snapshot.memoryEnabled, memories: snapshot.memories,
+      products: snapshot.products);
+    held.complete(fresh);
+    await loading;
+    expect(cubit.state.snapshot, same(fresh));
+    expect(cubit.state.canEditSoul, isTrue);
+    AssistantSoul? sent;
+    repository.write = (soul) async { sent = soul; return soul; };
+    expect(await cubit.saveSoul(freshSoul.copyWith(name: 'Saved')), isTrue);
+    expect(repository.writes, 1);
+    expect(sent?.tone, 'warm');
+    expect(sent?.personality, 'Fresh personality');
+    expect(sent?.boundaries, 'Fresh boundaries');
+    expect(sent?.chatTone, 'brief');
+    expect(cubit.state.snapshot!.memoryEnabled, snapshot.memoryEnabled);
+    expect(cubit.state.snapshot!.memories, snapshot.memories);
+    expect(cubit.state.snapshot!.products, snapshot.products);
+  });
+
+  test('failed refresh stays read-only until a successful retry', () async {
+    await cubit.load();
+    expect(cubit.state.canEditSoul, isTrue);
+    final held = Completer<AssistantPersonalSettingsSnapshot>();
+    repository.read = () => held.future;
+    final loading = cubit.load();
+    expect(cubit.state.canEditSoul, isFalse);
+    expect(await cubit.saveSoul(const AssistantSoul(name: 'Old')), isFalse);
+    held.completeError(const ApiException.transport(message: 'Offline'));
+    await loading;
+    expect(cubit.state.snapshot, same(snapshot));
+    expect(cubit.state.canEditSoul, isFalse);
+    expect(await cubit.saveSoul(const AssistantSoul(name: 'Old')), isFalse);
+    expect(repository.writes, 0);
+    repository.read = () async => snapshot;
+    await cubit.load();
+    expect(cubit.state.canEditSoul, isTrue);
+  });
 
   test('confirmed memory edits retain the existing refresh fence', () async {
     await cubit.load();

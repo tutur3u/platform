@@ -12,7 +12,7 @@ import 'package:mobile/features/assistant/data/assistant_personal_settings_repos
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
-import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_browsing_setting.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
@@ -89,14 +89,14 @@ void main() {
 
     await tester.pumpApp(
       Material(
-        child: AssistantSettingsSheetBody(
+        child: AssistantLiveBrowsingSetting(
           keepLiveWhileBrowsing: false,
           onKeepLiveWhileBrowsingChanged: ({required value}) async {},
         ),
       ),
     );
     await tester.pumpAndSettle();
-    final l = tester.element(find.byType(AssistantSettingsSheetBody)).l10n;
+    final l = tester.element(find.byType(AssistantLiveBrowsingSetting)).l10n;
     expect(find.text(l.assistantKeepLiveBrowsingDescription), findsNothing);
     await tester.tap(
       find.byTooltip(l.assistantSettingInfo(l.assistantKeepLiveBrowsingTitle)),

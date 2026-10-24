@@ -10,7 +10,7 @@ import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dar
 import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
-import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_browsing_setting.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -65,11 +65,10 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
           : AppPageListView(
               children: [
                 if (state.loaded)
-                  AssistantSettingsSheetBody(
+                  AssistantLiveBrowsingSetting(
                     keepLiveWhileBrowsing: state.keepLiveWhileBrowsing,
                     onKeepLiveWhileBrowsingChanged: _settings.save,
                     enabled: !state.saving,
-                    showTitle: false,
                   ),
                 if (state.failed)
                   Padding(

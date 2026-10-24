@@ -4,6 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
+bool assistantSettingsUsesDock(BuildContext context) {
+  final modal = AppModalScope.maybeOf(context);
+  return modal == null
+      ? context.read<ShellChromeActionsCubit?>() != null
+      : modal.shellChromeVisible && modal.chrome != null;
+}
+
 /// Publishes an action only while its route visibly shares the shell.
 class AssistantSettingsAction extends StatefulWidget {
   const AssistantSettingsAction({

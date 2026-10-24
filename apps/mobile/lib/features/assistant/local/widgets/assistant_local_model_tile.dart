@@ -44,7 +44,9 @@ class AssistantLocalModelTile extends StatelessWidget {
         : model.requiresLicensedImport
         ? l10n.assistantLocalImport
         : l10n.assistantLocalDownload;
-    return AppListTile(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [AppListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(model.name),
       subtitle: Text(status),
@@ -70,7 +72,7 @@ class AssistantLocalModelTile extends StatelessWidget {
               onPressed: enabled ? (installed ? onSelect : onInstall) : null,
               icon: Icon(
                 installed
-                    ? LucideIcons.check
+                    ? LucideIcons.arrowRight
                     : model.requiresLicensedImport
                     ? LucideIcons.fileUp
                     : LucideIcons.download,
@@ -89,20 +91,20 @@ class AssistantLocalModelTile extends StatelessWidget {
                   onPressed: onSource,
                   child: Text(l10n.assistantLocalDownloadSource),
                 ),
-              if (installed)
-                AppButton.destructive(
-                  onPressed: canRemove
-                      ? () {
-                          Navigator.of(dialogContext).pop();
-                          onRemove();
-                        }
-                      : null,
-                  child: Text(l10n.assistantLocalRemove),
-                ),
             ],
           ),
         ],
       ),
+    ),
+    if (installed)
+      Align(alignment: Alignment.centerRight,
+        child: AppIconButton(
+          tooltip: l10n.assistantLocalRemove,
+          onPressed: canRemove ? onRemove : null,
+          icon: const Icon(LucideIcons.trash2),
+        ),
+      ),
+    ],
     );
   }
 }

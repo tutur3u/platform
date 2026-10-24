@@ -14,13 +14,11 @@ class AssistantMemoryEditor extends StatefulWidget {
   const AssistantMemoryEditor({
     required this.settings,
     required this.memoryId,
-    this.showTitle = true,
     this.isScopeCurrent,
     super.key,
   });
   final AssistantPersonalSettingsCubit settings;
   final String memoryId;
-  final bool showTitle;
   final bool Function()? isScopeCurrent;
   @override
   State<AssistantMemoryEditor> createState() => _AssistantMemoryEditorState();
@@ -87,13 +85,6 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.showTitle) ...[
-              Text(
-                l.assistantMemoryEditTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-            ],
             if (state.loading && state.memory == null)
               Semantics(
                 label: l.commonLoading,
@@ -157,6 +148,7 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
                   ? l.assistantMemorySaveChanges
                   : l.commonSave,
             ),
+            if (!assistantSettingsUsesDock(context))
             AppButton.ghost(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(state.saved ? l.commonDone : l.commonCancel),

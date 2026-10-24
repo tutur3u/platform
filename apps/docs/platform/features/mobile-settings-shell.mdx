@@ -310,15 +310,17 @@ Back closes a custom explanation dialog before returning through the editor
 history. Standalone previews without shell providers retain fallback chrome.
 
 Personality restores only a verified actor-owned snapshot from the existing
-Assistant cache while revalidation runs. An offline snapshot never enables an
-unknown memory-consent setting. Memory items, consent changes and revisioned
+Assistant cache while revalidation runs. Personality editors remain read-only
+until fresh settings succeed, including after a failed refresh. An offline snapshot never enables an
+unknown memory-consent setting; unresolved consent shows progress during loading. Memory items, consent changes and revisioned
 memory edits remain authoritative network operations; full personality saves
 are not queued without a matching receipt contract. Cache and generation fences
 are covered by `assistant_personal_settings_cache_test.dart` and
 `assistant_personal_settings_cache_first_test.dart`.
 
 On-device models use compact rows with size and download/selection status.
-License, source and removal actions live in custom explanation dialogs. Existing
+Installed rows expose Remove directly and distinguish Use from selected status.
+License and source actions live in custom explanation dialogs. Existing
 preference, memory consent, selection and download semantics remain unchanged.
 This scope applies to English and Vietnamese, including enlarged text.
 
@@ -619,7 +621,8 @@ network. An open browser refreshes on a content revision; losing its owning acto
 workspace or permission dismisses it. Reopening starts a fresh search. The
 standalone preview uses an inline search field when no shell is present.
 
-Assistant quick settings and the central Assistant entry both open hosted sheets.
+Assistant quick settings and the central Assistant entry both open the routed
+Assistant settings screen.
 Nested personality and memory editors retain account/workspace cancellation and
 write fences. System-owned license and permission screens keep their framework
 or operating-system presentation.

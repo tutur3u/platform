@@ -7,9 +7,11 @@ import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubi
 import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
+import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// The personality route lists individual settings. Each setting has its own
-/// editor and writes only that field against the latest confirmed soul.
+/// editor that merges into the latest freshly confirmed full soul.
 class AssistantPersonalityEditor extends StatelessWidget {
   const AssistantPersonalityEditor({
     required this.cubit,
@@ -29,6 +31,13 @@ class AssistantPersonalityEditor extends StatelessWidget {
         builder: (context, state) => ListView(
           padding: const EdgeInsets.symmetric(vertical: 16),
           children: [
+            if (state.snapshot == null && state.loading)
+              const Center(child: NovaLoadingIndicator(size: 20)),
+            if (state.failed) ...[
+              Text(context.l10n.assistantPersonalSettingsError),
+              AppButton.ghost(onPressed: cubit.load, child: Text(context.l10n.commonRetry)),
+            ],
+            if (state.snapshot != null)
             for (final field in AssistantPersonalityField.values)
               AppListTile(
                 key: ValueKey('assistant-personality-${field.name}'),
@@ -40,8 +49,9 @@ class AssistantPersonalityEditor extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: const Icon(LucideIcons.chevronRight),
-                enabled: !state.busy,
-                onTap: () => unawaited(
+                enabled: cubit.admitted && state.canEditSoul,
+                onTap: () => cubit.admitted && cubit.state.canEditSoul
+                    ? unawaited(
                   pushScopedSettingsPage(
                     context,
                     builder: (editorContext, isCurrent) =>
@@ -55,7 +65,7 @@ class AssistantPersonalityEditor extends StatelessWidget {
                           ),
                         ),
                   ),
-                ),
+                ) : null,
               ),
           ],
         ),
