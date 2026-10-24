@@ -74,7 +74,8 @@ class _TimezonePickerSheetState extends State<TimezonePickerSheet> {
     key: ValueKey('timezone-option-${choice.id}'),
     title: choice.city,
     subtitle: choice.region.isEmpty ? null : choice.region,
-    detail: choice.offsetLabel,
+    // Fixed-offset zones are already titled by their offset.
+    detail: choice.city == choice.offsetLabel ? null : choice.offsetLabel,
     selected: choice.id == widget.selected,
     onTap: () => _pick(choice.id),
   );
