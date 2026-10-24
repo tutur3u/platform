@@ -9,6 +9,11 @@ import {
   admissionResourceConfig,
   burstEligibility,
 } from './resources-adaptive';
+import {
+  budgetStatus,
+  selectBudgetTicket,
+  ticketDemand,
+} from './resources-budget';
 import { limitCommand } from './resources-command';
 import {
   atomicJson,
@@ -66,6 +71,11 @@ export async function resourceQueueStatus(
         : await burstEligibility(config);
   const waiting = (await tickets(home)).map((ticket) => ticket.owner);
   return {
+    // Budget ceiling, total use, and per-project share, use, borrowing and
+    // waiters, when a cross-project budget is configured.
+    ...(config.budget
+      ? { budget: budgetStatus(config.budget, state.owners, waiting) }
+      : {}),
     owners: state.owners,
     ownerSlots: state.ownerSlots,
     laneCount,
@@ -204,6 +214,34 @@ async function runNested(
     { ...env, ...inherited, [admittedMarker]: parent.token }
   );
 }
+// The ticket that may claim the next lane: the FIFO head, or under a budget
+// the per-project head chosen by share, borrowing and fit.
+function chooseTicket(
+  config: ResourceConfig,
+  live: { path: string; owner: ResourceOwner }[],
+  owners: ResourceOwner[]
+) {
+  if (!config.budget) return live[0]?.path;
+  return selectBudgetTicket(
+    config.budget,
+    live.map((entry) => ({
+      path: entry.path,
+      queuedAt: entry.owner.queuedAt,
+      demand: entry.owner.demand,
+      limits: entry.owner.limits,
+    })),
+    owners
+  ).selected?.path;
+}
+// Read-only preview outside the mutex, so only the next ticket probes disk.
+async function nextTicket(home: string) {
+  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  return chooseTicket(
+    config,
+    await tickets(home),
+    (await occupancy(home)).owners
+  );
+}
 // How long a waiter with an unverifiable ancestor marker waits before failing.
 export const ancestryWait = { ms: 60_000 };
 export async function queuedResourceCommand(
@@ -252,6 +290,17 @@ export async function queuedResourceCommand(
     await withAdmission(
       home,
       async () => {
+        // Declare budget demand once, at enqueue, from the classified tool
+        // or an explicit TTR_RESOURCES_TOKENS / TTR_RESOURCES_MEMORY_GIB.
+        const config = await readResourceConfig(home);
+        if (config?.budget)
+          owner.demand = ticketDemand(config.budget, {
+            cwd: process.cwd(),
+            command,
+            args: originalArgs,
+            defaults: config,
+            env,
+          });
         await atomicJson(ticket, owner);
       },
       () => Boolean(cancelled)
@@ -306,7 +355,7 @@ export async function queuedResourceCommand(
       // mutex so a hung volume cannot stall other admissions. Only the FIFO
       // head probes; a round without a fresh result never claims.
       const disk =
-        (await tickets(home))[0]?.path === ticket
+        (await nextTicket(home)) === ticket
           ? await diskCheck(process.cwd(), env)
           : undefined;
       slot = await withAdmission(
@@ -327,7 +376,7 @@ export async function queuedResourceCommand(
             state.legacy ||
             state.initializing ||
             live.some((ticket) => ticket.owner.scheduler !== 2) ||
-            live[0]?.path !== ticket ||
+            chooseTicket(config, live, state.owners) !== ticket ||
             state.occupied.length >= maxLanes
           )
             return undefined;
@@ -360,7 +409,7 @@ export async function queuedResourceCommand(
             current.legacy ||
             current.initializing ||
             current.occupied.length >= maxLanes ||
-            currentTickets[0]?.path !== ticket ||
+            chooseTicket(latest, currentTickets, current.owners) !== ticket ||
             currentTickets.some((ticket) => ticket.owner.scheduler !== 2) ||
             (current.occupied.length >= lanes && !burst?.eligible)
           )
@@ -374,10 +423,18 @@ export async function queuedResourceCommand(
             return undefined;
           }
           if (cancelled) return undefined;
+          // Under a budget the declared tokens are the job's worker caps (its
+          // whole fan-out); otherwise lanes split the configured totals.
           const caps =
-            maxLanes > lanes
-              ? admissionResourceConfig(config, current.owners)
-              : laneResourceConfig(config);
+            config.budget && owner.demand
+              ? {
+                  ...laneResourceConfig(config),
+                  vitestWorkers: owner.demand.tokens,
+                  buildJobs: owner.demand.tokens,
+                }
+              : maxLanes > lanes
+                ? admissionResourceConfig(config, current.owners)
+                : laneResourceConfig(config);
           if (!caps) return undefined;
           launchArgs = limitCommand(command, originalArgs, caps);
           owner.limits = {

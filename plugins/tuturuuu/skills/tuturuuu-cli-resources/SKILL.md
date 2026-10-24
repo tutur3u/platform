@@ -114,6 +114,26 @@ runners; selection excludes them. A runner must also advertise
 `protocols.commitRun` containing the client's envelope version. Otherwise it is
 `blockedBy=capability_missing`, and `auto` queues locally.
 
+## Cross-project budget (shared host)
+
+An optional `budget` in `config.json` layers worker tokens, memory and
+per-project shares onto the same lanes, home and mutex. There is no second
+queue or home.
+- Projects come from roots, including a linked worktree's main checkout.
+  Unmatched work is `other` and only borrows.
+- Tokens come from `run --tokens N` or `TTR_RESOURCES_TOKENS`. Otherwise they
+  are inferred: vitest costs its worker count, browser or DB suites at least 2,
+  builds at least 4. Admission grants exactly that many workers.
+- Per-project FIFO. Owners reclaim unused share first; borrowing only when no
+  owner with spare share waits; no preemption.
+- `status --json` shows `budget` (ceiling, used, per-project
+  share/used/borrowing/waiting).
+- Studio policy: 12 lanes / 24 tokens / 320 GiB, Tuturuuu and Upskii 6/12/160
+  each. Roll out only through the SDK reference's Studio plan: pinned
+  artifact, drain first, every `ttr` on the host upgraded before the config
+  changes, the zshenv shim guard, then a +2 lane ramp with measurements.
+  Never edit a shared host's live config from an agent session.
+
 ## Multi-host weighted admission
 
 `ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off
@@ -184,9 +204,28 @@ warnings) and exits 1 for an invalid config. The queue is cooperative scheduling
 
 Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
 
+Budget reclaim priority is decided before global fit. A reclaiming project head drains capacity before admitting later borrowers (`resources-budget.test.ts`, `resources-budget-admission.test.ts`). Playwright always receives a numeric `--workers` cap matching the charged tokens, overriding config defaults and percentage flags. Every new-version admission persists `slots/budget-v3`, including before any budget is configured, by staging outside `slots/` and linking a complete marker under the existing mutex; legacy 0.28.0 rejects that marker even after owners drain. An idle downgrade requires explicit owner custody of removing that marker. At 12 lanes 0.28.0 already fails closed. PID start identity recovery is separately tracked in https://github.com/tutur3u/platform/issues/6561.
 Node runtime option values must be consumed before classifying the first program. Unknown or incomplete options admit conservatively; never scan an ordinary program's arguments for another tool. `resources-node-options.test.ts` covers diagnostic directories, profiling/report options, worker caps and Node separators.
 
 Treat `--experimental-specifier-resolution` as an equals-only Node option; its bare form queues as ambiguous. Both Node config-file flags (`--experimental-config-file` and `--experimental-default-config-file`) queue as ambiguous in every form because configuration can enable native tests; inject `--test-concurrency` and preserve a positive lower user limit. If a separate option value itself names a tool, ttr launcher or heavy script, also queue as ambiguous: a future or incorrectly modelled flag must not swallow an executable. `resources-node-options.test.ts` covers both rules; real Node 26.4 probes must verify runtime parsing rather than relying on the option table.
+
+Ambiguous commands default to at least `max(2, vitestWorkers)` tokens. Cap native tests (including config-enabled tests) with `--test-concurrency` at the lower positive requested value or granted token cap; zero means auto and uses that cap, and preserve arguments after the program or `--`. Fix #6561 before enabling budgets on long-uptime Studio hosts; PID reuse can retain a dead reservation and stall all projects. Upgrade/crash and worker-cap regressions live in `resources-budget-upgrade.test.ts`.
+
+### Budget scheduler rollout and rollback
+
+The budget-capable setup preflight runs before `--force`: force applies only to managed launchers already carrying protocol 3. A foreign legacy launcher is refused even with `--force --dry-run`. For that incident, an operator must stop all work, take exclusive custody, verify zero owners and waiters, and preserve the config and launcher bytes. Move only the identified foreign managed launcher files to an operator-owned backup outside `bin`; preserve unmanaged files and any existing budget marker. Then use the verified owning global CLI to run setup with the saved roots and shell settings. Verify every launcher and global version before resuming. Do not use a stale workspace CLI for recovery.
+
+Protocol 3 permanently fences legacy clients on the first normal admission, even when no project budget is configured. The frozen 0.28.0 error `Unknown resource slot; admission is closed.` means upgrade the global CLI and refresh its shims; it is not permission to delete a live marker. At 12 lanes, 0.28.0 already fails closed independently of this marker.
+
+Before rollout, fix [PID start identity #6561](https://github.com/tutur3u/platform/issues/6561) before enabling budgets on long-uptime Studio hosts: PID reuse can retain a dead reservation and stall every project. Source review and a package build do not publish or activate the new scheduler.
+
+Follow the single [SDK budget protocol rollout and rollback procedure](../../../../apps/docs/reference/packages/sdk.mdx#budget-scheduler-rollout-and-rollback). Upgrade every owning Bun global install before refreshing launchers with the existing roots and shell settings; a separate npm-prefix installation is a different owner. Setup does not publish the fence. Its preflight inspects only known launchers in the local resource home; it cannot inventory globals, PATH aliases, cached binaries, running processes or other hosts.
+
+Rollback requires exclusive custody: stop all admissions, disable with the new CLI, drain, then uninstall its launchers and managed shell hooks while the marker remains. Restore a disabled legacy-compatible config and downgrade all globals before removing only empty high slots and `slots/budget-v3`. Then use the legacy owning CLI to restore shims/settings and verify direct and fresh-shell admission without a marker. Never invoke a new-version mutation or admission after marker removal. Disabling alone permits unmanaged work and does not neutralise `.zshenv`.
+
+Non-borrowing requests clamp demand and worker caps to their share; absent/zero shares fail before enqueue. With borrowing, an intrinsically oversized project head gets age priority over younger share heads and reserves draining capacity. Older reclaimers and ordinary-borrower reclaim priority remain intact. Change budget policy only while idle; stale tickets above a reduced host ceiling must be cancelled and requeued. Legacy owners are charged their maximum recorded worker cap and proportional estimated memory, rather than one token and zero memory.
+
+Regression coverage: `resources-budget-publish.test.ts` proves fsync-before-link, one-time warning, fast reuse and stale-stage cleanup. `resources-budget-upgrade.test.ts` kills a publisher with an empty stage and verifies recovery. `resources-budget-rollout.test.ts` covers legacy preflight, installation-only setup, same-global versus consumer identity and idle upgrade. Native worker charging/caps retain positive lower `--test-concurrency`, while zero/auto uses the configured cap (`resources-node-budget.test.ts`).
 
 Prepare fixture shims once per home; concurrent run loaders wait for that preparation instead of racing shell-file compare-and-swap. Scope barriers to the child, operation or detached group that can produce the awaited state. Allow one second for final writes after liveness ends and emit scoped stderr before the test deadline. Keep synthetic CPU, memory and load telemetry consistent so host contention does not alter policy inputs. Test idle-warning status composition with one injected CPU snapshot, asserting warning data and rendered text plus a busy-snapshot negative control. A preliminary zero sample cannot stabilise a later ps read; do not resample an injected table. Reuse a fixture home only with the same CPU/memory budget; changed host budgets require a fresh home.
 
@@ -203,7 +242,7 @@ An operator with installation authority must identify and drain the offending jo
 ~/.bun/bin/ttr resources status --json
 ```
 
-Fence-enabled CLI versions refuse a different installation by default. Inspect `setup --force --dry-run` before an intentional cross-install restore, then use `setup --force` with the same roots after the queue drains. The plan reports each old/new launcher. Force never overwrites unmanaged files. Version changes within one Bun global installation are allowed; versioned cache paths normalise to its stable global link. Run/shim never write launchers. Review status for enabled installation and an empty queue before resuming work. Source changes do not repair already-installed links or prove historical writer attribution.
+Fence-enabled CLI versions refuse a different installation by default. For managed protocol-3 launchers, inspect `setup --force --dry-run` before an intentional cross-install restore, then use `setup --force` with the same roots after the queue drains. Foreign legacy launchers require the operator-controlled recovery in the budget rollout section; force does not bypass that preflight. The plan reports each old/new launcher. Force never overwrites unmanaged files. Version changes within one Bun global installation are allowed; versioned cache paths normalise to its stable global link. Run/shim never write launchers. Review status for enabled installation and an empty queue before resuming work. Source changes do not repair already-installed links or prove historical writer attribution.
 
 Regression coverage: `scripts/trusted-ttr.test.js`, `scripts/workspace-ttr-bin.test.js`, and `resources-provisioning.test.ts` exercise ancestor lookup, inherited admission, minimum version, stale bins, same-install upgrades, refusal and forced replacement with disposable homes.
 

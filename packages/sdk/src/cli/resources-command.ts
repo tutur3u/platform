@@ -163,6 +163,7 @@ const nodeSwitches = new Set([
 // shims are on PATH. It does its own admission, so a shim must never admit it.
 const ttrLaunchers = new Set([
   'ttr',
+  'ttr.cjs',
   'tuturuuu',
   'tutur3u',
   'resources-entry.ts',
@@ -227,6 +228,9 @@ export function commandTool(name: string, args: string[]) {
       for (const tool of tools) {
         if (
           [tool, `${tool}.js`, `${tool}.mjs`].includes(file) ||
+          (tool === 'playwright' &&
+            arg.includes('/@playwright/test/') &&
+            file === 'cli.js') ||
           (arg.includes(`/${tool}/`) &&
             ['cli.js', 'index.js', 'vitest.mjs'].includes(file))
         ) {
@@ -472,12 +476,14 @@ export function limitCommand(
     const tests = limitNodeTests(args, config.vitestWorkers);
     if (tests) return tests;
   }
-  if (tool === 'vitest' || tool === 'cargo') {
-    const budget = tool === 'vitest' ? config.vitestWorkers : config.buildJobs;
+  if (tool === 'vitest' || tool === 'cargo' || tool === 'playwright') {
+    const budget = tool === 'cargo' ? config.buildJobs : config.vitestWorkers;
     const flags =
       tool === 'vitest'
         ? ['--maxWorkers', '--max-workers', '--minWorkers', '--min-workers']
-        : ['-j', '--jobs'];
+        : tool === 'playwright'
+          ? ['-j', '--workers']
+          : ['-j', '--jobs'];
     const limited: string[] = [];
     for (let i = 0; i < tail.length; i++) {
       const arg = tail[i]!;
@@ -491,14 +497,18 @@ export function limitCommand(
       }
       if (
         flags.some((flag) => arg.startsWith(`${flag}=`)) ||
-        (tool === 'cargo' && /^-j\d/.test(arg))
+        ((tool === 'cargo' || tool === 'playwright') && /^-j\d/.test(arg))
       )
         continue;
       limited.push(arg);
     }
     const divider = limited.indexOf('--');
     const cap =
-      tool === 'vitest' ? `--maxWorkers=${budget}` : `--jobs=${budget}`;
+      tool === 'vitest'
+        ? `--maxWorkers=${budget}`
+        : tool === 'playwright'
+          ? `--workers=${budget}`
+          : `--jobs=${budget}`;
     limited.splice(divider < 0 ? limited.length : divider, 0, cap);
     return [...args.slice(0, offset), ...limited];
   }

@@ -93,13 +93,13 @@ describe('Node config-driven test runners', () => {
   });
 });
 
-it('explains the budget marker to pre-budget clients', async () => {
+it('explains unrecognised protocol markers to older clients', async () => {
   const { mkdir } = await import('node:fs/promises');
   const { occupancy } = await import('./resources-slots');
   const home = await mkdtemp(join(tmpdir(), 'node-config-legacy-fence-'));
   homes.push(home);
   await mkdir(join(home, 'slots'));
-  await writeFile(join(home, 'slots/budget-v3'), '3\n');
+  await writeFile(join(home, 'slots/newer-protocol-v99'), '3\n');
   await expect(occupancy(home)).rejects.toThrow(
     /upgrade the global CLI.*existing roots/
   );
