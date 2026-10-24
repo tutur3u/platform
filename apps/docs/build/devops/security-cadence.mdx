@@ -1,7 +1,7 @@
 ---
 title: "Security Review Cadence"
 description: "Pull request security checks, the security review classifier, the daily findings register and the weekly deep review."
-updatedAt: '2026-10-23'
+updatedAt: '2026-10-24'
 ---
 
 Tuturuuu is open source and a high-value target, so security review is a default
@@ -94,12 +94,29 @@ findings are tracked in the findings register instead of blocking unrelated work
   scan, audit and CodeQL gate steps against a base without the trusted helpers
   and a hostile checkout copy.
 - Fork CodeQL results are not uploaded. They feed only the new-alert gate.
-- The repository and its Actions logs are public, so neither CodeQL gate prints
-  rule IDs, paths or messages, and no SARIF is kept as an artifact. They print
-  counts by severity and point to the maintainer-only code-scanning view
-  (Security tab). Triage findings there, by alert number. Pull request uploads
-  are diff-filtered, so the Security tab may show none of the pre-existing
-  results that a bootstrap gate counts.
+- The new-alert gate prints each blocking result's rule ID and primary
+  `path:line`, with workflow-command characters escaped. SARIF messages and full
+  SARIF artifacts remain omitted. `codeql-new-alerts.test.js` covers diagnostics,
+  baseline matching, missing output and missing baselines. Pull request uploads
+  are diff-filtered, so the Security tab can show zero alerts while the local
+  SARIF still blocks the gate. Use the printed location to triage that result.
+  The inline bootstrap gate still prints counts only. Diagnostics from the
+  trusted script take effect after that script reaches the base branch.
+- For a local Actions reproduction, download the official platform bundle at the
+  hosted job's CLI version and verify its published SHA-256 checksum. Create an
+  Actions database from an isolated exact-head worktree, then analyze
+  `codeql/actions-queries:codeql-suites/actions-security-extended.qls` to SARIF.
+  Compare results with `newHighFindings` in `scripts/ci/codeql-new-alerts.js`;
+  if a category has no baseline, compare the same suite against the base source.
+  Clean up the downloaded bundle and databases after retaining the rule, location
+  and verification outcome in the private handoff.
+- Production migration prerequisite evaluation executes tooling from
+  `github.sha`, the trusted workflow revision. Configuration is also read from
+  that revision, rather than the migration target, while passing the immutable
+  resolved production SHA to changed-file evaluation. Only the admitted deploy
+  job checks out the approved target. Node package-manager caching is disabled
+  in prerequisite evaluation. `supabase-production-tooling.test.js` preserves
+  this separation and the deployment admission checks.
 - **Bootstrap sequencing.** Until `scripts/ci/codeql-new-alerts.js` is on
   `main`, the pull request gate fails on every high/critical result, including
   pre-existing ones. Land the gate script on `main` first, in its own PR. The

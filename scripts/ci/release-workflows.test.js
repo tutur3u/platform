@@ -1139,7 +1139,7 @@ test('Supabase production migration requires production platform deploy and succ
     /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
   );
 
-  assert.match(evaluateJob, /ref: \$\{\{ env\.TARGET_SHA \}\}/);
+  assert.match(evaluateJob, /ref: \$\{\{ github\.sha \}\}/);
   assert.match(
     deployJob,
     /needs: \[evaluate-prerequisites\][\s\S]*if: needs\.evaluate-prerequisites\.outputs\.trusted_trigger == 'true' && needs\.evaluate-prerequisites\.outputs\.should_deploy == 'true'/

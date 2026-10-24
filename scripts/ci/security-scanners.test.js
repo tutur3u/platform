@@ -131,8 +131,7 @@ test('gitleaks output never keeps secret material', () => {
   assert.equal(register[0].id, pr[0].id);
 });
 
-test('CodeQL gate logs counts only, never rule IDs, paths or messages', async (t) => {
-  // The repository is public, so findings stay in code scanning.
+test('CodeQL gate identifies blocking rules and locations without message bodies', async (t) => {
   const fs = require('node:fs');
   const os = require('node:os');
   const path = require('node:path');
@@ -180,5 +179,12 @@ test('CodeQL gate logs counts only, never rule IDs, paths or messages', async (t
     output,
     /new high\/critical CodeQL result\(s\) \(\d+ critical, \d+ high\)/u
   );
-  assert.doesNotMatch(output, /js\/|secret\/path|exploit detail|file=/u);
+  for (const { line, ruleId, severity, uri } of findings(sarif)) {
+    if (severity >= highSeverity) {
+      assert.ok(output.includes(`${ruleId} at ${uri}:${line}`));
+    } else {
+      assert.ok(!output.includes(`${ruleId} at ${uri}:${line}`));
+    }
+  }
+  assert.doesNotMatch(output, /exploit detail/u);
 });
