@@ -142,6 +142,29 @@ Copying the workspace manifest into repository-level `tmp` does not install its
 dependencies there; Bun's isolated layout resolves cf and its type imports through
 the owning Calendar workspace. Test that layout without a root-hoisted cf package.
 
+### Calendar Build Output qualification
+
+`calendar-cf-output.mjs` copies the sealed Calendar ESM bundle and client assets
+into an isolated cf Build Output tree, retaining relative paths and exact bytes.
+It validates the output with the config and reader suppliers resolved from the
+owning pinned cf installation. The complete module manifest is checked against
+all copied files; supplier schema acceptance alone does not prove coverage.
+Vite metadata and the source configuration remain covered by the source seal,
+while unqualified server maps or non-ESM modules stop emission.
+
+The existing exact-source CI runs this comparison before Worker runtime checks,
+verifies unchanged source bytes afterward, and verifies a same-run restored copy.
+Its receipt records source/config supplier identity, all output hashes, excluded
+metadata and the unqualified account/publication state. This helper never invokes
+the deployment CLI or loads a Worker, environment file or credential.
+
+Keep existing publishers and validation commands. cf adds `./` to secondary upload
+module names where the current publisher uses bare relative names. Byte-preserving
+emission does not establish upload-name equivalence, routing/asset semantics or
+hosted runtime parity. A separate isolated, network-denied cf dry-run and module
+resolution rehearsal must close those gaps before a publisher switch; cf dry-run
+has no emitted-upload output flag. Do not treat it as an upload byte comparison.
+
 ## Native Worker template
 
 Applied to Cron Control, Devbox Control and Coordination. Each migrated Worker has:

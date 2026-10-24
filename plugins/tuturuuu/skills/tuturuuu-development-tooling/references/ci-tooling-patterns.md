@@ -57,8 +57,7 @@ inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
 Review typed configuration and Vite mode resolution against existing resource
 identities, routes, bindings, Durable Object migrations, triggers and secret names.
-Keep one authoritative configuration per scope. Replace development, type generation,
-CI artifact production, tail/version inspection and release/rollback separately;
+Keep one authoritative configuration per scope. Replace dev, types, CI artifacts, tail/version inspection and release/rollback separately;
 retain Wrangler for unsupported operations. Exact-commit CI and real emitted-artifact
 acceptance remain required. Do not run global migration or deployment as part of
 planning. Follow the phased plan in the adoption guidance above and recheck
@@ -68,7 +67,8 @@ Execute the pinned cf CLI with a Node version satisfying its package engines
 (`cf@1.0.0-beta.20`: `^22.23 || ^24.22 || ^26.12`); Bun cannot run typed-config commands.
 The older discovery minimum does not suffice. Native scripts use typed config and `.cloudflare/types/index.d.ts`.
 Calendar's `calendar-cf-types.mjs` emits ASSETS-only template declarations after cf/artifact checks; keep fixtures/restores under Calendar for isolated dependency lookup and read verified descriptors rather than checked paths.
-Retain the CI oracle until pinned-executor qualification passes.
+`calendar-cf-output.mjs` companion compares sealed ESM/assets and restored output;
+retain publishers until upload-name/runtime parity, and the types CI oracle until qualification.
 Use anonymous operation-only queries outside config/env ancestry. Discover help/schema; require `cf auth whoami` JSON
 `authenticated === true`; unauthenticated results can exit zero. cf credentials
 are separate: stop when access is absent; never copy tokens or login files.

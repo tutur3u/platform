@@ -17,6 +17,7 @@ on:
       - 'scripts/ci/calendar-cf-types*'
       - 'scripts/ci/calendar-cf-fixture*'
       - 'scripts/ci/calendar-cf-files*'
+      - 'scripts/ci/calendar-cf-output*'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -41,6 +42,7 @@ on:
       - 'scripts/ci/calendar-cf-types*'
       - 'scripts/ci/calendar-cf-fixture*'
       - 'scripts/ci/calendar-cf-files*'
+      - 'scripts/ci/calendar-cf-output*'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -250,7 +252,7 @@ jobs:
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
-        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs scripts/ci/calendar-cf-types.test.mjs scripts/ci/calendar-cf-fixture.test.mjs scripts/ci/calendar-cf-files.test.mjs
+        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs scripts/ci/calendar-cf-types.test.mjs scripts/ci/calendar-cf-fixture.test.mjs scripts/ci/calendar-cf-files.test.mjs scripts/ci/calendar-cf-output.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -372,6 +374,8 @@ jobs:
       - name: Seal source and emitted artifact identity
         id: calendar-canonical-seal
         run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+      - name: Qualify Calendar cf Build Output without publication
+        run: node scripts/ci/calendar-cf-output.mjs emit apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
       - name: Exercise exact emitted Worker public routes
         id: calendar-runtime
         timeout-minutes: 3
@@ -390,6 +394,7 @@ jobs:
       - name: Verify runtime checks left the sealed artifact unchanged
         run: |
           node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+          node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
           pointer=.wrangler/deploy/config.json
           if [ -f apps/calendar/.void/preview-deploy-config.json ]; then
             pointer=.void/preview-deploy-config.json
@@ -399,6 +404,14 @@ jobs:
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-worker.tar.gz
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Retain Calendar cf comparison output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-cf-output-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-cf-output
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
@@ -462,10 +475,17 @@ jobs:
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-restore
+      - name: Restore same-run cf comparison output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: calendar-cf-output-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-cf-output-restored
       - name: Restore same-run immutable artifact without rebuilding
         run: tar -xzf "$RUNNER_TEMP/calendar-restore/calendar-worker.tar.gz" -C apps/calendar
       - name: Verify exact source seal after relocation
         run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+      - name: Verify relocated cf comparison against the exact sealed source
+        run: node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output-restored"
       - name: Discover restored config
         id: output
         run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar "$SOURCE_SHA"
