@@ -551,9 +551,11 @@ heartbeat takes it offline, so its active runs are reaped after 10 minutes.
 
 **MANUAL sweep or on-claim self-reap only.** No trigger schedules a global
 sweep today. Runners that never claim again retain their stale runs until an
-authorized operator invokes `GET` or `POST /api/cron/devboxes/reap-stale-runs`
-with `Authorization: Bearer $CRON_SECRET`. Each call reaps at most 200 runs
-across all runners and returns `{ limit, reaped }`.
+operator invokes `POST /api/v1/infrastructure/devboxes/runs/reap-stale` on the
+Infrastructure app. It uses the same gate as runner drain and features: root
+workspace membership plus `manage_workspace_secrets` or `manage_workspace_roles`.
+Each call reaps at most 200 runs across all runners and returns
+`{ limit, reaped }`. There is deliberately no `/api/cron` route for it.
 
 Adding a Cloudflare Cron Control trigger is a follow-up under the billable-work
 rules: bounded calls/retries, idempotent progress, terminal scheduling and a
