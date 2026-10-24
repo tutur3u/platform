@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,10 +9,12 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
+import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
@@ -19,8 +22,14 @@ import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart
 import 'package:mobile/features/assistant/widgets/assistant_message_actions.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/helpers.dart';
 import 'background_reply_harness.dart';
 
 const _actor = '33333333-3333-4333-8333-333333333333';
@@ -32,6 +41,16 @@ const _draft = 'Retained reply\nSecond line';
 const _notice =
     'Replies are unavailable while Live is connected. '
     'End the call or cancel the reply before sending.';
+
+class _LiveRepository extends AssistantLiveRepository {
+  @override
+  Future<AssistantLiveTokenEnvelope> fetchLiveToken({
+    required String wsId,
+    String? chatId,
+    String? model,
+    bool forceFresh = false,
+  }) async => throw const FormatException('Synthetic provider boundary');
+}
 
 class _Repository extends ReplyRepository {
   List<AssistantMessage>? sent;
@@ -140,12 +159,47 @@ AssistantTranscriptBubble _bubble(WidgetTester tester) => tester
 Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
   final h = BackgroundReplyHarness(repository: _Repository());
   addTearDown(() => h.dispose(tester));
-  await h.mount(
-    tester,
-    initialPreferences: {
-      '$_actor::$assistantKeepLiveWhileBrowsingKeyPrefix$_workspace': true,
-    },
+  SharedPreferences.setMockInitialValues({
+    '$_actor::$assistantKeepLiveWhileBrowsingKeyPrefix$_workspace': true,
+  });
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(
+    const MethodChannel('flutter_timezone'),
+    (_) async => 'UTC',
   );
+  messenger.setMockMethodCallHandler(
+    const MethodChannel('com.llfbandit.record/messages'),
+    (_) async => null,
+  );
+  await tester.pumpApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>.value(value: h.auth),
+        BlocProvider<WorkspaceCubit>.value(value: h.workspace),
+        BlocProvider.value(value: h.chrome),
+        BlocProvider.value(value: h.actions),
+      ],
+      child: ShellDockScope(
+        controller: h.dock,
+        child: FloatingShellDock(
+          location: '/assistant',
+          bottomInset: 68,
+          navigation: const SizedBox(height: 52),
+          child: AssistantPage(
+            repository: h.repository,
+            liveRepository: _LiveRepository(),
+            preferences: AssistantPreferences(
+              currentUserId: () => h.auth.state.user?.id,
+            ),
+            currentActor: () => h.auth.state.user?.id,
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  h.pageContext = tester.element(find.byType(ShellDockPublisher));
+  h.chat = h.pageContext.read<AssistantChatCubit>();
   await h.chat.openChatById(_workspace, _chat);
   await tester.pumpAndSettle();
   if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
@@ -156,14 +210,17 @@ Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
   return h;
 }
 
-void _connect(AssistantLiveCubit live) {
-  // Seed provider connection state; page and dispatch Cubits stay real.
+Future<void> _connect(
+  AssistantLiveCubit live, {
+  AssistantLiveConnectionStatus status =
+      AssistantLiveConnectionStatus.connected,
+}) async {
+  // Capture the real page's session lease before seeding provider-only state.
+  await live.prepareSession(wsId: _workspace, chatId: _chat);
+  expect(live.state.status, AssistantLiveConnectionStatus.error);
+  expect(live.state.error, contains('Synthetic provider boundary'));
   live.emit(
-    const AssistantLiveState(
-      workspaceId: _workspace,
-      chatId: _chat,
-      status: AssistantLiveConnectionStatus.connected,
-    ),
+    AssistantLiveState(workspaceId: _workspace, chatId: _chat, status: status),
   );
 }
 
@@ -229,7 +286,7 @@ void main() {
           .canReply,
       isTrue,
     );
-    _connect(live);
+    await _connect(live);
     // Dispatch before a rebuild to cover a captured pre-Live callback too.
     staleReply();
     expect(h.chat.state.replyTarget, isNull);
@@ -273,7 +330,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Reply'), findsOneWidget);
 
-    _connect(live);
+    await _connect(live);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.element(transcript), same(originalTranscript));
@@ -300,7 +357,7 @@ void main() {
       final composer = _composer(tester);
       final draft = composer.controller.value;
       final attachments = h.chat.state.composerAttachments;
-      _connect(live);
+      await _connect(live);
       await composer.onSend();
       expect(repository.starts, 0);
       expect(live.state.userDraft, isEmpty);
@@ -356,7 +413,7 @@ void main() {
     final h = await _mount(tester);
     await _prepareDraft(tester, h);
     final live = h.pageContext.read<AssistantLiveCubit>();
-    _connect(live);
+    await _connect(live);
     await _browseFromLive(tester, h);
     final composer = _composer(tester);
     final draft = composer.controller.value;
@@ -408,10 +465,14 @@ void main() {
     await tester.pump();
     expect(entered.isCompleted, isTrue);
     final live = h.pageContext.read<AssistantLiveCubit>();
-    _connect(live);
+    await _connect(live, status: AssistantLiveConnectionStatus.connecting);
+    expect(live.state.status, AssistantLiveConnectionStatus.connecting);
+    expect(h.repository.starts, 0);
+    expect(find.text(_notice), findsNothing);
     timezone.complete('UTC');
     await tester.pump();
     await sending;
+    await tester.pump();
     expect(h.repository.starts, 0);
     expect(live.state.userDraft, isEmpty);
     expect(composer.controller.value, draft);
@@ -470,7 +531,7 @@ void main() {
     expect(nextAttachments.single.isUploaded, isTrue);
     expect(h.chat.replyBlockedByPendingSubmission, isTrue);
     final live = h.pageContext.read<AssistantLiveCubit>();
-    _connect(live);
+    await _connect(live);
     await _browseFromLive(tester, h);
     expect(_bubble(tester).onReply, isNull);
     expect(completed, isFalse);

@@ -84,9 +84,18 @@ void main() {
             expect(fixture.source.value, isNull);
           case 'MFA ABA':
             when(fixture.repository.checkMfaRequired).thenReturn(true);
-            await fixture.auth.refreshAccountAssurance();
+            final revoked = fixture.nextActorChange();
+            final refreshing = fixture.auth.refreshAccountAssurance();
+            expect(fixture.auth.state.status, AuthStatus.mfaRequired);
+            expect(fixture.source.value, isNull);
+            await refreshing;
+            await revoked;
+            expect(fixture.source.value, isNull);
             when(fixture.repository.checkMfaRequired).thenReturn(false);
+            final restored = fixture.nextActorChange();
             await fixture.auth.refreshAccountAssurance();
+            expect(fixture.auth.state.status, AuthStatus.authenticated);
+            await restored;
             expect(fixture.source.value?.actorId, 'a');
             expect(fixture.source.value, isNot(same(original)));
         }
@@ -275,6 +284,17 @@ class _Fixture {
   int notifications = 0;
 
   _PreferencesGate holdPreferences() => _gate = _PreferencesGate();
+
+  Future<void> nextActorChange() {
+    final changed = Completer<void>();
+    void listener() {
+      source.removeListener(listener);
+      changed.complete();
+    }
+
+    source.addListener(listener);
+    return changed.future;
+  }
 
   AssistantThemePreferences stored() => AssistantThemePreferences.decode(
     preferences.getString(AssistantThemeStore.keyFor('a')),
