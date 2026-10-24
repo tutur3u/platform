@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { resourceShims } from './resources-command';
 
 export const budgetLauncherProtocol = '# Resource scheduler protocol: 3';
+export const ownershipLauncherProtocol = '# Resource ownership protocol: 1';
 const upgrade =
   'Upgrade every global ttr install to the budget-capable release and refresh shims with ttr resources setup using the existing roots before admitting work. No budget fence was published.';
 
@@ -38,6 +39,15 @@ export async function assertBudgetLaunchers(home: string) {
     if (!entry.content.split('\n').includes(budgetLauncherProtocol))
       throw new Error(
         `Older or unverified resource launcher still installed: ${entry.path}. ${upgrade}`
+      );
+  }
+}
+
+export async function assertOwnershipLaunchers(home: string) {
+  for (const entry of await launchers(home)) {
+    if (!entry.content.split('\n').includes(ownershipLauncherProtocol))
+      throw new Error(
+        `Older or unverified process-ownership launcher still installed: ${entry.path}. Upgrade every global ttr to the identity-capable release and refresh shims with setup using the existing roots before admitting work. No ownership fence was published.`
       );
   }
 }

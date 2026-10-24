@@ -107,7 +107,14 @@ function trustedGlobal(userHome) {
     );
   return { root, manifest, entry };
 }
-async function lease(home, waitDrain, _invoke, _cli, cancelled = () => false) {
+async function lease(
+  home,
+  waitDrain,
+  _invoke,
+  _cli,
+  cancelled = () => false,
+  receipt = null
+) {
   const deadline = Date.now() + waitDrain * 1000;
   for (;;) {
     if (cancelled()) throw new Error('Rollout interrupted before installation');
@@ -121,6 +128,7 @@ async function lease(home, waitDrain, _invoke, _cli, cancelled = () => false) {
       const token = crypto.randomUUID();
       atomicJson(path.join(directory, 'owner.json'), {
         scheduler: 2,
+        ...(receipt && { ownershipVersion: 1, pidStart: receipt.pidStart }),
         pid: process.pid,
         token,
         cwd: process.cwd(),
@@ -132,6 +140,7 @@ async function lease(home, waitDrain, _invoke, _cli, cancelled = () => false) {
         throw new Error('Rollout interrupted before installation');
       return {
         token,
+        receipt,
         release: () => {
           if (readJson(path.join(directory, 'owner.json')).token !== token)
             throw new Error(
@@ -217,7 +226,11 @@ async function qualify(context) {
   return { launchers: before, projectsChecked: config.roots.length };
 }
 async function worker(options, dependencies = {}) {
+  // Loaded here only: backups retain the original recovery scripts, and
+  // rollback never binds process identities.
+  const identity = require('./sdk-rollout-identity');
   const invoke = dependencies.run || run;
+  const inspect = dependencies.inspect || identity.inspectSync;
   const userHome = dependencies.userHome || os.homedir();
   const environment = dependencies.env || process.env;
   if (
@@ -235,6 +248,19 @@ async function worker(options, dependencies = {}) {
   const cli = path.join(userHome, '.bun/bin/ttr');
   const supplier = trustedGlobal(userHome);
   verifyBytes(fs.readFileSync(options.tarball), options);
+  const probe = {
+    env: {
+      ...environment,
+      PATH: `${path.join(userHome, '.bun/bin')}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    },
+    cwd: userHome,
+  };
+  const initial = await identity.leaseReceipt(
+    supplier.root,
+    invoke,
+    cli,
+    probe
+  );
   let lock;
   let interrupted = false;
   const onSignal = () => {
@@ -248,7 +274,8 @@ async function worker(options, dependencies = {}) {
       options.waitDrain,
       invoke,
       cli,
-      () => interrupted || dependencies.cancelled?.()
+      () => interrupted || dependencies.cancelled?.(),
+      initial
     );
   } catch (error) {
     for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
@@ -270,7 +297,10 @@ async function worker(options, dependencies = {}) {
           const owner = readJson(file);
           if (owner.token !== lock.token)
             throw new Error('Maintenance lease changed');
-          atomicJson(file, { ...owner, childPid: pid });
+          atomicJson(
+            file,
+            identity.withChild(owner, pid, inspect, cli, settings)
+          );
         },
       });
     } catch (error) {
@@ -278,7 +308,10 @@ async function worker(options, dependencies = {}) {
     }
     try {
       const owner = readJson(file);
-      if (!operationError?.unsettled) delete owner.childPid;
+      if (!operationError?.unsettled) {
+        delete owner.childPid;
+        delete owner.childStart;
+      }
       atomicJson(file, owner);
     } catch (cleanupError) {
       if (operationError) {
@@ -320,11 +353,7 @@ async function worker(options, dependencies = {}) {
     });
     const releaseRecoveryPreflight = await recoveryLock(report.backup);
     await releaseRecoveryPreflight();
-    const env = {
-      ...environment,
-      TTR_RESOURCES_MAINTENANCE: lock.token,
-      PATH: `${path.join(userHome, '.bun/bin')}:/usr/bin:/bin:/usr/sbin:/sbin`,
-    };
+    const env = { ...probe.env, TTR_RESOURCES_MAINTENANCE: lock.token };
     fenceMutation(home, lock.token, report.backup, 'install');
     mutationStarted = true;
     await checkedInvoke(
@@ -337,6 +366,14 @@ async function worker(options, dependencies = {}) {
       throw new Error('Installed package lacks safe rollout protocol');
     if (current.manifest.version !== options.version)
       throw new Error('Installed version differs from verified archive');
+    const receipt = await identity.bindInstalled({
+      root: current.root,
+      lock,
+      file: path.join(home, 'admission/owner.json'),
+      invoke: checkedInvoke,
+      cli,
+      settings: { env, cwd: userHome },
+    });
     const setup = [
       'resources',
       'setup',
@@ -363,6 +400,7 @@ async function worker(options, dependencies = {}) {
       path.join(slot, 'owner.json'),
       JSON.stringify({
         scheduler: 2,
+        ...identity.ownerFields(receipt),
         pid: process.pid,
         token: lock.token,
         cwd: config.roots[0],

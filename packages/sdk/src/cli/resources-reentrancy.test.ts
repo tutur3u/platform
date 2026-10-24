@@ -11,6 +11,7 @@ import {
 } from './resources-activity';
 import { isTrivialCommand } from './resources-command';
 import { atomicJson, readResourceConfig } from './resources-config';
+import { requireProcessIdentity } from './resources-process-identity';
 import { resourceQueueStatus } from './resources-queue';
 import { nestedOwner, newOwner } from './resources-slots';
 import {
@@ -78,6 +79,10 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
     const sibling = launch(path, ['run', '--', 'node', '-e', '0']);
     await waiting(path, 1, [sibling]);
     await writeFile(go, '');
+    await parent.until(
+      async () =>
+        parent.child.exitCode !== null || parent.child.signalCode !== null
+    );
     const result = await parent.done;
     expect(result.code, result.err).toBe(0);
     // One base lane owns the whole two-worker budget; the shim inherits it.
@@ -115,6 +120,7 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
     await atomicJson(join(path, 'slots', '0', 'owner.json'), {
       ...newOwner('ancestor'),
       pid: process.ppid,
+      pidStart: requireProcessIdentity(process.ppid),
     });
     expect((await nestedOwner(path, {}))?.tool).toBe('ancestor');
     const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
@@ -122,6 +128,7 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
       await atomicJson(join(path, 'slots', '0', 'owner.json'), {
         ...newOwner('sibling'),
         pid: unrelated.pid,
+        pidStart: requireProcessIdentity(unrelated.pid),
       });
       expect(await nestedOwner(path, {})).toBeUndefined();
     } finally {
@@ -291,6 +298,7 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
       const owner = {
         ...newOwner('python3', 'python3 /tmp/check.py'),
         childPid: idle.pid,
+        childStart: requireProcessIdentity(idle.pid),
         startedAt: started,
       };
       await atomicJson(join(slot, 'owner.json'), owner);

@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
+import { requireProcessIdentity } from './resources-process-identity';
 import { hasSetupMaintenanceLease, withAdmission } from './resources-slots';
 
 const homes: string[] = [];
@@ -16,6 +17,8 @@ async function fixture() {
   const owner = {
     scheduler: 2,
     pid: process.ppid,
+    ownershipVersion: 1,
+    pidStart: requireProcessIdentity(process.ppid),
     token: 'maintenance-test',
     cwd: home,
     tool: 'rollout',

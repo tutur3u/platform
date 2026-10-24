@@ -98,6 +98,7 @@ async function remoteWorker(host, resolved, options, invoke) {
       'sdk-rollout.js',
       'sdk-rollout-artifact.js',
       'sdk-rollout-engine.js',
+      'sdk-rollout-identity.js',
       'sdk-rollout-state.js',
     ])
       await invoke('scp', [

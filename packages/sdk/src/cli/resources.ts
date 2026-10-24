@@ -26,6 +26,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
+import { resourceIdentityCommand } from './resources-identity-command';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -45,10 +46,11 @@ import {
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
-Usage: ttr resources <setup|status|monitor|run|hosts|enable|disable|uninstall> [options]
+Usage: ttr resources <setup|status|identity|monitor|run|hosts|enable|disable|uninstall> [options]
 
   setup --root <path>     opt in a project and its Git worktrees (repeat --root)
   status [--json]         show capacity, owners (command, age, CPU), waiters, idle warnings
+  identity [--pid PID] [--json] verify a kernel start identity without admission
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
   run -- COMMAND ARGS    queue any finite command; explicit setup required
   offload [--json]       local saturation plus trusted devbox runner eligibility
@@ -112,6 +114,15 @@ export async function runResourcesCommand(argv: string[]) {
     action === 'help'
   ) {
     process.stdout.write(resourcesHelp());
+    return;
+  }
+  if (action === 'identity') {
+    const { json, receipt } = resourceIdentityCommand(argv.slice(1));
+    process.stdout.write(
+      json
+        ? `${JSON.stringify(receipt)}\n`
+        : `PID ${receipt.pid} identity verified (${receipt.pidStart.backend}).\n`
+    );
     return;
   }
   const allowed: Record<string, string[]> = {
