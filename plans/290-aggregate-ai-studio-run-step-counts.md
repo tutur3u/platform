@@ -81,7 +81,7 @@ values from coordination notes.
 | Full database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full isolated reset/pgTAP and typegen pass |
 | Deterministic types | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second type generation matches the intentional generated diff |
 | AI app | `bun run --cwd apps/ai type-check && bun run --cwd apps/ai build` | AI app compiles and builds |
-| Repository | `bun check && git diff --check` | repository and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | repository and whitespace gates pass |
 
 ## Scope
 

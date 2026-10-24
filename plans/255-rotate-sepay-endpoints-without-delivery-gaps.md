@@ -103,7 +103,7 @@ reconciliation is a STOP, not permission to guess.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/sepay-endpoint-rotation.sql && bun --cwd apps/database sb:validate:isolated` | claims serialize, settle is atomic, ACLs hold, and the full baseline passes |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/sepay-endpoint-rotation.sql` | generated columns/RPC types are current with no unrelated drift |
 | Inventory app | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all canonical gates pass; whitespace output is empty |
 
 ## Scope
 

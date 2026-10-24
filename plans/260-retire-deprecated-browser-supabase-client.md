@@ -111,7 +111,7 @@ remains.
 | Domain tests | `bun --cwd packages/tasks-ui vitest run && bun --cwd packages/ui vitest run && bun --cwd packages/trigger vitest run && bun --cwd apps/rewise vitest run && bun --cwd apps/track vitest run` | all migrated browser behaviors pass without raw product access |
 | Types | `bun run --cwd packages/supabase type-check && bun run --cwd packages/internal-api type-check && bun run --cwd packages/tasks-ui type-check && bun run --cwd packages/ui type-check && bun run --cwd packages/trigger type-check && bun run --cwd packages/utils type-check && bun run --cwd apps/rewise type-check && bun run --cwd apps/track type-check && bun run --cwd apps/web type-check` | affected packages/apps compile |
 | Builds | `bun run --cwd apps/tasks build && bun run --cwd apps/rewise build && bun run --cwd apps/track build && bun run --cwd apps/web build` | representative live hosts build serially |
-| Repository | `bun test:scripts && bun check && git diff --check` | script fleet, canonical gate, and whitespace pass |
+| Repository | `bun test:scripts && bun validate && git diff --check` | script fleet, canonical gate, and whitespace pass |
 
 ## Scope
 
@@ -180,7 +180,7 @@ changes unless a separately reviewed need is proved.
 
 - [ ] No app/package outside the deprecated module/test has a static, dynamic,
       require, or package-relative value import of the broad client; the source
-      guard enforces this in `bun check`.
+      guard enforces this in `bun validate`.
 - [ ] Legitimate browser auth/realtime uses only narrow modules, while every
       product CRUD/storage operation uses a typed server boundary.
 - [ ] Compatibility is disabled by default and can be enabled only by the two

@@ -150,7 +150,7 @@ immediately. Do not apply a production migration or use live credentials/data.
 | Full/typegen database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP passes and both private RPC types update atomically |
 | Infrastructure types/build | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | both exit 0 with the generated private RPC types |
 | Internal API types | `bun run --cwd packages/internal-api type-check` | exit 0 without public API shape drift |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 
@@ -197,7 +197,7 @@ migration application; creating a public/authenticated directory surface.
    prove neither path imports or invokes them.
 6. Run focused/full isolated pgTAP and atomic typegen, focused app/internal-api
    tests, Infrastructure and internal-api typechecks, the real Infrastructure
-   build, `bun check`, whitespace, and exact-scope review.
+   build, `bun validate`, whitespace, and exact-scope review.
 
 ## Done criteria
 
@@ -213,7 +213,7 @@ migration application; creating a public/authenticated directory surface.
       literal-search/sort/null/tie/>10k/storage/ACL coverage passes in isolated
       pgTAP.
 - [ ] Generated types, focused tests, app/package typechecks, Infrastructure
-      build, `bun check`, whitespace, and scope gates all pass.
+      build, `bun validate`, whitespace, and scope gates all pass.
 
 ## STOP conditions
 

@@ -52,7 +52,7 @@ does not claim this calendar subtree; stop if ownership has changed.
 | Dead tree proof | `test ! -e apps/web/src/components/settings/calendar` | exit 0 |
 | Web typecheck/build | `bun run --cwd apps/web type-check && bun run --cwd apps/web build` | both exit 0 |
 | Calendar typecheck/build | `bun run --cwd apps/calendar type-check && bun run --cwd apps/calendar build` | both exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -86,7 +86,7 @@ this is retirement, not consolidation.
 ### Step 3: Verify both hosts
 
 Run the import/deletion assertions, both app typechecks and real builds,
-`bun check`, and whitespace. Inspect `git status` to prove only the deleted tree
+`bun validate`, and whitespace. Inspect `git status` to prove only the deleted tree
 and plan status changed.
 
 ## Done criteria

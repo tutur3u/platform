@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFile, stat } from 'node:fs/promises';
+import { open } from 'node:fs/promises';
 import path from 'node:path';
 import { glob } from 'glob';
 import type { PrecacheEntry } from '../worker/types';
@@ -69,13 +69,15 @@ export async function createPrecacheManifest(
       /* turbopackIgnore: true */ globDirectory,
       file
     );
-    const metadata = await stat(/* turbopackIgnore: true */ absolutePath);
-
-    if (metadata.size > maximumFileSize) {
-      continue;
+    const handle = await open(/* turbopackIgnore: true */ absolutePath, 'r');
+    let contents: Buffer;
+    try {
+      const metadata = await handle.stat();
+      if (!metadata.isFile() || metadata.size > maximumFileSize) continue;
+      contents = await handle.readFile();
+    } finally {
+      await handle.close();
     }
-
-    const contents = await readFile(/* turbopackIgnore: true */ absolutePath);
     entries.set(toPublicUrl(file, options), {
       revision: createHash('sha256').update(contents).digest('hex'),
       url: toPublicUrl(file, options),

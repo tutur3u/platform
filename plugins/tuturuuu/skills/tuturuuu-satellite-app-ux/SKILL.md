@@ -64,7 +64,7 @@ bun i18n:check
 Use `bun i18n:add` for satellite translation key add/remove/replace work when
 possible; use `--entries` or `--entries-file` for bulk updates so every detected
 locale file is updated and sorted together. Reserve manual message JSON edits
-for broad prose rewrites or value-only updates. Finish with `bun check` for
+for broad prose rewrites or value-only updates. Finish with `bun validate` for
 TypeScript, JavaScript, messages, or repo config changes unless an unrelated
 pre-existing blocker prevents it. Finite builds needed to validate the authorized change may run. Start long-lived
 servers only when requested or needed for explicitly requested runtime verification.

@@ -13,6 +13,9 @@ vi.mock('./devbox-auto-upgrade', async (importOriginal) => ({
 
 vi.mock('../platform-devbox', () => ({ pollDevboxAgentJobs: pollJobs }));
 vi.mock('./devbox-runner', () => ({ executeDevboxAgentJob: executeJob }));
+vi.mock('./devbox-commit-run', () => ({
+  sweepStaleCommitWorktrees: vi.fn().mockResolvedValue(0),
+}));
 vi.mock('./devbox-agent-capabilities', () => ({
   createDevboxAgentCapabilities: vi
     .fn()
@@ -136,6 +139,7 @@ describe('Devbox agent upgrade handoff', () => {
     expect(pollJobs).toHaveBeenCalledWith({
       baseUrl: 'https://control.example.test',
       path: '/v1/poll',
+      timeoutMs: 15_000,
       token: 'runner-token',
     });
   });

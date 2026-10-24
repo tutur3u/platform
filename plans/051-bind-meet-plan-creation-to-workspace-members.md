@@ -44,7 +44,7 @@ product/UI behavior that anonymous plans without a workspace remain supported.
 | API action tests | `bun run --cwd packages/apis test -- src/meet/actions/plans.test.ts` | shared boundary passes |
 | API typecheck | `bun --cwd packages/apis type-check` | exit 0 |
 | Route tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | refreshed note and manifest describe the authenticated contract |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Real app compile | `bun run build:web` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

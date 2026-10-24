@@ -62,7 +62,7 @@ configuration, UI, Rust, or migration-manifest change.
 | --- | --- | --- |
 | Focused adapter | `bun --cwd packages/ai vitest run src/chat-sdk/zalo-personal.test.ts` | parse/process failures are contained and later events still dispatch |
 | AI package | `bun run --cwd packages/ai type-check` | exits 0 |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 

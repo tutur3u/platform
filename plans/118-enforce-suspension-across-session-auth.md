@@ -59,7 +59,7 @@ Inventory Core is a package consumer and must remain aligned.
 | Track auth contracts | `bun --cwd apps/track vitest run src/lib/api-auth.test.ts` | Track's distinct engine semantics enforce the same boundary |
 | Typechecks | `bun run --cwd packages/utils type-check && bun run --cwd packages/inventory-core type-check && bun run --cwd apps/web type-check && bun run --cwd apps/calendar type-check && bun run --cwd apps/hive type-check && bun run --cwd apps/infrastructure type-check && bun run --cwd apps/inventory type-check && bun run --cwd apps/learn type-check && bun run --cwd apps/mind type-check && bun run --cwd apps/tasks type-check && bun run --cwd apps/teach type-check && bun run --cwd apps/track type-check` | exit 0 |
 | App builds | `bun run --cwd apps/web build && bun run --cwd apps/calendar build && bun run --cwd apps/hive build && bun run --cwd apps/infrastructure build && bun run --cwd apps/inventory build && bun run --cwd apps/learn build && bun run --cwd apps/mind build && bun run --cwd apps/tasks build && bun run --cwd apps/teach build && bun run --cwd apps/track build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -116,7 +116,7 @@ suspension imports and verify every success path invokes the adapter.
 
 ### Step 5: Run package and app gates
 
-Run focused tests, all affected typechecks and builds, `bun check`, and
+Run focused tests, all affected typechecks and builds, `bun validate`, and
 whitespace. Record the availability tradeoff in the existing abuse-protection
 documentation if one exists; do not create an aspirational operations promise.
 

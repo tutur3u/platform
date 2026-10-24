@@ -58,7 +58,7 @@ is green and Plan 146's exact route changes are integrated or transferred.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/ai-credit-workspace-member-counts.sql && bun --cwd apps/database sb:validate:isolated` | grouped counts, bounds, ACLs, and full suite pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/ai-credit-workspace-member-counts.sql` | RPC types are current |
 | Infrastructure | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

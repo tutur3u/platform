@@ -56,7 +56,7 @@ migration with `bun sb:new aggregate_cms_commerce_metrics`.
 | Apply/types | `bun sb:up && bun sb:typegen` | migration applies and types regenerate deterministically |
 | CMS typecheck | `bun run --cwd apps/cms type-check` | exit 0 |
 | CMS build | `bun run --cwd apps/cms build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -113,7 +113,7 @@ unchanged JSON/status, and 500 on error/malformed result.
 
 ### Step 4: Apply and run all gates
 
-Apply/typegen, run pgTAP and CMS tests, typecheck/build, `bun check`, and
+Apply/typegen, run pgTAP and CMS tests, typecheck/build, `bun validate`, and
 whitespace. Retain no unrelated typegen drift.
 
 ## Done criteria

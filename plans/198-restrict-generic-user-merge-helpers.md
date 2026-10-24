@@ -61,7 +61,7 @@ isolated worktree based on the completed Plan 163 integration base. Run
 | Type generation | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/workspace-user-merge-helper-security.sql` | succeeds |
 | Type diff | `git diff --exit-code -- packages/types/src/supabase.ts` | no generated-type drift for ACL-only hardening |
 | Users Core | `bun run --cwd packages/users-core type-check` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

@@ -11,6 +11,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
+import { readFileSnapshot, readRegularFile } from '../safe-fs.js';
 import { sealMeetApp } from './meet-native-inventory.mjs';
 import {
   admitRegistry,
@@ -114,7 +115,7 @@ export async function inventoryRole(role) {
         await walk(path);
       } else {
         assert.ok(item.isFile(), 'Graph links/special files forbidden');
-        files[name] = hash(await readFile(path));
+        files[name] = hash(await readRegularFile(path));
       }
     }
   }
@@ -133,7 +134,7 @@ async function workdirInventory(path) {
     result.push({
       name,
       type: info.isDirectory() ? 'directory' : 'file',
-      hash: info.isFile() ? hash(await readFile(path)) : null,
+      hash: info.isFile() ? hash(await readRegularFile(path)) : null,
     });
     if (info.isDirectory())
       for (const child of (await readdir(path)).sort())
@@ -211,15 +212,17 @@ export async function assertMeetCopy(plan, prepared, beforeLoad = false) {
 export async function readMeetRegistry(prepared, startedAt) {
   const records = {};
   for (const name of await readdir(prepared.registry)) {
-    const path = join(prepared.registry, name),
-      info = await lstat(path);
+    const { data, stat: info } = await readFileSnapshot(
+      join(prepared.registry, name),
+      { maxBytes: 4096 }
+    );
     assert.ok(
       info.isFile() && !info.isSymbolicLink(),
       'Registry entry must be regular'
     );
     assert.ok(info.size <= 4096, 'Registry record bound');
     records[name] = {
-      value: JSON.parse(await readFile(path)),
+      value: JSON.parse(data),
       mtimeMs: info.mtimeMs,
     };
   }
