@@ -294,6 +294,17 @@ For each service, the orchestrator verifies before promotion:
    permissions, truncated results or unsupported scope. It never retries writes.
    The expected preview setting is explicitly true; this is unverified against
    current production until the preflight runs. A mismatch stops before mutation.
+   To change crons, text vars or Durable Objects, the parity baseline records a
+   reviewed `transition` (`decision` ID and `fields`, limited to `crons`, `vars`,
+   `durableObjects` and `durableObjectClasses`) from `previousIdentity` (live) to
+   `identity` (the emitted artifact). Every other identity field must be equal and
+   every declared field must change. `before` reads once and must match exactly one
+   stage, verifying text values (digest only, differing names in errors) and Durable
+   Object bindings; a Worker matching neither fails closed. `after` must match the
+   target. On the first publication only the settings hash, bindings and schedules
+   may change; once live already matches the target, settings must stay unchanged.
+   Storage classes are verified on the artifact, not read back live. Remove the
+   transition in a follow-up change after production matches the target.
 4. Production publication for Devbox Control and Coordination remains Wrangler
    with their applied `v1` migration metadata. A separate reviewed change must
    carry the rehearsal receipt before enabling cf publication. For these Workers, rehearse the first cf deploy on a disposable Worker created
