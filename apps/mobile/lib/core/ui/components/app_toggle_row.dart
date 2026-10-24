@@ -21,31 +21,38 @@ class AppToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: padding,
-    child: MergeSemantics(
-      child: Row(
-        children: [
-          if (leading != null) ...[leading!, const SizedBox(width: 12)],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DefaultTextStyle.merge(
-                  style: AppTokens.of(context).typography.base,
-                  child: title,
-                ),
-                if (subtitle != null)
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onTap: onChanged == null ? null : () => onChanged!(!value),
+      child: MergeSemantics(
+        child: Row(
+          children: [
+            if (leading != null) ...[leading!, const SizedBox(width: 12)],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   DefaultTextStyle.merge(
-                    style: AppTokens.of(context).typography.small.copyWith(
-                      color: AppTokens.of(context).colorScheme.mutedForeground,
-                    ),
-                    child: subtitle!,
+                    style: AppTokens.of(context).typography.base,
+                    child: title,
                   ),
-              ],
+                  if (subtitle != null)
+                    DefaultTextStyle.merge(
+                      style: AppTokens.of(context).typography.small.copyWith(
+                        color: AppTokens.of(
+                          context,
+                        ).colorScheme.mutedForeground,
+                      ),
+                      child: subtitle!,
+                    ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          AppSwitch(value: value, onChanged: onChanged),
-        ],
+            const SizedBox(width: 12),
+            AppSwitch(value: value, onChanged: onChanged),
+          ],
+        ),
       ),
     ),
   );

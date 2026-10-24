@@ -21,18 +21,33 @@ class AppCheckboxRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: padding,
-    child: MergeSemantics(
-      child: Row(
-        children: [
-          AppCheckbox(value: value, tristate: tristate, onChanged: onChanged),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [title, if (subtitle != null) subtitle!],
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onTap: onChanged == null
+          ? null
+          : () => onChanged!(
+              tristate
+                  ? switch (value) {
+                      false => true,
+                      true => null,
+                      null => false,
+                    }
+                  : value != true,
             ),
-          ),
-        ],
+      child: MergeSemantics(
+        child: Row(
+          children: [
+            AppCheckbox(value: value, tristate: tristate, onChanged: onChanged),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [title, if (subtitle != null) subtitle!],
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

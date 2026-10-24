@@ -103,7 +103,9 @@ Future<T?> showAppDialog<T>({
   bool barrierDismissible = true,
   bool useRootNavigator = false,
   double maxWidth = 440,
+  bool? requestFocus,
 }) => showDialog<T>(
+  requestFocus: requestFocus,
   context: context,
   useRootNavigator: useRootNavigator,
   barrierDismissible: barrierDismissible,

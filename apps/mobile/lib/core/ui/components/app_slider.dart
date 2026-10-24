@@ -10,6 +10,7 @@ class AppSlider extends StatelessWidget {
     this.max = 1,
     this.divisions,
     this.label,
+    this.semanticFormatter,
     this.onChangeEnd,
     super.key,
   }) : assert(max > min, 'max must exceed min'),
@@ -20,6 +21,7 @@ class AppSlider extends StatelessWidget {
   final double max;
   final int? divisions;
   final String? label;
+  final String Function(double)? semanticFormatter;
   final ValueChanged<double>? onChanged;
   final ValueChanged<double>? onChangeEnd;
 
@@ -53,14 +55,15 @@ class AppSlider extends StatelessWidget {
       onChanged?.call(lastValue);
     }
 
+    String format(double next) =>
+        semanticFormatter?.call(next) ??
+        '${((next - min) / (max - min) * 100).round()}%';
     return Semantics(
       slider: true,
       label: label,
-      value: '${(fraction * 100).round()}%',
-      increasedValue:
-          '${((_snap(value + step) - min) / (max - min) * 100).round()}%',
-      decreasedValue:
-          '${((_snap(value - step) - min) / (max - min) * 100).round()}%',
+      value: format(value),
+      increasedValue: format(_snap(value + step)),
+      decreasedValue: format(_snap(value - step)),
       onIncrease: onChanged == null ? null : () => adjust(step),
       onDecrease: onChanged == null ? null : () => adjust(-step),
       child: FocusableActionDetector(

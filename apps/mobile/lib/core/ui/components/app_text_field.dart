@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Single- or multi-line text input styled with design tokens.
@@ -9,6 +10,12 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 class AppTextField extends StatelessWidget {
   const AppTextField({
     this.controller,
+    this.style,
+    this.contentPadding,
+    this.expands = false,
+    this.textAlignVertical,
+    this.contextMenuBuilder,
+    this.selectionControls,
     this.focusNode,
     this.placeholder,
     this.label,
@@ -37,6 +44,12 @@ class AppTextField extends StatelessWidget {
   });
 
   final TextEditingController? controller;
+  final TextStyle? style;
+  final EdgeInsetsGeometry? contentPadding;
+  final bool expands;
+  final TextAlignVertical? textAlignVertical;
+  final EditableTextContextMenuBuilder? contextMenuBuilder;
+  final TextSelectionControls? selectionControls;
   final FocusNode? focusNode;
   final String? placeholder;
 
@@ -77,9 +90,18 @@ class AppTextField extends StatelessWidget {
               ? BorderSide.none
               : BorderSide(color: color, width: width),
         );
-    final style = tokens.typography.base.copyWith(color: c.foreground);
-    return TextField(
+    final resolvedStyle =
+        style ?? tokens.typography.base.copyWith(color: c.foreground);
+    final field = TextField(
       controller: controller,
+      expands: expands,
+      textAlignVertical: textAlignVertical,
+      contextMenuBuilder:
+          contextMenuBuilder ??
+          (context, state) => AdaptiveTextSelectionToolbar.editableText(
+            editableTextState: state,
+          ),
+      selectionControls: selectionControls,
       focusNode: focusNode,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
@@ -97,14 +119,12 @@ class AppTextField extends StatelessWidget {
       minLines: minLines,
       maxLines: obscureText ? 1 : maxLines,
       maxLength: maxLength,
-      style: style,
+      style: resolvedStyle,
       cursorColor: c.primary,
       decoration: InputDecoration(
-        labelText: label,
-        hintText: placeholder,
+        hintText: placeholder == label ? null : placeholder,
         errorText: errorText,
-        hintStyle: style.copyWith(color: c.mutedForeground),
-        labelStyle: tokens.typography.small.copyWith(color: c.mutedForeground),
+        hintStyle: resolvedStyle.copyWith(color: c.mutedForeground),
         prefixIcon: leading,
         suffixIcon: trailing,
         prefixIconColor: c.mutedForeground,
@@ -112,10 +132,9 @@ class AppTextField extends StatelessWidget {
         filled: true,
         fillColor: filled ? c.muted : c.card.withValues(alpha: 0),
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+        contentPadding:
+            contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: outline(c.input),
         enabledBorder: outline(c.input),
         disabledBorder: outline(c.input.withValues(alpha: 0.5)),
@@ -123,6 +142,22 @@ class AppTextField extends StatelessWidget {
         errorBorder: outline(c.destructive),
         focusedErrorBorder: outline(c.destructive, 1.5),
       ),
+    );
+    final fieldLabel = label;
+    if (fieldLabel == null) return field;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ExcludeSemantics(
+          child: Text(
+            fieldLabel,
+            style: tokens.typography.small.copyWith(color: c.foreground),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Semantics(label: fieldLabel, child: field),
+      ],
     );
   }
 }
