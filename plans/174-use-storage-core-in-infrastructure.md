@@ -65,7 +65,7 @@ without adding a dependency or changing behavior.
 | Infrastructure tests | `bun --cwd apps/infrastructure vitest run src/lib/inventory/media-storage-policy.test.ts src/lib/mobile-deployment/storage-policy.test.ts` | focused consumers pass |
 | Typechecks | `bun run --cwd packages/storage-core type-check && bun run --cwd apps/infrastructure type-check` | both exit 0 |
 | Infrastructure build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Suggested executor toolkit
@@ -135,7 +135,7 @@ three consumer/test edits, two deletions, and reviewer-owned plan status.
 
 ### Step 4: Run final gates
 
-Run the Storage Core provider suite, Infrastructure build, `bun check`, and
+Run the Storage Core provider suite, Infrastructure build, `bun validate`, and
 whitespace. Confirm `bun.lock` and both manifests are unchanged.
 
 ## Done criteria

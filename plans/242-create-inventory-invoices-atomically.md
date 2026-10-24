@@ -102,7 +102,7 @@ for `apps/finance/src/**`, `packages/finance-core/**`, and
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/inventory-invoice-creation.sql && bun --cwd apps/database sb:validate:isolated` | atomic writes, locks, promotion, audit, ACLs, and full suite pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/inventory-invoice-creation.sql` | exact RPC type generated with no unrelated drift |
 | Finance | `bun run --cwd apps/finance type-check && bun run --cwd apps/finance build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

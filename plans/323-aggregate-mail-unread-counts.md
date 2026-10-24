@@ -60,7 +60,7 @@ history.
 | Typegen stability | `cp packages/types/src/supabase.ts /tmp/plan323-supabase.ts && bun --cwd apps/database sb:validate:isolated --test supabase/tests/private-schema-mail.sql --typegen packages/types/src/supabase.ts && cmp /tmp/plan323-supabase.ts packages/types/src/supabase.ts` | second generation is byte-identical |
 | Mail tests | `bun --cwd apps/mail vitest run src/lib/mail/repository/bootstrap-unread.test.ts` | one-RPC and semantic mapping cases pass |
 | Mail | `bun type-check:mail && bun --cwd apps/mail run build` | typecheck and app build pass |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Query/scope | `rg -n 'queryMailMessageRows' apps/mail/src/lib/mail/repository/bootstrap.ts; git status --short` | no bootstrap unread call remains; only in-scope paths changed |
 
 ## Scope
@@ -103,7 +103,7 @@ without measured plan evidence.
   inbox/state exclusion.
 - [ ] Foreign/unbounded input fails closed and direct unprivileged execution is
   denied.
-- [ ] pgTAP, typegen, Mail test/build, `bun check`, scope, and whitespace pass.
+- [ ] pgTAP, typegen, Mail test/build, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

@@ -75,7 +75,7 @@ active AI metering note before writing a migration.
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no output unless an intentionally reviewed type change was required |
 | Infrastructure | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | admin callers compile and production build exits 0 |
 | Backend | `bun check:backend` | prepared Rust service-role callers remain green |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

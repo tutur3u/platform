@@ -118,7 +118,7 @@ test('release merge ends with main and production on the same commit', () => {
   );
 });
 
-test('release merge builds the dist-only packages before running bun check', () => {
+test('release merge builds the dist-only packages before running bun validate', () => {
   // The turbo `test` task depends on `transit`, not `^build`, so nothing else
   // in the run produces `dist/**`. Locally `bun setup` covers this; CI has to
   // do it explicitly or every suite importing @tuturuuu/types,
@@ -140,7 +140,7 @@ test('release merge builds the dist-only packages before running bun check', () 
   assert.ok(buildIndex !== -1, 'the workspace build step must exist');
   assert.ok(
     buildIndex < workflow.indexOf('- name: Merge release-please branch'),
-    'the workspace must be built before bun check runs'
+    'the workspace must be built before bun validate runs'
   );
 
   assert.match(
@@ -218,7 +218,7 @@ test('release merge pins the same Flutter version as the mobile workflow', () =>
 test('release merge fails fast when it has no token that can push', () => {
   // main and production are covered by a ruleset whose only bypass actor is
   // OrganizationAdmin, so a run that falls back to github.token cannot push.
-  // Finding that out after bun check has already run wastes ~40 minutes.
+  // Finding that out after bun validate has already run wastes ~40 minutes.
   const gateIndex = workflow.indexOf(
     '- name: Require a token that can push protected branches'
   );
@@ -448,7 +448,7 @@ function simulateAdvancedMain({ mobile = false, failInstall = false } = {}) {
           [[ "$installed" == true ]] || return 96
           echo build
           built=true ;;
-        check|check:mobile)
+        validate|check:mobile)
           [[ "$installed" == true && "$built" == true ]] || return 95
           echo "$1" ;;
         *) return 94 ;;
@@ -476,7 +476,7 @@ test('advanced release main refreshes the frozen graph and setup before checks a
     'merge',
     'install',
     'build',
-    'check',
+    'validate',
     'push',
   ]);
 });
@@ -489,7 +489,7 @@ test('advanced mobile release refreshes Flutter dependencies before mobile check
     'install',
     'build',
     'flutter pub get',
-    'check',
+    'validate',
     'check:mobile',
     'push',
   ]);

@@ -8,6 +8,7 @@ import {
 } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type { AccountUsage, UsageWindow } from './types';
+import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from './window-freshness';
 import {
   coversModel,
   noResetWindowMaxAgeMs,
@@ -263,6 +264,14 @@ export function snapshotWindows(
       typeof window.id !== 'string'
     )
       throw new HookError('usage-window-invalid');
+    const providerWindowKind =
+      window.kind === 'session' ||
+      window.kind === 'weekly' ||
+      window.kind === 'monthly' ||
+      window.kind === 'other'
+        ? window.kind
+        : undefined;
+    const kindKnown = providerWindowKind !== undefined;
     return {
       id: window.id,
       label: typeof window.label === 'string' ? window.label : '',
@@ -272,11 +281,14 @@ export function snapshotWindows(
         typeof window.label === 'string' ? window.label : ''
       ),
       kind:
-        window.kind === 'weekly' ||
+        providerWindowKind === 'weekly' ||
+        providerWindowKind === 'monthly' ||
         (typeof window.windowDurationMins === 'number' &&
           window.windowDurationMins > 1440)
           ? 'long'
           : 'short',
+      providerWindowKind,
+      freshnessTtlMs: PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS,
       windowDurationMins:
         typeof window.windowDurationMins === 'number' &&
         Number.isFinite(window.windowDurationMins) &&
@@ -289,7 +301,7 @@ export function snapshotWindows(
       observedAt: data.checkedAt as string,
       source: 'T3 server.getConfig usageLimits import',
       confidence: 'provider',
-      authoritative: true,
+      authoritative: kindKnown,
     } satisfies UsageWindow;
   });
 }
@@ -311,6 +323,14 @@ export function applyImportedUsage(
     const windows = provider
       ? snapshotWindows(account, provider.usageLimits)
       : [];
+    if (provider && windows.length === 0)
+      return {
+        ...account,
+        windows: account.windows.map((window) => ({
+          ...window,
+          freshnessTtlMs: 0,
+        })),
+      };
     const newer =
       windows.length &&
       (!account.windows.length ||
@@ -328,7 +348,11 @@ export function applyImportedUsage(
   });
 }
 
-export function mergeUsageImport(previous: unknown, next: unknown) {
+export function mergeUsageImport(
+  previous: unknown,
+  next: unknown,
+  now = new Date()
+) {
   const old = record(previous),
     update = record(next);
   const providers = new Map<string, Record<string, unknown>>();
@@ -338,6 +362,14 @@ export function mergeUsageImport(previous: unknown, next: unknown) {
   ]) {
     const provider = record(item);
     if (typeof provider.instanceId !== 'string') continue;
+    const checkedAt = Date.parse(
+      String(record(provider.usageLimits).checkedAt)
+    );
+    if (
+      !Number.isFinite(checkedAt) ||
+      checkedAt > now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+    )
+      continue;
     const existing = providers.get(provider.instanceId);
     if (
       !existing ||
@@ -346,6 +378,9 @@ export function mergeUsageImport(previous: unknown, next: unknown) {
     )
       providers.set(provider.instanceId, provider);
   }
+  const provenance = [update.provenance, old.provenance].find(
+    (value): value is string => typeof value === 'string'
+  );
   return {
     providers: [...providers.values()],
     settings: {
@@ -354,6 +389,8 @@ export function mergeUsageImport(previous: unknown, next: unknown) {
         ...record(record(update.settings).providerInstances),
       },
     },
-    provenance: update.provenance ?? old.provenance,
+    provenance: provenance
+      ? safeReceipt(provenance, failureClass(provenance)).text
+      : undefined,
   };
 }

@@ -18,6 +18,7 @@ test('Calendar workflow packaging assertions run cold in owning CI and root Node
   // Copy real suppliers and the actual workflow; no package install or YAML stub.
   for (const name of [
     entry,
+    'scripts/safe-fs.js',
     'scripts/ci/calendar-response-diagnostics.mjs',
     'scripts/ci/calendar-ssr-capture.mjs',
     'apps/calendar/src/runtime/ssr-diagnostics.ts',

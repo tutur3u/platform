@@ -62,7 +62,7 @@ generated-type and migration owners.
 | Regenerate types | `bun sb:typegen` | only expected generated type changes |
 | Package checks | `bun run --cwd packages/payment-core test && bun run --cwd packages/payment-core type-check` | exit 0 |
 | Pay checks | `bun run --cwd apps/pay type-check && bun run --cwd apps/pay build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -164,7 +164,7 @@ substituting a mock concurrency test.
 
 Apply the migration locally, run pgTAP, regenerate types, run Pay/payment-core
 and Internal API tests/typechecks, run `bun i18n:sort`, the Pay build,
-`bun check`, and whitespace.
+`bun validate`, and whitespace.
 
 ## Done criteria
 

@@ -77,7 +77,7 @@ and execute from completed Plan 163 in an isolated worktree with immediate
 | Type generation | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/task-board-copy.sql` | generated types match the new server contract |
 | Typechecks | `bun run --cwd apps/tasks type-check && bun run --cwd packages/tasks-ui type-check && bun run --cwd packages/internal-api type-check` | all exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

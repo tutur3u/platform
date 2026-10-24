@@ -75,8 +75,8 @@ select is(
     from pg_proc
     where oid = 'public.get_current_user_email()'::regprocedure
   ),
-  array['search_path=""']::text[],
-  'The email helper pins an empty search_path'
+  array['search_path=pg_catalog, pg_temp']::text[],
+  'The email helper pins catalog lookup with pg_temp last'
 );
 
 select is(
@@ -85,8 +85,8 @@ select is(
     from pg_proc
     where oid = 'public.sync_my_notifications()'::regprocedure
   ),
-  array['search_path=""']::text[],
-  'The notification sync RPC pins an empty search_path'
+  array['search_path=pg_catalog, pg_temp']::text[],
+  'The notification sync RPC pins catalog lookup with pg_temp last'
 );
 
 select is(

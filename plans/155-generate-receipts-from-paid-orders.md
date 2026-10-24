@@ -59,7 +59,7 @@ worktree, run `bun setup`, and inventory both cookie and Pay app-session callers
 | Localization | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | Pay English/Vietnamese keys remain aligned |
 | Pay typecheck | `bun run --cwd apps/pay type-check` | exit 0 |
 | Pay build | `bun run --cwd apps/pay build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

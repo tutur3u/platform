@@ -56,7 +56,7 @@ obtain exact transfer before creating the migration with `bun sb:new`.
 | Type generation | `bun sb:typegen` | generated types reflect the RPC only |
 | Nova routes | `bun --cwd apps/nova vitest run src/app/api/v1/sessions/route.test.ts src/app/api/auth/challenges/verify-password/route.test.ts` | admission matrix passes |
 | Nova build | `bun run --cwd apps/nova build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -127,7 +127,7 @@ manager behavior. Apply locally, regenerate types, and run all gates.
 - [ ] Client time/status and arbitrary fields are rejected.
 - [ ] Password proof is actor/challenge-bound, short-lived, and single-use.
 - [ ] Concurrent requests cannot exceed limits; retries are idempotent.
-- [ ] Database tests/apply/typegen, Nova tests/build, and `bun check` pass.
+- [ ] Database tests/apply/typegen, Nova tests/build, and `bun validate` pass.
 
 ## STOP conditions
 

@@ -54,7 +54,7 @@ expects no schema or generated-type change at the audited snapshot.
 | Existing analytics tests | `bun --cwd apps/forms vitest run src/features/forms/response-analytics.test.ts` | existing analytics semantics remain green |
 | Forms typecheck | `bun run --cwd apps/forms type-check` | exit 0 |
 | Forms build | `bun run --cwd apps/forms build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -102,7 +102,7 @@ query filtering, and empty-page behavior.
 Use a synthetic large-match fixture to assert answer retrieval receives at
 most `pageSize` IDs and that no call to `get_form_matched_response_ids` is made
 directly by the TypeScript request path. Run focused tests, typecheck, the Forms
-build, and `bun check`.
+build, and `bun validate`.
 
 ## Done criteria
 

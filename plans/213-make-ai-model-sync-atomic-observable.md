@@ -60,7 +60,7 @@ database/G22 transfer; run `bun setup` immediately.
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/ai-gateway-model-snapshot-sync.sql` | private RPC signature is current |
 | Route tracking | `bun web:api-routes:check && bun migration:tanstack:manifest && bun check:backend` | first-class source recorded; no false Rust migration claim |
 | Types/builds | `bun run --cwd packages/ai type-check && bun run --cwd apps/web build && bun run --cwd apps/infrastructure build` | all exit 0 |
-| Repository | `bun check && git diff --check` | all checks pass; no whitespace errors |
+| Repository | `bun validate && git diff --check` | all checks pass; no whitespace errors |
 
 ## Scope
 

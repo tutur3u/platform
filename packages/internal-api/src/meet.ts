@@ -33,7 +33,8 @@ export interface MeetPlanSnapshot {
 
 export interface MeetAvailabilityIdentity {
   guestId?: string;
-  passwordHash?: string;
+  /** Server-issued guest session from guest login. */
+  guestSession?: string;
 }
 
 export interface ReplaceMeetAvailabilityPayload
