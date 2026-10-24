@@ -76,7 +76,7 @@ class _CalendarAppSettingsState extends State<CalendarAppSettings> {
                   subtitle: calendar.state.isFromCache
                       ? l10n.settingsDataStatusCached
                       : null,
-                  onTap: calendar.state.saving || calendar.state.revalidating
+                  onTap: calendar.state.saving || !calendar.state.userLoaded
                       ? null
                       : () => unawaited(openCalendarProductSettings(context)),
                 ),

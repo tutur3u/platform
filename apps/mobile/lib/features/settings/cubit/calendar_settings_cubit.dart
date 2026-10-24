@@ -162,9 +162,10 @@ class CalendarSettingsCubit extends Cubit<CalendarSettingsState> {
   /// value.
   Future<void> setFirstDayOfWeek(FirstDayOfWeek value) async {
     final actor = _userId;
-    if (isClosed || actor == null || state.saving || state.revalidating) return;
-    final generation = _generation;
-    emit(state.copyWith(saving: true, clearError: true));
+    if (isClosed || actor == null || state.saving || !state.userLoaded) return;
+    final generation = ++_generation;
+    _pendingLoad = null;
+    emit(state.copyWith(saving: true, loading: false, revalidating: false, clearError: true));
     try {
       final saved = await _repository.savePersonal(
         actor,

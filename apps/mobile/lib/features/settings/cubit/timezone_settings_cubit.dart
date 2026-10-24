@@ -397,13 +397,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
   }) async {
     if ((_retryAt?.isAfter(_clock()) ?? false) ||
         _userId == null ||
-        state.loading ||
         state.saving ||
         !(workspace ? state.workspaceLoaded : state.personalLoaded) ||
         (workspace && (!canManageWorkspace || _workspaceId == null))) {
       return;
     }
-    final generation = _generation;
+    final generation = ++_generation;
+    _pendingLoad = null;
     final previous = state;
     emit(
       TimezoneSettingsState(

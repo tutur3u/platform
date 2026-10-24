@@ -310,6 +310,12 @@ API work, rather than silently reporting success. Coverage is in
 `calendar_settings_cache_test.dart`, `calendar_settings_offline_test.dart` and
 `timezone_settings_offline_test.dart`.
 
+Calendar and Timezone refresh on entry, scope changes and app resume rather than
+every unrelated outbox cycle. Known preferences remain editable during refresh;
+a save fences the obsolete read. Stored week-start values are validated before
+restoration. Offline Calendar and Timezone writes remain a follow-up requirement;
+this cache layer does not claim queued edits.
+
 ### Mail settings offline behavior
 
 Mail account rows and mailbox settings restore an encrypted account/workspace

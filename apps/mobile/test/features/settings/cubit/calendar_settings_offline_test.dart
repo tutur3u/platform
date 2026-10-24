@@ -34,6 +34,22 @@ void main() {
     await h.dispose();
   });
 
+  test('a save supersedes an in-flight refresh without restoring old values', () async {
+    h.api.read = (_) async => {'first_day_of_week': 'monday'};
+    await cubit.load(userId: 'actor', workspaceId: null);
+    final held = Completer<Map<String, dynamic>>();
+    h.api.read = (_) => held.future;
+    final loading = cubit.load(userId: 'actor', workspaceId: null);
+    expect(cubit.state.revalidating, isTrue);
+    await cubit.setFirstDayOfWeek(FirstDayOfWeek.saturday);
+    expect(cubit.state.userPreference, FirstDayOfWeek.saturday);
+    held.complete({'first_day_of_week': 'sunday'});
+    await loading;
+    expect(cubit.state.userPreference, FirstDayOfWeek.saturday);
+    expect(cubit.state.saving, isFalse);
+    expect(cubit.state.revalidating, isFalse);
+  });
+
   test(
     'publishes scoped cached week starts before awaiting fresh preferences',
     () async {

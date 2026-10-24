@@ -21,8 +21,15 @@ class CalendarSettingsRepository {
   final bool _ownsApi;
   final CalendarSettingsCache _cache;
 
-  Future<String?> snapshot(String actor, String? workspaceId) =>
-      _cache.snapshot(actor, workspaceId);
+  Future<String?> snapshot(String actor, String? workspaceId) async {
+    final value = await _cache.snapshot(actor, workspaceId);
+    if (value == null) return null;
+    try {
+      return _parse({'first_day_of_week': value});
+    } on FormatException {
+      return null;
+    }
+  }
 
   void fence(String actor, String? workspaceId) =>
       _cache.fence(actor, workspaceId);

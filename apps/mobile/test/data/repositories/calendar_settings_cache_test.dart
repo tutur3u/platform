@@ -215,6 +215,11 @@ void main() {
     },
   );
 
+  test('malformed cached week start is not restored as a known preference', () async {
+    await h.seed('settings.calendar.weekStart', 'invalid');
+    expect(await week.snapshot('actor', null), isNull);
+  });
+
   test(
     'malformed week-start response cannot replace the last snapshot',
     () async {
