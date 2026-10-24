@@ -12430,6 +12430,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      mfa_verification_failures: {
+        Row: {
+          failed_count: number;
+          scope_key: string;
+          user_id: string;
+          window_started_at: string;
+        };
+        Insert: {
+          failed_count?: number;
+          scope_key: string;
+          user_id: string;
+          window_started_at?: string;
+        };
+        Update: {
+          failed_count?: number;
+          scope_key?: string;
+          user_id?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
       mind_ai_messages: {
         Row: {
           board_id: string | null;
@@ -49765,6 +49786,7 @@ export type Database = {
         Args: { secret_name: string; ws_id: string };
         Returns: boolean;
       };
+      hook_mfa_verification_attempt: { Args: { event: Json }; Returns: Json };
       insert_ai_chat_message: {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;

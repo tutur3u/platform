@@ -77,7 +77,7 @@ transfer. Tests must not build, pull, or deploy an image.
 | Canonical enrollment | `node scripts/run-script-tests.js --list | rg '^scripts/watch-blue-green/managed-project-build\.test\.js$' && bun run test:scripts` | the managed-project rendering suite is listed once and passes in the root script gate |
 | Mutable absence | `rg -n 'FROM node:22-alpine( |$)|npm install -g bun( |$)|corepack (prepare|use) [^@ ]+($| )' scripts/watch-blue-green/projects.js scripts/watch-blue-green/managed-project-build.js` | no match |
 | Script syntax | `node --check scripts/watch-blue-green/projects.js && node --check scripts/watch-blue-green/managed-project-build.js && node --check scripts/watch-blue-green/managed-project-build.test.js` | exit 0 |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

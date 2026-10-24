@@ -160,7 +160,7 @@ jobs:
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Test qualification controls
-        run: timeout --kill-after=10s 30s node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/sdk-qualification-phase.test.js packages/sdk/scripts/portable-build.test.cjs
+        run: timeout --kill-after=10s 30s node --test scripts/ci/sdk-package-process.test.js scripts/ci/qualify-sdk-package.test.js scripts/ci/sdk-qualification-phase.test.js packages/sdk/scripts/portable-build.test.cjs
 
       - name: Qualify public registry consumer and compiled CLI
         if: steps.version-check.outputs.should_publish == 'true'

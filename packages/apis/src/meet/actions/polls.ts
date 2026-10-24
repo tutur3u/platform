@@ -7,11 +7,13 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { revalidatePath } from 'next/cache';
+import { resolveMeetGuestFromSession } from '../guest-session';
 
 interface PollParticipantInput {
   userType: 'PLATFORM' | 'GUEST';
   guestId?: string;
-  guestPasswordHash?: string;
+  /** Server-issued guest session from `guestLogin`, never a stored hash. */
+  guestSession?: string;
 }
 
 type PollActor =
@@ -40,20 +42,19 @@ async function resolvePollActor(
     };
   }
 
-  if (!input.guestId || !input.guestPasswordHash) {
+  if (!input.guestId || !input.guestSession) {
     return { error: 'Unauthorized' };
   }
 
   const sbAdmin = await createAdminClient();
-  const { data: guest, error } = await sbAdmin
-    .from('meet_together_guests')
-    .select('id')
-    .eq('plan_id', planId)
-    .eq('id', input.guestId)
-    .eq('password_hash', input.guestPasswordHash)
-    .maybeSingle();
+  const guest = await resolveMeetGuestFromSession(
+    sbAdmin,
+    planId,
+    input.guestSession,
+    input.guestId
+  );
 
-  if (error || !guest) {
+  if (!guest) {
     return { error: 'Unauthorized' };
   }
 

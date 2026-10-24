@@ -2,6 +2,7 @@ name: Mail Calendar Tasks builds
 on:
   pull_request:
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/mail/**'
       - 'apps/calendar/**'
       - 'apps/web/**'
@@ -22,6 +23,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/mail/**'
       - 'apps/calendar/**'
       - 'apps/web/**'

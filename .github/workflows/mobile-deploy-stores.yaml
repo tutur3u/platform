@@ -188,6 +188,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Production jobs read caches populated by trusted main builds.
       - name: Restore Gradle dependencies without saving
         id: gradle-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -298,14 +299,6 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-android.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
-      - name: Save trusted Gradle dependencies
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.gradle-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
 
   publish-ios-testflight:
     permissions:
@@ -340,6 +333,7 @@ jobs:
           flutter-version: "3.47.x"
           channel: stable
 
+      # Production jobs read caches populated by trusted main builds.
       - name: Restore CocoaPods downloads without saving
         id: pods-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -575,14 +569,6 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
-      - name: Save trusted CocoaPods downloads
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.pods-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            /Users/runner/Library/Caches/CocoaPods
-            /Users/runner/.cocoapods/repos/trunk
-          key: ${{ runner.os }}-${{ runner.arch }}-flutter-ios-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/ios/Podfile', 'apps/mobile/ios/Podfile.lock') }}
 
   retry-ios-testflight-review:
     permissions:

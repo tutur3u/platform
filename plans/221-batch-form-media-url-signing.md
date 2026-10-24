@@ -52,7 +52,7 @@ instructions. Do not edit until the Forms handoff transfers the exact files.
 | Focused | `bun --cwd apps/forms vitest run src/features/forms/server/media.test.ts` | mixed/default/external/duplicate/failure/high-cardinality cases pass |
 | Typecheck | `bun run --cwd apps/forms type-check` | exit 0 |
 | Build | `bun run --cwd apps/forms build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

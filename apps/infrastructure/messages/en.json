@@ -10675,6 +10675,8 @@
     "switch_account": "Switch account",
     "tentative": "Tentative",
     "timeblocks": "Timeblocks",
+    "too_many_attempts": "Too many failed attempts. Try again in {minutes} minutes.",
+    "too_many_join_attempts": "Too many attempts to join. Try again in {minutes} minutes.",
     "tuturuuu_account": "Tuturuuu account",
     "unavailable": "Unavailable",
     "update_plan": "Update plan",

@@ -32,10 +32,16 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 - Verify role contracts against the full migration chain, including existing
   grants. Assert intended permission denials with SQLSTATE `42501` and exercise
   supported RPCs as their caller roles; reduced schemas cannot prove this boundary.
+- Auth hooks need both schema `USAGE` and function `EXECUTE` for
+  `supabase_auth_admin`. Assert schema access separately from function privileges
+  and call the hook after switching roles; an `EXECUTE` catalog check alone can
+  pass while schema lookup fails. Capture the result with psql's `\gset` and
+  reset the role before pgTAP assertions, rather than granting Auth access to
+  the test extension.
 - Clear transaction-local JWT claims before privileged signup fixture inserts.
   `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
 - Run focused API/helper tests for affected code.
-- Run `bun check` for TypeScript changes.
+- Run `bun validate` for TypeScript changes.
 
 ### Isolated lifecycle recovery
 

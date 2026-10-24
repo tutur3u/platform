@@ -5,6 +5,7 @@ const { runProcess, drainGroup } = require('./sdk-package-process');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
+const { readPackage } = require('./qualify-sdk-file');
 const os = require('node:os');
 const path = require('node:path');
 const {
@@ -53,13 +54,14 @@ function inventory(root) {
       else {
         if (!stat.isFile())
           fail('UNSAFE_PACKAGE_PATH', 'Nonregular package file');
-        bytes += stat.size;
-        if (files.length >= MAX_FILES || bytes > MAX_BYTES)
+        if (files.length >= MAX_FILES)
           fail('PACKAGE_LIMIT', 'Package bounds exceeded');
+        const data = readPackage(file, MAX_BYTES - bytes, 'PACKAGE_LIMIT');
+        bytes += data.length;
         files.push({
           path: safeMember(path.relative(root, file).split(path.sep).join('/')),
-          bytes: stat.size,
-          sha256: hash(fs.readFileSync(file)),
+          bytes: data.length,
+          sha256: hash(data),
         });
       }
     }
@@ -372,9 +374,7 @@ async function qualify({
     const pack = checkPack(packed, stagedFiles);
     receipt.identities.pack = checkIdentity(identity, pack, 'pack');
     const archive = path.join(output, pack.filename);
-    const stat = fs.lstatSync(archive);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_BYTES)
-      fail('PACK_FAILED', 'Invalid packed archive');
+    const archiveBytes = readPackage(archive, MAX_BYTES, 'PACK_FAILED');
     const tarList = await command('tar', ['-tzf', archive]);
     if (tarList.status !== 0)
       fail('PACK_FAILED', 'Unreadable archive inventory');
@@ -420,14 +420,14 @@ async function qualify({
       JSON.parse(extracted.stdout),
       'archive'
     );
-    const integrity = `sha512-${createHash('sha512').update(fs.readFileSync(archive)).digest('base64')}`;
+    const integrity = `sha512-${createHash('sha512').update(archiveBytes).digest('base64')}`;
     if (pack.integrity !== integrity)
       fail('PACK_FAILED', 'Archive integrity mismatch');
     receipt.package = {
       name: pack.name,
       version: pack.version,
       archive: pack.filename,
-      sha256: hash(fs.readFileSync(archive)),
+      sha256: hash(archiveBytes),
       files: pack.files,
       sourceFiles: stagedFiles,
     };

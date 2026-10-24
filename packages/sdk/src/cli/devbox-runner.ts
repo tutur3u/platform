@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import {
   evaluateDevboxCommandPolicy,
   parseDevboxEnvAssignments,
@@ -10,6 +10,12 @@ import {
   recordDevboxAgentEvents,
 } from '../platform-devbox';
 import { agentRequest, withAgentRetries } from './devbox-agent-network';
+import {
+  COMMIT_RUN_ENVELOPE,
+  decodeCommitRun,
+  getCommitRunStateDir,
+  prepareCommitWorktree,
+} from './devbox-commit-run';
 import { runProcessGroup } from './devbox-job-process';
 import {
   parseJudgeImages,
@@ -267,6 +273,65 @@ export async function executeDevboxAgentJob(
       status: 'failed',
     });
     return { exitCode: 1, status: 'failed' as const };
+  }
+
+  if (command[0] === COMMIT_RUN_ENVELOPE) {
+    // Trusted runners only: judge-only and playground pools reject this
+    // envelope above. The inner argv goes back through the same policy.
+    let spec: ReturnType<typeof decodeCommitRun>;
+    let prepared: Awaited<ReturnType<typeof prepareCommitWorktree>>;
+    let runCwd: string;
+    try {
+      spec = decodeCommitRun(command);
+      // Refuse a blocked inner command before any fetch or checkout work.
+      const innerPolicy = evaluateDevboxCommandPolicy(spec.command);
+      if (!innerPolicy.allowed)
+        throw new Error(
+          innerPolicy.reason ?? 'Command is blocked in devboxes.'
+        );
+      prepared = await prepareCommitWorktree({
+        checkout: cwd,
+        sha: spec.sha,
+        runId: job.runId,
+        stateDir: getCommitRunStateDir(options.env ?? process.env),
+      });
+      runCwd = join(prepared.path, spec.prefix);
+      if (!(await stat(runCwd).catch(() => undefined))?.isDirectory()) {
+        await prepared.cleanup();
+        throw new Error(
+          `Directory ${spec.prefix || '.'} does not exist at that commit.`
+        );
+      }
+    } catch (error) {
+      await postAgentEvents({
+        ...eventOptions,
+        events: [
+          {
+            eventType: 'error',
+            message:
+              error instanceof Error ? error.message : 'Commit run failed.',
+          },
+        ],
+      });
+      await postAgentCompletion({
+        ...eventOptions,
+        exitCode: 1,
+        status: 'failed',
+      });
+      return { exitCode: 1, status: 'failed' as const };
+    }
+    await postAgentEvents({
+      ...eventOptions,
+      events: [{ message: `remote$ checkout ${spec.sha.slice(0, 12)}` }],
+    });
+    try {
+      return await executeDevboxAgentJob(
+        { ...job, command: spec.command },
+        { ...options, cwd: runCwd }
+      );
+    } finally {
+      await prepared.cleanup();
+    }
   }
 
   if (command.length === 1 && command[0] === '__ttr_restart_agent_v1__') {

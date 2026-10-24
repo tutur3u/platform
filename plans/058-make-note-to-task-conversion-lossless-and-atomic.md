@@ -58,7 +58,7 @@ than inventing another encoding.
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | atomic conversion cases pass |
 | Database types | `bun sb:typegen` | generated RPC types are current |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

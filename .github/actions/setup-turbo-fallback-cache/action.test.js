@@ -72,7 +72,13 @@ function restoreKey(step, fixture, archives) {
 }
 
 test('parsed writer gate retains default-branch-only trust for the event/ref/actor matrix', () => {
-  for (const event of ['push', 'workflow_dispatch', 'pull_request']) {
+  for (const event of [
+    'push',
+    'workflow_dispatch',
+    'pull_request',
+    'pull_request_target',
+    'workflow_run',
+  ]) {
     for (const ref of ['main', 'feature', 'production']) {
       for (const actor of ['vhpx', 'dependabot[bot]']) {
         const fixture = context();
@@ -82,7 +88,7 @@ test('parsed writer gate retains default-branch-only trust for the event/ref/act
           actor,
         });
         const allowed =
-          event !== 'pull_request' &&
+          ['push', 'workflow_dispatch'].includes(event) &&
           ref === 'main' &&
           actor !== 'dependabot[bot]';
         assert.equal(

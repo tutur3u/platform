@@ -18,7 +18,15 @@ does not authorize promotion.
   writers must have explicit trusted-ref/event guards; PRs restore only.
   `actions/setup-java` with `cache: gradle` registers an implicit post-job save,
   so use SHA-pinned `actions/cache/restore` plus a main-push-only save instead.
-  Keep the pinned Bun version in dependency keys and every restore prefix.
+  Inventory every combined cache/save action and setup cache input, including
+  combined `lookup-only` post saves, Rust save-if, Buildx binary defaults and
+  declared BuildKit GHA exports. Keep paused-source classifications fence-checked.
+  Allow exceptions only by exact workflow/job
+  and full input set with a reason; do not infer safety from key names. Bun
+  dependencies use a coarse v2 key per OS/architecture/pinned version without
+  lockfile hashes or v1 fallback, preventing new archives on every lock update.
+  Production mobile jobs restore main caches without unreachable save steps;
+  desktop/release/employee Flutter callers use the restore-everywhere wrapper.
   Run `node --test scripts/ci/heavyweight-cache-budget.test.js` when changing
   cache behavior; see the CI runbook's repository cache budget section for
   bounded, operator-owned retired-version cleanup. A passing source guard does
@@ -156,4 +164,4 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 - Parse touched JSON with `python3 -m json.tool`.
 - Run `bun ff` on touched docs, scripts, config, and workflow files.
 - Run `git diff --check`.
-- Run `bun check` when root TypeScript config or repo-wide script/config behavior changed.
+- Run `bun validate` when root TypeScript config or repo-wide script/config behavior changed.

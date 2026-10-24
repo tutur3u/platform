@@ -60,7 +60,7 @@ and run `bun setup` immediately after ownership clears.
 | Caller/owner inventory | `rg -n 'linked-promotions' apps/inventory apps/contacts packages/users-core apps/backend/src --glob '!**/node_modules/**'` | all live/compatibility callers classified; no hidden Inventory client contract invented |
 | Focused test | `bun --cwd apps/inventory vitest run 'src/app/api/v1/workspaces/[wsId]/users/[userId]/linked-promotions/route.test.ts'` | all authorization/tenant/error cases pass |
 | Typecheck/build | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 
@@ -90,7 +90,7 @@ messages, or route manifests.
 - [ ] POST and DELETE reject a promotion outside that workspace before mutation.
 - [ ] Permission, app-session, success-body, referral, and Contacts contracts
       are unchanged.
-- [ ] Focused tests, Inventory typecheck/build, `bun check`, and whitespace pass.
+- [ ] Focused tests, Inventory typecheck/build, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

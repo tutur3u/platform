@@ -55,7 +55,7 @@ or HTTP error sanitization.
 | Route | `bun --cwd apps/infrastructure vitest run src/app/api/v1/infrastructure/github-bot/installation-token/route.test.ts` | bearer, typed/unknown errors, no-store, and success pass |
 | Existing | `bun --cwd apps/infrastructure vitest run src/lib/infrastructure/github-bot.test.ts` | current helper suite remains green |
 | App | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | Infrastructure compiles/builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 
@@ -83,7 +83,7 @@ reconciliation; permissions/repository scope; network/E2E tests; secrets.
 4. Add route cases for absent, wrong-scheme, whitespace-only, and trimmed mixed-
    case bearer headers; typed 401/other typed status; unknown sanitized 500; and
    success. Assert `no-store` on every response and admin client `noCookie:true`.
-5. Run focused/existing tests, app typecheck/build, `bun check`, whitespace, and
+5. Run focused/existing tests, app typecheck/build, `bun validate`, whitespace, and
    exact-scope review.
 
 ## Done criteria

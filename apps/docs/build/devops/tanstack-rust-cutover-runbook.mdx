@@ -117,7 +117,7 @@ For terminal cutover, do not pass any `--skip-*` evidence flags.
 - benchmark compare evidence is fresh and within thresholds.
 - Cloudflare smoke probes pass for backend and TanStack origins.
 - `bun migration:tanstack:gates` exits `0` with all evidence present.
-- final `bun check` passes or has only documented unrelated blockers.
+- final `bun validate` passes or has only documented unrelated blockers.
 
 Keep `apps/web` available as rollback fallback until the cutover window is
 complete and the post-cutover smoke has stayed green.

@@ -57,7 +57,7 @@ expected discriminated-result and negative-call patterns.
 | --- | --- | --- |
 | Focused route test | `bun --cwd apps/nova vitest run 'src/app/api/v1/nova/users/[userId]/route.test.ts'` | exit 0; authorization and strict-body matrix passes |
 | Nova typecheck | `bun run --cwd apps/nova type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Nova build | `bun run --cwd apps/nova build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -134,7 +134,7 @@ Run every command in the table in order. Expected: all Bun commands exit 0 and
 - [ ] The path UUID is the only accepted target identity.
 - [ ] PUT accepts exactly four explicit boolean flags and rejects extra fields.
 - [ ] Error responses do not expose database messages or unrelated copy.
-- [ ] Focused tests, typecheck, `bun check`, Nova build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, Nova build, and whitespace pass.
 
 ## STOP conditions
 

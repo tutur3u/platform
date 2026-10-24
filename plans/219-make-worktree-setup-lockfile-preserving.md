@@ -59,7 +59,7 @@ restore its setup-only lock drift.
 | Plugin | `python3 plugins/tuturuuu/scripts/validate_plugin.py` | exit 0 |
 | Script discovery | `bun test:scripts` | all script tests, including the new file, pass |
 | JSON | `python3 -m json.tool package.json >/dev/null` | exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 
@@ -76,7 +76,7 @@ selection, AGENTS policy, CI install commands, or cleaning existing worktrees.
    lockfile to a temporary directory, injects a fake Bun executable, and proves
    default setup selects frozen mode, propagates failure, and never writes the
    lockfile; prove the opt-in command selects mutable mode. Register this exact
-   file in the current root `test:scripts` command so `bun check` cannot miss
+   file in the current root `test:scripts` command so `bun validate` cannot miss
    it. Do not run real package installation inside the test.
 2. Change `setup` to the frozen install and add `setup:update-lockfile` with the
    old mutable behavior. Factor a small root script only if shell duplication

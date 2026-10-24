@@ -56,7 +56,7 @@ static importer and hash inventory; stop on any production Web consumer.
 | Typechecks | `bun run --cwd apps/finance type-check && bun run --cwd apps/web type-check` | exit 0 |
 | Finance build | `bun run --cwd apps/finance build` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -90,7 +90,7 @@ do not push.
    the rendered canonical tree.
 3. Delete the other eleven Web files. Re-run reachability/absence checks and
    prove neither app manifest nor lockfile changed.
-4. Run the Finance focused test, both typechecks/builds, `bun check`, and
+4. Run the Finance focused test, both typechecks/builds, `bun validate`, and
    whitespace. Confirm the final diff is one test relocation/adaptation plus
    eleven deletions and optional established static assertion only.
 
