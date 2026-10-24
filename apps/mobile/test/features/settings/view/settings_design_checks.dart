@@ -24,7 +24,7 @@ void registerSettingsDesignChecks() {
     final title = tester.widget<SettingsTile>(first).title;
     final icon = find.descendant(
       of: first,
-      matching: find.byIcon(shad.LucideIcons.palette),
+      matching: find.byIcon(LucideIcons.palette),
     );
     // Captions sit just inside the rounded card; icons and titles keep a
     // fixed grid inside it.
@@ -57,7 +57,7 @@ void registerSettingsDesignChecks() {
     }
     final chevron = find.descendant(
       of: first,
-      matching: find.byIcon(shad.LucideIcons.chevronRight),
+      matching: find.byIcon(LucideIcons.chevronRight),
     );
     h.accounts.add(
       const AuthState.authenticated(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/duration.dart';
@@ -199,7 +200,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
                                 ?.name ??
                             l10n.timerNoCategory,
                       ),
-                      const Icon(shad.LucideIcons.chevronDown, size: 16),
+                      const Icon(LucideIcons.chevronDown, size: 16),
                     ],
                   ),
                 ),

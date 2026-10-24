@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -39,7 +40,7 @@ class StatsCards extends StatelessWidget {
               child: _StatCard(
                 label: l10n.timerToday,
                 value: _formatSeconds(stats?.todayTime ?? 0),
-                icon: shad.LucideIcons.calendar,
+                icon: LucideIcons.calendar,
                 iconColor: theme.colorScheme.primary,
                 iconBackgroundColor: theme.colorScheme.primary.withValues(
                   alpha: 0.16,
@@ -51,7 +52,7 @@ class StatsCards extends StatelessWidget {
               child: _StatCard(
                 label: l10n.timerThisWeek,
                 value: _formatSeconds(stats?.weekTime ?? 0),
-                icon: shad.LucideIcons.trendingUp,
+                icon: LucideIcons.trendingUp,
                 iconColor: const Color(0xFF16A34A),
                 iconBackgroundColor: const Color(
                   0xFF16A34A,
@@ -63,7 +64,7 @@ class StatsCards extends StatelessWidget {
               child: _StatCard(
                 label: l10n.timerThisMonth,
                 value: _formatSeconds(stats?.monthTime ?? 0),
-                icon: shad.LucideIcons.zap,
+                icon: LucideIcons.zap,
                 iconColor: const Color(0xFF7C3AED),
                 iconBackgroundColor: const Color(
                   0xFF7C3AED,
@@ -75,7 +76,7 @@ class StatsCards extends StatelessWidget {
               child: _StatCard(
                 label: l10n.timerStreak,
                 value: l10n.timerDays(stats?.streak ?? 0),
-                icon: shad.LucideIcons.clock,
+                icon: LucideIcons.clock,
                 iconColor: theme.colorScheme.destructive,
                 iconBackgroundColor: theme.colorScheme.destructive.withValues(
                   alpha: 0.16,

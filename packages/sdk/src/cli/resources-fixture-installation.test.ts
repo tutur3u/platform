@@ -62,14 +62,11 @@ import {basename} from 'node:path';
 import {writeFileSync,existsSync} from 'node:fs';
 import {setTimeout} from 'node:timers/promises';
 const base=${JSON.stringify(home)};
-const open=fs.open;
-mock.module('node:fs/promises',()=>({...fs,open:async(path,...args)=>{
+const open=fs.open;const writeFile=fs.writeFile;
+const hold=async(path)=>{if(String(path).startsWith(base+'/bin/')&&/^\\.?bun[.]/.test(basename(String(path)))){writeFileSync(base+'/installer.entered.'+process.pid,'');while(!existsSync(base+'/installer.release.'+process.pid))await setTimeout(10);}};
+mock.module('node:fs/promises',()=>({...fs,writeFile:async(path,...args)=>{await hold(path);return writeFile(path,...args);},open:async(path,...args)=>{
   const file=await open(path,...args);
-  if(String(path).startsWith(base+'/bin/')&&basename(String(path)).startsWith('.bun.')) {
-    writeFileSync(base+'/installer.entered.'+process.pid,'');
-    while(!existsSync(base+'/installer.release.'+process.pid))await setTimeout(10);
-  }
-  return file;
+  await hold(path);return file;
 }}));
 `
     );

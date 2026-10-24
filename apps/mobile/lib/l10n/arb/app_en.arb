@@ -3531,7 +3531,9 @@
   "settingsTimezoneRateLimitedRetryAfter": "The server asks you to wait {seconds} seconds before retrying.",
   "@settingsTimezoneRateLimitedRetryAfter": {
     "placeholders": {
-      "seconds": { "type": "int" }
+      "seconds": {
+        "type": "int"
+      }
     }
   },
   "settingsTimezoneRetry": "Retry timezone",
@@ -4640,6 +4642,27 @@
   "feedbackDetailsRequired": "Enter details of 1–8000 characters.",
   "profileMediaNetworkError": "Could not connect. Check your connection and try again.",
   "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again.",
+  "settingsTimezonePickerAll": "All timezones",
+  "settingsTimezonePickerAutoPersonal": "Uses the workspace timezone, or this device's when the workspace has none.",
+  "settingsTimezonePickerAutoWorkspace": "Members without a personal timezone use their own device's.",
+  "settingsTimezonePickerAutoResolved": "Currently {timezone}.",
+  "settingsTimezonePickerCurrent": "Current",
+  "settingsTimezonePickerEmpty": "No timezones match “{query}”.",
+  "settingsTimezonePickerSearchHint": "Search city, region or GMT offset",
+  "@settingsTimezonePickerAutoResolved": {
+    "placeholders": {
+      "timezone": {
+        "type": "String"
+      }
+    }
+  },
+  "@settingsTimezonePickerEmpty": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAppsGroup": "Apps",
   "settingsSearchPlaceholder": "Search settings",
   "settingsSearchNoResults": "No settings match “{query}”.",

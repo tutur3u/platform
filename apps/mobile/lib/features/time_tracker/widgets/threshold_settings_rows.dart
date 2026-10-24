@@ -14,7 +14,7 @@ class _ThresholdRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SettingsRowLayout.minHeight),
       child: Padding(
@@ -36,7 +36,7 @@ class _ThresholdRow extends StatelessWidget {
                     ),
                   ),
                   if (subtitle case final hint?) ...[
-                    const shad.Gap(2),
+                    const AppGap(2),
                     Text(
                       hint,
                       style: theme.typography.small.copyWith(
@@ -47,7 +47,7 @@ class _ThresholdRow extends StatelessWidget {
                 ],
               ),
             ),
-            const shad.Gap(12),
+            const AppGap(12),
             trailing,
           ],
         ),
@@ -72,7 +72,7 @@ class _NumberField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -88,7 +88,7 @@ class _NumberField extends StatelessWidget {
             enabled: enabled,
           ),
         ),
-        const shad.Gap(8),
+        const AppGap(8),
         Text(
           unit,
           style: theme.typography.base.copyWith(

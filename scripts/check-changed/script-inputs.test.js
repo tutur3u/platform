@@ -17,7 +17,7 @@ for (const [testFile, helperFile] of [
     t.after(() => fs.rmSync(root, { recursive: true, force: true }));
     const git = (...args) =>
       execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
-    git('init', '-q');
+    git('init', '-q', '-b', 'fix/script-inputs');
     git('config', 'user.name', 'Gate fixture');
     git('config', 'user.email', 'fixture@example.invalid');
     git(
@@ -48,7 +48,7 @@ for (const [testFile, helperFile] of [
     const deps = {
       root,
       env: { TUTURUUU_PRE_PUSH: '1' },
-      stdin: `refs/heads/fix/test ${head} refs/heads/fix/test ${'0'.repeat(40)}\n`,
+      stdin: `refs/heads/fix/script-inputs ${head} refs/heads/fix/script-inputs ${'0'.repeat(40)}\n`,
       execFile: (command, args, options) => {
         if (args[0] === 'ls-files') queries.push(args);
         return execFileSync(command, args, { ...options, cwd: root });

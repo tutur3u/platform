@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Offline module pages link to the app's single settings sub-screen rather
 /// than repeating its editors.
@@ -31,7 +31,7 @@ class OfflineModulePreferences extends StatelessWidget {
           SettingsTile(
             key: ValueKey('offline-$moduleId-app-settings'),
             grouped: true,
-            icon: shad.LucideIcons.slidersHorizontal,
+            icon: LucideIcons.slidersHorizontal,
             title: l10n.settingsAppSettingsFor(_moduleLabel(l10n)),
             onTap: () => context.push(location),
           ),

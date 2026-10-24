@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
@@ -15,7 +16,6 @@ import 'package:mobile/features/settings/view/apps/app_settings_labels.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 export 'package:mobile/features/settings/view/product_settings_section.dart';
 
@@ -66,7 +66,7 @@ Future<void> _push(BuildContext context, String appId) async {
 final productSettingsRegistry = <ProductSettingsEntry>[
   ProductSettingsEntry(
     id: 'tasks',
-    icon: shad.LucideIcons.squareKanban,
+    icon: LucideIcons.squareKanban,
     title: (context) => context.l10n.navTasks,
     visible: (_) => true,
     open: (context) => _push(context, 'tasks'),
@@ -79,7 +79,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'calendar',
-    icon: shad.LucideIcons.calendar,
+    icon: LucideIcons.calendar,
     title: (context) => context.l10n.navCalendar,
     visible: (context) => context.read<CalendarSettingsCubit?>() != null,
     open: (context) => _push(context, 'calendar'),
@@ -96,7 +96,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'finance',
-    icon: shad.LucideIcons.wallet,
+    icon: LucideIcons.wallet,
     title: (context) => context.l10n.navFinance,
     visible: (context) => context.read<FinancePreferencesCubit?>() != null,
     open: (context) => _push(context, 'finance'),
@@ -108,7 +108,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'timer',
-    icon: shad.LucideIcons.timer,
+    icon: LucideIcons.timer,
     title: (context) => context.l10n.timerTitle,
     // Timer is opt-in; its routed sub-screen stays reachable by link.
     visible: (context) =>
@@ -124,7 +124,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'mail',
-    icon: shad.LucideIcons.mail,
+    icon: LucideIcons.mail,
     title: (context) => context.l10n.mailTitle,
     visible: (context) {
       final user = context.read<AuthCubit>().state.user;
@@ -154,7 +154,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
   ),
   ProductSettingsEntry(
     id: 'assistant',
-    icon: shad.LucideIcons.sparkles,
+    icon: LucideIcons.sparkles,
     title: (context) => context.l10n.navAssistant,
     visible: _assistantSettingsReady,
     summary: (context, _) => context.l10n.settingsAssistantSummary,

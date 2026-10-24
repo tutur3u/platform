@@ -12,7 +12,7 @@ class _ChatEmptyList extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              shad.LucideIcons.messagesSquare,
+              LucideIcons.messagesSquare,
               size: 34,
               color: colorScheme.mutedForeground,
             ),
@@ -105,7 +105,7 @@ class _ConversationTile extends StatelessWidget {
                         ),
                         if (conversation.isPinned)
                           Icon(
-                            shad.LucideIcons.pin,
+                            LucideIcons.pin,
                             size: 13,
                             color: colorScheme.mutedForeground,
                           ),
@@ -177,10 +177,10 @@ class _ConversationIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = shad.Theme.of(context).colorScheme;
     final icon = switch (type) {
-      ChatConversationType.ai => shad.LucideIcons.bot,
-      ChatConversationType.channel => shad.LucideIcons.hash,
-      ChatConversationType.direct => shad.LucideIcons.user,
-      ChatConversationType.group => shad.LucideIcons.users,
+      ChatConversationType.ai => LucideIcons.bot,
+      ChatConversationType.channel => LucideIcons.hash,
+      ChatConversationType.direct => LucideIcons.user,
+      ChatConversationType.group => LucideIcons.users,
     };
 
     return Container(

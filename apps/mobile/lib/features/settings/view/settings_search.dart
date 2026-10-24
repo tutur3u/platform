@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// A root Settings group to scroll into view, set by links from app
 /// sub-screens and consumed by the Settings root.
@@ -87,37 +86,26 @@ class SettingsSearchField extends StatelessWidget {
     return Semantics(
       textField: true,
       label: l10n.settingsSearchPlaceholder,
-      child: shad.TextField(
+      child: AppTextField(
         key: const ValueKey('settings-search-field'),
-        selectionControls: platformTextSelectionControls(),
-        contextMenuBuilder: platformTextContextMenuBuilder(),
         controller: controller,
-        placeholder: Text(l10n.settingsSearchPlaceholder),
+        placeholder: l10n.settingsSearchPlaceholder,
         onChanged: onChanged,
         textInputAction: TextInputAction.search,
-        borderRadius: BorderRadius.circular(SettingsRowLayout.cardRadius),
         filled: true,
-        features: [
-          const shad.InputFeature.leading(
-            Icon(shad.LucideIcons.search, size: 18),
-          ),
-          if (controller.text.isNotEmpty)
-            shad.InputFeature.trailing(
-              shad.IconButton.ghost(
+        leading: const Icon(LucideIcons.search, size: 18),
+        trailing: controller.text.isEmpty
+            ? null
+            : AppIconButton(
                 key: const ValueKey('settings-search-clear'),
-                density: shad.ButtonDensity.iconDense,
-                icon: Icon(
-                  shad.LucideIcons.x,
-                  size: 18,
-                  semanticLabel: l10n.commonClearSearch,
-                ),
+                tooltip: l10n.commonClearSearch,
+                density: AppButtonDensity.iconDense,
+                icon: const Icon(LucideIcons.x, size: 18),
                 onPressed: () {
                   controller.clear();
                   onChanged('');
                 },
               ),
-            ),
-        ],
       ),
     );
   }
@@ -137,7 +125,7 @@ class SettingsSearchResults extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     if (results.isEmpty) {
-      final theme = shad.Theme.of(context);
+      final theme = AppTokens.of(context);
       return Padding(
         key: const ValueKey('settings-search-empty'),
         padding: const EdgeInsets.symmetric(

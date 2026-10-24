@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -28,7 +29,7 @@ class AppearanceAdjustments extends StatelessWidget {
       children: [
         _SliderRow(
           key: const ValueKey('appearance-intensity'),
-          icon: shad.LucideIcons.sunDim,
+          icon: LucideIcons.sunDim,
           label: l10n.appearanceIntensity,
           value: settings.intensity,
           onChanged: (v) => onPreview(settings.copyWith(intensity: v)),
@@ -37,7 +38,7 @@ class AppearanceAdjustments extends StatelessWidget {
         if (blobs)
           _SliderRow(
             key: const ValueKey('appearance-softness'),
-            icon: shad.LucideIcons.droplets,
+            icon: LucideIcons.droplets,
             label: l10n.appearanceSoftness,
             value: settings.softness,
             onChanged: (v) => onPreview(settings.copyWith(softness: v)),
@@ -45,7 +46,7 @@ class AppearanceAdjustments extends StatelessWidget {
           ),
         _SliderRow(
           key: const ValueKey('appearance-surface-opacity'),
-          icon: shad.LucideIcons.layers,
+          icon: LucideIcons.layers,
           label: l10n.appearanceSurfaceOpacity,
           min: AppearanceSettings.minSurfaceOpacity,
           value: settings.surfaceOpacity,
@@ -60,7 +61,7 @@ class AppearanceAdjustments extends StatelessWidget {
                 key: const ValueKey('appearance-animate'),
                 grouped: true,
                 wrapSupportingText: true,
-                icon: shad.LucideIcons.wind,
+                icon: LucideIcons.wind,
                 title: l10n.appearanceAnimate,
                 subtitle: reducedMotion
                     ? l10n.appearanceAnimateReducedMotion

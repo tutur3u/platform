@@ -46,7 +46,7 @@ class _RequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = context.l10n;
 
@@ -176,7 +176,7 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final colorScheme = theme.colorScheme;
 
     final initials = _initials(displayName);
@@ -238,7 +238,7 @@ class _DurationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final muted = theme.colorScheme.mutedForeground;
 
     return Row(
@@ -278,7 +278,7 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final muted = theme.colorScheme.mutedForeground;
 
     return Row(
@@ -309,7 +309,7 @@ class _ActionFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final colorScheme = theme.colorScheme;
     final colors = DynamicColors.of(context);
     final l10n = context.l10n;
