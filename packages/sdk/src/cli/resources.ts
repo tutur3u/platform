@@ -378,7 +378,11 @@ export async function runResourcesCommand(argv: string[]) {
         ? [
             `validationLanes ${resourceLanes(limits)} exceeds this host's lane ceiling ${ceiling}; at most ${state.effectiveLanes} lane(s) are admitted.`,
           ]
-        : []),
+        : resourceMaxLanes(limits) > ceiling
+          ? [
+              `maxValidationLanes ${resourceMaxLanes(limits)} exceeds this host's lane ceiling ${ceiling}; burst admission stops at ${state.effectiveLanes} lane(s).`,
+            ]
+          : []),
     ];
     const details = await resourceStatusDetails(state);
     const result = {

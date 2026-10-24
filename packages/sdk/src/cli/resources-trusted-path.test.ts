@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   type ExecutableFs,
@@ -144,5 +145,33 @@ describe('trusted canonical system tools on macOS', () => {
   it('accepts SIP-protected /bin and /usr/bin binaries', () => {
     expect(trustedSystemExecutable('cat', PATH, macos)).toBe('/bin/cat');
     expect(trustedSystemExecutable('head', PATH, macos)).toBe('/usr/bin/head');
+  });
+});
+
+// Evidence on a real host rather than a fixture: runs wherever Ubuntu's
+// rust-coreutils layout exists (for example skr-linux-lan, Ubuntu 26.04).
+const rustCoreutils = '/usr/lib/cargo/bin/coreutils';
+describe.runIf(
+  process.platform === 'linux' && existsSync(`${rustCoreutils}/cat`)
+)('real rust-coreutils host (REV-6492-9)', () => {
+  it.each(['cat', 'echo', 'head', 'tail', 'wc', 'pwd', 'date', 'uname'])(
+    '%s resolves to its canonical rust-coreutils applet',
+    (tool) => {
+      const resolved = trustedSystemExecutable(tool, '/usr/bin:/bin');
+      if (!existsSync(`${rustCoreutils}/${tool}`))
+        return expect(resolved).toBeUndefined();
+      expect(resolved).toBe(`${rustCoreutils}/${tool}`);
+      // The symlink the shell would find points into the applet directory.
+      expect(realpathSync(`/usr/bin/${tool}`)).toBe(resolved);
+    }
+  );
+
+  it('queues true where it links to a differently named binary (gnutrue)', () => {
+    const real = realpathSync('/usr/bin/true');
+    const resolved = trustedSystemExecutable('true', '/usr/bin:/bin');
+    if (real === `${rustCoreutils}/true`) return expect(resolved).toBe(real);
+    // Ubuntu 26.04 ships GNU true as /usr/bin/gnutrue: another applet name.
+    expect(real.endsWith('/gnutrue')).toBe(true);
+    expect(resolved).toBeUndefined();
   });
 });

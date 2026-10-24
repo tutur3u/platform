@@ -94,9 +94,12 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
     const runner = join(path, 'net.ts');
     await writeFile(
       runner,
-      `import {mock} from 'bun:test';import * as cp from 'node:child_process';
-      let failures=2;const original=cp.execFileSync;
-      mock.module('node:child_process',()=>({...cp,execFileSync:(command,args,options)=>{if(/(^|\\/)ps$/.test(command)&&args?.[1]==='pid=,ppid=,pgid='&&failures-->0)throw new Error('ps unavailable');return original(command,args,options)}}));
+      `import {mock} from 'bun:test';import * as cp from 'node:child_process';import * as fs from 'node:fs';
+      let failures=2;let psOk=false;const original=cp.execFileSync;const readProc=fs.readFileSync;
+      // Keep Linux's /proc fallback from supplying the evidence this test
+      // withholds until ps works again.
+      mock.module('node:fs',()=>({...fs,readFileSync:(path,...rest)=>{if(String(path).startsWith('/proc/')&&!psOk)throw new Error('ENOENT');return readProc(path,...rest)}}));
+      mock.module('node:child_process',()=>({...cp,execFileSync:(command,args,options)=>{if(/(^|\\/)ps$/.test(command)&&args?.[1]==='pid=,ppid=,pgid='&&failures-->0)throw new Error('ps unavailable');if(/(^|\\/)ps$/.test(command))psOk=true;return original(command,args,options)}}));
       delete process.env.TTR_RESOURCES_ADMITTED;delete process.env.TTR_RESOURCE_OWNER;
       const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});
       process.exitCode=await queuedResourceCommand(${JSON.stringify(path)},${JSON.stringify(realNode)},['-e',${JSON.stringify(`require('fs').writeFileSync(${JSON.stringify(output)},'ok')`)}],process.env,true,1);`

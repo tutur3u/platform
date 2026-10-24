@@ -30,6 +30,7 @@ import {
   newOwner,
   occupancy,
   processGroupAlive,
+  processLineage,
   type ResourceOwner,
   readOwner,
   releaseSlot,
@@ -203,6 +204,8 @@ async function runNested(
     { ...env, ...inherited, [admittedMarker]: parent.token }
   );
 }
+// How long a waiter with an unverifiable ancestor marker waits before failing.
+export const ancestryWait = { ms: 60_000 };
 export async function queuedResourceCommand(
   home: string,
   command: string,
@@ -256,6 +259,7 @@ export async function queuedResourceCommand(
     let announced = 0;
     let pressureReason: string | null = null;
     let ancestryCheckedAt = Date.now();
+    let unverifiedSince: number | undefined;
     while (!slot) {
       if (cancelled) return signalCodes[cancelled];
       // Safety net: a waiter must never queue behind its own ancestor, even if
@@ -274,6 +278,26 @@ export async function queuedResourceCommand(
             await rm(ticket, { force: true });
           return await runNested(home, command, originalArgs, env, ancestor);
         }
+        // Without any ancestry evidence, a waiter carrying a live owner's
+        // marker may be queued behind its own ancestor forever: fail with an
+        // actionable error after a bounded wait instead of deadlocking.
+        const marker =
+          process.env[admittedMarker] || process.env.TTR_RESOURCE_OWNER;
+        const unverified =
+          marker !== undefined &&
+          !processLineage(true) &&
+          (await occupancy(home)).owners.some(
+            (entry) => entry.token === marker
+          );
+        if (!unverified) unverifiedSince = undefined;
+        else unverifiedSince ??= Date.now();
+        if (
+          unverifiedSince !== undefined &&
+          Date.now() - unverifiedSince >= ancestryWait.ms
+        )
+          throw new Error(
+            `Cannot verify process ancestry: neither /bin/ps nor /usr/bin/ps exists${process.platform === 'linux' ? ' and /proc is unreadable' : ''}. This command carries ${admittedMarker} for a live admitted job and may be waiting behind its own ancestor. Install ps (procps), or rerun the nested command with TTR_RESOURCES_BYPASS=1.`
+          );
       }
       let pressureBlocked = false;
       pressureReason = null;

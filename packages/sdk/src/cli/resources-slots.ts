@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import {
   link,
   lstat,
@@ -145,7 +145,40 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
       /* Retry once; missing evidence never permits nesting by itself. */
     }
   }
-  return undefined;
+  // Linux without a trusted ps: the kernel's /proc is not PATH-controlled.
+  const fallback = procLineage();
+  if (fallback) lineage = fallback;
+  return fallback;
+}
+// Parent and process group from /proc/<pid>/stat. The command name (field 2)
+// may contain spaces and parentheses, so fields are read after its last ')'.
+function procStat(pid: number | 'self') {
+  const text = readFileSync(`/proc/${pid}/stat`, 'utf8');
+  const fields = text.slice(text.lastIndexOf(')') + 2).split(' ');
+  const parent = Number(fields[1]);
+  const group = Number(fields[2]);
+  if (!Number.isInteger(parent) || !Number.isInteger(group))
+    throw new Error('unreadable /proc stat');
+  return { parent, group };
+}
+export function procLineage(): ProcessLineage | undefined {
+  if (process.platform !== 'linux') return undefined;
+  try {
+    const pids = new Set<number>();
+    let parent = process.ppid;
+    while (parent > 1 && !pids.has(parent)) {
+      pids.add(parent);
+      try {
+        parent = procStat(parent).parent || 1;
+      } catch {
+        // The ancestor exited between reads; the chain above it is gone.
+        break;
+      }
+    }
+    return { pids, group: procStat('self').group || undefined };
+  } catch {
+    return undefined;
+  }
 }
 export function isAncestor(pid: number) {
   return processLineage()?.pids.has(pid) ?? false;
