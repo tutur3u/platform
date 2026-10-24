@@ -21,9 +21,9 @@ afterEach(() => {
 it('defaults to off and does not construct a store or provider runtime', () => {
   vi.stubEnv('NATIVE_INTEGRITY_MODE', '');
   expect(nativeIntegrityMode()).toBe('off');
-  expect(nativeIntegrityRuntime()).toBeNull();
+  expect(nativeIntegrityRuntime('actor')).toBeNull();
   vi.stubEnv('NATIVE_INTEGRITY_MODE', 'typo-enforce');
-  expect(nativeIntegrityRuntime()).toBeNull();
+  expect(nativeIntegrityRuntime('actor')).toBeNull();
   expect(mocks.redis).not.toHaveBeenCalled();
 });
 it('accepts only explicitly enabled rollout modes', () => {

@@ -11,6 +11,16 @@ export function calendarPreferenceGuardOptions(request: {
   | 'routePolicies'
 > {
   if (
+    request.method === 'GET' &&
+    request.nextUrl.pathname === '/native-integrity/turnstile'
+  )
+    return {
+      prefixBase: 'proxy:web:native-integrity-bridge',
+      routePolicies: [],
+      useVerifiedBearerActor: true,
+      diagnosticPolicyName: 'native-integrity-bridge',
+    };
+  if (
     request.method === 'POST' &&
     /^\/api\/v1\/native-integrity\/(?:challenge|enroll)$/u.test(
       request.nextUrl.pathname

@@ -101,10 +101,7 @@ describe('native integrity challenge/enrollment adapters', () => {
       'enroll'
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      verified: false,
-      verdict: 'invalid-proof',
-    });
+    expect(await response.json()).toEqual({ verified: false });
   });
   it('degrades challenge outage in monitor and rate-limits issuance in enforce with diagnostics', async () => {
     mocks.runtime.mockImplementation(() => {
@@ -126,5 +123,36 @@ describe('native integrity challenge/enrollment adapters', () => {
     expect(response.headers.get('X-RateLimit-Policy')).toBe(
       'native-integrity-challenge'
     );
+  });
+  it('returns only the public verification boolean for enrollment, including disabled mode and provider errors', async () => {
+    mocks.enroll.mockResolvedValue({
+      mode: 'monitor',
+      allowed: true,
+      reason: 'verified',
+    });
+    const enrollment = {
+      keyId: 'key',
+      challengeId: 'c'.repeat(32),
+      attestation: 'attestation',
+    };
+    expect(
+      await (
+        await nativeIntegrityEndpoint(request(enrollment), 'enroll')
+      ).json()
+    ).toEqual({ verified: true });
+    mocks.runtime.mockImplementation(() => {
+      throw new Error('provider unavailable');
+    });
+    expect(
+      await (
+        await nativeIntegrityEndpoint(request(enrollment), 'enroll')
+      ).json()
+    ).toEqual({ verified: false });
+    mocks.mode.mockReturnValue('off');
+    expect(
+      await (
+        await nativeIntegrityEndpoint(request(enrollment), 'enroll')
+      ).json()
+    ).toEqual({ verified: false });
   });
 });

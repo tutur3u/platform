@@ -35,6 +35,10 @@ export interface NativeIntegrityStore {
     challengeId: string
   ): Promise<NativeIntegrityChallenge | null>;
   getKey(actorId: string, keyId: string): Promise<NativeIntegrityKey | null>;
+  /** Live Apple enrollment or a retained server-verified Play capability. */
+  hasNativeCapability(actorId: string): Promise<boolean>;
+  /** Persist a bounded actor capability before accepting a valid Play proof. */
+  recordVerifiedPlayCapability(actorId: string): Promise<void>;
   /** Register once for actor + keyId, never overwrite an enrolled key. */
   registerKey(
     actorId: string,
@@ -77,7 +81,9 @@ export type NativeIntegrityReason =
   | 'counter-conflict'
   | 'provider-unavailable'
   | 'store-unavailable'
-  | 'fallback-disabled';
+  | 'fallback-disabled'
+  | 'fallback-ineligible'
+  | 'native-proof-required';
 export type NativeIntegrityResult = {
   allowed: boolean;
   mode: NativeIntegrityMode;
@@ -101,13 +107,22 @@ export interface NativeIntegrityVerifiers {
   play(input: { token: string; requestHash: string }): Promise<void>;
   turnstile(input: { token: string; requestHash: string }): Promise<void>;
 }
+export type NativeIntegrityFallbackEligibility =
+  | 'unsupported-platform'
+  | 'native-required';
+
 export type NativeIntegrityDependencies = {
   mode: NativeIntegrityMode;
   store: NativeIntegrityStore;
   verifiers: NativeIntegrityVerifiers;
   now?: () => number;
   randomBytes?: (size: number) => Uint8Array;
+  /** Explicit server operator control; absent means fallback is disabled. */
   allowTurnstile?: boolean;
+  /** Server-owned eligibility; never derive this from request headers or UA. */
+  turnstileActorEligibility?: (
+    actorId: string
+  ) => Promise<NativeIntegrityFallbackEligibility>;
   allowDevelopmentApple?: boolean;
   cloudProjectNumber?: string;
   turnstileSiteKey?: string;

@@ -43,6 +43,16 @@ redis.call('SET', KEYS[3], ARGV[5], 'EX', ARGV[3])
 redis.call('ZADD', KEYS[2], ARGV[4], KEYS[1])
 redis.call('EXPIRE', KEYS[2], ARGV[3])
 return 1`,
+  capability: `local capability = redis.call('GET', KEYS[2])
+if capability then
+  if capability ~= '1' then return redis.error_reply('invalid-native-capability') end
+  return 1
+end
+local keys = redis.call('ZRANGEBYSCORE', KEYS[1], ARGV[1], '+inf', 'LIMIT', 0, 8)
+for _, key in ipairs(keys) do if redis.call('EXISTS', key) == 1 then return 1 end end
+return 0`,
+  verifiedPlay: `redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+return 1`,
   revoke: `local keys = redis.call('ZRANGE', KEYS[1], 0, 7)
 for _, key in ipairs(keys) do
   local value = redis.call('GET', key)
@@ -53,7 +63,8 @@ for _, key in ipairs(keys) do
   redis.call('DEL', key)
 end
 redis.call('DEL', KEYS[1])
-return #keys`,
+local play = redis.call('DEL', KEYS[2])
+return #keys + play`,
   counter: `local value = redis.call('GET', KEYS[1])
 if not value then return 0 end
 local record = cjson.decode(value)
@@ -79,6 +90,8 @@ const prefix = 'native-integrity:v1:';
 const keyRetentionSeconds = 90 * 24 * 60 * 60;
 const actorKeyIndex = (actorId: string) =>
   `${prefix}actor-keys:${digest(actorId)}`;
+const playCapability = (actorId: string) =>
+  `${prefix}play-capability:${digest(actorId)}`;
 const keyName = (actorId: string, keyId: string) =>
   `${prefix}key:${digest(`${actorId}\n${keyId}`)}`;
 function storedValue(value: unknown): unknown {
@@ -90,6 +103,28 @@ export function createNativeIntegrityStore(
   now = Date.now
 ): NativeIntegrityStore {
   return {
+    async hasNativeCapability(actorId) {
+      return (
+        z
+          .union([z.literal(0), z.literal(1)])
+          .parse(
+            await redis.eval(
+              scripts.capability,
+              [actorKeyIndex(actorId), playCapability(actorId)],
+              [now()]
+            )
+          ) === 1
+      );
+    },
+    async recordVerifiedPlayCapability(actorId) {
+      const committed = await redis.eval(
+        scripts.verifiedPlay,
+        [playCapability(actorId)],
+        [keyRetentionSeconds]
+      );
+      if (committed !== 1)
+        throw new Error('Native capability persistence unavailable');
+    },
     async issueChallenge(record, quota) {
       const ttl = Math.min(120_000, record.expiresAt - now());
       if (ttl <= 0) return false;
@@ -183,11 +218,11 @@ export async function revokeNativeIntegrityActorKeys(
     .number()
     .int()
     .min(0)
-    .max(8)
+    .max(9)
     .parse(
       await redis.eval(
         scripts.revoke,
-        [actorKeyIndex(actorId)],
+        [actorKeyIndex(actorId), playCapability(actorId)],
         [digest(actorId)]
       )
     );

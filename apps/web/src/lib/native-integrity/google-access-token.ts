@@ -12,7 +12,8 @@ const tokenSchema = z.object({
 });
 const endpoint = 'https://oauth2.googleapis.com/token';
 let cached: { identity: string; token: string; expiresAt: number } | undefined;
-let pending: { identity: string; promise: Promise<string> } | undefined;
+const pending = new Map<string, Promise<string>>();
+const maximumPendingRefreshes = 128;
 
 function waitForCaller(
   promise: Promise<string>,
@@ -27,7 +28,8 @@ function waitForCaller(
     promise.then(
       (token) => {
         signal.removeEventListener('abort', abort);
-        signal.aborted ? reject(signal.reason) : resolve(token);
+        if (signal.aborted) reject(signal.reason);
+        else resolve(token);
       },
       (error: unknown) => {
         signal.removeEventListener('abort', abort);
@@ -40,7 +42,8 @@ function waitForCaller(
 export function googleIntegrityAccessToken(
   fetchImpl: typeof fetch = fetch,
   now = Date.now,
-  callerSignal?: AbortSignal
+  callerSignal?: AbortSignal,
+  actorScope = 'single-caller'
 ): Promise<string> {
   if (callerSignal?.aborted) return Promise.reject(callerSignal.reason);
   const serialized = process.env.NATIVE_INTEGRITY_GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -51,13 +54,18 @@ export function googleIntegrityAccessToken(
   const identity = createHash('sha256').update(serialized).digest('hex');
   if (cached?.identity === identity && cached.expiresAt > now() + 60_000)
     return waitForCaller(Promise.resolve(cached.token), callerSignal);
-  if (pending?.identity === identity)
-    return waitForCaller(pending.promise, callerSignal);
+  const pendingIdentity = `${identity}:${createHash('sha256').update(actorScope).digest('hex')}`;
+  const ongoing = pending.get(pendingIdentity);
+  if (ongoing) return waitForCaller(ongoing, callerSignal);
+  if (pending.size >= maximumPendingRefreshes)
+    return Promise.reject(
+      new Error('Google authorization capacity unavailable')
+    );
   const signal = AbortSignal.any([
     AbortSignal.timeout(5000),
     ...(callerSignal ? [callerSignal] : []),
   ]);
-  const promise = (async () => {
+  const promise: Promise<string> = (async () => {
     signal.throwIfAborted();
     const credentials = credentialsSchema.parse(JSON.parse(serialized));
     const issuedAt = Math.floor(now() / 1000);
@@ -132,8 +140,9 @@ export function googleIntegrityAccessToken(
     };
     return token.access_token;
   })().finally(() => {
-    if (pending?.identity === identity) pending = undefined;
+    if (pending.get(pendingIdentity) === promise)
+      pending.delete(pendingIdentity);
   });
-  pending = { identity, promise };
+  pending.set(pendingIdentity, promise);
   return promise;
 }

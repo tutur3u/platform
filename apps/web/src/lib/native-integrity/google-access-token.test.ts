@@ -145,3 +145,41 @@ it('honors an aborted coalesced caller without abandoning the active shared toke
   await cachedRejected;
   expect(network).toHaveBeenCalledTimes(1);
 });
+it('does not let one actor budget denial poison another actor token refresh', async () => {
+  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  vi.stubEnv(
+    'NATIVE_INTEGRITY_GOOGLE_SERVICE_ACCOUNT_JSON',
+    JSON.stringify({
+      client_email: 'isolated@example.test',
+      private_key: privateKey.export({ format: 'pem', type: 'pkcs8' }),
+    })
+  );
+  let fail: (error: Error) => void = () => {};
+  const denied = new Promise<Response>((_resolve, reject) => {
+    fail = reject;
+  });
+  const firstNetwork = vi.fn<typeof fetch>().mockReturnValue(denied);
+  const secondNetwork = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ access_token: 'second-actor-token', expires_in: 3600 })
+    );
+  const first = googleIntegrityAccessToken(
+    firstNetwork,
+    Date.now,
+    undefined,
+    'actor-budget-exhausted'
+  );
+  const failed = expect(first).rejects.toThrow('actor budget exhausted');
+  const second = googleIntegrityAccessToken(
+    secondNetwork,
+    Date.now,
+    undefined,
+    'actor-budget-available'
+  );
+  fail(new Error('actor budget exhausted'));
+  await failed;
+  expect(await second).toBe('second-actor-token');
+  expect(firstNetwork).toHaveBeenCalledTimes(1);
+  expect(secondNetwork).toHaveBeenCalledTimes(1);
+});

@@ -11,11 +11,16 @@ import type {
   NativeIntegrityStore,
 } from './native-integrity-types';
 
-function fixture(mode: NativeIntegrityMode = 'enforce', fallback = false) {
+function fixture(
+  mode: NativeIntegrityMode = 'enforce',
+  fallback = false,
+  unsupported = false
+) {
   let now = 1000;
   let sequence = 0;
   const challenges = new Map<string, NativeIntegrityChallenge>();
   const keys = new Map<string, NativeIntegrityKey>();
+  const playActors = new Set<string>();
   const key = (actor: string, id: string) => `${actor}:${id}`;
   const store: NativeIntegrityStore = {
     issueChallenge: vi.fn(async (record) => {
@@ -28,6 +33,14 @@ function fixture(mode: NativeIntegrityMode = 'enforce', fallback = false) {
       return record;
     }),
     getKey: vi.fn(async (actor, id) => keys.get(key(actor, id)) ?? null),
+    hasNativeCapability: vi.fn(
+      async (actor) =>
+        playActors.has(actor) ||
+        [...keys.values()].some((value) => value.actorId === actor)
+    ),
+    recordVerifiedPlayCapability: vi.fn(async (actor) => {
+      playActors.add(actor);
+    }),
     registerKey: vi.fn(async (actor, id, value) => {
       if (keys.has(key(actor, id))) return false;
       keys.set(key(actor, id), value);
@@ -62,7 +75,14 @@ function fixture(mode: NativeIntegrityMode = 'enforce', fallback = false) {
     verifiers,
     now: () => now,
     randomBytes: (size) => Buffer.alloc(size, ++sequence),
+    turnstileSiteKey: 'public-site-key',
+    turnstileUrl: 'https://tuturuuu.com/native-integrity/turnstile',
     allowTurnstile: fallback,
+    turnstileActorEligibility: vi.fn(async () =>
+      unsupported
+        ? ('unsupported-platform' as const)
+        : ('native-required' as const)
+    ),
   });
   const issue = async (purpose: 'request' | 'enroll' = 'request') => {
     const result = await service.issue({
@@ -81,6 +101,7 @@ function fixture(mode: NativeIntegrityMode = 'enforce', fallback = false) {
     issue,
     challenges,
     keys,
+    playActors,
     setNow: (time: number) => {
       now = time;
     },
@@ -255,7 +276,7 @@ describe('native integrity challenge and mode service', () => {
       ).reason
     ).toBe('fallback-disabled');
     expect(f.verifiers.turnstile).not.toHaveBeenCalled();
-    const fallback = fixture('enforce', true);
+    const fallback = fixture('enforce', true, true);
     const challenge = await fallback.issue();
     expect(
       (
@@ -271,6 +292,248 @@ describe('native integrity challenge and mode service', () => {
       requestHash: challenge.requestHash,
     });
   });
+  it.each(['off', 'monitor', 'enforce'] as const)(
+    '%s never lets an enrolled Apple actor downgrade to Turnstile',
+    async (mode) => {
+      const f = fixture(mode, true, true);
+      f.keys.set('actor:another-key', {
+        actorId: 'actor',
+        publicKey: 'key',
+        environment: 'production',
+        platform: 'macos',
+        counter: 0,
+      });
+      const issued = await f.service.issue({
+        ...f.binding,
+        purpose: 'request',
+      });
+      const result = await f.service.verify({
+        ...f.binding,
+        mechanism: 'turnstile',
+        proof:
+          issued.mode === 'off'
+            ? undefined
+            : { challengeId: issued.challengeId, token: 'token' },
+      });
+      expect(result).toEqual({
+        allowed: mode !== 'enforce',
+        mode,
+        reason: mode === 'off' ? 'off' : 'native-proof-required',
+      });
+      expect(f.verifiers.turnstile).not.toHaveBeenCalled();
+      if (mode === 'off')
+        expect(f.store.hasNativeCapability).not.toHaveBeenCalled();
+    }
+  );
+  it('requires both explicit fallback enablement and server-owned unsupported eligibility', async () => {
+    for (const [enabled, unsupported] of [
+      [false, true],
+      [true, false],
+      [false, false],
+    ]) {
+      const f = fixture('enforce', enabled, unsupported);
+      const challenge = await f.issue();
+      expect(
+        (
+          await f.service.verify({
+            ...f.binding,
+            mechanism: 'turnstile',
+            proof: {
+              challengeId: challenge.challengeId,
+              token: 'token',
+              keyId: 'untrusted-platform-claim',
+            },
+          })
+        ).reason
+      ).toBe(enabled ? 'fallback-ineligible' : 'fallback-disabled');
+      expect(f.verifiers.turnstile).not.toHaveBeenCalled();
+    }
+  });
+  it('does not advertise fallback without server eligibility and native capability checks', async () => {
+    const f = fixture('enforce', true, true);
+    f.keys.set('actor:key', {
+      actorId: 'actor',
+      publicKey: 'key',
+      environment: 'production',
+      platform: 'ios',
+      counter: 0,
+    });
+    expect(await f.issue()).not.toHaveProperty('turnstileUrl');
+    expect(f.store.hasNativeCapability).toHaveBeenCalledWith('actor');
+  });
+  it('allows native Play proof for an enrolled Apple actor but prevents a later Turnstile downgrade', async () => {
+    const f = fixture('enforce', true, true);
+    f.keys.set('actor:key', {
+      actorId: 'actor',
+      publicKey: 'key',
+      environment: 'production',
+      platform: 'ios',
+      counter: 0,
+    });
+    const challenge = await f.issue();
+    expect(
+      (
+        await f.service.verify({
+          ...f.binding,
+          mechanism: 'play-integrity',
+          proof: { challengeId: challenge.challengeId, token: 'token' },
+        })
+      ).reason
+    ).toBe('verified');
+    expect(f.store.recordVerifiedPlayCapability).toHaveBeenCalledWith('actor');
+    f.keys.clear();
+    const fallback = await f.issue();
+    expect(
+      (
+        await f.service.verify({
+          ...f.binding,
+          mechanism: 'turnstile',
+          proof: { challengeId: fallback.challengeId, token: 'token' },
+        })
+      ).reason
+    ).toBe('native-proof-required');
+    expect(f.verifiers.turnstile).not.toHaveBeenCalled();
+  });
+  it('defaults to native proof when the server has no unsupported-platform policy', async () => {
+    const f = fixture();
+    const service = new NativeIntegrityService({
+      mode: 'enforce',
+      store: f.store,
+      verifiers: f.verifiers,
+      allowTurnstile: true,
+    });
+    const challenge = await service.issue({ ...f.binding, purpose: 'request' });
+    if (challenge.mode === 'off') throw new Error('off');
+    expect(
+      (
+        await service.verify({
+          ...f.binding,
+          mechanism: 'turnstile',
+          proof: { challengeId: challenge.challengeId, token: 'token' },
+        })
+      ).reason
+    ).toBe('fallback-ineligible');
+    expect(f.verifiers.turnstile).not.toHaveBeenCalled();
+  });
+  it.each(['monitor', 'enforce'] as const)(
+    '%s never treats unavailable eligibility policy as permission',
+    async (mode) => {
+      const f = fixture();
+      const service = new NativeIntegrityService({
+        mode,
+        store: f.store,
+        verifiers: f.verifiers,
+        allowTurnstile: true,
+        turnstileActorEligibility: async () => {
+          throw new Error('private-policy-failure');
+        },
+      });
+      const challenge = await service.issue({
+        ...f.binding,
+        purpose: 'request',
+      });
+      if (challenge.mode === 'off') throw new Error('off');
+      expect(
+        await service.verify({
+          ...f.binding,
+          mechanism: 'turnstile',
+          proof: { challengeId: challenge.challengeId, token: 'token' },
+        })
+      ).toEqual({
+        allowed: mode === 'monitor',
+        mode,
+        reason: 'provider-unavailable',
+      });
+      expect(f.verifiers.turnstile).not.toHaveBeenCalled();
+    }
+  );
+  it('advertises fallback only for a server-eligible actor without native capability', async () => {
+    const f = fixture('enforce', true, true);
+    expect(await f.issue()).toMatchObject({
+      turnstileUrl: 'https://tuturuuu.com/native-integrity/turnstile',
+      turnstileSiteKey: 'public-site-key',
+    });
+    f.keys.set('other:key', {
+      actorId: 'other',
+      publicKey: 'key',
+      environment: 'production',
+      platform: 'ios',
+      counter: 0,
+    });
+    const challenge = await f.issue();
+    expect(
+      (
+        await f.service.verify({
+          ...f.binding,
+          mechanism: 'turnstile',
+          proof: { challengeId: challenge.challengeId, token: 'token' },
+        })
+      ).reason
+    ).toBe('verified');
+  });
+  it.each(['monitor', 'enforce'] as const)(
+    '%s denies fallback if native capability appears during verification',
+    async (mode) => {
+      const f = fixture(mode, true, true);
+      const challenge = await f.issue();
+      f.verifiers.turnstile.mockImplementation(async () => {
+        f.playActors.add('actor');
+      });
+      const result = await f.service.verify({
+        ...f.binding,
+        mechanism: 'turnstile',
+        proof: { challengeId: challenge.challengeId, token: 'token' },
+      });
+      expect(result).toEqual({
+        allowed: mode === 'monitor',
+        mode,
+        reason: 'native-proof-required',
+      });
+      expect(f.verifiers.turnstile).toHaveBeenCalledTimes(1);
+    }
+  );
+  it.each(['monitor', 'enforce'] as const)(
+    '%s does not grant Play verification before persisting native capability',
+    async (mode) => {
+      const f = fixture(mode);
+      const challenge = await f.issue();
+      vi.mocked(f.store.recordVerifiedPlayCapability).mockRejectedValue(
+        new Error('private-store-failure')
+      );
+      expect(
+        await f.service.verify({
+          ...f.binding,
+          mechanism: 'play-integrity',
+          proof: { challengeId: challenge.challengeId, token: 'token' },
+        })
+      ).toEqual({
+        allowed: mode === 'monitor',
+        mode,
+        reason: 'store-unavailable',
+      });
+    }
+  );
+  it.each(['monitor', 'enforce'] as const)(
+    '%s handles capability-store failure without dispatching fallback',
+    async (mode) => {
+      const f = fixture(mode, true, true);
+      const challenge = await f.issue();
+      vi.mocked(f.store.hasNativeCapability).mockRejectedValue(
+        new Error('private-store-failure')
+      );
+      const result = await f.service.verify({
+        ...f.binding,
+        mechanism: 'turnstile',
+        proof: { challengeId: challenge.challengeId, token: 'token' },
+      });
+      expect(result).toEqual({
+        allowed: mode === 'monitor',
+        mode,
+        reason: 'store-unavailable',
+      });
+      expect(f.verifiers.turnstile).not.toHaveBeenCalled();
+    }
+  );
   it.each(['monitor', 'enforce'] as const)(
     '%s handles invalid, unavailable providers and unavailable stores safely',
     async (mode) => {

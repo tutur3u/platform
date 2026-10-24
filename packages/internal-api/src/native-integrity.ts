@@ -88,6 +88,26 @@ export class NativeIntegrityService {
       reason,
     };
   }
+  private async fallbackDenial(
+    actorId: string
+  ): Promise<NativeIntegrityReason | null> {
+    if (!this.deps.allowTurnstile) return 'fallback-disabled';
+    try {
+      if (await this.deps.store.hasNativeCapability(actorId))
+        return 'native-proof-required';
+    } catch {
+      return 'store-unavailable';
+    }
+    if (!this.deps.turnstileActorEligibility) return 'fallback-ineligible';
+    try {
+      return (await this.deps.turnstileActorEligibility(actorId)) ===
+        'unsupported-platform'
+        ? null
+        : 'fallback-ineligible';
+    } catch {
+      return 'provider-unavailable';
+    }
+  }
   async issue(
     input: NativeIntegrityBinding & {
       purpose: 'request' | 'enroll';
@@ -136,6 +156,7 @@ export class NativeIntegrityService {
       throw new NativeIntegrityError(503, 'store-unavailable');
     }
     if (!stored) throw new NativeIntegrityError(429, 'challenge-quota');
+    const fallbackDenial = await this.fallbackDenial(binding.actorId);
     return {
       mode: this.deps.mode,
       challengeId: id,
@@ -144,7 +165,7 @@ export class NativeIntegrityService {
       ...(this.deps.cloudProjectNumber
         ? { cloudProjectNumber: this.deps.cloudProjectNumber }
         : {}),
-      ...(this.deps.allowTurnstile &&
+      ...(fallbackDenial === null &&
       this.deps.turnstileSiteKey &&
       this.deps.turnstileUrl
         ? {
@@ -279,13 +300,21 @@ export class NativeIntegrityService {
           token: proof.token,
           requestHash: challenge.requestHash,
         });
+        try {
+          await this.deps.store.recordVerifiedPlayCapability(input.actorId);
+        } catch {
+          return this.result('store-unavailable');
+        }
       } else if (input.mechanism === 'turnstile') {
-        if (!this.deps.allowTurnstile) return this.result('fallback-disabled');
+        const denied = await this.fallbackDenial(input.actorId);
+        if (denied) return this.result(denied);
         if (!proof.token) return this.result('invalid-proof');
         await this.deps.verifiers.turnstile({
           token: proof.token,
           requestHash: challenge.requestHash,
         });
+        const changedPolicy = await this.fallbackDenial(input.actorId);
+        if (changedPolicy) return this.result(changedPolicy);
       } else return this.result('invalid-proof');
       return this.result('verified');
     } catch {

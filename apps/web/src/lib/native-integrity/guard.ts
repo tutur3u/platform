@@ -24,7 +24,7 @@ export async function guardNativeCalendarIntegrity(
   let reason = 'provider-unavailable';
   let allowed = mode !== 'enforce';
   try {
-    const runtime = nativeIntegrityRuntime();
+    const runtime = nativeIntegrityRuntime(actorId);
     if (!runtime) return null;
     const body =
       request.method === 'GET'
@@ -56,7 +56,6 @@ export async function guardNativeCalendarIntegrity(
       headers: {
         'Cache-Control': 'private, no-store',
         'X-Tuturuuu-Native-Integrity': mode,
-        'X-Tuturuuu-Integrity-Fallback': 'turnstile',
       },
     }
   );

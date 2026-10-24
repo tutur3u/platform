@@ -5,6 +5,10 @@ import {
 } from '@tuturuuu/internal-api/native-integrity';
 import { verifyTurnstileToken } from '@tuturuuu/turnstile/server';
 import { configuredAppleVerifiers } from './apple-verifiers';
+import {
+  nativeIntegrityActorEligibility,
+  nativeIntegrityTurnstileEnabled,
+} from './fallback-policy';
 import { googleIntegrityAccessToken } from './google-access-token';
 import { budgetedNativeIntegrityFetch } from './provider-budget';
 import {
@@ -60,15 +64,18 @@ export function nativeIntegrityTurnstileParents() {
   ];
 }
 
-export function nativeIntegrityRuntime() {
+export function nativeIntegrityRuntime(actorId: string) {
   const mode = nativeIntegrityMode();
   if (mode === 'off') return null;
+  if (!actorId || actorId.length > 128)
+    throw new Error('Native integrity actor unavailable');
   const redis = configuredNativeIntegrityRedis();
-  const providerFetch = budgetedNativeIntegrityFetch(redis);
-  return new NativeIntegrityService({
+  const providerFetch = budgetedNativeIntegrityFetch(redis, actorId);
+  const service = new NativeIntegrityService({
     mode,
     store: createNativeIntegrityStore(redis),
-    allowTurnstile: true,
+    allowTurnstile: nativeIntegrityTurnstileEnabled(),
+    turnstileActorEligibility: nativeIntegrityActorEligibility,
     verifiers: {
       attest: (input) => configuredAppleVerifiers().attest(input),
       assert: (input) => configuredAppleVerifiers().assert(input),
@@ -82,7 +89,12 @@ export function nativeIntegrityRuntime() {
             .map((value) => value.trim())
             .filter(Boolean),
           getAccessToken: (signal) =>
-            googleIntegrityAccessToken(providerFetch, Date.now, signal),
+            googleIntegrityAccessToken(
+              providerFetch,
+              Date.now,
+              signal,
+              actorId
+            ),
           fetch: providerFetch,
         })(input),
       turnstile: async ({ token, requestHash }) => {
@@ -104,4 +116,21 @@ export function nativeIntegrityRuntime() {
     turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     turnstileUrl: `${nativeIntegrityWebOrigin()}/native-integrity/turnstile`,
   });
+  const assertActor = (claimed: string) => {
+    if (claimed !== actorId) throw new Error('Native integrity actor mismatch');
+  };
+  return {
+    issue(input: Parameters<NativeIntegrityService['issue']>[0]) {
+      assertActor(input.actorId);
+      return service.issue(input);
+    },
+    enroll(input: Parameters<NativeIntegrityService['enroll']>[0]) {
+      assertActor(input.actorId);
+      return service.enroll(input);
+    },
+    verify(input: Parameters<NativeIntegrityService['verify']>[0]) {
+      assertActor(input.actorId);
+      return service.verify(input);
+    },
+  };
 }

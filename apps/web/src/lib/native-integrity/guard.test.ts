@@ -82,9 +82,7 @@ describe('native calendar integrity route guard', () => {
     });
     const response = await guardNativeCalendarIntegrity(request(), 'actor');
     expect(response?.status).toBe(403);
-    expect(response?.headers.get('X-Tuturuuu-Integrity-Fallback')).toBe(
-      'turnstile'
-    );
+    expect(response?.headers.get('X-Tuturuuu-Integrity-Fallback')).toBeNull();
     expect(await response?.json()).toMatchObject({
       code: 'NATIVE_INTEGRITY_REQUIRED',
     });

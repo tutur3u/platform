@@ -26,9 +26,15 @@ const enrollSchema = z
     attestation: z.string().min(1).max(32_768),
   })
   .strict();
-function unavailable(mode: 'monitor' | 'enforce', status = 503) {
+function unavailable(
+  mode: 'monitor' | 'enforce',
+  status = 503,
+  purpose: 'challenge' | 'enroll' = 'challenge'
+) {
   return NextResponse.json(
-    { mode, verified: false, code: 'NATIVE_INTEGRITY_UNAVAILABLE' },
+    purpose === 'enroll'
+      ? { verified: false }
+      : { mode, verified: false, code: 'NATIVE_INTEGRITY_UNAVAILABLE' },
     {
       status: mode === 'monitor' ? 200 : status,
       headers: {
@@ -52,7 +58,9 @@ export async function nativeIntegrityEndpoint(
   const mode = nativeIntegrityMode();
   if (mode === 'off')
     return NextResponse.json(
-      { mode: 'off', verified: false },
+      purpose === 'enroll'
+        ? { verified: false }
+        : { mode: 'off', verified: false },
       { headers: { 'Cache-Control': 'private, no-store' } }
     );
   const assurance = await enforceRequiredMfaRequest(request);
@@ -67,14 +75,19 @@ export async function nativeIntegrityEndpoint(
       Buffer.from(await nativeIntegrityBody(request, 48_000)).toString('utf8')
     );
   } catch {
-    return unavailable(mode, 400);
+    return unavailable(mode, 400, purpose);
   }
   try {
-    const runtime = nativeIntegrityRuntime();
-    if (!runtime) return NextResponse.json({ mode: 'off', verified: false });
+    const runtime = nativeIntegrityRuntime(auth.user.id);
+    if (!runtime)
+      return NextResponse.json(
+        purpose === 'enroll'
+          ? { verified: false }
+          : { mode: 'off', verified: false }
+      );
     if (purpose === 'challenge') {
       const parsed = challengeSchema.safeParse(body);
-      if (!parsed.success) return unavailable(mode, 400);
+      if (!parsed.success) return unavailable(mode, 400, purpose);
       const issued = await runtime.issue({
         ...parsed.data,
         actorId: auth.user.id,
@@ -84,7 +97,7 @@ export async function nativeIntegrityEndpoint(
       });
     }
     const parsed = enrollSchema.safeParse(body);
-    if (!parsed.success) return unavailable(mode, 400);
+    if (!parsed.success) return unavailable(mode, 400, purpose);
     const result = await runtime.enroll({
       ...parsed.data,
       actorId: auth.user.id,
@@ -95,7 +108,7 @@ export async function nativeIntegrityEndpoint(
       verdict: result.reason,
     });
     return NextResponse.json(
-      { mode, verified: result.reason === 'verified', verdict: result.reason },
+      { verified: result.reason === 'verified' },
       {
         status: result.allowed ? 200 : 403,
         headers: { 'Cache-Control': 'private, no-store' },
@@ -111,6 +124,6 @@ export async function nativeIntegrityEndpoint(
       mechanism: purpose,
       verdict: 'unavailable',
     });
-    return unavailable(mode, status);
+    return unavailable(mode, status, purpose);
   }
 }
