@@ -26,7 +26,7 @@ revertible.
 - Keep plugin and script validators standard-library based when feasible so CI stays fast and stable.
 - Add new workflows to `tuturuuu.ts` so the repo CI switchboard can enable or disable them consistently.
 - Use read-only permissions for validation jobs unless a workflow truly writes commits, comments, or artifacts.
-- Run focused non-build validation locally and require builds in exact-commit CI; do not run local setup/builds/root `bun check`. A long-lived server requires a runtime verification need. Deployment authority remains separate.
+- Run focused non-build validation locally and require builds in exact-commit CI; do not run local setup/builds/root `bun validate`. A long-lived server requires a runtime verification need. Deployment authority remains separate.
 
 ## Documentation Patterns
 

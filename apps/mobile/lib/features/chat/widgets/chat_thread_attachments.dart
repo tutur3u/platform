@@ -27,7 +27,7 @@ class _ThreadEmpty extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              shad.LucideIcons.messageCircle,
+              LucideIcons.messageCircle,
               color: colorScheme.mutedForeground,
               size: 34,
             ),

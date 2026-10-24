@@ -15,6 +15,10 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/supabase/next/common',
+        replacement: resolve(__dirname, '../supabase/src/next/common.ts'),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: '@tuturuuu/types/primitives/playgrounds',

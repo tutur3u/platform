@@ -396,11 +396,11 @@ class _TaskRelationshipIndicator {
 
 IconData _taskRelationshipIcon(_TaskRelationshipKind kind) {
   return switch (kind) {
-    _TaskRelationshipKind.parent => shad.LucideIcons.circleArrowUp,
-    _TaskRelationshipKind.child => shad.LucideIcons.listTree,
-    _TaskRelationshipKind.blockedBy => shad.LucideIcons.ban,
-    _TaskRelationshipKind.blocking => shad.LucideIcons.ban,
-    _TaskRelationshipKind.related => shad.LucideIcons.link2,
+    _TaskRelationshipKind.parent => LucideIcons.circleArrowUp,
+    _TaskRelationshipKind.child => LucideIcons.listTree,
+    _TaskRelationshipKind.blockedBy => LucideIcons.ban,
+    _TaskRelationshipKind.blocking => LucideIcons.ban,
+    _TaskRelationshipKind.related => LucideIcons.link2,
   };
 }
 

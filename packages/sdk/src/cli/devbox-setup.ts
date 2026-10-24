@@ -54,8 +54,10 @@ export interface DevboxSetupOptions {
   runCommand?: DevboxSetupCommandRunner;
   service?: boolean;
   serviceManager?: DevboxServiceManager;
+  serviceName?: string;
   serviceUser?: string;
   stdout?: (value: string) => void;
+  force?: boolean;
   tokenFile?: string;
   yes?: boolean;
 }
@@ -347,6 +349,7 @@ export async function runDevboxSetupCommand({
       : undefined,
     dockerHost: getFlag(flags, 'docker-host'),
     controlUrl: getFlag(flags, 'control-url'),
+    force: flags.force === true,
     judgeImages: getFlag(flags, 'judge-images'),
     agent: flags.agent === true,
     client,
@@ -356,6 +359,7 @@ export async function runDevboxSetupCommand({
     runnerName: getFlag(flags, 'runner-name'),
     service: flags.service === true,
     serviceManager: serviceManager as DevboxServiceManager | undefined,
+    serviceName: getFlag(flags, 'service-name'),
     serviceUser: getFlag(flags, 'service-user'),
     tokenFile: getFlag(flags, 'token-file'),
     yes: flags.yes === true,

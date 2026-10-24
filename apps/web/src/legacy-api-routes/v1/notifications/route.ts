@@ -93,7 +93,11 @@ export const GET = withSessionAuth(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
 
       // Parse and validate query parameters
       const { searchParams } = new URL(req.url);
@@ -246,6 +250,7 @@ export const GET = withSessionAuth(
   {
     allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     cache: { maxAge: 15, swr: 15 },
+    preferSupabaseSessionAuth: true,
   }
 );
 
@@ -273,7 +278,11 @@ export const PATCH = withSessionAuth(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
 
       // Parse and validate body
       const body = await req.json();
@@ -340,5 +349,6 @@ export const PATCH = withSessionAuth(
   },
   {
     allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    preferSupabaseSessionAuth: true,
   }
 );

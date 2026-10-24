@@ -98,7 +98,7 @@ that cannot accept the envelope is a STOP and requires a versioned rollout plan.
 | Web/Internal types | `bun run --cwd apps/web type-check && bun run --cwd packages/internal-api type-check` | exit 0 |
 | Mobile | `flutter test test/features/settings/workspace_members_pagination_test.dart && flutter analyze` from `apps/mobile` | page loading and analysis pass |
 | Web build | `bun run --cwd apps/web build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

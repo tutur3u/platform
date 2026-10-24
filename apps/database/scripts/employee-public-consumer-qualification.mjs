@@ -1,10 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  closeSync,
+  constants,
   cpSync,
   existsSync,
-  lstatSync,
+  fstatSync,
   mkdtempSync,
+  openSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -185,12 +188,15 @@ export function assertEmployeeCatalog(raw, binding) {
 }
 
 export function assertEmployeeArtifact(file, expectedSha256) {
-  if (
-    !hash(expectedSha256) ||
-    !lstatSync(file).isFile() ||
-    sha256(readFileSync(file)) !== expectedSha256
-  )
+  if (!hash(expectedSha256))
     throw new Error('Same-run generated employee artifact differs');
+  const fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    if (!fstatSync(fd).isFile() || sha256(readFileSync(fd)) !== expectedSha256)
+      throw new Error('Same-run generated employee artifact differs');
+  } finally {
+    closeSync(fd);
+  }
 }
 
 // Public export targets determine source resolution; directory indexes are never guessed.

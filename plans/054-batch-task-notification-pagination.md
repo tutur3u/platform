@@ -49,7 +49,7 @@ live source of truth.
 | Wrapper guard | `bun web:api-routes:check` | first-class move is consistent |
 | Migration tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | metadata is current |
 | Backend guard | `bun check:backend` | fallback ownership remains explicit |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | App compiles | `bun run build:web && bun run --cwd apps/tanstack-web build` | both exit 0 |
 | Whitespace | `git diff --check` | no output |
 

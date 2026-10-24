@@ -55,7 +55,7 @@ normal read-only approval.
 | External code | `for p in ai apis games google icons supabase types typescript-config ui utils vercel; do gh search code "jsr:@tuturuuu/$p" --limit 100 --json repository,path,url; gh search code "@jsr/tuturuuu__$p" --limit 100 --json repository,path,url; done` | every direct and npm-compatibility import hit dispositioned; zero supported/unknown external consumers remain before removal |
 | Release tests | `node --test scripts/ci/release-workflows.test.js` | stale metadata invariant passes |
 | Script suite | `bun test:scripts` | all pass |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

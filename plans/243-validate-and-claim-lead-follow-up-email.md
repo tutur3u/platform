@@ -108,7 +108,7 @@ verification.
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/lead-follow-up-email-claim.sql` | exact table/RPC types generated without unrelated drift |
 | Route tracking | `bun web:api-routes:check && bun migration:tanstack:manifest && bun migration:tanstack:check` | first-class route and generated migration artifacts agree |
 | Apps | `bun type-check:web && bun run --cwd apps/web build && bun type-check:contacts && bun run --cwd apps/contacts build` | typechecks and real builds exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

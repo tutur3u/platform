@@ -4,7 +4,7 @@ inputs:
   bun-version:
     description: Bun version to install.
     required: false
-    default: 1.4.3
+    default: 1.4.4
   max-attempts:
     description: Maximum install attempts.
     required: false
@@ -13,40 +13,32 @@ runs:
   using: composite
   steps:
     - name: Restore and save trusted Bun runtime cache
-      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' }}
-      uses: actions/cache@v6
+      if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/bin/bun
-        key: bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
-        restore-keys: |
-          bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+        key: bun-runtime-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Restore Bun runtime cache without saving
-      if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || github.ref != 'refs/heads/main' }}
-      uses: actions/cache/restore@v6
+      if: ${{ github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/bin/bun
-        key: bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
-        restore-keys: |
-          bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+        key: bun-runtime-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Restore and save trusted Bun package cache
-      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' }}
-      uses: actions/cache@v6
+      if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
-        key: bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
-        restore-keys: |
-          bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+        key: bun-deps-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Restore Bun package cache without saving
-      if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || github.ref != 'refs/heads/main' }}
-      uses: actions/cache/restore@v6
+      if: ${{ github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
-        key: bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
-        restore-keys: |
-          bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+        key: bun-deps-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Install Bun with backoff
       shell: bash

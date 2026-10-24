@@ -125,6 +125,54 @@ describe('devbox repair', () => {
     }
   });
 
+  it.each([undefined, false, true])(
+    'REV-6451-3 explicit executionMode requires force=true (force: %s)',
+    async (force) => {
+      const root = await mkdtemp(join(tmpdir(), 'ttr-repair-force-'));
+      const checkoutDir = join(root, 'checkout');
+      const configDir = join(root, 'config');
+      const tokenFile = join(configDir, 'runner.env');
+      await preparePlatformShape(checkoutDir);
+      await mkdir(configDir, { recursive: true });
+      const token =
+        "TUTURUUU_DEVBOX_RUNNER_TOKEN=fixture\nTUTURUUU_DEVBOX_EXECUTION_MODE='trusted'\n";
+      const wrapper = "export TUTURUUU_DEVBOX_EXECUTION_MODE='judge-only'\n";
+      const wrapperFile = join(configDir, 'devbox-runner.sh');
+      await writeFile(tokenFile, token, { mode: 0o600 });
+      await writeFile(wrapperFile, wrapper, { mode: 0o700 });
+      vi.stubEnv('TUTURUUU_CONFIG', join(configDir, 'config.json'));
+      const { commands, runCommand } = createRepairRunner(
+        new Set([checkoutDir])
+      );
+      try {
+        const repair = runDevboxRepair({
+          cwd: checkoutDir,
+          dir: '.',
+          executionMode: 'trusted',
+          force,
+          dryRun: true,
+          tokenFile,
+          runCommand,
+          serviceManager: 'systemd',
+          stdout: () => {},
+        });
+        if (force === true)
+          await expect(repair).resolves.toMatchObject({ status: 'ok' });
+        else {
+          await expect(repair).rejects.toThrow('--force');
+          expect(commands).toEqual([]);
+        }
+        expect(await readFile(tokenFile, 'utf8')).toBe(token);
+        expect(await readFile(wrapperFile, 'utf8')).toBe(wrapper);
+        expect(commands.some((command) => command.startsWith('sudo '))).toBe(
+          false
+        );
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    }
+  );
+
   it('supports dry-run repair without writing service files or running sudo', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ttr-devbox-repair-dry-'));
     const checkoutDir = join(root, 'checkout');

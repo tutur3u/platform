@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => {
     is: isMock,
     order: orderByCreatedAtMock,
   }));
-  const orMock = vi.fn(() => ({
+  const orMock = vi.fn((_filter?: string) => ({
     eq: eqWsIdMock,
     is: isMock,
     order: orderByCreatedAtMock,
@@ -35,7 +35,7 @@ const mocks = vi.hoisted(() => {
     selectMock,
     serverLoggerError: vi.fn(),
     supabase: { from: vi.fn() },
-    user: { id: 'user-1' },
+    user: { email_confirmed_at: null, id: 'user-1' },
     withSessionAuth: vi.fn(),
   };
 });
@@ -45,6 +45,7 @@ const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
+      auth: { admin: { getUserById: vi.fn() } },
       from: vi.fn((table: string) => {
         if (table === 'notifications') {
           return {
@@ -68,17 +69,6 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('./access', () => ({
-  buildNotificationAccessFilter: vi.fn(() => 'scope.eq.user'),
-  getNotificationAccessContext: vi.fn(() =>
-    Promise.resolve({
-      userEmail: 'local@tuturuuu.com',
-      userId: 'user-1',
-      workspaceIds: ['42529372-c669-4833-bb32-2cab1f4ffd83'],
-    })
-  ),
-}));
-
 describe('notifications route', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -87,6 +77,17 @@ describe('notifications route', () => {
       count: 0,
       data: [],
       error: null,
+    });
+    mocks.supabase.from.mockImplementation((table: string) => {
+      if (table === 'workspace_members') {
+        return {
+          select: () => ({
+            eq: async () => ({ data: [], error: null }),
+          }),
+        };
+      }
+
+      throw new Error(`Unexpected request table ${table}`);
     });
     mocks.withSessionAuth.mockImplementation(
       (
@@ -123,5 +124,19 @@ describe('notifications route', () => {
     expect(mocks.isMock).toHaveBeenCalledWith('read_at', null);
     expect(mocks.rangeMock).toHaveBeenCalledWith(0, 14);
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns 200 for an unconfirmed user with only user-owned notification access', async () => {
+    const route = await import('./route');
+
+    const response = await route.GET(
+      new NextRequest('http://localhost/api/v1/notifications')
+    );
+
+    expect(response.status).toBe(200);
+    const accessFilter = mocks.orMock.mock.calls[0]?.[0];
+    expect(accessFilter).toContain('user_id.eq.user-1');
+    expect(accessFilter).not.toContain('type.eq.workspace_invite');
+    expect(accessFilter).not.toContain('email.ilike.');
   });
 });

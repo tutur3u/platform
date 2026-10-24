@@ -51,7 +51,7 @@ supported caller uses the service role before changing ACLs.
 | Full DB | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Types | `git diff --exit-code -- packages/types/src/supabase.ts` | signatures unchanged |
 | Infrastructure | `bun run --cwd apps/infrastructure type-check` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

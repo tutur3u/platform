@@ -25,6 +25,7 @@ import {
 import { parseDurationSeconds } from './devbox-duration';
 import { runDevboxFleetCommand } from './devbox-fleet';
 import { parseDevboxExecutionMode } from './devbox-host-protection';
+import { runDevboxIsolationDoctor } from './devbox-isolation-command';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
 import {
   createDevboxRestartPayload,
@@ -460,6 +461,11 @@ export async function runDevboxCommand({
     return;
   }
 
+  if (resolvedAction === 'doctor' && flags.isolation === true) {
+    await runDevboxIsolationDoctor({ flags, json });
+    return;
+  }
+
   if (resolvedAction === 'doctor') {
     printDevboxDoctorReport(await createDevboxDoctorReport(), json);
     return;
@@ -543,7 +549,7 @@ export async function runDevboxCommand({
   }
 
   if (
-    ['runners', 'inspect'].includes(resolvedAction) ||
+    ['runners', 'inspect', 'feature', 'drain'].includes(resolvedAction) ||
     (['upgrade', 'restart'].includes(resolvedAction) &&
       (flags.all === true ||
         flags.runners !== undefined ||

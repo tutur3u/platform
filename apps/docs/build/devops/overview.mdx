@@ -38,7 +38,7 @@ commands and CI are inactive until explicitly resumed.
 
 - GitHub Actions is the canonical automation layer for hosted deployments, platform build validation, and database migrations.
 - `tuturuuu.ts` can disable individual workflows; `ci-check.yml` enforces that toggle before a job does real work.
-- `bun check` includes path-sensitive Discord Python validation when the local
+- `bun validate` includes path-sensitive Discord Python validation when the local
   diff touches `apps/discord/**` or `.github/workflows/discord-python-ci.yml`.
   That path runs the same blocking checks as Discord Python CI through
   `scripts/check-discord-python.js`.
