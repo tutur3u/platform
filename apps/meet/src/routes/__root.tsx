@@ -1,5 +1,5 @@
 import { createRootRoute } from '@tanstack/react-router';
-import { Document, ErrorPage } from '../runtime/router-shell';
+import { Document, ErrorPage, NotFoundPage } from '../runtime/router-shell';
 
 export const Route = createRootRoute({
   errorComponent: ErrorPage,
@@ -17,9 +17,5 @@ export const Route = createRootRoute({
     links: [{ rel: 'icon', href: '/favicon.ico' }],
   }),
   component: Document,
-  notFoundComponent: () => (
-    <main className="grid min-h-dvh place-items-center">
-      <h1>404</h1>
-    </main>
-  ),
+  notFoundComponent: NotFoundPage,
 });

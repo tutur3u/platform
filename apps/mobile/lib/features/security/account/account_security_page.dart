@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/security/account/account_security_repository.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
@@ -105,156 +106,144 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1000),
-        child: NovaRefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              16,
-              20,
-              24 + MediaQuery.paddingOf(context).bottom,
+    return NovaRefreshIndicator(
+      onRefresh: _load,
+      child: AppPageListView(
+        children: [
+          if (_loading) const NovaLoadingIndicator(size: 20),
+          if (_failed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: Text(l10n.deviceMfaError),
             ),
+          Text(l10n.securitySessionsDescription),
+          const SizedBox(height: AppLayout.itemGap),
+          for (final session in _sessions)
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  session.label.toLowerCase().contains('mobile')
+                      ? Icons.smartphone_rounded
+                      : Icons.devices_rounded,
+                ),
+                title: Text(
+                  session.label.isEmpty
+                      ? l10n.securityUnknownDevice
+                      : session.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  [
+                    if (session.current) l10n.securityCurrentSession,
+                    if (session.lastActive != null)
+                      DateFormat.yMMMd().add_jm().format(
+                        session.lastActive!.toLocal(),
+                      ),
+                    if (session.ip != null) session.ip!,
+                  ].join(' · '),
+                ),
+                trailing: session.current
+                    ? const Icon(Icons.check_circle_outline_rounded)
+                    : IconButton(
+                        tooltip: l10n.securityRevokeSession,
+                        onPressed: _busy
+                            ? null
+                            : () => unawaited(
+                                _change(
+                                  () => _repo.revoke(session.id),
+                                  title: l10n.securityRevokeSession,
+                                  description: l10n.securityRevokeDescription,
+                                ),
+                              ),
+                        icon: const Icon(Icons.logout_rounded),
+                      ),
+              ),
+            ),
+          if (_sessions.any((session) => !session.current))
+            Align(
+              alignment: Alignment.centerLeft,
+              child: shad.OutlineButton(
+                alignment: Alignment.center,
+                onPressed: _busy
+                    ? null
+                    : () => unawaited(
+                        _change(
+                          _repo.revokeOthers,
+                          title: l10n.securityRevokeOthers,
+                          description: l10n.securityRevokeDescription,
+                        ),
+                      ),
+                child: Text(l10n.securityRevokeOthers),
+              ),
+            ),
+          const SizedBox(height: 28),
+          Text(
+            l10n.securityConnectionsTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(l10n.securityConnectionsDescription),
+          const SizedBox(height: AppLayout.itemGap),
+          for (final identity in _identities)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.link_rounded),
+                title: Text(identity.provider),
+                subtitle: Text(
+                  identity.identityData?['email']?.toString() ?? '',
+                ),
+                trailing: IconButton(
+                  tooltip: l10n.securityDisconnect,
+                  onPressed: _busy || _identities.length < 2
+                      ? null
+                      : () => unawaited(
+                          _change(
+                            () => _repo.unlink(identity),
+                            title: l10n.securityDisconnect,
+                            description: l10n.securityDisconnectDescription,
+                          ),
+                        ),
+                  icon: const Icon(Icons.link_off_rounded),
+                ),
+              ),
+            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              if (_loading) const NovaLoadingIndicator(size: 20),
-              if (_failed)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(l10n.deviceMfaError),
-                ),
-              Text(l10n.securitySessionsDescription),
-              const SizedBox(height: 12),
-              for (final session in _sessions)
-                Card(
-                  child: ListTile(
-                    leading: Icon(
-                      session.label.toLowerCase().contains('mobile')
-                          ? Icons.smartphone_rounded
-                          : Icons.devices_rounded,
-                    ),
-                    title: Text(
-                      session.label.isEmpty
-                          ? l10n.securityUnknownDevice
-                          : session.label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      [
-                        if (session.current) l10n.securityCurrentSession,
-                        if (session.lastActive != null)
-                          DateFormat.yMMMd().add_jm().format(
-                            session.lastActive!.toLocal(),
-                          ),
-                        if (session.ip != null) session.ip!,
-                      ].join(' · '),
-                    ),
-                    trailing: session.current
-                        ? const Icon(Icons.check_circle_outline_rounded)
-                        : IconButton(
-                            tooltip: l10n.securityRevokeSession,
-                            onPressed: _busy
-                                ? null
-                                : () => unawaited(
-                                    _change(
-                                      () => _repo.revoke(session.id),
-                                      title: l10n.securityRevokeSession,
-                                      description:
-                                          l10n.securityRevokeDescription,
-                                    ),
-                                  ),
-                            icon: const Icon(Icons.logout_rounded),
-                          ),
-                  ),
-                ),
-              if (_sessions.any((session) => !session.current))
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: shad.OutlineButton(
+              for (final entry in {
+                OAuthProvider.google: 'Google',
+                OAuthProvider.apple: 'Apple',
+                OAuthProvider.github: 'GitHub',
+                OAuthProvider.azure: 'Microsoft',
+              }.entries)
+                if (!_identities.any(
+                  (identity) => identity.provider == entry.key.name,
+                ))
+                  shad.OutlineButton(
                     alignment: Alignment.center,
                     onPressed: _busy
                         ? null
-                        : () => unawaited(
-                            _change(
-                              _repo.revokeOthers,
-                              title: l10n.securityRevokeOthers,
-                              description: l10n.securityRevokeDescription,
-                            ),
-                          ),
-                    child: Text(l10n.securityRevokeOthers),
+                        : () async {
+                            setState(() => _busy = true);
+                            try {
+                              await _repo.link(entry.key);
+                            } on Object {
+                              if (mounted) {
+                                setState(() => _failed = true);
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() => _busy = false);
+                              }
+                            }
+                          },
+                    child: Text('${l10n.securityConnect} ${entry.value}'),
                   ),
-                ),
-              const SizedBox(height: 28),
-              Text(
-                l10n.securityConnectionsTitle,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(l10n.securityConnectionsDescription),
-              const SizedBox(height: 12),
-              for (final identity in _identities)
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.link_rounded),
-                    title: Text(identity.provider),
-                    subtitle: Text(
-                      identity.identityData?['email']?.toString() ?? '',
-                    ),
-                    trailing: IconButton(
-                      tooltip: l10n.securityDisconnect,
-                      onPressed: _busy || _identities.length < 2
-                          ? null
-                          : () => unawaited(
-                              _change(
-                                () => _repo.unlink(identity),
-                                title: l10n.securityDisconnect,
-                                description: l10n.securityDisconnectDescription,
-                              ),
-                            ),
-                      icon: const Icon(Icons.link_off_rounded),
-                    ),
-                  ),
-                ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final entry in {
-                    OAuthProvider.google: 'Google',
-                    OAuthProvider.apple: 'Apple',
-                    OAuthProvider.github: 'GitHub',
-                    OAuthProvider.azure: 'Microsoft',
-                  }.entries)
-                    if (!_identities.any(
-                      (identity) => identity.provider == entry.key.name,
-                    ))
-                      shad.OutlineButton(
-                        alignment: Alignment.center,
-                        onPressed: _busy
-                            ? null
-                            : () async {
-                                setState(() => _busy = true);
-                                try {
-                                  await _repo.link(entry.key);
-                                } on Object {
-                                  if (mounted) {
-                                    setState(() => _failed = true);
-                                  }
-                                } finally {
-                                  if (mounted) {
-                                    setState(() => _busy = false);
-                                  }
-                                }
-                              },
-                        child: Text('${l10n.securityConnect} ${entry.value}'),
-                      ),
-                ],
-              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

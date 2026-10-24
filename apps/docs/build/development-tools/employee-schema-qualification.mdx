@@ -3,10 +3,12 @@ title: Employee schema qualification
 description: Qualify the employee creation and restoration schema in an exact-source disposable database.
 ---
 
-Run `employee-schema-contract.yaml` from a reviewed control revision and set
-`source_sha` to the full reviewed creation/restoration stack commit. The workflow
-keeps the trusted control checkout at the workspace root for the shared setup
-action and checks out the exact source under `source/`. Commands run from that
+Dispatch `employee-schema-contract.yaml` on a published ref whose head is the
+reviewed creation/restoration stack commit, and set `source_sha` to that same
+full SHA. The workflow rejects a source that differs from the dispatched
+(control) commit, so no dispatch input selects code to run in that ref's cache
+scope, in particular `main`'s. It keeps the control checkout at the workspace root
+for the shared setup action and checks out the same commit under `source/`. Commands run from that
 source directory invoke the reviewed control scripts via `../apps` and
 `../scripts`; they never substitute current main or
 connects to staging or production. Its installed CLI starts a disposable

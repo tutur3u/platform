@@ -61,7 +61,7 @@ move.
 | Web tests | `bun run --cwd apps/web test -- src/lib/calendar src/__tests__/calendar-all-day-events.test.ts src/__tests__/calendar-smart-schedule-timezone.test.ts` | Web scheduling tests pass |
 | App typechecks | `bun run --cwd apps/calendar type-check && bun run --cwd apps/tasks type-check && bun run --cwd apps/web type-check` | all exit 0 |
 | App builds | `bun run --cwd apps/calendar build && bun run --cwd apps/tasks build && bun run --cwd apps/web build` | all exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Duplicate check | `rg -l "export .*UnifiedScheduler|class UnifiedScheduler" apps/calendar/src/lib/calendar apps/tasks/src/lib/calendar apps/web/src/lib/calendar` | only intentional thin facades, or no matches |
 | Whitespace | `git diff --check` | no output |
 
@@ -129,7 +129,7 @@ production copies.
 
 ### Step 6: Run full gates
 
-Run package/app tests and typechecks, all three production builds, `bun check`,
+Run package/app tests and typechecks, all three production builds, `bun validate`,
 the duplicate check, and whitespace validation. Inspect `bun.lock` and manifests
 for only the three intended workspace edges.
 

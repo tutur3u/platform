@@ -4,7 +4,9 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/layout/app_page.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -45,10 +47,16 @@ CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     : CalendarViewMode.threeDays;
 
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, this.initialEventId, this.repositoryFactory});
+  const CalendarPage({
+    super.key,
+    this.initialEventId,
+    this.repositoryFactory,
+    this.cacheStore,
+  });
 
   final String? initialEventId;
   final CalendarRepository Function()? repositoryFactory;
+  final CacheStore? cacheStore;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +66,7 @@ class CalendarPage extends StatelessWidget {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
           calendarRepository: repositoryFactory?.call() ?? CalendarRepository(),
+          cacheStore: cacheStore,
           defaultViewMode: defaultMode,
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)
@@ -355,41 +364,52 @@ class _CalendarViewState extends State<_CalendarView> {
                     return _ErrorView(error: state.error);
                   }
 
-                  return NovaRefreshIndicator(
-                    onRefresh: () async => _reload(context),
-                    child: Column(
-                      children: [
-                        // Month strip for agenda and schedule-style views.
-                        if (state.viewMode == CalendarViewMode.day ||
-                            state.viewMode == CalendarViewMode.agenda)
-                          MonthStrip(
-                            selectedDate: state.effectiveSelectedDate,
-                            focusedMonth: state.effectiveFocusedMonth,
-                            events: state.displayEvents,
-                            firstDayOfWeek: firstDayOfWeek,
-                            onDateSelected: (date) {
-                              final cubit = context.read<CalendarCubit>()
-                                ..selectDate(date);
-                              final wsId = context
-                                  .read<WorkspaceCubit>()
-                                  .state
-                                  .currentWorkspace
-                                  ?.id;
-                              if (wsId != null) {
-                                unawaited(cubit.ensureRangeLoaded(wsId, date));
-                              }
-                            },
-                            onMonthChanged: (month) {
-                              context.read<CalendarCubit>().setFocusedMonth(
-                                month,
-                              );
-                            },
+                  // Full-bleed canvas: timelines scroll beneath the dock and
+                  // read its clearance themselves.
+                  return AppPageBody.fullBleed(
+                    consumeBottomClearance: false,
+                    child: NovaRefreshIndicator(
+                      onRefresh: () async => _reload(context),
+                      child: Column(
+                        children: [
+                          // Month strip for agenda and schedule-style views.
+                          if (state.viewMode == CalendarViewMode.day ||
+                              state.viewMode == CalendarViewMode.agenda)
+                            MonthStrip(
+                              selectedDate: state.effectiveSelectedDate,
+                              focusedMonth: state.effectiveFocusedMonth,
+                              events: state.displayEvents,
+                              firstDayOfWeek: firstDayOfWeek,
+                              onDateSelected: (date) {
+                                final cubit = context.read<CalendarCubit>()
+                                  ..selectDate(date);
+                                final wsId = context
+                                    .read<WorkspaceCubit>()
+                                    .state
+                                    .currentWorkspace
+                                    ?.id;
+                                if (wsId != null) {
+                                  unawaited(
+                                    cubit.ensureRangeLoaded(wsId, date),
+                                  );
+                                }
+                              },
+                              onMonthChanged: (month) {
+                                context.read<CalendarCubit>().setFocusedMonth(
+                                  month,
+                                );
+                              },
+                            ),
+                          // View body.
+                          Expanded(
+                            child: _buildViewBody(
+                              context,
+                              state,
+                              firstDayOfWeek,
+                            ),
                           ),
-                        // View body.
-                        Expanded(
-                          child: _buildViewBody(context, state, firstDayOfWeek),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

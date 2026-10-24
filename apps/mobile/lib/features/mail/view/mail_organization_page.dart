@@ -1,9 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+
+/// Keeps the last row clear of the create button.
+const double _mailOrganizationFabGap = 100;
 
 class MailOrganizationPage extends StatefulWidget {
   const MailOrganizationPage({
@@ -293,28 +297,34 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                 child: Text(l10n.commonRetry),
               ),
             )
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 100),
-              children: [
-                for (final item in _items)
-                  ListTile(
-                    title: Text(
-                      item[_members ? 'email' : 'name'] as String? ?? '',
+          : LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                padding: AppPageInsets.of(
+                  context,
+                  width: constraints.maxWidth,
+                  endGap: _mailOrganizationFabGap,
+                ),
+                children: [
+                  for (final item in _items)
+                    ListTile(
+                      title: Text(
+                        item[_members ? 'email' : 'name'] as String? ?? '',
+                      ),
+                      subtitle: _members ? Text(item['role'] as String) : null,
+                      onTap: item['kind'] == 'system' || item['role'] == 'owner'
+                          ? null
+                          : () => _edit(item),
+                      trailing:
+                          item['kind'] == 'system' || item['role'] == 'owner'
+                          ? null
+                          : IconButton(
+                              tooltip: l10n.commonDelete,
+                              onPressed: () => _remove(item),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
                     ),
-                    subtitle: _members ? Text(item['role'] as String) : null,
-                    onTap: item['kind'] == 'system' || item['role'] == 'owner'
-                        ? null
-                        : () => _edit(item),
-                    trailing:
-                        item['kind'] == 'system' || item['role'] == 'owner'
-                        ? null
-                        : IconButton(
-                            tooltip: l10n.commonDelete,
-                            onPressed: () => _remove(item),
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                  ),
-              ],
+                ],
+              ),
             ),
     );
   }

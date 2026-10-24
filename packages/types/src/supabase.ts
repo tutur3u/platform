@@ -4044,6 +4044,35 @@ export type Database = {
           },
         ];
       };
+      devbox_run_event_cursors: {
+        Row: {
+          last_seq: number;
+          legacy_numbered: number;
+          legacy_rows: number;
+          run_id: string;
+        };
+        Insert: {
+          last_seq?: number;
+          legacy_numbered?: number;
+          legacy_rows?: number;
+          run_id: string;
+        };
+        Update: {
+          last_seq?: number;
+          legacy_numbered?: number;
+          legacy_rows?: number;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_run_event_cursors_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       devbox_run_events: {
         Row: {
           created_at: string;
@@ -4052,6 +4081,7 @@ export type Database = {
           message: string | null;
           metadata: Json;
           run_id: string;
+          seq: number | null;
         };
         Insert: {
           created_at?: string;
@@ -4060,6 +4090,7 @@ export type Database = {
           message?: string | null;
           metadata?: Json;
           run_id: string;
+          seq?: number | null;
         };
         Update: {
           created_at?: string;
@@ -4068,6 +4099,7 @@ export type Database = {
           message?: string | null;
           metadata?: Json;
           run_id?: string;
+          seq?: number | null;
         };
         Relationships: [
           {
@@ -4184,6 +4216,7 @@ export type Database = {
           env_files: string[];
           exit_code: number | null;
           id: string;
+          idempotency_key: string | null;
           lease_id: string;
           preview_ports: number[];
           runner_id: string | null;
@@ -4202,6 +4235,7 @@ export type Database = {
           env_files?: string[];
           exit_code?: number | null;
           id?: string;
+          idempotency_key?: string | null;
           lease_id: string;
           preview_ports?: number[];
           runner_id?: string | null;
@@ -4220,6 +4254,7 @@ export type Database = {
           env_files?: string[];
           exit_code?: number | null;
           id?: string;
+          idempotency_key?: string | null;
           lease_id?: string;
           preview_ports?: number[];
           runner_id?: string | null;
@@ -12451,6 +12486,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      mfa_verification_failures: {
+        Row: {
+          failed_count: number;
+          scope_key: string;
+          user_id: string;
+          window_started_at: string;
+        };
+        Insert: {
+          failed_count?: number;
+          scope_key: string;
+          user_id: string;
+          window_started_at?: string;
+        };
+        Update: {
+          failed_count?: number;
+          scope_key?: string;
+          user_id?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
       mind_ai_messages: {
         Row: {
           board_id: string | null;
@@ -19987,6 +20043,10 @@ export type Database = {
         Returns: Json;
       };
       available_playground_languages: { Args: never; Returns: Json };
+      backfill_devbox_run_event_seq: {
+        Args: { p_max_rows?: number };
+        Returns: number;
+      };
       backfill_inventory_finance_sales: {
         Args: { p_ws_id?: string };
         Returns: number;
@@ -20549,6 +20609,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      claim_email_invite_notifications_for: {
+        Args: {
+          p_email: string;
+          p_email_confirmed_at: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       claim_next_devbox_run: {
         Args: { p_runner_id: string };
         Returns: {
@@ -21102,6 +21170,10 @@ export type Database = {
         Returns: boolean;
       };
       devbox_require_reported_execution_mode: { Args: never; Returns: boolean };
+      devbox_run_idempotency_ready: {
+        Args: never;
+        Returns: boolean;
+      };
       devbox_runner_activity: {
         Args: never;
         Returns: {
@@ -21118,6 +21190,10 @@ export type Database = {
           p_capabilities_updated_at: string;
           p_workload: string;
         };
+        Returns: boolean;
+      };
+      devbox_runner_supports_commit_run: {
+        Args: { p_capabilities: Json; p_features: Json };
         Returns: boolean;
       };
       discard_uninitialized_playground: {
@@ -47972,6 +48048,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: number;
       };
+      get_current_user_email: { Args: never; Returns: string };
       get_daily_activity_heatmap: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;
@@ -49195,7 +49272,6 @@ export type Database = {
           user_count: number;
         }[];
       };
-      get_user_email: { Args: { p_user_id: string }; Returns: string };
       get_user_group_metrics_count: {
         Args: { ws_id: string };
         Returns: number;
@@ -49795,6 +49871,7 @@ export type Database = {
         Args: { secret_name: string; ws_id: string };
         Returns: boolean;
       };
+      hook_mfa_verification_attempt: { Args: { event: Json }; Returns: Json };
       insert_ai_chat_message: {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;

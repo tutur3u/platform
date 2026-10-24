@@ -38,7 +38,7 @@ export async function PATCH(
     const admin = (await createAdminClient({
       noCookie: true,
     })) as TypedSupabaseClient;
-    const access = await getNotificationAccessContext(admin, user);
+    const access = await getNotificationAccessContext(admin, user, admin);
     const filter = buildNotificationAccessFilter(access);
     const { data: notification, error: fetchError } = await admin
       .from('notifications')

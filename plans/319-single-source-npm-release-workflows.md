@@ -113,7 +113,7 @@ handoff and every affected release/CI workflow. Never inspect secret values.
 | Fleet shape | `find .github/workflows -maxdepth 1 -name 'release-*-package.yaml' -print | sort && wc -l .github/workflows/release-*-package.yaml .github/workflows/reusable-release-package.yaml` | exactly 14 thin wrappers plus one reusable workflow; copied state machines are absent |
 | Discovery | `node scripts/run-script-tests.js --list | rg '^scripts/ci/(package-release-config|package-release-runner|package-release-readiness|package-release-workflows|release-workflows).*\.test\.js$' && bun test:scripts` | all new/existing package release suites are canonically discovered and pass |
 | YAML | `ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_file(f, aliases: true) }' .github/workflows/release-*-package.yaml .github/workflows/reusable-release-package.yaml` | every workflow parses |
-| Repository/docs | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository/docs | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope/size | `git status --short && wc -l scripts/ci/release-workflows.test.js scripts/ci/package-release-config.js scripts/ci/package-release-runner.js scripts/ci/package-release-workflows.test.js` | only in-scope files changed; new/extracted modules stay focused and the oversized legacy test shrinks |
 
 ## Scope

@@ -1,3 +1,5 @@
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
+
 const OAUTH_DEBUG_ENV_KEY = 'TUTURUUU_CALENDAR_OAUTH_DEBUG';
 
 export function calendarOAuthDebug(...args: unknown[]) {
@@ -5,9 +7,9 @@ export function calendarOAuthDebug(...args: unknown[]) {
     return;
   }
 
-  console.debug(...args);
+  console.debug(...args.map((arg) => sanitizeLogValue(arg)));
 }
 
 export function calendarOAuthError(...args: unknown[]) {
-  console.error(...args);
+  console.error(...args.map((arg) => sanitizeLogValue(arg)));
 }

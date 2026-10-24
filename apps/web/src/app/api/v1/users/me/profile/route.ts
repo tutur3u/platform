@@ -15,6 +15,7 @@ import {
   CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
 } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { allowedProfileAvatar } from '@/lib/profile-avatar-url';
 import {
   bannerStorageOrigin,
   canonicalManagedBanner,
@@ -31,7 +32,8 @@ function isHttpsUrl(value: string) {
 const PatchProfileSchema = z.object({
   display_name: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH).optional(),
   bio: z.string().max(MAX_BIO_LENGTH).nullable().optional(),
-  avatar_url: z.url().max(2000).refine(isHttpsUrl).nullable().optional(),
+  // Preserve original bytes for managed avatar ownership validation.
+  avatar_url: z.string().max(2000).refine(isHttpsUrl).nullable().optional(),
   banner_url: z.url().max(2000).refine(isHttpsUrl).nullable().optional(),
   handle: z.string().max(100).nullable().optional(),
 });
@@ -127,6 +129,15 @@ export const PATCH = withSessionAuth(
           { status: 400 }
         );
       }
+
+      if (
+        updates.avatar_url !== undefined &&
+        !allowedProfileAvatar(updates.avatar_url, user.id)
+      )
+        return NextResponse.json(
+          { message: 'Invalid request data' },
+          { status: 400 }
+        );
 
       if (typeof updates.handle === 'string') {
         const original = updates.handle;

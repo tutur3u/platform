@@ -78,7 +78,7 @@ database/type ownership transfer. Never apply production migrations.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/form-definition-save.sql && bun --cwd apps/database sb:validate:isolated` | rollback, graph validation, answer preservation, ACLs, and full suite pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/form-definition-save.sql` | exact RPC types generated with no unrelated drift |
 | Forms | `bun run --cwd apps/forms type-check && bun run --cwd apps/forms build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

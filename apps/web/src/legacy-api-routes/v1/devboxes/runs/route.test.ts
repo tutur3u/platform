@@ -37,6 +37,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: createClientMock,
 }));
 
+const { limitKeyedCreateMock } = vi.hoisted(() => ({
+  limitKeyedCreateMock: vi.fn(),
+}));
+vi.mock('@/lib/devboxes/rate-limits', () => ({
+  limitDevboxKeyedCreate: limitKeyedCreateMock,
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: getPermissionsMock,
 }));
@@ -87,6 +94,29 @@ describe('devbox runs route', () => {
       })),
     });
     insertMock.mockResolvedValue({ error: null });
+    limitKeyedCreateMock.mockResolvedValue({ allowed: true, headers: {} });
+  });
+
+  it('rate limits keyed creates per actor before storage writes', async () => {
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    getPermissionsMock.mockResolvedValue(createPermissionsResult('MEMBER'));
+    const { NextResponse } = await import('next/server');
+    limitKeyedCreateMock.mockResolvedValue(
+      NextResponse.json({ message: 'Too Many Requests' }, { status: 429 })
+    );
+
+    const response = await POST(
+      createRunRequest({
+        command: ['echo', 'hi'],
+        idempotencyKey: '7d0c3a9e-1f3b-4c55-9f1e-2a3b4c5d6e7f',
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(limitKeyedCreateMock).toHaveBeenCalledWith('user-1');
+    expect(createAdminClientMock).not.toHaveBeenCalled();
   });
 
   it('rejects unauthenticated requests', async () => {

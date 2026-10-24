@@ -56,7 +56,7 @@ identity-link identifiers across tenants.
 | Utils tests | `bun run --cwd packages/utils test -- src/workspace-user-link.test.ts` | self/service repair contract passes (create test if absent) |
 | API tests | `bun run --cwd packages/apis test -- src/finance/transactions/route.test.ts` | admin repair caller remains green |
 | Backend | `bun check:backend` | Rust caller/contract compiles and tests pass |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Suggested executor toolkit
@@ -129,7 +129,7 @@ the function correctly.
 
 ### Step 4: Run full gates
 
-Run the full isolated database suite, `bun check`, and whitespace. If no function
+Run the full isolated database suite, `bun validate`, and whitespace. If no function
 signature changed, confirm generated Supabase types have no diff.
 
 ## Done criteria

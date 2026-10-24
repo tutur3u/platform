@@ -222,42 +222,40 @@ export function withApiAuth<T = unknown>(
     const isRead = method === 'GET' || method === 'HEAD';
 
     // Enforce persistent IP blocks (shared across services)
-    if (ipAddress && ipAddress !== 'unknown') {
-      const blockInfo = await isIPBlocked(ipAddress, {
-        route: endpoint,
-        source: 'api-middleware',
-      });
-      if (blockInfo) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+    const blockInfo = await isIPBlocked(ipAddress, {
+      route: endpoint,
+      source: 'api-middleware',
+    });
+    if (blockInfo) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+      );
+
+      return createErrorResponse(
+        'Too Many Requests',
+        'Rate limit exceeded',
+        429,
+        'IP_BLOCKED',
+        {
+          'Retry-After': `${retryAfter}`,
+        }
+      );
+    }
+
+    // IP-based rate limit BEFORE auth — reject floods cheaply
+    if (options?.rateLimit !== false) {
+      const preAuthConfig =
+        options?.rateLimit ??
+        (isRead ? false : { windowMs: 60000, maxRequests: 120 });
+
+      if (preAuthConfig !== false) {
+        const preAuthResult = await checkRateLimit(
+          `ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
+          preAuthConfig
         );
-
-        return createErrorResponse(
-          'Too Many Requests',
-          'Rate limit exceeded',
-          429,
-          'IP_BLOCKED',
-          {
-            'Retry-After': `${retryAfter}`,
-          }
-        );
-      }
-
-      // IP-based rate limit BEFORE auth — reject floods cheaply
-      if (options?.rateLimit !== false) {
-        const preAuthConfig =
-          options?.rateLimit ??
-          (isRead ? false : { windowMs: 60000, maxRequests: 120 });
-
-        if (preAuthConfig !== false) {
-          const preAuthResult = await checkRateLimit(
-            `ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
-            preAuthConfig
-          );
-          if (!('allowed' in preAuthResult)) {
-            return preAuthResult;
-          }
+        if (!('allowed' in preAuthResult)) {
+          return preAuthResult;
         }
       }
     }

@@ -1,4 +1,6 @@
 const test = require('node:test');
+const fs = require('node:fs');
+const path = require('node:path');
 const assert = require('node:assert/strict');
 
 const {
@@ -494,26 +496,20 @@ test('runBenchmark rejects compare runs pointed at the same frontend origin', as
   );
 });
 
-test('writeReport keeps generated reports under ignored tmp benchmark output', () => {
+test('writeReport keeps generated reports under ignored tmp benchmark output', (t) => {
   const report = {
     generatedAt: '2026-06-20T00:00:00.000Z',
     gates: { passed: true },
   };
-  const writes = [];
-  const fsImpl = {
-    mkdirSync: (dirPath) => writes.push(['mkdir', dirPath]),
-    writeFileSync: (filePath) => writes.push(['write', filePath]),
-  };
-
-  const reportPath = writeReport(report, undefined, fsImpl);
-
-  assert.match(
-    reportPath,
-    /tmp\/benchmarks\/web-migration\/2026-06-20T00-00-00-000Z\/report\.json$/u
-  );
-  assert.equal(writes.length, 2);
+  const base = path.join(__dirname, '../tmp/benchmarks/web-migration');
+  fs.mkdirSync(base, { recursive: true });
+  const output = fs.mkdtempSync(path.join(base, 'report-test-'));
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }));
+  const reportPath = writeReport(report, output);
+  assert.equal(path.dirname(path.dirname(reportPath)), output);
+  assert.deepEqual(JSON.parse(fs.readFileSync(reportPath, 'utf8')), report);
   assert.throws(
-    () => writeReport(report, '/tmp/outside-benchmark-output', fsImpl),
+    () => writeReport(report, '/tmp/outside-benchmark-output'),
     /Benchmark reports must be written under tmp\/benchmarks\/web-migration/u
   );
 });

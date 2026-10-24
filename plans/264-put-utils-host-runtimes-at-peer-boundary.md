@@ -63,7 +63,7 @@ use Bun, never manual manifest edits.
 | Focused package | `bun --cwd packages/utils vitest run src/public-runtime-boundary.test.ts && bun run --cwd packages/utils type-check` | manifest test and types pass |
 | Artifact smoke | `node --test scripts/ci/npm-package-artifact-smoke.test.js && node scripts/ci/npm-package-artifact-smoke.js --prepare-and-smoke packages/utils` | clean prepared tarball imports both affected subpaths with host runtimes |
 | Workspace dependency gate | `node --test scripts/check-workspace-dependencies.test.js` | dependency policy passes |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 

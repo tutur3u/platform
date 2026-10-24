@@ -187,44 +187,44 @@ atomically replaces `packages/types/src/supabase.ts` only after a successful,
 non-empty result. Reset, pgTAP, type generation, or output-write failure keeps
 the existing generated file unchanged. No other output path is accepted.
 
-The runner derives a Docker-safe project identity from the exact worktree path
-and Git commit, selects an available deterministic eight-port block, and prints
-both before starting. It copies only Git-tracked files from
-`apps/database/supabase` into a directory named
-`tuturuuu-supabase-*` under the operating system's temporary directory. The
-temporary config receives the isolated project id and ports; the tracked
-`supabase/config.toml` is never edited.
+The runner derives a Docker-safe identity from the exact worktree path and commit,
+selects an available deterministic eight-port block, and prints both. It copies
+only tracked `apps/database/supabase` files into an owned `tuturuuu-supabase-*`
+temporary directory, changing its project id and ports without editing tracked config.
 
-If staging fails before startup, the runner attempts to remove only its partial
-temporary project and rethrows the original staging error. A secondary cleanup
-failure emits only `Secondary staging cleanup failure.`; cleanup or diagnostic
-errors cannot replace the original error. The secondary diagnostic excludes
-paths and exception details. Run the focused regression with
-`node --test scripts/run-supabase-isolated-staging-cleanup.test.mjs`.
-It checks error identity, retained partial files and successful scoped removal
-without starting Supabase or Docker.
+Staging failure removes only its partial project and preserves the original error.
+Secondary cleanup failures emit only `Secondary staging cleanup failure.`, without
+paths or exception details. `node --test scripts/run-supabase-isolated-staging-cleanup.test.mjs`
+checks error identity, retained partial files and scoped removal without Docker.
 
-The isolated lifecycle starts that project, resets it from the copied exact-base
-migrations, runs the full or focused pgTAP suite, and stops that project with
-`--no-backup` in cleanup. It never invokes `supabase stop --all` or the default
-`sb:stop`/`sb:reset` aliases. Ordinary development continues to use
-`sb:start`, `sb:up`, and `sb:reset` unchanged.
+The lifecycle starts the copied project, resets its exact-base migrations, runs
+full or focused pgTAP, and stops only that project with `--no-backup`. It never
+uses `supabase stop --all` or the ordinary `sb:stop`/`sb:reset` aliases.
 
-SIGINT and SIGTERM request the same scoped cleanup while preserving the failing
-command or signal exit code. A hard process or machine termination can leave the
-temporary directory behind; its `.tuturuuu-isolated-supabase.json` records the
-project id, worktree commit, ports, and last lifecycle step. Resume or explicitly
-clean that recorded directory without guessing its Docker identity:
+SIGINT and SIGTERM request scoped cleanup while preserving the command or signal
+exit code. Hard termination can retain `.tuturuuu-isolated-supabase.json`, recording
+the project id, worktree commit, ports and last complete lifecycle step. Resume
+or clean the recorded directory without guessing its Docker identity:
 
 ```bash
 bun --cwd apps/database sb:validate:isolated --resume /tmp/tuturuuu-supabase-EXAMPLE
 bun --cwd apps/database sb:validate:isolated --cleanup /tmp/tuturuuu-supabase-EXAMPLE
 ```
 
-The exact temporary parent varies by operating system. Use the disposable path
-printed when the run starts; cleanup refuses paths outside the owned temporary
-directory pattern. If scoped Docker cleanup fails, the metadata directory is
-kept so the command can be retried safely.
+Use the printed disposable path; its temporary parent varies by operating system.
+Cleanup refuses paths outside the owned pattern; failed Docker cleanup retains metadata for a safe retry.
+
+Recovery metadata updates atomically replace the prior regular file with mode
+`0600`; temporary creation stays exclusive and symlink targets are rejected.
+Fault tests interrupt descriptor writes, then verify partial bytes and the prior
+record. Run the retained proposal's suite separately from the repository root:
+
+```bash
+TMPDIR=/private/tmp ttr resources run -- node --test --test-concurrency=1 apps/database/tests/programming-hosted-typegen-review/metadata.node-test.mjs
+```
+
+This `.node-test.mjs` suite is absent from root script discovery and active CI;
+`apps/database/scripts/*.test.*` results do not include it.
 
 ### Generating TypeScript Types
 

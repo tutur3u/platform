@@ -29,6 +29,7 @@ function fixture(t, policy) {
   const root = mkdtempSync(join(tmpdir(), 'publication-policy-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const file of [
+    'scripts/safe-fs.js',
     'tuturuuu.ts',
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',
@@ -40,6 +41,7 @@ function fixture(t, policy) {
     'scripts/ci/wave1-native-artifact.mjs',
     'scripts/ci/mail-node-imports.mjs',
     'scripts/ci/calendar-native-inventory.mjs',
+    'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/resolve-production-vercel-targets.ts',

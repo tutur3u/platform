@@ -133,7 +133,7 @@ canonically working Finance/Inventory owner. Never apply production migrations.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/subscription-invoice-creation.sql && bun --cwd apps/database sb:validate:isolated` | tenant invariants, transaction rollback, concurrency, ACLs, and full suite pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/subscription-invoice-creation.sql` | exact RPC/junction types generated without unrelated drift |
 | Finance | `bun run --cwd apps/finance type-check && bun run --cwd apps/finance build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

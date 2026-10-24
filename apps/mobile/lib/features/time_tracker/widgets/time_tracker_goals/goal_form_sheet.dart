@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
@@ -341,7 +342,7 @@ class _CategoryPickerSheet extends StatelessWidget {
                 Expanded(child: Text(l10n.timerGoalsGeneral)),
                 if (selectedCategory == 'general')
                   Icon(
-                    shad.LucideIcons.check,
+                    LucideIcons.check,
                     size: 16,
                     color: theme.colorScheme.foreground,
                   ),
@@ -377,7 +378,7 @@ class _CategoryPickerSheet extends StatelessWidget {
                     ),
                     if (selectedCategory == category.id)
                       Icon(
-                        shad.LucideIcons.check,
+                        LucideIcons.check,
                         size: 16,
                         color: theme.colorScheme.foreground,
                       ),

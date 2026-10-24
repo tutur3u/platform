@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -12,7 +13,7 @@ class HiddenWorkspacesSettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SettingsTile(
     grouped: grouped,
-    icon: Icons.visibility_off_outlined,
+    icon: LucideIcons.eyeOff,
     title: context.l10n.workspaceHiddenTitle,
     onTap: () => showWorkspacePickerSheet(context, hiddenOnly: true),
   );

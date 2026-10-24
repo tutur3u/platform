@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -251,8 +252,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Phone: shad.openDrawer already paints a drag handle.
-                // Dialog: show one.
+                // Phones get shad.openDrawer's drag handle; dialogs show one.
                 if (!context.isCompact)
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -281,7 +281,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
                         ),
                       ),
                       shad.IconButton.ghost(
-                        icon: const Icon(shad.LucideIcons.x, size: 18),
+                        icon: const Icon(LucideIcons.x, size: 18),
                         onPressed: () => unawaited(_closeSheet(context)),
                       ),
                     ],
