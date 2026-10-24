@@ -120,8 +120,7 @@ void main() {
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
       'packages/shadcn_flutter/LucideIcons':
           'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
-      'packages/lucide_icons_flutter/Lucide':
-          'packages/lucide_icons_flutter/assets/lucide.ttf',
+      'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
