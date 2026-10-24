@@ -766,9 +766,10 @@ The combined `rust-backend.yml` workflow is paused in `tuturuuu.ci.ts`.
 Its disabled switch also applies to manual dispatch; skipped verify jobs do not
 prove native or wasm compilation, regardless of the aggregate check result.
 
-`rust-verify.yml` provides a separate manual, main-only CI verification route
-once registered on the default branch. Supply the exact 40-character source
-commit SHA. It verifies the checkout and records source/workflow SHAs,
+`rust-verify.yml` provides a separate manual CI verification route (paused with
+Rust). Dispatch it on the ref whose head is the commit to verify and supply that
+exact 40-character SHA. The workflow rejects any other SHA, so no dispatch input
+selects code to run in a branch's cache scope. It verifies the checkout and records source/workflow SHAs,
 manifest and lock hashes, and the Rust toolchain in the run summary. It uses the
 repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
 checking and a native release build. It uses read-only repository permissions,
@@ -1198,6 +1199,11 @@ Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 - `turbo-unit-tests.yaml`
 - `biome-check.yaml`
 - `codeql.yml`
+- `security-checks.yaml`
+- `security-review-classifier.yaml`
+- `security-review-recheck.yaml` (permissionless review signal)
+- `security-review-reclassify.yaml` (default-branch recompute after reviews)
+- `security-review-sweep.yaml` (hourly default-branch recompute of one 1/24 partition of open PRs; revocation backstop)
 - `codecov.yaml`
 - `i18n-check.yaml`
 - `check-migrations.yml`
@@ -1280,12 +1286,13 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
-Automatic CodeQL uses GitHub's organization-managed
-`dynamic/github-code-scanning/codeql` workflow for JavaScript/TypeScript and
-Python. `codeql.yml` is a manual-only fallback so the repository retains an
-explicit workflow file without duplicating managed push or pull-request scans.
-Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
-the already-scanned `main` commit to `production`.
+CodeQL runs from the repository-owned `codeql.yml` (GitHub default setup is not
+configured; do not enable both). It scans pull requests and `main` pushes for the
+languages the diff touches, and `security-checks.yaml` runs it daily. Neither
+workflow calls the `ci-check` switchboard: its selectors run from the PR checkout,
+so the scope jobs read their selectors from the base commit instead. Pull requests
+fail only on new high/critical results; `bun git-sync` mirrors the already-scanned
+`main` commit to `production`. See [Security review cadence](/build/devops/security-cadence).
 
 `scripts/ci/codeql-new-alerts.js` is the trusted new-alert gate for a
 repository-owned pull request CodeQL workflow. That workflow reads it from the

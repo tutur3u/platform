@@ -1,19 +1,119 @@
 name: CodeQL Manual Fallback
 
+# Repository-owned CodeQL. GitHub default setup is not configured; do not enable
+# it alongside this workflow (code scanning rejects advanced-setup uploads while
+# default setup is on). Pull requests and main pushes scan the languages their
+# diff touches; security-checks.yaml calls this workflow on its daily schedule.
 on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_call:
   workflow_dispatch:
 
+# The codeql- prefix keeps the group distinct from security-checks.yaml when
+# this runs as its reusable workflow (github.workflow names the caller there).
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: codeql-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
   contents: read
 
 jobs:
+  # No ci-check switchboard: its selectors run from the pull request checkout,
+  # so a hostile copy could skip every scan. The scope job below selects scans
+  # with base-commit scripts only and runs everything when they are missing.
+  scope:
+    name: Resolve CodeQL scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      languages: ${{ steps.scope.outputs.codeql_languages }}
+      run: ${{ steps.scope.outputs.codeql }}
+    steps:
+      - name: Check out scope inputs
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/github-deployment-markers.ts
+            scripts/ci/resolve-changed-files-core.ts
+            scripts/ci/resolve-changed-files.ts
+            scripts/ci/security-paths.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      # Scope scripts come from the base commit (main for scheduled runs),
+      # never the checkout, so a pull request cannot switch its own gates off.
+      # Without them (bootstrap) every scan runs.
+      - name: Load trusted scope scripts
+        id: trusted_scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          trusted="$GITHUB_SHA"
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+            trusted=""
+            if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+              trusted="$BASE_SHA"
+            fi
+          fi
+          dir="$RUNNER_TEMP/trusted-scope"
+          for file in scripts/ci/github-deployment-markers.ts scripts/ci/resolve-changed-files-core.ts \
+            scripts/ci/resolve-changed-files.ts scripts/ci/security-paths.js; do
+            if [ -z "$trusted" ] || ! git cat-file -e "$trusted:$file" 2>/dev/null; then
+              echo "::warning::Trusted scope scripts are unavailable; running every scan."
+              echo "available=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            mkdir -p "$dir/$(dirname "$file")"
+            git show "$trusted:$file" > "$dir/$file"
+          done
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Compute changed files
+        id: changed_files
+        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push')
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
+          WORKFLOW_NAME: codeql.yml
+        run: node --experimental-strip-types "$TRUSTED_SCOPE/scripts/ci/resolve-changed-files.ts"
+
+      - name: Select CodeQL languages
+        id: scope
+        env:
+          AVAILABLE: ${{ steps.trusted_scope.outputs.available }}
+          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
+        run: |
+          set -euo pipefail
+          if [ "$AVAILABLE" = true ]; then
+            node "$TRUSTED_SCOPE/scripts/ci/security-paths.js" scope
+          else
+            printf '%s\n' 'codeql_languages=["actions","javascript-typescript","python"]' \
+              codeql=true dependencies=true workflows=true | tee -a "$GITHUB_OUTPUT"
+          fi
+
   analyze:
     name: Analyze (${{ matrix.language }})
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       actions: read
       contents: read
@@ -22,13 +122,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language:
-          - javascript-typescript
-          - python
+        language: ${{ fromJSON(needs.scope.outputs.languages) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           persist-credentials: false
 
       - name: Initialize CodeQL
@@ -38,7 +137,55 @@ jobs:
           languages: ${{ matrix.language }}
           queries: security-extended
 
+      # Fork pull requests get a read-only token, so their results stay local
+      # and only feed the new-alert gate below.
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           category: /language:${{ matrix.language }}
+          output: ${{ runner.temp }}/codeql-sarif
+          upload: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'never' || 'always' }}
+
+      # Pre-existing alerts are tracked by the findings register; a pull request
+      # fails only for high/critical results absent from the default-branch
+      # baseline. The gate runs from the base commit so a PR cannot edit it.
+      - name: Fail on new high or critical results
+        if: github.event_name == 'pull_request'
+        env:
+          BASELINE_REF: refs/heads/${{ github.event.repository.default_branch }}
+          CATEGORY: /language:${{ matrix.language }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Never the checkout's copy: without the trusted gate (bootstrap)
+          # every high/critical result fails, and a result whose rule or rule
+          # severity is missing or not numeric counts as high.
+          if git cat-file -e "HEAD^1:scripts/ci/codeql-new-alerts.js" 2>/dev/null; then
+            gate="$RUNNER_TEMP/codeql-new-alerts.js"
+            git show "HEAD^1:scripts/ci/codeql-new-alerts.js" > "$gate"
+            node "$gate" "$RUNNER_TEMP/codeql-sarif" "$CATEGORY"
+          else
+            shopt -s nullglob
+            sarif=("$RUNNER_TEMP"/codeql-sarif/*.sarif)
+            [ "${#sarif[@]}" -gt 0 ] || { echo "::error::No SARIF output to gate."; exit 1; }
+            # Public logs show counts only; results live in the maintainer-only
+            # code-scanning view (Security tab), never in logs or artifacts.
+            levels="$(jq -rs '[.[] | .runs[]? as $run
+              | ([$run.tool.driver.rules[]?, ($run.tool.extensions[]?.rules[]?)]
+                 | map({key: .id, value: (.properties["security-severity"]
+                     | if type == "number" then .
+                       elif type == "string" and test("^[0-9]+(\\.[0-9]+)?$") then tonumber
+                       else 10 end)})
+                 | from_entries) as $severity
+              | $run.results[]?
+              | ($severity[(.ruleId // .rule.id // "")] // 10)
+              | select(. >= 7)]
+              | "\(length) \(map(select(. >= 9)) | length) \(map(select(. < 9)) | length)"' "${sarif[@]}")"
+            read -r count critical high <<< "$levels"
+            echo "$count high/critical CodeQL result(s) ($critical critical, $high high); the trusted gate is unavailable, so every one fails."
+            if [ "$count" -ne 0 ]; then
+              echo "::error::Review the results in the repository's Security tab (code scanning, category $CATEGORY)."
+            fi
+            [ "$count" -eq 0 ]
+          fi
+

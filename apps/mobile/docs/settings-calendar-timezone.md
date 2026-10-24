@@ -1,12 +1,14 @@
 # Settings, ordering, Profile, and Calendar timezone behavior
 
 The App, Workspace, and You dock destinations consolidate into one Settings
-screen. Workspace and You are nested navigation rows; App preferences are compact
-items on that root. Preferences, General, and Support use quiet grouped surfaces
+screen. Workspace is a nested navigation row and Edit profile opens from the
+profile header. Per-app settings live under Settings > Apps sub-screens (see the
+mobile settings shell docs). Preferences, Apps, General, and Support use quiet grouped surfaces
 and current-value summaries. Expanded preferences retain two grouped columns
 at widths of at least 840dp.
-Language, first day, timezone, Finance visibility, haptics, and default Task
-board behavior open nested adaptive choice editors. Appearance (mode, theme,
+Language, timezone and haptics at the root, and first day, Finance visibility and
+default Task board behavior on their app sub-screens, open nested adaptive choice
+editors. Appearance (mode, theme,
 accent and background) opens its `/settings/appearance` child page, whose
 choices apply instantly. Root rows do not contain
 switches and tapping, opening, canceling, dismissing, or returning from an editor
@@ -18,7 +20,7 @@ to personal timezone and requires workspace settings permission; hiding an edito
 is not server authorization. Loading, unknown, retry, and retained same-scope
 failure states remain visible. Permission checks clear immediately on scope
 changes, ignore stale responses, and revalidate on pull-to-refresh. Workspace
-administration retains its guarded detail routes. You opens the existing Profile;
+administration retains its guarded detail routes. Edit profile opens the Profile settings;
 Session, About, and the bundled license viewer remain reachable. Home/Apps and
 Profile's app-wide navigation stay in the existing shell. Workspace is now a
 Settings child, so its Back returns to Settings; deeper routes return to their
@@ -27,8 +29,10 @@ parent. Existing URLs and the legacy Preferences redirect remain valid.
 This replaces the earlier decision to expose root switches. The default is a
 compact row with a concise label, muted summary, chevron, and at least a 48dp touch
 target; full explanations and options belong in the child. Rows grow with large
-text. Contextual Time Tracker, Mail, Meet, and Assistant editors remain in their
-owning app because their context and permission rules differ.
+text. Superseded on 2026-10-24: Timer (Pomodoro and the permission-gated request
+threshold), Mail and Assistant settings now have one editor under Settings > Apps,
+and in-app gears open it; the permission rules are unchanged. Per-entity editors,
+such as a Meet room, stay in their owning app.
 
 Calendar resolves personal timezone, then workspace timezone, then device
 timezone. Stored event times remain UTC instants. Views explicitly project them

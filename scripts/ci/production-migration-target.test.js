@@ -331,7 +331,7 @@ for (const overrides of [
 
 test('resolved immutable target precedes checkout and pending-range configuration', () => {
   const resolve = workflow.indexOf(`      - name: ${resolveStep}`);
-  const checkout = workflow.indexOf('      - name: Check out migration target');
+  const checkout = workflow.indexOf('Check out trusted prerequisite tooling');
   const diff = workflow.indexOf(
     '      - name: Compute pending migration changes'
   );

@@ -123,7 +123,11 @@ void registerSettingsDesignChecks() {
     await h.pump(tester);
     final scrollable = find.byType(Scrollable).first;
     final position = tester.state<ScrollableState>(scrollable).position;
-    position.jumpTo(position.maxScrollExtent);
+    // The lazy list refines its extent as later groups build.
+    for (var pass = 0; pass < 4; pass++) {
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+    }
     await tester.pump(const Duration(seconds: 2));
     await _settle(tester);
     final lastRow = find.byType(SettingsTile).last;
@@ -151,7 +155,7 @@ void registerSettingsDesignChecks() {
       of: section,
       matching: find.byType(SettingsGroup),
     );
-    expect(groups, findsNWidgets(4));
+    expect(groups, findsNWidgets(3));
     expect(
       tester.getRect(section).bottom - tester.getRect(groups.last).bottom,
       closeTo(0, 0.1),
@@ -178,7 +182,8 @@ void registerSettingsDesignChecks() {
         await h.pump(tester, scale: 2);
         final rows = find.byType(SettingsTile);
         // The profile header precedes Preferences; scroll each row in.
-        for (final key in ['settings-haptics-row', 'settings-finance-row']) {
+        // Per-app rows live under Settings > Apps.
+        for (final key in ['settings-haptics-row', 'finance']) {
           await tester.scrollUntilVisible(
             find.byKey(ValueKey(key)),
             160,

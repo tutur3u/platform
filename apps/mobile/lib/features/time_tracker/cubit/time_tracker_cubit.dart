@@ -1230,9 +1230,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     }
   }
 
-  Future<void> updatePomodoroSettings(PomodoroSettings settings) async {
-    await _repo.savePomodoroSettings(settings);
-    emit(state.copyWith(pomodoroSettings: settings));
+  Future<void> reloadPomodoroSettings() async {
+    final settings = await _repo.loadPomodoroSettings();
+    if (!isClosed) emit(state.copyWith(pomodoroSettings: settings));
   }
 
   void togglePomodoro() {

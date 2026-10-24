@@ -40,7 +40,8 @@ const _initial = WorkspaceState(
   status: WorkspaceStatus.loaded,
   currentWorkspace: Workspace(id: 'ws', name: 'Original workspace'),
 );
-const ValueKey<String> _financeRow = ValueKey('settings-finance-row');
+// A device preference row; per-app rows moved to Settings > Apps.
+const ValueKey<String> _hapticsRow = ValueKey('settings-haptics-row');
 const ValueKey<String> _workspaceRow = ValueKey('settings-workspace-row');
 
 void main() {
@@ -63,7 +64,7 @@ void main() {
     final harness = _Harness();
     addTearDown(harness.dispose);
     await harness.pump(tester);
-    expect(find.byKey(_financeRow), findsOneWidget);
+    expect(find.byKey(_hapticsRow), findsOneWidget);
     expect(find.byKey(_workspaceRow), findsOneWidget);
 
     final rebuilds = <Key, int>{};
@@ -89,10 +90,10 @@ void main() {
     }
     expect(
       {
-        'finance': rebuilds[_financeRow] ?? 0,
+        'haptics': rebuilds[_hapticsRow] ?? 0,
         'workspace': rebuilds[_workspaceRow] ?? 0,
       },
-      {'finance': 0, 'workspace': 0},
+      {'haptics': 0, 'workspace': 0},
     );
     expect(find.text('Original workspace'), findsOneWidget);
     verify(
@@ -108,7 +109,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Renamed workspace'), findsOneWidget);
     expect(rebuilds[_workspaceRow] ?? 0, greaterThan(0));
-    expect(rebuilds[_financeRow] ?? 0, 0);
+    expect(rebuilds[_hapticsRow] ?? 0, 0);
 
     rebuilds.clear();
     harness.scopes.add(
@@ -118,7 +119,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Other workspace'), findsOneWidget);
-    expect(rebuilds[_financeRow] ?? 0, greaterThan(0));
+    expect(rebuilds[_hapticsRow] ?? 0, greaterThan(0));
     verify(
       () => harness.permissions.getPermissions(wsId: 'other', userId: 'user'),
     ).called(1);

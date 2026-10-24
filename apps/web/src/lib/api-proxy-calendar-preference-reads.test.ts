@@ -81,7 +81,6 @@ async function request(
   return guardApiProxyRequest(req, {
     ...calendarPreferenceGuardOptions(req),
     useVerifiedBearerActor: useActor,
-    diagnosticPolicyName: 'native-calendar-preferences',
   });
 }
 
@@ -187,6 +186,163 @@ describe('cold-cache native preference reads', () => {
   it('does not use verified identity to bypass required MFA', async () => {
     mocks.assurance.mockResolvedValue({ status: 'required' });
     expect((await request())?.status).toBe(403);
+    expect(mocks.buckets.size).toBe(0);
+  });
+  it('isolates cold verified challenge issuance from generic, preferences and shared-IP mutation exhaustion', async () => {
+    mocks.buckets.set(
+      'proxy:web:api:default:anonymous:mutate:minute:ip:192.0.2.1',
+      30
+    );
+    mocks.buckets.set(
+      'proxy:web:calendar-preferences:default:authenticated:mutate:minute:user:actor',
+      60
+    );
+    mocks.buckets.set(
+      'proxy:web:native-integrity:default:anonymous:mutate:minute:ip:192.0.2.1',
+      30
+    );
+    expect(
+      await request(
+        '/api/v1/native-integrity/challenge',
+        'eyJvalid',
+        true,
+        'POST'
+      )
+    ).toBeNull();
+    expect(
+      await request('/api/v1/native-integrity/enroll', 'eyJother', true, 'POST')
+    ).toBeNull();
+    expect(
+      mocks.buckets.get(
+        'proxy:web:native-integrity:default:authenticated:mutate:minute:user:actor'
+      )
+    ).toBe(1);
+    expect(
+      mocks.buckets.get(
+        'proxy:web:native-integrity:default:authenticated:mutate:minute:user:other-actor'
+      )
+    ).toBe(1);
+    expect(
+      mocks.buckets.get(
+        'proxy:web:native-integrity:default:anonymous:mutate:minute:ip:192.0.2.1'
+      )
+    ).toBe(30);
+    expect(
+      mocks.buckets.get(
+        'proxy:web:api:default:anonymous:mutate:minute:ip:192.0.2.1'
+      )
+    ).toBe(30);
+    expect(
+      mocks.buckets.get(
+        'proxy:web:calendar-preferences:default:authenticated:mutate:minute:user:actor'
+      )
+    ).toBe(60);
+    expect(mocks.assurance).toHaveBeenCalledTimes(2);
+    expect(mocks.getUser).toHaveBeenCalledTimes(2);
+  });
+  it('shares proof quotas across enrollment and issuance while preserving actor isolation and diagnostic headers', async () => {
+    mocks.buckets.set(
+      'proxy:web:native-integrity:default:authenticated:mutate:minute:user:actor',
+      60
+    );
+    const denial = await request(
+      '/api/v1/native-integrity/challenge',
+      'eyJvalid',
+      true,
+      'POST'
+    );
+    expect(denial?.status).toBe(429);
+    expect(denial?.headers.get('X-RateLimit-Policy')).toBe(
+      'native-integrity-challenge'
+    );
+    expect(denial?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(denial?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(denial?.headers.get('X-RateLimit-Window')).toBe('minute');
+    expect(denial?.headers.get('Retry-After')).toBe('30');
+    expect(
+      (
+        await request(
+          '/api/v1/native-integrity/enroll',
+          'eyJrotated',
+          true,
+          'POST'
+        )
+      )?.status
+    ).toBe(429);
+    expect(
+      await request(
+        '/api/v1/native-integrity/challenge',
+        'eyJother',
+        true,
+        'POST'
+      )
+    ).toBeNull();
+  });
+  it('retains anonymous proof issuance quotas and persistent IP blocks', async () => {
+    mocks.buckets.set(
+      'proxy:web:native-integrity:default:anonymous:mutate:minute:ip:192.0.2.1',
+      30
+    );
+    const anonymous = await request(
+      '/api/v1/native-integrity/challenge',
+      'forged',
+      true,
+      'POST'
+    );
+    expect(anonymous?.status).toBe(429);
+    expect(anonymous?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'anonymous'
+    );
+    mocks.blocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const blocked = await request(
+      '/api/v1/native-integrity/enroll',
+      'eyJvalid',
+      true,
+      'POST'
+    );
+    expect(blocked?.status).toBe(429);
+    expect(blocked?.headers.get('X-RateLimit-Policy')).toBe('proxy-ip-block');
+  });
+  it('enforces the explicit bridge read quota for anonymous and verified callers', async () => {
+    const bridge = '/native-integrity/turnstile';
+    mocks.buckets.set(
+      'proxy:web:native-integrity-bridge:native-integrity-bridge:anonymous:get:minute:ip:192.0.2.1',
+      59
+    );
+    expect(await request(bridge, 'forged')).toBeNull();
+    const anonymous = await request(bridge, 'forged');
+    expect(anonymous?.status).toBe(429);
+    expect(anonymous?.headers.get('X-RateLimit-Policy')).toBe(
+      'native-integrity-bridge'
+    );
+    expect(anonymous?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'anonymous'
+    );
+    expect(anonymous?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(anonymous?.headers.get('X-RateLimit-Window')).toBe('minute');
+    expect(anonymous?.headers.get('Retry-After')).toBe('30');
+    mocks.buckets.set(
+      'proxy:web:native-integrity-bridge:native-integrity-bridge:authenticated:get:minute:user:actor',
+      60
+    );
+    const authenticated = await request(bridge);
+    expect(authenticated?.status).toBe(429);
+    expect(authenticated?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(authenticated?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+  });
+  it('preserves persistent bridge IP blocks before the explicit read limiter', async () => {
+    mocks.blocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const blocked = await request('/native-integrity/turnstile', 'forged');
+    expect(blocked?.status).toBe(429);
+    expect(blocked?.headers.get('X-RateLimit-Policy')).toBe('proxy-ip-block');
     expect(mocks.buckets.size).toBe(0);
   });
 });

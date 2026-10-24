@@ -64,13 +64,13 @@ test('rules with unreadable severities count as high', () => {
   assert.deepEqual(actual, severityCases.blocking);
 });
 
-function harness(t, { analyses, baseline }) {
+function harness(t, { analyses, baseline, head }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-new-alerts-'));
   t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
   fs.writeFileSync(
     path.join(dir, 'python.sarif'),
     JSON.stringify(
-      sarif([result('py/high', 'h1'), result('py/critical', 'h3')])
+      head ?? sarif([result('py/high', 'h1'), result('py/critical', 'h3')])
     )
   );
   const saved = { ...process.env };
@@ -126,7 +126,7 @@ test('a baseline buried behind other categories is still found', async (t) => {
   assert.ok(run.requests.some((url) => url.endsWith('/analyses/7')));
 });
 
-test('a missing baseline fails closed, and logs carry counts only', async (t) => {
+test('a missing baseline fails closed and identifies every blocking result', async (t) => {
   const run = harness(t, { analyses: [filler(30)], baseline: { runs: [] } });
   await main([run.dir, '/language:python']);
   assert.equal(process.exitCode, 1);
@@ -135,8 +135,54 @@ test('a missing baseline fails closed, and logs carry counts only', async (t) =>
     output,
     /2 new high\/critical CodeQL result\(s\) \(1 critical, 1 high\)/u
   );
-  // The repository is public: no rule IDs, paths or messages in logs.
-  assert.doesNotMatch(output, /py\/|pkg\/|exploit detail|file=/u);
+  assert.match(output, /::error::CodeQL high result: py\/high at pkg\/a.py:3/u);
+  assert.match(
+    output,
+    /::error::CodeQL critical result: py\/critical at pkg\/a.py:3/u
+  );
+  assert.doesNotMatch(output, /exploit detail/u);
+});
+
+test('diagnostics identify only new results and escape workflow commands', async (t) => {
+  const unsafe = result(
+    'py/high\r\n::notice::forged%0A',
+    'new',
+    'pkg/%file\n::warning::forged.py'
+  );
+  const run = harness(t, {
+    analyses: [[{ category: '/language:python', id: 7 }]],
+    baseline: sarif([result('py/high', 'known')]),
+    head: sarif([result('py/high', 'known'), unsafe]),
+  });
+  await main([run.dir, '/language:python']);
+  assert.equal(process.exitCode, 1);
+  const output = run.output();
+  assert.match(
+    output,
+    /::error::CodeQL critical result: py\/high%0D%0A::notice::forged%250A at pkg\/%25file%0A::warning::forged.py:3/u
+  );
+  assert.equal(
+    output.split('\n').filter((line) => line.startsWith('::error::CodeQL '))
+      .length,
+    1
+  );
+  assert.doesNotMatch(output, /\n::(?:notice|warning)::/u);
+  assert.doesNotMatch(output, /CodeQL high result: py\/high at pkg\/a.py/u);
+});
+
+test('a blocking result without a location is still identified', async (t) => {
+  const run = harness(t, {
+    analyses: [[{ category: '/language:python', id: 7 }]],
+    baseline: sarif([]),
+    head: sarif([{ ruleId: 'py/high', message: { text: 'private detail' } }]),
+  });
+  await main([run.dir, '/language:python']);
+  assert.equal(process.exitCode, 1);
+  assert.match(
+    run.output(),
+    /CodeQL high result: py\/high at unknown location/u
+  );
+  assert.doesNotMatch(run.output(), /private detail/u);
 });
 
 test('baseline paging is bounded', async (t) => {
