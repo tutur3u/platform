@@ -67,6 +67,7 @@
                   "platform/features/mobile-workspace-tools",
                   "platform/features/mobile-settings-shell",
                   "platform/features/hidden-workspaces",
+                  "platform/features/settings-dialog",
                   "platform/features/notification-access",
                   "platform/features/sso",
                   "platform/features/inventory-stock-health",
