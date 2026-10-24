@@ -322,3 +322,43 @@ test('symlinked HOME resolves the same trusted global CLI', (t) => {
     `${fs.realpathSync(path.dirname(f.cli))}/ttr`
   );
 });
+
+for (const [version, build, allowed] of [
+  [
+    '0.28.0-dev.123.abcdef0',
+    { channel: 'dev', sourceSha: 'abcdef0'.padEnd(40, '1') },
+    true,
+  ],
+  ['0.28.0-dev.123.abcdef0', undefined, false],
+  [
+    '0.28.0-dev.123.abcdef0',
+    { channel: 'dev', sourceSha: '1'.repeat(40) },
+    false,
+  ],
+  [
+    '0.27.0-dev.123.abcdef0',
+    { channel: 'dev', sourceSha: 'abcdef0'.padEnd(40, '1') },
+    false,
+  ],
+  [
+    '0.28.0-beta.123',
+    { channel: 'dev', sourceSha: 'abcdef0'.padEnd(40, '1') },
+    false,
+  ],
+]) {
+  test(`dev supplier identity ${version} accepted=${allowed} metadata=${Boolean(build)}`, (t) => {
+    const f = fixture(t);
+    fs.writeFileSync(
+      path.join(f.pkg, 'package.json'),
+      JSON.stringify({
+        name: 'tuturuuu',
+        version,
+        tuturuuuBuild: build,
+        bin: { ttr: './dist/cli/index.js' },
+      })
+    );
+    if (allowed) assert.equal(trustedTtr(f.home, f.root), f.cli);
+    else assert.throws(() => trustedTtr(f.home, f.root), /requires tuturuuu/);
+    assert.equal(fs.existsSync(f.observed), false);
+  });
+}
