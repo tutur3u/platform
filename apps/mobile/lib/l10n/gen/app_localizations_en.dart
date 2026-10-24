@@ -11097,5 +11097,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSubmitSuccess => 'Submitted successfully';
 
   @override
+  String get offlineDownloadsPaused => 'Downloads paused. Saved data is still available. We will retry in the background.';
+
+  @override
+  String get offlineDownloadsRetryLimit => 'Downloads are still unavailable. Try again later; saved data is still available.';
+
+  @override
   String get mailSettingsReadOnly => 'Saved settings are read-only until access can be verified.';
 }

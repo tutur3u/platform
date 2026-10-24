@@ -57,6 +57,20 @@ Read only the section relevant to the current feature; paths are repository-rela
 
 ## 3. Mobile UX & Shell Patterns
 
+- Named settings pages use their route's `GoRouterState` location. Imperative
+  settings editors use the current `GoRouter.state.matchedLocation`; the router
+  configuration URI can still name the earlier root after a push. Modal actions
+  use `AppModalScope` and its owner instead; do not resolve a GoRouter page from
+  a pageless dialog. Exercise dialog open, dock Back and restoration of the
+  underlying Save action (`assistant_settings_dock_route_test.dart`). In shell
+  fixtures, pass `state.uri.path` as the active location through navigation.
+- Bulk download service failures retain the requested modules, network consent,
+  Retry-After deadline and bounded retry budget. Keep ordinary cached reads
+  independent, never drop the bulk marker as an outage workaround, and distinguish
+  source readiness from deployment activation. See the mobile workspace tools
+  feature page for the serving-app map and activation prerequisites.
+
+
 - **Immersive Mobile View Transitions**: When toggling between fullscreen/immersive and overview modes, reset scroll position deliberately and recompute bottom insets for restored nav/FAB chrome.
 - **Single Shell Detail Chrome**: Register dedicated settings/detail destinations in the app router so the shell owns their title and floating-bottom-navbar back behavior. Top navbars never contain Back buttons. Shell bodies inherit its background and header clearance, omit nested AppBars/body topbars and duplicate top SafeAreas, and consume bottom MediaQuery padding inside scrollables for floating-dock clearance. Preserve pushed-route origin on back; direct links use the registered parent fallback. Explicit full-screen forms/system flows use the root navigator above the shell. Verify compact/enlarged-text geometry plus Android system and floating-dock back, including direct links.
 - **Compact Shell Safe Areas**: Pages rendered inside `ShellPage` already sit under shell-managed app bar/footer chrome; avoid unconditional inner `SafeArea` top/bottom padding in feature pages.
