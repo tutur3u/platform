@@ -261,8 +261,11 @@ void main() {
           workspaceId: 'workspace',
         );
         await coordinator.run(
-          userId: 'actor', workspaceId: 'workspace',
-          requestedProducts: {'calendar'}, wifiOnly: false, automatic: true,
+          userId: 'actor',
+          workspaceId: 'workspace',
+          requestedProducts: {'calendar'},
+          wifiOnly: false,
+          automatic: true,
         );
         expect(
           calls,
