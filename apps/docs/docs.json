@@ -371,6 +371,7 @@
               "build/development-tools/tsrs-shadow-type-check",
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
+              "build/development-tools/thanh-local-e2e",
               "build/development-tools/employee-schema-qualification",
               "build/development-tools/employee-cli-recovery",
               "build/development-tools/employee-schema-provenance",

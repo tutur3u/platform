@@ -1,0 +1,154 @@
+---
+title: 'Thanh Local End-to-End Environment'
+description: 'Run the isolated Supabase stack, web, Playwright and mobile simulator/emulator end-to-end tests on the Thanh Mac Studio.'
+updatedAt: '2026-10-24'
+---
+
+The Thanh Mac Studio (`ssh skr-studio`) hosts a repeatable local end-to-end
+environment: an isolated Supabase project with migrations and seed data, the
+`apps/web` dev server, Playwright, and the mobile app on a dedicated iOS
+Simulator and Android Emulator. Use it to validate changes against real
+simulator/emulator runs instead of host-only widget tests.
+
+The entry point is `scripts/thanh-e2e/thanh-e2e.mjs`. It works on any macOS host
+with the same toolchain; Thanh defaults are baked in and overridable by
+environment variables.
+
+<Warning>
+  Use Thanh only for this lane. Queue heavy steps (`up`, `seed`, `web`,
+  `web-e2e`, `mobile-e2e`) with `ttr resources run --` from a checkout under
+  `/Users/thanh/ci-lanes/tuturuuu-*`, and never stop Upskii or other lanes'
+  containers, emulators or queue owners.
+</Warning>
+
+## Toolchain
+
+Everything Tuturuuu-specific lives in user space under
+`/Users/thanh/ci-lanes/tuturuuu-tools` (`$T`). Source `$T/mobile-env.sh` first;
+it sets `DEVELOPER_DIR`, `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_AVD_HOME`,
+`PUB_CACHE`, `GRADLE_USER_HOME`, an isolated `XDG_CONFIG_HOME` for Flutter
+settings, and `PATH` (Flutter 3.47.7, Temurin 17, Android SDK tools, Bun,
+Docker).
+
+| Component | Location |
+| --- | --- |
+| Xcode 26.5 + iOS 26.5 runtime | `/Applications/Xcode.app` |
+| Flutter 3.47.7 | `$T/flutter-3.47.7-stable-arm64/flutter` |
+| JDK 17 (Temurin) | `$T/jdk` |
+| Android SDK (platforms 36 + 37, NDK 28.2, API 36 arm64 image) | `$T/android-sdk` |
+| AVDs | `$T/android-avd` |
+| E2E state (Supabase workdir, env files, logs, screenshots) | `$T/e2e/<project>` |
+
+`xcode-select` on Thanh still points at the Command Line Tools. Dart
+native-asset build hooks run with a filtered environment that keeps `PATH` but
+drops `DEVELOPER_DIR`, so `$T/bin/xcrun` pins Xcode. Without it, iOS builds fail
+in `objective_c/hook/build.dart` with `Bad state: No element`. Remove the shim
+after an administrator runs
+`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+
+## Isolation
+
+| Resource | Value | Override |
+| --- | --- | --- |
+| Supabase project id | `tuturuuu-e2e` | `TUTURUUU_E2E_PROJECT_ID` |
+| Supabase ports | `8000`-`8007` (API `8001`, DB `8002`, Studio `8003`, mail `8004`) | `TUTURUUU_E2E_SUPABASE_BASE_PORT` |
+| Web dev server | `http://127.0.0.1:7803` | `TUTURUUU_E2E_WEB_PORT` |
+| iOS Simulator | `tuturuuu-ios-iphone17pro` | `TUTURUUU_E2E_IOS_SIM` |
+| Android Emulator | `tuturuuu-android-36-pixel9pro` on `emulator-5580` | `TUTURUUU_E2E_AVD`, `TUTURUUU_E2E_AVD_PORT` |
+
+The ports stay canonical on purpose: the web local-E2E auth and captcha bypass
+(`apps/web/src/lib/auth/local-e2e.ts`) and the Playwright safety guard
+(`apps/web/e2e/helpers/environment.ts`) only trust Supabase `:8001` and web
+`:7803` on loopback. With other ports, mobile password sign-in fails with
+`Turnstile is not configured`. Isolation comes from the project id instead: the
+script refuses the default `tuturuuu` id and `up` fails fast when any port in
+the block is already listening, so it never adopts another lane's stack. Only
+one stack on the canonical ports can run on a host at a time; stop it with
+`down` when you finish. The Supabase config is staged from tracked
+`apps/database/supabase` files and rewritten with the isolated helpers from
+`apps/database/scripts/run-supabase-isolated.js`.
+
+Docker over SSH cannot use the macOS keychain (`credsStore: desktop`). The
+script points `DOCKER_CONFIG` at a credential-free directory in the state dir
+and `DOCKER_HOST` at the Docker Desktop socket, so public image pulls work
+anonymously and the keychain is never touched.
+
+## Run it
+
+```bash
+ssh skr-studio
+. ~/ci-lanes/tuturuuu-tools/mobile-env.sh
+cd ~/ci-lanes/tuturuuu-e2e          # any checkout under ci-lanes/tuturuuu-*
+bun install                         # once per checkout
+E2E=scripts/thanh-e2e/thanh-e2e.mjs
+
+node $E2E doctor
+ttr resources run -- node $E2E up          # start + migrations + seed
+ttr resources run -- node $E2E web         # build types/supabase, start next dev
+node $E2E devices                          # boot simulator + emulator headless
+ttr resources run -- node $E2E web-e2e --install -- e2e/auth.noauth.spec.ts
+ttr resources run -- node $E2E mobile-e2e ios
+ttr resources run -- node $E2E mobile-e2e android
+ttr resources run -- node $E2E mobile-e2e android --mode=profile
+node $E2E status
+node $E2E down            # stop web + Supabase; --purge drops project volumes
+```
+
+`seed` re-applies migrations and seed data. `env` rewrites
+`$T/e2e/<project>/env/web.env` and `mobile.json` from `supabase status`.
+`web.log` and other logs live in the state dir's `logs/`.
+
+## Test accounts
+
+The seed creates `local@tuturuuu.com` (root admin) and `user1`-`user4@tuturuuu.com`
+with the public local-only seed password from `apps/database/supabase/seed.sql`.
+The mobile flow defaults to `local@tuturuuu.com`; override with
+`--dart-define=E2E_EMAIL=...` only for other seeded accounts.
+
+## Mobile wiring
+
+`mobile.json` is passed with `--dart-define-from-file` and routes
+`NEXT_PUBLIC_SUPABASE_URL` and every `*_API_BASE_URL` owner to loopback
+`127.0.0.1`. Android permits cleartext only to `127.0.0.1`/`localhost`, and the
+app rewrites `localhost` to `10.0.2.2`, so the script uses `127.0.0.1` and runs
+`adb reverse` for the web and Supabase ports. All satellite API owners point at
+the local web server, which owns the live API handlers.
+
+`apps/mobile/integration_test/e2e_flows_test.dart` signs in with the seeded
+account, opens Agenda, opens Settings → Preferences, changes the personal
+timezone and returns to Agenda. It fails if an `ErrorWidget` renders at any
+step and writes screenshots through `test_driver/integration_test.dart` into
+`$T/e2e/<project>/shots/<platform>-<mode>-<timestamp>/`.
+
+`flutter test -d <device> test/...` does not run on the device: files outside
+`integration_test/` run on the host VM. Widget tests that resize
+`tester.view` also fail under the live binding, so on-device coverage belongs in
+`integration_test/`.
+
+## Release-mode gray screen
+
+Release builds replace the debug red error box with a gray `ErrorWidget`. iOS
+simulators run debug builds only (Flutter refuses `--profile` and `--release`),
+so reproduce release-only rendering on the Android emulator with
+`mobile-e2e android --mode=profile` or `--mode=release`. The same `ErrorWidget`
+assertion reports the failing screen, and the screenshots show it.
+
+## Web Playwright
+
+`web-e2e` sets `BASE_URL=http://127.0.0.1:7803` and the local Supabase keys,
+which the unchanged E2E safety guard accepts. `--install` installs the
+Playwright Chromium build first. Pass spec paths or Playwright flags after `--`.
+
+## Gotchas
+
+- The web auth spam guard blocks requests without a native or browser user
+  agent; probe mobile APIs with a `Dart/3.x (dart:io)` user agent, not bare
+  `curl`.
+- A killed `flutter run`/`flutter drive` can leave `adb ... logcat` or
+  `simctl ... log stream` children holding stdout open, which pins a
+  `ttr resources` slot. Kill only your own leftover streamer.
+- `permission_handler_android` compiles against Android SDK 37; keep
+  `platforms;android-37.0` installed.
+- Plain `./gradlew` tasks need `-Ptarget=lib/main_development.dart` because the
+  app has no `lib/main.dart`, and flavored task names such as
+  `:app:testDevelopmentDebugUnitTest`.
