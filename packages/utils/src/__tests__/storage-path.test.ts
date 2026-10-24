@@ -106,10 +106,80 @@ describe('Storage Path Sanitization', () => {
       'folder/a\u0085b',
       'folder/a\u009fb',
       'folder/a%C2%85b',
+      'folder/a%C2%80b',
+      'folder/a%00b',
       'folder/a%7Fb',
+      'folder/a%25C2%2580b',
     ])('rejects raw and encoded control characters in %j', (path) => {
       expect(sanitizePathStrict(path)).toBeNull();
       expect(sanitizePath(path)).toBeNull();
+    });
+
+    it.each([
+      'folder/a%85b',
+      'folder/a%80b',
+      'folder/%C3%A1%9F',
+      'folder/a%C3',
+      'folder/%C0%AE%C0%AE',
+      'folder/%ED%A0%80',
+    ])('rejects malformed UTF-8 escapes in %j', (path) => {
+      expect(sanitizePathStrict(path)).toBeNull();
+      expect(sanitizePath(path)).toBeNull();
+    });
+
+    it.each([
+      'folder/a%E2%80%93b.pdf',
+      'B%C3%A1o%20c%C3%A1o.pdf',
+      'folder/50% done.pdf',
+      'folder/x%',
+      'folder/100%zz.txt',
+    ])('accepts UTF-8 escapes and literal percent signs in %j', (path) => {
+      expect(sanitizePathStrict(path)).toBe(path);
+      expect(sanitizePath(path)).toBe(path);
+    });
+
+    describe('Vietnamese names', () => {
+      const encode = (path: string) =>
+        path.split('/').map(encodeURIComponent).join('/');
+      const names = [
+        'Báo cáo.pdf',
+        'Hồ sơ nhân viên.docx',
+        'Tiếng Việt/ảnh đại diện.png',
+        'Kế hoạch/Quý 3/Đề xuất ngân sách.xlsx',
+      ];
+      const variants = names.flatMap((name) =>
+        (['NFC', 'NFD'] as const).flatMap((form) => {
+          const path = name.normalize(form);
+          return [
+            [`raw ${form}`, path],
+            [`encoded ${form}`, encode(path)],
+          ];
+        })
+      );
+
+      it.each(variants)('accepts the %s path %j', (_label, path) => {
+        expect(sanitizePathStrict(path)).toBe(path);
+        expect(sanitizePath(path)).toBe(path);
+        expect(sanitizePathSegments(path)).toEqual(path.split('/'));
+      });
+
+      it.each([
+        `${encode('Báo cáo')}/%2e%2e/secret.pdf`,
+        `${encode('Báo cáo')}/%2E%2E/secret.pdf`,
+        `${encode('Hồ sơ')}%2f..%2fsecret.pdf`,
+        `${encode('Hồ sơ')}%2F%2E%2E%2Fsecret.pdf`,
+        `${encode('Tiếng Việt')}/%252e%252e/secret.pdf`,
+        `${encode('Tiếng Việt')}%252f%252e%252e%252fsecret.pdf`,
+        `${encode('ảnh')}%5c..%5csecret.pdf`,
+        'Hồ sơ/%2e%2e/secret.pdf',
+        'Hồ sơ/../secret.pdf',
+      ])(
+        'still rejects encoded traversal beside Vietnamese text in %j',
+        (path) => {
+          expect(sanitizePathStrict(path)).toBeNull();
+          expect(sanitizePath(path)).toBeNull();
+        }
+      );
     });
 
     it('handles complex valid paths', () => {
