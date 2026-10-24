@@ -50,6 +50,7 @@ class SettingsDockSearch extends StatelessWidget {
           icon: active ? AppIcons.close : AppIcons.search,
           tooltip: hint,
           inDock: true,
+          keepVisibleWithKeyboard: active,
           highlighted: active || controller.text.isNotEmpty,
           callbackToken: (active, controller.text),
           searchController: active ? controller : null,

@@ -196,7 +196,16 @@ void registerSettingsAppsChecks() {
           final location = offline
               ? Routes.settingsOfflineModulePath('finance')
               : Routes.settings;
-          final h = _SettingsHarness(initial: location);
+          final offlineQuery = TextEditingController();
+          addTearDown(offlineQuery.dispose);
+          // Exercise Offline's real chrome without unrelated global disk setup.
+          final h = _SettingsHarness(
+            initial: location,
+            offlineModuleBuilder: offline ? (_, _) => OfflineSearchChrome(
+              moduleId: 'finance', controller: offlineQuery,
+              hint: 'Search saved data', onChanged: (_) {},
+            ) : null,
+          );
           addTearDown(() async {
             await tester.pumpWidget(const SizedBox.shrink());
             await tester.pump();

@@ -45,6 +45,7 @@ import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/settings/view/offline_page.dart';
+import 'package:mobile/features/settings/view/offline_search_chrome.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
