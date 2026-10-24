@@ -3,8 +3,13 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const { formatBytes, parseBytes } = require('./rust-cache.js');
+const {
+  artifactCheckoutSafety,
+  artifactLiveness,
+  walkArtifact,
+} = require('./worktree-footprint-safety.js');
 const {
   ARTIFACT_RULES,
   findArtifactDirs,
@@ -204,6 +209,11 @@ function planPrune(options = {}) {
       skipped,
     })) {
       if (categories && !categories.includes(artifact.category)) continue;
+      const safety = artifactCheckoutSafety(artifact.path, worktree.path);
+      if (safety) {
+        skipped.push({ path: artifact.path, reason: safety });
+        continue;
+      }
       if (newestMtimeMs(artifact.path) > idleCutoffMs) {
         skipped.push({ path: artifact.path, reason: 'recently-written' });
         continue;
@@ -240,6 +250,7 @@ function planPrune(options = {}) {
 function pruneArtifacts({
   apply = false,
   execFile = execFileSync,
+  spawnFile = spawnSync,
   ...options
 } = {}) {
   const plan = planPrune({ execFile, ...options });
@@ -273,7 +284,18 @@ function pruneArtifacts({
         )
       )
         continue;
-      fs.rmSync(candidate.path, { force: true, recursive: true });
+      const safety =
+        artifactCheckoutSafety(candidate.path, candidate.worktree) ||
+        artifactLiveness(candidate.path, spawnFile);
+      if (safety) {
+        plan.skipped.push({ path: candidate.path, reason: safety });
+        continue;
+      }
+      const removal = walkArtifact(candidate.path, { remove: true });
+      if (removal) {
+        plan.skipped.push({ path: candidate.path, reason: removal });
+        continue;
+      }
       removed.push(candidate);
     }
   }

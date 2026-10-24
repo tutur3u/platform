@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawn } = require('node:child_process');
 
 const {
   findArtifactDirs,
@@ -476,3 +476,184 @@ for (const flag of [
     });
   }
 }
+
+for (const kind of [
+  'repository',
+  'worktree',
+  'bare',
+  'artifact-root',
+  'ancestor',
+]) {
+  test(`prune preserves nested ${kind} checkouts inside ignored artifacts`, () => {
+    const { repo, root } = makeRepo();
+    const wt = addWorktree(repo, root, `nested-${kind}`);
+    const artifact = path.join(wt, 'apps/web/dist');
+    const nested =
+      kind === 'artifact-root'
+        ? artifact
+        : kind === 'ancestor'
+          ? path.dirname(artifact)
+          : path.join(artifact, 'deep/checkout');
+    fs.mkdirSync(nested, { recursive: true });
+    if (kind === 'worktree') {
+      run(repo, 'worktree', 'add', '-q', '--detach', nested, 'main');
+    } else if (kind === 'bare' || kind === 'artifact-root') {
+      run(nested, 'init', '-q', '--bare');
+    } else {
+      run(nested, 'init', '-q');
+    }
+    const sentinel = path.join(
+      kind === 'ancestor' ? artifact : nested,
+      'keep.txt'
+    );
+    writeFile(sentinel, 'nested checkout data');
+    backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
+    const result = pruneArtifacts({
+      repoDir: repo,
+      currentDir: root,
+      baseRef: 'main',
+      apply: true,
+      categories: ['dist'],
+    });
+    assert.equal(fs.existsSync(sentinel), true);
+    assert.equal(result.removed.length, 0);
+    assert.ok(result.skipped.some((x) => x.reason === 'nested-checkout'));
+  });
+}
+
+for (const activity of ['cwd', 'open-file']) {
+  test(`prune preserves old artifacts with a live process ${activity}`, async (t) => {
+    const { repo, root } = makeRepo();
+    const wt = addWorktree(repo, root, `live-${activity}`);
+    const artifact = path.join(wt, '.turbo');
+    const file = path.join(artifact, 'cache/a.tar.zst');
+    backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
+    const child = spawn(
+      process.execPath,
+      [
+        '-e',
+        `
+      if (process.argv[1] === 'open-file') {
+        global.fd = require('node:fs').openSync(process.argv[2], 'r');
+      }
+      process.send('ready');
+      setInterval(() => {}, 1000);
+    `,
+        activity,
+        file,
+      ],
+      {
+        cwd: activity === 'cwd' ? path.dirname(file) : root,
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      }
+    );
+    t.after(async () => {
+      if (child.exitCode !== null) return;
+      const exited = new Promise((resolve) => child.once('exit', resolve));
+      child.kill();
+      await exited;
+    });
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error('child readiness timeout')),
+        5000
+      );
+      child.once('message', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      child.once('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+    const result = pruneArtifacts({
+      repoDir: repo,
+      currentDir: root,
+      baseRef: 'main',
+      apply: true,
+      categories: ['turbo'],
+    });
+    assert.equal(fs.existsSync(file), true);
+    assert.equal(result.removed.length, 0);
+    assert.ok(
+      result.skipped.some((x) => x.reason === 'in-use'),
+      JSON.stringify(result.skipped)
+    );
+  });
+}
+
+for (const failure of [
+  'missing',
+  'timeout',
+  'permission',
+  'warning',
+  'empty-success',
+  'truncated',
+  'signal',
+]) {
+  test(`prune preserves artifacts when liveness is uncertain: ${failure}`, () => {
+    const { repo, root } = makeRepo();
+    const wt = addWorktree(repo, root, `uncertain-${failure}`);
+    backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
+    const probes = [];
+    const spawnFile = (command, args, options) => {
+      probes.push({ command, args, options });
+      return {
+        status: failure === 'empty-success' || failure === 'warning' ? 0 : 1,
+        signal: failure === 'signal' ? 'SIGKILL' : null,
+        error: ['missing', 'timeout', 'truncated'].includes(failure)
+          ? new Error(failure)
+          : undefined,
+        stdout: failure === 'warning' ? 'p123\nfcwd\n' : '',
+        stderr: ['permission', 'warning'].includes(failure)
+          ? 'lsof: incomplete scan'
+          : '',
+      };
+    };
+    const result = pruneArtifacts({
+      repoDir: repo,
+      currentDir: root,
+      baseRef: 'main',
+      apply: true,
+      categories: ['turbo'],
+      spawnFile,
+    });
+    assert.equal(fs.existsSync(path.join(wt, '.turbo/cache/a.tar.zst')), true);
+    assert.equal(probes.length, 1);
+    const { command, args, options } = probes[0];
+    assert.equal(command, 'lsof');
+    assert.ok(options.timeout > 0 && options.timeout <= 5000);
+    assert.equal(options.killSignal, 'SIGKILL');
+    assert.ok(options.maxBuffer > 0 && options.maxBuffer <= 1024 * 1024);
+    assert.deepEqual(args, ['-nP', '-Fpf', '+D', path.join(wt, '.turbo')]);
+    assert.equal(result.removed.length, 0);
+    assert.ok(result.skipped.some((x) => x.reason === 'liveness-unknown'));
+  });
+}
+
+test('prune preserves a checkout created after the final preflight scan', () => {
+  const { repo, root } = makeRepo();
+  const wt = addWorktree(repo, root, 'late-checkout');
+  const artifact = path.join(wt, '.turbo');
+  const nested = path.join(artifact, 'late');
+  backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
+  const result = pruneArtifacts({
+    repoDir: repo,
+    currentDir: root,
+    baseRef: 'main',
+    apply: true,
+    categories: ['turbo'],
+    spawnFile() {
+      run(repo, 'worktree', 'add', '-q', '--detach', nested, 'main');
+      writeFile(path.join(nested, 'keep.txt'), 'late checkout data');
+      return { status: 1, stdout: '', stderr: '' };
+    },
+  });
+  assert.equal(
+    fs.readFileSync(path.join(nested, 'keep.txt'), 'utf8'),
+    'late checkout data'
+  );
+  assert.equal(result.removed.length, 0);
+  assert.ok(result.skipped.some((x) => x.reason === 'nested-checkout'));
+});

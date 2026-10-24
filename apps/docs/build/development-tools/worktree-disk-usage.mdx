@@ -1,7 +1,7 @@
 ---
 title: 'Worktree Disk Usage'
 description: 'Measure the real APFS footprint of parallel worktrees and prune rebuildable artifacts safely.'
-updatedAt: '2026-10-23'
+updatedAt: '2026-10-24'
 ---
 
 Parallel agent lanes each get their own Git worktree. On macOS, `du`, Finder
@@ -86,6 +86,12 @@ Candidates must pass every gate:
 - The directory matches an artifact category, is git-ignored, and contains no
   tracked files. This is why the tracked `apps/docs/build` documentation is
   never a candidate.
+- The artifact contains no nested checkout and is not inside one. A `.git`
+  directory or file, or bare-repository markers (`HEAD` and an `objects`
+  directory), protect the whole artifact, even when the checkout belongs to
+  another repository. Incomplete checkout scans fail closed with
+  `artifact-scan-unknown`; they use the same depth and entry bounds as activity
+  scans.
 - The plan stays under the `--max-remove` total (default `20g`).
 
 Each invocation creates a fresh plan; `--apply` does not reuse an earlier dry run.
@@ -93,7 +99,22 @@ Fatal `git check-ignore` errors record `check-ignore-failed` and skip that workt
 Rust target cleanup belongs exclusively to `bun rust-cache`.
 
 Before deleting, the tool re-checks that the worktree is still clean, still on
-the planned `HEAD`, and that the target is a real directory inside it.
+the planned `HEAD`, and that the target is a real directory inside it. It repeats
+checkout detection and runs `lsof -nP -Fpf +D <artifact>` to detect any process
+with its working directory or an open file beneath the target. This probe has a
+five-second deadline, a forced kill on timeout, and a 1 MiB output limit. Live
+users record `in-use`; missing tools, warnings, errors, truncated output and
+ambiguous results record `liveness-unknown` and preserve the artifact. Only a
+no-match exit with empty stdout and stderr permits deletion.
+
+Deletion walks check checkout boundaries again and remove directories without
+recursive filesystem removal, preserving a checkout discovered during the walk.
+An interrupted walk can remove some ordinary artifacts before recording a skip;
+only fully removed candidates contribute to `removedSize`. These observations
+do not reserve the directory against later activity: owners should keep active
+worktrees locked or held during cleanup. Regression coverage lives in
+`scripts/worktree-footprint.test.js`, including real child processes with old
+artifacts open or held as their working directory.
 
 | Category | Paths |
 | --- | --- |
