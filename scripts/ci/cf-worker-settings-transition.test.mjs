@@ -239,7 +239,17 @@ test('a live Worker matching neither stage fails closed without leaking values',
         error.message,
         /target: Worker vars differ: CRON_CONTROL_ENABLED_JOBS, CRON_CONTROL_WORKER_PROCESSORS, INFRASTRUCTURE_ORIGIN, INVENTORY_ORIGIN, PAY_ORIGIN, TASKS_ORIGIN\)$/
       );
-      assert.ok(!error.message.includes('tuturuuu.com'));
+      // No var value may leak: compare parsed hostnames, not substrings.
+      const origins = new Set(
+        Object.values({ ...plan.previous.vars, ...plan.target.vars })
+          .filter((value) => URL.canParse(value))
+          .map((value) => new URL(value).hostname)
+      );
+      assert.ok(origins.size > 0);
+      const urls = error.message.match(/https?:\/\/[^\s,;)]+/g) ?? [];
+      for (const candidate of urls)
+        assert.ok(!origins.has(new URL(candidate).hostname));
+      assert.deepEqual(urls, []);
       return true;
     }
   );
