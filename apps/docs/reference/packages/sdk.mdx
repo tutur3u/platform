@@ -131,11 +131,16 @@ public build configuration to retain its source files and semantic checking opti
 It disables emit, composite output and incremental state, so it owns no `dist`
 files even when the CI task graph also schedules the SDK build. The portable
 `build` remains responsible for JavaScript and public declarations; its configuration
-and staging are unchanged. `sdk-typecheck-boundary.test.ts` checks resolved compiler
+remains separate from the no-emit check. `sdk-typecheck-boundary.test.ts` checks resolved compiler
 coverage/options and exercises a disposable type error and successful check without
 output files. Exact-head CI must verify both type-check and the real portable build.
 This structural boundary does not identify the writer behind a historical
 `ENOTEMPTY` failure.
+
+Portable staging excludes test/spec/acceptance modules and the shared
+`resources-test-fixtures.ts` helper. Test-only imports such as Vitest's fixture
+hooks must not enter the public runtime closure. The actual-source control in
+`packages/sdk/scripts/portable-build.test.cjs` verifies this before compilation.
 
 ## CLI
 

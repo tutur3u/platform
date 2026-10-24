@@ -4,12 +4,7 @@ import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resourceQueueStatus } from './resources-queue';
-import {
-  exists,
-  privateFixtures,
-  realNode,
-  until,
-} from './resources-test-fixtures';
+import { exists, privateFixtures, realNode } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
   ...(await original<typeof import('node:os')>()),
@@ -66,7 +61,7 @@ describe('occupied-slot bypass attempts queue', { timeout: 60_000 }, () => {
     await executable(impostor, touch('impostor'));
 
     const a = launch(path, ['run', '--', 'node', await held(path, 'a')]);
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const nodeOptions = { NODE_OPTIONS: `--require ${preload}` };
     const npx = join(dirname(realNode), 'npx');
     const probes = [
@@ -96,7 +91,7 @@ describe('occupied-slot bypass attempts queue', { timeout: 60_000 }, () => {
         : []),
       launch(path, ['run', '--', impostor, '--version']),
     ];
-    await waiting(path, probes.length);
+    await waiting(path, probes.length, probes);
     // Trusted read-only system tools still skip the queue.
     const control = await launch(path, ['run', '--', 'echo', 'control']).done;
     expect(control.code, control.err).toBe(0);

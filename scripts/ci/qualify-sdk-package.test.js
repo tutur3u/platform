@@ -588,19 +588,24 @@ test('a process-helper-only change selects package qualification', () => {
   const rules = [
     ...workflow.split('workflow_dispatch:')[0].matchAll(/^ {6}- "([^"]+)"$/gm),
   ].map((match) => match[1]);
-  const helper = 'scripts/ci/sdk-package-process.js';
-  const selected = (paths) =>
-    paths.some((rule) => path.matchesGlob(helper, rule));
-  assert.equal(
-    selected(rules.filter((rule) => rule !== helper)),
-    false,
-    'prior trigger excluded a helper-only change'
-  );
-  assert.equal(
-    selected(rules),
-    true,
-    'helper-only changes must run the drain controls'
-  );
+  const helperRule = 'scripts/ci/sdk-package-process*';
+  for (const helper of [
+    'scripts/ci/sdk-package-process.js',
+    'scripts/ci/sdk-package-process.test.js',
+  ]) {
+    const selected = (paths) =>
+      paths.some((rule) => path.matchesGlob(helper, rule));
+    assert.equal(
+      selected(rules.filter((rule) => rule !== helperRule)),
+      false,
+      'prior trigger excluded helper-only changes'
+    );
+    assert.equal(
+      selected(rules),
+      true,
+      `${helper} must run the drain controls`
+    );
+  }
 });
 
 test('install failure retains only bounded diagnostic hashes and allowlisted reported codes before cleanup', async (t) => {
