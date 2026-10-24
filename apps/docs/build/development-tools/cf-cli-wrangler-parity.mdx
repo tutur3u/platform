@@ -244,9 +244,12 @@ Each snapshot phase first logs the token's id and status from
 fail the job. A failed read prints its HTTP status, numeric Cloudflare error codes,
 its request path and the zone name for route lists, so a `403` shows which token
 and zone lack access. Diagnostics never print free-form server text (error
-messages, bodies or assertion diffs of live values): token id, status, zone name
-and binding identifiers print only when they match a fixed shape. Compare that id
-with the token listed in the Cloudflare dashboard before changing the GitHub secret.
+messages, bodies, JSON parse errors or assertion diffs of live values): token id,
+status and zone name print only when they match a fixed shape, and binding names
+only when the baseline already declares them (others print as
+`<undeclared binding #n>`). The CLI prints only its own assertion messages and the
+name of any other error. Compare that id with the token listed in the Cloudflare
+dashboard before changing the GitHub secret.
 
 Cloudflare documents the accepted permissions for
 [Worker secrets](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/secrets/methods/list/),

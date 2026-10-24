@@ -37,12 +37,76 @@ function same(actual, expected, message) {
   assert.ok(isDeepStrictEqual(actual, expected), message);
 }
 
-/** A server-provided binding identifier, printed only if identifier-shaped. */
-function label(value) {
-  return typeof value === 'string' &&
-    /^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(value)
-    ? value
-    : 'unrecognized';
+// Server identifiers are printed only when they equal a name we already
+// trust: a declared binding of this identity, or a constant reviewed here.
+// A syntactically valid identifier can still be a credential.
+const KNOWN_BINDING_TYPES = new Set([
+  'plain_text',
+  'secret_text',
+  'durable_object_namespace',
+  'json',
+  'kv_namespace',
+  'r2_bucket',
+  'd1',
+  'queue',
+  'service',
+  'analytics_engine',
+  'ai',
+  'assets',
+  'browser',
+  'hyperdrive',
+  'vectorize',
+  'version_metadata',
+  'dispatch_namespace',
+  'workflow',
+  'secrets_store_secret',
+  'send_email',
+  'mtls_certificate',
+]);
+const KNOWN_BINDING_ATTRIBUTES = new Set([
+  'environment',
+  'dispatch_namespace',
+  'namespace_id',
+  'script_name',
+  'class_name',
+  'text',
+  'json',
+]);
+
+function declaredNames(identity) {
+  return new Set([
+    ...Object.keys(identity.vars ?? {}),
+    ...Object.keys(identity.durableObjects ?? {}),
+    ...(identity.secrets ?? []),
+  ]);
+}
+
+function bindingLabel(name, declared, index) {
+  return declared.has(name) ? name : `<undeclared binding #${index + 1}>`;
+}
+
+function typeLabel(type) {
+  return KNOWN_BINDING_TYPES.has(type) ? type : '<unknown type>';
+}
+
+function attributeLabel(attribute) {
+  return KNOWN_BINDING_ATTRIBUTES.has(attribute)
+    ? attribute
+    : '<unknown attribute>';
+}
+
+/** Parse a response body; a parse error would echo the body, so drop it. */
+async function readJson(response, target) {
+  let body;
+  let parsed = false;
+  try {
+    body = await response.json();
+    parsed = true;
+  } catch {
+    // The native SyntaxError quotes the body; it is deliberately discarded.
+  }
+  assert.ok(parsed, `settings snapshot returned malformed JSON for ${target}`);
+  return body;
 }
 
 /** Numeric Cloudflare error codes from a response body, bounded. */
@@ -149,7 +213,7 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
         `settings snapshot HTTP ${response.status} for ${target}` +
           (await failedResponseCodes(response))
       );
-    const body = await response.json();
+    const body = await readJson(response, target);
     assert.ok(
       body?.success === true,
       `settings snapshot API failed for ${target}${errorCodes(body)}`
@@ -216,9 +280,13 @@ function verifyBindings(settings, identity) {
     Array.isArray(bindings) && bindings.length < 100,
     'binding list unavailable'
   );
+  const declared = declaredNames(identity);
+  const names = new Map();
   const vars = {};
   const durableObjects = {};
-  for (const binding of bindings) {
+  for (const [index, binding] of bindings.entries()) {
+    const name = bindingLabel(binding.name, declared, index);
+    if (typeof binding.name === 'string') names.set(binding.name, name);
     // Routing attributes (environment, dispatch namespace, ...) are not part
     // of the reviewed identity; any present one fails instead of being dropped.
     const reviewed = REVIEWED_BINDING_ATTRIBUTES[binding.type];
@@ -226,7 +294,7 @@ function verifyBindings(settings, identity) {
       for (const [attribute, value] of Object.entries(binding))
         assert.ok(
           reviewed.has(attribute) || value === undefined || value === null,
-          `unreviewed ${label(attribute)} on ${label(binding.type)} binding ${label(binding.name)}`
+          `unreviewed ${attributeLabel(attribute)} on ${typeLabel(binding.type)} binding ${name}`
         );
     switch (binding.type) {
       case 'plain_text':
@@ -239,14 +307,12 @@ function verifyBindings(settings, identity) {
         assert.ok(
           binding.script_name === undefined ||
             binding.script_name === identity.name,
-          `Durable Object binding ${label(binding.name)} targets another Worker`
+          `Durable Object binding ${name} targets another Worker`
         );
         durableObjects[binding.name] = { className: binding.class_name };
         break;
       default:
-        assert.fail(
-          `unreviewed ${label(binding.type)} binding ${label(binding.name)}`
-        );
+        assert.fail(`unreviewed ${typeLabel(binding.type)} binding ${name}`);
     }
   }
   // Name only the differing vars: assertion diffs would print text values.
@@ -255,7 +321,7 @@ function verifyBindings(settings, identity) {
     ...new Set([...Object.keys(vars), ...Object.keys(expected)]),
   ]
     .filter((name) => vars[name] !== expected[name])
-    .map(label)
+    .map((name) => names.get(name) ?? name)
     .sort();
   assert.ok(
     differing.length === 0,
@@ -509,8 +575,7 @@ export function compareTransition(plan, before, after) {
   );
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const [phase, baseline, beforePath, afterPath] = process.argv.slice(2);
+async function main(phase, baseline, beforePath, afterPath) {
   assert.ok(
     phase === 'before' || phase === 'after',
     'usage: before <baseline> <out> | after <baseline> <before> <out>'
@@ -539,4 +604,21 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     `Worker settings ${phase} snapshot verified` +
       (snapshot.stage ? ` (${snapshot.stage} identity)` : '')
   );
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const [argument] = process.argv.slice(2);
+  const phase = ['before', 'after'].includes(argument) ? argument : 'settings';
+  try {
+    await main(...process.argv.slice(2));
+  } catch (error) {
+    // Assertion messages are composed here from trusted values; any other
+    // error (parse, network, runtime) may quote server data, so name only it.
+    const detail =
+      error instanceof assert.AssertionError
+        ? error.message
+        : `unexpected ${/^[A-Za-z]{1,40}$/.test(error?.name) ? error.name : 'error'}`;
+    console.error(`Worker settings ${phase} check failed: ${detail}`);
+    process.exitCode = 1;
+  }
 }

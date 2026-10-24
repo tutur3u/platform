@@ -259,7 +259,7 @@ for (const [label, binding, error] of [
   [
     'unreviewed binding type',
     { name: 'CACHE', type: 'kv_namespace', namespace_id: 'kv' },
-    /unreviewed kv_namespace binding CACHE/,
+    /unreviewed kv_namespace binding <undeclared binding #12>$/,
   ],
   [
     'foreign Durable Object environment',
@@ -344,9 +344,48 @@ test('server-provided binding identifiers never reach output', async () => {
       }
     );
   assert.deepEqual(messages, [
-    'unreviewed unrecognized binding unrecognized',
-    'Worker vars differ: unrecognized',
-    'unreviewed unrecognized on plain_text binding WEB_ORIGIN',
+    'unreviewed <unknown type> binding <undeclared binding #12>',
+    'Worker vars differ: <undeclared binding #12>',
+    'unreviewed <unknown attribute> on plain_text binding WEB_ORIGIN',
     'Durable Object bindings differ',
   ]);
+});
+
+test('identifier-shaped credentials used as binding names are never printed', async () => {
+  // Valid identifiers and base64url text: syntax alone must not admit them.
+  const token = 'tok_Ab3dEf5hIj7lMn9pQr1tUv3xYz5bCd7fGh9j';
+  const encoded = Buffer.from(token).toString('base64url');
+  const outputs = [];
+  for (const name of [token, encoded])
+    for (const extra of [
+      { name, type: 'plain_text', text: '' },
+      { name, type: 'kv_namespace', namespace_id: name },
+      { name, type: 'durable_object_namespace', class_name: 'CronLedger' },
+      { name: 'WEB_ORIGIN', type: 'plain_text', text: 'x', [name]: true },
+    ])
+      await assert.rejects(
+        captureAfter({
+          plan,
+          ...credentials(
+            liveWorker(plan.target, {
+              settings: { bindings: [...bindingsFor(plan.target), extra] },
+            })
+          ),
+        }),
+        (error) => {
+          outputs.push(error.message);
+          return true;
+        }
+      );
+  const text = outputs.join('\n');
+  for (const form of [token, encoded, token.slice(0, 8), encoded.slice(0, 8)])
+    assert.ok(!text.includes(form), 'a credential-shaped name reached output');
+  assert.equal(outputs.length, 8);
+  assert.ok(
+    outputs.every((message) =>
+      /<undeclared binding #12>|<unknown attribute>|^Durable Object bindings differ$/.test(
+        message
+      )
+    )
+  );
 });
