@@ -40,10 +40,10 @@ function sqlStore(sql: SqlStorage): LedgerStore {
   };
 }
 
-export class CronLedger extends DurableObject<CronControlEnv> {
+export class CronLedger extends DurableObject<unknown> {
   readonly #core: LedgerCore;
 
-  constructor(ctx: DurableObjectState, env: CronControlEnv) {
+  constructor(ctx: DurableObjectState, env: unknown) {
     super(ctx, env);
     this.#core = new LedgerCore(sqlStore(ctx.storage.sql));
   }
