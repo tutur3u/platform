@@ -2533,12 +2533,6 @@ abstract class AppLocalizations {
   /// **'No accounts connected'**
   String get calendarConnectionsEmpty;
 
-  /// No description provided for @calendarConnectionsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Google and Microsoft accounts to sync calendars.'**
-  String get calendarConnectionsSubtitle;
-
   /// No description provided for @calendarConnectionsTitle.
   ///
   /// In en, this message translates to:

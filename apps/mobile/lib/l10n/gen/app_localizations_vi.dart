@@ -1258,9 +1258,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendarConnectionsEmpty => 'Chưa có tài khoản nào được kết nối';
 
   @override
-  String get calendarConnectionsSubtitle => 'Kết nối tài khoản Google và Microsoft để đồng bộ lịch.';
-
-  @override
   String get calendarConnectionsTitle => 'Quản lý tài khoản lịch';
 
   @override

@@ -24,7 +24,6 @@ Future<Map<String, dynamic>?> showEventFormSheet(
 }) {
   return showAppSheet<Map<String, dynamic>>(
     context: context,
-
     builder: (context) => _EventFormContent(
       event: event,
       initialStartTime: initialStartTime,
@@ -314,8 +313,6 @@ class _EventFormContentState extends State<_EventFormContent> {
         children: [
           if (_dateTimeError != null)
             Text(_dateTimeError!, style: TextStyle(color: colorScheme.error)),
-          // Header.
-          const SizedBox.shrink(),
           const SizedBox(height: 16),
 
           // Title.

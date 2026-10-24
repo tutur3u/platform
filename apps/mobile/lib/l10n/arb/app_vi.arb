@@ -1578,7 +1578,6 @@
   "calendarConnectionsDisconnect": "Ngắt kết nối",
   "calendarConnectionsDisconnectConfirm": "Ngắt kết nối {account}? Các lịch liên quan sẽ bị vô hiệu hóa.",
   "calendarConnectionsEmpty": "Chưa có tài khoản nào được kết nối",
-  "calendarConnectionsSubtitle": "Kết nối tài khoản Google và Microsoft để đồng bộ lịch.",
   "calendarConnectionsTitle": "Quản lý tài khoản lịch",
   "calendarDayView": "Ngày",
   "calendarDeleteConfirm": "Xóa sự kiện này?",
