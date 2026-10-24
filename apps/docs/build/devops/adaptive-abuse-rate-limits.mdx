@@ -169,6 +169,51 @@ hard-block threshold would have been crossed. Generic anonymous API route-limit
 hits, malformed auth-cookie abuse, scanner-like requests, `api_auth_failed`, and
 manual operator blocks can still escalate to hard IP blocks.
 
+## MFA Verification Budgets
+
+MFA code verification has three independent budgets:
+
+| Scope | Limit | Where |
+| --- | --- | --- |
+| Source IP | 5 failures / 5 minutes | `checkMFAVerifyLimit` (Redis) in the web MFA verify routes |
+| One factor of one account | 5 failures / 15 minutes | `@tuturuuu/utils/abuse-protection/mfa-subject-limits` (Redis) in the same routes, and the Auth hook below |
+| One account, all factors | 10 failures / 1 hour | Same as above |
+
+The account budgets follow the user and factor, not the source address, so
+rotating IPs does not extend them. The routes reserve an attempt atomically
+before contacting Auth, so parallel requests cannot outrun the counter. While a
+budget is spent, even a correct code is refused until the window passes. A
+correct code within budget resets the account counters. Only Supabase Auth's
+role can run the hook; the service role cannot. The Redis counters fail open when Redis is unavailable, like
+the rest of abuse protection.
+
+Clients holding a session can also call Supabase Auth's MFA endpoints directly
+(the web login form does), which bypasses the API routes. The
+`public.hook_mfa_verification_attempt` Postgres hook applies the per-factor and
+per-account budgets inside Auth for every caller. It stores windowed counters
+in `private.mfa_verification_failures` and answers spent budgets with an HTTP
+429 error rather than the `reject` decision, which would sign the user out
+everywhere.
+
+The migration grants `supabase_auth_admin` `USAGE` on `public` and `EXECUTE`
+on this hook only. Function execution permission alone does not allow Auth to
+resolve the schema. The SQL fixture checks schema access without `CREATE`
+permission and calls the hook after switching to Auth's actual role. It captures
+the result with psql's `\gset` and resets the role before invoking pgTAP; Auth
+does not need access to the test extension.
+
+- Local: enabled in `apps/database/supabase/config.toml` as
+  `[auth.hook.mfa_verification_attempt]`.
+- Hosted: an operator enables it under **Authentication > Hooks** as the MFA
+  verification attempt hook (Postgres function
+  `public.hook_mfa_verification_attempt`). Supabase offers this hook on Team
+  and Enterprise plans only. Until it is enabled, direct Auth calls are
+  limited only by Auth's built-in rate limits.
+
+Regression coverage: `apps/database/supabase/tests/security-mfa-verification-hook.sql`,
+`packages/utils/src/abuse-protection/__tests__/mfa-subject-limits.test.ts` and
+`apps/web/src/legacy-api-routes/auth/mfa/totp/mfa-verify-subject-limit.test.ts`.
+
 ## Trusted-Location Read Uplift
 
 High-density centers (many staff behind one office NAT IP) can hit the read-limit
