@@ -100,6 +100,12 @@ export function resolveConfig(env = process.env, { home = os.homedir() } = {}) {
   };
 }
 
+// Browser-facing web origin. Next dev only serves its dev resources (HMR,
+// hydration) to localhost; 127.0.0.1 pages stay unhydrated with disabled forms.
+export function webOrigin(port) {
+  return `http://localhost:${port}`;
+}
+
 export function loopbackUrl(port) {
   return `http://${LOOPBACK_HOST}:${port}`;
 }
@@ -153,7 +159,10 @@ export function webEnv(config, status) {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.publishableKey,
     SUPABASE_SECRET_KEY: status.secretKey,
     TUTURUUU_APP_COORDINATION_SECRET: LOCAL_APP_COORDINATION_SECRET,
-    NEXT_PUBLIC_WEB_APP_URL: loopbackUrl(config.webPort),
+    // Existing local-only opt-in used by CI web E2E; local-e2e.ts enables it
+    // only for loopback :7803 web and :8001 Supabase origins.
+    TUTURUUU_LOCAL_E2E_AUTH_BYPASS: '1',
+    NEXT_PUBLIC_WEB_APP_URL: webOrigin(config.webPort),
     PORT: String(config.webPort),
     NEXT_TELEMETRY_DISABLED: '1',
   };
@@ -162,7 +171,7 @@ export function webEnv(config, status) {
 export function playwrightEnv(config, status) {
   return {
     ...webEnv(config, status),
-    BASE_URL: loopbackUrl(config.webPort),
+    BASE_URL: webOrigin(config.webPort),
   };
 }
 
@@ -181,6 +190,34 @@ export function mobileDefines(config, status) {
     defines[key] = loopbackUrl(config.webPort);
   }
   return defines;
+}
+
+// Same synthetic Firebase config CI writes for Android builds (no real keys).
+export function dummyGoogleServicesJson() {
+  const client = (suffix, id) => ({
+    client_info: {
+      mobilesdk_app_id: `1:123:android:${id}`,
+      android_client_info: { package_name: `com.tuturuuu.app.mobile${suffix}` },
+    },
+    oauth_client: [],
+    api_key: [{ current_key: 'dummy_key' }],
+    services: { appinvite_service: { other_platform_oauth_client: [] } },
+  });
+  return `${JSON.stringify({
+    project_info: {
+      project_number: '123',
+      firebase_url: 'https://dummy.firebaseio.com',
+      project_id: 'dummy-project',
+      storage_bucket: 'dummy.appspot.com',
+    },
+    client: [client('', 'abc'), client('.dev', 'def'), client('.stg', 'ghi')],
+  })}\n`;
+}
+
+// Matches the integration test's `E2E_SHOT <name>` device-log marker.
+export function parseShotMarker(line) {
+  const match = /\bE2E_SHOT ([a-z0-9][a-z0-9-]{0,63})\b/.exec(line);
+  return match ? match[1] : null;
 }
 
 export function adbReversePorts(config) {
@@ -204,7 +241,7 @@ export const COMMANDS = Object.freeze({
   'mobile-e2e':
     'Run the mobile integration_test flow on ios|android (--mode=profile|release on Android shows the release gray screen).',
   status: 'Show stack, web server and device status.',
-  down: 'Stop web and Supabase (pass --purge to drop the project volumes).',
+  down: 'Stop web and Supabase (--web-only keeps Supabase; --purge drops volumes).',
 });
 
 export function parseCliArgs(argv) {

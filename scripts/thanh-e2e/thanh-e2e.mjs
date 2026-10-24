@@ -17,12 +17,14 @@ import {
 import {
   adbReversePorts,
   dockerEnv,
+  dummyGoogleServicesJson,
   formatEnvFile,
   helpText,
   isolatedDockerConfigJson,
   loopbackUrl,
   mobileDefines,
   parseCliArgs,
+  parseShotMarker,
   parseSupabaseStatus,
   playwrightEnv,
   resolveConfig,
@@ -298,6 +300,88 @@ function wireAndroid(config) {
   }
 }
 
+// Gitignored Firebase inputs, prepared the same way as mobile CI.
+function prepareFirebase(platform) {
+  if (platform === 'ios') {
+    run('python3', [
+      '-I',
+      path.join(
+        repoRoot,
+        'scripts',
+        'mobile-deployment',
+        'firebase-service-config.py'
+      ),
+      '--platform',
+      'ios',
+      '--mobile-root',
+      mobileDir,
+    ]);
+    return;
+  }
+  const target = path.join(mobileDir, 'android', 'app', 'google-services.json');
+  if (!fs.existsSync(target))
+    fs.writeFileSync(target, dummyGoogleServicesJson());
+}
+
+const DRIVE_TIMEOUT_MS = 20 * 60_000;
+
+// Streams `flutter drive`, capturing a host screenshot for each E2E_SHOT marker.
+function driveWithScreenshots({ args, capture, logFile, shotsDir }) {
+  return new Promise((resolve, reject) => {
+    const out = fs.createWriteStream(logFile);
+    // Own process group: a killed drive otherwise orphans its dev service and
+    // driver, which keep stdout open and pin the ttr resources slot.
+    const child = spawn('flutter', args, {
+      cwd: mobileDir,
+      detached: true,
+      env: process.env,
+    });
+    const killGroup = () => {
+      try {
+        process.kill(-child.pid, 'SIGTERM');
+      } catch {
+        // Group already exited.
+      }
+    };
+    let buffer = '';
+    let passed = false;
+    const timer = setTimeout(() => {
+      log(
+        `flutter drive exceeded ${DRIVE_TIMEOUT_MS / 60_000} minutes; stopping it`
+      );
+      killGroup();
+    }, DRIVE_TIMEOUT_MS);
+    const onData = (chunk) => {
+      process.stdout.write(chunk);
+      out.write(chunk);
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        if (line.includes('All tests passed')) passed = true;
+        const name = parseShotMarker(line);
+        if (!name) continue;
+        try {
+          capture(path.join(shotsDir, `${name}.png`));
+          log(`captured ${name}`);
+        } catch (error) {
+          log(`screenshot ${name} failed: ${error.message}`);
+        }
+      }
+    };
+    child.stdout.on('data', onData);
+    child.stderr.on('data', onData);
+    child.on('error', reject);
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      killGroup();
+      out.end();
+      // A killed or crashed drive can exit 0; only the pass line counts.
+      resolve(code === 0 && passed ? 0 : code || 1);
+    });
+  });
+}
+
 async function mobileE2e(config, flags, positionals) {
   const platform = positionals[0];
   if (!['ios', 'android'].includes(platform))
@@ -308,26 +392,41 @@ async function mobileE2e(config, flags, positionals) {
   if (platform === 'ios' && mode !== 'debug')
     throw new Error('iOS simulators only run debug builds.');
   await writeEnvFiles(config);
+  prepareFirebase(platform);
   if (platform === 'android') wireAndroid(config);
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const shotsDir = path.join(config.shotsDir, `${platform}-${mode}-${stamp}`);
   fs.mkdirSync(shotsDir, { recursive: true });
-  run(
-    'flutter',
-    [
+  const device =
+    platform === 'ios' ? config.iosSimulator : config.androidSerial;
+  const code = await driveWithScreenshots({
+    args: [
       'drive',
       '--driver=test_driver/integration_test.dart',
       '--target=integration_test/e2e_flows_test.dart',
       '-d',
-      platform === 'ios' ? config.iosSimulator : config.androidSerial,
+      device,
       `--${mode}`,
       '--flavor',
       'development',
       `--dart-define-from-file=${path.join(config.envDir, 'mobile.json')}`,
     ],
-    { cwd: mobileDir, env: { E2E_SHOTS_DIR: shotsDir } }
-  );
+    capture: (file) =>
+      platform === 'ios'
+        ? run('xcrun', ['simctl', 'io', device, 'screenshot', file], {
+            capture: true,
+          })
+        : fs.writeFileSync(
+            file,
+            execFileSync('adb', ['-s', device, 'exec-out', 'screencap', '-p'], {
+              maxBuffer: 64 * 1024 * 1024,
+            })
+          ),
+    logFile: path.join(shotsDir, 'flutter-drive.log'),
+    shotsDir,
+  });
   log(`screenshots: ${shotsDir}`);
+  if (code !== 0) throw new Error(`flutter drive exited with ${code}`);
 }
 
 async function status(config) {
@@ -390,6 +489,7 @@ async function down(config, flags) {
     log(`stopped web (pid ${pid})`);
   }
   fs.rmSync(config.webPidFile, { force: true });
+  if (flags['web-only']) return;
   const args = ['stop', '--project-id', config.projectId];
   if (flags.purge) args.push('--no-backup');
   await supabase(config, args);

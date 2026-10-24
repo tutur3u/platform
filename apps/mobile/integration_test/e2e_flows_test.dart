@@ -2,6 +2,7 @@
 //
 // Run through `node scripts/thanh-e2e/thanh-e2e.mjs mobile-e2e <ios|android>`,
 // which supplies loopback dart-defines and collects screenshots.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -31,22 +32,22 @@ const _timezone = String.fromEnvironment(
 );
 
 void main() {
-  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  var surfaceConverted = false;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  // The host runner (scripts/thanh-e2e) captures a device screenshot when it
+  // sees this marker; holding the frame works in debug, profile and release.
   Future<void> shot(WidgetTester tester, String name) async {
-    if (Platform.isAndroid && !surfaceConverted) {
-      await binding.convertFlutterSurfaceToImage();
-      surfaceConverted = true;
-    }
     await tester.pump();
-    await binding.takeScreenshot(
-      '${Platform.isAndroid ? 'android' : 'ios'}-$name',
-    );
+    debugPrint('E2E_SHOT ${Platform.isAndroid ? 'android' : 'ios'}-$name');
+    await _settle(tester, seconds: 3);
   }
 
   testWidgets('login, agenda, settings and timezone flow', (tester) async {
+    // bootstrap() installs the app's FlutterError.onError; restore the test
+    // binding's handler so framework errors fail the test with their details.
+    final testErrorHandler = FlutterError.onError;
     await app.main();
+    FlutterError.onError = testErrorHandler;
     await _pumpUntil(
       tester,
       () =>
@@ -59,11 +60,16 @@ void main() {
 
     if (_authStatus(tester) != AuthStatus.authenticated) {
       await tester.enterText(find.byType(EditableText).first, _email);
-      await tester.tap(find.text('Continue with email'));
-      await _pumpUntil(
-        tester,
-        () => find.text('Sign in').evaluate().isNotEmpty,
-      );
+      // Continue is a no-op while OTP availability resolves (short grace
+      // period), so retry the tap until the password stage renders.
+      await _pumpUntil(tester, () {
+        if (find.text('Sign in').evaluate().isNotEmpty) return true;
+        final cont = find.text('Continue with email');
+        if (cont.evaluate().isNotEmpty) {
+          unawaited(tester.tap(cont.first, warnIfMissed: false));
+        }
+        return false;
+      }, step: const Duration(seconds: 1));
       await tester.enterText(find.byType(EditableText).last, _password);
       await shot(tester, '02-password');
       await tester.tap(find.text('Sign in').last);
@@ -171,12 +177,13 @@ Future<void> _pumpUntil(
   WidgetTester tester,
   bool Function() condition, {
   Duration timeout = const Duration(seconds: 30),
+  Duration step = const Duration(milliseconds: 200),
 }) async {
   final end = DateTime.now().add(timeout);
   while (!condition()) {
     if (DateTime.now().isAfter(end)) {
       throw TestFailure('Timed out after ${timeout.inSeconds}s');
     }
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(step);
   }
 }

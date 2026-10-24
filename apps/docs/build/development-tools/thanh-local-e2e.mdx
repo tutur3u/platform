@@ -91,7 +91,7 @@ ttr resources run -- node $E2E mobile-e2e ios
 ttr resources run -- node $E2E mobile-e2e android
 ttr resources run -- node $E2E mobile-e2e android --mode=profile
 node $E2E status
-node $E2E down            # stop web + Supabase; --purge drops project volumes
+node $E2E down            # stop web + Supabase; --web-only, --purge
 ```
 
 `seed` re-applies migrations and seed data. `env` rewrites
@@ -117,8 +117,20 @@ the local web server, which owns the live API handlers.
 `apps/mobile/integration_test/e2e_flows_test.dart` signs in with the seeded
 account, opens Agenda, opens Settings → Preferences, changes the personal
 timezone and returns to Agenda. It fails if an `ErrorWidget` renders at any
-step and writes screenshots through `test_driver/integration_test.dart` into
-`$T/e2e/<project>/shots/<platform>-<mode>-<timestamp>/`.
+step. At each checkpoint it prints an `E2E_SHOT <name>` marker and holds the
+frame; the runner streams `flutter drive` output and captures the device with
+`xcrun simctl io ... screenshot` or `adb exec-out screencap`, so screenshots
+work in debug, profile and release builds. Shots and `flutter-drive.log` land
+in `$T/e2e/<project>/shots/<platform>-<mode>-<timestamp>/`. (On Android,
+`IntegrationTestWidgetsFlutterBinding.takeScreenshot` after
+`convertFlutterSurfaceToImage` captured only the first frame.)
+
+Before each run the script prepares the gitignored Firebase inputs the same way
+mobile CI does: `scripts/mobile-deployment/firebase-service-config.py` copies the
+tracked development plist on iOS, and Android gets the synthetic
+`google-services.json` CI writes. iOS builds run `pod install`, which can leave
+`ios/Podfile.lock` and `project.pbxproj` modified in the E2E checkout; do not
+commit those side effects.
 
 `flutter test -d <device> test/...` does not run on the device: files outside
 `integration_test/` run on the host VM. Widget tests that resize
@@ -135,11 +147,29 @@ assertion reports the failing screen, and the screenshots show it.
 
 ## Web Playwright
 
-`web-e2e` sets `BASE_URL=http://127.0.0.1:7803` and the local Supabase keys,
-which the unchanged E2E safety guard accepts. `--install` installs the
+`web` and `web-e2e` set `BASE_URL=http://127.0.0.1:7803`, the local Supabase
+keys and `TUTURUUU_LOCAL_E2E_AUTH_BYPASS=1`, the same local-only opt-in CI web
+E2E uses. `local-e2e.ts` honors it only for the loopback `:7803`/`:8001`
+origins; without it the `/api/auth/dev-session` rate-limit reset returns 403
+and most auth specs fail in `beforeEach`. `--install` installs the
 Playwright Chromium build first. Pass spec paths or Playwright flags after `--`.
 
 ## Gotchas
+
+- Browsers must open web at `http://localhost:7803`, not `127.0.0.1`: Next dev
+  serves its dev resources (HMR, hydration) only to `localhost`, so a
+  `127.0.0.1` page stays unhydrated and the login form remains disabled. The
+  script uses `localhost` for `BASE_URL`/`NEXT_PUBLIC_WEB_APP_URL` and keeps
+  `127.0.0.1` for mobile, which Android cleartext requires.
+- `bootstrap()` installs the app's `FlutterError.onError`. The integration test
+  restores the test binding's handler after `app.main()`; otherwise a framework
+  error surfaces only as `A test overrode FlutterError.onError ...` and the real
+  failure is hidden.
+- Mobile login ignores "Continue with email" while OTP availability resolves
+  (a short grace period); the test retries the tap until the password stage
+  renders.
+- `mobile-e2e` runs `flutter drive` in its own process group with a 20-minute
+  timeout and requires the `All tests passed` line; a killed drive can exit 0.
 
 - The web auth spam guard blocks requests without a native or browser user
   agent; probe mobile APIs with a `Dart/3.x (dart:io)` user agent, not bare

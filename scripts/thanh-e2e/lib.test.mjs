@@ -4,11 +4,13 @@ import { describe, it } from 'node:test';
 import {
   adbReversePorts,
   dockerEnv,
+  dummyGoogleServicesJson,
   formatEnvFile,
   isolatedDockerConfigJson,
   MOBILE_API_OVERRIDE_KEYS,
   mobileDefines,
   parseCliArgs,
+  parseShotMarker,
   parseSupabaseStatus,
   playwrightEnv,
   resolveConfig,
@@ -87,11 +89,12 @@ describe('env derivation', () => {
     const env = webEnv(config, status);
     assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, 'http://127.0.0.1:8001');
     assert.equal(env.PORT, '7803');
+    assert.equal(env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS, '1');
   });
 
   it('targets Playwright at the guard-approved loopback web origin', () => {
     const env = playwrightEnv(config, status);
-    assert.equal(env.BASE_URL, 'http://127.0.0.1:7803');
+    assert.equal(env.BASE_URL, 'http://localhost:7803');
   });
 
   it('routes every mobile API owner to the local web server via 127.0.0.1', () => {
@@ -116,6 +119,36 @@ describe('env derivation', () => {
 
   it('formats env files one key per line', () => {
     assert.equal(formatEnvFile({ A: '1', B: 'x\ny' }), 'A=1\nB=xy\n');
+  });
+});
+
+describe('dummyGoogleServicesJson', () => {
+  it('covers every flavor package with synthetic values only', () => {
+    const json = JSON.parse(dummyGoogleServicesJson());
+    assert.deepEqual(
+      json.client.map((c) => c.client_info.android_client_info.package_name),
+      [
+        'com.tuturuuu.app.mobile',
+        'com.tuturuuu.app.mobile.dev',
+        'com.tuturuuu.app.mobile.stg',
+      ]
+    );
+    assert.equal(json.client[1].api_key[0].current_key, 'dummy_key');
+  });
+});
+
+describe('parseShotMarker', () => {
+  it('extracts safe names from Android and iOS log lines', () => {
+    assert.equal(
+      parseShotMarker('I/flutter ( 6351): E2E_SHOT android-04-agenda'),
+      'android-04-agenda'
+    );
+    assert.equal(
+      parseShotMarker('flutter: E2E_SHOT ios-01-launch'),
+      'ios-01-launch'
+    );
+    assert.equal(parseShotMarker('E2E_SHOT ../etc'), null);
+    assert.equal(parseShotMarker('unrelated'), null);
   });
 });
 
