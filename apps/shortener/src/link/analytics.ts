@@ -19,9 +19,11 @@ function coordinate(value: string | null | undefined) {
 }
 
 /**
- * Build one click row. Vercel geolocation headers keep their meaning while a
- * request still reaches the legacy origin; on Cloudflare the trusted `cf`
- * object supplies the same columns and the Vercel-only columns stay null.
+ * Build one click row. On Cloudflare the trusted `cf` object and
+ * `cf-connecting-ip` are the only geolocation and address sources: client-sent
+ * `x-vercel-*` and `x-forwarded-for` headers are ignored there, and the
+ * Vercel-only columns stay null. Without `cf` (the legacy Vercel origin), the
+ * Vercel edge headers keep their meaning.
  */
 export function clickRecord(
   linkId: string,
@@ -29,26 +31,39 @@ export function clickRecord(
   cf?: ClickGeolocation
 ): LinkClickRecord {
   const header = (name: string) => headers.get(name) || null;
+  const common = {
+    link_id: linkId,
+    user_agent: header('user-agent'),
+    referrer: header('referer') ?? header('referrer'),
+  };
+  if (cf)
+    return {
+      ...common,
+      ip_address: header('cf-connecting-ip'),
+      country: cf.country ?? null,
+      country_region: cf.regionCode ?? null,
+      city: cf.city ?? null,
+      latitude: coordinate(cf.latitude),
+      longitude: coordinate(cf.longitude),
+      timezone: cf.timezone ?? null,
+      postal_code: cf.postalCode ?? null,
+      vercel_region: null,
+      vercel_id: null,
+    };
   const vercelId = header('x-vercel-id');
-  // Cloudflare appends to a client-supplied X-Forwarded-For, so prefer its own
-  // connecting address there; the legacy header order applies elsewhere.
   const ip =
-    (cf ? header('cf-connecting-ip') : null) ||
     headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     header('x-real-ip');
   return {
-    link_id: linkId,
+    ...common,
     ip_address: ip || null,
-    user_agent: header('user-agent'),
-    referrer: header('referer') ?? header('referrer'),
-    country: header('x-vercel-ip-country') ?? cf?.country ?? null,
-    country_region:
-      header('x-vercel-ip-country-region') ?? cf?.regionCode ?? null,
-    city: header('x-vercel-ip-city') ?? cf?.city ?? null,
-    latitude: coordinate(header('x-vercel-ip-latitude') ?? cf?.latitude),
-    longitude: coordinate(header('x-vercel-ip-longitude') ?? cf?.longitude),
-    timezone: header('x-vercel-ip-timezone') ?? cf?.timezone ?? null,
-    postal_code: header('x-vercel-ip-postal-code') ?? cf?.postalCode ?? null,
+    country: header('x-vercel-ip-country'),
+    country_region: header('x-vercel-ip-country-region'),
+    city: header('x-vercel-ip-city'),
+    latitude: coordinate(header('x-vercel-ip-latitude')),
+    longitude: coordinate(header('x-vercel-ip-longitude')),
+    timezone: header('x-vercel-ip-timezone'),
+    postal_code: header('x-vercel-ip-postal-code'),
     vercel_region: vercelId?.split('::')[0] || null,
     vercel_id: vercelId,
   };

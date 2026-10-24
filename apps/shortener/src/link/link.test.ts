@@ -214,6 +214,43 @@ describe('click analytics', () => {
     ).toBe('192.0.2.4');
   });
 
+  it('ignores client-sent Vercel and forwarding headers when cf is present', () => {
+    const forged = new Headers({
+      'cf-connecting-ip': '198.51.100.7',
+      'x-forwarded-for': '203.0.113.66',
+      'x-real-ip': '203.0.113.67',
+      'x-vercel-ip-country': 'US',
+      'x-vercel-ip-country-region': 'CA',
+      'x-vercel-ip-city': 'Forged City',
+      'x-vercel-ip-latitude': '1',
+      'x-vercel-ip-longitude': '2',
+      'x-vercel-ip-timezone': 'America/Los_Angeles',
+      'x-vercel-ip-postal-code': '94016',
+      'x-vercel-id': 'iad1::forged',
+    });
+    expect(clickRecord('link', forged, { country: 'VN' })).toMatchObject({
+      ip_address: '198.51.100.7',
+      country: 'VN',
+      country_region: null,
+      city: null,
+      latitude: null,
+      longitude: null,
+      timezone: null,
+      postal_code: null,
+      vercel_region: null,
+      vercel_id: null,
+    });
+    // An empty cf object is still the trusted source: nothing falls back to
+    // client headers, including the forwarded address.
+    forged.delete('cf-connecting-ip');
+    expect(clickRecord('link', forged, {})).toMatchObject({
+      ip_address: null,
+      country: null,
+      vercel_region: null,
+      vercel_id: null,
+    });
+  });
+
   it('never lets an analytics failure escape', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { store: links } = store();
