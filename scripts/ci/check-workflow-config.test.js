@@ -891,10 +891,7 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
   );
 
   assert.match(workflow, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/);
-  const nodeVersion = fs
-    .readFileSync(path.join(repoRoot, '.node-version'), 'utf8')
-    .trim();
-  assert.ok(workflow.includes(`node-version: ${nodeVersion}\n`));
+  // node-version-pin.test.js owns the exact Node pin of every setup-node step.
   assert.match(
     workflow,
     /node --experimental-strip-types scripts\/ci\/resolve-changed-files\.ts/
