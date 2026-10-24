@@ -54,6 +54,7 @@ jobs:
             packages/*/package.json
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
+            scripts/ci/mobile-build-selection.ts
             scripts/ci/mail-calendar-tasks-affected.ts
             scripts/ci/overflow-notes-ci.js
             scripts/ci/production-test-only-paths.ts

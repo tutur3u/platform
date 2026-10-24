@@ -41,6 +41,55 @@ afterEach(() => {
 });
 
 describe('job process groups', { timeout: 15_000 }, () => {
+  it.each([
+    '',
+    'echo;id',
+    'echo|id',
+    '$(id)',
+    '`id`',
+    'echo>file',
+    'echo\nwhoami',
+    'echo\0',
+  ])('rejects malformed executable %j before spawning', async (command) => {
+    await expect(
+      runProcessGroup({
+        command,
+        args: [],
+        cwd: process.cwd(),
+        env,
+        onOutput: () => {},
+      })
+    ).rejects.toThrow('Invalid devbox executable or argument.');
+  });
+
+  it('preserves shell syntax as literal argv data', async () => {
+    const argument = '; echo injected | $(whoami) `id` > file';
+    let output = '';
+    const result = await runProcessGroup({
+      command: process.execPath,
+      args: ['-e', 'process.stdout.write(process.argv[1])', argument],
+      cwd: process.cwd(),
+      env,
+      onOutput: (chunk) => {
+        output += chunk;
+      },
+    });
+    expect(result.code).toBe(0);
+    expect(output).toBe(argument);
+  });
+
+  it('rejects NUL arguments before spawning', async () => {
+    await expect(
+      runProcessGroup({
+        command: process.execPath,
+        args: ['bad\0argument'],
+        cwd: process.cwd(),
+        env,
+        onOutput: () => {},
+      })
+    ).rejects.toThrow('Invalid devbox executable or argument.');
+  });
+
   it('times out the whole group, not only the direct child', async () => {
     const { result, pids } = await run(
       'sleep 30 & echo $!; sleep 30 & echo $!; wait',

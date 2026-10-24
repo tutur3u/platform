@@ -169,6 +169,7 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
           'isolation',
           'judge',
           'playground',
+          'protocols',
           'os',
           'reportedAt',
           'resources',
@@ -184,6 +185,22 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
     !EXECUTION_MODES.has(String(data.executionMode))
   )
     return false;
+  const protocols = data.protocols;
+  if (protocols !== undefined) {
+    if (!protocols || typeof protocols !== 'object' || Array.isArray(protocols))
+      return false;
+    for (const [key, versions] of Object.entries(protocols))
+      if (
+        key !== 'commitRun' ||
+        !Array.isArray(versions) ||
+        versions.length > 10 ||
+        versions.some(
+          (version) =>
+            !Number.isInteger(version) || version < 1 || version > 100
+        )
+      )
+        return false;
+  }
   const isolation = data.isolation;
   if (isolation !== undefined) {
     if (!isolation || typeof isolation !== 'object' || Array.isArray(isolation))
@@ -260,9 +277,19 @@ async function heartbeat(request: Request, env: Env, runner: Runner) {
     Object.keys(body).some((key) => key !== 'capabilities')
   )
     return json({ message: 'Invalid heartbeat body' }, 400);
-  const capabilities = (body as { capabilities?: unknown }).capabilities;
+  let capabilities = (body as { capabilities?: unknown }).capabilities;
   if (capabilities !== undefined && !isCapabilities(capabilities))
     return json({ message: 'Invalid heartbeat body' }, 400);
+  // Only trusted-mode runners may advertise envelope protocols; the database
+  // also drops them for Judge/playground runners.
+  if (
+    capabilities &&
+    'protocols' in capabilities &&
+    capabilities.executionMode !== 'trusted'
+  ) {
+    const { protocols: _dropped, ...rest } = capabilities;
+    capabilities = rest;
+  }
   const now = new Date().toISOString();
   await query(env, `/rest/v1/devbox_runners?id=eq.${runner.id}`, 'private', {
     method: 'PATCH',
