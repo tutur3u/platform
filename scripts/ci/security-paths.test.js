@@ -64,6 +64,10 @@ test('security-sensitive paths require review by category', () => {
     // Paths #6491 adds to CODEOWNERS stay classified as well.
     ['apps/web/src/app/api/auth/session/route.ts', 'auth'],
     ['packages/satellite/src/auth.ts', 'auth'],
+    ['apps/web/src/lib/api-auth.ts', 'auth'],
+    ['packages/sdk/src/platform-sdk-auth.ts', 'auth'],
+    ['apps/web/src/lib/devboxes/agent-auth.ts', 'runner-sandbox'],
+    ['apps/infrastructure/src/lib/devboxes/claims.ts', 'runner-sandbox'],
   ]) {
     assert.ok(
       categoriesOf([filePath]).includes(category),
