@@ -691,7 +691,9 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   globally, and the old email-service root dependency busted every task on 11
   of 40 main commits. Machine paths (`PUB_CACHE`, `LOCALAPPDATA`,
   `USERPROFILE`) are pass-through only. Hash gitignored files that change
-  results (`.env*` for Vitest `loadEnv`, `.dev.vars*` for `wrangler types`).
+  results (`.env*` for Vitest `loadEnv`, `.dev.vars*` for `wrangler types` and
+  `cf workers types`), and cache the generated declarations the tsconfig reads
+  (`.cloudflare/types/**` for `cf workers types`).
   `scripts/ci/turbo-cache-config.test.js` pins these rules. Diagnose misses
   with `--dry=json` hash comparisons as described in
   `apps/docs/build/devops/caching.mdx`; never narrow `^type-check`/`^transit`

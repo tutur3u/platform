@@ -205,14 +205,29 @@ test('gitignored env files that change results are hashed', () => {
   assert.ok(tasks.test.inputs.includes('.env*'));
   assert.ok(tasks.build.inputs.includes('.env*'));
 
-  // `wrangler types` derives the Env interface from .dev.vars/.env files.
+  // `wrangler types` and `cf workers types` derive the Env interface from
+  // .dev.vars/.env files, and a cache hit must restore the declarations the
+  // tsconfig reads, or a fresh checkout type-checks against missing types.
+  const generators = [
+    { command: /\bwrangler types\b/u, output: 'worker-configuration.d.ts' },
+    { command: /\bcf workers types\b/u, output: '.cloudflare/types/**' },
+  ];
+  const generatedDeclaration = (file) =>
+    file === 'worker-configuration.d.ts' || file.startsWith('.cloudflare/');
+  const covers = (output, file) =>
+    output.endsWith('/**')
+      ? file.startsWith(output.slice(0, -2))
+      : output === file;
+  let workers = 0;
   for (const dir of listWorkspaceDirs()) {
     const manifest = readJson(`${dir}/package.json`);
     const typeCheck = Object.entries(manifest.scripts ?? {})
       .filter(([script]) => script.startsWith('type-check'))
       .map(([, command]) => command)
       .join('\n');
-    if (!/\bwrangler types\b/u.test(typeCheck)) continue;
+    const generator = generators.find(({ command }) => command.test(typeCheck));
+    if (!generator) continue;
+    workers += 1;
 
     const configPath = `${dir}/turbo.json`;
     assert.ok(fs.existsSync(path.join(repoRoot, configPath)), configPath);
@@ -225,8 +240,21 @@ test('gitignored env files that change results are hashed', () => {
     }
     // Restore the generated declarations on a cache hit for editors and tsc.
     const outputs = readJson(configPath).tasks['type-check'].outputs ?? [];
-    assert.ok(outputs.includes('worker-configuration.d.ts'), configPath);
+    assert.ok(
+      outputs.includes(generator.output),
+      `${configPath} type-check must restore ${generator.output}`
+    );
+    const tsconfigPath = `${dir}/tsconfig.json`;
+    if (!fs.existsSync(path.join(repoRoot, tsconfigPath))) continue;
+    for (const file of (readJson(tsconfigPath).include ?? []).filter(
+      generatedDeclaration
+    ))
+      assert.ok(
+        outputs.some((output) => covers(output, file)),
+        `${configPath} type-check outputs do not restore ${file}`
+      );
   }
+  assert.ok(workers >= 3, 'expected the Cloudflare Worker type-check apps');
 });
 
 test('package Turbo configs extend the root and only widen inputs', () => {

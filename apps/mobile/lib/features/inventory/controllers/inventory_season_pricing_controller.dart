@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/inventory/inventory_sales_period.dart';
 import 'package:mobile/data/models/inventory/inventory_season_price.dart';
 import 'package:mobile/data/sources/inventory_sale_journal.dart';
 
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 part 'inventory_season_pricing_recovery.dart';
@@ -25,9 +25,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     String Function()? requestId,
   }) : journal = journal ?? InventorySaleJournal.instance,
        now = now ?? DateTime.now,
-       requestId = requestId ?? newLocalMutationId {
-    tzdata.initializeTimeZones();
-  }
+       requestId = requestId ?? newLocalMutationId;
   final Future<InventorySeasonQuote> Function(String, String) fetch;
   final Future<String> Function(String, Map<String, dynamic>) send;
   final Future<bool> Function() isOnline;
@@ -142,7 +140,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
       return false;
     }
     try {
-      final local = tz.TZDateTime.from(q.asOf, tz.getLocation(p.timeZone!));
+      final local = tz.TZDateTime.from(q.asOf, timezoneLocation(p.timeZone!));
       final day = DateTime.utc(local.year, local.month, local.day);
       final start = DateTime.utc(
         p.startsAt!.year,

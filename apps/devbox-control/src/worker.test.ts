@@ -231,6 +231,10 @@ it('drops a protocol advertisement from a Judge-only runner', async () => {
 it.each([
   { executionMode: 'root' },
   { executionMode: 1 },
+  { executionMode: ['trusted'] },
+  { executionMode: [['sandboxed']] },
+  { executionMode: { toString: 'trusted' } },
+  { executionMode: null },
   { isolation: { dedicatedUser: 'yes' } },
   { isolation: { tokenValue: true } },
   { isolation: { checkedAt: 'x'.repeat(101) } },

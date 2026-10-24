@@ -346,6 +346,7 @@
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",
+                  "build/devops/code-owners",
                   "build/devops/security-cadence",
                   "build/devops/e2e-proof-reuse",
                   "build/devops/vercel-cost-controls",

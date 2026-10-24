@@ -1,19 +1,14 @@
 name: TanStack And Rust Cloudflare CI/CD
 
+# Rust and TanStack runtimes are paused (tuturuuu.ci.ts), so every job reports
+# disabled. Trigger only on their own sources, not shared docs or root config.
 on:
   pull_request:
     paths:
       - "apps/backend/**"
       - "apps/tanstack-web/**"
       - "apps/backend/README.md"
-      - "apps/docs/build/devops/web-docker-deployment.mdx"
-      - "apps/docs/build/devops/github-actions-runbook.mdx"
-      - "apps/docs/build/devops/overview.mdx"
-      - "apps/docs/platform/architecture/tanstack-rust-migration.mdx"
-      - "packages/internal-api/src/backend.ts"
       - ".github/workflows/rust-backend.yml"
-      - ".github/workflows/ci-check.yml"
-      - "package.json"
       - "scripts/check-backend.js"
       - "scripts/check-backend.test.js"
       - "scripts/check-cloudflare-workers.js"
@@ -24,22 +19,13 @@ on:
       - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
-      - "tuturuuu.ci.ts"
-      - "tuturuuu.ts"
   push:
     branches: ["main", "production"]
     paths:
       - "apps/backend/**"
       - "apps/tanstack-web/**"
       - "apps/backend/README.md"
-      - "apps/docs/build/devops/web-docker-deployment.mdx"
-      - "apps/docs/build/devops/github-actions-runbook.mdx"
-      - "apps/docs/build/devops/overview.mdx"
-      - "apps/docs/platform/architecture/tanstack-rust-migration.mdx"
-      - "packages/internal-api/src/backend.ts"
       - ".github/workflows/rust-backend.yml"
-      - ".github/workflows/ci-check.yml"
-      - "package.json"
       - "scripts/check-backend.js"
       - "scripts/check-backend.test.js"
       - "scripts/check-cloudflare-workers.js"
@@ -50,8 +36,6 @@ on:
       - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
-      - "tuturuuu.ci.ts"
-      - "tuturuuu.ts"
   workflow_dispatch:
     inputs:
       deploy_target:

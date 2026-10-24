@@ -88,6 +88,7 @@ part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
 part 'settings_appearance_shell_checks.dart';
 part 'settings_apps_checks.dart';
+part 'settings_timezone_rows_checks.dart';
 part 'settings_timezone_picker_checks.dart';
 
 void main() {
@@ -101,6 +102,7 @@ void main() {
   registerSettingsSecretsShellChecks();
   registerSettingsAppearanceShellChecks();
   registerSettingsAppsChecks();
+  registerSettingsTimezoneRowsChecks();
   registerTimezonePickerChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -378,10 +380,12 @@ void main() {
         await h.dispose();
       });
       await h.pump(tester);
-      expect(
-        find.text('Effective timezone: Asia/Ho_Chi_Minh'),
-        findsNWidgets(2),
-      );
+      // One value line per row; the workspace row does not repeat the
+      // effective zone and no raw identifier is shown.
+      expect(find.text('Ho Chi Minh City\u00a0(GMT+7)'), findsOneWidget);
+      expect(find.textContaining('Paris\u00a0(GMT+'), findsOneWidget);
+      expect(find.textContaining('Effective'), findsNothing);
+      expect(find.textContaining('Asia/'), findsNothing);
       h.zones.add(const TimezoneSettingsState());
       await _settle(tester);
       expect(find.text('Resolving timezone…'), findsNWidgets(2));

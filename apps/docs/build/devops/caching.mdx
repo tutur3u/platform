@@ -78,7 +78,10 @@ not exclude upstream `__tests__` folders from them:
    extend `//` and add to inherited inputs with `$TURBO_EXTENDS$`.
 6. **Gitignored files that change results are hashed.** `test` hashes `.env*`
    because Vitest configs call `loadEnv(process.cwd())`. Packages whose type
-   check runs `wrangler types` hash `.dev.vars*` and `.env*`.
+   check runs `wrangler types` or `cf workers types` hash `.dev.vars*` and
+   `.env*`, and cache the generated declarations their tsconfig reads
+   (`worker-configuration.d.ts` or `.cloudflare/types/**`) so a cache hit on
+   a fresh checkout restores them.
 7. **The local cache is bounded:** `cacheMaxAge: "7d"` and
    `cacheMaxSize: "4GB"`. These settings do not change task hashes.
 
