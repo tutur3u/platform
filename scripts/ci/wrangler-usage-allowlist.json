@@ -21,6 +21,11 @@
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete in the service PR that moves it to cloudflare.config.ts, cf types, Build Output parity and cf deploy --prebuilt."
     },
+    "security-path-classification": {
+      "reason": "security path classification of wrangler config filenames, not CLI invocation",
+      "owner": "Security review cadence and CI tooling maintainers",
+      "removal": "Remove when security path classification no longer references legacy configuration filenames, or the guard has a reviewed config-filename reference rule."
+    },
     "shared-toolchain": {
       "reason": "Root wrangler devDependency supplies the CLI for every remaining gap; trustedDependencies, .wrangler ignores and policy tests cover @cloudflare/vite-plugin 1.x, which depends on the wrangler library.",
       "owner": "cf/Void Wrangler-exit lane",
@@ -1412,6 +1417,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "aba608d10a2c0b039da23ae11403319a8b3a87683a73ff47a572db78dd6de8fe"
+    },
+    "scripts/ci/security-paths.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6456",
+        "reason": "security path classification of wrangler config filenames, not CLI invocation"
+      },
+      "digest": "418b75a229830899b30ae038aad4c7e99461de0ef4c7fb7ac0f378f21fdd42e2"
+    },
+    "scripts/ci/security-paths.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6456",
+        "reason": "security path classification of wrangler config filenames, not CLI invocation"
+      },
+      "digest": "99d635ce313af1ff602ce34891806c8cf6893d6ed07702d1d19d68dbb4ea1ddc"
     },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,
