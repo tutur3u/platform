@@ -106,6 +106,31 @@ secrets and DOs; assets, AI, R2, D1, KV, services and email triggers need explic
 profiles. The retained publication adapter separately enforces the original `v1`
 history and exact module inventory. Preserve both gates and unknown-field rejection.
 
+### Calendar emitted binding types
+
+Calendar's ASSETS-only profile uses `calendar-cf-types.mjs` after its existing
+emitted-artifact validator. The helper creates a disposable literal typed config
+and runs the owning pinned `cf workers types --no-include-runtime` on a supported
+Node executor. It never loads a Worker module, environment file or credential.
+
+The cf-inferred binding and the standalone `CloudflareEnv` compatibility declaration
+must have the exact required ASSETS key and Fetcher type, with no `any`. During CI
+qualification the existing producer remains an explicit reference oracle; the
+same checks apply to its declaration. Additional resources, vars, secrets and
+named environments remain rejected by the existing artifact profile.
+
+Only after declaration parity and unchanged hashes for the bundle, assets,
+emitted config and deploy pointer does the helper atomically replace
+`cloudflare-env.d.ts`. Concurrent edits and partial, empty or symlinked producer
+output fail without replacing prior declarations. Its disposable config is
+removed; the output remains self-contained when the sealed artifact is restored.
+The JSON receipt records source/tool versions and before/after artifact digests.
+
+Local `cf:typegen` requires a qualified existing build; it does not build or
+publish. Exact-head CI must run the real cf CLI and the retained reference
+producer. Fixture tests exercise failure handling and the real TypeScript proof;
+they do not establish supported-runtime cf execution on an older local Node.
+
 ## Native Worker template
 
 Applied to Cron Control, Devbox Control and Coordination. Each migrated Worker has:
