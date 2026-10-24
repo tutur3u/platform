@@ -222,12 +222,12 @@ jobs:
           echo "target_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
           echo "TARGET_SHA=$TARGET_SHA" >> "$GITHUB_ENV"
 
-      - name: Check out migration target
+      - name: Check out trusted prerequisite tooling
         if: steps.resolve_target.outputs.target_sha != ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ env.TARGET_SHA }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Use Node.js 24
@@ -235,6 +235,7 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Compute pending migration changes
         if: steps.resolve_target.outputs.target_sha != ''

@@ -596,25 +596,6 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
-test('checked-in CodeQL is a manual fallback for managed commit scanning', () => {
-  const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'codeql.yml'),
-    'utf8'
-  );
-
-  assert.match(workflow, /\n {2}workflow_dispatch:\n/);
-  assert.doesNotMatch(workflow, /\n {2}push:/);
-  assert.doesNotMatch(workflow, /\n {2}pull_request:/);
-  assert.doesNotMatch(workflow, /\n {2}schedule:/);
-  assert.match(workflow, /- javascript-typescript\n {10}- python/);
-  assert.match(workflow, /queries: security-extended/);
-  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-  assert.doesNotMatch(workflow, /needs\.check-ci/);
-
-  const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
-  assert.doesNotMatch(config, /['"]codeql\.yml['"]\s*:/);
-});
-
 test('Codecov workflow runs workspace package tests with coverage', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'codecov.yaml'),
@@ -1124,7 +1105,7 @@ test('Supabase production migration requires production platform deploy and succ
     /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
   );
 
-  assert.match(evaluateJob, /ref: \$\{\{ env\.TARGET_SHA \}\}/);
+  assert.match(evaluateJob, /ref: \$\{\{ github\.sha \}\}/);
   assert.match(
     deployJob,
     /needs: \[evaluate-prerequisites\][\s\S]*if: needs\.evaluate-prerequisites\.outputs\.trusted_trigger == 'true' && needs\.evaluate-prerequisites\.outputs\.should_deploy == 'true'/

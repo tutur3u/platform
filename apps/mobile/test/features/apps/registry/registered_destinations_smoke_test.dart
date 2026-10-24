@@ -5,11 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
-import 'package:mobile/core/theme/appearance/appearance_scope.dart';
-import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -34,10 +29,10 @@ import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+import '../../../helpers/pump_app.dart';
 
 const _workspace = Workspace(id: 'smoke-workspace', name: 'Smoke workspace');
 
@@ -281,22 +276,7 @@ class _DestinationHarness {
       BlocProvider.value(value: miniNav),
       BlocProvider.value(value: title),
     ],
-    child: shad.ShadcnApp.router(
-      theme: AppearanceTheme.shadTheme(
-        const AppearanceSettings(),
-        Brightness.light,
-      ),
-      localizationsDelegates: const [
-        ...AppLocalizations.localizationsDelegates,
-        AppShadcnLocalizationsDelegate(),
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: router,
-      builder: (context, child) => AppearanceBackdrop(
-        settings: const AppearanceSettings(),
-        child: ShadcnMaterialBridge(child: child!),
-      ),
-    ),
+    child: shellTestApp(router: router),
   );
 
   Future<void> dispose() async {

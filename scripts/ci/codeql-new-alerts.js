@@ -70,6 +70,13 @@ function label(severity) {
   return severity >= 9 ? 'critical' : 'high';
 }
 
+function escapeAnnotation(value) {
+  return String(value)
+    .replaceAll('%', '%25')
+    .replaceAll('\r', '%0D')
+    .replaceAll('\n', '%0A');
+}
+
 async function github(url, accept) {
   const response = await fetch(url, {
     headers: {
@@ -169,9 +176,13 @@ async function main(argv = process.argv.slice(2)) {
   console.log(
     `${category}: ${headHigh.length} high/critical result(s) at head, ${fresh.length} not in the ${env.BASELINE_REF} baseline.`
   );
-  // The repository is public: logs carry counts only. Rule IDs, paths and
-  // messages stay in the maintainer-only code-scanning view.
   if (fresh.length > 0) {
+    for (const { line, ruleId, severity, uri } of fresh) {
+      const location = uri ? `${uri}:${line}` : 'unknown location';
+      console.log(
+        `::error::${escapeAnnotation(`CodeQL ${label(severity)} result: ${ruleId} at ${location}`)}`
+      );
+    }
     const critical = fresh.filter(
       ({ severity }) => label(severity) === 'critical'
     ).length;

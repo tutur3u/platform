@@ -1,0 +1,9 @@
+# Gitleaks configuration for security-checks.yaml. Pull request scans read this
+# file from the base commit, so a pull request cannot allowlist its own secret.
+# Keep allowlists path-scoped and justified; never allowlist by secret value.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Skill provenance manifests map reference file names to content digests"
+paths = ['''^\.agents/skills/[^/]+/UPSTREAM\.json$''']
