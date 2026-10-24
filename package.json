@@ -60,7 +60,8 @@
     "nanoid@>=5.0.0 <5.1.16": "5.1.16",
     "@opentelemetry/core@>=2.0.0 <2.8.0": "2.8.0",
     "lodash-es@<4.18.0": "4.18.0",
-    "nanoid@>=3.0.0 <3.3.18": "3.3.18"
+    "nanoid@>=3.0.0 <3.3.18": "3.3.18",
+    "@azure/msal-node": "7.1.1"
   },
   "packageManager": "bun@1.4.4",
   "private": true,
