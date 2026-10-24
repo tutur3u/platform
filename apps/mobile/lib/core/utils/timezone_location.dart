@@ -5,9 +5,9 @@ import 'package:timezone/timezone.dart' as tz;
 tz.Location timezoneLocation(String identifier) {
   if (identifier == 'UTC') return tz.UTC;
   if (!tz.timeZoneDatabase.isInitialized ||
-      !tz.timeZoneDatabase.locations.containsKey(identifier)) {
-    // Another consumer may have initialized the compact database, which omits
-    // native aliases such as Asia/Saigon. Keep its configured local location.
+      !tz.timeZoneDatabase.locations.containsKey('Asia/Saigon')) {
+    // Asia/Saigon marks the full database; unknown identifiers must not reload it.
+    // Preserve the configured local location when upgrading compact fixtures.
     final local = tz.timeZoneDatabase.isInitialized ? tz.local : tz.UTC;
     try {
       data.initializeTimeZones();

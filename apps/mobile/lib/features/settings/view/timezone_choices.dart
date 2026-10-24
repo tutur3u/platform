@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz;
+import 'package:mobile/core/utils/timezone_location.dart';
 
 /// A timezone presented with a friendly city name and its current GMT offset.
 @immutable
@@ -71,17 +70,11 @@ class TimezoneChoice {
 String normalizeTimezoneQuery(String value) =>
     value.trim().toLowerCase().replaceAll('_', ' ').replaceAll('−', '-');
 
-bool _databaseReady = false;
-
 /// Current UTC offset of [id], or `null` if the zone is unknown.
 Duration? timezoneOffset(String id, DateTime now) {
   if (id == 'UTC') return Duration.zero;
-  if (!_databaseReady) {
-    tz_data.initializeTimeZones();
-    _databaseReady = true;
-  }
   try {
-    final zone = tz.getLocation(id).timeZone(now.millisecondsSinceEpoch);
+    final zone = timezoneLocation(id).timeZone(now.millisecondsSinceEpoch);
     return zone.offset;
   } on Object {
     return null;
