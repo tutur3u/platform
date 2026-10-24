@@ -6,10 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -437,147 +435,136 @@ class _InventorySalesPageState extends State<InventorySalesPage>
           child: Builder(
             builder: (context) {
               final l10n = context.l10n;
-              return ResponsiveWrapper(
-                maxWidth: ResponsivePadding.maxContentWidth(
-                  context.deviceClass,
-                ),
-                child: Stack(
-                  children: [
-                    InventorySearchChrome(
-                      location: Routes.inventorySales,
-                      controller: _searchController,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    NovaRefreshIndicator(
-                      onRefresh: () => _loadInitial(forceRefresh: true),
-                      child: ListView(
-                        controller: _scrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          8,
-                          16,
-                          108 + MediaQuery.paddingOf(context).bottom,
+              return Stack(
+                children: [
+                  InventorySearchChrome(
+                    location: Routes.inventorySales,
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  NovaRefreshIndicator(
+                    onRefresh: () => _loadInitial(forceRefresh: true),
+                    child: AppPageListView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        if (_error != null || _limitedData)
+                          InventoryReadWarning(
+                            onRetry: () =>
+                                unawaited(_loadInitial(forceRefresh: true)),
+                          ),
+                        InventorySalesPeriodBar(
+                          workspaceId: _wsId ?? '',
+                          periods: _salesPeriods,
+                          selectedPeriodId: _selectedPeriodId,
+                          canManage: false,
+                          onChanged: (periodId) =>
+                              unawaited(_selectPeriod(periodId)),
+                          onCreate: () => unawaited(_createSalesPeriod()),
+                          onEdit: (period) =>
+                              unawaited(_editSalesPeriod(period)),
+                          onToggleArchive: (period) =>
+                              unawaited(_togglePeriodArchive(period)),
                         ),
-                        children: [
-                          if (_error != null || _limitedData)
-                            InventoryReadWarning(
-                              onRetry: () =>
-                                  unawaited(_loadInitial(forceRefresh: true)),
-                            ),
-                          InventorySalesPeriodBar(
-                            workspaceId: _wsId ?? '',
-                            periods: _salesPeriods,
-                            selectedPeriodId: _selectedPeriodId,
-                            canManage: false,
-                            onChanged: (periodId) =>
-                                unawaited(_selectPeriod(periodId)),
-                            onCreate: () => unawaited(_createSalesPeriod()),
-                            onEdit: (period) =>
-                                unawaited(_editSalesPeriod(period)),
-                            onToggleArchive: (period) =>
-                                unawaited(_togglePeriodArchive(period)),
+                        const shad.Gap(12),
+                        InventorySalesTotals(
+                          sales: _sales,
+                          isPending: (id) =>
+                              OfflineMutationQueue.instance.pending.value.any(
+                                (m) =>
+                                    m.userId == _scope.$1 &&
+                                    m.workspaceId == _wsId &&
+                                    m.entityId == id,
+                              ),
+                        ),
+                        const shad.Gap(18),
+                        if (_isLoadingInitial && _sales.isEmpty)
+                          const FinanceSkeletonBlock(height: 160, radius: 20)
+                        else if (_sales.isEmpty)
+                          InventoryEmptyPanel(
+                            icon: Icons.receipt_long_outlined,
+                            body: l10n.inventorySalesEmpty,
+                          )
+                        else ...[
+                          FinanceSectionHeader(
+                            title: l10n.inventorySalesRecentTitle,
                           ),
                           const shad.Gap(12),
-                          InventorySalesTotals(
-                            sales: _sales,
-                            isPending: (id) =>
-                                OfflineMutationQueue.instance.pending.value.any(
-                                  (m) =>
-                                      m.userId == _scope.$1 &&
-                                      m.workspaceId == _wsId &&
-                                      m.entityId == id,
-                                ),
-                          ),
-                          const shad.Gap(18),
-                          if (_isLoadingInitial && _sales.isEmpty)
-                            const FinanceSkeletonBlock(height: 160, radius: 20)
-                          else if (_sales.isEmpty)
-                            InventoryEmptyPanel(
-                              icon: Icons.receipt_long_outlined,
-                              body: l10n.inventorySalesEmpty,
-                            )
-                          else ...[
-                            FinanceSectionHeader(
-                              title: l10n.inventorySalesRecentTitle,
-                            ),
-                            const shad.Gap(12),
-                            ..._sales
-                                .where(
-                                  (sale) =>
-                                      [
-                                            sale.notice,
-                                            sale.customerName,
-                                            sale.creatorName,
-                                            sale.walletName,
-                                            ...sale.owners,
-                                          ]
-                                          .whereType<String>()
-                                          .join(' ')
-                                          .toLowerCase()
-                                          .contains(
-                                            _searchController.text
-                                                .trim()
-                                                .toLowerCase(),
-                                          ),
-                                )
-                                .map(
-                                  (sale) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: PendingSyncFrame(
-                                      workspaceId: _wsId ?? '',
-                                      entityId: sale.id,
-                                      feature: 'inventory',
-                                      child: ValueListenableBuilder(
-                                        valueListenable: OfflineMutationQueue
-                                            .instance
-                                            .pending,
-                                        builder: (context, edits, _) {
-                                          final pendingCreate = edits.any(
-                                            (edit) =>
-                                                edit.feature == 'inventory' &&
-                                                edit.workspaceId == _wsId &&
-                                                edit.entityId == sale.id &&
-                                                edit.method == 'POST',
-                                          );
-                                          return _InventorySaleCard(
-                                            sale: sale,
+                          ..._sales
+                              .where(
+                                (sale) =>
+                                    [
+                                          sale.notice,
+                                          sale.customerName,
+                                          sale.creatorName,
+                                          sale.walletName,
+                                          ...sale.owners,
+                                        ]
+                                        .whereType<String>()
+                                        .join(' ')
+                                        .toLowerCase()
+                                        .contains(
+                                          _searchController.text
+                                              .trim()
+                                              .toLowerCase(),
+                                        ),
+                              )
+                              .map(
+                                (sale) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppLayout.itemGap,
+                                  ),
+                                  child: PendingSyncFrame(
+                                    workspaceId: _wsId ?? '',
+                                    entityId: sale.id,
+                                    feature: 'inventory',
+                                    child: ValueListenableBuilder(
+                                      valueListenable:
+                                          OfflineMutationQueue.instance.pending,
+                                      builder: (context, edits, _) {
+                                        final pendingCreate = edits.any(
+                                          (edit) =>
+                                              edit.feature == 'inventory' &&
+                                              edit.workspaceId == _wsId &&
+                                              edit.entityId == sale.id &&
+                                              edit.method == 'POST',
+                                        );
+                                        return _InventorySaleCard(
+                                          sale: sale,
+                                          currency: sale.currency ?? _currency,
+                                          pendingCreate: pendingCreate,
+                                          onTap: () => _openSaleDetail(
+                                            saleId: sale.id,
                                             currency:
                                                 sale.currency ?? _currency,
-                                            pendingCreate: pendingCreate,
-                                            onTap: () => _openSaleDetail(
-                                              saleId: sale.id,
-                                              currency:
-                                                  sale.currency ?? _currency,
-                                              canUpdateSales: _canUpdateSales,
-                                              canDeleteSales: _canDeleteSales,
-                                            ),
-                                          );
-                                        },
-                                      ),
+                                            canUpdateSales: _canUpdateSales,
+                                            canDeleteSales: _canDeleteSales,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
-                            if (_isLoadingMore)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Center(
-                                  child: NovaLoadingIndicator(size: 20),
-                                ),
                               ),
-                          ],
+                          if (_isLoadingMore)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: NovaLoadingIndicator(size: 20),
+                              ),
+                            ),
                         ],
-                      ),
+                      ],
                     ),
-                    if (_canCreateSales)
-                      ExtendedFab(
-                        icon: Icons.point_of_sale_rounded,
-                        label: l10n.inventoryCheckoutTitle,
-                        includeBottomSafeArea: false,
-                        onPressed: _openCheckout,
-                      ),
-                  ],
-                ),
+                  ),
+                  if (_canCreateSales)
+                    ExtendedFab(
+                      icon: Icons.point_of_sale_rounded,
+                      label: l10n.inventoryCheckoutTitle,
+                      includeBottomSafeArea: false,
+                      onPressed: _openCheckout,
+                    ),
+                ],
               );
             },
           ),

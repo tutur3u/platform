@@ -192,6 +192,8 @@ async function resumeProductionDeployment({
     return { dispatched: false, reason };
   };
   if (
+    !Number.isSafeInteger(trigger?.id) ||
+    trigger.id <= 0 ||
     !/^[a-f0-9]{40}$/u.test(sha || '') ||
     trigger?.head_branch !== 'production' ||
     trigger?.head_repository?.full_name !== env.GITHUB_REPOSITORY ||

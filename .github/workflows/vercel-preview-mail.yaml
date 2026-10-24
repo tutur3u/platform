@@ -24,7 +24,7 @@ jobs:
       deployments: write
     steps:
       - name: Check out code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 2
           ref: ${{ inputs.preview_ref }}
@@ -32,8 +32,10 @@ jobs:
 
       - name: Confirm preview ref
         id: check_commits
+        env:
+          PREVIEW_REF: ${{ inputs.preview_ref }}
         run: |
-          echo "Deploying preview ref ${{ inputs.preview_ref }}."
+          echo "Deploying preview ref ${PREVIEW_REF}."
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
       - name: Keep native Mail outside Vercel publication
@@ -48,11 +50,11 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
 

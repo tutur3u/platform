@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
@@ -9,6 +10,8 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -17,13 +20,15 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
-import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/link_browser_settings_tile.dart';
-import 'package:mobile/features/settings/view/product_preference_editors.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
+import 'package:mobile/features/settings/view/settings_profile_header.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_search.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
@@ -38,7 +43,11 @@ import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'settings_page_actions.dart';
+part 'settings_page_search.dart';
+part 'settings_page_sections.dart';
 part 'settings_page_widgets.dart';
+part 'settings_preferences_section.dart';
 
 enum SettingsSectionDestination {
   overview,
@@ -78,12 +87,11 @@ class _SettingsView extends StatefulWidget {
   State<_SettingsView> createState() => _SettingsViewState();
 }
 
-class _SettingsViewState extends State<_SettingsView> {
+class _SettingsViewState extends State<_SettingsView>
+    with _SettingsPageActions, _SettingsPageSearch {
   Future<PackageInfo>? _packageInfoFuture;
-  late final SettingsRepository _settingsRepository;
   late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   String? _loadedWorkspaceId;
-  bool _disableDefaultTaskBoardNavigation = false;
   bool _canManageMobileVersions = false;
   String? _mobileVersionsAccessWorkspaceId;
   int _mobileVersionsAccessLoadToken = 0;
@@ -92,7 +100,6 @@ class _SettingsViewState extends State<_SettingsView> {
   @override
   void initState() {
     super.initState();
-    _settingsRepository = SettingsRepository();
     _workspacePermissionsRepository =
         widget.permissionsRepository ?? WorkspacePermissionsRepository();
     if (widget.section == SettingsSectionDestination.about) {
@@ -110,10 +117,11 @@ class _SettingsViewState extends State<_SettingsView> {
     }
     if (widget.section == SettingsSectionDestination.preferences ||
         widget.section == SettingsSectionDestination.overview) {
-      unawaited(_loadDefaultTaskBoardNavigationPreference());
+      unawaited(_loadAppearanceIntro());
     }
     if (widget.section == SettingsSectionDestination.overview) {
       unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
+      _listenForFocusRequests();
     }
   }
 
@@ -160,11 +168,6 @@ class _SettingsViewState extends State<_SettingsView> {
           future: _packageInfoFuture,
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
-            final financePreferencesCubit =
-                (widget.section == SettingsSectionDestination.preferences ||
-                    widget.section == SettingsSectionDestination.overview)
-                ? context.watch<FinancePreferencesCubit?>()
-                : null;
             final experimentalAppsState =
                 widget.section == SettingsSectionDestination.experiments
                 ? context.watch<ExperimentalAppsCubit?>()?.state ??
@@ -178,19 +181,22 @@ class _SettingsViewState extends State<_SettingsView> {
                   context.deviceClass,
                 ),
                 child: ListView(
+                  // Search jumps need every root group built, not only the
+                  // visible ones; the root is a few dozen rows.
+                  scrollCacheExtent:
+                      widget.section == SettingsSectionDestination.overview
+                      ? const ScrollCacheExtent.pixels(100000)
+                      : null,
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics(),
                   ),
-                  padding: EdgeInsets.fromLTRB(
+                  padding: SettingsRowLayout.scrollPadding(
+                    context,
                     horizontalPadding,
-                    10,
-                    horizontalPadding,
-                    32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: _buildSettingsChildren(
                     context: context,
                     packageInfo: packageInfo,
-                    financePreferencesCubit: financePreferencesCubit,
                     experimentalAppsState: experimentalAppsState,
                   ),
                 ),
@@ -205,34 +211,59 @@ class _SettingsViewState extends State<_SettingsView> {
   List<Widget> _buildSettingsChildren({
     required BuildContext context,
     required PackageInfo? packageInfo,
-    required FinancePreferencesCubit? financePreferencesCubit,
     required ExperimentalAppsState experimentalAppsState,
   }) {
     switch (widget.section) {
       case SettingsSectionDestination.overview:
+        final searching = _searchQuery.trim().isNotEmpty;
         return [
-          StaggeredEntry(
-            index: 0,
-            playOnceKey: 'settings-root-preferences',
-            child: _buildPreferencesSection(context, financePreferencesCubit),
+          const SettingsProfileHeader(),
+          const SizedBox(height: SettingsRowLayout.groupGap),
+          SettingsSearchField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
           ),
-          const SizedBox(height: 20),
-          StaggeredEntry(
-            index: 1,
-            playOnceKey: 'settings-section-overview',
-            child: _SettingsOverviewSection(
-              showInfrastructure: _canManageMobileVersions,
+          const SizedBox(height: SettingsRowLayout.groupGap),
+          if (searching)
+            SettingsSearchResults(
+              query: _searchQuery,
+              results: filterSettingsSearch(
+                _searchEntries(
+                  context,
+                  showInfrastructure: _canManageMobileVersions,
+                ),
+                _searchQuery,
+              ),
+            )
+          else ...[
+            StaggeredEntry(
+              index: 0,
+              playOnceKey: 'settings-root-preferences',
+              child: _buildPreferencesSection(context),
             ),
-          ),
-          const SizedBox(height: 20),
-          const ProductSettingsSection(),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+            StaggeredEntry(
+              index: 1,
+              playOnceKey: 'settings-root-apps',
+              child: ProductSettingsSection(key: _anchor('apps')),
+            ),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+            StaggeredEntry(
+              index: 2,
+              playOnceKey: 'settings-section-overview',
+              child: _SettingsOverviewSection(
+                showInfrastructure: _canManageMobileVersions,
+                anchors: _anchor,
+              ),
+            ),
+          ],
         ];
       case SettingsSectionDestination.preferences:
         return [
           StaggeredEntry(
             index: 0,
             playOnceKey: 'settings-preferences',
-            child: _buildPreferencesSection(context, financePreferencesCubit),
+            child: _buildPreferencesSection(context),
           ),
         ];
       case SettingsSectionDestination.experiments:
@@ -275,87 +306,26 @@ class _SettingsViewState extends State<_SettingsView> {
     }
   }
 
-  Widget _buildPreferencesSection(
-    BuildContext context,
-    FinancePreferencesCubit? financePreferencesCubit,
-  ) {
+  Widget _buildPreferencesSection(BuildContext context) {
+    final themeState = context.watch<ThemeCubit>().state;
     return _PreferencesSection(
       permissionsRepository: _workspacePermissionsRepository,
       permissionsRevision: _timezonePermissionsRevision,
-      themeLabel: _themeDisplayName(
-        context.watch<ThemeCubit>().state.themeMode,
-        context.l10n,
+      appearanceTheme: context.l10n.appearanceTheme(
+        themeState.appearance.theme,
       ),
-      showFinanceAmounts: financePreferencesCubit?.state.showAmounts ?? false,
+      appearanceIsNew: !_appearanceIntroSeen,
       languageLabel: _localeDisplayName(
         Localizations.localeOf(context),
         context.read<LocaleCubit>().state.locale,
         context.l10n,
       ),
-      calendarLabel: _calendarDisplayName(
-        context.watch<CalendarSettingsCubit>().state,
-        context.l10n,
-      ),
       onChangeLanguage: () => unawaited(_showLanguageDialog()),
-      onToggleFinanceAmounts: () {
-        if (financePreferencesCubit == null) {
-          return;
-        }
-        unawaited(_showFinanceAmountsDialog(financePreferencesCubit));
-      },
-      disableDefaultTaskBoardNavigation: _disableDefaultTaskBoardNavigation,
-      onToggleDefaultTaskBoardNavigation: () =>
-          unawaited(_showDefaultTaskBoardDialog()),
-      onChangeTheme: () => unawaited(_showThemeDialog()),
-      onChangeFirstDayOfWeek: () => unawaited(_showCalendarDialog()),
+      onOpenAppearance: _openAppearance,
       hapticsEnabled: AppHaptics.enabled,
       onToggleHaptics: () => unawaited(_showHapticsDialog()),
+      anchors: _anchor,
     );
-  }
-
-  String _calendarDisplayName(
-    CalendarSettingsState state,
-    AppLocalizations l10n,
-  ) {
-    final effective = state.userPreference != FirstDayOfWeek.auto_
-        ? state.userPreference
-        : state.workspacePreference != FirstDayOfWeek.auto_
-        ? state.workspacePreference
-        : FirstDayOfWeek.auto_;
-
-    switch (effective) {
-      case FirstDayOfWeek.auto_:
-        return l10n.settingsFirstDayAuto;
-      case FirstDayOfWeek.sunday:
-        return l10n.settingsFirstDaySunday;
-      case FirstDayOfWeek.monday:
-        return l10n.settingsFirstDayMonday;
-      case FirstDayOfWeek.saturday:
-        return l10n.settingsFirstDaySaturday;
-    }
-  }
-
-  String _localeDisplayName(
-    Locale systemLocale,
-    Locale? selectedLocale,
-    AppLocalizations l10n,
-  ) {
-    final locale = selectedLocale ?? systemLocale;
-    switch (locale.languageCode) {
-      case 'en':
-        return selectedLocale == null
-            ? '${l10n.settingsLanguageSystem} · ${l10n.settingsLanguageEnglish}'
-            : l10n.settingsLanguageEnglish;
-      case 'vi':
-        return selectedLocale == null
-            ? '${l10n.settingsLanguageSystem} · '
-                  '${l10n.settingsLanguageVietnamese}'
-            : l10n.settingsLanguageVietnamese;
-      default:
-        return selectedLocale == null
-            ? '${l10n.settingsLanguageSystem} · ${locale.languageCode}'
-            : locale.languageCode;
-    }
   }
 
   Future<void> _loadWorkspaceCalendarPreference(String workspaceId) async {
@@ -367,72 +337,6 @@ class _SettingsViewState extends State<_SettingsView> {
     await context.read<CalendarSettingsCubit>().loadWorkspacePreference(
       workspaceId,
     );
-  }
-
-  Future<void> _loadDefaultTaskBoardNavigationPreference() async {
-    final value = await _settingsRepository
-        .getDisableDefaultTaskBoardNavigation();
-    if (!mounted) return;
-    setState(() => _disableDefaultTaskBoardNavigation = value);
-  }
-
-  Future<void> _showDefaultTaskBoardDialog() async {
-    final l10n = context.l10n;
-    final selected = await showSettingsChoiceDialog<bool>(
-      context: context,
-      title: l10n.settingsDefaultTaskBoardNavigation,
-      description: l10n.settingsDefaultTaskBoardNavigationDescription,
-      currentValue: _disableDefaultTaskBoardNavigation,
-      options: [
-        SettingsChoiceOption(
-          value: false,
-          label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-          icon: Icons.view_kanban_outlined,
-        ),
-        SettingsChoiceOption(
-          value: true,
-          label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
-          icon: Icons.dashboard_outlined,
-        ),
-      ],
-    );
-    if (selected == null ||
-        !mounted ||
-        selected == _disableDefaultTaskBoardNavigation) {
-      return;
-    }
-    await _settingsRepository.setDisableDefaultTaskBoardNavigation(
-      value: selected,
-    );
-    if (mounted) setState(() => _disableDefaultTaskBoardNavigation = selected);
-  }
-
-  Future<void> _showFinanceAmountsDialog(FinancePreferencesCubit cubit) =>
-      openFinanceProductSettings(context, cubit);
-
-  Future<void> _showHapticsDialog() async {
-    final l10n = context.l10n;
-    final selected = await showSettingsChoiceDialog<bool>(
-      context: context,
-      title: l10n.settingsHaptics,
-      currentValue: AppHaptics.enabled,
-      options: [
-        SettingsChoiceOption(
-          value: true,
-          label: l10n.commonOn,
-          icon: Icons.vibration_rounded,
-        ),
-        SettingsChoiceOption(
-          value: false,
-          label: l10n.commonOff,
-          icon: Icons.notifications_off_outlined,
-        ),
-      ],
-    );
-    if (selected != null && mounted && selected != AppHaptics.enabled) {
-      await AppHaptics.setEnabled(value: selected);
-      if (mounted) setState(() {});
-    }
   }
 
   void _toggleExperimentalApp(String moduleId) {
@@ -501,109 +405,5 @@ class _SettingsViewState extends State<_SettingsView> {
           currentWorkspaceId != null)
         calendarCubit.loadWorkspacePreference(currentWorkspaceId),
     ]);
-  }
-
-  Future<void> _showCalendarDialog() => openCalendarProductSettings(context);
-
-  Future<void> _showLanguageDialog() async {
-    final l10n = context.l10n;
-    final cubit = context.read<LocaleCubit>();
-    final currentValue = cubit.state.locale?.languageCode ?? 'system';
-
-    final selected = await showSettingsChoiceDialog<String>(
-      context: context,
-      title: l10n.settingsLanguage,
-      description: l10n.settingsLanguageDescription,
-      currentValue: currentValue,
-      options: [
-        SettingsChoiceOption(
-          value: 'system',
-          label: l10n.settingsLanguageSystem,
-          icon: Icons.settings_suggest_rounded,
-          description: l10n.settingsLanguageSystemDescription,
-        ),
-        SettingsChoiceOption(
-          value: 'en',
-          label: l10n.settingsLanguageEnglish,
-          icon: Icons.translate_rounded,
-        ),
-        SettingsChoiceOption(
-          value: 'vi',
-          label: l10n.settingsLanguageVietnamese,
-          icon: Icons.translate_rounded,
-        ),
-      ],
-    );
-
-    if (selected == null || !mounted) {
-      return;
-    }
-
-    if (selected == 'system') {
-      await cubit.clearLocale();
-      return;
-    }
-
-    await cubit.setLocale(Locale(selected));
-  }
-
-  Future<void> _showSignOutDialog() async {
-    final authCubit = context.read<AuthCubit>();
-    final confirmed = await showSettingsConfirmationDialog(
-      context: context,
-      title: context.l10n.authLogOutConfirmDialogTitle,
-      description: context.l10n.authLogOutConfirmDialogBody,
-      confirmLabel: context.l10n.authLogOut,
-      isDestructive: true,
-    );
-
-    if (confirmed == true && context.mounted) {
-      await authCubit.signOutCurrentAccount();
-    }
-  }
-
-  Future<void> _showThemeDialog() async {
-    final l10n = context.l10n;
-    final cubit = context.read<ThemeCubit>();
-
-    final selected = await showSettingsChoiceDialog<shad.ThemeMode>(
-      context: context,
-      title: l10n.settingsTheme,
-      description: l10n.settingsThemeDescription,
-      currentValue: cubit.state.themeMode,
-      options: [
-        SettingsChoiceOption(
-          value: shad.ThemeMode.system,
-          label: l10n.settingsThemeSystem,
-          icon: Icons.brightness_auto_rounded,
-          description: l10n.settingsThemeSystemDescription,
-        ),
-        SettingsChoiceOption(
-          value: shad.ThemeMode.light,
-          label: l10n.settingsThemeLight,
-          icon: Icons.light_mode_rounded,
-        ),
-        SettingsChoiceOption(
-          value: shad.ThemeMode.dark,
-          label: l10n.settingsThemeDark,
-          icon: Icons.dark_mode_rounded,
-        ),
-      ],
-    );
-
-    if (selected != null && mounted) {
-      await cubit.setThemeMode(selected);
-    }
-  }
-
-  String _themeDisplayName(shad.ThemeMode mode, AppLocalizations l10n) {
-    switch (mode) {
-      case shad.ThemeMode.light:
-        return l10n.settingsThemeLight;
-      case shad.ThemeMode.dark:
-        return l10n.settingsThemeDark;
-      case shad.ThemeMode.system:
-        return l10n.settingsThemeSystem;
-    }
   }
 }

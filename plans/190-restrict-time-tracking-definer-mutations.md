@@ -69,7 +69,7 @@ do not replace the maintained route permission checks with database trust.
 | Full DB | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no signature/type drift |
 | Track typecheck | `bun run --cwd apps/track type-check` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

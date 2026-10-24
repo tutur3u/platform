@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const test = require('node:test');
 const {
   cacheKey,
+  configurationDiagnostic,
   subsetImages,
   missingImages,
   imageList,
@@ -26,6 +27,22 @@ const identity = {
   registry: 'public.ecr.aws',
   profile: 'contract',
 };
+
+test('configuration diagnostics allow only fixed public messages and service identifiers', () => {
+  for (const message of [
+    'Uncached service enabled: edge_runtime',
+    'Missing explicit service configuration: storage',
+    'Review supplemental image pins for the installed Supabase CLI',
+  ])
+    assert.equal(configurationDiagnostic(new Error(message)), message);
+  for (const message of [
+    'Uncached service enabled: secret-token',
+    'Missing CLI image metadata: private-project',
+    'child failed: password=secret',
+  ])
+    assert.equal(configurationDiagnostic(new Error(message)), undefined);
+});
+
 test('contract images derive versions from CLI metadata including temporary overrides', () => {
   assert.deepEqual(imageList(identity), [
     'public.ecr.aws/supabase/gotrue:v2.196.0',
@@ -147,7 +164,7 @@ test('extended seed budget is main-only and normal misses retain two minutes', (
 });
 
 test('real cache helper pulls only on miss, saves only trusted archives, and loads without pulls', async (t) => {
-  const { execFileSync } = require('node:child_process');
+  const { execFileSync, spawnSync } = require('node:child_process');
   const os = require('node:os');
   const path = require('node:path');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'image-cache-helper-'));
@@ -169,6 +186,18 @@ const path = require('node:path');
 const root = __dirname;
 const args = process.argv.slice(2);
 fs.appendFileSync(path.join(root, 'calls'), JSON.stringify(args) + '\\n');
+if (args[0] === 'image' && process.env.IMAGE_SEED_CATALOG === 'cli-2.121.0') {
+  if (args.includes('--format')) { console.log('100'); process.exit(0); }
+  const pins = ${JSON.stringify(require('./supabase-image-cache-seed-data.json').catalogs['cli-2.121.0'].images)};
+  const reference = args.at(-1);
+  const entry = Object.entries(pins).find(([image, pin]) => image === reference || image.split(':')[0] + '@' + pin.amd64 === reference);
+  if (!entry) process.exit(1);
+  const [image, pin] = entry;
+  const digest = image.split(':')[0] + '@' + pin.amd64;
+  if (!fs.readFileSync(path.join(root, 'calls'), 'utf8').includes(JSON.stringify(['pull', '--platform', 'linux/amd64', digest]))) process.exit(1);
+  console.log(JSON.stringify([{ Os: 'linux', Architecture: 'amd64', Id: pin.config, RepoDigests: [digest] }]));
+  process.exit(0);
+}
 if (args[0] === 'image') {
   if (!fs.existsSync(path.join(root, 'present'))) process.exit(1);
   console.log(args.includes('--format') ? '100' : '[]');
@@ -185,6 +214,7 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     IMAGE_PROFILE: 'contract',
     SUPABASE_INTERNAL_IMAGE_REGISTRY: 'public.ecr.aws',
     GITHUB_OUTPUT: path.join(root, 'output'),
+    GITHUB_STEP_SUMMARY: path.join(root, 'summary'),
     GITHUB_EVENT_NAME: 'pull_request',
     GITHUB_REF: 'refs/pull/6409/merge',
   };
@@ -196,6 +226,7 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     );
   run('key');
   assert.match(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'), /save=false/);
+  env.IMAGE_SAVE = 'true';
   run('pull');
   const calls = () =>
     fs
@@ -213,6 +244,9 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   env.GITHUB_REF = 'refs/heads/main';
   run('key');
   assert.match(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'), /save=true/);
+  env.IMAGE_SAVE = 'false';
+  run('pull');
+  assert.equal(calls().filter((args) => args[0] === 'save').length, 0);
   env.IMAGE_SAVE = 'true';
   run('pull');
   assert.equal(calls().filter((args) => args[0] === 'save').length, 1);
@@ -240,6 +274,60 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   assert.match(run('load'), /Loaded and verified 5 cached Supabase images/);
   assert.equal(calls().filter((args) => args[0] === 'pull').length, pulls);
   assert.equal(calls().filter((args) => args[0] === 'load').length, 2);
+  env.IMAGE_PROFILE = 'full';
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  const unsupported = config.replace(
+    '[edge_runtime]\nenabled = false',
+    '[edge_runtime]\nenabled = true'
+  );
+  assert.notEqual(unsupported, config);
+  fs.writeFileSync(path.join(database, 'supabase/config.toml'), unsupported);
+  const failure = spawnSync(
+    process.execPath,
+    ['scripts/ci/supabase-image-cache.js', 'key'],
+    { env, encoding: 'utf8' }
+  );
+  assert.equal(failure.status, 1);
+  assert.match(
+    failure.stderr,
+    /::warning::Supabase image cache configuration: Uncached service enabled: edge_runtime/
+  );
+  assert.match(
+    fs.readFileSync(env.GITHUB_STEP_SUMMARY, 'utf8'),
+    /Uncached service enabled: edge_runtime/
+  );
+  env.IMAGE_PROFILE = 'contract';
+  // A fixed catalog must never invoke installed CLI or PR code.
+  fs.writeFileSync(
+    path.join(database, 'scripts/run-supabase.js'),
+    'process.exit(99)'
+  );
+  const platformFixture = path.join(root, 'linux-platform.cjs');
+  fs.writeFileSync(
+    platformFixture,
+    "Object.defineProperty(process, 'platform', { value: 'linux' }); Object.defineProperty(process, 'arch', { value: 'x64' });"
+  );
+  env.NODE_OPTIONS = `--require=${platformFixture}`;
+  env.IMAGE_SEED_CATALOG = 'cli-2.121.0';
+  env.IMAGE_PULL_BUDGET_SECONDS = '600';
+  run('key');
+  assert.match(
+    fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'),
+    /key=supabase-images-v1-1f27e9c5ae4e1b32fe7e337cfb66488d653f2ca75e5d70920ef07e45f37a9cf0/
+  );
+  const before = calls().length;
+  run('pull');
+  const futureCalls = calls().slice(before);
+  assert.equal(futureCalls.filter((args) => args[0] === 'pull').length, 5);
+  assert.equal(futureCalls.filter((args) => args[0] === 'tag').length, 5);
+  assert.deepEqual(
+    futureCalls.find((args) => args[0] === 'save').slice(3),
+    seedCatalog('cli-2.121.0', futureContext)
+  );
+  const saved = calls().filter((args) => args[0] === 'save').length;
+  env.IMAGE_SAVE = 'false';
+  run('pull');
+  assert.equal(calls().filter((args) => args[0] === 'save').length, saved);
 });
 
 test('deadline exhaustion retains the last registry classification and bootstrap instruction', async () => {
@@ -318,4 +406,78 @@ test('missing-only pull list inspects every exact tag and treats inspect failure
     images.filter((image) => !present.has(image))
   );
   assert.equal(missing.length, 2);
+});
+
+const { seedCatalog, catalogPin } = require('./supabase-image-cache-seed.js');
+const seedContext = {
+  trusted: true,
+  budget: 600000,
+  platform: 'linux',
+  arch: 'x64',
+};
+const futureContext = {
+  ...seedContext,
+  registry: 'public.ecr.aws',
+  profile: 'contract',
+};
+const gotrue = 'public.ecr.aws/supabase/gotrue:v2.196.0';
+
+test('only the fixed trusted Linux seed catalog bypasses installed CLI metadata', () => {
+  for (const name of [undefined, '', 'current'])
+    assert.equal(seedCatalog(name, { ...futureContext, trusted: false }), null);
+  for (const patch of [
+    { trusted: false },
+    { budget: 120000 },
+    { registry: 'ghcr.io' },
+    { platform: 'darwin' },
+    { arch: 'arm64' },
+    { profile: 'unknown' },
+  ])
+    assert.throws(() =>
+      seedCatalog('cli-2.121.0', { ...futureContext, ...patch })
+    );
+  for (const name of ['__proto__', 'cli-2.122.0', 'https://arbitrary'])
+    assert.throws(() => seedCatalog(name, futureContext));
+  assert.throws(() => catalogPin('cli-2.121.0', gotrue));
+});
+
+test('all three future seed keys equal consumer keys and current keys remain unchanged', () => {
+  const expected = [
+    [
+      'contract',
+      '229d3fa96dc11003926d8c5c3091c544fc4ce1fd6cb56d1ca94d696f961c6931',
+      '1f27e9c5ae4e1b32fe7e337cfb66488d653f2ca75e5d70920ef07e45f37a9cf0',
+    ],
+    [
+      'contract-http',
+      '22ec2badf2f791f9c51b19b371e2722570d4e420383804a697c2fb2efe2c6036',
+      'f0bd567d6109866d8f088db24b26800bac970f3263c96026557ae0168c1bdbe1',
+    ],
+    [
+      'full',
+      '75a831d01e0b1689c7a40ae43b79dd5e838b394ef37fa5d43bc3290213c551eb',
+      '605f4bc0796aa6e082f6e8e913a484da99d5eb46a49a049eceb6fc30202bec9e',
+    ],
+  ];
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  for (const [profile, currentKey, futureKey] of expected) {
+    const key = (images) =>
+      cacheKey({
+        images,
+        registry: 'public.ecr.aws',
+        platform: 'linux',
+        arch: 'x64',
+      });
+    assert.equal(
+      key(imageList({ ...identity, profile, config })),
+      `supabase-images-v1-${currentKey}`
+    );
+    const images = seedCatalog('cli-2.121.0', { ...futureContext, profile });
+    assert.equal(key(images), `supabase-images-v1-${futureKey}`);
+    for (const image of images) {
+      const pin = catalogPin('cli-2.121.0', image);
+      for (const field of ['index', 'amd64', 'config'])
+        assert.match(pin[field], /^sha256:[a-f0-9]{64}$/);
+    }
+  }
 });

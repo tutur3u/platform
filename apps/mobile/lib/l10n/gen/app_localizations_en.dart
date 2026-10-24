@@ -841,6 +841,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Reset zoom';
 
   @override
+  String get assistantMessageDelivered => 'Delivered';
+
+  @override
+  String get assistantMessageRead => 'Read';
+
+  @override
   String get assistantMessageActionsTitle => 'Message actions';
 
   @override
@@ -949,7 +955,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSendAction => 'Send message';
 
   @override
-  String get assistantSettingsTitle => 'Assistant settings';
+  String get assistantSettingsTitle => 'Assistant Settings';
 
   @override
   String get assistantShowBottomNavLabel => 'Show bottom nav';
@@ -6914,6 +6920,134 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppVersion => 'App version';
 
   @override
+  String get appearanceAccentAmber => 'Amber';
+
+  @override
+  String get appearanceAccentBlue => 'Blue';
+
+  @override
+  String get appearanceAccentGreen => 'Green';
+
+  @override
+  String get appearanceAccentIndigo => 'Indigo';
+
+  @override
+  String get appearanceAccentNeutral => 'Neutral';
+
+  @override
+  String get appearanceAccentOrange => 'Orange';
+
+  @override
+  String get appearanceAccentRose => 'Rose';
+
+  @override
+  String get appearanceAccentTeal => 'Teal';
+
+  @override
+  String get appearanceAccentTheme => 'Match theme';
+
+  @override
+  String get appearanceAccentTitle => 'Accent color';
+
+  @override
+  String get appearanceAccentViolet => 'Violet';
+
+  @override
+  String get appearanceAnimate => 'Animate background';
+
+  @override
+  String get appearanceAnimateDescription => 'Blobs drift slowly. Uses a little more battery.';
+
+  @override
+  String get appearanceAnimateReducedMotion => 'Reduce Motion is on, so the background stays still.';
+
+  @override
+  String get appearanceBackgroundBlobs => 'Blobs';
+
+  @override
+  String get appearanceBackgroundGradient => 'Gradient';
+
+  @override
+  String get appearanceBackgroundSolid => 'Solid';
+
+  @override
+  String get appearanceBackgroundTitle => 'Background';
+
+  @override
+  String get appearanceIntensity => 'Intensity';
+
+  @override
+  String get appearanceModeTitle => 'Mode';
+
+  @override
+  String get appearanceNew => 'New';
+
+  @override
+  String get appearancePreviewTitle => 'Preview';
+
+  @override
+  String get appearanceReset => 'Reset to default';
+
+  @override
+  String get appearanceResetDone => 'Appearance reset to default';
+
+  @override
+  String get appearanceSoftness => 'Softness';
+
+  @override
+  String get appearanceSurfaceOpacity => 'Card opacity';
+
+  @override
+  String get appearanceSurfacesTitle => 'Surfaces';
+
+  @override
+  String get appearanceThemeAurora => 'Aurora';
+
+  @override
+  String get appearanceThemeBlossom => 'Blossom';
+
+  @override
+  String get appearanceThemeClassic => 'Classic';
+
+  @override
+  String get appearanceThemeEmber => 'Ember';
+
+  @override
+  String get appearanceThemeForest => 'Forest';
+
+  @override
+  String get appearanceThemeMono => 'Mono';
+
+  @override
+  String get appearanceThemeOcean => 'Ocean';
+
+  @override
+  String get appearanceThemeSunset => 'Sunset';
+
+  @override
+  String get appearanceThemesTitle => 'Themes';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsProfileEdit => 'Edit profile';
+
+  @override
+  String get settingsProfileManageWorkspace => 'Workspace';
+
+  @override
+  String settingsProfileWorkspaceCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'workspaces',
+      one: 'workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsAppearanceLanguage => 'Appearance & language';
 
   @override
@@ -7012,7 +7146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsFirstDaySunday => 'Sunday';
 
   @override
-  String get settingsGeneralGroup => 'Personalize';
+  String get settingsGeneralGroup => 'General';
 
   @override
   String get settingsHaptics => 'Haptic feedback';
@@ -7276,9 +7410,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneDescription => 'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.';
 
   @override
-  String settingsTimezoneEffective(String timezone) {
-    return 'Effective timezone: $timezone';
-  }
+  String get settingsTimezoneAutoShort => 'Auto';
+
+  @override
+  String get settingsTimezoneCityHoChiMinh => 'Ho Chi Minh City';
 
   @override
   String get settingsTimezoneError => 'Could not load or save timezone. Retry or edit a loaded preference.';
@@ -7288,6 +7423,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
+
+  @override
+  String settingsTimezoneRateLimitedDetails(Object details) {
+    return 'Limit details: $details';
+  }
+
+  @override
+  String get settingsTimezoneRateLimitedChallenge => 'The response indicates a Vercel security challenge. Please contact support if this continues.';
+
+  @override
+  String get settingsTimezoneRateLimitedUpstream => 'This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.';
+
+  @override
+  String settingsTimezoneRateLimitedRetryAfter(int seconds) {
+    return 'The server asks you to wait $seconds seconds before retrying.';
+  }
 
   @override
   String get settingsTimezoneRetry => 'Retry timezone';
@@ -10777,4 +10928,177 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackDetailsRequired => 'Enter details of 1–8000 characters.';
+
+  @override
+  String get profileMediaNetworkError => 'Could not connect. Check your connection and try again.';
+
+  @override
+  String get profileMediaUploadExpired => 'The upload link expired or is invalid. Select the image again.';
+
+  @override
+  String get settingsNativeVerificationFailed => 'Could not verify this device. Check your connection and try again.';
+
+  @override
+  String get settingsTimezonePickerAll => 'All timezones';
+
+  @override
+  String get settingsTimezonePickerAutoPersonal => 'Uses the workspace timezone, or this device\'s when the workspace has none.';
+
+  @override
+  String get settingsTimezonePickerAutoWorkspace => 'Members without a personal timezone use their own device\'s.';
+
+  @override
+  String settingsTimezonePickerAutoResolved(String timezone) {
+    return 'Currently $timezone.';
+  }
+
+  @override
+  String get settingsTimezonePickerCurrent => 'Current';
+
+  @override
+  String settingsTimezonePickerEmpty(String query) {
+    return 'No timezones match “$query”.';
+  }
+
+  @override
+  String get settingsTimezonePickerSearchHint => 'Search city, region or GMT offset';
+
+  @override
+  String get settingsAppsGroup => 'Apps';
+
+  @override
+  String get settingsSearchPlaceholder => 'Search settings';
+
+  @override
+  String settingsSearchNoResults(String query) {
+    return 'No settings match “$query”.';
+  }
+
+  @override
+  String settingsSearchResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAppOfflineData => 'Offline data';
+
+  @override
+  String get settingsAppOfflineDataDescription => 'Prepare and review what this device keeps offline';
+
+  @override
+  String get settingsAppBoardsGroup => 'Boards';
+
+  @override
+  String get settingsAppWeekGroup => 'Week';
+
+  @override
+  String get settingsAppConnectionsGroup => 'Connected calendars';
+
+  @override
+  String get settingsAppPrivacyGroup => 'Privacy';
+
+  @override
+  String get settingsAppFocusGroup => 'Focus';
+
+  @override
+  String get settingsAppRequestsGroup => 'Requests';
+
+  @override
+  String settingsPomodoroSummary(int focus, int shortBreak) {
+    return '$focus min focus · $shortBreak min break';
+  }
+
+  @override
+  String settingsRequestThresholdSummary(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Entries older than $days days need approval',
+      one: 'Entries older than 1 day need approval',
+      zero: 'Every missed entry needs approval',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsFirstDaySummary(String day) {
+    return 'First day: $day';
+  }
+
+  @override
+  String get settingsMailSummary => 'Mailboxes, reading and swipe actions';
+
+  @override
+  String get settingsAssistantSummary => 'Personality, memory and on-device models';
+
+  @override
+  String get settingsTimeZoneGroup => 'Time zone';
+
+  @override
+  String settingsAppSettingsFor(String app) {
+    return '$app settings';
+  }
+
+  @override
+  String get settingsApprovalThreshold => 'Approval threshold';
+
+  @override
+  String get settingsPomodoroTitle => 'Pomodoro';
+
+  @override
+  String get settingsRequireApproval => 'Require approval';
+
+  @override
+  String get settingsApprovalOlderThan => 'For entries older than';
+
+  @override
+  String get settingsDaysUnit => 'days';
+
+  @override
+  String get settingsStatusChangeWindow => 'Status change window';
+
+  @override
+  String get settingsFooterDevice => 'Saved on this device.';
+
+  @override
+  String get settingsFooterFirstDay => 'Saved to your account on every device. Auto uses the workspace default.';
+
+  @override
+  String get settingsFooterWorkspace => 'Applies to everyone in this workspace.';
+
+  @override
+  String get settingsFooterCalendarAccounts => 'Calendar accounts connected to this workspace.';
+
+  @override
+  String get settingsFooterOffline => 'Data kept on this device for offline use.';
+
+  @override
+  String get settingsTasksSummaryBoardView => 'Board view';
+
+  @override
+  String get settingsTasksSummaryBoardList => 'Board list';
+
+  @override
+  String get settingsFinanceAmountsShown => 'Amounts shown';
+
+  @override
+  String get settingsFinanceAmountsHidden => 'Amounts hidden';
+
+  @override
+  String get settingsSearchBrowserTerm => 'browser';
+
+  @override
+  String get profilePhoto => 'Photo';
+
+  @override
+  String get profileCoverBanner => 'Cover banner';
+
+  @override
+  String get profileMediaSet => 'Set';
 }

@@ -99,7 +99,7 @@ Use isolated synthetic fixtures only.
 | Callers | `rg -n 'listForms' apps/forms/src/features/forms/server.ts apps/forms/src/features/forms/server 'apps/forms/src/app/[locale]/[wsId]/forms/page.tsx' 'apps/forms/src/app/api/v1/workspaces/[wsId]/forms/route.ts'` | exactly the export plus the page and collection route callers are inventoried and bounded |
 | Forms | `bun run --cwd apps/forms test && bun run --cwd apps/forms type-check && bun run --cwd apps/forms build` | Forms suite/types/build pass |
 | Rust parity | `cargo test --manifest-path apps/backend/Cargo.toml workspaces_forms` | prepared GET auth, filters, envelope, ties, and paging match Forms |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Size | `wc -l apps/forms/src/features/forms/server/queries.ts apps/forms/src/features/forms/server/form-list.ts apps/backend/src/workspaces_forms.rs apps/backend/src/workspaces_forms/tests.rs` | every substantially edited source remains below 700 lines |
 
 ## Scope

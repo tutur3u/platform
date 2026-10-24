@@ -70,7 +70,7 @@ No database, provider, storage, or generated-type change is authorized.
 | Focused route | `bun --cwd apps/mail vitest run 'src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/route.test.ts'` | auth-order, header, file-size, JSON-copy, and success cases pass |
 | Mail tests/typecheck | `bun --cwd apps/mail vitest run && bun run --cwd apps/mail type-check` | canonical Mail suite and types pass |
 | Mail build | `bun run --cwd apps/mail build` | production route compiles under Cache Components |
-| Repository | `bun check && git diff --check` | all checks pass and diff is clean |
+| Repository | `bun validate && git diff --check` | all checks pass and diff is clean |
 
 ## Scope
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_source_link.dart';
 import 'package:mobile/features/assistant/widgets/assistant_thinking_accordion.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 
@@ -55,6 +56,8 @@ List<Widget> assistantOrderedPartWidgets(
           ),
         );
       }
+    } else if (part.type == 'source-url' && part.url != null) {
+      children.add(AssistantSourceLink(url: part.url!, title: part.title));
     } else if (part.type == 'text' && (part.text?.trim().isNotEmpty ?? false)) {
       children.add(
         Padding(

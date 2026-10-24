@@ -3,6 +3,7 @@ import type { NovaSession } from '@tuturuuu/types';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
+import { hasChallengeAccess } from '@/lib/challenge-access';
 
 interface Props {
   params: Promise<{
@@ -18,12 +19,9 @@ export default async function Page({ params }: Props) {
   if (!challenge) redirect('/challenges');
 
   const cookieStore = await cookies();
-  const token = cookieStore.get('token');
+  const user = await getNovaAppSessionUserFromHeaders();
 
-  if (
-    challenge.password_hash &&
-    (!token || challenge.password_hash !== token.value)
-  )
+  if (!hasChallengeAccess(challenge, cookieStore, user?.id))
     redirect('/challenges');
 
   // Fetch session data

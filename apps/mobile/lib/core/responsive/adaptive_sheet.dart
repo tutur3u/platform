@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -13,10 +15,9 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 /// Uses the app surface by default. Callers with their own shaped surface can
 /// explicitly opt into a transparent background.
 ///
-/// Wraps overlay content with a [BackButtonListener] so the Android hardware
-/// back button dismisses the overlay instead of triggering shell navigation.
-/// Child back-button dispatchers have higher priority than the shell's
-/// [BackButtonListener], so this intercept is transparent to callers.
+/// Wraps overlay content with an [AppModalBinding] so system Back and the
+/// shell's floating-dock Back close the overlay instead of popping the page
+/// underneath. New code should use `showAppSheet` from `core/ui`.
 Future<T?> showAdaptiveSheet<T>({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
@@ -42,17 +43,8 @@ Future<T?> showAdaptiveSheet<T>({
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      builder: (sheetContext) => BackButtonListener(
-        onBackButtonPressed: () async {
-          if (!isDismissible && !enableDrag) {
-            return true;
-          }
-
-          if (sheetContext.mounted) {
-            await Navigator.maybePop(sheetContext);
-          }
-          return true;
-        },
+      builder: (sheetContext) => AppModalBinding(
+        dismissible: isDismissible || enableDrag,
         child: _sheetSurface(sheetContext, builder(sheetContext), surface),
       ),
     );
@@ -63,17 +55,8 @@ Future<T?> showAdaptiveSheet<T>({
     useRootNavigator: useRootNavigator,
     barrierColor: barrierColor,
     barrierDismissible: barrierDismissible,
-    builder: (dialogContext) => BackButtonListener(
-      onBackButtonPressed: () async {
-        if (!barrierDismissible) {
-          return true;
-        }
-
-        if (dialogContext.mounted) {
-          await Navigator.maybePop(dialogContext);
-        }
-        return true;
-      },
+    builder: (dialogContext) => AppModalBinding(
+      dismissible: barrierDismissible,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -92,7 +75,10 @@ Future<T?> showAdaptiveSheet<T>({
 }
 
 Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
-  if (child is AppDialogScaffold || surface.a == 0) return child;
+  // Modal content keeps opaque scaffolds when pages use an ambient theme.
+  if (child is AppDialogScaffold || surface.a == 0) {
+    return AppearanceScope.opaqueScaffolds(child);
+  }
   return ClipRRect(
     borderRadius: BorderRadius.circular(24),
     child: BackdropFilter(
@@ -101,7 +87,7 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
         color: surface.withValues(
           alpha: MediaQuery.highContrastOf(context) ? 1 : 0.88,
         ),
-        child: child,
+        child: AppearanceScope.opaqueScaffolds(child),
       ),
     ),
   );
@@ -136,7 +122,7 @@ Future<void> showAdaptiveDrawer({
           }
           return true;
         },
-        child: builder(drawerContext),
+        child: AppearanceScope.opaqueScaffolds(builder(drawerContext)),
       ),
     );
     return;
@@ -161,7 +147,7 @@ Future<void> showAdaptiveDrawer({
               color: shad.Theme.of(dialogContext).colorScheme.background,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
-              child: builder(dialogContext),
+              child: AppearanceScope.opaqueScaffolds(builder(dialogContext)),
             ),
           ),
         ),

@@ -17,38 +17,64 @@ async function drainGroup(
 ) {
   if (!pid) return;
   const until = Date.now() + timeoutMs;
+  let lastError;
   do {
     try {
       if (!exists(pid)) return;
-    } catch {
-      break;
+    } catch (error) {
+      if (error?.code !== 'EPERM') throw error;
+      lastError = error;
     }
     await new Promise((resolve) => setTimeout(resolve, 20));
   } while (Date.now() < until);
-  throw Object.assign(new Error('Owned process group not drained'), {
-    code: 'PROCESS_GROUP_UNDRAINED',
-    undrainedGroup: pid,
-  });
+  throw Object.assign(
+    new Error('Owned process group not drained', { cause: lastError }),
+    {
+      code: 'PROCESS_GROUP_UNDRAINED',
+      undrainedGroup: pid,
+    }
+  );
 }
-function runProcess(command, args, { cwd, env, timeoutMs = 30000 } = {}) {
+/** @param {{ cwd?: string, env?: NodeJS.ProcessEnv, timeoutMs?: number, onSpawn?: (pid: number) => void | Promise<void> }} [options] */
+function runProcess(command, args, options = {}) {
+  const { cwd, env, timeoutMs = 30000, onSpawn } = options;
   return new Promise((resolve, reject) => {
     let stdout = '',
       stderr = '',
       bytes = 0,
       stopped,
       killTimer;
-    const child = spawn(command, args, {
-      cwd,
-      env,
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    const signal = (value) => {
+    const gated = Boolean(onSpawn);
+    const child = spawn(
+      gated ? '/bin/sh' : command,
+      gated
+        ? [
+            '-c',
+            'IFS= read -r gate <&3 || exit 125; [ "$gate" = go ] || exit 125; exec 3<&-; exec "$@"',
+            'sdk-gated-process',
+            command,
+            ...args,
+          ]
+        : args,
+      {
+        cwd,
+        env,
+        detached: true,
+        stdio: gated
+          ? ['ignore', 'pipe', 'pipe', 'pipe']
+          : ['ignore', 'pipe', 'pipe'],
+      }
+    );
+    const signal = (value, phase = 'terminate') => {
       if (!child.pid) return;
       try {
         process.kill(-child.pid, value);
       } catch (error) {
-        if (error.code !== 'ESRCH') stopped = 'PROCESS_SIGNAL_FAILED';
+        if (
+          error.code !== 'ESRCH' &&
+          !(phase === 'drain' && value === 'SIGKILL' && error.code === 'EPERM')
+        )
+          stopped = 'PROCESS_SIGNAL_FAILED';
       }
     };
     const stop = (reason) => {
@@ -58,10 +84,8 @@ function runProcess(command, args, { cwd, env, timeoutMs = 30000 } = {}) {
       killTimer = setTimeout(() => signal('SIGKILL'), 250);
     };
     const timer = setTimeout(() => stop('PROCESS_DEADLINE'), timeoutMs);
-    for (const [stream, name] of [
-      [child.stdout, 'stdout'],
-      [child.stderr, 'stderr'],
-    ]) {
+    for (const name of ['stdout', 'stderr']) {
+      const stream = name === 'stdout' ? child.stdout : child.stderr;
       stream.on('data', (chunk) => {
         bytes += chunk.length;
         if (bytes > MAX_OUTPUT) {
@@ -72,15 +96,29 @@ function runProcess(command, args, { cwd, env, timeoutMs = 30000 } = {}) {
         else stderr += chunk.toString();
       });
     }
+    if (gated) {
+      const gate = child.stdio[3];
+      gate.on('error', () => {});
+      child.once('spawn', async () => {
+        try {
+          await onSpawn(child.pid);
+          if (!stopped) gate.end('go\n');
+          else gate.destroy();
+        } catch {
+          gate.destroy();
+          stop('PROCESS_SPAWN_PUBLICATION_FAILED');
+        }
+      });
+    }
     child.on('error', (error) => {
       stopped = 'PROCESS_SPAWN';
-      stderr = error.code || 'spawn failed';
+      stderr = 'code' in error ? String(error.code) : 'spawn failed';
     });
     child.on('close', async (status, exitSignal) => {
       clearTimeout(timer);
       clearTimeout(killTimer);
       // Also fence descendants that closed their output streams before the leader.
-      signal('SIGKILL');
+      signal('SIGKILL', 'drain');
       try {
         await drainGroup(child.pid);
       } catch (error) {

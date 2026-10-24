@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   extractIPFromHeaders: vi.fn(),
   getAdaptiveRateLimitConfig: vi.fn(),
   getAppSessionTokenFromRequest: vi.fn(),
+  hasSupportedSupabaseAuthCookie: vi.fn(),
   hasAuthenticatedApiSession: vi.fn(),
   isBackendRateLimitError: vi.fn(),
   isIPBlocked: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   attachSupabaseAuthUser: mocks.attachSupabaseAuthUser,
   createAppSessionUser: mocks.createAppSessionUser,
   getAppSessionTokenFromRequest: mocks.getAppSessionTokenFromRequest,
+  hasSupportedSupabaseAuthCookie: mocks.hasSupportedSupabaseAuthCookie,
   verifyAppSessionRequest: mocks.verifyAppSessionRequest,
 }));
 
@@ -135,6 +137,7 @@ describe('withSessionAuth app-session step-up controls', () => {
     );
     mocks.extractIPFromHeaders.mockReturnValue('203.0.113.1');
     mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_token');
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.isIPBlocked.mockResolvedValue(null);
     mocks.resolveWebAbuseDecision.mockResolvedValue({
       decisionSource: 'test',
@@ -172,6 +175,7 @@ describe('withSessionAuth app-session step-up controls', () => {
     const handler = vi.fn(() => NextResponse.json({ ok: true }));
     const route = withSessionAuth(handler, {
       allowAppSessionAuth: { requiredScope: 'users:profile:write' },
+      preferSupabaseSessionAuth: true,
       rateLimit: false,
       skipAppSessionStepUpChallenge: true,
     });
@@ -182,5 +186,104 @@ describe('withSessionAuth app-session step-up controls', () => {
     expect(await response.json()).toEqual({ ok: true });
     expect(mocks.enforceAdaptiveStepUpChallenge).not.toHaveBeenCalled();
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the switched cookie account for PATCH instead of a stale app session', async () => {
+    const switchedUser = {
+      created_at: '2026-06-26T00:00:00.000Z',
+      email: 'user-b@example.com',
+      id: 'user-b',
+    };
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.createClient.mockResolvedValue({ auth: { getUser: vi.fn() } });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      user: switchedUser,
+    });
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    mocks.createAppSessionUser.mockReturnValue({
+      created_at: '2026-06-26T00:00:00.000Z',
+      email: 'user-a@example.com',
+      id: 'user-a',
+    });
+
+    const route = withSessionAuth(
+      async (_request, { user }) =>
+        user.id === 'user-b'
+          ? NextResponse.json({ success: true })
+          : NextResponse.json(
+              { error: 'Notification not found' },
+              { status: 404 }
+            ),
+      {
+        allowAppSessionAuth: { targetApp: 'mail' },
+        preferSupabaseSessionAuth: true,
+        rateLimit: false,
+      }
+    );
+    const response = await route(
+      new NextRequest('https://tuturuuu.com/api/v1/notifications/n-1', {
+        headers: {
+          authorization: 'Bearer stale-user-a-app-session',
+          cookie: 'sb-project-auth-token=switched-user-b-session',
+        },
+        method: 'PATCH',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ success: true });
+    expect(mocks.verifyAppSessionRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe('withSessionAuth undetermined client IP', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.extractIPFromHeaders.mockReturnValue('unknown');
+    mocks.isIPBlocked.mockResolvedValue(null);
+    mocks.hasAuthenticatedApiSession.mockReturnValue(false);
+  });
+
+  it('block-checks the shared unknown bucket instead of skipping it', async () => {
+    mocks.isIPBlocked.mockResolvedValue({
+      blockLevel: 1,
+      blockedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      id: 'block-1',
+      reason: 'manual',
+    });
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler);
+
+    const response = await route(
+      new NextRequest('https://app.test/api/v1/test', { method: 'GET' })
+    );
+
+    expect(mocks.isIPBlocked).toHaveBeenCalledWith(
+      'unknown',
+      expect.objectContaining({ source: 'api-auth' })
+    );
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('rate-limits the shared unknown bucket for mutations', async () => {
+    mocks.checkRateLimit.mockResolvedValue(
+      NextResponse.json({ error: 'Too Many Requests' }, { status: 429 })
+    );
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler);
+
+    const response = await route(
+      new NextRequest('https://app.test/api/v1/test', { method: 'POST' })
+    );
+
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith(
+      'session:ip:mutate:unknown',
+      expect.anything()
+    );
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@ name: Meet Cloudflare
 on:
   pull_request:
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/meet/**'
       - 'apps/meet-realtime/**'
       - 'apps/web/src/lib/meet/**'
@@ -41,6 +42,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/meet/**'
       - 'apps/meet-realtime/**'
       - 'apps/web/src/lib/meet/**'
@@ -83,10 +85,12 @@ permissions:
   contents: read
   deployments: read
 
+# Validation runs supersede per PR or branch; production and manual runs stay
+# unique. The literal prefix keeps workflow_call runs from one planner apart.
+# Only the deploy job serializes production with a non-cancelling queue.
 concurrency:
-  group: meet-cloudflare-${{ github.ref }}
-  cancel-in-progress: false
-  queue: max
+  group: meet-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 env:
   SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -118,7 +122,7 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
@@ -392,7 +396,7 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
@@ -444,8 +448,8 @@ jobs:
     outputs:
       allowed: ${{ steps.policy.outputs.allowed }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - id: policy
@@ -463,6 +467,10 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
       # The existing account deployment credential can bootstrap Meet; prefer its own credential when configured.
       CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+    concurrency:
+      group: meet-cloudflare-production-deploy
+      cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -472,7 +480,7 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0

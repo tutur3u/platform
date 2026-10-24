@@ -104,7 +104,7 @@ focused/full pgTAP and isolated typegen are available.
 | Types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/ai-studio-pricing-reconciliation.sql` | focused test passes and generated types update only for this migration |
 | Typechecks | `bun run --cwd apps/ai type-check && bun run --cwd packages/ai type-check` | exit 0 |
 | AI build | `bun run --cwd apps/ai build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -170,7 +170,7 @@ apply production migrations.
    claims, sanitized response/logging, and no provider invocation.
 
 5. **Run all gates.** Run focused/full isolated database validation and
-   typegen, typechecks, AI build, `bun check`, and whitespace verification.
+   typegen, typechecks, AI build, `bun validate`, and whitespace verification.
 
 ## Done criteria
 

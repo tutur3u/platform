@@ -71,7 +71,7 @@ one live host while the other remains executable.
 | Authority guard | `node --test scripts/time-tracking-route-authority.test.js` | exact 25-path inventory and thin-adapter source contract pass |
 | Route guards | `bun web:api-routes:check && bun migration:tanstack:manifest && bun migration:tanstack:check` | no legacy wrappers regenerate; regenerated manifest is internally fresh and its intended source-ID diff remains scoped |
 | Apps | `bun run --cwd apps/web type-check && bun run --cwd apps/track type-check && bun run --cwd apps/web build && bun run --cwd apps/track build` | both hosts compile/build |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

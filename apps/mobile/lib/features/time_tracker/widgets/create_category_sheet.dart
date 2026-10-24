@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -220,7 +221,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                       ),
                     ),
                     shad.IconButton.ghost(
-                      icon: const Icon(shad.LucideIcons.x, size: 18),
+                      icon: const Icon(LucideIcons.x, size: 18),
                       onPressed: _saving
                           ? null
                           : () => unawaited(Navigator.maybePop(context)),
@@ -361,11 +362,7 @@ class _ColorGrid extends StatelessWidget {
                     : null,
               ),
               child: isSelected
-                  ? const Icon(
-                      shad.LucideIcons.check,
-                      size: 16,
-                      color: Colors.white,
-                    )
+                  ? const Icon(LucideIcons.check, size: 16, color: Colors.white)
                   : null,
             ),
           ),

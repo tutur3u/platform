@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
@@ -72,4 +73,30 @@ Future<void> openCalendarProductSettings(BuildContext context) async {
   if (selected != null && context.mounted) {
     await cubit.setFirstDayOfWeek(selected);
   }
+}
+
+/// Returns the explicit Boards choice; `true` opens the board picker.
+Future<bool?> openTaskBoardNavigationSettings(
+  BuildContext context, {
+  required bool boardPicker,
+}) {
+  final l10n = context.l10n;
+  return showSettingsChoiceDialog<bool>(
+    context: context,
+    title: l10n.settingsDefaultTaskBoardNavigation,
+    description: l10n.settingsDefaultTaskBoardNavigationDescription,
+    currentValue: boardPicker,
+    options: [
+      SettingsChoiceOption(
+        value: false,
+        label: l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
+        icon: LucideIcons.squareKanban,
+      ),
+      SettingsChoiceOption(
+        value: true,
+        label: l10n.settingsDefaultTaskBoardNavigationBoardPicker,
+        icon: LucideIcons.layoutDashboard,
+      ),
+    ],
+  );
 }
