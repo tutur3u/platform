@@ -82,14 +82,19 @@ state. It has no alarms, so only Cron Triggers start work.
   and idempotent jobs retry once, after two seconds, and only for a network error,
   502 or 503. Processor errors, redirects and deadlines are never retried; a
   deadline is recorded as an unknown outcome. Handover jobs never retry.
-- **Outcomes.** A 2xx is a success unless its bounded JSON summary (first
-  64 KiB) reports `ok: false`, which processors such as Calendar provider sync
-  use for partial failure; that slot counts as failed.
+- **Outcomes.** A 2xx needs a complete JSON object summary within 64 KiB.
+  `ok: false` is failed; malformed, truncated, unreadable or oversized summaries
+  are unknown and consume the failure budget without a retry. An absent `ok`
+  field preserves existing JSON-object processor contracts. Bytes exceeding the
+  remaining cap are rejected before retaining the chunk.
 - **Failure budget.** Five consecutive failed or unknown slots stop the job
   (`failure-budget-exhausted`). A run terminated before it completes leaves an
   expired lease; the next claim charges it as unknown before admitting a
   replacement, so repeated terminations exhaust the budget too. The counter
-  survives restarts and resets only on success or operator resume.
+  survives restarts and resets only on success or operator resume. Settled
+  claims reject late completions, including after reconciliation exhausts the
+  budget; late success cannot overwrite the unknown outcome. The dispatch and
+  ledger unit regressions cover these cases across a simulated restart.
 - **Operator stop.** `POST /control/jobs/<id>/stop` and `/resume`, plus
   `GET /control/jobs`, require `Authorization: Bearer <CRON_CONTROL_OPERATOR_TOKEN>`
   (32 characters or more); otherwise every control path returns the same 404 as an

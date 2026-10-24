@@ -837,6 +837,13 @@ check dispatches scheduled events to a loopback processor; never dispatch the
 immediate-notification trigger there. Add a trigger to both `wrangler.jsonc` and the
 runtime script's expected list. See the runbook's per-job cutover order.
 
+Require a complete JSON object within the 64 KiB outcome cap before accepting
+2xx success. Reject oversized chunks before retaining them; read errors and
+invalid or truncated JSON are unknown, never success. Reconciled claims are
+settled: late completions must not recharge failures or overwrite an unknown
+outcome, including when reconciliation refused a replacement at the budget limit.
+Keep dispatch and restart regressions for both late failure and late success.
+
 ## Native Meet realtime toolchain
 
 For the native Meet realtime Vite+ workspace, keep the original production Wrangler

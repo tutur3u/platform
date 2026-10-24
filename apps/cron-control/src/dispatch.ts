@@ -54,45 +54,41 @@ function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
 
 type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
 
-// Processor bodies are bounded summaries. Some report partial failure with a
-// 200 and `{ ok: false }` (Calendar provider sync), so read at most this many
-// bytes and treat an explicit `ok: false` as a failed run. Anything else,
-// including non-JSON or oversized bodies, keeps the status-based outcome.
+// Existing processors return JSON objects, some without an ok field. A partial,
+// unreadable or oversized summary cannot establish success, even after 200 headers.
 export const MAX_OUTCOME_BODY_BYTES = 64 * 1024;
 
-async function reportsFailure(response: Response) {
+async function readOutcome(response: Response): Promise<Exclude<RunOutcome, 'stopped'>> {
   const reader = response.body?.getReader();
-  if (!reader) return false;
+  if (!reader) return 'unknown';
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
-    while (size <= MAX_OUTCOME_BODY_BYTES) {
+    while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      if (value.byteLength > MAX_OUTCOME_BODY_BYTES - size) return 'unknown';
       chunks.push(value);
       size += value.byteLength;
     }
-  } catch {
-    return false;
-  } finally {
-    await reader.cancel().catch(() => undefined);
-  }
-  if (size > MAX_OUTCOME_BODY_BYTES) return false;
-  try {
     const bytes = new Uint8Array(size);
     let offset = 0;
     for (const chunk of chunks) {
       bytes.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    const body = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
-    return (
-      typeof body === 'object' &&
-      body !== null &&
-      (body as { ok?: unknown }).ok === false
+    const body: unknown = JSON.parse(
+      new TextDecoder('utf-8', { fatal: true }).decode(bytes)
     );
+    if (typeof body !== 'object' || body === null || Array.isArray(body))
+      return 'unknown';
+    if ('ok' in body)
+      return body.ok === true ? 'ok' : body.ok === false ? 'failed' : 'unknown';
+    return 'ok';
   } catch {
-    return false;
+    return 'unknown';
+  } finally {
+    void reader.cancel().catch(() => undefined);
   }
 }
 
@@ -125,7 +121,7 @@ async function invoke(
   }
   if (response.ok)
     return {
-      result: (await reportsFailure(response)) ? 'failed' : 'ok',
+      result: await readOutcome(response),
       status: response.status,
     };
   await response.body?.cancel().catch(() => undefined);

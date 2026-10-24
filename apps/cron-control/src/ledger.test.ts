@@ -159,3 +159,29 @@ it('repeated termination across restarts exhausts the durable budget', () => {
     stopped: true,
   });
 });
+
+it.each(['failed', 'ok'] as const)(
+  'ignores late %s after exhausting reconciliation across restart',
+  (outcome) => {
+    const { core, store, counts } = ledger();
+    claim(core, SLOT);
+    complete(core, 'failed');
+    claim(core, NEXT_SLOT);
+    complete(core, 'failed', NEXT_SLOT);
+    const abandonedSlot = '2026-10-25T03:17:00.000Z';
+    claim(core, abandonedSlot);
+    expect(claim(core, '2026-10-26T03:17:00.000Z', 2_000)).toMatchObject({
+      reason: 'stopped',
+    });
+    const settled = core.status().job;
+    const writes = counts.writes;
+    const restarted = new LedgerCore(store);
+    expect(complete(restarted, outcome, abandonedSlot)).toEqual(settled);
+    expect(counts.writes).toBe(writes);
+    expect(settled).toMatchObject({
+      consecutiveFailures: 3,
+      lastOutcome: 'unknown',
+      stopped: true,
+    });
+  }
+);
