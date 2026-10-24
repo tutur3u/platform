@@ -269,30 +269,59 @@ function parseContours(svg) {
   return contours.filter((contour) => contour.segments.length > 0);
 }
 
-/** Polyline approximation of a contour (curves sampled). */
+// Curves are flattened adaptively until every control point lies within
+// FLATNESS of the chord (bounded by MAX_DEPTH splits), so nesting tests see
+// the true curve: a hole just inside a bulging curve stays inside.
+const FLATNESS = 1e-4; // grid units (24 per icon); far below a font unit.
+const MAX_DEPTH = 18;
+
+function split(ctrl) {
+  const left = [ctrl[0]];
+  const right = [ctrl.at(-1)];
+  let level = ctrl;
+  while (level.length > 1) {
+    level = level
+      .slice(1)
+      .map((p, j) => [(level[j][0] + p[0]) / 2, (level[j][1] + p[1]) / 2]);
+    left.push(level[0]);
+    right.unshift(level.at(-1));
+  }
+  return [left, right];
+}
+
+function flatEnough(ctrl) {
+  const [x0, y0] = ctrl[0];
+  const [x1, y1] = ctrl.at(-1);
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const length = Math.hypot(dx, dy);
+  return ctrl.slice(1, -1).every(([x, y]) => {
+    const distance =
+      length === 0
+        ? Math.hypot(x - x0, y - y0)
+        : Math.abs(dy * (x - x0) - dx * (y - y0)) / length;
+    return distance <= FLATNESS;
+  });
+}
+
+function flattenCurve(ctrl, depth, out) {
+  if (depth >= MAX_DEPTH || flatEnough(ctrl)) {
+    out.push(ctrl.at(-1));
+    return;
+  }
+  const [left, right] = split(ctrl);
+  flattenCurve(left, depth + 1, out);
+  flattenCurve(right, depth + 1, out);
+}
+
+/** Polyline approximation of a contour, accurate to FLATNESS. */
 function flatten(contour) {
   const points = [contour.start];
   let from = contour.start;
   for (const segment of contour.segments) {
     const end = segment.points.at(-1);
-    if (segment.type !== 'L') {
-      const ctrl = [from, ...segment.points];
-      for (let k = 1; k < 8; k++) {
-        const t = k / 8;
-        // de Casteljau on the control polygon.
-        let level = ctrl;
-        while (level.length > 1) {
-          level = level
-            .slice(1)
-            .map((p, j) => [
-              level[j][0] + (p[0] - level[j][0]) * t,
-              level[j][1] + (p[1] - level[j][1]) * t,
-            ]);
-        }
-        points.push(level[0]);
-      }
-    }
-    points.push(end);
+    if (segment.type === 'L') points.push(end);
+    else flattenCurve([from, ...segment.points], 0, points);
     from = end;
   }
   return points;

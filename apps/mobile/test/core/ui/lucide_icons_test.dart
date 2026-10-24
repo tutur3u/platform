@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -34,18 +34,42 @@ Map<String, List<_Sample>> _samples() {
   );
 }
 
-String _family(String kind) =>
-    kind == 'base' ? LucideIcons.fontFamily : LucideLabIcons.fontFamily;
+// The generated constants for the fixture samples (const, as icon
+// tree-shaking requires); the test checks they match the fixture.
+const _icons = {
+  'base': <String, IconData>{
+    'house': LucideIcons.house,
+    'search': LucideIcons.search,
+    'x': LucideIcons.x,
+    'check': LucideIcons.check,
+    'settings': LucideIcons.settings,
+    'bell': LucideIcons.bell,
+    'calendar': LucideIcons.calendar,
+    'user': LucideIcons.user,
+    'earth': LucideIcons.earth,
+    'chevron-right': LucideIcons.chevronRight,
+    'trash': LucideIcons.trash,
+    'circle-alert': LucideIcons.circleAlert,
+    'ellipsis': LucideIcons.ellipsis,
+    'grip-vertical': LucideIcons.gripVertical,
+    'loader-circle': LucideIcons.loaderCircle,
+    'star': LucideIcons.star,
+  },
+  'lab': <String, IconData>{
+    'apple-core': LucideLabIcons.appleCore,
+    'ampersand-square': LucideLabIcons.ampersandSquare,
+    'arrows-up-down-square': LucideLabIcons.arrowsUpDownSquare,
+    'bottle-champagne': LucideLabIcons.bottleChampagne,
+    'cat-big': LucideLabIcons.catBig,
+    'burger': LucideLabIcons.burger,
+    'flower-lotus': LucideLabIcons.flowerLotus,
+    'hat-top': LucideLabIcons.hatTop,
+  },
+};
 
 /// Alpha coverage of the web SVG, drawn by flutter_svg at 24px * ratio.
 Future<Uint8List> _webCoverage(String svg) async {
-  final info = await vg.loadPicture(
-    SvgStringLoader(
-      svg,
-      theme: const SvgTheme(currentColor: Color(0xFF000000)),
-    ),
-    null,
-  );
+  final info = await vg.loadPicture(SvgStringLoader(svg), null);
   final recorder = ui.PictureRecorder();
   ui.Canvas(recorder)
     ..scale(_ratio)
@@ -53,7 +77,7 @@ Future<Uint8List> _webCoverage(String svg) async {
   final size = (24 * _ratio).round();
   final image = await recorder.endRecording().toImage(size, size);
   info.picture.dispose();
-  return _alpha(image);
+  return await _alpha(image);
 }
 
 Future<Uint8List> _alpha(ui.Image image) async {
@@ -62,15 +86,45 @@ Future<Uint8List> _alpha(ui.Image image) async {
   return Uint8List.fromList([for (var i = 3; i < rgba.length; i += 4) rgba[i]]);
 }
 
-/// Share of ink pixels whose coverage differs by more than half.
-double _mismatch(Uint8List a, Uint8List b) {
-  var ink = 0;
-  var differ = 0;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] > 0 || b[i] > 0) ink++;
-    if ((a[i] - b[i]).abs() > 128) differ++;
+/// What a viewer compares: shape overlap (IoU of the half-coverage masks),
+/// placement (ink centroid offset in device pixels) and stroke weight (ink
+/// ratio). Exact per-glyph geometry is gated at 1% by the generator; text and
+/// vector rasterisers anti-alias edges differently, so pixel equality is not
+/// the right measure here.
+({double iou, double offset, double weight}) _compare(
+  Uint8List web,
+  Uint8List glyph,
+) {
+  var both = 0;
+  var either = 0;
+  var wx = 0.0;
+  var wy = 0.0;
+  var ws = 0.0;
+  var gx = 0.0;
+  var gy = 0.0;
+  var gs = 0.0;
+  const side = 96;
+  for (var i = 0; i < web.length; i++) {
+    final a = web[i] > 128;
+    final b = glyph[i] > 128;
+    if (a && b) both++;
+    if (a || b) either++;
+    final x = i % side;
+    final y = i ~/ side;
+    wx += x * web[i];
+    wy += y * web[i];
+    ws += web[i];
+    gx += x * glyph[i];
+    gy += y * glyph[i];
+    gs += glyph[i];
   }
-  return ink == 0 ? 1 : differ / ink;
+  final dx = wx / ws - gx / gs;
+  final dy = wy / ws - gy / gs;
+  return (
+    iou: either == 0 ? 0 : both / either,
+    offset: (dx * dx + dy * dy) == 0 ? 0 : math.sqrt(dx * dx + dy * dy),
+    weight: gs / ws,
+  );
 }
 
 Widget _gridRow(_Sample sample, String kind, Color ink, Color muted) => Row(
@@ -87,11 +141,7 @@ Widget _gridRow(_Sample sample, String kind, Color ink, Color muted) => Row(
       child: SvgPicture.string(sample.svg, theme: SvgTheme(currentColor: ink)),
     ),
     const SizedBox(width: 16),
-    Icon(
-      IconData(sample.codepoint, fontFamily: _family(kind)),
-      size: 24,
-      color: ink,
-    ),
+    Icon(_icons[kind]![sample.name], size: 24, color: ink),
   ],
 );
 
@@ -146,7 +196,7 @@ void main() {
               child: RepaintBoundary(
                 key: const Key('glyph'),
                 child: Icon(
-                  IconData(sample.codepoint, fontFamily: _family(kind)),
+                  _icons[kind]![sample.name],
                   size: 24,
                   color: const Color(0xFF000000),
                 ),
@@ -157,14 +207,21 @@ void main() {
         final boundary = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(const Key('glyph')),
         );
-        final ratio = await tester.runAsync(() async {
+        final icon = _icons[kind]![sample.name]!;
+        expect(icon.codePoint, sample.codepoint);
+        final result = await tester.runAsync(() async {
           final glyph = await _alpha(
             await boundary.toImage(pixelRatio: _ratio),
           );
           final web = await _webCoverage(sample.svg);
-          return _mismatch(web, glyph);
+          return _compare(web, glyph);
         });
-        expect(ratio, lessThan(0.03), reason: '${sample.name}: $ratio');
+        final r = result!;
+        final why = '${sample.name}: $r';
+        expect(r.iou, greaterThan(0.85), reason: why);
+        // Under a quarter of a logical pixel at 4x.
+        expect(r.offset, lessThan(1.0), reason: why);
+        expect(r.weight, inInclusiveRange(0.85, 1.2), reason: why);
       });
     }
   }

@@ -467,12 +467,17 @@ async function main() {
       return { ...glyph, path: fontPath(svg) };
     });
     const font = buildFont(spec.font, glyphs);
-    // Gate the shipped artefact: parse the serialized font back and compare
-    // every glyph (after coordinate rounding and CFF encoding) with the web
-    // rendering of its SVG node.
-    const worst = verifySerialized(ck, font, plan.glyphs, shapesByName);
     const fontFile = `assets/fonts/lucide/${spec.font}.otf`;
     fs.writeFileSync(path.join(mobile, fontFile), font);
+    // Gate the shipped artefact: reopen the written file and compare every
+    // glyph (after coordinate rounding and CFF encoding) with the web
+    // rendering of its SVG node.
+    const worst = verifySerialized(
+      ck,
+      fs.readFileSync(path.join(mobile, fontFile)),
+      plan.glyphs,
+      shapesByName
+    );
     const dart = sources.emitDart({
       kind,
       version: entry.version,

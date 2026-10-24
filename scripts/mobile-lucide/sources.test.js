@@ -115,3 +115,23 @@ test('even-odd holes become opposite-direction contours for nonzero fill', () =>
   const curve = orientForNonzero('M0 0L10 0L10 10L0 10Z M2 2Q5 1 8 2L8 8L2 8Z');
   assert.match(curve, /Q5 1 2 2/u);
 });
+
+test('a hole just inside a bulging curve is nested by the true curve', () => {
+  // Review repro: the hole sits between the quadratic and its coarse
+  // eight-segment approximation, so it must still be reversed.
+  const oriented = orientForNonzero(
+    'M0 0Q10 -20 20 0L20 20L0 20Z M0.99 -1.85L1.01 -1.85L1.01 -1.82L0.99 -1.82Z'
+  );
+  const [outer, hole] = parseContours(oriented);
+  const area = (contour) => {
+    const pts = [
+      contour.start,
+      ...contour.segments.map((s) => s.points.at(-1)),
+    ];
+    return pts.reduce((sum, [x, y], k) => {
+      const [nx, ny] = pts[(k + 1) % pts.length];
+      return sum + x * ny - nx * y;
+    }, 0);
+  };
+  assert.ok(Math.sign(area(outer)) !== Math.sign(area(hole)), oriented);
+});

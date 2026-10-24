@@ -1,6 +1,6 @@
 /// Icon abstraction for the mobile design system.
 ///
-/// [LucideIcons] and [LucideLabIcons] are generated from the exact
+/// [LucideIcons] and `LucideLabIcons` are generated from the exact
 /// `lucide-react` and `@lucide/lab` versions the web uses
 /// (scripts/mobile-lucide), so names and glyphs match the web: `arrow-right`
 /// is `LucideIcons.arrowRight`, lab `apple-core` is
