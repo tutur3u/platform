@@ -228,3 +228,35 @@ Playwright Chromium build first. Pass spec paths or Playwright flags after `--`.
 - Plain `./gradlew` tasks need `-Ptarget=lib/main_development.dart` because the
   app has no `lib/main.dart`, and flavored task names such as
   `:app:testDevelopmentDebugUnitTest`.
+
+## Measuring Vite+ satellites signed in
+
+Production Meet and Mail redirect every signed-out request to the web login,
+so first-load metrics for their real surfaces need a signed-in session. The
+same isolated stack serves that: build the satellite on Thanh against the local
+Supabase values from `env/web.env` (`vp build` with `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL=http://localhost:<port>`
+and `NEXT_PUBLIC_WEB_APP_URL=http://localhost:7803` exported, because the client
+bundle inlines them), then `vp preview --host 127.0.0.1 --port <port>` runs the
+emitted Worker in workerd. Three details make the handshake work:
+
+- Void copies only the `secrets.required` entries of `void.config.ts` into
+  `dist/server/.dev.vars`. Meet therefore has no
+  `TUTURUUU_APP_COORDINATION_SECRET` after a build; append it (and the loopback
+  `WEB_APP_URL`/`INTERNAL_WEB_API_ORIGIN`) before starting the preview, or the
+  Worker cannot verify the app-session cookie web issues.
+- Supabase cookies are only trusted on `*.tuturuuu.com` and
+  `*.tuturuuu.localhost` hosts. On plain `localhost` the web session cookie is
+  host-only and reaches every port, and `/verify-token` then clears it with
+  `response.cookies.set`, which rebuilds the `Set-Cookie` header and drops the
+  app-session cookies that were appended a moment earlier. Sign in on web,
+  capture the `/verify-token?token=…` URL web redirects to, clear the `sb-*`
+  cookies from the browser context, and only then open that URL on the
+  satellite origin.
+- Keep the Playwright run on `ttr resources run --` and point it at the
+  `playwright` package under `~/ci-lanes/tuturuuu-e2e/node_modules/.bun`; the
+  Chromium build in `~/Library/Caches/ms-playwright` is shared.
+
+The satellite then serves `/personal/…` with a real session, and a CDP-based
+Playwright script can record TTFB, FCP, LCP, CLS and transferred JavaScript for
+cold and warm loads of the exact local build.
