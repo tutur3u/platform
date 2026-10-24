@@ -11112,4 +11112,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantReplyPending => 'Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi.';
 }

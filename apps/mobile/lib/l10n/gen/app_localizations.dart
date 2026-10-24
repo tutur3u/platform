@@ -21276,6 +21276,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.'**
   String get assistantReplyPending;
+
+  /// No description provided for @assistantReplyLiveUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.'**
+  String get assistantReplyLiveUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -132,7 +132,7 @@ void main() {
     expect(await fixture.stored(), const AssistantThemePreferences());
   });
 
-  testWidgets('disposal cancels debounce and retires captured callbacks', (
+  testWidgets('disposal saves debounce and retires captured callbacks', (
     tester,
   ) async {
     final fixture = _Fixture();
@@ -144,8 +144,8 @@ void main() {
     change(_choice(0.2));
     release();
     await tester.pump(const Duration(seconds: 1));
-    expect(fixture.store.writes, isEmpty);
-    expect(await fixture.stored(), const AssistantThemePreferences());
+    expect(fixture.store.writes, [_choice(0.9)]);
+    expect(await fixture.stored(), _choice(0.9));
   });
 
   testWidgets('failed debounce retains the last preview for retry', (

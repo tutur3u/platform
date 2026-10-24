@@ -1,22 +1,27 @@
 part of 'assistant_page.dart';
 
 extension _AssistantPageSubmission on _AssistantPageState {
-  Future<void> _handleSend(
-    String wsId,
-    AssistantShellState shellState,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) async {
+  Future<void> _handleSend(String wsId) async {
     if (_localCubit.state.local || _localCubit.state.blocked) {
       await _sendLocal();
       return;
     }
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
+    final shellState = _shellCubit.state;
+    final chatState = _chatCubit.state;
+    final liveState = _liveCubit.state;
     final operation = _remoteOperationGuard(wsId);
     final workspaceVersion = _chatCubit.attachmentScopeVersion;
     if (_chatCubit.state.workspaceId != wsId ||
         _chatCubit.state.status == AssistantChatStatus.restoring) {
+      return;
+    }
+    bool liveReplyBlocked() =>
+        _chatCubit.state.replyTarget != null &&
+        _shouldSendThroughLive(_chatCubit.state, _liveCubit.state);
+    if (liveReplyBlocked()) {
+      _showInlineNotice(context.l10n.assistantReplyLiveUnavailable);
       return;
     }
     if (chatState.creationOutcomeUnknown &&
@@ -36,12 +41,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
           scope != null &&
           scope == _localScope() &&
           _inputController.value == draft) {
-        await _handleSend(
-          wsId,
-          _shellCubit.state,
-          _chatCubit.state,
-          _liveCubit.state,
-        );
+        await _handleSend(wsId);
       }
       return;
     }
@@ -93,11 +93,16 @@ extension _AssistantPageSubmission on _AssistantPageState {
         message: text,
         isCurrent: () =>
             guard.current &&
-            _chatCubit.attachmentScopeVersion == workspaceVersion,
+            _chatCubit.attachmentScopeVersion == workspaceVersion &&
+            !liveReplyBlocked(),
         isOperationCurrent: () =>
             operation.current &&
-            _chatCubit.attachmentScopeVersion == workspaceVersion,
+            _chatCubit.attachmentScopeVersion == workspaceVersion &&
+            !liveReplyBlocked(),
       )) {
+        if (mounted && guard.current && liveReplyBlocked()) {
+          _showInlineNotice(context.l10n.assistantReplyLiveUnavailable);
+        }
         return;
       }
     }

@@ -21,7 +21,15 @@ extension _AssistantPageMessageActions on _AssistantPageState {
   }
 
   void _replyToMessage(String messageId, bool Function() current) {
-    if (!current() || !_chatCubit.setReplyTarget(messageId)) return;
+    if (!current()) return;
+    final chatState = _chatCubit.state;
+    final wsId = chatState.workspaceId;
+    if (wsId == null ||
+        !_remoteGuard(wsId).current ||
+        _shouldSendThroughLive(chatState, _liveCubit.state) ||
+        !_chatCubit.setReplyTarget(messageId)) {
+      return;
+    }
     _restoreComposerAndFocus();
   }
 

@@ -4715,5 +4715,6 @@
   "assistantThemeStorageError": "Không thể lưu hoặc tải giao diện trên thiết bị này.",
   "assistantThemeText": "Màu chữ",
   "assistantThemeTitle": "Giao diện trò chuyện",
-  "assistantReplyPending": "Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước."
+  "assistantReplyPending": "Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước.",
+  "assistantReplyLiveUnavailable": "Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi."
 }

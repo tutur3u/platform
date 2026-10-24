@@ -11248,4 +11248,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantReplyPending => 'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.';
 }

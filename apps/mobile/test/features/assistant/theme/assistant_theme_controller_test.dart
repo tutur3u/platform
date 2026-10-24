@@ -115,7 +115,7 @@ void main() {
     },
   );
 
-  test('newest edit wins and disposal fences a waiting write', () async {
+  test('newest edit wins and disposal saves a waiting write', () async {
     final prefs = await SharedPreferences.getInstance();
     final gate = Completer<SharedPreferences>();
     var hold = false;
@@ -163,7 +163,7 @@ void main() {
       AssistantThemePreferences.decode(
         prefs.getString(AssistantThemeStore.keyFor('a')),
       ),
-      const AssistantThemePreferences(),
+      AssistantThemePreferences.preset(AppearanceThemeId.ember),
     );
     actor.dispose();
   });

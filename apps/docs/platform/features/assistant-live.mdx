@@ -98,6 +98,11 @@ Legacy `ai-chat-*` and `legacy-ai-*` conversations keep Copy, but cannot use pri
 Chat message IDs. Legacy dashboard Mira reaction/reply parity requires its own
 adapter work; IDs must never be stripped or guessed to enable it.
 
+Reply is unavailable when text sends use a retained Live connection. A reply
+selected before that transition blocks sending and keeps its draft and target;
+end the call or cancel the reply before sending. Live text does not silently
+discard the reply reference.
+
 Reactions use the native idempotent operation contract described below. Unknown
 outcomes expose **Refresh reactions**, which safely reconciles the original
 intent before updating the exact message's summaries. Reply previews jump to
@@ -113,7 +118,8 @@ Assistant conversations and workspaces; it does not change the shell, web UI or
 another actor's preferences. It does not synchronize across devices. Both remote
 and on-device conversations use the selected appearance. The theme controller
 previews successive edits immediately, debounces storage and flushes slider changes
-on release. Delayed edits retire on logout or session replacement. Preset contrast, storage
+on release. Closing the controller flushes the last authorized pending edit;
+delayed edits retire on logout or session replacement. Preset contrast, storage
 round trips, actor/session fences and the collapsed editor are covered under
 `apps/mobile/test/features/assistant/theme/`.
 

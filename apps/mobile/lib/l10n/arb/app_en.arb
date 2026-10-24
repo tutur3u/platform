@@ -4812,5 +4812,6 @@
   "assistantThemeStorageError": "Appearance could not be saved or loaded on this device.",
   "assistantThemeText": "Text colors",
   "assistantThemeTitle": "Chat appearance",
-  "assistantReplyPending": "The earlier message is still unconfirmed. Clear this reply and retry the earlier message first."
+  "assistantReplyPending": "The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.",
+  "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending."
 }

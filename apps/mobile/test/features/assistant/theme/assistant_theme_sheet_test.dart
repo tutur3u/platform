@@ -18,6 +18,7 @@ void main() {
     var value = const AssistantThemePreferences();
     await tester.pumpWidget(
       MaterialApp(
+        debugShowCheckedModeBanner: false,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(

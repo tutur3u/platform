@@ -45,6 +45,7 @@ import 'package:mobile/features/assistant/models/assistant_mobile_screen_context
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
@@ -133,7 +134,10 @@ class _AssistantPageState extends State<AssistantPage>
   Object? _chromeActionsKey;
   List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
-  late final _chatThemeActor = ValueNotifier<AssistantThemeActor?>(null);
+  late final _chatThemeActor = AssistantThemeSessionSource(
+    auth: context.read<AuthCubit>(),
+    actorId: _currentActor(),
+  );
   late final _chatTheme = AssistantThemeController(actor: _chatThemeActor);
   double? _composerHeight;
   bool _settingsWritePending = false;
@@ -346,8 +350,7 @@ class _AssistantPageState extends State<AssistantPage>
 
   @override
   void dispose() {
-    _chatTheme.dispose();
-    _chatThemeActor.dispose();
+    _disposeChatTheme();
     WidgetsBinding.instance.removeObserver(this);
     _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);

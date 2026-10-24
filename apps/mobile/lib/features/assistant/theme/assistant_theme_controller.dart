@@ -16,7 +16,7 @@ class AssistantThemeActor {
   final String actorId;
 }
 
-/// Own above the Assistant route, and dispose with its auth-session owner.
+/// Keep the actor source alive until [writesDrained] after route disposal.
 class AssistantThemeController extends ChangeNotifier {
   AssistantThemeController({
     required ValueListenable<AssistantThemeActor?> actor,
@@ -32,6 +32,8 @@ class AssistantThemeController extends ChangeNotifier {
   final ValueListenable<AssistantThemeActor?> _actor;
   final AssistantThemeStore _store;
   final Duration _debounceDuration;
+  int _writes = 0;
+  final _writesDrained = Completer<void>();
   Timer? _debounce;
   bool _pendingEdit = false;
   AssistantThemeActor? _snapshot;
@@ -49,6 +51,9 @@ class AssistantThemeController extends ChangeNotifier {
   bool get saving => _saving;
   bool get storageFailed => _storageFailed;
   bool get canEdit => !_disposed && _snapshot != null && !_loading;
+
+  /// Completes after disposal, once every captured write has retired.
+  Future<void> get writesDrained => _writesDrained.future;
 
   /// Fence the session, allowing multiple ticks before the next rebuild.
   /// A delayed picker selection cannot edit a replacement session.
@@ -79,7 +84,9 @@ class AssistantThemeController extends ChangeNotifier {
   }
 
   bool _sessionCurrent(AssistantThemeActor actor, int epoch) =>
-      !_disposed &&
+      !_disposed && _writeSessionCurrent(actor, epoch);
+
+  bool _writeSessionCurrent(AssistantThemeActor actor, int epoch) =>
       identical(_snapshot, actor) &&
       identical(_actor.value, actor) &&
       _epoch == epoch;
@@ -94,7 +101,10 @@ class AssistantThemeController extends ChangeNotifier {
   }
 
   void _actorChanged() {
-    if (_disposed) return;
+    if (_disposed) {
+      _epoch++;
+      return;
+    }
     _cancelDebounce();
     _snapshot = _actor.value;
     _epoch++;
@@ -166,11 +176,15 @@ class AssistantThemeController extends ChangeNotifier {
     final epoch = _epoch;
     final revision = _revision;
     bool current() => _current(actor, epoch, revision);
+    // Storage may drain after route disposal; UI callbacks must not.
+    bool writeCurrent() =>
+        _writeSessionCurrent(actor, epoch) && _revision == revision;
+    _writes++;
     try {
       final saved = await _store.write(
         actor.actorId,
         _value,
-        isCurrent: current,
+        isCurrent: writeCurrent,
       );
       if (current()) _storageFailed = !saved;
       return saved && current();
@@ -178,10 +192,12 @@ class AssistantThemeController extends ChangeNotifier {
       if (current()) _storageFailed = true;
       return false;
     } finally {
+      _writes--;
       if (current()) {
         _saving = false;
         notifyListeners();
       }
+      if (_disposed && _writes == 0) _retireWrites();
     }
   }
 
@@ -195,12 +211,18 @@ class AssistantThemeController extends ChangeNotifier {
     }
   }
 
+  void _retireWrites() {
+    _actor.removeListener(_actorChanged);
+    if (!_writesDrained.isCompleted) _writesDrained.complete();
+  }
+
   @override
   void dispose() {
+    if (_pendingEdit) unawaited(_persist());
     _cancelDebounce();
     _disposed = true;
-    _epoch++;
-    _actor.removeListener(_actorChanged);
+    // Observe logout/ABA until serialized writes finish, without publishing UI.
+    if (_writes == 0) _retireWrites();
     super.dispose();
   }
 }

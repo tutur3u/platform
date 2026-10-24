@@ -432,9 +432,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   ),
                                               onSend: () => _handleSend(
                                                 currentWorkspace.id,
-                                                shellState,
-                                                chatState,
-                                                liveState,
                                               ),
                                               onRemoveAttachment:
                                                   removeComposerAttachment,
@@ -453,9 +450,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   _toggleComposerNavigation,
                                               onSend: () => _handleSend(
                                                 currentWorkspace.id,
-                                                shellState,
-                                                chatState,
-                                                liveState,
                                               ),
                                               voiceCapture: localLane
                                                   ? null
@@ -566,7 +560,9 @@ extension _AssistantPageLayout on _AssistantPageState {
       needsReactionRefresh: remote ? _chatCubit.needsReactionRefresh : null,
       isActionCurrent: current,
       onJumpToReply: _transcriptFollower.suspend,
-      onReply: (id) => _replyToMessage(id, current),
+      onReply: _shouldSendThroughLive(chatState, liveState)
+          ? null
+          : (id) => _replyToMessage(id, current),
       onReact: (id, reaction) =>
           unawaited(_reactToMessage(id, reaction, current)),
       onRefreshReactions: (id) => unawaited(_reactToMessage(id, null, current)),

@@ -2,14 +2,12 @@ part of 'assistant_page.dart';
 
 extension _AssistantPageTheme on _AssistantPageState {
   void _syncThemeActor({bool force = false}) {
-    final actor = _currentActor();
-    final authenticated = context.read<AuthCubit>().state.user?.id;
-    final current = actor == authenticated ? actor : null;
-    if (force || _chatThemeActor.value?.actorId != current) {
-      _chatThemeActor.value = current == null
-          ? null
-          : AssistantThemeActor(current);
-    }
+    _chatThemeActor.syncActor(_currentActor(), force: force);
+  }
+
+  void _disposeChatTheme() {
+    _chatTheme.dispose();
+    unawaited(_chatThemeActor.closeAfter(_chatTheme.writesDrained));
   }
 
   Widget _themedPage(BuildContext context) => ListenableBuilder(
