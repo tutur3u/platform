@@ -143,6 +143,13 @@ Receipts and step checks record the evidence level (`private-tree` or
 `full-visibility`). Root's processes remain uninspectable under this rule;
 that residual is accepted only for proven-private trees. Idle Xcode
 DerivedData usually qualifies through `~/Library/Developer` (0700, no ACL).
+Its repository-refusal exemption applies only to the literal
+`~/Library/Developer/Xcode/DerivedData` root when its canonical path matches
+and every component through the user's home is a real directory owned by the
+effective user. Symlinked roots or ancestors and nonstandard report roots are
+skipped, and the chain is checked again immediately before removal. This keeps
+checkouts reached through a redirected DerivedData path intact; see
+`packages/sdk/src/cli/storage-derived-data.test.ts`.
 Worktrees and their artifacts under `~/.t3` do not qualify unless that tree
 is 0700; ttr never changes permissions to make something qualify.
 
