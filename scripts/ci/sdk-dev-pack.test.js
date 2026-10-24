@@ -16,7 +16,16 @@ function fixture(t) {
   return root;
 }
 test('dev versions require a stable base, monotonic run identity and exact source SHA', () => {
-  assert.equal(devVersion('0.28.0', '123', sha), '0.28.0-dev.123.abcdef0');
+  assert.equal(devVersion('0.28.0', '123', sha), '0.28.1-dev.123.abcdef0');
+  const order = require('node:child_process').execFileSync(
+    'bun',
+    [
+      '-e',
+      `console.log(Bun.semver.order(${JSON.stringify(devVersion('0.28.0', '123', sha))}, '0.28.0'))`,
+    ],
+    { encoding: 'utf8' }
+  );
+  assert.equal(Number(order.trim()), 1);
   for (const args of [
     ['latest', '123', sha],
     ['0.28.0-dev.1', '1', sha],
@@ -55,7 +64,8 @@ test('staging embeds exact source and channel without changing source manifest',
   );
   for (const version of [
     '0.29.0-dev.123.abcdef0',
-    '0.28.0-dev.123.fffffff',
+    '0.28.1-dev.123.fffffff',
+    '0.28.0-dev.123.abcdef0',
     '0.28.0',
   ]) {
     reset();
@@ -170,7 +180,7 @@ test('private pack verifies qualified bytes, writes manifest and releases its bu
     };
   };
   const qualifyPackage = async (options) => {
-    assert.equal(options.packageVersion, '0.28.0-dev.123.abcdef0');
+    assert.equal(options.packageVersion, '0.28.1-dev.123.abcdef0');
     assert.equal(options.sourceSha, sha);
     fs.mkdirSync(output);
     const bytes = Buffer.from('qualified bytes');
@@ -186,7 +196,7 @@ test('private pack verifies qualified bytes, writes manifest and releases its bu
       package: {
         name: 'tuturuuu',
         version: options.packageVersion,
-        archive: 'tuturuuu-0.28.0-dev.123.abcdef0.tgz',
+        archive: 'tuturuuu-0.28.1-dev.123.abcdef0.tgz',
         sha256: createHash('sha256').update(bytes).digest('hex'),
       },
     };

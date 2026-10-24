@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { createRequire } = require('node:module');
+const { devVersion } = require('./sdk-dev-identity');
 
 function stageSdkRuntime(root, stageSdk, inventory) {
   for (const folder of ['dist', 'bin']) {
@@ -34,18 +35,17 @@ function stageBuildIdentity({
 }) {
   const source = JSON.parse(before);
   const version = packageVersion ?? source.version;
-  const devSuffix =
-    typeof version === 'string' && version.slice(source.version.length);
+  const devParts =
+    typeof packageVersion === 'string' &&
+    /-dev\.([1-9][0-9]*)\.[a-f0-9]{7}$/.exec(packageVersion);
   if (
     !/^[a-f0-9]{40}$/.test(sourceSha || '') ||
     !/^\d+\.\d+\.\d+$/.test(source.version) ||
     (packageVersion !== undefined &&
-      (!version.startsWith(source.version) ||
-        !/^-dev\.[1-9][0-9]*\.[a-f0-9]{7}$/.test(devSuffix) ||
-        !version.endsWith(`.${sourceSha.slice(0, 7)}`)))
-  ) {
+      (!devParts ||
+        packageVersion !== devVersion(source.version, devParts[1], sourceSha)))
+  )
     throw new Error('INVALID_BUILD_IDENTITY');
-  }
   const staged = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (staged.name !== 'tuturuuu' || staged.version !== source.version)
     throw new Error('PACKAGE_IDENTITY_MISMATCH');

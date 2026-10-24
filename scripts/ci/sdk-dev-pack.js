@@ -6,15 +6,8 @@ const { runProcess } = require('./sdk-package-process');
 const { qualify } = require('./qualify-sdk-package');
 const { verifyPublishReceipt } = require('./sdk-qualification-phase');
 
-function devVersion(base, run, sha) {
-  if (
-    !/^\d+\.\d+\.\d+$/.test(base) ||
-    !/^[1-9][0-9]*$/.test(run) ||
-    !/^[a-f0-9]{40}$/.test(sha)
-  )
-    throw new Error('INVALID_DEV_IDENTITY');
-  return `${base}-dev.${run}.${sha.slice(0, 7)}`;
-}
+const { devVersion } = require('./sdk-dev-identity');
+const { acquirePackLock } = require('./sdk-dev-pack-lock');
 
 function checksumManifest({ archive, version, sourceSha, internalOnly }) {
   const bytes = fs.readFileSync(archive);
@@ -44,8 +37,28 @@ async function pack({
   qualifyPackage = qualify,
 } = {}) {
   root = fs.realpathSync(root);
+  let releaseLock;
+  async function trackedRun(executable, args, options) {
+    if (!releaseLock) return run(executable, args, options);
+    let group;
+    let retained = false;
+    try {
+      return await run(executable, args, {
+        ...options,
+        onSpawn: (pid) => {
+          releaseLock.track(pid);
+          group = pid;
+        },
+      });
+    } catch (error) {
+      retained = Boolean(error.undrainedGroup);
+      throw error;
+    } finally {
+      if (group && !retained) releaseLock.drained(group);
+    }
+  }
   async function command(executable, args, timeoutMs = 30000) {
-    const result = await run(executable, args, {
+    const result = await trackedRun(executable, args, {
       cwd: root,
       env: process.env,
       timeoutMs,
@@ -70,7 +83,9 @@ async function pack({
   );
   output ??= path.join(os.tmpdir(), `tuturuuu-sdk-${version}`);
   const lockPath = path.join(root, 'packages/sdk/.dev-pack.lock');
-  const lock = fs.openSync(lockPath, 'wx', 0o600);
+  releaseLock = acquirePackLock(lockPath);
+  let packError;
+  let result;
   try {
     await command(
       'bun',
@@ -90,6 +105,7 @@ async function pack({
       sourceSha,
       packageVersion: version,
       phase: 'public',
+      run: trackedRun,
     });
     if (!receipt.qualified)
       throw new Error(
@@ -112,11 +128,17 @@ async function pack({
       `${JSON.stringify(manifest, null, 2)}\n`,
       { mode: 0o600 }
     );
-    return { output, manifest };
-  } finally {
-    fs.closeSync(lock);
-    fs.unlinkSync(lockPath);
+    result = { output, manifest };
+  } catch (error) {
+    packError = error;
   }
+  try {
+    releaseLock();
+  } catch (error) {
+    packError ??= error;
+  }
+  if (packError) throw packError;
+  return result;
 }
 
 if (require.main === module) {

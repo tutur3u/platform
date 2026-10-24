@@ -4,7 +4,10 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { checksumManifest } = require('./sdk-dev-pack');
-const { verifyDevPublication } = require('./sdk-dev-publish');
+const {
+  verifyDevPublication,
+  waitForDevPublication,
+} = require('./sdk-dev-publish');
 function fixture(t) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-publish-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -125,10 +128,67 @@ test('trusted preflight and post-publication verifier match tested implementatio
     .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
     .join('\n');
   assert.equal(normalized.split(verifyDevPublication.toString()).length - 1, 2);
+  assert.ok(normalized.includes(waitForDevPublication.toString()));
   const preflight = workflow.indexOf('- name: Verify dev identity');
   const publish = workflow.indexOf('- name: Publish dev only');
   assert.ok(preflight < publish);
   assert.ok(
     workflow.includes("if: steps.publication.outputs.should_publish == 'true'")
   );
+});
+
+test('post-publish verification retries transient 5xx and 404 without republishing', async (t) => {
+  const { waitForDevPublication } = require('./sdk-dev-publish');
+  const f = fixture(t),
+    statuses = [503, 502, 404, 200],
+    sleeps = [];
+  await waitForDevPublication(
+    {
+      ...f,
+      fetchRegistry: async () => {
+        const status = statuses.shift();
+        return { status, ok: status === 200, json: async () => f.published };
+      },
+    },
+    { sleep: async (ms) => sleeps.push(ms) }
+  );
+  assert.deepEqual(statuses, []);
+  assert.deepEqual(sleeps, [10000, 10000, 10000]);
+});
+test('post-publish retries are bounded and reject auth errors or byte mismatches immediately', async (t) => {
+  const { waitForDevPublication } = require('./sdk-dev-publish');
+  const f = fixture(t);
+  let requests = 0,
+    sleeps = 0;
+  await assert.rejects(
+    waitForDevPublication(
+      {
+        ...f,
+        fetchRegistry: async () => {
+          requests++;
+          return { status: 503, ok: false };
+        },
+      },
+      { attempts: 3, sleep: async () => sleeps++ }
+    ),
+    /DO_NOT_BLINDLY_REPUBLISH/
+  );
+  assert.equal(requests, 3);
+  assert.equal(sleeps, 2);
+  for (const response of [
+    { status: 403, ok: false },
+    { status: 200, ok: true, json: async () => ({ ...f.published, dist: {} }) },
+  ]) {
+    await assert.rejects(
+      waitForDevPublication(
+        { ...f, fetchRegistry: async () => response },
+        {
+          sleep: async () => {
+            throw new Error('MUST_NOT_RETRY');
+          },
+        }
+      ),
+      /REGISTRY_VERIFICATION_FAILED|PUBLISHED_DEV_BYTES_MISMATCH/
+    );
+  }
 });

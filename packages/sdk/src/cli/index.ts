@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { versionDescription } from './build-identity';
+import { installedBuildIdentity } from './build-identity';
 
 const args = process.argv.slice(2);
 const local = args[0] === 'backlog' || args[0] === 'operational-memory';
@@ -10,7 +10,7 @@ const run =
   !local &&
   (globalArgs.includes('--version') || globalArgs.includes('-v'))
     ? Promise.resolve().then(() => {
-        process.stdout.write(`${versionDescription()}\n`);
+        process.stdout.write(`${installedBuildIdentity().version}\n`);
       })
     : args[0] === 'resources'
       ? import('./resources.js').then(({ runResourcesCommand }) =>

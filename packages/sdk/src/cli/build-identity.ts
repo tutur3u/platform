@@ -34,8 +34,3 @@ export function installedBuildIdentity() {
   );
   return packageBuildIdentity(manifest);
 }
-
-export function versionDescription() {
-  const { version, channel, sourceSha } = installedBuildIdentity();
-  return `${version} (${channel}, ${sourceSha ?? 'source unknown'})`;
-}

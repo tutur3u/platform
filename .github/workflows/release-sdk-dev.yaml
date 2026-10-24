@@ -230,7 +230,10 @@ jobs:
             );
             if (response.status === 404) return { shouldPublish: true };
             if (!response.ok)
-              throw new Error(`REGISTRY_VERIFICATION_FAILED: ${response.status}`);
+              throw Object.assign(
+                new Error(`REGISTRY_VERIFICATION_FAILED: ${response.status}`),
+                { retryable: response.status >= 500 && response.status < 600 }
+              );
             const published = await response.json();
             if (
               published.name !== 'tuturuuu' ||
@@ -306,7 +309,10 @@ jobs:
             );
             if (response.status === 404) return { shouldPublish: true };
             if (!response.ok)
-              throw new Error(`REGISTRY_VERIFICATION_FAILED: ${response.status}`);
+              throw Object.assign(
+                new Error(`REGISTRY_VERIFICATION_FAILED: ${response.status}`),
+                { retryable: response.status >= 500 && response.status < 600 }
+              );
             const published = await response.json();
             if (
               published.name !== 'tuturuuu' ||
@@ -319,16 +325,23 @@ jobs:
               throw new Error('PUBLISHED_DEV_BYTES_MISMATCH');
             return { shouldPublish: false };
           }
-          (async () => {
-            for (let attempt = 0; attempt < 12; attempt++) {
-              const result = await verifyDevPublication({ directory: 'sdk-package', sourceSha: process.env.GITHUB_SHA,
-                version: process.env.EXPECTED_PACKAGE_VERSION });
-              if (!result.shouldPublish) {
-                console.log('Verified published dev version and exact registry bytes.');
-                return;
+          async function waitForDevPublication(
+            options,
+            {
+              attempts = 12,
+              sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+            } = {}
+          ) {
+            for (let attempt = 0; attempt < attempts; attempt++) {
+              try {
+                if (!(await verifyDevPublication(options)).shouldPublish) return;
+              } catch (error) {
+                if (error.retryable !== true) throw error;
               }
-              await new Promise((resolve) => setTimeout(resolve, 10000));
+              if (attempt + 1 < attempts) await sleep(10000);
             }
             throw new Error('PUBLICATION_NOT_VISIBLE_DO_NOT_BLINDLY_REPUBLISH');
-          })().catch((error) => { console.error(error.message); process.exitCode = 1; });
+          }
+          waitForDevPublication({ directory: 'sdk-package', sourceSha: process.env.GITHUB_SHA,
+            version: process.env.EXPECTED_PACKAGE_VERSION }).catch((error) => { console.error(error.message); process.exitCode = 1; });
           NODE

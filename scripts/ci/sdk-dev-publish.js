@@ -45,7 +45,10 @@ async function verifyDevPublication({
   );
   if (response.status === 404) return { shouldPublish: true };
   if (!response.ok)
-    throw new Error(`REGISTRY_VERIFICATION_FAILED: ${response.status}`);
+    throw Object.assign(
+      new Error(`REGISTRY_VERIFICATION_FAILED: ${response.status}`),
+      { retryable: response.status >= 500 && response.status < 600 }
+    );
   const published = await response.json();
   if (
     published.name !== 'tuturuuu' ||
@@ -58,4 +61,21 @@ async function verifyDevPublication({
     throw new Error('PUBLISHED_DEV_BYTES_MISMATCH');
   return { shouldPublish: false };
 }
-module.exports = { verifyDevPublication };
+async function waitForDevPublication(
+  options,
+  {
+    attempts = 12,
+    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  } = {}
+) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      if (!(await verifyDevPublication(options)).shouldPublish) return;
+    } catch (error) {
+      if (error.retryable !== true) throw error;
+    }
+    if (attempt + 1 < attempts) await sleep(10000);
+  }
+  throw new Error('PUBLICATION_NOT_VISIBLE_DO_NOT_BLINDLY_REPUBLISH');
+}
+module.exports = { verifyDevPublication, waitForDevPublication };
