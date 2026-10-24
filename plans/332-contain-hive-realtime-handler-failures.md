@@ -54,7 +54,7 @@ be observable, sanitized, and recoverable without terminating later messages.
 | Focused tests | `bun --cwd apps/hive-realtime vitest run tests/server-lifecycle.test.ts tests/protocol.test.ts` | containment, sanitization, retry, and existing lifecycle cases pass |
 | Raw-error absence | `rg -n 'error\.message|String\(error\)|unknown_error|void handleSyncHello\(ws\);' apps/hive-realtime/src/server.ts` | no matches |
 | Typecheck | `bun --cwd apps/hive-realtime run type-check` | exits 0 |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only server/lifecycle test and plan status changed |
 
 ## Suggested executor toolkit
@@ -108,7 +108,7 @@ catch attached.
 
 ### Step 3: Run package and repository gates
 
-Run focused tests, typecheck, `bun check`, scope, and whitespace. Confirm
+Run focused tests, typecheck, `bun validate`, scope, and whitespace. Confirm
 `server.ts` remains below 700 lines and no protocol/database file changed.
 
 ## Test plan
@@ -127,7 +127,7 @@ Run focused tests, typecheck, `bun check`, scope, and whitespace. Confirm
 - [ ] No raw exception message, stack, request payload, or token reaches a client or bounded diagnostic.
 - [ ] Stable error codes distinguish malformed input, snapshot unavailability, and write failure.
 - [ ] Failed operations leave the socket able to process a later valid message.
-- [ ] Focused tests, typecheck, `bun check`, scope, LOC, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, scope, LOC, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

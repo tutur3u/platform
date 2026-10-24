@@ -694,6 +694,16 @@ Columns within boards (e.g., "To Do", "In Progress", "Done").
 
 Task boards may contain multiple `closed` lists when teams need distinct terminal buckets such as `Abandoned`, `Not Planned`, or `Duplicate`. Treat `closed` as a status group for sorting/reporting, not a singleton board column.
 
+**Access rule:** direct task-table access is server-owned; request-scoped
+clients have no task read or write grants. Authorized routes verify the actor,
+workspace membership or share before using the admin client. Task-list RLS
+requires a `workspace_members` row in the board's workspace. Task RLS adds a
+defence-in-depth fence: list-bound tasks require list visibility, and list-less
+tasks require the actor to match `creator_id`. The calendar scheduling route
+`POST /api/{wsId}/task/create` creates list-less tasks. Board shares, task shares
+and public share links do not grant direct list or task access. Regression
+coverage: `apps/database/supabase/tests/security-definer-function-grants.sql`.
+
 ```sql
 CREATE TABLE task_lists (
   id text PRIMARY KEY,

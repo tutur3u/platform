@@ -33,6 +33,7 @@ vi.mock('./devbox-agent-capabilities', () => ({
     runtimes: { bun: '1.4.0', node: 'v26.0.0' },
     tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
   })),
+  heartbeatStorageTrigger: vi.fn(async () => undefined),
 }));
 
 const doctorOk = {
@@ -74,14 +75,14 @@ describe('devbox CLI helpers', () => {
 
   it('falls back to positional command syntax for compact use', () => {
     expect(
-      extractDevboxForwardedCommand(['box', 'run', 'bun', 'check'])
-    ).toEqual(['bun', 'check']);
+      extractDevboxForwardedCommand(['box', 'run', 'bun', 'validate'])
+    ).toEqual(['bun', 'validate']);
   });
 
   it('collects repeated --env values from raw argv', () => {
     expect(
       collectRepeatedFlagValues(
-        ['box', 'run', '--env', 'A=1', '--env=B=2', '--', 'bun', 'check'],
+        ['box', 'run', '--env', 'A=1', '--env=B=2', '--', 'bun', 'validate'],
         'env'
       )
     ).toEqual(['A=1', 'B=2']);
@@ -149,14 +150,14 @@ describe('devbox CLI helpers', () => {
           'REMOTE_DEVBOX_DATABASE_URL',
           '--',
           'bun',
-          'check',
+          'validate',
         ],
         flags: {
           'database-url-env': 'REMOTE_DEVBOX_DATABASE_URL',
         },
       })
     ).toMatchObject({
-      command: ['bun', 'check'],
+      command: ['bun', 'validate'],
       env: {
         DATABASE_URL: 'postgres://remote-db',
       },

@@ -14,6 +14,7 @@ extension AssistantRepositorySettings on AssistantRepository {
     if (!isUuid(actorId) || !isUuid(wsId) || !isUuid(selection.creditWsId)) {
       return AssistantSettingsDisposition.denied;
     }
+    _chatSettingsRevision++;
     try {
       final route = AssistantChatRoute.parse(chatId);
       if (route.kind != AssistantChatRouteKind.native) {
@@ -44,6 +45,8 @@ extension AssistantRepositorySettings on AssistantRepository {
       return current()
           ? AssistantSettingsDisposition.unknown
           : AssistantSettingsDisposition.stale;
+    } finally {
+      _chatSettingsRevision++;
     }
   }
 }

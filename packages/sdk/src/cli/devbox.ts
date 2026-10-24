@@ -25,6 +25,7 @@ import {
 import { parseDurationSeconds } from './devbox-duration';
 import { runDevboxFleetCommand } from './devbox-fleet';
 import { parseDevboxExecutionMode } from './devbox-host-protection';
+import { runDevboxIsolationDoctor } from './devbox-isolation-command';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
 import {
   createDevboxRestartPayload,
@@ -457,6 +458,11 @@ export async function runDevboxCommand({
       ),
       supportedModes: ['trusted', 'judge-only'],
     });
+    return;
+  }
+
+  if (resolvedAction === 'doctor' && flags.isolation === true) {
+    await runDevboxIsolationDoctor({ flags, json });
     return;
   }
 

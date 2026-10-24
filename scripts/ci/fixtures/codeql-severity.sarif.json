@@ -1,0 +1,45 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "rules": [
+            {
+              "id": "js/string-high",
+              "properties": { "security-severity": "8.8" }
+            },
+            {
+              "id": "js/number-high",
+              "properties": { "security-severity": 8.8 }
+            },
+            {
+              "id": "js/string-low",
+              "properties": { "security-severity": "2.0" }
+            },
+            { "id": "js/number-low", "properties": { "security-severity": 2 } },
+            { "id": "js/missing", "properties": {} },
+            { "id": "js/no-properties" },
+            { "id": "js/null", "properties": { "security-severity": null } },
+            { "id": "js/empty", "properties": { "security-severity": "" } },
+            {
+              "id": "js/non-numeric",
+              "properties": { "security-severity": "high" }
+            }
+          ]
+        }
+      },
+      "results": [
+        { "ruleId": "js/string-high" },
+        { "ruleId": "js/number-high" },
+        { "ruleId": "js/string-low" },
+        { "ruleId": "js/number-low" },
+        { "ruleId": "js/missing" },
+        { "ruleId": "js/no-properties" },
+        { "ruleId": "js/null" },
+        { "ruleId": "js/empty" },
+        { "ruleId": "js/non-numeric" },
+        { "ruleId": "js/unknown-rule" }
+      ]
+    }
+  ]
+}

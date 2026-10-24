@@ -33,6 +33,7 @@
   "apps/forms": "0.19.1",
   "apps/git": "0.14.1",
   "apps/track": "0.30.1",
+  "packages/agent-quota": "0.1.0",
   "packages/ai": "0.18.2",
   "packages/apis": "0.13.0",
   "packages/auth": "0.7.0",

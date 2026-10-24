@@ -62,7 +62,7 @@ and obtain Finance plus the G20 wallets/transactions transfer.
 | Backend full | `bun check:backend` | exit 0 |
 | Finance typecheck | `bun run --cwd apps/finance type-check` | exit 0 |
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no signature/type drift |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

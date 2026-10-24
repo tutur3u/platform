@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('./safe-fs');
 const path = require('node:path');
 const { PAUSED_APP_DIRECTORIES } = require('./paused-runtimes.js');
 
@@ -438,12 +439,11 @@ function generate({ root = ROOT, check = false } = {}) {
   for (const [file, source] of files) {
     const target =
       file === '../docs.json' ? configFile : path.join(root, 'apps/docs', file);
-    if (fs.existsSync(target) && fs.readFileSync(target, 'utf8') === source)
-      continue;
+    if (readOptionalFileSync(target, { encoding: 'utf8' }) === source) continue;
     stale.push(file);
     if (!check) {
       fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.writeFileSync(target, source);
+      atomicWriteFileSync(target, source);
     }
   }
   if (check && stale.length)

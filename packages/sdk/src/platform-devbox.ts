@@ -11,6 +11,11 @@ export interface DevboxRunPayload {
   workload?: 'run' | 'build' | 'serve' | 'tunnel' | 'maintenance';
   env?: DevboxEnv;
   envFiles?: string[];
+  /**
+   * Client operation ID (16-128 of `A-Za-z0-9_-`). The server returns the
+   * existing run for a repeated key instead of creating a second one.
+   */
+  idempotencyKey?: string;
   keep?: boolean;
   leaseId?: string;
   leaseMode: 'auto' | 'existing';
@@ -141,9 +146,24 @@ export class DevboxesClient {
     );
   }
 
+  /** Stops the caller's run created with this idempotency key. */
+  stopRunByKey(idempotencyKey: string, options: { signal?: AbortSignal } = {}) {
+    return this.api.json<{ message: string; runId: string; status: string }>(
+      '/api/v1/devboxes/runs/stop-by-key',
+      {
+        body: JSON.stringify({ idempotencyKey }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        signal: options.signal,
+      }
+    );
+  }
+
   /**
-   * One page of run log lines. `next` is the offset for the following page;
-   * servers that predate paging omit it and return only the first page.
+   * One page of run log lines. `next` is the cursor for the following page
+   * (the last per-run event sequence returned, so lines that commit late are
+   * never skipped); servers that predate paging omit it and return only the
+   * first page.
    */
   getRunLogs(
     runId: string,
@@ -197,21 +217,27 @@ export class DevboxesClient {
   }
 }
 
+// Agent HTTP calls are bounded: the signal also covers reading the body.
+export const DEVBOX_AGENT_REQUEST_TIMEOUT_MS = 15_000;
+
 export async function pollDevboxAgentJobs({
   baseUrl,
   fetch: fetchImpl = globalThis.fetch,
   path = '/api/v1/devboxes/agents/poll',
+  timeoutMs = DEVBOX_AGENT_REQUEST_TIMEOUT_MS,
   token,
 }: {
   baseUrl: string;
   fetch?: typeof fetch;
   path?: string;
+  timeoutMs?: number;
   token: string;
 }) {
   const response = await fetchImpl(new URL(path, baseUrl), {
     headers: {
       'X-Devbox-Runner-Token': token,
     },
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) return { ok: false as const, response };
 
@@ -223,11 +249,13 @@ export async function recordDevboxAgentEvents({
   baseUrl,
   fetch: fetchImpl = globalThis.fetch,
   payload,
+  timeoutMs = DEVBOX_AGENT_REQUEST_TIMEOUT_MS,
   token,
 }: {
   baseUrl: string;
   fetch?: typeof fetch;
   payload: DevboxAgentEventPayload;
+  timeoutMs?: number;
   token: string;
 }) {
   return fetchImpl(new URL('/api/v1/devboxes/agents/events', baseUrl), {
@@ -237,16 +265,19 @@ export async function recordDevboxAgentEvents({
       'X-Devbox-Runner-Token': token,
     },
     method: 'POST',
+    signal: AbortSignal.timeout(timeoutMs),
   });
 }
 
 export async function shutdownDevboxAgent({
   baseUrl,
   fetch: fetchImpl = globalThis.fetch,
+  timeoutMs = DEVBOX_AGENT_REQUEST_TIMEOUT_MS,
   token,
 }: {
   baseUrl: string;
   fetch?: typeof fetch;
+  timeoutMs?: number;
   token: string;
 }) {
   const response = await fetchImpl(
@@ -256,6 +287,7 @@ export async function shutdownDevboxAgent({
         'X-Devbox-Runner-Token': token,
       },
       method: 'POST',
+      signal: AbortSignal.timeout(timeoutMs),
     }
   );
   if (!response.ok) return { ok: false as const, response };

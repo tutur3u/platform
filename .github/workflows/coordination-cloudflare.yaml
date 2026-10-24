@@ -6,6 +6,12 @@ on:
       - 'packages/utils/src/coordination*'
       - 'bun.lock'
       - '.github/workflows/coordination-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-settings.mjs'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/cf-wrangler-publication.mjs'
+      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
+      - 'scripts/ci/fixtures/cf-worker-parity/coordination.json'
       - 'tuturuuu.ci.ts'
   push:
     branches: [main]
@@ -14,6 +20,12 @@ on:
       - 'packages/utils/src/coordination*'
       - 'bun.lock'
       - '.github/workflows/coordination-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-settings.mjs'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/cf-wrangler-publication.mjs'
+      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
+      - 'scripts/ci/fixtures/cf-worker-parity/coordination.json'
       - 'tuturuuu.ci.ts'
   workflow_dispatch:
   workflow_call:
@@ -42,12 +54,15 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun x --no-install wrangler types --env-interface CoordinationEnv apps/coordination/worker-configuration.d.ts -c apps/coordination/wrangler.jsonc
+      - run: bun x --no-install cf workers types
+        working-directory: apps/coordination
+        env:
+          CF_SEND_TELEMETRY: 'false'
       - run: bun x --no-install tsc --project apps/coordination/tsconfig.json
       - run: node --test apps/coordination/src/request-body.test.mjs
       - run: node --test apps/coordination/src/worker.test.mjs
@@ -62,11 +77,36 @@ jobs:
           command: bun turbo:local run build --filter=@tuturuuu/coordination --concurrency=1
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Compare emitted Build Output with the recorded deployment identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json
       - name: Verify the built Worker and Durable Object
         run: node --test apps/coordination/src/worker.test.mjs
         env:
-          COORDINATION_TEST_CONFIG: ${{ github.workspace }}/apps/coordination/dist/worker/wrangler.json
-      - run: bun x --no-install wrangler deploy --dry-run -c apps/coordination/dist/worker/wrangler.json
+          COORDINATION_TEST_BUILD_OUTPUT: '1'
+      - name: Check the prebuilt artifact without credentials
+        run: bun x --no-install cf deploy --prebuilt --mode production --dry-run --no-provision
+        working-directory: apps/coordination
+        env:
+          CF_SEND_TELEMETRY: 'false'
+      - name: Verify publication against real Vite output
+        env:
+          CF_PUBLICATION_TEST_APP: coordination
+        run: node --test scripts/ci/cf-wrangler-publication.runtime.mjs
+      - name: Prepare the retained Wrangler publication profile
+        run: node scripts/ci/cf-wrangler-publication.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json apps/coordination/wrangler.publish.jsonc
+      - name: Check Wrangler publication without credentials
+        run: bun x --no-install wrangler deploy --dry-run --no-bundle -c .cloudflare/wrangler-publication.json
+        working-directory: apps/coordination
+      # upload-artifact skips hidden paths, so stage the Build Output first.
+      - name: Stage the cf Build Output artifact
+        run: cp -R apps/coordination/.cloudflare/output "$RUNNER_TEMP/coordination-build-output"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coordination-worker-${{ github.sha }}
+          path: ${{ runner.temp }}/coordination-build-output
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
@@ -76,34 +116,65 @@ jobs:
     runs-on: ubuntu-latest
     environment: coordination-production
     env:
-      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - name: Require pre-provisioned server credentials
+      - name: Capture and verify settings before publication
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json"
+      - name: Require pre-provisioned server credentials
+        working-directory: apps/coordination
+        env:
+          CF_SEND_TELEMETRY: 'false'
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
-          bun x --no-install wrangler secret list -c apps/coordination/wrangler.jsonc > "$RUNNER_TEMP/coordination-secrets.json"
-          jq -e 'any(.[]; .name == "COORDINATION_TOKEN")' "$RUNNER_TEMP/coordination-secrets.json" > /dev/null
-      - name: Build the Worker with scoped Turbo caching
-        uses: ./.github/actions/run-with-turbo-remote-cache
+          bun x --no-install wrangler secret list -c wrangler.publish.jsonc > "$RUNNER_TEMP/coordination-secrets.json"
+          # Fail closed on any output shape that does not name the secret.
+          jq -e '[.. | objects | select(.name? == "COORDINATION_TOKEN")] | length > 0' "$RUNNER_TEMP/coordination-secrets.json" > /dev/null
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          command: bun turbo:local run build --filter=@tuturuuu/coordination --concurrency=1
-          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
-      - run: bun x --no-install wrangler deploy -c apps/coordination/dist/worker/wrangler.json --message "$GITHUB_SHA"
+          name: coordination-worker-${{ github.sha }}
+          path: apps/coordination/.cloudflare/output
+      - name: Recheck the downloaded artifact identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Prepare the retained Wrangler production publisher
+        run: node scripts/ci/cf-wrangler-publication.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json apps/coordination/wrangler.publish.jsonc "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Publish the exact artifact with retained migration tags
+        working-directory: apps/coordination
+        run: bun x --no-install wrangler deploy --no-bundle -c .cloudflare/wrangler-publication.json --message "$GITHUB_SHA"
+        env:
+          CF_SEND_TELEMETRY: 'false'
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+      - name: Verify the coordination token survived publication
+        working-directory: apps/coordination
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: |
+          bun x --no-install wrangler secret list -c wrangler.publish.jsonc > "$RUNNER_TEMP/coordination-secrets-after.json"
+          jq -e 'any(.[]; .name == "COORDINATION_TOKEN")' "$RUNNER_TEMP/coordination-secrets-after.json" > /dev/null
+      - name: Capture and compare settings after publication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json" "$RUNNER_TEMP/coordination-settings-after.json"
+      - name: Retain settings and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coordination-settings-${{ github.sha }}
+          path: ${{ runner.temp }}/coordination-settings-*.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Record successful Cloudflare deployment
         continue-on-error: true
         env:

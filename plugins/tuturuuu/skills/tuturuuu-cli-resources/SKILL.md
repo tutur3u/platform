@@ -33,7 +33,7 @@ ttr resources setup --root <repo> --shell zsh
 ttr resources status --json
 ```
 
-Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
+Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Repository scripts and check:changed invoke `~/.bun/bin/ttr` directly, bypassing workspace binaries. Run and shim never provision launchers. Setup refuses existing launchers owned by a different installation; use the explicit force preview and drain procedure below before switching. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
 
 Repeat `--root` for other repositories. Linked Git worktrees inherit repository
 scope. Zsh/Bash hooks apply to new shells; `--shell none` avoids shell edits and
@@ -62,8 +62,9 @@ refuses burst admission while preserving base behavior. Burst memory checks stil
 apply with `--ignore-pressure`. Preserve FIFO order and never interrupt running
 jobs to shrink occupancy.
 
-Effective lanes are `min(maxValidationLanes, max(base, host lane ceiling))`, with
-a host lane ceiling of `min(8, floor(memory GiB / 4), CPUs - 2)`. Worker totals
+Effective lanes are `max(1, min(maxValidationLanes, host lane ceiling))`, with
+a host lane ceiling of `min(8, floor(memory GiB / 4), CPUs - 2)`. Base lanes
+above the ceiling are capped too, and `status` warns about them. Worker totals
 no longer cap lanes. After the aggregate budget is spent, each pressure-gated
 burst lane gets exactly one worker. Multi-lane worker totals clamp to the host
 worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))`.
@@ -79,10 +80,19 @@ Reconcile legacy status consumers and check all owners, not only the compatibili
 export `TTR_RESOURCES_ADMITTED=<token>`. Nested `run` calls and shims pass straight
 through with the owner's caps when that marker names a live owner inside their
 process tree (ancestor or owned process group), or when ancestry alone finds an
-admitted ancestor (filtered env). Stale or copied markers queue normally. Waiters
+admitted ancestor (filtered env). Stale or copied markers queue normally, and
+so does any marker when `ps` cannot read the process tree. Waiters
 recheck ancestry about once per second, so they never deadlock behind their own
-ancestor. Version/help probes and read-only commands such as `ls` and `git status`
-skip the queue. Cancellation releases only its own slot after the
+ancestor. Ancestry uses only `/bin/ps` or `/usr/bin/ps` with an empty
+environment, never PATH. Only read-only coreutils (`cat`, `echo`, ...; never
+`ls`) skip the queue, and only when the executable that would run canonicalizes
+to a root-locked binary under `/bin` or `/usr/bin` (every path component
+root-owned, not group/other writable) and no `LD_*`/`DYLD_*` loader variable is
+set. The CLI spawns that canonical path, never the original symlink. Runtimes and package managers (even `--version`, since
+`NODE_OPTIONS` can preload code) and every git command (fsmonitor, hooks,
+pager, textconv) always queue. Shims classify only the program (first positional), never later arguments,
+and never admit the `ttr` launcher itself (it starts through the bun shim
+when shims are on PATH, e.g. from `~/.zshenv`). Cancellation releases only its own slot after the
 owned child group drains. Do not use separate
 `TTR_RESOURCES_HOME` values across projects: that creates independent queues.
 
@@ -143,7 +153,75 @@ environment is sent. When offload cannot run, the message names `blockedBy`
 `ttr resources offload --json` explains eligibility using the server clock.
 Once a remote run exists, a failure stops it and exits non-zero; even
 `--offload auto` never reruns it locally. Never offload to Judge or playground
-runners; selection excludes them.
+runners; selection excludes them. A runner must also advertise
+`protocols.commitRun` containing the client's envelope version. Otherwise it is
+`blockedBy=capability_missing`, and `auto` queues locally.
+
+## Cross-project budget (shared host)
+
+An optional `budget` in `config.json` layers worker tokens, memory and
+per-project shares onto the same lanes, home and mutex. There is no second
+queue or home.
+- Projects come from roots, including a linked worktree's main checkout.
+  Unmatched work is `other` and only borrows.
+- Tokens come from `run --tokens N` or `TTR_RESOURCES_TOKENS`. Otherwise they
+  are inferred: vitest costs its worker count, browser or DB suites at least 2,
+  builds at least 4. Admission grants exactly that many workers.
+- Per-project FIFO. Owners reclaim unused share first; borrowing only when no
+  owner with spare share waits; no preemption.
+- `status --json` shows `budget` (ceiling, used, per-project
+  share/used/borrowing/waiting).
+- Studio policy: 12 lanes / 24 tokens / 320 GiB, Tuturuuu and Upskii 6/12/160
+  each. Roll out only through the SDK reference's Studio plan: pinned
+  artifact, drain first, every `ttr` on the host upgraded before the config
+  changes, the zshenv shim guard, then a +2 lane ramp with measurements.
+  Never edit a shared host's live config from an agent session.
+
+## Multi-host weighted admission
+
+`ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off
+until an operator installs that file after a reviewed release; never write or
+activate it from an agent session.
+- The registry is trusted only in the canonical `~/.tuturuuu/resources`
+  (0700 directory, 0600 file, owned by you, no symlinks, no writable parents).
+  A home inside an opted-in repository root is refused. Any other
+  `TTR_RESOURCES_HOME` ignores it and disables `--hosts`.
+- `--hosts` jobs are heavy unless `--class light`. Nested `run --hosts` reuses
+  the ancestor's reservation (verified by process ancestry). The disk probe is
+  bounded, runs outside the mutex, and reports `blockedBy=disk`.
+- Runners are re-validated against a fresh server-timestamped snapshot just
+  before remote creation; if one is no longer eligible, the job requeues.
+- Hosts have separate light and heavy slots, per-class CPU/memory weights, and
+  reserved CPU/memory/disk headroom.
+- Local heavy work keeps the lane FIFO. Runners use the devbox offload
+  transport. Stale or unreachable runners and unknown disk are never admitted.
+- Reservations are created only inside the admission mutex and released on
+  cancel or owner death. Project-only locks never count as host admission.
+- Optional per-host `preference` (lower first) orders only eligible hosts
+  with capacity; degraded (load per CPU >= `maxLoadPerCpu`, default 1),
+  stale, low-disk or full preferred hosts are skipped, never forced. Operator
+  order: skr-studio > skr-sonha > skr-linux-lan > M4.
+- Fairness is by repository share with a bypass bound (`maxBypass`), so no
+  waiter starves.
+- Every lane-queued job re-checks disk at dequeue: `TTR_STORAGE_MIN_FREE`
+  (15 GiB) and `TTR_STORAGE_MIN_FREE_PERCENT` (5%), fail closed;
+  `TTR_RESOURCES_IGNORE_DISK=1` overrides it for one command.
+
+Use `ttr resources hosts --simulate` for the offline dry run. The SDK reference
+has the measured old to new limits table.
+
+| Host | Old | New |
+| --- | --- | --- |
+| M4 | 2 lanes for every class | heavy 2 (2 CPU/5 GiB), light 1 (1 CPU/1 GiB), reserve 4 CPU/8 GiB/15 GiB |
+| skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
+| Sonha, ThanhStudio | none | not registered |
+
+## SDK supplier updates
+
+For an authorized dev/latest or private-tarball supplier change, use the
+[rollout procedure](references/sdk-rollout.md). It preserves the global Bun
+installation and the existing queue, verifies checksums, records rollback, and
+qualifies each host. Source changes never authorize activation.
 
 ## Diagnose and recover
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
@@ -163,6 +241,75 @@ serialize with admission and read the latest policy inside the mutex. `uninstall
 idle queue and removes only owned hooks/shims, preserving shell content and
 backups. Existing processes, absolute binary paths, and replaced PATH values can
 bypass automatic shims; explicitly wrap unrecognized commands. Admission caps apply only when enabled; disabled/out-of-scope/bypass commands
-retain argv/env. Invalid config errors name the field and range but omit values. The queue is cooperative scheduling.
+retain argv/env. Invalid config errors name the field and range but omit values; `status` still
+reports (`config.state`: `invalid`, `disabled`, `enabled` or `missing`, with
+warnings) and exits 1 for an invalid config. The queue is cooperative scheduling.
 
 Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
+
+Budget reclaim priority is decided before global fit. A reclaiming project head drains capacity before admitting later borrowers (`resources-budget.test.ts`, `resources-budget-admission.test.ts`). Playwright always receives a numeric `--workers` cap matching the charged tokens, overriding config defaults and percentage flags. Every new-version admission persists `slots/budget-v3`, including before any budget is configured, by staging outside `slots/` and linking a complete marker under the existing mutex; legacy 0.28.0 rejects that marker even after owners drain. An idle downgrade requires explicit owner custody of removing that marker. At 12 lanes 0.28.0 already fails closed. PID start identity recovery is separately tracked in https://github.com/tutur3u/platform/issues/6561.
+Node runtime option values must be consumed before classifying the first program. Unknown or incomplete options admit conservatively; never scan an ordinary program's arguments for another tool. `resources-node-options.test.ts` covers diagnostic directories, profiling/report options, worker caps and Node separators.
+
+Treat `--experimental-specifier-resolution` as an equals-only Node option; its bare form queues as ambiguous. Both Node config-file flags (`--experimental-config-file` and `--experimental-default-config-file`) queue as ambiguous in every form because configuration can enable native tests; inject `--test-concurrency` and preserve a positive lower user limit. If a separate option value itself names a tool, ttr launcher or heavy script, also queue as ambiguous: a future or incorrectly modelled flag must not swallow an executable. `resources-node-options.test.ts` covers both rules; real Node 26.4 probes must verify runtime parsing rather than relying on the option table.
+
+Ambiguous commands default to at least `max(2, vitestWorkers)` tokens. Cap native tests (including config-enabled tests) with `--test-concurrency` at the lower positive requested value or granted token cap; zero means auto and uses that cap, and preserve arguments after the program or `--`. Fix #6561 before enabling budgets on long-uptime Studio hosts; PID reuse can retain a dead reservation and stall all projects. Upgrade/crash and worker-cap regressions live in `resources-budget-upgrade.test.ts`.
+
+### Budget scheduler rollout and rollback
+
+The budget-capable setup preflight runs before `--force`: force applies only to managed launchers already carrying protocol 3. A foreign legacy launcher is refused even with `--force --dry-run`. For that incident, an operator must stop all work, take exclusive custody, verify zero owners and waiters, and preserve the config and launcher bytes. Move only the identified foreign managed launcher files to an operator-owned backup outside `bin`; preserve unmanaged files and any existing budget marker. Then use the verified owning global CLI to run setup with the saved roots and shell settings. Verify every launcher and global version before resuming. Do not use a stale workspace CLI for recovery.
+
+Protocol 3 permanently fences legacy clients on the first normal admission, even when no project budget is configured. The frozen 0.28.0 error `Unknown resource slot; admission is closed.` means upgrade the global CLI and refresh its shims; it is not permission to delete a live marker. At 12 lanes, 0.28.0 already fails closed independently of this marker.
+
+Before rollout, fix [PID start identity #6561](https://github.com/tutur3u/platform/issues/6561) before enabling budgets on long-uptime Studio hosts: PID reuse can retain a dead reservation and stall every project. Source review and a package build do not publish or activate the new scheduler.
+
+Follow the single [SDK budget protocol rollout and rollback procedure](../../../../apps/docs/reference/packages/sdk.mdx#budget-scheduler-rollout-and-rollback). Upgrade every owning Bun global install before refreshing launchers with the existing roots and shell settings; a separate npm-prefix installation is a different owner. Setup does not publish the fence. Its preflight inspects only known launchers in the local resource home; it cannot inventory globals, PATH aliases, cached binaries, running processes or other hosts.
+
+Rollback requires exclusive custody: stop all admissions, disable with the new CLI, drain, then uninstall its launchers and managed shell hooks while the marker remains. Restore a disabled legacy-compatible config and downgrade all globals before removing only empty high slots and `slots/budget-v3`. Then use the legacy owning CLI to restore shims/settings and verify direct and fresh-shell admission without a marker. Never invoke a new-version mutation or admission after marker removal. Disabling alone permits unmanaged work and does not neutralise `.zshenv`.
+
+Non-borrowing requests clamp demand and worker caps to their share; absent/zero shares fail before enqueue. With borrowing, an intrinsically oversized project head gets age priority over younger share heads and reserves draining capacity. Older reclaimers and ordinary-borrower reclaim priority remain intact. Change budget policy only while idle; stale tickets above a reduced host ceiling must be cancelled and requeued. Legacy owners are charged their maximum recorded worker cap and proportional estimated memory, rather than one token and zero memory.
+
+Regression coverage: `resources-budget-publish.test.ts` proves fsync-before-link, one-time warning, fast reuse and stale-stage cleanup. `resources-budget-upgrade.test.ts` kills a publisher with an empty stage and verifies recovery. `resources-budget-rollout.test.ts` covers legacy preflight, installation-only setup, same-global versus consumer identity and idle upgrade. Native worker charging/caps retain positive lower `--test-concurrency`, while zero/auto uses the configured cap (`resources-node-budget.test.ts`).
+
+Prepare fixture shims once per home; concurrent run loaders wait for that preparation instead of racing shell-file compare-and-swap. Scope barriers to the child, operation or detached group that can produce the awaited state. Allow one second for final writes after liveness ends and emit scoped stderr before the test deadline. Keep synthetic CPU, memory and load telemetry consistent so host contention does not alter policy inputs. Test idle-warning status composition with one injected CPU snapshot, asserting warning data and rendered text plus a busy-snapshot negative control. A preliminary zero sample cannot stabilise a later ps read; do not resample an injected table. Reuse a fixture home only with the same CPU/memory budget; changed host budgets require a fresh home.
+
+### Launcher mismatch incident recovery
+
+Symptom: the global CLI rejects missing, stale or malformed launchers. A stale workspace SDK dist can write its own entry into shared launchers before admission, and its nested run can block the queue. Never run operational commands through workspace or ancestor `node_modules/.bin/ttr` or stale `packages/sdk/dist`.
+
+Repository admission uses the verified global `~/.bun/bin/ttr` (stable >= 0.28.0). `check:changed` and `node scripts/ttr-run.js -- COMMAND` run directly when the inherited `TTR_RESOURCES_ADMITTED` or `TTR_RESOURCE_OWNER` marker is present. When the global install is absent, `check:changed` warns and runs sequentially with its existing worker limits. The operational wrappers still require a global CLI, and an invalid/old installed global fails with `bun add -g tuturuuu` recovery guidance. None falls back to a workspace binary. Refresh declared workspace bin links after adopting the source wrapper. `bun install` alone can leave orphan aliases unchanged; use the explicit orphan inspection/removal procedure below. This does not rebuild dist. The shipped bin works in installed packages; workspace aliases refuse to execute dist, including from `bunx`.
+
+An operator with installation authority must identify and drain the offending jobs, preserve the existing resource configuration, then restore canonical launchers through the trusted global CLI with the **same existing roots and shell settings**:
+
+```sh
+~/.bun/bin/ttr resources setup --root <existing-root-1> --root <existing-root-2> --shell <existing-shell>
+~/.bun/bin/ttr resources status --json
+```
+
+Fence-enabled CLI versions refuse a different installation by default. For managed protocol-3 launchers, inspect `setup --force --dry-run` before an intentional cross-install restore, then use `setup --force` with the same roots after the queue drains. Foreign legacy launchers require the operator-controlled recovery in the budget rollout section; force does not bypass that preflight. The plan reports each old/new launcher. Force never overwrites unmanaged files. Version changes within one Bun global installation are allowed; versioned cache paths normalise to its stable global link. Run/shim never write launchers. Review status for enabled installation and an empty queue before resuming work. Source changes do not repair already-installed links or prove historical writer attribution.
+
+Regression coverage: `scripts/trusted-ttr.test.js`, `scripts/workspace-ttr-bin.test.js`, and `resources-provisioning.test.ts` exercise ancestor lookup, inherited admission, minimum version, stale bins, same-install upgrades, refusal and forced replacement with disposable homes.
+
+#### Orphan workspace aliases
+
+A refusal can also mean stale workspace bin links in an ancestor checkout that still has a legitimate SDK dependency. Inspect that ancestor's package.json and links first. For a declared dependency, run `~/.bun/bin/ttr resources run -- bun install --force` there to regenerate aliases pointing to `bin/ttr.cjs`; retain its legitimate package link. `--no-ttr` does not bypass unsafe ancestor links. The removal procedure below applies only to confirmed undeclared orphan symlinks.
+
+If the root manifest has no `tuturuuu` dependency, old symlinks can remain: `node_modules/tuturuuu -> ../packages/sdk` and `node_modules/.bin/{ttr,tuturuuu,tutur3u} -> ../tuturuuu/dist/cli/index.js`. Bun may report no changes and keep them. The trusted repo wrapper and `check:changed` refuse such ancestor aliases, even inside an admitted lane; they never execute or remove them silently. A healthy global CLI does not make those bare aliases safe.
+
+From the affected ancestor checkout, inspect the manifest and every link first. Only after confirming these are the orphan symlinks above, remove those links explicitly and reinstall under admission:
+
+```sh
+ls -l node_modules/tuturuuu node_modules/.bin/ttr node_modules/.bin/tuturuuu node_modules/.bin/tutur3u
+# Confirm the root has no tuturuuu dependency and each path is a symlink.
+for alias in ttr tuturuuu tutur3u; do
+  file="node_modules/.bin/$alias"
+  if [ -L "$file" ] && [ "$(readlink "$file")" = '../tuturuuu/dist/cli/index.js' ]; then
+    rm -- "$file"
+  fi
+done
+if [ -L node_modules/tuturuuu ] && [ "$(readlink node_modules/tuturuuu)" = '../packages/sdk' ]; then
+  rm -- node_modules/tuturuuu
+fi
+~/.bun/bin/ttr resources run -- bun install
+```
+
+Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity. Resolve HOME and the Bun install base independently: a symlinked `.bun` or `.bun/install` is supported, while entries outside that resolved install base are still refused.

@@ -21,6 +21,7 @@ import {
   type Measurer,
   measureTrees,
 } from './storage-measure';
+import { resolveNpmCacheRoot } from './storage-scratch';
 import {
   type DockerUsage,
   type DockerVolume,
@@ -285,7 +286,7 @@ export async function analyzeStorage({
       path,
       risk: 'safe',
     });
-  for (const target of machineTargets())
+  for (const target of machineTargets({ npmCacheRoot: resolveNpmCacheRoot() }))
     for (const path of target.paths)
       add(
         {

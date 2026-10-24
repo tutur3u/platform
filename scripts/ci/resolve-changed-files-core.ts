@@ -158,7 +158,7 @@ function getChangedFilesFromRange({
   }
 
   const output =
-    git(rootDir, ['diff', '--name-only', baseSha, headSha], {
+    git(rootDir, ['diff', '--name-only', '--no-renames', baseSha, headSha], {
       allowFailure: true,
     }) ?? '';
 

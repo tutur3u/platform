@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart'
     show newLocalMutationId;
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
@@ -246,13 +247,8 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
     final locked = _busy || _pendingKey != null || _preferences == null;
     return Form(
       key: _formKey,
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          24 + MediaQuery.paddingOf(context).bottom,
-        ),
+      child: AppPageListView(
+        kind: AppPageKind.form,
         children: [
           Text(l10n.feedbackPrivate),
           const SizedBox(height: 16),

@@ -60,7 +60,7 @@ its provenance must also be resolved before editing. Create the additive migrati
 | Route tests | `bun run --cwd packages/users-core test -- src/routes/users/links/manual/route.test.ts` | all pass |
 | UI tests | `bun run --cwd apps/contacts test -- 'src/app/[locale]/[wsId]/users/groups/manager-link-dialog.test.tsx'` | debounce/query cases pass |
 | Types/build | `bun run --cwd packages/users-core type-check && bun run --cwd apps/contacts build` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -128,7 +128,7 @@ as performance proof.
 - [ ] Results remain capped at 100 with identical fields/ranking semantics.
 - [ ] RPC privileges and tenant containment are proven in pgTAP.
 - [ ] Rapid typing produces one settled search request.
-- [ ] Local apply, typegen, tests, build, `bun check`, and whitespace pass.
+- [ ] Local apply, typegen, tests, build, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

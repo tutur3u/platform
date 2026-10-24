@@ -68,7 +68,7 @@ and do not grow unrelated orchestration.
 | Full database | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Type drift | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/vietnamese-holiday-permissions.sql` | test passes and generated types have no diff |
 | Infrastructure build | `bun run --cwd apps/infrastructure build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

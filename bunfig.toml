@@ -13,6 +13,10 @@ globalStore = false
 # Require npm releases to be at least 1 day old before Bun can install them
 minimumReleaseAge = 86400
 minimumReleaseAgeExcludes = [
+  # Bun runtime type packages track the pinned Bun release and its security
+  # fixes, so they are exempt from the release-age delay.
+  "@types/bun",
+  "bun-types",
   "@cloudflare/build-output-utils",
   "@cloudflare/codemods",
   "@cloudflare/config",

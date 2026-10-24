@@ -69,7 +69,7 @@ Review current GitHub secret names only as identifiers; never read their values.
 | Focused workflow contract | `node --test scripts/ci/release-workflows.test.js` | every package build job is credential-free and publication-only credentials remain accepted |
 | Secret-reference absence | `if rg -n 'NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY|SUPABASE_SECRET_KEY|PROXY_API_KEY|NEXT_PUBLIC_PROXY_API_KEY' .github/workflows/release-{ai,supabase,types,typescript-config,ui}-package.yaml; then exit 1; fi` | no production service credential reference remains in the five workflows |
 | Script discovery | `node scripts/run-script-tests.js --list | rg '^scripts/ci/release-workflows\.test\.js$' && bun run test:scripts` | the workflow contract remains canonical and the script suite passes |
-| Repository | `bun check && git diff --check` | repository and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | repository and whitespace gates pass |
 | Scope | `git status --short` | only the five workflows and shared workflow test changed |
 
 ## Scope

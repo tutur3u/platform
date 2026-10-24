@@ -256,6 +256,19 @@ describe('private desktop signing operator workflow', () => {
       'private backend detail'
     );
   });
+  it('shows a localized parser outage message for operator actions', async () => {
+    mount();
+    mock.mutate.mockRejectedValue({
+      status: 503,
+      code: 'certificate_inspection_unavailable',
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'vault.validate' })
+    );
+    expect(
+      await screen.findByText('errors.certificate_inspection_unavailable')
+    ).toBeInTheDocument();
+  });
   it('hides retained state on a definitive access denial', async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },

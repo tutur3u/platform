@@ -9,8 +9,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
+permissions:
+  contents: read
+
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: check-migrations.yml
@@ -21,21 +27,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # needed for diffing against base branch
 
       - name: Get new migration files
         id: new_migrations
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'apps/database/supabase/migrations/**.sql')
-          echo "new_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$NEW_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          NEW_FILES=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" -- 'apps/database/supabase/migrations/**.sql')
+          # A random delimiter keeps a file named EOF from ending the value early.
+          delimiter="ghadelim_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          {
+            echo "new_files<<$delimiter"
+            echo "$NEW_FILES"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Check new migration files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          NEW_MIGRATIONS: ${{ steps.new_migrations.outputs.new_files }}
         run: |
-          NEW_MIGRATIONS="${{ steps.new_migrations.outputs.new_files }}"
           if [ -z "$NEW_MIGRATIONS" ]; then
             echo "No new migration files found. Skipping checks."
             exit 0
@@ -53,7 +68,7 @@ jobs:
           done
 
           # Check 2: New migrations must be chronologically after existing ones.
-          LAST_BASE_MIGRATION_PATH=$(git ls-tree -r --name-only ${{ github.event.pull_request.base.sha }} apps/database/supabase/migrations | grep '\.sql$' | sort -r | head -n 1)
+          LAST_BASE_MIGRATION_PATH=$(git ls-tree -r --name-only "$BASE_SHA" apps/database/supabase/migrations | grep '\.sql$' | sort -r | head -n 1)
 
           if [ -z "$LAST_BASE_MIGRATION_PATH" ]; then
             echo "No existing migrations in base branch. Skipping chronological check."

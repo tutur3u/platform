@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
@@ -245,101 +243,92 @@ class _HabitsViewState extends State<_HabitsView> {
                     }
                     if (state.status == HabitsStatus.error &&
                         state.trackers.isEmpty) {
-                      return HabitsErrorView(error: state.error);
+                      return AppPageBody(
+                        child: HabitsErrorView(error: state.error),
+                      );
                     }
 
                     final isPersonalWorkspace = workspace.personal;
 
-                    return ResponsiveWrapper(
-                      maxWidth: ResponsivePadding.maxContentWidth(
-                        context.deviceClass,
-                      ),
-                      child: NovaRefreshIndicator(
-                        onRefresh: _refreshCurrentSection,
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.fromLTRB(
-                            ResponsivePadding.horizontal(context.deviceClass),
-                            12,
-                            ResponsivePadding.horizontal(context.deviceClass),
-                            24 + MediaQuery.paddingOf(context).bottom,
-                          ),
-                          children: [
-                            if (!isPersonalWorkspace) ...[
-                              const SizedBox(height: 4),
-                              HabitsScopeControls(
-                                selectedScope: state.selectedScope,
-                                onScopeSelected: (scope) async {
-                                  final cubit = context.read<HabitsCubit>();
-                                  await cubit.setScope(scope);
-                                  if (!context.mounted) {
-                                    return;
-                                  }
-                                  if (widget.initialSection ==
-                                      HabitsSection.activity) {
-                                    await cubit.loadActivity();
-                                  }
-                                },
-                              ),
-                            ],
-                            if (!isPersonalWorkspace &&
-                                state.selectedScope ==
-                                    HabitTrackerScope.member) ...[
-                              const SizedBox(height: 10),
-                              HabitsMemberPicker(
-                                members: state.members,
-                                selectedMemberId: state.selectedMemberId,
-                                onChanged: (value) async {
-                                  final cubit = context.read<HabitsCubit>();
-                                  await cubit.setSelectedMember(value);
-                                  if (!context.mounted) {
-                                    return;
-                                  }
-                                  if (widget.initialSection ==
-                                      HabitsSection.activity) {
-                                    await cubit.loadActivity();
-                                  }
-                                },
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            if (state.isRefreshing &&
-                                widget.initialSection !=
-                                    HabitsSection.activity) ...[
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(999),
-                                  child: const NovaLoadingIndicator(size: 20),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            if (widget.initialSection == HabitsSection.activity)
-                              HabitsActivitySection(
-                                state: state,
-                                onOpenTracker: _openTrackerDetail,
-                              )
-                            else if (widget.initialSection ==
-                                HabitsSection.library)
-                              HabitsLibrarySection(
-                                onUseTemplate: (template) =>
-                                    _openCreateTracker(template: template),
-                                onCustomize: () => _openCreateTracker(
-                                  template: habitTrackerTemplateById('custom'),
-                                ),
-                              )
-                            else
-                              HabitsOverviewSection(
-                                filteredTrackers: state.filteredTrackers,
-                                state: state,
-                                onCreateTracker: _openCreateTracker,
-                                onEditTracker: _openEditTracker,
-                                onOpenTracker: _openTrackerDetail,
-                                onQuickLog: _quickLogTracker,
-                              ),
+                    return NovaRefreshIndicator(
+                      onRefresh: _refreshCurrentSection,
+                      child: AppPageListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          if (!isPersonalWorkspace) ...[
+                            const SizedBox(height: 4),
+                            HabitsScopeControls(
+                              selectedScope: state.selectedScope,
+                              onScopeSelected: (scope) async {
+                                final cubit = context.read<HabitsCubit>();
+                                await cubit.setScope(scope);
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                if (widget.initialSection ==
+                                    HabitsSection.activity) {
+                                  await cubit.loadActivity();
+                                }
+                              },
+                            ),
                           ],
-                        ),
+                          if (!isPersonalWorkspace &&
+                              state.selectedScope ==
+                                  HabitTrackerScope.member) ...[
+                            const SizedBox(height: 10),
+                            HabitsMemberPicker(
+                              members: state.members,
+                              selectedMemberId: state.selectedMemberId,
+                              onChanged: (value) async {
+                                final cubit = context.read<HabitsCubit>();
+                                await cubit.setSelectedMember(value);
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                if (widget.initialSection ==
+                                    HabitsSection.activity) {
+                                  await cubit.loadActivity();
+                                }
+                              },
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          if (state.isRefreshing &&
+                              widget.initialSection !=
+                                  HabitsSection.activity) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(999),
+                                child: const NovaLoadingIndicator(size: 20),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          if (widget.initialSection == HabitsSection.activity)
+                            HabitsActivitySection(
+                              state: state,
+                              onOpenTracker: _openTrackerDetail,
+                            )
+                          else if (widget.initialSection ==
+                              HabitsSection.library)
+                            HabitsLibrarySection(
+                              onUseTemplate: (template) =>
+                                  _openCreateTracker(template: template),
+                              onCustomize: () => _openCreateTracker(
+                                template: habitTrackerTemplateById('custom'),
+                              ),
+                            )
+                          else
+                            HabitsOverviewSection(
+                              filteredTrackers: state.filteredTrackers,
+                              state: state,
+                              onCreateTracker: _openCreateTracker,
+                              onEditTracker: _openEditTracker,
+                              onOpenTracker: _openTrackerDetail,
+                              onQuickLog: _quickLogTracker,
+                            ),
+                        ],
                       ),
                     );
                   },

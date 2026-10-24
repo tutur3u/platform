@@ -86,10 +86,9 @@ describe('resolveTurnstileToken', () => {
 
 describe('verifyTurnstileToken', () => {
   it('posts to Cloudflare with the remote ip when verification is required', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true }),
-    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ success: true }));
 
     await verifyTurnstileToken(
       {
@@ -112,10 +111,9 @@ describe('verifyTurnstileToken', () => {
   });
 
   it('omits the remote ip for trusted server-to-server relays', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true }),
-    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ success: true }));
 
     await verifyTurnstileToken(
       {
@@ -141,10 +139,7 @@ describe('verifyTurnstileToken', () => {
       await verifyTurnstileToken({ headers: new Headers() }, 'captcha-token', {
         devMode: false,
         secretKey: 'secret-key',
-        fetch: vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: false }),
-        }),
+        fetch: vi.fn().mockResolvedValue(Response.json({ success: false })),
       });
       throw new Error('Expected TurnstileError');
     } catch (error) {
@@ -152,5 +147,87 @@ describe('verifyTurnstileToken', () => {
       expect((error as TurnstileError).code).toBe('verification_failed');
       expect((error as Error).message).toBe('Turnstile verification failed');
     }
+  });
+});
+
+describe('strict native Turnstile binding', () => {
+  const options = {
+    devMode: false,
+    secretKey: 'fixture-secret',
+    expectedHostname: 'tuturuuu.com',
+    expectedAction: 'native_integrity',
+    expectedCData: 'request-hash',
+  };
+  it('accepts only the expected hostname, action and challenge hash', async () => {
+    await expect(
+      verifyTurnstileToken({ headers: new Headers() }, 'token', {
+        ...options,
+        fetch: vi.fn().mockResolvedValue(
+          Response.json({
+            success: true,
+            hostname: 'tuturuuu.com',
+            action: 'native_integrity',
+            cdata: 'request-hash',
+          })
+        ),
+      })
+    ).resolves.toBeUndefined();
+  });
+  it.each(['hostname', 'action', 'cdata'])(
+    'rejects mismatched or missing %s',
+    async (field) => {
+      const valid = {
+        success: true,
+        hostname: 'tuturuuu.com',
+        action: 'native_integrity',
+        cdata: 'request-hash',
+      };
+      for (const bad of [
+        { ...valid, [field]: 'wrong' },
+        Object.fromEntries(
+          Object.entries(valid).filter(([key]) => key !== field)
+        ),
+      ]) {
+        await expect(
+          verifyTurnstileToken({ headers: new Headers() }, 'token', {
+            ...options,
+            fetch: vi.fn().mockResolvedValue(Response.json(bad)),
+          })
+        ).rejects.toMatchObject({ code: 'verification_failed' });
+      }
+    }
+  );
+  it('rejects truthy nonboolean success and malformed provider objects', async () => {
+    for (const result of [null, 'success', { success: 'true' }])
+      await expect(
+        verifyTurnstileToken({ headers: new Headers() }, 'token', {
+          ...options,
+          fetch: vi.fn().mockResolvedValue(Response.json(result)),
+        })
+      ).rejects.toMatchObject({ code: 'verification_failed' });
+  });
+  it('bounds the provider response before parsing', async () => {
+    await expect(
+      verifyTurnstileToken({ headers: new Headers() }, 'token', {
+        ...options,
+        fetch: vi.fn().mockResolvedValue(new Response('x'.repeat(16_385))),
+      })
+    ).rejects.toMatchObject({ code: 'verification_failed' });
+  });
+  it('cancels and drains a stalled Siteverify body under the same request deadline', async () => {
+    const cancelled = vi.fn();
+    const fetch = vi.fn<typeof globalThis.fetch>(
+      async () =>
+        new Response(new ReadableStream({ pull() {}, cancel: cancelled }))
+    );
+    await expect(
+      verifyTurnstileToken({ headers: new Headers() }, 'token', {
+        ...options,
+        fetch,
+        timeoutMs: 20,
+      })
+    ).rejects.toThrow();
+    expect(cancelled).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

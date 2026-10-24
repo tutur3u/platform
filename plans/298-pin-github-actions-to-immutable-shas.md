@@ -71,7 +71,7 @@ only to resolve public Git refs.
 | Pinning test | `node --test scripts/ci/github-actions-sha-pinning.test.js` | local/docker cases pass; tag/branch/abbreviated refs fail; full SHAs pass |
 | Workflow policy | `node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js` | existing workflow contracts pass |
 | Script fleet | `bun test:scripts` | all root-discovered script tests pass |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 
@@ -98,7 +98,7 @@ vendoring; secrets; deployment or publication.
 3. Pin privileged OIDC/write/deployment/secret-bearing workflows first, review
    their manifest, run focused tests, then pin the remaining fleet in bounded
    batches. Verify no action was upgraded and local/docker refs are unchanged.
-4. Run workflow tests, full script tests, `bun check`, whitespace, and exact
+4. Run workflow tests, full script tests, `bun validate`, whitespace, and exact
    scope inventory.
 
 ## Done criteria

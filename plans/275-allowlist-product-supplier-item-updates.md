@@ -92,7 +92,7 @@ compatibility decision.
 | Focused payload contract | `bun --cwd apps/inventory vitest run src/__tests__/product-supplier-item-update-payload.test.ts` | authorization, malformed/non-object/strict-body, success, workspace predicate, and database-error cases pass |
 | Existing item scope | `bun --cwd apps/inventory vitest run src/__tests__/inventory-item-workspace-scope.test.ts` | existing category, warehouse, and unit workspace-scope cases remain green |
 | Inventory | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | Inventory typecheck and production build both exit 0 |
-| Repository | `bun check && git diff --check` | canonical checks pass and whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical checks pass and whitespace output is empty |
 | Exact scope | `git status --short -- 'apps/inventory/src/app/api/v1/workspaces/[wsId]/product-suppliers/[supplierId]/route.ts' apps/inventory/src/__tests__/product-supplier-item-update-payload.test.ts` | only the compatibility route and focused test are modified |
 
 ## Scope
@@ -138,7 +138,7 @@ artifacts, route relocation, and migration of callers to another URL.
    denial occurs before body parsing or mutation. Preserve every response and
    status described above.
 5. Run caller inventory, focused and existing tests, Inventory typecheck/build,
-   `bun check`, whitespace, and exact-scope checks. Review the diff to confirm
+   `bun validate`, whitespace, and exact-scope checks. Review the diff to confirm
    DELETE and every out-of-scope path are untouched.
 
 ## Test plan
@@ -166,7 +166,7 @@ artifacts, route relocation, and migration of callers to another URL.
       return the specified 400 response and cause no mutation.
 - [ ] Permission, route-workspace predicates, success envelope, and sanitized
       database-error behavior are unchanged; DELETE is untouched.
-- [ ] Focused/existing tests, Inventory typecheck/build, `bun check`, and
+- [ ] Focused/existing tests, Inventory typecheck/build, `bun validate`, and
       whitespace gates pass.
 - [ ] Only the compatibility item route and its focused test are modified; no
       database, generated type, Rust/OpenAPI, Web/TanStack, Mobile, Contacts, or

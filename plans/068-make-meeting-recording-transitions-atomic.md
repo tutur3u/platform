@@ -64,7 +64,7 @@ per meeting before applying the invariant; any result is an operator STOP.
 | Migration metadata | `bun migration:tanstack:manifest && bun migration:tanstack:check` | first-class source key is current |
 | Backend method guard | `bun check:backend` | POST remains tracked fallthrough, not falsely Rust-owned |
 | Typechecks | `bun run --cwd packages/internal-api type-check && bun run --cwd apps/meet type-check && bun run --cwd apps/web type-check` | all exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | App builds | `bun run --cwd apps/meet build && bun run --cwd apps/web build` | both production builds succeed |
 | Whitespace | `git diff --check` | no output |
 
@@ -165,7 +165,7 @@ connections cannot observe the caller transaction.
 - [ ] The migration itself fails before DDL on duplicates, and the execution
       handoff records the same read-only zero-row production preflight as an
       operator gate before application.
-- [ ] Web/Internal API/Meet tests, pgTAP, typegen, migration/wrapper/backend guards, typechecks, `bun check`, builds, and whitespace pass.
+- [ ] Web/Internal API/Meet tests, pgTAP, typegen, migration/wrapper/backend guards, typechecks, `bun validate`, builds, and whitespace pass.
 - [ ] The route is first-class and only its migration key/artifact is refreshed.
 
 ## STOP conditions
