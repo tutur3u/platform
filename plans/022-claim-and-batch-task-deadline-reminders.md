@@ -60,7 +60,7 @@ new additive migration with `bun sb:new`; never run production push commands.
 | Migration tests | `cd apps/database && bunx supabase test db` | all pgTAP tests pass, including exclusive and recoverable claims |
 | Migration validation | `bun sb:up` followed by `bun sb:typegen` | local migration applies; generated types reflect RPC/table changes |
 | Tasks typecheck | `bun type-check:tasks` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -141,7 +141,7 @@ failure, preference skip, batch boundary, no work, and authorization denial.
 - [ ] Notification creation cannot race ahead of uniqueness ownership.
 - [ ] Successful tuples send once; failed tuples retry without replaying success.
 - [ ] Root-only rollout and existing preference/timing semantics remain.
-- [ ] Migration tests, route tests, typecheck, `bun check`, build, and whitespace
+- [ ] Migration tests, route tests, typecheck, `bun validate`, build, and whitespace
       pass.
 
 ## STOP conditions

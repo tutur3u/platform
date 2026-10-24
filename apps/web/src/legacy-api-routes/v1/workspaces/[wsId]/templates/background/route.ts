@@ -1,4 +1,5 @@
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -46,7 +47,11 @@ export const DELETE = withSessionAuth(
       const body = await req.json();
       const { path } = DeleteBackgroundSchema.parse(body);
 
-      if (!path.startsWith(`${normalizedWsId}/template-backgrounds/`)) {
+      if (
+        sanitizePathStrict(path) !== path ||
+        !path.startsWith(`${normalizedWsId}/template-backgrounds/`) ||
+        path.endsWith('/')
+      ) {
         return NextResponse.json(
           { error: 'Invalid background path' },
           { status: 400 }

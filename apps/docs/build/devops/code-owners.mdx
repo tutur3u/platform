@@ -1,0 +1,69 @@
+---
+title: "Code owners for sensitive paths"
+description: "Which paths need the security reviewer's approval, and how that interacts with agent-authored pull requests."
+---
+
+The `main` ruleset requires code-owner review. `.github/CODEOWNERS` assigns the
+security reviewer (`@vhpx`) to the paths where a mistake has the widest blast
+radius:
+
+- CI, workflows and repository automation (`.github/`, `scripts/ci/`)
+- authentication, sessions, SSO and request guards (`packages/auth`,
+  `packages/sso`, `packages/turnstile`, `packages/supabase`, the satellite session
+  validator, web's auth and SSO API routes, every app's `proxy.ts`, and the API
+  proxy guard and required-MFA runtime in `packages/utils`)
+- the libraries those routes call to decide: web's `lib/auth`, `lib/sso`, MCP
+  authorization and ChatGPT OAuth, the API-key middleware, the required-MFA
+  policy modules, every realtime, Hive, Meet assistant and app-coordination token
+  signer, Discord auth, and the service-credential check in web's immediate
+  notification route
+- scheduled jobs authenticated by the cron secret: every app's `api/cron` routes,
+  web's legacy cron implementations, Infrastructure's cron gateways and
+  `apps/cron-control`
+- inbound webhooks and their verifiers (SePay and its OAuth state, Polar, Square,
+  and the mail inbound verifiers)
+- database migrations and RLS (`apps/database/supabase/migrations/`)
+- code-execution infrastructure (`apps/devbox-control`, `packages/devbox`)
+- payments (`packages/payment`, `packages/payment-core`, and the payment API and
+  webhooks in `apps/pay`)
+- `CODEOWNERS` itself
+
+Modules are also owned by name wherever they live: `oidc*`, `oauth`, `auth`, `*-auth`,
+`*crypto*`, `webhooks`, `email-unsubscribe` and `external-apps*` TypeScript
+files, plus web's and Infrastructure's devbox libraries (runner authentication and token
+revocation), the coordination Worker entry, storage export links, the workspace
+membership helper and Calendar's cron-authorised sync and schedule routes.
+
+Code ownership is best-effort coverage, not an exhaustive security boundary: a
+new sensitive module with an unusual name can still land unowned. The planned
+enforced net is the `Security review` path classifier, which evaluates changed
+paths on every pull request; until that workflow is merged and required, code
+ownership and independent agent security review are the only checks.
+
+Paths not listed have no code owner and follow the normal review rules. Importing an
+owned package does not protect its callers, so list the calling routes and guards
+themselves when they make security decisions.
+
+## Agent-authored pull requests
+
+GitHub never counts an author's own approval. Agent pull requests are currently
+opened with the security reviewer's account, so a change to an owned path cannot
+collect a code-owner approval until agents author pull requests as the
+`tuturuuu-bot` GitHub App. Until then, such a pull request merges only through
+an authorized administrator bypass after an independent agent security review,
+and GitHub records that bypass. Once `tuturuuu-bot` authors agent pull requests,
+the reviewer's approval satisfies the rule normally.
+
+## Release pull requests
+
+Release Please opens release pull requests against `production`, where the same
+ruleset applies. While the release author is the security reviewer's account, a
+release pull request that touches owned paths cannot collect a code-owner
+approval, so release merges go through the release script or the recorded
+administrator bypass.
+
+## Changing ownership
+
+Adding or removing an owned path is itself an owned change. Keep the list to
+security-sensitive code; owning broad trees slows every pull request without
+adding review value.

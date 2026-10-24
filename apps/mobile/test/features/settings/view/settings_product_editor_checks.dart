@@ -14,7 +14,10 @@ void registerProductEditorChecks() {
         () => h.calendar.setFirstDayOfWeek(FirstDayOfWeek.monday),
       ).thenAnswer((_) async {});
       await h.pump(tester);
+      // Settings > Apps opens the app's central sub-screen, then its editor.
       await _tapRow(tester, ValueKey(product));
+      expect(h.router.state.matchedLocation, Routes.settingsAppPath(product));
+      await _tapRow(tester, ValueKey(_editorRow(product)));
       if (product == 'calendar') {
         expect(find.text('Monday'), findsOneWidget);
         await tester.ensureVisible(find.text('Monday'));
@@ -31,7 +34,7 @@ void registerProductEditorChecks() {
         expect(h.finance.state.showAmounts, isTrue);
         expect(await h.settings.getFinanceAmountsVisible(), isTrue);
       }
-      expect(h.router.state.matchedLocation, Routes.settings);
+      expect(h.router.state.matchedLocation, Routes.settingsAppPath(product));
       expect(tester.takeException(), isNull);
     });
   }
@@ -50,6 +53,7 @@ void registerProductEditorChecks() {
         });
         await h.pump(tester);
         await _tapRow(tester, ValueKey(product));
+        await _tapRow(tester, ValueKey(_editorRow(product)));
         final choice = product == 'calendar' ? 'Monday' : 'Show amounts';
         expect(find.text(choice), findsOneWidget);
         if (transition == 'workspace ABA') {
@@ -71,3 +75,6 @@ void registerProductEditorChecks() {
     }
   }
 }
+
+String _editorRow(String product) =>
+    product == 'calendar' ? 'settings-first-day-row' : 'settings-finance-row';

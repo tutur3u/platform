@@ -26,6 +26,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/supabase/next/proxy',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/proxy.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/request/server',
         replacement: resolve(
           __dirname,

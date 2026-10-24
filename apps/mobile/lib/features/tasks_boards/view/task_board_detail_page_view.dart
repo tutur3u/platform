@@ -43,7 +43,6 @@ class _TaskQuickCreateFab extends StatelessWidget {
 }
 
 class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
-  static const double _fabContentBottomPadding = 96;
   final Map<String, double> _savedScrollOffsets = <String, double>{};
   final Map<String, int> _savedKanbanPages = <String, int>{};
   late final TextEditingController _searchController;
@@ -335,8 +334,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             _listViewVisibleLists(detail.lists, state.filters),
           );
           final filteredByList = state.filteredTasksByListId;
-          final bottomPadding =
-              _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
           final currentBoardKey = '${state.workspaceId}:${detail.id}';
           if (_initialListLoadBoardKey != currentBoardKey) {
             _initialListLoadBoardKey = currentBoardKey;
@@ -395,181 +392,159 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                 shellMiniNavRegistration,
                 shellTitleRegistration,
               ],
-              ResponsiveWrapper(
-                maxWidth: state.currentView == TaskBoardDetailView.list
-                    ? ResponsivePadding.maxContentWidth(context.deviceClass)
-                    : null,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final pageSizeHint = _tasksPageSizeHintForViewport(
-                      constraints.maxHeight,
-                    );
-                    if (state.currentView == TaskBoardDetailView.list) {
-                      for (final list in _listViewInitialLoadLists(
-                        listViewLists,
-                        state,
-                      )) {
-                        _requestInitialListLoadOnce(
-                          list.id,
-                          pageSizeHint,
-                          state,
-                        );
-                      }
-                    } else if (state.currentView ==
-                        TaskBoardDetailView.timeline) {
-                      for (final list in sortedLists) {
-                        _requestInitialListLoadOnce(
-                          list.id,
-                          pageSizeHint,
-                          state,
-                        );
-                      }
+              // The list view pads itself with the page insets; kanban and
+              // timeline are full-bleed canvases.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final pageSizeHint = _tasksPageSizeHintForViewport(
+                    constraints.maxHeight,
+                  );
+                  if (state.currentView == TaskBoardDetailView.list) {
+                    for (final list in _listViewInitialLoadLists(
+                      listViewLists,
+                      state,
+                    )) {
+                      _requestInitialListLoadOnce(list.id, pageSizeHint, state);
                     }
+                  } else if (state.currentView ==
+                      TaskBoardDetailView.timeline) {
+                    for (final list in sortedLists) {
+                      _requestInitialListLoadOnce(list.id, pageSizeHint, state);
+                    }
+                  }
 
-                    return NovaRefreshIndicator(
-                      notificationPredicate: (notification) =>
-                          state.currentView == TaskBoardDetailView.kanban &&
-                              !context.isCompact
-                          ? notification.metrics.axis == Axis.vertical
-                          : notification.depth == 0,
-                      onRefresh: () => _refreshBoardContent(
-                        context,
-                        lists: state.currentView == TaskBoardDetailView.list
-                            ? listViewLists
-                            : sortedLists,
-                        pageSizeHint: pageSizeHint,
-                      ),
-                      child: switch (state.currentView) {
-                        TaskBoardDetailView.list => _TaskBoardEnhancedListView(
-                          boardId: widget.boardId,
-                          lists: listViewLists,
-                          tasks: state.filteredTasksForListView,
+                  return NovaRefreshIndicator(
+                    notificationPredicate: (notification) =>
+                        state.currentView == TaskBoardDetailView.kanban &&
+                            !context.isCompact
+                        ? notification.metrics.axis == Axis.vertical
+                        : notification.depth == 0,
+                    onRefresh: () => _refreshBoardContent(
+                      context,
+                      lists: state.currentView == TaskBoardDetailView.list
+                          ? listViewLists
+                          : sortedLists,
+                      pageSizeHint: pageSizeHint,
+                    ),
+                    child: switch (state.currentView) {
+                      TaskBoardDetailView.list => _TaskBoardEnhancedListView(
+                        boardId: widget.boardId,
+                        lists: listViewLists,
+                        tasks: state.filteredTasksForListView,
+                        state: state,
+                        board: detail,
+                        sort: _listSort,
+                        scrollController: _listScrollController,
+                        onTaskTap: (task) =>
+                            _handleTaskTap(context, task, sortedLists),
+                        onTaskToggleDone: (task, targetStatus) =>
+                            _markTaskAsStatus(
+                              context,
+                              task,
+                              sortedLists,
+                              targetStatus,
+                            ),
+                        isBulkSelectMode: state.isBulkSelectMode,
+                        selectedTaskIds: state.selectedTaskIds,
+                        onToggleTaskSelection: (task) => context
+                            .read<TaskBoardDetailCubit>()
+                            .toggleBulkTaskSelection(task.id),
+                        collapsedListIds: _collapsedListIds,
+                        onToggleListCollapsed: (list) => _toggleListCollapsed(
+                          context,
+                          list: list,
                           state: state,
-                          board: detail,
-                          sort: _listSort,
-                          bottomPadding: bottomPadding,
-                          scrollController: _listScrollController,
-                          onTaskTap: (task) =>
-                              _handleTaskTap(context, task, sortedLists),
-                          onTaskToggleDone: (task, targetStatus) =>
-                              _markTaskAsStatus(
-                                context,
-                                task,
-                                sortedLists,
-                                targetStatus,
-                              ),
-                          isBulkSelectMode: state.isBulkSelectMode,
-                          selectedTaskIds: state.selectedTaskIds,
-                          onToggleTaskSelection: (task) => context
-                              .read<TaskBoardDetailCubit>()
-                              .toggleBulkTaskSelection(task.id),
-                          collapsedListIds: _collapsedListIds,
-                          onToggleListCollapsed: (list) => _toggleListCollapsed(
+                          pageSizeHint: pageSizeHint,
+                        ),
+                        onLoadMore: () {
+                          _loadMoreVisibleLists(
                             context,
-                            list: list,
+                            lists: _listViewLoadMoreLists(listViewLists, state),
                             state: state,
                             pageSizeHint: pageSizeHint,
-                          ),
-                          onLoadMore: () {
-                            _loadMoreVisibleLists(
-                              context,
-                              lists: _listViewLoadMoreLists(
-                                listViewLists,
-                                state,
-                              ),
-                              state: state,
+                          );
+                        },
+                      ),
+                      TaskBoardDetailView.kanban => _TaskBoardKanbanView(
+                        boardId: widget.boardId,
+                        lists: sortedLists,
+                        tasksByList: filteredByList,
+                        state: state,
+                        board: detail,
+                        viewportHeight: constraints.maxHeight,
+                        kanbanVerticalScrollController:
+                            _kanbanVerticalScrollController,
+                        kanbanHorizontalPageController:
+                            _kanbanHorizontalPageController,
+                        onRequestInitialLoad: _requestInitialListLoadOnce,
+                        onRequestListWindowLoad: _requestListWindowLoad,
+                        onLoadMore: (listId, pageSizeHint) =>
+                            context.read<TaskBoardDetailCubit>().loadListTasks(
+                              listId: listId,
+                              loadMore: true,
                               pageSizeHint: pageSizeHint,
-                            );
-                          },
-                        ),
-                        TaskBoardDetailView.kanban => _TaskBoardKanbanView(
-                          boardId: widget.boardId,
+                            ),
+                        onRetryLoad: (listId, pageSizeHint) =>
+                            context.read<TaskBoardDetailCubit>().loadListTasks(
+                              listId: listId,
+                              forceRefresh: true,
+                              pageSizeHint: pageSizeHint,
+                            ),
+                        onTaskTap: (task) =>
+                            _handleTaskTap(context, task, sortedLists),
+                        onTaskMove: (task) =>
+                            _openMoveTaskPicker(context, task, sortedLists),
+                        isBulkSelectMode: state.isBulkSelectMode,
+                        selectedTaskIds: state.selectedTaskIds,
+                        onToggleTaskSelection: (task) => context
+                            .read<TaskBoardDetailCubit>()
+                            .toggleBulkTaskSelection(task.id),
+                        onCreateTask: (listId) => _openTaskCreateSheet(
+                          context,
                           lists: sortedLists,
-                          tasksByList: filteredByList,
-                          state: state,
-                          board: detail,
-                          bottomPadding: bottomPadding,
-                          viewportHeight: constraints.maxHeight,
-                          kanbanVerticalScrollController:
-                              _kanbanVerticalScrollController,
-                          kanbanHorizontalPageController:
-                              _kanbanHorizontalPageController,
-                          onRequestInitialLoad: _requestInitialListLoadOnce,
-                          onRequestListWindowLoad: _requestListWindowLoad,
-                          onLoadMore: (listId, pageSizeHint) => context
-                              .read<TaskBoardDetailCubit>()
-                              .loadListTasks(
-                                listId: listId,
-                                loadMore: true,
-                                pageSizeHint: pageSizeHint,
-                              ),
-                          onRetryLoad: (listId, pageSizeHint) => context
-                              .read<TaskBoardDetailCubit>()
-                              .loadListTasks(
-                                listId: listId,
-                                forceRefresh: true,
-                                pageSizeHint: pageSizeHint,
-                              ),
-                          onTaskTap: (task) =>
-                              _handleTaskTap(context, task, sortedLists),
-                          onTaskMove: (task) =>
-                              _openMoveTaskPicker(context, task, sortedLists),
-                          isBulkSelectMode: state.isBulkSelectMode,
-                          selectedTaskIds: state.selectedTaskIds,
-                          onToggleTaskSelection: (task) => context
-                              .read<TaskBoardDetailCubit>()
-                              .toggleBulkTaskSelection(task.id),
-                          onCreateTask: (listId) => _openTaskCreateSheet(
+                          defaultListId: listId,
+                        ),
+                        onEditList: (list) =>
+                            _openEditListDialog(context, list),
+                        onFocusedListChanged: _handleKanbanPageChanged,
+                      ),
+                      TaskBoardDetailView.timeline => _TaskBoardTimelineView(
+                        board: detail,
+                        lists: sortedLists,
+                        tasksByList: filteredByList,
+                        hasMoreTasks: _hasMoreTasksForLists(sortedLists, state),
+                        isLoadingMoreTasks: state.isLoadingListTasks,
+                        verticalScrollController:
+                            _timelineVerticalScrollController,
+                        horizontalScrollController:
+                            _timelineHorizontalScrollController,
+                        onLoadMore: () {
+                          _loadMoreVisibleLists(
                             context,
                             lists: sortedLists,
-                            defaultListId: listId,
-                          ),
-                          onEditList: (list) =>
-                              _openEditListDialog(context, list),
-                          onFocusedListChanged: _handleKanbanPageChanged,
-                        ),
-                        TaskBoardDetailView.timeline => _TaskBoardTimelineView(
-                          board: detail,
-                          lists: sortedLists,
-                          tasksByList: filteredByList,
-                          bottomPadding: bottomPadding,
-                          hasMoreTasks: _hasMoreTasksForLists(
-                            sortedLists,
-                            state,
-                          ),
-                          isLoadingMoreTasks: state.isLoadingListTasks,
-                          verticalScrollController:
-                              _timelineVerticalScrollController,
-                          horizontalScrollController:
-                              _timelineHorizontalScrollController,
-                          onLoadMore: () {
-                            _loadMoreVisibleLists(
+                            state: state,
+                            pageSizeHint: pageSizeHint,
+                          );
+                        },
+                        onTaskTap: (task) =>
+                            _handleTaskTap(context, task, sortedLists),
+                        onTimelineTaskCommit:
+                            ({
+                              required task,
+                              required listId,
+                              required startDate,
+                              required endDate,
+                            }) => _commitTimelineTaskChange(
                               context,
-                              lists: sortedLists,
-                              state: state,
-                              pageSizeHint: pageSizeHint,
-                            );
-                          },
-                          onTaskTap: (task) =>
-                              _handleTaskTap(context, task, sortedLists),
-                          onTimelineTaskCommit:
-                              ({
-                                required task,
-                                required listId,
-                                required startDate,
-                                required endDate,
-                              }) => _commitTimelineTaskChange(
-                                context,
-                                task: task,
-                                listId: listId,
-                                startDate: startDate,
-                                endDate: endDate,
-                              ),
-                        ),
-                      },
-                    );
-                  },
-                ),
+                              task: task,
+                              listId: listId,
+                              startDate: startDate,
+                              endDate: endDate,
+                            ),
+                      ),
+                    },
+                  );
+                },
               ),
               if (state.isBulkSelectMode)
                 SpeedDialFab(
@@ -699,7 +674,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       ),
       ShellMiniNavItemSpec(
         id: 'tasks',
-        icon: shad.LucideIcons.userCheck,
+        icon: LucideIcons.userCheck,
         label: context.l10n.navTasks,
         selected: state.currentView == TaskBoardDetailView.list,
         callbackToken: 'tasks',

@@ -152,7 +152,7 @@ requires a versioned migration rather than silent breakage.
 | Route artifacts | `bun web:api-routes:check && bun migration:tanstack:manifest` | legacy wrapper is not regenerated and manifest records the first-class Web source |
 | Types | `bun run --cwd apps/tasks type-check && bun run --cwd apps/web type-check && bun run --cwd packages/internal-api type-check && bun run --cwd packages/tasks-ui type-check` | exit 0 with the shared row/envelope contract |
 | Builds | `bun run --cwd apps/tasks build && bun run --cwd apps/web build` | both production builds exit 0 |
-| Repository | `bun check && git diff --check` | all repository gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all repository gates pass; whitespace output is empty |
 
 ## Scope
 

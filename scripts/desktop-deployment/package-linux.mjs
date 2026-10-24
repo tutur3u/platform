@@ -32,7 +32,7 @@ Priority: optional
 Architecture: amd64
 Maintainer: Tuturuuu <support@tuturuuu.com>
 Homepage: https://tuturuuu.com/download
-Depends: pkexec, libgtk-3-0t64, libsecret-1-0, libstdc++6, libc6 (>= 2.39), libasound2t64, libgstreamer1.0-0, libgstreamer-plugins-base1.0-0
+Depends: pkexec, libgtk-3-0t64, libwebkit2gtk-4.1-0, libsoup-3.0-0, libsecret-1-0, libstdc++6, libc6 (>= 2.39), libasound2t64, libgstreamer1.0-0, libgstreamer-plugins-base1.0-0
 Description: Tuturuuu workspace (early-access beta)
  This beta may not be ready for production use.
 `

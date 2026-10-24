@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
@@ -26,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
+import '../../../helpers/timezone_http_harness.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -157,6 +159,9 @@ void main() {
     AuthState? initialAuth,
     Future<String> Function()? deviceLoader,
     bool root = false,
+    TimezoneSettingsRepository? timezoneRepository,
+    SettingsSectionDestination section = SettingsSectionDestination.preferences,
+    ValueNotifier<bool>? showSettings,
   }) async {
     if (initialAuth != null) {
       whenListen(auth, authEvents.stream, initialState: initialAuth);
@@ -177,16 +182,23 @@ void main() {
           ),
         ],
         child: CalendarTimezoneScope(
-          repository: repository,
+          repository: timezoneRepository ?? repository,
           deviceLoader: deviceLoader,
           loadTimeout: const Duration(seconds: 1),
           child: Builder(
             builder: (context) {
               cubit = context.read<TimezoneSettingsCubit>();
               if (root) {
-                return SettingsPage(
-                  section: SettingsSectionDestination.preferences,
+                final page = SettingsPage(
+                  section: section,
                   permissionsRepository: permissions,
+                );
+                if (showSettings == null) return page;
+                return ValueListenableBuilder<bool>(
+                  valueListenable: showSettings,
+                  builder: (_, visible, child) =>
+                      visible ? child! : const SizedBox.shrink(),
+                  child: page,
                 );
               }
               final id = context.watch<AuthCubit>().state.user?.id;
@@ -214,6 +226,92 @@ void main() {
     return cubit;
   }
 
+  for (final status in [200, 429]) {
+    testWidgets(
+      'cold scope makes two GETs; opening Settings adds none for HTTP $status',
+      (tester) async {
+        final h = TimezoneHttpHarness();
+        addTearDown(h.dispose);
+        final showSettings = ValueNotifier(false);
+        addTearDown(showSettings.dispose);
+        h.respond = (_) async => status == 200
+            ? TimezoneHttpHarness.json({'timezone': 'UTC'})
+            : http.Response('{}', 429, headers: {'retry-after': '60'});
+        final cubit = await mount(
+          tester,
+          initialAuth: _signedIn('synthetic-actor'),
+          root: true,
+          section: SettingsSectionDestination.overview,
+          timezoneRepository: h.repository,
+          deviceLoader: () async => 'UTC',
+          showSettings: showSettings,
+        );
+        await tester.pumpAndSettle();
+        expect(h.requests, hasLength(2));
+        expect(h.refreshes, 0);
+        expect(
+          h.requests.every(
+            (r) => !r.headers.containsKey('x-tuturuuu-offline-download'),
+          ),
+          isTrue,
+        );
+        expect(find.text('Personal timezone'), findsNothing);
+        showSettings.value = true;
+        await tester.pumpAndSettle();
+        expect(find.text('Personal timezone'), findsOneWidget);
+        expect(find.text('Workspace timezone'), findsOneWidget);
+        expect(cubit.state.failed, status == 429);
+        if (status == 429) {
+          expect(find.text('Unknown'), findsNWidgets(2));
+        }
+        final expectedRequests = [
+          'GET /api/v1/users/calendar-settings',
+          'GET /api/v1/workspaces/ws/calendar-settings',
+        ];
+        expect(
+          h.requests.map((r) => '${r.method} ${r.url.path}'),
+          expectedRequests,
+        );
+        expect(
+          h.requests.every(
+            (r) => r.headers['authorization'] == 'Bearer synthetic-access',
+          ),
+          isTrue,
+        );
+        for (var revision = 0; revision < 3; revision++) {
+          workspaceEvents.add(
+            WorkspaceState(
+              status: WorkspaceStatus.loaded,
+              currentWorkspace: Workspace(id: 'ws', name: 'Name $revision'),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+        showSettings.value = false;
+        await tester.pumpAndSettle();
+        showSettings.value = true;
+        await tester.pumpAndSettle();
+        if (status == 429) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+        }
+        await tester.pump(const Duration(seconds: 61));
+        await tester.pumpAndSettle();
+        expect(
+          h.requests.map((r) => '${r.method} ${r.url.path}'),
+          expectedRequests,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        expect(h.refreshes, 0);
+      },
+    );
+  }
+
   testWidgets('real root auth arrival resolves both rows without false UTC', (
     tester,
   ) async {
@@ -224,13 +322,14 @@ void main() {
     );
     expect(cubit.state.loading, isFalse);
     expect(cubit.state.resolved, isFalse);
-    expect(find.text('Effective timezone: UTC'), findsNothing);
+    expect(find.text('UTC'), findsNothing);
     expect(api.reads, 0);
     api.personal = 'Asia/Ho_Chi_Minh';
     authEvents.add(_signedIn('user'));
     await tester.pumpAndSettle();
     expect(cubit.state.effective, 'Asia/Ho_Chi_Minh');
     expect(cubit.state.resolved, isTrue);
+    expect(find.text('Ho Chi Minh City\u00a0(GMT+7)'), findsOneWidget);
     expect(find.text('Personal timezone'), findsOneWidget);
     expect(find.text('Workspace timezone'), findsOneWidget);
     expect(api.reads, 2);
@@ -264,7 +363,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(cubit.state.resolved, isFalse);
-      expect(find.text('Effective timezone: UTC'), findsNothing);
+      expect(find.text('UTC'), findsNothing);
       workspaceEvents.add(
         const WorkspaceState(
           status: WorkspaceStatus.loaded,
@@ -276,7 +375,7 @@ void main() {
       delayed.complete({'timezone': 'Asia/Ho_Chi_Minh'});
       await tester.pumpAndSettle();
       expect(cubit.state.effective, 'Europe/London');
-      expect(find.text('Effective timezone: Asia/Ho_Chi_Minh'), findsNothing);
+      expect(find.textContaining('Ho Chi Minh'), findsNothing);
       expect(api.writes, 0);
       await tester.tap(find.text('Workspace timezone'));
       await tester.pump();
@@ -292,7 +391,7 @@ void main() {
     final cubit = await mount(tester, deviceLoader: () => device.future);
     expect(cubit.state.failed, isTrue);
     expect(cubit.state.loading, isFalse);
-    expect(find.text('Effective timezone: UTC'), findsNothing);
+    expect(find.text('UTC'), findsNothing);
     expect(find.text('Unknown'), findsNWidgets(2));
     await cubit.save('UTC');
     expect(api.writes, 0);
@@ -321,7 +420,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       expect(cubit.state.failed, isTrue);
       expect(cubit.state.loading, isFalse);
-      expect(find.text('Effective timezone: UTC'), findsNothing);
+      expect(find.text('UTC'), findsNothing);
       waiting = false;
       api.pending = null;
       await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
@@ -346,12 +445,16 @@ void main() {
       expect(cubit.state.failed, isTrue);
       expect(cubit.state.resolved, isFalse);
       expect(cubit.state.errorMessage, contains('synthetic unavailable'));
-      expect(find.text('Effective timezone: UTC'), findsNothing);
+      expect(find.text('UTC'), findsNothing);
       messenger.setMockMethodCallHandler(channel, (_) async => 'UTC');
       await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
       await tester.pumpAndSettle();
       expect(cubit.state.resolved, isTrue);
-      expect(find.text('Effective timezone: UTC'), findsNWidgets(2));
+      // Personal Automatic names the zone in use; the workspace row does
+      // not repeat it.
+      expect(find.text('UTC'), findsOneWidget);
+      expect(find.text('Auto'), findsOneWidget);
+      expect(find.text('Automatic'), findsOneWidget);
       expect(api.writes, 0);
     },
   );

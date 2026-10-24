@@ -98,5 +98,5 @@ bun i18n:sort
 bun i18n:check
 ```
 
-Run `bun check` for TypeScript, JavaScript, messages, or repo config changes
+Run `bun validate` for TypeScript, JavaScript, messages, or repo config changes
 unless an unrelated pre-existing blocker prevents it.

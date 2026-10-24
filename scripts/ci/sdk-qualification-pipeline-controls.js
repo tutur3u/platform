@@ -3,6 +3,21 @@ const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 function pipelineTests(pipeline) {
+  test('published aliases must resolve to the shipped wrapper, not a direct dist entry', async (t) => {
+    const { receipt } = await pipeline(t, {
+      afterInstall(consumer) {
+        const alias = path.join(consumer, 'node_modules/.bin/ttr');
+        fs.unlinkSync(alias);
+        fs.symlinkSync(
+          path.join(consumer, 'node_modules/tuturuuu/dist/cli/index.js'),
+          alias
+        );
+      },
+    });
+    assert.equal(receipt.qualified, false);
+    assert.equal(receipt.blocker.code, 'BIN_RESOLUTION_FAILED');
+    assert.equal(receipt.temporaryFixtureDrained, true);
+  });
   test('PUBLIC compares registry integrity against the actual nested package lock', async (t) => {
     const name = '@tuturuuu/unpublished',
       version = '1.2.3';

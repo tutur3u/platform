@@ -1,0 +1,189 @@
+{
+  "provenance": "Read-only T3 provider status cache export at 2026-10-23T20:32:50.602746+00:00",
+  "providers": [
+    {
+      "instanceId": "codex_ai4ed",
+      "driver": "codex",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:31:26.245Z",
+        "windows": [
+          {
+            "id": "primary",
+            "kind": "weekly",
+            "label": "Weekly",
+            "usedPercent": 5,
+            "resetsAt": "2026-10-30T17:40:54.000Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "codex",
+      "driver": "codex",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:31:26.245Z",
+        "windows": [
+          {
+            "id": "primary",
+            "kind": "monthly",
+            "label": "Monthly",
+            "usedPercent": 100,
+            "resetsAt": "2026-11-19T07:28:47.000Z",
+            "windowDurationMins": 43200
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "claudeAgent",
+      "driver": "claudeAgent",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:28:01.942Z",
+        "windows": [
+          {
+            "id": "five_hour",
+            "kind": "session",
+            "label": "Session",
+            "usedPercent": 88,
+            "resetsAt": "2026-10-23T21:00:00.301Z",
+            "windowDurationMins": 300
+          },
+          {
+            "id": "seven_day_fable",
+            "kind": "weekly",
+            "label": "Weekly \u00b7 Fable",
+            "usedPercent": 30,
+            "resetsAt": "2026-10-26T23:00:00.301Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "claude_mira",
+      "driver": "claudeAgent",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:28:02.069Z",
+        "windows": [
+          {
+            "id": "five_hour",
+            "kind": "session",
+            "label": "Session",
+            "usedPercent": 62,
+            "resetsAt": "2026-10-23T20:40:00.415Z",
+            "windowDurationMins": 300
+          },
+          {
+            "id": "seven_day_fable",
+            "kind": "weekly",
+            "label": "Weekly \u00b7 Fable",
+            "usedPercent": 0,
+            "resetsAt": "2026-10-26T14:00:00.000Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "claude_kv",
+      "driver": "claudeAgent",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:28:01.063Z",
+        "windows": [
+          {
+            "id": "five_hour",
+            "kind": "session",
+            "label": "Session",
+            "usedPercent": 100,
+            "resetsAt": "2026-10-23T20:50:00.406Z",
+            "windowDurationMins": 300
+          },
+          {
+            "id": "seven_day_fable",
+            "kind": "weekly",
+            "label": "Weekly \u00b7 Fable",
+            "usedPercent": 2,
+            "resetsAt": "2026-10-26T08:00:00.406Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "claude_hehe",
+      "driver": "claudeAgent",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:28:01.971Z",
+        "windows": [
+          {
+            "id": "five_hour",
+            "kind": "session",
+            "label": "Session",
+            "usedPercent": 100,
+            "resetsAt": "2026-10-23T22:40:00.346Z",
+            "windowDurationMins": 300
+          },
+          {
+            "id": "seven_day_fable",
+            "kind": "weekly",
+            "label": "Weekly \u00b7 Fable",
+            "usedPercent": 6,
+            "resetsAt": "2026-10-28T08:00:00.346Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "claude_dd",
+      "driver": "claudeAgent",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:28:01.985Z",
+        "windows": [
+          {
+            "id": "five_hour",
+            "kind": "session",
+            "label": "Session",
+            "usedPercent": 6,
+            "resetsAt": "2026-10-24T00:20:00.357Z",
+            "windowDurationMins": 300
+          },
+          {
+            "id": "seven_day_fable",
+            "kind": "weekly",
+            "label": "Weekly \u00b7 Fable",
+            "usedPercent": 0,
+            "resetsAt": "2026-10-30T19:00:00.000Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    },
+    {
+      "instanceId": "antigravity",
+      "driver": "antigravity",
+      "usageLimits": {
+        "checkedAt": "2026-10-23T20:31:26.234Z",
+        "windows": [
+          {
+            "id": "3p-5h",
+            "kind": "session",
+            "label": "Claude & GPT (shared) \u00b7 5-hour",
+            "usedPercent": 0,
+            "resetsAt": "2026-10-24T01:31:26.000Z",
+            "windowDurationMins": 300
+          },
+          {
+            "id": "3p-weekly",
+            "kind": "weekly",
+            "label": "Claude & GPT (shared) \u00b7 Weekly",
+            "usedPercent": 0,
+            "resetsAt": "2026-10-30T20:31:26.000Z",
+            "windowDurationMins": 10080
+          }
+        ]
+      }
+    }
+  ]
+}

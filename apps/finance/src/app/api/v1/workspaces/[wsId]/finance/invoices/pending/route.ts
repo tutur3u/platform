@@ -2,6 +2,7 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { searchParamsToRecord } from '@tuturuuu/utils/search-params-record';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -68,19 +69,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const { searchParams } = new URL(request.url);
-    const params_obj: Record<string, string | string[]> = {};
-    searchParams.forEach((value, key) => {
-      const existing = params_obj[key];
-      if (existing) {
-        if (Array.isArray(existing)) {
-          existing.push(value);
-        } else {
-          params_obj[key] = [existing, value];
-        }
-      } else {
-        params_obj[key] = value;
-      }
-    });
+    const params_obj = searchParamsToRecord(searchParams, { multi: true });
 
     const parsed = PendingInvoicesParamsSchema.safeParse(params_obj);
     if (!parsed.success) {

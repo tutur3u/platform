@@ -330,7 +330,7 @@ canonical hosted Tuturuuu asset URL so apps without local `/media/logos/*`
 files do not produce repeated 404s.
 
 All Next apps configured with `next-intl` are checked by
-`bun i18n:setup-check` (and therefore `bun check`). Locale-rooted apps must
+`bun i18n:setup-check` (and therefore `bun validate`). Locale-rooted apps must
 resolve and validate the explicit `locale` override or awaited `requestLocale`
 segment in `src/i18n/request.ts`, then resolve the document language from
 `next/root-params` in the locale root layout and validate it with

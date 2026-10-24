@@ -41,6 +41,7 @@ vi.mock('@/lib/auth/otp', () => ({
 describe('OTP route diagnostics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
     mocks.createAuthDiagnosticCode.mockImplementation((stage: string) =>
       stage === 'otp_send' ? 'AUTH-OTP-SEND-ABC123' : 'AUTH-OTP-VERIFY-ABC123'
     );

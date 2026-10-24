@@ -6,6 +6,7 @@ import 'package:mobile/core/config/api_origins.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/native_integrity/native_integrity_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,6 +19,7 @@ class _Session extends Mock implements Session {}
 class TimezoneHttpHarness {
   TimezoneHttpHarness({
     bool rotateTokenOnRefresh = false,
+    NativeIntegrityClient? nativeIntegrity,
     DateTime Function()? clock,
   }) {
     final origins = ApiOrigins.forFlavor(AppFlavor.production);
@@ -46,9 +48,13 @@ class TimezoneHttpHarness {
       return AuthResponse(session: session, user: auth.currentUser);
     });
     api = ApiClient(
+      nativeIntegrity: nativeIntegrity,
       baseUrl: origins.baseUrlForPath(TimezoneSettingsRepository.personalPath),
       authClient: client,
       httpClient: MockClient((request) async {
+        if (request.url.path == '/api/v1/native-integrity/challenge') {
+          return json(integrityChallenge);
+        }
         requests.add(request);
         return await respond(request);
       }),
@@ -56,6 +62,7 @@ class TimezoneHttpHarness {
     );
     repository = TimezoneSettingsRepository(apiClient: api, clock: clock);
   }
+  Map<String, dynamic> integrityChallenge = {'mode': 'off'};
   int refreshes = 0;
   String accessToken = 'synthetic-access';
   late final ApiClient api;

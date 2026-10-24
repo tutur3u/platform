@@ -66,49 +66,49 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: shouldShowLoading
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: NovaLoadingIndicator()),
-                    )
-                  : goals.isEmpty
-                  ? GoalsEmptyState(
-                      onCreatePressed: _isSubmitting
-                          ? null
-                          : () => _openCreateGoalSheet(state),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var index = 0; index < goals.length; index++) ...[
-                          Builder(
-                            builder: (context) {
-                              final goal = goals[index];
-                              final progressSeconds =
-                                  _resolveGoalProgressSeconds(state, goal);
+            if (shouldShowLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: NovaLoadingIndicator()),
+              )
+            else if (goals.isEmpty)
+              GoalsEmptyState(
+                onCreatePressed: _isSubmitting
+                    ? null
+                    : () => _openCreateGoalSheet(state),
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < goals.length; index++) ...[
+                    Builder(
+                      builder: (context) {
+                        final goal = goals[index];
+                        final progressSeconds = _resolveGoalProgressSeconds(
+                          state,
+                          goal,
+                        );
 
-                              return PendingSyncFrame(
-                                workspaceId: widget.wsId,
-                                entityId: goal.id,
-                                feature: 'time_tracker',
-                                child: GoalCard(
-                                  goal: goal,
-                                  categoryTodaySeconds: progressSeconds.$1,
-                                  categoryWeekSeconds: progressSeconds.$2,
-                                  onTap: _isSubmitting
-                                      ? null
-                                      : () => _openGoalDetailSheet(state, goal),
-                                ),
-                              );
-                            },
+                        return PendingSyncFrame(
+                          workspaceId: widget.wsId,
+                          entityId: goal.id,
+                          feature: 'time_tracker',
+                          child: GoalCard(
+                            goal: goal,
+                            categoryTodaySeconds: progressSeconds.$1,
+                            categoryWeekSeconds: progressSeconds.$2,
+                            onTap: _isSubmitting
+                                ? null
+                                : () => _openGoalDetailSheet(state, goal),
                           ),
-                          if (index < goals.length - 1) const shad.Gap(8),
-                        ],
-                      ],
+                        );
+                      },
                     ),
-            ),
+                    if (index < goals.length - 1) const shad.Gap(8),
+                  ],
+                ],
+              ),
           ],
         );
       },

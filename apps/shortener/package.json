@@ -54,7 +54,7 @@
     "postcss": "^8.5.31",
     "typescript": "7.0.2"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "shortener.tuturuuu",
     "script": "dev:app"

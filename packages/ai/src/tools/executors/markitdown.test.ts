@@ -206,6 +206,42 @@ describe('executeConvertFileToMarkdown', () => {
     expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'workspace-1/user-groups/group-1/../group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2e%2e/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2E%2E/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2e./group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/.%2e/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2fgroup-2/secret.pdf',
+    'workspace-1\\user-groups\\group-1\\secret.pdf',
+    'workspace-2/user-groups/group-1/secret.pdf',
+  ])(
+    'rejects unsafe or cross-workspace storage path %s before admin access',
+    async (storagePath) => {
+      const result = (await executeConvertFileToMarkdown(
+        { storagePath },
+        createContext({ canReadUserGroupStorage: () => true })
+      )) as Record<string, unknown>;
+
+      expect(result.ok).toBe(false);
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+      expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects encoded traversal from the current chat folder before admin access', async () => {
+    const result = (await executeConvertFileToMarkdown(
+      {
+        storagePath: 'workspace-1/chats/ai/resources/chat-1/%2e%2e/secret.pdf',
+      },
+      createContext()
+    )) as Record<string, unknown>;
+
+    expect(result.ok).toBe(false);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
+  });
+
   it('converts user-group files only after caller-provided storage authorization', async () => {
     const createSignedUrl = vi.fn().mockResolvedValue({
       data: { signedUrl: 'https://storage.test/signed-syllabus' },

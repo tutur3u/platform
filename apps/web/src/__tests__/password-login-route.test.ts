@@ -33,6 +33,7 @@ vi.mock('@/lib/auth/password', () => ({
 describe('password-login route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
     mocks.createAuthDiagnosticCode.mockReturnValue('AUTH-PASSWORD-ABC123');
     mocks.toPasswordLoginErrorResult.mockReturnValue({
       body: { error: 'Failed to login' },

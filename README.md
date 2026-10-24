@@ -312,7 +312,7 @@ change touches TypeScript, JavaScript, root scripts, or shared config.
 | `bun test` | Run package test tasks through Turbo |
 | `bun test:scripts` | Run root script tests |
 | `bun type-check` | Run type-check tasks through Turbo |
-| `bun check` | Run the repository validation suite |
+| `bun validate` | Run the repository validation suite |
 | `bun check:docker` | Validate Docker web configuration |
 | `bun check:mobile` | Run Flutter mobile validation |
 | `git diff --check` | Catch whitespace issues before commit |
