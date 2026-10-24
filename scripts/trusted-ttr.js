@@ -38,7 +38,7 @@ function assertWorkspaceBins(cwd = process.cwd()) {
   }
   if (unsafe.length)
     throw new Error(
-      `Unsafe ancestor ttr bin links (possibly orphaned): ${unsafe.join('; ')}. Refusing workspace dist. Inspect and explicitly remove confirmed orphan alias symlinks and the orphan node_modules/tuturuuu link, then run bun install. bun install alone may leave orphans unchanged. Use absolute ~/.bun/bin/ttr while recovering.`
+      `Unsafe ancestor ttr bin links (possibly stale workspace links or orphaned aliases): ${unsafe.join('; ')}. Refusing workspace dist, including with --no-ttr. In the listed ancestor checkout, inspect package.json and ls -l node_modules/tuturuuu node_modules/.bin/{ttr,tuturuuu,tutur3u}. For a declared workspace dependency, run ~/.bun/bin/ttr resources run -- bun install --force to refresh its bin/ttr.cjs aliases; keep the legitimate package link. Only if the manifest has no tuturuuu dependency and these paths are confirmed orphan symlinks to ../packages/sdk and ../tuturuuu/dist/cli/index.js, remove those confirmed links with rm -- node_modules/.bin/{ttr,tuturuuu,tutur3u} node_modules/tuturuuu, then reinstall. bun install alone may leave orphans unchanged. Never remove packages/sdk or legitimate dependency links. See apps/docs/reference/packages/sdk.mdx, Orphan workspace aliases. Use absolute ~/.bun/bin/ttr while recovering.`
     );
 }
 

@@ -132,16 +132,21 @@ function planChecks(changes, context) {
       `not covered; CI only: root/shared configuration (${sharedConfig.join(', ')})`,
     ]);
 
-  if (context.branch) {
+  const branches =
+    context.pushedBranches ?? (context.branch ? [context.branch] : []);
+  if (branches.length) {
     steps.push({
       id: 'branch-name',
-      label: `branch name ${context.branch}${context.localBranch ? ` (tracking for ${context.localBranch})` : ''}`,
-      inline: () => isBranchNameValid(context.branch),
+      label: `branch name ${branches.join(', ')}${context.localBranch ? ` (tracking for ${context.localBranch})` : ''}`,
+      inline: () => branches.every(isBranchNameValid),
       failureHint:
         'Use a type/description branch, for example chore/<topic>; ci/ is rejected.',
     });
   } else {
-    skipped.push(['branch-name', 'detached HEAD']);
+    skipped.push([
+      'branch-name',
+      context.pushedBranches ? 'no pushed branch refs' : 'detached HEAD',
+    ]);
   }
 
   steps.push(
@@ -245,9 +250,10 @@ function planChecks(changes, context) {
       relatedTests.set(related, isNodeTest(related, context));
     }
   }
-  const scriptTests = nodeScriptTests(present, exists).filter(
-    (file) => !workspaceOf(file) || isNodeTest(file, context)
-  );
+  const scriptTests = nodeScriptTests(
+    all.filter((file) => !isPausedPath(file)),
+    exists
+  ).filter((file) => !workspaceOf(file) || isNodeTest(file, context));
   const nodeTests = [
     ...new Set([
       ...scriptTests,

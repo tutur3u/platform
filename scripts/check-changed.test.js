@@ -94,7 +94,7 @@ test('hookDecision requires opt-in and a HEAD push', () => {
       'git rev-parse HEAD': `${head}\n`,
       'git status': '',
     });
-  const stdin = `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`;
+  const stdin = `refs/heads/fix/x ${head} refs/heads/fix/x ${'0'.repeat(40)}\n`;
   assert.deepEqual(
     hookDecision({ stdin, env: {}, execFile: execFile(new Error('unset')) }),
     { run: false, reason: 'not opted in' }
@@ -113,7 +113,7 @@ test('hookDecision requires opt-in and a HEAD push', () => {
   );
   assert.equal(
     hookDecision({
-      stdin: `(delete) ${'0'.repeat(40)} refs/heads/x ${head}\n`,
+      stdin: `(delete) ${'0'.repeat(40)} refs/heads/fix/x ${head}\n`,
       env: { TUTURUUU_PRE_PUSH: '1' },
       execFile: execFile(new Error('unset')),
     }).reason,
@@ -121,7 +121,7 @@ test('hookDecision requires opt-in and a HEAD push', () => {
   );
   assert.match(
     hookDecision({
-      stdin: `refs/heads/y ${'b'.repeat(40)} refs/heads/y ${head}\n`,
+      stdin: `refs/heads/fix/y ${'b'.repeat(40)} refs/heads/fix/y ${head}\n`,
       env: { TUTURUUU_PRE_PUSH: '1' },
       execFile: execFile(new Error('unset')),
     }).reason,
@@ -406,7 +406,7 @@ test('REV-6467-5: hook refuses tracked staged or unstaged edits before planning'
     const logs = [];
     assert.equal(
       main(['--hook'], {
-        stdin: `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`,
+        stdin: `refs/heads/fix/x ${head} refs/heads/fix/x ${'0'.repeat(40)}\n`,
         env: { TUTURUUU_PRE_PUSH: '1' },
         execFile: fakeGit({
           'git config': '',
@@ -470,7 +470,7 @@ test('REV-6467-8: hook refuses untracked inputs in selected reverse dependents',
     });
     const result = main(['--hook', '--dry-run', '--no-ttr'], {
       root,
-      stdin: `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`,
+      stdin: `refs/heads/fix/x ${head} refs/heads/fix/x ${'0'.repeat(40)}\n`,
       env: { TUTURUUU_PRE_PUSH: '1' },
       execFile: (command, args) => {
         if (args[0] !== 'ls-files') return baseGit(command, args);
@@ -520,7 +520,7 @@ test('tsrs resolution is lazy, qualified-project-only and offline in hooks', (t)
   const deps = {
     root,
     env: { TUTURUUU_PRE_PUSH: '1' },
-    stdin: `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`,
+    stdin: `refs/heads/fix/x ${head} refs/heads/fix/x ${'0'.repeat(40)}\n`,
     log: () => {},
     execFile: fakeGit({
       'git merge-base': 'base',

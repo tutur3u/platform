@@ -27,6 +27,7 @@ const {
 } = require('./check-changed/workspaces.js');
 const {
   BIOME_VERSION,
+  isBranchNameValid,
   planChecks,
   workspaceOf,
 } = require('./check-changed/plan.js');
@@ -107,13 +108,19 @@ function tryGit(args, execFile) {
   }
 }
 
-function validationBranch(execFile) {
+function validationBranch(execFile, pushes = []) {
+  if (pushes.length) return { pushedBranches: pushedBranches(pushes) };
   const local = tryGit(['branch', '--show-current'], execFile);
   if (!local?.startsWith('tmp/')) return { branch: local };
-  const upstream = tryGit(
-    ['for-each-ref', '--format=%(upstream:remoteref)', `refs/heads/${local}`],
-    execFile
-  );
+  const upstream =
+    tryGit(
+      ['for-each-ref', '--format=%(upstream:remoteref)', `refs/heads/${local}`],
+      execFile
+    ) ||
+    tryGit(
+      ['for-each-ref', '--format=%(upstream)', `refs/heads/${local}`],
+      execFile
+    );
   return upstream?.startsWith('refs/heads/')
     ? { branch: upstream.slice('refs/heads/'.length), localBranch: local }
     : { branch: local };
@@ -161,17 +168,36 @@ function collectChanges(base, committed, execFile) {
 }
 
 // Pre-push stdin: "<local ref> <local sha> <remote ref> <remote sha>" lines.
+function pushedRefs(stdin) {
+  return stdin
+    .split(/\r?\n/)
+    .map((line) => line.trim().split(/\s+/))
+    .filter((parts) => parts.length >= 4 && !ZERO_SHA.test(parts[1]));
+}
+
+function pushedBranches(refs) {
+  return refs
+    .filter((parts) => parts[2].startsWith('refs/heads/'))
+    .map((parts) => parts[2].slice('refs/heads/'.length));
+}
+
 function hookDecision({ stdin, env, execFile }) {
   const configured = tryGit(['config', '--bool', 'tuturuuu.prePush'], execFile);
   const optedIn =
     env.TUTURUUU_PRE_PUSH === '1' ||
     (env.TUTURUUU_PRE_PUSH !== '0' && configured === 'true');
   if (!optedIn) return { run: false, reason: 'not opted in' };
-  const pushed = stdin
-    .split(/\r?\n/)
-    .map((line) => line.trim().split(/\s+/))
-    .filter((parts) => parts.length >= 2 && !ZERO_SHA.test(parts[1]));
+  const pushed = pushedRefs(stdin);
   if (!pushed.length) return { run: false, reason: 'nothing to check' };
+  const invalid = pushedBranches(pushed).filter(
+    (name) => !isBranchNameValid(name)
+  );
+  if (invalid.length)
+    return {
+      run: false,
+      failed: true,
+      reason: `invalid pushed branch names: ${invalid.join(', ')}; use a type/description publication branch`,
+    };
   const head = tryGit(['rev-parse', 'HEAD'], execFile);
   if (!pushed.some((parts) => parts[1] === head)) {
     return {
@@ -196,11 +222,21 @@ function ttrPrefix(
   enabled,
   execFile,
   env = process.env,
-  resolveCli = trustedTtr
+  resolveCli = trustedTtr,
+  warn = console.warn
 ) {
   assertWorkspaceBins();
   if (!enabled || inResourceLane(env)) return null;
-  const cli = resolveCli();
+  let cli;
+  try {
+    cli = resolveCli();
+  } catch (cause) {
+    if ((cause.code ?? cause.cause?.code) !== 'ENOENT') throw cause;
+    warn(
+      'check:changed: trusted global ttr is not installed; running checks sequentially with existing worker limits. Run bun add -g tuturuuu to enable resource admission. Workspace binaries are never used.'
+    );
+    return null;
+  }
   try {
     const status = JSON.parse(
       execFile(cli, ['resources', 'status', '--json'], {
@@ -379,9 +415,12 @@ function main(argv = process.argv.slice(2), deps = {}) {
   const execFile = deps.execFile ?? execFileSync;
   const log = deps.log ?? console.log;
   const options = parseArgs(argv);
+  let pushes = [];
   if (options.hook) {
+    const stdin = deps.stdin ?? readStdin();
+    pushes = pushedRefs(stdin);
     const decision = hookDecision({
-      stdin: deps.stdin ?? readStdin(),
+      stdin,
       env: deps.env ?? process.env,
       execFile,
     });
@@ -406,7 +445,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
   const plan = planChecks(changes, {
     base,
     biomeBinary: localBiome(root),
-    ...validationBranch(execFile),
+    ...validationBranch(execFile, pushes),
     exists,
     readSource: (file) => fs.readFileSync(path.join(root, file), 'utf8'),
     workspaces: readWorkspaces(root),
@@ -475,7 +514,13 @@ function main(argv = process.argv.slice(2), deps = {}) {
     }
     return 0;
   }
-  const ttr = ttrPrefix(options.ttr, execFile, deps.env ?? process.env);
+  const ttr = ttrPrefix(
+    options.ttr,
+    execFile,
+    deps.env ?? process.env,
+    deps.resolveCli ?? trustedTtr,
+    (message) => log(`  warning: ${message}`)
+  );
   const tsrs =
     options.checker === 'tsrs' &&
     steps.some((step) => {

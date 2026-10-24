@@ -25,7 +25,9 @@ bun check:changed --files a.ts b.ts
 It never runs builds, `bun validate` or Turbo. Small repository scripts run directly;
 Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
 when resource control is installed and enabled (`--no-ttr` opts out). Without
-ttr, steps run sequentially with Vitest capped at two workers.
+a global ttr installation, the gate warns and runs sequentially with Vitest
+capped at two workers. An invalid installed global CLI or unsafe ancestor bin
+alias still fails closed; a workspace binary is never used as a fallback.
 
 ## What runs for which paths
 
@@ -46,11 +48,24 @@ Oxlint stays advisory until a scope records Biome parity under the
 [Oxc adoption rules](/build/development-tools/oxc-cloudflare-adoption); Biome
 remains the blocking formatter and linter. Paused runtimes are excluded.
 
-Local `tmp/` branches with a configured tracking branch validate that tracked
+In hook mode, every non-deletion `refs/heads/*` destination from Git's pre-push
+stdin is validated, including additional branches whose commits differ from
+HEAD. Tracking cannot override an invalid destination such as `tmp/agent`.
+Branch deletions and tag names do not undergo branch-name validation.
+
+Without push refs, local `tmp/` branches with a configured tracking branch validate that tracked
 branch name and print both names. Untracked `tmp/` branches still fail, and other
 local branch names always validate themselves. This keeps the check blocking
 while allowing temporary agent worktrees that track a valid publication branch.
 CI continues to validate the actual published branch name.
+
+Ancestor bin refusals can be caused by stale links in the main checkout even
+when the current worktree is healthy. `--no-ttr` does not bypass that safety
+check. Inspect the listed ancestor's manifest and links: refresh declared
+workspace dependencies with `~/.bun/bin/ttr resources run -- bun install --force`,
+keeping legitimate package links. Remove links only after proving they are
+undeclared orphan symlinks; follow the conditional
+[orphan alias recovery procedure](/reference/packages/sdk#orphan-workspace-aliases).
 
 ## Type-checking without built declarations
 

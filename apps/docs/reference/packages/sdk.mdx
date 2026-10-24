@@ -1567,7 +1567,7 @@ Repository operational scripts, including `bun ttr` and `check:changed`, invoke 
 
 Symptom: the global CLI rejects missing, stale or malformed launchers. A stale workspace SDK dist can write its own entry into shared launchers before admission, and its nested run can block the queue. Never run operational commands through workspace or ancestor `node_modules/.bin/ttr` or stale `packages/sdk/dist`.
 
-Repository admission uses the verified global `~/.bun/bin/ttr` (stable >= 0.28.0). `check:changed` and `node scripts/ttr-run.js -- COMMAND` run directly when the inherited `TTR_RESOURCES_ADMITTED` or `TTR_RESOURCE_OWNER` marker is present. Missing/old global installations fail with `bun add -g tuturuuu` recovery guidance; they never fall back to a workspace binary. Refresh declared workspace bin links after adopting the source wrapper. `bun install` alone can leave orphan aliases unchanged; use the explicit orphan inspection/removal procedure below. This does not rebuild dist. The shipped bin works in installed packages; workspace aliases refuse to execute dist, including from `bunx`.
+Repository admission uses the verified global `~/.bun/bin/ttr` (stable >= 0.28.0). `check:changed` and `node scripts/ttr-run.js -- COMMAND` run directly when the inherited `TTR_RESOURCES_ADMITTED` or `TTR_RESOURCE_OWNER` marker is present. When the global install is absent, `check:changed` warns and runs sequentially with its existing worker limits. The operational wrappers still require a global CLI, and an invalid/old installed global fails with `bun add -g tuturuuu` recovery guidance. None falls back to a workspace binary. Refresh declared workspace bin links after adopting the source wrapper. `bun install` alone can leave orphan aliases unchanged; use the explicit orphan inspection/removal procedure below. This does not rebuild dist. The shipped bin works in installed packages; workspace aliases refuse to execute dist, including from `bunx`.
 
 An operator with installation authority must identify and drain the offending jobs, preserve the existing resource configuration, then restore canonical launchers through the trusted global CLI with the **same existing roots and shell settings**:
 
@@ -1581,6 +1581,8 @@ Fence-enabled CLI versions refuse a different installation by default. Inspect `
 Regression coverage: `scripts/trusted-ttr.test.js`, `scripts/workspace-ttr-bin.test.js`, and `resources-provisioning.test.ts` exercise ancestor lookup, inherited admission, minimum version, stale bins, same-install upgrades, refusal and forced replacement with disposable homes.
 
 #### Orphan workspace aliases
+
+A refusal can also mean stale workspace bin links in an ancestor checkout that still has a legitimate SDK dependency. Inspect that ancestor's package.json and links first. For a declared dependency, run `~/.bun/bin/ttr resources run -- bun install --force` there to regenerate aliases pointing to `bin/ttr.cjs`; retain its legitimate package link. `--no-ttr` does not bypass unsafe ancestor links. The removal procedure below applies only to confirmed undeclared orphan symlinks.
 
 If the root manifest has no `tuturuuu` dependency, old symlinks can remain: `node_modules/tuturuuu -> ../packages/sdk` and `node_modules/.bin/{ttr,tuturuuu,tutur3u} -> ../tuturuuu/dist/cli/index.js`. Bun may report no changes and keep them. The trusted repo wrapper and `check:changed` refuse such ancestor aliases, even inside an admitted lane; they never execute or remove them silently. A healthy global CLI does not make those bare aliases safe.
 

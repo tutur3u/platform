@@ -65,7 +65,7 @@ test('the package native test script selects related files and propagates failur
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   const run = () =>
-    main(['--only', 'script-tests', '--files', ...files], {
+    main(['--no-ttr', '--only', 'script-tests', '--files', ...files], {
       root,
       env,
       execFile: git(),
@@ -124,7 +124,7 @@ for (const { branch, upstream, expected } of [
   test(`branch policy ${branch} tracking ${upstream || 'nothing'} returns ${expected}`, () => {
     const logs = [];
     assert.equal(
-      main(['--only', 'branch-name', '--files', 'README.md'], {
+      main(['--no-ttr', '--only', 'branch-name', '--files', 'README.md'], {
         execFile: git(branch, upstream),
         log: (line) => logs.push(line),
       }),

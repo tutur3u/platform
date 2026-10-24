@@ -5,6 +5,12 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
+function errorStderr(error) {
+  return error && typeof error === 'object' && 'stderr' in error
+    ? String(error.stderr)
+    : '';
+}
+
 test('orphan SDK aliases without a root dependency are refused even inside an admitted lane', (t) => {
   const root = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), 'ttr-orphan-bins-'))
@@ -37,7 +43,8 @@ test('orphan SDK aliases without a root dependency are refused even inside an ad
   for (const alias of ['ttr', 'tuturuuu', 'tutur3u'])
     fs.symlinkSync('../tuturuuu/dist/cli/index.js', path.join(bin, alias));
   assert.equal(
-    JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).dependencies,
+    JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+      .dependencies,
     undefined
   );
   assert.equal(fs.existsSync(path.join(workspace, 'node_modules')), false);
@@ -77,15 +84,18 @@ test('orphan SDK aliases without a root dependency are refused even inside an ad
       ...env,
       ...(nested ? { TTR_RESOURCES_ADMITTED: 'live-lane' } : {}),
     };
-    for (const [command, args] of [
-      [process.execPath, [trusted, 'resources', 'status', '--json']],
-      [
-        process.execPath,
-        [
+    for (const { command, args } of [
+      {
+        command: process.execPath,
+        args: [trusted, 'resources', 'status', '--json'],
+      },
+      {
+        command: process.execPath,
+        args: [
           '-e',
           `require(${JSON.stringify(checker)}).ttrPrefix(true,require('node:child_process').execFileSync);`,
         ],
-      ],
+      },
     ])
       assert.throws(
         () =>
@@ -95,9 +105,23 @@ test('orphan SDK aliases without a root dependency are refused even inside an ad
             stdio: 'pipe',
           }),
         (error) =>
-          /Unsafe ancestor ttr bin links/.test(error.stderr.toString()) &&
-          /bun install alone may leave orphans/.test(error.stderr.toString())
+          /Unsafe ancestor ttr bin links/.test(errorStderr(error)) &&
+          /stale workspace links/.test(errorStderr(error)) &&
+          /keep the legitimate package link/.test(errorStderr(error)) &&
+          /bun install alone may leave orphans/.test(errorStderr(error))
       );
+    assert.throws(
+      () =>
+        execFileSync(
+          process.execPath,
+          [
+            '-e',
+            `require(${JSON.stringify(checker)}).ttrPrefix(false,()=>{throw Error('must not probe')});`,
+          ],
+          { cwd: workspace, env: inherited, stdio: 'pipe' }
+        ),
+      (error) => /Unsafe ancestor ttr bin links/.test(errorStderr(error))
+    );
   }
   assert.equal(fs.existsSync(globalProbe), false);
   assert.equal(fs.existsSync(marker), false);
