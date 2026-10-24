@@ -129,10 +129,12 @@ Map<String, dynamic> mailSettingsFormValues(Map<String, dynamic> settings) {
 // Settings policy values are scalars or nested objects, with no ordered lists.
 bool _sameSettingsValue(Object? first, Object? second) {
   if (first is Map<String, dynamic> && second is Map<String, dynamic>) {
-    return first.length == second.length && first.entries.every(
-      (entry) => second.containsKey(entry.key) &&
-          _sameSettingsValue(entry.value, second[entry.key]),
-    );
+    return first.length == second.length &&
+        first.entries.every(
+          (entry) =>
+              second.containsKey(entry.key) &&
+              _sameSettingsValue(entry.value, second[entry.key]),
+        );
   }
   return first == second;
 }

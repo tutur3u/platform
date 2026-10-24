@@ -81,6 +81,7 @@ class MailCache {
       _removedPaths.remove((wsId, path));
       return result;
     }
+
     final key = _key(wsId, path);
     final scopeRevision = _store.scopeRevisionFor(key);
     void checkScope() {
