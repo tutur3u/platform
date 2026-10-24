@@ -18,6 +18,9 @@ on:
         default: false
         description: "Also detect release-only PR changes; other events always run"
     outputs:
+      affected_jobs:
+        description: "Affected validation jobs; absent keys retain validation"
+        value: ${{ jobs.check.outputs.affected_jobs }}
       run_checks:
         description: "Whether release relevance requires checks (true when not requested)"
         value: ${{ jobs.check.outputs.run_checks }}
@@ -34,11 +37,12 @@ jobs:
     name: Check CI Config
     runs-on: ubuntu-latest
     outputs:
+      affected_jobs: ${{ steps.check_config.outputs.affected_jobs }}
       run_checks: ${{ steps.pr_release_relevance.outputs.run_checks || steps.release_relevance.outputs.run_checks || 'true' }}
       should_run: ${{ steps.check_config.outputs.should_run }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -50,6 +54,9 @@ jobs:
             packages/*/package.json
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
+            scripts/ci/lockfile-workspace-delta.ts
+            scripts/ci/mobile-build-selection.ts
+            scripts/ci/mail-calendar-tasks-affected.ts
             scripts/ci/overflow-notes-ci.js
             scripts/ci/production-test-only-paths.ts
             scripts/ci/release-only-changes.js
@@ -63,7 +70,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -80,7 +87,9 @@ jobs:
         id: check_config
         shell: bash
         env:
+          CHANGED_BASE_SHA: ${{ steps.changed_files.outputs.base_sha }}
           CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          CHANGED_HEAD_SHA: ${{ steps.changed_files.outputs.head_sha }}
           WORKFLOW_NAME: ${{ inputs.workflow_name }}
         run: |
           if [ "$(node scripts/ci/overflow-notes-ci.js)" = true ]; then

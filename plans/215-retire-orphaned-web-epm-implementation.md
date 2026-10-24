@@ -31,7 +31,7 @@ their three focused tests pass; Web typecheck passes; CMS and TanStack have zero
 diff. After coordinator build serialization, both clean Web build attempts hung
 for at least five minutes at `Creating an optimized production build ...` with
 no output or `.next` artifact progress and were interrupted under the shared
-definitive threshold. Per STOP, `bun check`, final staging, and commit were not
+definitive threshold. Per STOP, `bun validate`, final staging, and commit were not
 run. Setup-generated `bun.lock` drift remains out of scope and must be restored
 before any future commit attempt. The repository-wide release closeout later
 completed a real Web production build on exact integrated main `cdef1c5533`, so
@@ -81,7 +81,7 @@ worktrees/branches under the post-merge cleanup rule.
 | Retained set | `find 'apps/web/src/app/[locale]/(dashboard)/[wsId]/epm' -type f | sort` | exactly the six named redirect files after deletion |
 | Focused redirects | `bun --cwd apps/web vitest run 'src/app/[locale]/(dashboard)/[wsId]/epm/page.test.tsx' 'src/app/[locale]/(dashboard)/[wsId]/epm/collections/[collectionId]/page.test.tsx' 'src/app/[locale]/(dashboard)/[wsId]/epm/entries/[entryId]/page.test.tsx'` | all redirect contracts pass |
 | Types/build | `bun run --cwd apps/web type-check && bun run --cwd apps/web build` | exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

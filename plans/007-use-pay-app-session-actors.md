@@ -107,7 +107,7 @@ authorize resources using the resolved `user.id`.
    non-user-authenticated exception.
 
 5. **Run gates.** Run the helper test and all newly added representative route
-   tests, then `bun check`, `bun run --cwd apps/pay build`, and
+   tests, then `bun validate`, `bun run --cwd apps/pay build`, and
    `git diff --check`; expect all Bun commands to exit 0 and no whitespace
    output.
 
@@ -119,7 +119,7 @@ authorize resources using the resolved `user.id`.
 - [ ] Existing workspace/object authorization is evaluated against the resolved
   actor ID; using an admin client does not grant access by itself.
 - [ ] Shared helper and representative read/mutation/invoice tests pass with
-  `bun check`, the Pay build, and `git diff --check`.
+  `bun validate`, the Pay build, and `git diff --check`.
 
 ## STOP conditions
 

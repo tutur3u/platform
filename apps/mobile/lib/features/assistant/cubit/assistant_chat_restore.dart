@@ -69,11 +69,49 @@ extension _AssistantChatRestore on AssistantChatCubit {
 
       // A restore failure retains the selected identity. It is not a new chat.
       _emitIfOpen(state.copyWith(storedChatId: storedChatId));
-      final restored = await _repository.restoreChat(
-        wsId: wsId,
-        chatId: storedChatId,
-        cacheOrigin: _captureChatCacheOrigin(wsId, storedChatId),
-      );
+      final initialRestore = Completer<void>();
+      List<AssistantMessage>? initialMessages;
+      final origin = _captureChatCacheOrigin(wsId, storedChatId);
+      final revalidatingOrigin = origin == null
+          ? null
+          : AssistantChatCacheOrigin(
+              key: origin.key,
+              epoch: origin.epoch,
+              revision: origin.revision,
+              isCurrent: origin.isCurrent,
+              onRevalidated: (fresh) async {
+                await initialRestore.future;
+                if (!current() ||
+                    !origin.isCurrent() ||
+                    fresh == null ||
+                    state.storedChatId != storedChatId ||
+                    state.isBusy ||
+                    !identical(state.messages, initialMessages)) {
+                  return;
+                }
+                _publishRestoredSettings(fresh.settings);
+                _emitIfOpen(
+                  state.copyWith(
+                    chat: fresh.chat,
+                    messages: fresh.messages,
+                    attachmentsByMessageId: fresh.attachmentsByMessageId,
+                  ),
+                );
+                await _onChatRestored(fresh.chat?.model);
+              },
+            );
+      late final AssistantRestoredChat? restored;
+      try {
+        restored = await _repository.restoreChat(
+          wsId: wsId,
+          chatId: storedChatId,
+          cacheOrigin: revalidatingOrigin,
+        );
+        initialMessages = restored?.messages;
+      } finally {
+        // Revalidation publishes after the initial cached snapshot below.
+        scheduleMicrotask(initialRestore.complete);
+      }
       if (!current()) return;
 
       if (restored == null) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/chat/view/chat_page.dart';
@@ -25,7 +26,6 @@ import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppRegistry {
   const AppRegistry._();
@@ -78,7 +78,7 @@ class AppRegistry {
     AppModule(
       id: 'tasks',
       route: Routes.tasks,
-      icon: shad.LucideIcons.userCheck,
+      icon: LucideIcons.userCheck,
       labelBuilder: _labelTasks,
       pageBuilder: _pageTasks,
       miniAppNavItems: _tasksMiniNav,
@@ -86,7 +86,7 @@ class AppRegistry {
     AppModule(
       id: 'chat',
       route: Routes.chat,
-      icon: shad.LucideIcons.messagesSquare,
+      icon: LucideIcons.messagesSquare,
       labelBuilder: _labelChat,
       pageBuilder: _pageChat,
       miniAppNavItems: _chatMiniNav,
@@ -214,19 +214,19 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'tasks_home',
       route: Routes.tasks,
-      icon: shad.LucideIcons.userCheck,
+      icon: LucideIcons.userCheck,
       labelBuilder: _labelTasks,
     ),
     MiniAppNavItem(
       id: 'tasks_boards',
       route: Routes.taskBoards,
-      icon: shad.LucideIcons.squareKanban,
+      icon: LucideIcons.squareKanban,
       labelBuilder: _labelTaskBoards,
     ),
     MiniAppNavItem(
       id: 'tasks_planning',
       route: Routes.taskPlanning,
-      icon: shad.LucideIcons.route,
+      icon: LucideIcons.route,
       labelBuilder: _labelTaskPlanning,
     ),
   ];
@@ -235,7 +235,7 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'chat_home',
       route: Routes.chat,
-      icon: shad.LucideIcons.messagesSquare,
+      icon: LucideIcons.messagesSquare,
       labelBuilder: _labelChat,
     ),
   ];

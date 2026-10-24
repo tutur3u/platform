@@ -285,20 +285,20 @@ test('public project dependencies skip dependent bodies after failed setup while
   );
   fs.writeFileSync(
     path.join(webDir, 'setup.spec.ts'),
-    `const {test,expect}=require(${JSON.stringify(api)});test('setup fails',()=>expect(1).toBe(2));`
+    "const {test,expect}=require(process.env.COHORT_TEST_API);test('setup fails',()=>expect(1).toBe(2));"
   );
   fs.writeFileSync(
     path.join(webDir, 'finance-permission-boundaries.noauth.spec.ts'),
-    `const {test}=require(${JSON.stringify(api)});test('dependent body',()=>require('node:fs').writeFileSync(${JSON.stringify(path.join(webDir, 'dependent-ran'))},'unsafe'));`
+    "const {test}=require(process.env.COHORT_TEST_API);test('dependent body',()=>require('node:fs').writeFileSync(require('node:path').join(__dirname,'dependent-ran'),'unsafe'));"
   );
   fs.writeFileSync(
     path.join(webDir, 'forms-private.noauth.spec.ts'),
-    `const {test}=require(${JSON.stringify(api)});test('independent body',()=>require('node:fs').writeFileSync(${JSON.stringify(path.join(webDir, 'independent-ran'))},'ran'));`
+    "const {test}=require(process.env.COHORT_TEST_API);test('independent body',()=>require('node:fs').writeFileSync(require('node:path').join(__dirname,'independent-ran'),'ran'));"
   );
   const invoke = (args, env = {}) =>
     spawnSync(process.execPath, [cli, 'test', '--config', config, ...args], {
       cwd: webDir,
-      env: { ...process.env, ...env },
+      env: { ...process.env, ...env, COHORT_TEST_API: api },
       encoding: 'utf8',
     });
   const discovery = invoke(['--list', `--reporter=json,${reporter}`], {

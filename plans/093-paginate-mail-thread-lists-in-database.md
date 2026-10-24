@@ -48,7 +48,7 @@ migration, internal API, generated-type, and lockfile paths. Obtain transfer.
 | Mail tests | `bun --cwd apps/mail vitest run src/lib/mail/repository/threads.test.ts` | folder/search/cursor suite passes |
 | Internal API | `bun run --cwd packages/internal-api type-check` | exit 0 |
 | Mail build | `bun run --cwd apps/mail build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 
 ## Scope
 
@@ -86,7 +86,7 @@ commit window before staging.
 - [ ] Mailboxes over 5,000 messages expose complete deterministic pagination.
 - [ ] Work per page is bounded by page size, not mailbox size.
 - [ ] Every existing folder/search/state rule has parity coverage.
-- [ ] Database/apply/typegen, focused tests, Mail build, and `bun check` pass.
+- [ ] Database/apply/typegen, focused tests, Mail build, and `bun validate` pass.
 
 ## STOP conditions
 

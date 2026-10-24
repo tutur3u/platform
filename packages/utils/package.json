@@ -72,6 +72,7 @@
     "./editor": "./src/editor/index.ts",
     "./abuse-protection": "./src/abuse-protection/index.ts",
     "./abuse-protection/backend-rate-limit": "./src/abuse-protection/backend-rate-limit.ts",
+    "./abuse-protection/client-ip": "./src/abuse-protection/client-ip.ts",
     "./abuse-protection/edge": "./src/abuse-protection/edge.ts",
     "./abuse-protection/edge-trust": "./src/abuse-protection/edge-trust.ts",
     "./abuse-protection/user-suspension": "./src/abuse-protection/user-suspension.ts",
@@ -80,5 +81,5 @@
     "./encryption": "./src/encryption/index.ts",
     "./finance": "./src/finance/index.ts"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

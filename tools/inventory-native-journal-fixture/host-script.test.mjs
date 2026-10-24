@@ -191,6 +191,9 @@ test('actual trusted gate emits true only for explicitly enabled registration', 
           'tuturuuu.ts',
           'scripts/ci/check-workflow-config.ts',
           'scripts/ci/workflow-config-core.ts',
+          'scripts/ci/production-test-only-paths.ts',
+          'scripts/ci/workspace-dependency-closure.ts',
+          'scripts/ci/mail-calendar-tasks-affected.ts',
         ])
           copyFileSync(resolve(root, file), resolve(directory, file));
         writeFileSync(

@@ -7,7 +7,6 @@ import {
   openSync,
   readFileSync,
   realpathSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -328,13 +327,18 @@ export function assertChatProcessContext(context) {
 }
 
 function fileDigest(file, limit = 256 * 1024 * 1024) {
-  const stat = statSync(file);
-  if (!stat.isFile() || stat.size > limit)
-    throw new Error('Chat identity input exceeds bound');
-  const bytes = readFileSync(file);
-  if (bytes.length > limit)
-    throw new Error('Chat identity input exceeds bound');
-  return sha256(bytes);
+  const fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile() || stat.size > limit)
+      throw new Error('Chat identity input exceeds bound');
+    const bytes = readFileSync(fd);
+    if (bytes.length > limit)
+      throw new Error('Chat identity input exceeds bound');
+    return sha256(bytes);
+  } finally {
+    closeSync(fd);
+  }
 }
 
 export function chatProcessContext(root) {

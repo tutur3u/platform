@@ -779,13 +779,6 @@
       }
     }
   },
-  "@settingsTimezoneEffective": {
-    "placeholders": {
-      "timezone": {
-        "type": "String"
-      }
-    }
-  },
   "@settingsWorkspaceMembersActiveSection": {
     "placeholders": {
       "count": {
@@ -1445,6 +1438,8 @@
   "assistantMermaidZoomIn": "Zoom in",
   "assistantMermaidZoomOut": "Zoom out",
   "assistantMermaidZoomReset": "Reset zoom",
+  "assistantMessageDelivered": "Delivered",
+  "assistantMessageRead": "Read",
   "assistantMessageActionsTitle": "Message actions",
   "assistantMicrophoneUnavailable": "Microphone unavailable. Check microphone access or reconnect your headset, then try again.",
   "assistantModeFast": "Fast",
@@ -1481,7 +1476,7 @@
   "assistantSeeMoreLabel": "See more",
   "assistantSelectWorkspace": "Select a workspace",
   "assistantSendAction": "Send message",
-  "assistantSettingsTitle": "Assistant settings",
+  "assistantSettingsTitle": "Assistant Settings",
   "assistantShowBottomNavLabel": "Show bottom nav",
   "assistantSourceLabel": "Source",
   "assistantSourcePersonal": "Personal",
@@ -3352,6 +3347,53 @@
   "settingsAccountTab": "Account",
   "settingsAppPreferences": "App preferences",
   "settingsAppVersion": "App version",
+  "appearanceAccentAmber": "Amber",
+  "appearanceAccentBlue": "Blue",
+  "appearanceAccentGreen": "Green",
+  "appearanceAccentIndigo": "Indigo",
+  "appearanceAccentNeutral": "Neutral",
+  "appearanceAccentOrange": "Orange",
+  "appearanceAccentRose": "Rose",
+  "appearanceAccentTeal": "Teal",
+  "appearanceAccentTheme": "Match theme",
+  "appearanceAccentTitle": "Accent color",
+  "appearanceAccentViolet": "Violet",
+  "appearanceAnimate": "Animate background",
+  "appearanceAnimateDescription": "Blobs drift slowly. Uses a little more battery.",
+  "appearanceAnimateReducedMotion": "Reduce Motion is on, so the background stays still.",
+  "appearanceBackgroundBlobs": "Blobs",
+  "appearanceBackgroundGradient": "Gradient",
+  "appearanceBackgroundSolid": "Solid",
+  "appearanceBackgroundTitle": "Background",
+  "appearanceIntensity": "Intensity",
+  "appearanceModeTitle": "Mode",
+  "appearanceNew": "New",
+  "appearancePreviewTitle": "Preview",
+  "appearanceReset": "Reset to default",
+  "appearanceResetDone": "Appearance reset to default",
+  "appearanceSoftness": "Softness",
+  "appearanceSurfaceOpacity": "Card opacity",
+  "appearanceSurfacesTitle": "Surfaces",
+  "appearanceThemeAurora": "Aurora",
+  "appearanceThemeBlossom": "Blossom",
+  "appearanceThemeClassic": "Classic",
+  "appearanceThemeEmber": "Ember",
+  "appearanceThemeForest": "Forest",
+  "appearanceThemeMono": "Mono",
+  "appearanceThemeOcean": "Ocean",
+  "appearanceThemeSunset": "Sunset",
+  "appearanceThemesTitle": "Themes",
+  "settingsAppearance": "Appearance",
+  "settingsProfileEdit": "Edit profile",
+  "settingsProfileManageWorkspace": "Workspace",
+  "settingsProfileWorkspaceCount": "{count, plural, =1{workspace} other{workspaces}}",
+  "@settingsProfileWorkspaceCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsAppearanceLanguage": "Appearance & language",
   "settingsBuildLabel": "Build",
   "settingsCalendar": "Calendar",
@@ -3384,7 +3426,7 @@
   "settingsFirstDayOfWeekDescription": "Control how calendars and weekly summaries start.",
   "settingsFirstDaySaturday": "Saturday",
   "settingsFirstDaySunday": "Sunday",
-  "settingsGeneralGroup": "Personalize",
+  "settingsGeneralGroup": "General",
   "settingsHaptics": "Haptic feedback",
   "settingsHeroDescription": "Personal setup, workspace context, and release details in one place.",
   "settingsInfrastructureSectionDescription": "Platform-wide controls available in the internal workspace.",
@@ -3472,10 +3514,22 @@
   "settingsTimezoneAccountPending": "Waiting for your account.",
   "settingsTimezoneAuto": "Automatic",
   "settingsTimezoneDescription": "Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.",
-  "settingsTimezoneEffective": "Effective timezone: {timezone}",
+  "settingsTimezoneAutoShort": "Auto",
+  "settingsTimezoneCityHoChiMinh": "Ho Chi Minh City",
   "settingsTimezoneError": "Could not load or save timezone. Retry or edit a loaded preference.",
   "settingsTimezoneLoading": "Resolving timezone…",
   "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
+  "settingsTimezoneRateLimitedDetails": "Limit details: {details}",
+  "settingsTimezoneRateLimitedChallenge": "The response indicates a Vercel security challenge. Please contact support if this continues.",
+  "settingsTimezoneRateLimitedUpstream": "This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.",
+  "settingsTimezoneRateLimitedRetryAfter": "The server asks you to wait {seconds} seconds before retrying.",
+  "@settingsTimezoneRateLimitedRetryAfter": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "settingsTimezoneRetry": "Retry timezone",
   "settingsTimezoneSearch": "Search timezones",
   "settingsTimezoneUnknown": "Unknown",
@@ -4579,5 +4633,112 @@
   "feedbackRetry": "Retry same submission",
   "feedbackEditRejected": "Edit rejected submission",
   "feedbackSubjectRequired": "Enter a subject of 1–160 characters.",
-  "feedbackDetailsRequired": "Enter details of 1–8000 characters."
+  "feedbackDetailsRequired": "Enter details of 1–8000 characters.",
+  "profileMediaNetworkError": "Could not connect. Check your connection and try again.",
+  "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again.",
+  "settingsNativeVerificationFailed": "Could not verify this device. Check your connection and try again.",
+  "settingsTimezonePickerAll": "All timezones",
+  "settingsTimezonePickerAutoPersonal": "Uses the workspace timezone, or this device's when the workspace has none.",
+  "settingsTimezonePickerAutoWorkspace": "Members without a personal timezone use their own device's.",
+  "settingsTimezonePickerAutoResolved": "Currently {timezone}.",
+  "settingsTimezonePickerCurrent": "Current",
+  "settingsTimezonePickerEmpty": "No timezones match “{query}”.",
+  "settingsTimezonePickerSearchHint": "Search city, region or GMT offset",
+  "@settingsTimezonePickerAutoResolved": {
+    "placeholders": {
+      "timezone": {
+        "type": "String"
+      }
+    }
+  },
+  "@settingsTimezonePickerEmpty": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsGroup": "Apps",
+  "settingsSearchPlaceholder": "Search settings",
+  "settingsSearchNoResults": "No settings match “{query}”.",
+  "@settingsSearchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSearchResults": "{count, plural, =1{1 result} other{{count} results}}",
+  "@settingsSearchResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppOfflineData": "Offline data",
+  "settingsAppOfflineDataDescription": "Prepare and review what this device keeps offline",
+  "settingsAppBoardsGroup": "Boards",
+  "settingsAppWeekGroup": "Week",
+  "settingsAppConnectionsGroup": "Connected calendars",
+  "settingsAppPrivacyGroup": "Privacy",
+  "settingsAppFocusGroup": "Focus",
+  "settingsAppRequestsGroup": "Requests",
+  "settingsPomodoroSummary": "{focus} min focus · {shortBreak} min break",
+  "@settingsPomodoroSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "shortBreak": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRequestThresholdSummary": "{days, plural, =0{Every missed entry needs approval} =1{Entries older than 1 day need approval} other{Entries older than {days} days need approval}}",
+  "@settingsRequestThresholdSummary": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsFirstDaySummary": "First day: {day}",
+  "@settingsFirstDaySummary": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailSummary": "Mailboxes, reading and swipe actions",
+  "settingsAssistantSummary": "Personality, memory and on-device models",
+  "settingsTimeZoneGroup": "Time zone",
+  "settingsAppSettingsFor": "{app} settings",
+  "@settingsAppSettingsFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalThreshold": "Approval threshold",
+  "settingsPomodoroTitle": "Pomodoro",
+  "settingsRequireApproval": "Require approval",
+  "settingsApprovalOlderThan": "For entries older than",
+  "settingsDaysUnit": "days",
+  "settingsStatusChangeWindow": "Status change window",
+  "settingsFooterDevice": "Saved on this device.",
+  "settingsFooterFirstDay": "Saved to your account on every device. Auto uses the workspace default.",
+  "settingsFooterWorkspace": "Applies to everyone in this workspace.",
+  "settingsFooterCalendarAccounts": "Calendar accounts connected to this workspace.",
+  "settingsFooterOffline": "Data kept on this device for offline use.",
+  "settingsTasksSummaryBoardView": "Board view",
+  "settingsTasksSummaryBoardList": "Board list",
+  "settingsFinanceAmountsShown": "Amounts shown",
+  "settingsFinanceAmountsHidden": "Amounts hidden",
+  "settingsSearchBrowserTerm": "browser",
+  "profilePhoto": "Photo",
+  "profileCoverBanner": "Cover banner",
+  "profileMediaSet": "Set"
 }

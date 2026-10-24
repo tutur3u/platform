@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { open, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute } from 'node:path';
 import {
   CALENDAR_SSR_MARKER,
@@ -304,14 +304,32 @@ export async function writeCalendarSsrPacket(path, packet) {
   );
   const bytes = `${JSON.stringify(clean)}\n`;
   assert.ok(Buffer.byteLength(bytes) <= 32768, 'Oversized sanitized packet');
-  await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
-  const info = await stat(path);
-  assert.ok(
-    info.isFile() && (info.mode & 0o777) === 0o600,
-    'Nonprivate sanitized packet'
-  );
-  assert.ok(
-    (await readFile(path, 'utf8')) === bytes,
-    'Sanitized packet readback failed'
-  );
+  const handle = await open(path, 'wx+', 0o600);
+  try {
+    await handle.writeFile(bytes);
+    const info = await handle.stat();
+    assert.ok(
+      info.isFile() && (info.mode & 0o777) === 0o600,
+      'Nonprivate sanitized packet'
+    );
+    const expected = Buffer.from(bytes);
+    const readback = Buffer.alloc(expected.length + 1);
+    let length = 0;
+    while (length < readback.length) {
+      const { bytesRead } = await handle.read(
+        readback,
+        length,
+        readback.length - length,
+        length
+      );
+      if (bytesRead === 0) break;
+      length += bytesRead;
+    }
+    assert.ok(
+      readback.subarray(0, length).equals(expected),
+      'Sanitized packet readback failed'
+    );
+  } finally {
+    await handle.close();
+  }
 }

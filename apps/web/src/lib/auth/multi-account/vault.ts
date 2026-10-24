@@ -5,22 +5,21 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import { revokeUserAiTempAuthTokens } from '@tuturuuu/utils/ai-temp-auth';
-import { cookies } from 'next/headers';
+import { BASE_URL } from '@/constants/common';
 import {
-  createDeviceCookieValue,
   createDeviceSecret,
   decryptSession,
   encryptSession,
-  getAllDeviceCookieClearTargets,
-  getDeviceCookieName,
-  getDeviceCookieOptions,
-  getDeviceCookieReadNames,
-  getStaleDeviceCookieClearTargets,
   hashDeviceSecret,
-  parseDeviceCookieValue,
 } from './crypto';
 import {
+  clearDeviceCookie,
+  getDeviceCredentialCandidates,
+  setDeviceCookie,
+} from './device-cookies';
+import {
   getWorkspaceIdFromMultiAccountRoute,
+  isWebOriginRequest,
   normalizePersistableMultiAccountRoute,
   resolveMultiAccountAddRedirect,
   resolveMultiAccountSwitchRedirect,
@@ -135,78 +134,11 @@ function rowToAccountSummary(row: AccountRow): WebAccountSummary {
   };
 }
 
-function clearStaleDeviceCookies(
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-  request: Pick<Request, 'headers' | 'url'>
-) {
-  for (const target of getStaleDeviceCookieClearTargets(request)) {
-    cookieStore.set(target.name, '', target.options);
-  }
-}
-
-function getCookieHeaderValues(
-  request: Pick<Request, 'headers' | 'url'>,
-  name: string
-) {
-  const cookieHeader = request.headers.get('cookie');
-
-  if (!cookieHeader) return [];
-
-  return cookieHeader.split(';').flatMap((cookie) => {
-    const [cookieName, ...valueParts] = cookie.trim().split('=');
-    if (cookieName !== name) return [];
-    const value = valueParts.join('=').trim();
-    return value ? [value] : [];
-  });
-}
-
-function getDeviceCredentialCandidates(
-  request: Pick<Request, 'headers' | 'url'>,
-  cookieStore: Awaited<ReturnType<typeof cookies>>
-) {
-  return getDeviceCookieReadNames(request).flatMap((cookieName) => {
-    const headerValues = getCookieHeaderValues(request, cookieName);
-    const values =
-      headerValues.length > 0
-        ? [...headerValues].reverse()
-        : [cookieStore.get(cookieName)?.value].filter(Boolean);
-
-    return values.flatMap((value) => {
-      const credential = parseDeviceCookieValue(value);
-      return credential ? [credential] : [];
-    });
-  });
-}
-
-async function setDeviceCookie(
-  request: Pick<Request, 'headers' | 'url'>,
-  device: WebAccountDevice
-) {
-  const cookieStore = await cookies();
-  const cookieName = getDeviceCookieName(request);
-
-  clearStaleDeviceCookies(cookieStore, request);
-
-  cookieStore.set(
-    cookieName,
-    createDeviceCookieValue(device.deviceId, device.secret),
-    getDeviceCookieOptions(request)
-  );
-}
-
-async function clearDeviceCookie(request: Pick<Request, 'headers' | 'url'>) {
-  const cookieStore = await cookies();
-  for (const target of getAllDeviceCookieClearTargets(request)) {
-    cookieStore.set(target.name, '', target.options);
-  }
-}
-
 async function resolveDevice(
   request: Pick<Request, 'headers' | 'url'>,
   options: { create: boolean }
 ): Promise<WebAccountDevice | null> {
-  const cookieStore = await cookies();
-  const credentials = getDeviceCredentialCandidates(request, cookieStore);
+  const credentials = await getDeviceCredentialCandidates(request);
   const db = await getPrivateDb();
 
   for (const credential of credentials) {
@@ -522,7 +454,13 @@ async function switchToStoredWebAccount(
   await refreshActiveAccountSession(device, supabase);
   await revokeCurrentUserTempAuth(supabase);
 
-  if (payload.currentRoute && device.activeUserId) {
+  // Satellite apps share the account vault but send their own app path as
+  // currentRoute. Only Web-originated paths can be resumed on Web later.
+  if (
+    payload.currentRoute &&
+    device.activeUserId &&
+    isWebOriginRequest(request, BASE_URL)
+  ) {
     await updateCurrentWebAccount(request, {
       route: payload.currentRoute,
       workspaceId: getWorkspaceIdFromRoute(payload.currentRoute),

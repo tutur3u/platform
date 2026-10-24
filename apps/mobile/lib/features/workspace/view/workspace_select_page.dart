@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart'
     hide AppBar, Chip, CircleAvatar, FilledButton, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -108,8 +106,8 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
           if (state.visibilityStatus != WorkspaceStatus.error) return list;
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
+              AppPageBody(
+                consumeBottomClearance: false,
                 child: Row(
                   children: [
                     Expanded(child: Text(l10n.workspaceHiddenLoadError)),
@@ -182,52 +180,43 @@ class _WorkspaceListView extends StatelessWidget {
     final l10n = context.l10n;
     final sections = splitWorkspaceSections(state.visibleWorkspaces);
 
-    return ResponsiveWrapper(
-      maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-      child: NovaRefreshIndicator(
-        onRefresh: onRefresh,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-            ResponsivePadding.horizontal(context.deviceClass),
-            8,
-            ResponsivePadding.horizontal(context.deviceClass),
-            32,
-          ),
-          children: [
-            // Limits bar
-            if (state.limits != null && state.limits!.limit > 0) ...[
-              _LimitsBar(
-                currentCount: state.limits!.currentCount,
-                limit: state.limits!.limit,
-              ),
-              const shad.Gap(16),
-            ],
-
-            // Personal workspace section
-            if (sections.personal.isNotEmpty) ...[
-              _SectionHeader(title: l10n.workspacePersonalSection),
-              const shad.Gap(8),
-              for (final w in sections.personal) _buildTile(w),
-            ],
-
-            if (sections.system.isNotEmpty) ...[
-              if (sections.personal.isNotEmpty) const shad.Gap(16),
-              _SectionHeader(title: l10n.workspaceSystemSection),
-              const shad.Gap(8),
-              for (final w in sections.system) _buildTile(w),
-            ],
-
-            // Team workspaces section
-            if (sections.team.isNotEmpty) ...[
-              if (sections.personal.isNotEmpty || sections.system.isNotEmpty)
-                const shad.Gap(16),
-              _SectionHeader(title: l10n.workspaceTeamSection),
-              const shad.Gap(8),
-              for (final w in sections.team) _buildTile(w),
-            ],
+    return NovaRefreshIndicator(
+      onRefresh: onRefresh,
+      child: AppPageListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          // Limits bar
+          if (state.limits != null && state.limits!.limit > 0) ...[
+            _LimitsBar(
+              currentCount: state.limits!.currentCount,
+              limit: state.limits!.limit,
+            ),
+            const shad.Gap(16),
           ],
-        ),
+
+          // Personal workspace section
+          if (sections.personal.isNotEmpty) ...[
+            _SectionHeader(title: l10n.workspacePersonalSection),
+            const shad.Gap(8),
+            for (final w in sections.personal) _buildTile(w),
+          ],
+
+          if (sections.system.isNotEmpty) ...[
+            if (sections.personal.isNotEmpty) const shad.Gap(16),
+            _SectionHeader(title: l10n.workspaceSystemSection),
+            const shad.Gap(8),
+            for (final w in sections.system) _buildTile(w),
+          ],
+
+          // Team workspaces section
+          if (sections.team.isNotEmpty) ...[
+            if (sections.personal.isNotEmpty || sections.system.isNotEmpty)
+              const shad.Gap(16),
+            _SectionHeader(title: l10n.workspaceTeamSection),
+            const shad.Gap(8),
+            for (final w in sections.team) _buildTile(w),
+          ],
+        ],
       ),
     );
   }

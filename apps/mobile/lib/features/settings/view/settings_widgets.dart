@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/settings/view/settings_group.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+export 'package:mobile/features/settings/view/settings_group.dart';
+export 'package:mobile/features/settings/view/settings_tile.dart';
 
 class SettingsPanel extends StatelessWidget {
   const SettingsPanel({
@@ -34,98 +40,21 @@ class SettingsPanel extends StatelessWidget {
   }
 }
 
-/// Sections inherit the page surface; separators establish a quiet hierarchy.
-class SettingsGroup extends StatelessWidget {
-  const SettingsGroup({required this.children, super.key});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(17),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.background,
-          borderRadius: BorderRadius.circular(17),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 0; index < children.length; index++) ...[
-              if (index > 0)
-                Divider(
-                  height: 1,
-                  indent: 58,
-                  color: theme.colorScheme.border.withValues(alpha: 0.7),
-                ),
-              children[index],
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Root navigation groups use the same quiet heading and shared row surface.
-class SettingsCompactSection extends StatelessWidget {
-  const SettingsCompactSection({
-    required this.title,
-    required this.children,
-    this.columnSplit,
-    super.key,
-  });
-
-  final String title;
-  final List<Widget> children;
-
-  /// Expanded layouts retain the same compact groups in two columns.
-  final int? columnSplit;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        title,
-        style: shad.Theme.of(context).typography.small.copyWith(
-          fontWeight: FontWeight.w600,
-          color: shad.Theme.of(context).colorScheme.mutedForeground,
-        ),
-      ),
-      const shad.Gap(8),
-      if (columnSplit case final split?)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SettingsGroup(children: children.take(split).toList()),
-            ),
-            const shad.Gap(16),
-            Expanded(
-              child: SettingsGroup(children: children.skip(split).toList()),
-            ),
-          ],
-        )
-      else
-        SettingsGroup(children: children),
-    ],
-  );
-}
-
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     required this.title,
     required this.children,
     this.description,
+    this.grouped = false,
     super.key,
   });
 
   final String title;
   final String? description;
   final List<Widget> children;
+
+  /// Renders [children] as rows of one rounded card.
+  final bool grouped;
 
   @override
   Widget build(BuildContext context) {
@@ -134,23 +63,27 @@ class SettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (title.trim().isNotEmpty)
-          Text(
-            title,
-            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
-          ),
+        if (title.trim().isNotEmpty) SettingsCaption(title),
         if (description?.trim().isNotEmpty ?? false) ...[
           const shad.Gap(6),
-          Text(
-            description!,
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SettingsRowLayout.captionInset,
+            ),
+            child: Text(
+              description!,
+              style: theme.typography.textSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
             ),
           ),
         ],
         if (title.trim().isNotEmpty || description?.trim().isNotEmpty == true)
           const shad.Gap(8),
-        ..._withSpacing(children),
+        if (grouped)
+          SettingsGroup(children: children)
+        else
+          ..._withSpacing(children),
       ],
     );
   }
@@ -168,145 +101,6 @@ class SettingsSection extends StatelessWidget {
       widgets.add(children[index]);
     }
     return widgets;
-  }
-}
-
-class SettingsTile extends StatelessWidget {
-  const SettingsTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.value,
-    this.onTap,
-    this.isDestructive = false,
-    this.showChevron = true,
-    this.trailing,
-    this.grouped = false,
-    this.wrapSupportingText = false,
-    super.key,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final String? value;
-  final VoidCallback? onTap;
-  final bool isDestructive;
-  final bool showChevron;
-  final Widget? trailing;
-  final bool grouped;
-  final bool wrapSupportingText;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accentColor = isDestructive
-        ? theme.colorScheme.destructive
-        : theme.colorScheme.primary;
-    final textColor = isDestructive ? theme.colorScheme.destructive : null;
-    final hasSupportingLine =
-        (value?.trim().isNotEmpty ?? false) ||
-        (subtitle?.trim().isNotEmpty ?? false);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(grouped ? 0 : 14),
-        onTap: onTap,
-        child: Ink(
-          padding: EdgeInsets.symmetric(
-            horizontal: grouped ? 14 : 13,
-            vertical: grouped ? 8 : 10,
-          ),
-          child: Row(
-            crossAxisAlignment: hasSupportingLine
-                ? CrossAxisAlignment.start
-                : CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Icon(icon, size: 18, color: accentColor),
-              ),
-              const shad.Gap(11),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    top: hasSupportingLine && !grouped ? 5 : 0,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.typography.small.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                        ),
-                      ),
-                      if (value?.trim().isNotEmpty ?? false) ...[
-                        const shad.Gap(4),
-                        Text(
-                          value!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              (grouped
-                                      ? theme.typography.textSmall
-                                      : theme.typography.base)
-                                  .copyWith(
-                                    color:
-                                        textColor ??
-                                        (grouped
-                                            ? theme.colorScheme.mutedForeground
-                                            : theme.colorScheme.foreground),
-                                    fontWeight: grouped
-                                        ? FontWeight.w400
-                                        : FontWeight.w700,
-                                  ),
-                        ),
-                      ],
-                      if (subtitle?.trim().isNotEmpty ?? false) ...[
-                        const shad.Gap(2),
-                        Text(
-                          subtitle!,
-                          maxLines: onTap != null && !wrapSupportingText
-                              ? 1
-                              : null,
-                          overflow: onTap != null && !wrapSupportingText
-                              ? TextOverflow.ellipsis
-                              : null,
-                          style: theme.typography.textSmall.copyWith(
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const shad.Gap(8),
-              Padding(
-                padding: EdgeInsets.only(top: hasSupportingLine ? 6 : 0),
-                child:
-                    trailing ??
-                    (showChevron
-                        ? Icon(
-                            Icons.chevron_right,
-                            size: 20,
-                            color: theme.colorScheme.mutedForeground,
-                          )
-                        : const SizedBox.shrink()),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

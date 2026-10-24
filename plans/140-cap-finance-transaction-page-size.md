@@ -52,7 +52,7 @@ greater than 100; exports must use their own endpoint rather than this UI route.
 | Focused route | `bun --cwd apps/finance vitest run 'src/app/api/workspaces/[wsId]/transactions/infinite/route.test.ts'` | all page-bound, cursor, enrichment, and existing cases pass |
 | Finance typecheck | `bun run --cwd apps/finance type-check` | exit 0 |
 | Finance build | `bun run --cwd apps/finance build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -97,7 +97,7 @@ runs for invalid limits.
 
 ### Step 3: Run all gates
 
-Run the focused suite, Finance typecheck/build, `bun check`, and whitespace.
+Run the focused suite, Finance typecheck/build, `bun validate`, and whitespace.
 Confirm only the route/test plus README changed.
 
 ## Done criteria

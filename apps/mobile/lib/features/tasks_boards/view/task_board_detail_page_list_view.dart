@@ -8,7 +8,6 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
     required this.state,
     required this.board,
     required this.sort,
-    required this.bottomPadding,
     required this.scrollController,
     required this.onTaskTap,
     required this.onTaskToggleDone,
@@ -26,7 +25,6 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
   final TaskBoardDetailState state;
   final TaskBoardDetail board;
   final TaskBoardListViewSortField sort;
-  final double bottomPadding;
   final ScrollController scrollController;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task, String targetStatus) onTaskToggleDone;
@@ -114,14 +112,13 @@ class _TaskBoardEnhancedListViewState
     final hasMoreTasks = _hasMoreTasks;
 
     if (sections.isEmpty) {
-      return ListView(
+      return AppPageListView(
         key: PageStorageKey<String>(
           'task-board-enhanced-list-empty-${widget.boardId}',
         ),
         controller: widget.scrollController,
         primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 0, 16, widget.bottomPadding),
         children: [
           shad.Card(
             child: Padding(
@@ -148,12 +145,11 @@ class _TaskBoardEnhancedListViewState
       );
     }
 
-    return ListView.builder(
+    return AppPageListView.builder(
       key: PageStorageKey<String>('task-board-enhanced-list-${widget.boardId}'),
       controller: widget.scrollController,
       primary: false,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 0, 16, widget.bottomPadding),
       itemCount: sections.length + (hasMoreTasks ? 1 : 0),
       itemBuilder: (context, index) {
         final sectionIndex = index;
