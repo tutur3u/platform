@@ -1020,3 +1020,42 @@ summary rather than authenticated URLs or response bodies. A runner shutdown
 without a final assertion report leaves the underlying cause unproven. Preserve
 allocated fixtures until successful final cleanup or independently verified
 resource absence, and use the next exact-source CI result for runtime evidence.
+
+
+## Trusted command execution boundary
+
+General devbox jobs intentionally execute caller-selected binaries and argv on
+trusted infrastructure. Only verified CLI app sessions or authenticated Supabase
+sessions with `MEMBER` membership in the root workspace can submit them through
+`/api/v1/devboxes/runs`. Membership in another workspace, root guest membership,
+and pull-request content alone do not authorize submission. Root members are
+trusted to execute code on enabled fleet runners; command-policy deny rules are
+operational guardrails, not a sandbox or an executable allowlist.
+
+The API persists the verified actor with the command in `private.devbox_runs`.
+Private tables have RLS enabled, and the claim RPC is restricted to `service_role`.
+Both the Web polling endpoint and the control Worker authenticate a hashed,
+non-revoked runner token and recheck its owner's root membership. The Worker
+supports heartbeat, poll, connect and internal wake notifications, not arbitrary
+job submission. Runner feature selection, active leases and trust-pool constraints
+limit claims. Host-side execution fences reject Judge and playground envelopes
+on ordinary trusted runners, and generic commands on Judge-only runners.
+Learner source reaches the dedicated Judge/playground paths, not generic host
+execution. Keep those pools and their credentials separate.
+
+The exact-commit envelope validates a full SHA and clean relative directory,
+fetches origin branches and requires the SHA to be reachable from an origin
+branch before making a private detached worktree. This proves provenance, not
+that project code or a branch is safe: root members must review what they submit.
+An explicit interpreter such as `sh -c` remains supported for these trusted users.
+
+The process launcher always uses `shell: false` and a separate argv array.
+It rejects control characters and shell metacharacters in the executable and NUL
+in arguments. Shell syntax in ordinary arguments remains literal; these checks
+do not restrict what an explicitly selected interpreter can execute. Regression
+coverage is in `packages/sdk/src/cli/devbox-job-process.test.ts`,
+`devbox-runner-trust.test.ts`, and `devbox-commit-run.test.ts`; API authorization
+coverage is in the devbox runs route tests. CodeQL command-line-injection alerts
+at this launcher require review of the authenticated execution boundary rather
+than treating `shell: false` alone as proof of safety. Source review does not
+verify deployed grants, runner configuration, or token custody.
