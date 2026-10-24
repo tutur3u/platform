@@ -27,6 +27,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -48,6 +49,7 @@ export function ConfirmDialog({
   trigger,
 }: ConfirmDialogProps) {
   const router = useRouter();
+  const t = useTranslations('nova');
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -74,6 +76,17 @@ export function ConfirmDialog({
             password: formData.password,
           }),
         });
+
+        if (response.status === 429) {
+          const retryAfter = Number(response.headers.get('Retry-After')) || 60;
+          form.setError('password', {
+            message: t('challenge_password_too_many_attempts', {
+              minutes: Math.max(1, Math.ceil(retryAfter / 60)),
+            }),
+          });
+          setIsConfirming(false);
+          return;
+        }
 
         if (!response.ok) {
           form.setError('password', { message: 'Invalid password' });

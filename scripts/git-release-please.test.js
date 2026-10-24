@@ -62,7 +62,7 @@ test('parseArgs supports release-please merge overrides', () => {
   );
 });
 
-test('runReleaseChecks runs bun check for staged release changes', () => {
+test('runReleaseChecks runs bun validate for staged release changes', () => {
   const calls = [];
 
   runReleaseChecks({
@@ -70,7 +70,7 @@ test('runReleaseChecks runs bun check for staged release changes', () => {
     runCommand: (command, args) => calls.push([command, args]),
   });
 
-  assert.deepEqual(calls, [['bun', ['check']]]);
+  assert.deepEqual(calls, [['bun', ['validate']]]);
 });
 
 test('runReleaseChecks mirrors mobile pre-commit coverage when mobile is staged', () => {
@@ -82,7 +82,7 @@ test('runReleaseChecks mirrors mobile pre-commit coverage when mobile is staged'
   });
 
   assert.deepEqual(calls, [
-    ['bun', ['check']],
+    ['bun', ['validate']],
     ['bun', ['check:mobile']],
   ]);
 });
@@ -110,7 +110,7 @@ test('finalizeMerge runs release checks before creating the merge commit', () =>
     ['node', ['scripts/ci/release-docs-inventory.js', '--integration']],
     ['bun', ['ff']],
     ['git', ['add', '--all']],
-    ['bun', ['check']],
+    ['bun', ['validate']],
     ['git', ['commit', '--no-edit']],
   ]);
 });

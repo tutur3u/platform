@@ -1,5 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
-import { completedFailureClass, safeReceipt } from '../failure-receipt';
+import {
+  completedFailureClass,
+  executionFailureKind,
+  safeReceipt,
+} from '../failure-receipt';
 import { HookError } from '../hook-ledger';
 import type {
   ChildFailure,
@@ -42,6 +46,13 @@ const receiptPrefixes = [
   "LIKE 'capacity error%'",
   "LIKE 'capacity exceeded%'",
   "LIKE 'capacity exhausted%'",
+  "LIKE 'context allowance%'",
+  "LIKE 'context window%'",
+  "LIKE 'context limit%'",
+  "LIKE 'prompt too long%'",
+  "LIKE 'provider failed to start%'",
+  "LIKE 'failed to start provider%'",
+  "LIKE 'provider startup failed%'",
 ];
 const terminalPrefixPredicate = (expression: string) =>
   `(${receiptPrefixes.map((prefix) => `${expression} ${prefix}`).join(' OR ')})`;
@@ -92,7 +103,7 @@ export function collectChildren(
       AND r.status IN ('failed','completed')
       AND (EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
         AND receipt.type='error' AND receipt.status='failed'
-        AND (lower(json_extract(receipt.payload_json,'$.failure.class'))='usage_limit'
+        AND (lower(json_extract(receipt.payload_json,'$.failure.class')) IN ('usage_limit','context_allowance','context-allowance','context_allowance_failure','provider_start','provider-start','provider_start_failure')
           OR (json_type(receipt.payload_json,'$.failure.message')='text'
           AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(receipt.payload_json,'$.failure.message'),'’',char(39))))")})))
         OR (r.status='completed' AND EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
@@ -164,7 +175,7 @@ export function collectChildren(
    FROM orchestration_v2_projection_turn_items i JOIN descendants d ON d.thread_id=i.thread_id
    WHERE i.type='error' AND i.status='failed' AND json_type(i.payload_json,'$.failure.message')='text'
    AND EXISTS(SELECT 1 FROM orchestration_v2_projection_runs terminal WHERE terminal.run_id=i.run_id AND terminal.status='failed')
-   AND (lower(json_extract(i.payload_json,'$.failure.class'))='usage_limit' OR ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.failure.message'),'’',char(39))))")})`);
+   AND (lower(json_extract(i.payload_json,'$.failure.class')) IN ('usage_limit','context_allowance','context-allowance','context_allowance_failure','provider_start','provider-start','provider_start_failure') OR ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.failure.message'),'’',char(39))))")})`);
     const completedReceipts = rows<ChildFailure>(`SELECT i.run_id AS runId,
       json_extract(r.payload_json,'$.rootNodeId') AS nodeId,
       substr(json_extract(i.payload_json,'$.text'),1,4096) AS message,
@@ -178,10 +189,14 @@ export function collectChildren(
       AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.text'),'’',char(39))))")}`);
     for (const receipt of completedReceipts) {
       const kind = completedFailureClass(receipt.message);
-      if (kind === 'usage-limit' || kind === 'capacity')
+      if (
+        kind === 'usage-limit' ||
+        kind === 'capacity' ||
+        executionFailureKind(receipt.message)
+      )
         failures.push({
           ...receipt,
-          message: safeReceipt(receipt.message, kind).text,
+          message: safeReceipt(receipt.message, kind ?? 'other').text,
         });
     }
     const transfers = poolScan

@@ -21,6 +21,33 @@ test('published dependency resumes owning deferred planner with exact SHA', asyn
   assert.equal(f.refs, 3);
 });
 
+test('invalid trigger run identities stop before API access', async () => {
+  for (const id of [
+    undefined,
+    null,
+    '',
+    '4',
+    '../other',
+    -1,
+    0,
+    1.5,
+    Infinity,
+  ]) {
+    const f = fixture();
+    f.event.workflow_run.id = id;
+    assert.deepEqual(
+      await f.run({
+        api: () => assert.fail('invalid run must not call the API'),
+      }),
+      {
+        dispatched: false,
+        reason: 'untrusted completion',
+      }
+    );
+    assert.deepEqual(f.posts, []);
+  }
+});
+
 test('planner completion also resumes when packages finished first', async () => {
   const f = fixture();
   f.event.workflow_run.name = 'Production Deployment Planner';

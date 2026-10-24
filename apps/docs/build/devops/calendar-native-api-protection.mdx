@@ -95,3 +95,29 @@ request receipt. Correlate that build's effective host/path and timestamp with
 Infrastructure/Calendar logs to attribute an exact event. Keep the private
 credential condition: direct requests without it should still be challenged.
 Never log tokens, cookies, private bodies, actor/workspace identifiers or IPs here.
+
+## Retained Web and Tasks Google sync helpers
+
+The `apps/web` and `apps/tasks` copies of
+`src/lib/calendar/incremental-active-sync.ts` log sync-token presence and page
+counts, never the stored sync token or the raw Google page response containing
+`nextSyncToken`. This scope is separate from the native gateway and Calendar's
+current provider-sync implementation.
+
+For a Google error with numeric `code: 410` during incremental fetching, these
+helpers increment `retryCount`, disable token use and attempt to clear the token
+under the same workspace/connection/calendar key. Clear failures are logged and
+swallowed. Despite the retry counter, a first-page 410 exits the pagination loop
+without a date-range request because no `pageToken` exists. After a successful
+clear, the next invocation fetches the configured date range without a sync token
+and stores a returned replacement token, including for an empty event page.
+This is a bounded date-range fetch, not a complete calendar-history rebuild.
+
+A later-page 410 retains the existing page cursor and accumulated events while
+switching to date-range parameters; it does not restart pagination. A 410 already
+in date-range mode, or another Google error, propagates without token recovery.
+The sibling `incremental-active-sync.test.ts` suites exercise the real helpers
+with mocked Google and storage boundaries: token-free logs, pagination/storage,
+first-page 410 clearing and next-invocation fetching, and non-410 propagation.
+They do not prove live Google acceptance, clear-failure recovery, later-page
+recovery correctness, or database event-write behavior.

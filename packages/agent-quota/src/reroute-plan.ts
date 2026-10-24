@@ -162,6 +162,15 @@ export function reroutePlan(
         chosen &&
         proof?.configured?.providerInstanceId === chosen.providerInstanceId &&
         proof.configured.model === chosen.model;
+      const executionOutcome = resumed
+        ? 'verified-resumed-execution'
+        : proof?.resumed
+          ? 'resume-proof-unverified'
+          : configured
+            ? 'configured-only'
+            : chosen
+              ? 'admission-only'
+              : 'no-eligible-pool';
 
       return {
         threadId,
@@ -177,6 +186,7 @@ export function reroutePlan(
                 ? 'block'
                 : 'plan-ready',
         success: Boolean(resumed && blockers.length === 0),
+        executionOutcome,
         verifiedRunningOnTarget: resumed,
         blockers,
         admission,

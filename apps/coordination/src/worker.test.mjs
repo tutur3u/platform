@@ -2,24 +2,29 @@ import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { createTestHarness } from 'wrangler';
+import { startCfViteWorker } from '../../../scripts/ci/cf-vite-worker.mjs';
 
 const token = randomUUID() + randomUUID();
-const server = createTestHarness({
-  workers: [
-    {
-      configPath:
-        process.env.COORDINATION_TEST_CONFIG ??
-        fileURLToPath(new URL('../wrangler.jsonc', import.meta.url)),
-      secrets: { COORDINATION_TOKEN: token },
-    },
-  ],
-});
+// Source mode serves cloudflare.config.ts through the Vite dev runtime; CI sets
+// COORDINATION_TEST_BUILD_OUTPUT=1 to rerun on the emitted cf Build Output.
+let server;
 before(async () => {
-  await server.listen();
+  server = await startCfViteWorker({
+    root: fileURLToPath(new URL('..', import.meta.url)),
+    mode:
+      process.env.COORDINATION_TEST_BUILD_OUTPUT === '1'
+        ? 'build-output'
+        : 'source',
+    secrets: { COORDINATION_TOKEN: token },
+  });
 });
 after(async () => {
-  await server.close();
+  await server?.close();
+});
+// SQL inside the named CoordinationObject through the Local Explorer.
+const objectSql = (name) => ({
+  exec: (sql, ...params) =>
+    server.durableObjectSql('CoordinationObject', name, sql, params),
 });
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 const request = (namespace = 'authenticator') => ({
@@ -110,9 +115,8 @@ test('completed meeting state survives release, eviction, and retry', async () =
   };
   await result({ ...lease, action: 'complete' });
   await result({ ...lease, action: 'release' });
-  await server
-    .getWorker()
-    .evictDurableObject('COORDINATION', { name: `meeting:${input.key}` });
+  // Restarting workerd re-instantiates the object from persisted SQLite.
+  await server.restart();
   assert.deepEqual(
     await result({ ...input, owner: randomUUID(), action: 'acquire' }),
     { outcome: 'acquired', fresh: false, completed: true }
@@ -147,9 +151,7 @@ test('failed meeting retries retain payload binding without marking complete', a
 test('expired lease cannot mutate its successor', async () => {
   const input = { ...request('meeting'), fingerprint: digest('details') };
   await result({ ...input, action: 'acquire' });
-  const sql = await server
-    .getWorker()
-    .getDurableObjectStorage('COORDINATION', { name: `meeting:${input.key}` });
+  const sql = objectSql(`meeting:${input.key}`);
   await sql.exec('UPDATE coordination SET lease_until = 0');
   const successor = { ...input, owner: randomUUID() };
   assert.equal(
@@ -171,9 +173,7 @@ test('expired lease cannot mutate its successor', async () => {
 test('expiry removes old records and namespaces do not collide', async () => {
   const input = { ...request('meeting'), fingerprint: digest('details') };
   await result({ ...input, action: 'acquire' });
-  const sql = await server
-    .getWorker()
-    .getDurableObjectStorage('COORDINATION', { name: `meeting:${input.key}` });
+  const sql = objectSql(`meeting:${input.key}`);
   await sql.exec('UPDATE coordination SET expires_at = 0');
   assert.deepEqual(
     await result({ ...input, fingerprint: digest('new'), action: 'acquire' }),
@@ -194,9 +194,7 @@ test('expiry removes old records and namespaces do not collide', async () => {
 test('a late retry keeps its fingerprint until its entire lease expires', async () => {
   const input = { ...request('meeting'), fingerprint: digest('details') };
   await result({ ...input, action: 'acquire' });
-  const sql = await server
-    .getWorker()
-    .getDurableObjectStorage('COORDINATION', { name: `meeting:${input.key}` });
+  const sql = objectSql(`meeting:${input.key}`);
   await sql.exec(
     'UPDATE coordination SET lease_until = 0, expires_at = ?',
     Date.now() + 60_000

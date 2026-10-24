@@ -37,8 +37,7 @@ jobs:
       is_sorted: ${{ steps.sort-check.outputs.is_sorted }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -76,8 +75,7 @@ jobs:
       has_issues: ${{ steps.i18n-check.outputs.has_issues }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -132,10 +130,9 @@ jobs:
       missing_in_en: ${{ steps.parity-check.outputs.missing_in_en }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
 
@@ -176,10 +173,9 @@ jobs:
       has_issues: ${{ steps.namespace-check.outputs.has_issues }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
 
@@ -219,7 +215,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Comment on PR with i18n status
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           I18N_KEY_PARITY_CHECK_HAS_ISSUES: ${{ needs.i18n-key-parity-check.outputs.has_issues }}
           I18N_KEY_PARITY_CHECK_MISSING_IN_EN: ${{ needs.i18n-key-parity-check.outputs.missing_in_en }}

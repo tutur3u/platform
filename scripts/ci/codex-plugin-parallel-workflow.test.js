@@ -26,15 +26,19 @@ test('plugin pilot preserves its triggers, switchboard and required check', () =
 
 test('checkout, Python setup, validator and hash-locked install precede both suites', () => {
   assert.equal(groupIndex, 4);
-  assert.deepEqual(steps.slice(0, groupIndex), [
+  const pinned = (step) =>
+    step.uses
+      ? { ...step, uses: step.uses.replace(/@[0-9a-f]{40}$/u, '@<sha>') }
+      : step;
+  assert.deepEqual(steps.slice(0, groupIndex).map(pinned), [
     {
       name: 'Checkout code',
-      uses: 'actions/checkout@v7',
+      uses: 'actions/checkout@<sha>',
       with: { 'fetch-depth': 2 },
     },
     {
       name: 'Setup Python',
-      uses: 'actions/setup-python@v7',
+      uses: 'actions/setup-python@<sha>',
       with: {
         'python-version': '3.13',
         cache: 'pip',

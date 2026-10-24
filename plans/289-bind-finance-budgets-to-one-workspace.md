@@ -94,7 +94,7 @@ and the current database/generated-type owners.
 | Full database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full reset/pgTAP and typegen pass |
 | Deterministic types | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | a second type generation is byte-identical to the intentional generated diff |
 | Finance app | `bun run --cwd apps/finance type-check && bun run --cwd apps/finance build` | Finance compiles and builds |
-| Repository | `bun check && git diff --check` | repository and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | repository and whitespace gates pass |
 
 ## Scope
 
@@ -128,7 +128,7 @@ wallet/category policies.
    service-role transaction DML to prove the SECURITY DEFINER trigger still
    settles the expected workspace despite direct-call denial.
 5. Run focused/full database validation, deterministic typegen, route tests,
-   Finance typecheck/build, `bun check`, whitespace, and exact-scope review.
+   Finance typecheck/build, `bun validate`, whitespace, and exact-scope review.
 
 ## Done criteria
 

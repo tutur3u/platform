@@ -445,9 +445,9 @@ reservation locks; the dispatch owner still coordinates concurrent launches.
 
 The same router now offers opt-in single-shot `admit`, `observe`, thread-scoped
 `switch-lease`, read-only `switch-check`, and `handover-check` commands for every
-orchestrator on the host. Follow the runbook's JSON contract and the installed
-[shared-account handover guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover)
-and [planning preference guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+orchestrator on the host. Follow the runbook's JSON contract. A successor handover
+preserves source, dirty files, index, jobs, true child parents, questions, watches,
+unknown writes and workspace binding.
 Accounts are shared; only a thread's transition is leased. Preference is planning
 input, never quota. These hooks require owner integration and independent review;
 they do not install automatic failover, spend reset credits, or create successors.
@@ -458,4 +458,4 @@ Never duplicate an already queued resume. Pass the reported run/failure identity
 to `admit` recovery input for idempotent admission; provider-native delivery of
 all descendant terminal failures remains a separate T3 integration gap.
 
-Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only child waits under the [shared rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation). Preserve queued text and dirty files, cancel old queued selections, require fresh admission and the thread lease, and verify a task-bound running continuation. Configuration alone is not successful resumption.
+Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only child waits. Preserve queued text and dirty files, cancel old queued selections, require fresh admission and the thread lease, and verify a task-bound running continuation. Configuration alone is not successful resumption.

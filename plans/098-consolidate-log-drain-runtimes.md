@@ -51,7 +51,7 @@ explicit consolidation lane lists every owned path and sequencing agreement.
 | App typechecks | `for app in tasks learn track calendar web inventory mind hive teach infrastructure; do bun run --cwd "apps/$app" type-check || exit 1; done` | all ten app typechecks exit 0 |
 | Core typecheck | `bun run --cwd packages/inventory-core type-check` | exit 0 |
 | App builds | `for app in tasks learn track calendar web inventory mind hive teach infrastructure; do bun run --cwd "apps/$app" build || exit 1; done` | all ten app builds exit 0 |
-| Repository | `bun check` | exit 0 or documented unrelated blocker |
+| Repository | `bun validate` | exit 0 or documented unrelated blocker |
 
 ## Scope
 
@@ -96,7 +96,7 @@ separately; claim/release the commit window for every commit.
 - [ ] One tested server-only context contract replaces all identical copies.
 - [ ] Persistence/DDL, if retained, has one explicit owner and no request-time schema creation.
 - [ ] Native console severity/redaction behavior remains unchanged.
-- [ ] Every migrated consumer test/build and `bun check` passes.
+- [ ] Every migrated consumer test/build and `bun validate` passes.
 - [ ] Manifests/lockfile were changed mechanically with no unrelated drift.
 
 ## STOP conditions

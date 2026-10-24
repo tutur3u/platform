@@ -61,7 +61,7 @@ dependency commands. Never hand-edit dependency fields.
 | Exact tarball | `node scripts/ci/npm-package-artifact-smoke.js --prepare-and-smoke packages/ui` | badge and finance invoice subpath import from clean installed tarball |
 | Release tooling | `node --test scripts/ci/npm-package-artifact-smoke.test.js scripts/ci/package-release-readiness.test.js` | matrix and artifact fixtures pass |
 | UI | `bun run --cwd packages/ui test && bun run --cwd packages/ui type-check` | UI suite/types pass |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

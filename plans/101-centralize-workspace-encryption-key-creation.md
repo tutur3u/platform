@@ -53,7 +53,7 @@ plaintext clamping locally.
 | Consumer tests | `bun run --cwd apps/infrastructure test -- src/lib/inventory/commerce/square/connection-store.test.ts` | credential persistence uses the shared winner |
 | App typechecks | `bun run --cwd apps/calendar type-check && bun run --cwd apps/tasks type-check && bun run --cwd apps/track type-check && bun run --cwd apps/inventory type-check && bun run --cwd apps/infrastructure type-check` | all consumers compile |
 | App builds | `bun run --cwd apps/calendar build && bun run --cwd apps/tasks build && bun run --cwd apps/track build && bun run --cwd apps/inventory build && bun run --cwd apps/infrastructure build` | every changed app builds |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

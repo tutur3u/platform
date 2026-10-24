@@ -2016,6 +2016,7 @@
     "something_went_wrong": "Có lỗi xảy ra. Vui lòng thử lại sau.",
     "switch_account": "Chuyển tài khoản",
     "timeblocks": "Khung giờ",
+    "too_many_join_attempts": "Quá nhiều lần thử tham gia. Vui lòng thử lại sau {minutes} phút.",
     "tuturuuu_account": "Tài khoản Tuturuuu",
     "unavailable": "Không rảnh",
     "update_plan": "Cập nhật kế hoạch",
@@ -2490,6 +2491,7 @@
         "whitelist-only-description": "Chỉ cho phép truy cập đối với người dùng trong danh sách trắng."
       }
     },
+    "challenge_password_too_many_attempts": "Quá nhiều lần thử không thành công. Vui lòng thử lại sau {minutes} phút.",
     "challenges": "Các thử thách",
     "challenges-page": {
       "clear-filters": "Xóa bộ lọc",

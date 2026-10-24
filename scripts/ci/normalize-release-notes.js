@@ -1,5 +1,5 @@
 const { isReleaseBookkeeping } = require('./release-note-policy');
-const fs = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('../safe-fs');
 const { execFileSync } = require('node:child_process');
 
 const referencePattern =
@@ -172,9 +172,8 @@ function main(base = 'origin/production') {
   };
   let changed = 0;
   for (const file of paths) {
-    if (!fs.existsSync(file)) continue;
-    if (!fs.lstatSync(file).isFile())
-      throw new Error(`Generated changelog is not a regular file: ${file}`);
+    const content = readOptionalFileSync(file, { encoding: 'utf8' });
+    if (content === undefined) continue;
     let previous = '';
     try {
       previous = readPublishedHistory(base, file);
@@ -182,14 +181,13 @@ function main(base = 'origin/production') {
       if (git('ls-tree', '--name-only', base, '--', file).trim())
         throw new Error(`Cannot read published history: ${file}`);
     }
-    const content = fs.readFileSync(file, 'utf8');
     const normalized = normalizeReleaseNotes(
       content,
       previous,
       isIntegrationCommit
     );
     if (normalized !== content) {
-      fs.writeFileSync(file, normalized);
+      atomicWriteFileSync(file, normalized);
       changed++;
     }
   }

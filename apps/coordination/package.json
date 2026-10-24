@@ -3,16 +3,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vp dev --host 127.0.0.1 --port 8798",
+    "dev": "vp dev",
     "build": "vp build",
-    "type-check": "wrangler types --env-interface CoordinationEnv worker-configuration.d.ts && tsc --project tsconfig.json",
+    "type-check": "cf workers types && tsc --project tsconfig.json",
     "test": "node --test src/worker.test.mjs",
-    "lint": "vp lint --config .oxlintrc.json src vite.config.ts --deny-warnings",
-    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts --check"
+    "lint": "vp lint --config .oxlintrc.json src vite.config.ts cloudflare.config.ts --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts cloudflare.config.ts --check"
   },
   "packageManager": "bun@1.4.4",
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.64.0",
+    "cf": "1.0.0-beta.20",
     "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
     "vite-plus": "1.3.0"

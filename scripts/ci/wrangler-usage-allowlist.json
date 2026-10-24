@@ -1,6 +1,11 @@
 {
   "$comment": "Shrink-only allowlist enforced by scripts/ci/wrangler-usage-guard.test.js. Lower counts as usage is removed; a new entry, count growth or changed gap needs a fresh structured admitted object with a repository PR decision URL and reason. Uses conservatively count every Wrangler token, including comments. See apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx.",
   "gaps": {
+    "do-publication-rehearsal": {
+      "reason": "Existing Durable Object Workers must retain applied v1 production migration tags until disposable same-history migration/data-retention rehearsal proves cf exports publication parity.",
+      "owner": "cf/Void Wrangler-exit lane; release orchestrator owns rehearsal acceptance and the separate publisher promotion.",
+      "removal": "Remove only in a separately reviewed cf publisher change carrying the disposable migration and data-survival rehearsal receipt."
+    },
     "opennext-adapter": {
       "reason": "Parley and Lettin publish through @opennextjs/cloudflare, which reads wrangler.jsonc and invokes Wrangler; cf has no OpenNext adapter.",
       "owner": "Parley/Lettin TanStack Start on Void migration lane (orchestrator assigns)",
@@ -20,6 +25,11 @@
       "reason": "Native Worker with no cf capability gap for its operations, awaiting its per-service parity PR (Durable Object migrations need manual exports conversion and a disposable rehearsal).",
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete in the service PR that moves it to cloudflare.config.ts, cf types, Build Output parity and cf deploy --prebuilt."
+    },
+    "producer-inventory": {
+      "reason": "Compiler qualification detects pre-existing wrangler types producers and cf types equivalents; its detector and data-only regression fixture perform no invocation.",
+      "owner": "Development tooling and native type-check qualification owner",
+      "removal": "Remove the compatibility detector and fixture admission after every declaration producer uses cf types and no legacy producer needs recognition."
     },
     "shared-toolchain": {
       "reason": "Root wrangler devDependency supplies the CLI for every remaining gap; trustedDependencies, .wrangler ignores and policy tests cover @cloudflare/vite-plugin 1.x, which depends on the wrangler library.",
@@ -54,24 +64,24 @@
       "digest": "9db1107ae358039a4c0a1c925f33da6740c0d9c3a1f85351e26b8f512a18e73b"
     },
     ".github/workflows/coordination-cloudflare.yaml": {
-      "lines": 5,
-      "uses": 9,
-      "gap": "pending-migration",
+      "lines": 14,
+      "uses": 20,
+      "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
       },
-      "digest": "26bdc8b1dc21b706c960eb0ae8a8d8758d3f4ec3e9f56a7ce3cc56b7de9a36ae"
+      "digest": "432917c334a10df4f54b39b09d86237638b0b3262568345f46a89319545fdd21"
     },
     ".github/workflows/devbox-control-cloudflare.yaml": {
-      "lines": 5,
-      "uses": 9,
-      "gap": "pending-migration",
+      "lines": 13,
+      "uses": 18,
+      "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
       },
-      "digest": "b8a33eee999bdb3ca4b4b00cb623a12f8759eae5be7998fbcd77c5a80ab54c9d"
+      "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
     },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
@@ -253,104 +263,24 @@
       },
       "digest": "a17ce10f9c0d158ccc88b2c98fcfa861b50b8724ab134e2fa90ad6cf28b98ee6"
     },
-    "apps/coordination/.gitignore": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
+    "apps/coordination/wrangler.publish.jsonc": {
+      "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
       },
-      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
-    },
-    "apps/coordination/package.json": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "3e7d0256ae46fc7782df224e04bf6df01125042b69659af12d6849d332b41768"
-    },
-    "apps/coordination/src/worker.test.mjs": {
       "lines": 2,
       "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "58812ce4415467c3fdac2bf55be0214a5c23eb87c951ed86577051668bfc6e73"
-    },
-    "apps/coordination/vite.config.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "9e15c227f35f6c2d0ad3c5586ae959517cd2d997e3959303be8cce73f001bcf8"
-    },
-    "apps/coordination/vitest.config.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "eb0fa4039d812cf2831e88bef0a0fb70b007f50499b6575306c307a3f374bfc0"
-    },
-    "apps/coordination/wrangler.jsonc": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
       "digest": "bcf522b59db5e53edd34048ed5c20f3d9821a45cb0ca0d2be0e7726b91f4aa34"
     },
-    "apps/devbox-control/package.json": {
+    "apps/devbox-control/wrangler.publish.jsonc": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
       "lines": 2,
       "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "e9c9ce48d713c5067a1808c2593d671dd1d25dac6ffd0a8e54bf20eb26a0927e"
-    },
-    "apps/devbox-control/scripts/verify-worker-runtime.mjs": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "58812ce4415467c3fdac2bf55be0214a5c23eb87c951ed86577051668bfc6e73"
-    },
-    "apps/devbox-control/vite.config.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "9e15c227f35f6c2d0ad3c5586ae959517cd2d997e3959303be8cce73f001bcf8"
-    },
-    "apps/devbox-control/wrangler.jsonc": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
       "digest": "020b34ea92ac676f6c33d3c150563c4ede845910adff3f06d109fbaa26aefdb7"
     },
     "apps/docs/docs.json": {
@@ -913,6 +843,26 @@
       },
       "digest": "4e37276f800598baeb980bc03127c6746432b2e38489712f1bf91b491689ec30"
     },
+    "scripts/ci/bun-check-inventory.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6504",
+        "reason": "Detects pre-existing wrangler types producers and cf types equivalents; no invocation."
+      },
+      "digest": "c55f3fd51dac80c324b145cb06f493e3d14d94c5152d9f8e71280e80f7f4092e"
+    },
+    "scripts/ci/bun-check-qualification.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6504",
+        "reason": "Data-only fixture tests pre-existing wrangler types and cf types producer detection; no invocation."
+      },
+      "digest": "44a2d124db1b7ab13e5cfab56303a465538920ea32ada7d464a755611ffb3497"
+    },
     "scripts/ci/calendar-emitted-defaults.mjs": {
       "lines": 6,
       "uses": 9,
@@ -1024,14 +974,14 @@
       "digest": "2f27ae7a2350483a1d7661aa41fe487ef52d6722838609d575f4350d13785d61"
     },
     "scripts/ci/cf-worker-parity.test.mjs": {
-      "lines": 24,
-      "uses": 29,
+      "lines": 26,
+      "uses": 31,
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487: retained v1 Wrangler production publication and isolated runtime persistence."
       },
-      "digest": "b5c7f4782c5fdd9ea1bcb0ebaa7f5faacb6d6ae331f532d130a23a949e01c62c"
+      "digest": "4c48fc2eb94578c3de929af8f4e4213a09c666c971d5c83cc63d63395bdfc2bb"
     },
     "scripts/ci/cf-worker-publication.test.js": {
       "gap": "parity-tooling",
@@ -1042,6 +992,36 @@
       "lines": 1,
       "uses": 1,
       "digest": "70f59bbcfa3fd76e0da94e71b73769a58dbdf5c5af8899b888ea8d2a5f60f59a"
+    },
+    "scripts/ci/cf-wrangler-publication.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
+      "lines": 5,
+      "uses": 5,
+      "digest": "c3df53888002b532177d7c3af0e8db99492c0e23969954db092377c7ab8cb420"
+    },
+    "scripts/ci/cf-wrangler-publication.runtime.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "lines": 3,
+      "uses": 4,
+      "digest": "2cd8b2315cd469259b44907dd24ee29cc37186483e65b1fc4128da5a52a16080"
+    },
+    "scripts/ci/cf-wrangler-publication.test.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
+      "lines": 7,
+      "uses": 8,
+      "digest": "6d7ced9576027a42fe58af1112d7b3b486a8702c36f50b8689a9abe518033b01"
     },
     "scripts/ci/ci-cache-policy.test.js": {
       "lines": 1,
@@ -1282,6 +1262,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "521e2cc3f7e0aa3a35a8323584954b5b51ddca33964e76538a79c458e9aa7ca2"
+    },
+    "scripts/ci/native-worker-cf-artifact.test.js": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "lines": 7,
+      "uses": 8,
+      "digest": "c91cade7b1b459a859749acb3467f583f2a9299bb5ce49594e152fad4f4ecad7"
     },
     "scripts/ci/native-wrangler-evidence.mjs": {
       "lines": 17,

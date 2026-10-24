@@ -62,7 +62,7 @@ all series materialization callers and preserve single-detached-session behavior
 | Focused database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/user-group-session-series-relations.sql` | max-horizon, rollback, concurrency, ACL, and relation assertions pass |
 | Full database/typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP passes and generated types change only for the RPC |
 | Packages/apps | `bun run --cwd packages/users-core type-check && bun type-check:web && bun --cwd apps/web run build` | package, Web types, and real build pass |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 

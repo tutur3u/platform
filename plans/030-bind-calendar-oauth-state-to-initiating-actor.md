@@ -73,7 +73,7 @@ RPC so every deployment shares the same replay boundary.
 | Database apply | `bun sb:reset` | migration applies locally |
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | all pgTAP tests pass |
 | Database types | `bun sb:typegen` | generated Supabase types include the OAuth transaction contract |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -158,7 +158,7 @@ and run all listed gates.
 - [ ] Caller-controlled callback parameters never become `ws_id`.
 - [ ] Existing production/local redirect and refresh-token behavior remains
       compatible.
-- [ ] Focused tests, local migration, type generation, typecheck, `bun check`,
+- [ ] Focused tests, local migration, type generation, typecheck, `bun validate`,
       build, and whitespace pass.
 
 ## STOP conditions

@@ -13,6 +13,9 @@ vi.mock('./devbox-auto-upgrade', async (importOriginal) => ({
 
 vi.mock('../platform-devbox', () => ({ pollDevboxAgentJobs: pollJobs }));
 vi.mock('./devbox-runner', () => ({ executeDevboxAgentJob: executeJob }));
+vi.mock('./devbox-commit-run', () => ({
+  sweepStaleCommitWorktrees: vi.fn().mockResolvedValue(0),
+}));
 vi.mock('./devbox-agent-capabilities', () => ({
   createDevboxAgentCapabilities: vi
     .fn()

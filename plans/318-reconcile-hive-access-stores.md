@@ -107,7 +107,7 @@ runner and scheduler can accept the new migration/endpoint before editing.
 | Hive DB migration | `bash apps/hive/db/migrate-forward.test.sh && sh -n apps/hive/db/migrate-forward.sh && node scripts/check-docker-web.js` | the test starts an isolated disposable Postgres, applies the immutable baseline plus all forward migrations, reruns idempotently, verifies the operation schema/indexes, and removes its container/volume; Docker wiring also validates |
 | Internal API | `bun --cwd packages/internal-api vitest run src/hive/access.test.ts && bun run --cwd packages/internal-api type-check` | extracted additive response/payload types and client calls pass |
 | Hive | `bun run --cwd apps/hive type-check && bun run --cwd apps/hive build` | Hive compiles and builds |
-| Repository/docs | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository/docs | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope/size | `git status --short && wc -l apps/hive/src/lib/hive/hive-db.ts apps/hive/src/lib/hive/member-sync.ts 'apps/hive/src/app/api/v1/hive/access-requests/[requestId]/approve/route.ts' 'apps/hive/src/app/api/v1/hive/members/route.ts' packages/internal-api/src/hive.ts packages/internal-api/src/hive/access.ts` | only in-scope files changed; `hive.ts` does not grow, the new access module remains focused, and every substantially edited source stays below 700 lines |
 
 ## Scope
