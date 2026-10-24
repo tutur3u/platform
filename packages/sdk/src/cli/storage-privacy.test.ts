@@ -1,5 +1,12 @@
 import { lstatSync } from 'node:fs';
-import { chmod, mkdir, mkdtemp, realpath, writeFile } from 'node:fs/promises';
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -196,12 +203,17 @@ describe('private-tree proof', () => {
   });
 
   it('manual prune removes only items with a private-tree proof when foreign processes are hidden', async () => {
-    const dir = await realpath(await mkdtemp(join(tmpdir(), 'ttr-ptmp-')));
-    const items = ['private', 'public'].map((name) => join(dir, name));
-    for (const path of items) {
-      await mkdir(path, { mode: 0o755 });
+    // Top-level identified scratch dirs, as `analyze` reports tmp-old items.
+    const items: string[] = [];
+    for (const name of ['private', 'public']) {
+      const path = await realpath(
+        await mkdtemp(join(tmpdir(), `ttr-ptmp-${name}-`))
+      );
+      await chmod(path, 0o755);
       await writeFile(join(path, 'blob'), 'x');
+      items.push(path);
     }
+    const dir = items[0]!;
     const removed: string[] = [];
     const result = pruneStorage({
       report: {
@@ -259,5 +271,6 @@ describe('private-tree proof', () => {
     // The fixture dir is not a tmp root on every OS; where it is, only the
     // private item may be removed.
     expect(removed).not.toContain(items[1]);
+    for (const path of items) await rm(path, { recursive: true, force: true });
   });
 });

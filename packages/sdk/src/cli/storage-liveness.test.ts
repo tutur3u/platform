@@ -179,7 +179,7 @@ describe('open files under a path', () => {
           {
             category: 'tmp-old',
             label: 'idle',
-            path: join(dir, 'cache'),
+            path: dir,
             uniqueBytes: 64 * 1024 ** 2,
             allocatedBytes: 0,
             files: 1,
@@ -209,7 +209,7 @@ describe('open files under a path', () => {
     });
     expect(result.steps[0]).toMatchObject({
       status: 'failed',
-      reason: `a process has files open under ${join(dir, 'cache')}`,
+      reason: `a process has files open under ${dir}`,
     });
     expect(removed).toEqual([]);
     expect(

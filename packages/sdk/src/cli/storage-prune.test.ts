@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
-import { mkdir, rm, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { StorageReport } from './storage-analyze';
@@ -336,12 +337,11 @@ describe('storage prune categories', () => {
   });
 
   it('removes idle tmp dirs only when named, never held ones', async () => {
-    const fixture = await createRepoFixture();
-    roots.push(fixture.root);
-    const idle = join(fixture.root, 'idle');
-    const kept = join(fixture.root, 'kept');
+    // Top-level identified scratch dirs, as `analyze` reports tmp-old items.
+    const idle = await mkdtemp(join(tmpdir(), 'ttr-idle-'));
+    const kept = await mkdtemp(join(tmpdir(), 'ttr-kept-'));
+    roots.push(idle, kept);
     for (const dir of [idle, kept]) {
-      await mkdir(dir);
       await writeFile(join(dir, 'blob'), 'x');
       const old = new Date(Date.now() - 30 * 86_400_000);
       await utimes(join(dir, 'blob'), old, old);

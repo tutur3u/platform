@@ -2,6 +2,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readdirSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {
+  containsGitRepository,
+  isScratchDirName,
+  resolveNpmCacheRoot,
+} from './storage-scratch';
 
 /**
  * - `safe`: rebuildable cache with no state; `prune --apply` may remove it
@@ -50,10 +55,17 @@ export function machineTargets({
   home = homedir(),
   platform = process.platform,
   env = process.env,
+  npmCacheRoot = resolveNpmCacheRoot({
+    home,
+    env,
+    exec: () => ({ status: 1, stdout: '' }),
+  }),
 }: {
   home?: string;
   platform?: NodeJS.Platform;
   env?: NodeJS.ProcessEnv;
+  /** Effective npm cache root; `prune` pins `npm cache clean` to it. */
+  npmCacheRoot?: string;
 } = {}): CacheTarget[] {
   const mac = platform === 'darwin';
   const xdgCache = env.XDG_CACHE_HOME || join(home, '.cache');
@@ -72,9 +84,9 @@ export function machineTargets({
     {
       category: 'npm-cache',
       label: 'npm cache',
-      paths: [join(home, '.npm', '_cacache')],
+      paths: [join(npmCacheRoot, '_cacache')],
       risk: 'safe',
-      command: 'npm cache clean --force',
+      command: `npm cache clean --force --cache ${npmCacheRoot}`,
     },
     {
       category: 'pub-cache',
@@ -235,7 +247,10 @@ export interface TmpCandidate {
   newestMtimeMs: number;
 }
 
-/** User-owned top-level tmp dirs whose newest entry anywhere is older than the cutoff. */
+/**
+ * User-owned top-level tmp dirs that are identified tool scratch, hold no git
+ * repository and whose newest entry anywhere is older than the cutoff.
+ */
 export function oldTmpDirs({
   roots = tmpRoots(),
   olderThanMs,
@@ -256,7 +271,7 @@ export function oldTmpDirs({
       continue;
     }
     for (const name of names) {
-      if (TMP_SKIP.test(name)) continue;
+      if (TMP_SKIP.test(name) || !isScratchDirName(name)) continue;
       const path = join(root, name);
       const info = lstatSync(path, { throwIfNoEntry: false });
       if (
@@ -266,7 +281,7 @@ export function oldTmpDirs({
       )
         continue;
       const newest = newestMtime(path);
-      if (now - newest >= olderThanMs)
+      if (now - newest >= olderThanMs && !containsGitRepository(path))
         found.push({ path, newestMtimeMs: newest });
     }
   }

@@ -4,6 +4,7 @@ import { dockerOverrides, verifyLocalDocker } from './storage-docker-local';
 import { canonicalPath, isInside } from './storage-holds';
 import { systemTool } from './storage-liveness';
 import type { Exec, PruneContext, StepResult } from './storage-prune';
+import { tmpScratchRejection } from './storage-scratch';
 import {
   newestMtime,
   type StorageCategory,
@@ -74,14 +75,21 @@ export function tmpSteps(ctx: PruneContext, category: StorageCategory) {
         isInside(canonicalPath(item.path), entry) &&
         canonicalPath(item.path) !== entry
     );
-    if (!root) {
+    // Only identified tool scratch directly under a tmp root is removable;
+    // anything holding a git repository or worktree is never removed.
+    const rejection = !root
+      ? 'outside tmp roots'
+      : dirname(canonicalPath(item.path)) !== root
+        ? 'not a top-level tmp dir'
+        : tmpScratchRejection(item.path, basename(item.path));
+    if (!root || rejection) {
       steps.push({
         category,
         path: item.path,
         bytes: item.uniqueBytes,
         description: `remove idle tmp dir (${item.label})`,
         status: 'skipped',
-        reason: 'outside tmp roots',
+        reason: rejection ?? 'outside tmp roots',
       });
       continue;
     }
@@ -91,11 +99,12 @@ export function tmpSteps(ctx: PruneContext, category: StorageCategory) {
       bytes: item.uniqueBytes,
       description: `remove idle tmp dir (${item.label})`,
       root,
-      run: removeTree(root, item.path, () =>
-        newestMtime(item.path) > cutoff
-          ? 're-check failed: written recently'
-          : null
-      ),
+      run: removeTree(root, item.path, () => {
+        if (newestMtime(item.path) > cutoff)
+          return 're-check failed: written recently';
+        const again = tmpScratchRejection(item.path, basename(item.path));
+        return again ? `re-check failed: ${again}` : null;
+      }),
     });
   }
 }
@@ -187,10 +196,6 @@ export function cacheCommandSteps(
     'homebrew-cache': {
       argv: ['brew', 'cleanup', `--prune=${olderThanDays}`],
     },
-    'npm-cache': {
-      argv: ['npm', 'cache', 'clean', '--force'],
-      busy: /\bnpm (install|ci)\b/u,
-    },
     'bun-cache': {
       argv: ['bun', 'pm', 'cache', 'rm'],
       busy: /\bbun (install|i|add)\b/u,
@@ -200,6 +205,7 @@ export function cacheCommandSteps(
       busy: /\b(flutter|dart) pub\b/u,
     },
   };
+  if (category === 'npm-cache') return npmCacheSteps(ctx, category);
   const rule = simple[category];
   const relevant = items(category);
   const bytes = relevant.reduce((sum, item) => sum + item.uniqueBytes, 0);
@@ -230,6 +236,72 @@ export function cacheCommandSteps(
         : command(rule.argv)()
     ),
   });
+}
+
+const NPM_BUSY = /\bnpm (install|ci)\b/u;
+
+/**
+ * `npm cache clean` is pinned with `--cache` to the exact root whose
+ * `_cacache` the report measured, so `npm_config_cache` or an npmrc can never
+ * redirect it to a shared or unmeasured cache. The root must be a real
+ * directory owned by this user, re-checked with the fences right before.
+ */
+function npmCacheSteps(ctx: PruneContext, category: StorageCategory) {
+  const { steps, push, fenced, command, items, exec } = ctx;
+  for (const item of items(category)) {
+    const cacheRoot = dirname(item.path);
+    const skip = (reason: string) =>
+      steps.push({
+        category,
+        path: item.path,
+        bytes: item.uniqueBytes,
+        description: 'npm cache clean',
+        status: 'skipped',
+        reason,
+      });
+    const problem = () =>
+      basename(item.path) !== '_cacache'
+        ? 'not an npm _cacache directory'
+        : ownedRealDirectory(cacheRoot)
+          ? null
+          : 'npm cache root is not a directory owned by this user';
+    const rejection = problem();
+    if (rejection) skip(rejection);
+    else if (processRunning(exec, NPM_BUSY))
+      skip('a process is using this cache');
+    else
+      push({
+        category,
+        path: item.path,
+        fencePaths: [item.path],
+        bytes: item.uniqueBytes,
+        description: `npm cache clean --force --cache ${cacheRoot}`,
+        run: fenced(item.path, () => {
+          const again = problem();
+          if (again) return `re-check failed: ${again}`;
+          if (processRunning(exec, NPM_BUSY))
+            return 'a process started using this cache';
+          return command([
+            'npm',
+            'cache',
+            'clean',
+            '--force',
+            '--cache',
+            cacheRoot,
+          ])();
+        }),
+      });
+  }
+}
+
+function ownedRealDirectory(path: string) {
+  const info = lstatSync(path, { throwIfNoEntry: false });
+  const uid = process.getuid?.();
+  return Boolean(
+    info?.isDirectory() &&
+      !info.isSymbolicLink() &&
+      (uid === undefined || info.uid === uid)
+  );
 }
 
 /**
