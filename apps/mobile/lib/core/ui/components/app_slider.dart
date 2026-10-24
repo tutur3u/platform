@@ -46,6 +46,13 @@ class AppSlider extends StatelessWidget {
       onChangeEnd?.call(next);
     }
 
+    var lastValue = value;
+    void update(Offset position, double width) {
+      final fraction = ((position.dx - 10) / (width - 20)).clamp(0.0, 1.0);
+      lastValue = _snap(min + (rtl ? 1 - fraction : fraction) * (max - min));
+      onChanged?.call(lastValue);
+    }
+
     return Semantics(
       slider: true,
       label: label,
@@ -80,28 +87,21 @@ class AppSlider extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
-            double at(Offset offset) {
-              final position = ((offset.dx - 10) / (width - 20)).clamp(
-                0.0,
-                1.0,
-              );
-              return _snap(min + (rtl ? 1 - position : position) * (max - min));
-            }
 
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapDown: onChanged == null
                   ? null
-                  : (event) => onChanged!(at(event.localPosition)),
+                  : (event) => update(event.localPosition, width),
               onTapUp: onChanged == null
                   ? null
-                  : (event) => onChangeEnd?.call(at(event.localPosition)),
+                  : (event) => onChangeEnd?.call(lastValue),
               onHorizontalDragUpdate: onChanged == null
                   ? null
-                  : (event) => onChanged!(at(event.localPosition)),
+                  : (event) => update(event.localPosition, width),
               onHorizontalDragEnd: onChanged == null
                   ? null
-                  : (_) => onChangeEnd?.call(value),
+                  : (_) => onChangeEnd?.call(lastValue),
               child: SizedBox(
                 height: 48,
                 child: Stack(

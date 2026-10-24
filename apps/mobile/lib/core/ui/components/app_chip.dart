@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/components/app_control_target.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 class AppChip extends StatelessWidget {
@@ -60,13 +61,15 @@ class AppChip extends StatelessWidget {
         ),
         if (onDeleted != null)
           Semantics(
-            label: deleteTooltip,
+            label:
+                deleteTooltip ??
+                MaterialLocalizations.of(context).deleteButtonTooltip,
             button: true,
             child: AppControlTarget(
               onTap: onDeleted,
               child: const Padding(
                 padding: EdgeInsets.all(8),
-                child: Text('×'),
+                child: Icon(LucideIcons.x, size: 16),
               ),
             ),
           ),

@@ -67,6 +67,7 @@ void main() {
   ) async {
     var selected = false;
     var value = 0.0;
+    double? committed;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -80,6 +81,7 @@ void main() {
                 value: value,
                 divisions: 4,
                 onChanged: (next) => value = next,
+                onChangeEnd: (next) => committed = next,
               ),
             ],
           ),
@@ -93,6 +95,8 @@ void main() {
       Offset(slider.left + slider.width * .75, slider.center.dy),
     );
     expect(value, .75);
+    await tester.drag(find.byType(AppSlider), const Offset(100, 0));
+    expect(committed, value);
     expect(find.byType(Slider), findsNothing);
   });
 }

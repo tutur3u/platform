@@ -349,3 +349,11 @@ window is wider than the body.
   checks that the page list uses the resolved insets, the scrollable stays
   full width, and content stays within the page kind's max width.
   `DESIGN_RENDER_DIR` writes PNG captures.
+
+### Custom selection and date controls
+
+AppSwitch and AppCheckbox draw their own token-based surfaces on every platform. They retain 48dp touch targets, keyboard activation, focus indicators, disabled states and screen-reader state. Use AppToggleRow or AppCheckboxRow for labeled settings. AppChip covers selectable filters and short actions. AppSlider previews through onChanged and commits through onChangeEnd.
+
+Use showAppDatePicker and showAppTimePicker for in-app date/time editing. Both use the modal host so Back dismisses the picker before its parent editor. Date bounds, leap days and 12/24-hour input are preserved; year selection supports the shell search action. Existing framework localizations supply English and Vietnamese picker labels. System-owned permission dialogs remain OS-owned.
+
+Regression coverage: test/core/ui/app_selection_controls_test.dart and test/core/ui/app_date_time_picker_test.dart.
