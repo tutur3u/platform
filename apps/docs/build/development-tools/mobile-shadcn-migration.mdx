@@ -54,7 +54,7 @@ identifiers.
 | `shad.ColorScheme` roles | `AppColorTokens` | Adds `success`, `warning`, `info`. Published as a `ThemeExtension` by the appearance theme. |
 | `shad.Typography` | `AppTypography` | Same sizes and weights (`small` 14, `textSmall` 14/500, `h4` 18/600…). |
 | `shad.Gap(n)` | `AppGap(n)` | Follows the parent `Flex` or scroll axis. Codemod. |
-| `shad.LucideIcons.x` | `LucideIcons.x` (`lucide_icons_flutter`) | Same member names. 17 brand marks and `railSymbol` map to `AppIcons.*`. Codemod. |
+| `shad.LucideIcons.x` | `LucideIcons.x` (generated at the web's `lucide-react` version) | Same member names; lab icons are `LucideLabIcons`. The 17 brand marks and `railSymbol` that Lucide dropped map to `AppIcons.*`. Codemod. |
 | `shad.PrimaryButton` / `SecondaryButton` / `OutlineButton` / `GhostButton` / `DestructiveButton` | `AppButton.primary` / `.secondary` / `.outline` / `.ghost` / `.destructive` | Keeps `child`, `onPressed`, `leading`, `trailing`, `density`, `size`, `shape`, `enabled`, `alignment`. Adds `loading`. |
 | `shad.ButtonDensity.*`, `ButtonSize.*`, `ButtonShape.*` | `AppButtonDensity`, `AppButtonSize`, `AppButtonShape` | `icon`, `iconDense`, `dense`, `compact`, `comfortable` keep their meaning. |
 | `shad.IconButton` | `AppIconButton(tooltip:)` | `tooltip` is required and is the accessible name. |
