@@ -68,7 +68,7 @@ void main() {
         expect(setting.left, 16);
         expect(setting.right, width - 16);
 
-        final scroll = find.byType(ListView).first;
+        final scroll = find.byType(CustomScrollView).first;
         await tester.scrollUntilVisible(
           find.text('On-device models'),
           300,

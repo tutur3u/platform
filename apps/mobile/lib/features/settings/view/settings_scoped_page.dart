@@ -33,11 +33,9 @@ Future<void> pushScopedSettingsPage(
       final owned = route;
       final navigator = owned?.navigator;
       if (owned == null || navigator == null || !owned.isActive) return;
-      if (owned.isCurrent) {
-        navigator.pop();
-      } else {
-        navigator.removeRoute(owned);
-      }
+      // An ancestor route can cover this navigator and pause its exit ticker.
+      // Scope invalidation must retire the owned editor even while covered.
+      navigator.removeRoute(owned);
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }

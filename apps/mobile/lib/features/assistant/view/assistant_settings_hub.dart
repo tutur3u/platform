@@ -48,23 +48,25 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
   }
 
   @override
-  Widget build(BuildContext context) => AppSheetScaffold(
-    title: context.l10n.assistantSettingsTitle,
-    padding: EdgeInsets.zero,
-    slivers: [SliverFillRemaining(child: _body(context))],
-  );
-  Widget _body(BuildContext context) =>
+  Widget build(BuildContext context) =>
       BlocBuilder<AssistantSettingsCubit, AssistantSettingsState>(
         bloc: _settings,
-        builder: (context, state) => state.loading
-            ? Semantics(
-                label: context.l10n.commonLoading,
-                child: const Center(child: NovaLoadingIndicator(size: 20)),
-              )
-            : ListView(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.paddingOf(context).bottom + 16,
+        builder: (context, state) => AppSheetScaffold(
+          title: context.l10n.assistantSettingsTitle,
+          padding: EdgeInsets.zero,
+          slivers: [
+            if (state.loading)
+              SliverToBoxAdapter(
+                child: Semantics(
+                  label: context.l10n.commonLoading,
+                  child: const SizedBox(
+                    height: 160,
+                    child: Center(child: NovaLoadingIndicator(size: 20)),
+                  ),
                 ),
+              )
+            else
+              SliverList.list(
                 children: [
                   if (state.loaded)
                     AssistantSettingsSheetBody(
@@ -103,5 +105,7 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
                   ),
                 ],
               ),
+          ],
+        ),
       );
 }
