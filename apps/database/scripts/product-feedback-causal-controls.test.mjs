@@ -471,7 +471,8 @@ test('workflow input is default-OFF and real legacy controls isolate both inheri
       '--test-concurrency=1',
       new URL('./employee-schema-workflow.test.mjs', import.meta.url).pathname,
     ],
-    { env, encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 }
+    // The spawned legacy suite takes ~15s alone; leave headroom under load.
+    { env, encoding: 'utf8', timeout: 60000, maxBuffer: 1024 * 1024 }
   );
   assert.equal(result.error, undefined);
   assert.equal(result.status, 0, result.stdout + result.stderr);
