@@ -811,16 +811,15 @@ workspace users cannot create runs, leases, previews, or runner tokens.
 
 ## Local Executable Verification
 
-Use an isolated CLI config when testing local `apps/web` so the production CLI
-session is not overwritten:
+For local source CLI development, use an isolated CLI config and disposable resource home so production CLI and scheduler state stay separate. `bun ttr` invokes the trusted global CLI; it does not run source. Use the explicit source entry below:
 
 ```bash
 bun sb:status
 docker exec supabase_db_tuturuuu psql -U postgres -d postgres -tAc "select to_regclass('private.devbox_leases'), exists (select 1 from supabase_migrations.schema_migrations where version = '20260603171600')"
-TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr login --base-url http://localhost:7803
-TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr box agent register --name local-devbox
-TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr box agent start --token <runner-token>
-TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr box run -- bun --version
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json TTR_RESOURCES_HOME=/tmp/ttr-devbox-local-resources bun packages/sdk/src/cli/index.ts login --base-url http://localhost:7803
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json TTR_RESOURCES_HOME=/tmp/ttr-devbox-local-resources bun packages/sdk/src/cli/index.ts box agent register --name local-devbox
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json TTR_RESOURCES_HOME=/tmp/ttr-devbox-local-resources bun packages/sdk/src/cli/index.ts box agent start --token <runner-token>
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json TTR_RESOURCES_HOME=/tmp/ttr-devbox-local-resources bun packages/sdk/src/cli/index.ts box run -- bun --version
 ```
 
 The final command should print the remote command logs and exit with the remote

@@ -34,6 +34,9 @@ export function commandCwd(args: string[], cwd = process.cwd()) {
 }
 
 export function commandTool(name: string, args: string[]) {
+  if (name === 'bun' && basename(args[0] || '') === 'ttr.cjs')
+    return { tool: 'ttr', tail: args.slice(1), offset: 1 };
+
   if (['node', 'bun', 'bunx', 'npx'].includes(name)) {
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]!;

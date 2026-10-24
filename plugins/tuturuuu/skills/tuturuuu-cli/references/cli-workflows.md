@@ -27,7 +27,7 @@ ttr --version
 ttr workspaces --help
 ```
 
-Inside the Tuturuuu monorepo, use `bun ttr ...` to run the local package script.
+Inside the Tuturuuu monorepo, `bun ttr ...` invokes the trusted global `~/.bun/bin/ttr` through an absolute path. Never use workspace `node_modules/.bin/ttr` for operational commands.
 After global installation, use `ttr ...` directly. Do not diagnose `bun ttr login`
 as a registry install failure: Bun interprets that form as a workspace package-script
 lookup, so inspect the local script and its error first.
@@ -70,8 +70,8 @@ first-run, CI, and headless environments.
 
 ## Common Commands
 
-In a source preview, `bun ttr backlog search help --lang en|vi --json` and
-`bun ttr backlog search model-status --json` use the native offline entry before
+In a source preview, `bun packages/sdk/src/cli/index.ts backlog search help --lang en|vi --json` and
+`bun packages/sdk/src/cli/index.ts backlog search model-status --json` use the native offline entry before
 login. Status without `--runtime-dir` performs no model load/download. Lexical
 queries use an explicit `--db`. Indexing scans the full projection and rebuilds
 all lexical documents. It reuses vectors only for identical record IDs and
@@ -237,7 +237,7 @@ should fail before making the request.
 
 The Tuturuuu monorepo contains a workspace package named `tuturuuu` under
 `packages/sdk`. From the repo root, Bun resolves that package name to the local
-workspace package. Use `bun ttr ...` for the local script and `ttr ...` for the
+workspace package. Use `bun ttr ...` for the trusted global wrapper and `ttr ...` for the
 globally installed CLI.
 
 ## Companion Workflows
