@@ -1,6 +1,8 @@
 import { availableParallelism, totalmem } from 'node:os';
 import { basename, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { evaluateTrustedRunner, fleetSnapshotNow } from '../devbox-fleet-types';
+import { parseDurationSeconds } from './devbox-duration';
 import {
   commandCwd,
   isHeavyCommand,
@@ -47,6 +49,7 @@ Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [option
   status [--json]         show capacity, owners (command, age, CPU), waiters, idle warnings
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
   run -- COMMAND ARGS    queue any finite command; explicit setup required
+  offload [--json]       local saturation plus trusted devbox runner eligibility
   enable | disable       toggle automatic admission for future commands
   uninstall              remove owned shell hooks/shims; preserve backups
 
@@ -59,6 +62,11 @@ Setup options:
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
+Run option: --offload auto|<runner-id> runs the exact pushed commit on a fresh,
+attested trusted-development devbox runner (ttr box) when local lanes are
+saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
+no local environment is sent. --timeout <30s|10m|2h> bounds it (default 30m).
+ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
 Burst admission requires normal memory pressure and low CPU load, and stays
@@ -99,7 +107,8 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   const allowed: Record<string, string[]> = {
-    run: ['--ignore-pressure'],
+    run: ['--ignore-pressure', '--offload', '--timeout'],
+    offload: ['--json', '--runner'],
     shim: [],
     status: ['--json'],
     monitor: ['--seconds'],
@@ -114,7 +123,13 @@ export async function runResourcesCommand(argv: string[]) {
       if (option === '--no-update-check') continue;
       if (!allowed[action]!.includes(option))
         throw new Error(`Unknown ${action} option: ${option}`);
-      if (option === '--seconds') i++;
+      if (
+        ['--seconds', '--offload', '--timeout', '--runner'].includes(option)
+      ) {
+        const value = options[++i];
+        if (!value || value.startsWith('--'))
+          throw new Error(`Missing value for ${option}.`);
+      }
     }
   }
   const home = resourceHome();
@@ -151,22 +166,74 @@ export async function runResourcesCommand(argv: string[]) {
       ? limitCommand(basename(name), command, settings)
       : command;
     const env = enabled ? resourceEnvironment(settings) : { ...process.env };
+    const queued =
+      enabled &&
+      (shim ? isHeavyCommand(name, command) : !isTrivialCommand(name, command));
+    const offload = optionValue(options, '--offload');
+    if (!shim && queued && offload && !parent) {
+      const code = await offloadRun({
+        home,
+        lanes: resourceLanes(total),
+        target: offload,
+        argv: [name, ...command],
+        timeout: optionValue(options, '--timeout'),
+      });
+      if (code !== undefined) {
+        process.exitCode = code;
+        return;
+      }
+    }
     if (enabled && !shim) {
       const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
     }
-    process.exitCode =
-      enabled &&
-      (shim ? isHeavyCommand(name, command) : !isTrivialCommand(name, command))
-        ? await queuedResourceCommand(
-            home,
-            real,
-            command,
-            env,
-            !shim && options.includes('--ignore-pressure'),
-            resourceLanes(total)
-          )
-        : await spawnResourceCommand(real, args, env);
+    process.exitCode = queued
+      ? await queuedResourceCommand(
+          home,
+          real,
+          command,
+          env,
+          !shim && options.includes('--ignore-pressure'),
+          resourceLanes(total)
+        )
+      : await spawnResourceCommand(real, args, env);
+    return;
+  }
+  if (action === 'offload') {
+    const box = await import('./resources-box-offload.js');
+    const config = await readResourceConfig(home);
+    const state = await resourceQueueStatus(
+      home,
+      resourceLanes(config || defaultResourceConfig())
+    );
+    const snapshot = await (
+      await box.createSessionClient()
+    ).devboxes.fleet.snapshot();
+    const result = {
+      local: {
+        saturated:
+          state.occupied >= state.effectiveLanes || state.waiting.length > 0,
+        occupied: state.occupied,
+        effectiveLanes: state.effectiveLanes,
+        waiting: state.waiting.length,
+      },
+      selection: box.selectOffloadRunner(
+        snapshot,
+        optionValue(options, '--runner') ?? 'auto'
+      ),
+      runners: snapshot.runners
+        .filter((runner) => runner.status !== 'revoked')
+        .map((runner) => ({
+          id: runner.id,
+          name: runner.name,
+          ...evaluateTrustedRunner(runner, fleetSnapshotNow(snapshot)),
+        })),
+    };
+    process.stdout.write(
+      options.includes('--json')
+        ? `${JSON.stringify(result, null, 2)}\n`
+        : `Local: ${result.local.saturated ? 'saturated' : 'lanes available'} (${result.local.occupied}/${result.local.effectiveLanes}, ${result.local.waiting} waiting)\n${result.runners.map((runner) => `${runner.eligible ? 'eligible' : `blockedBy=${runner.blockedBy}`} ${runner.name} (${runner.id}): ${runner.reason}`).join('\n')}\n${'runner' in result.selection ? `Offload target: ${result.selection.runner.name}` : `Offload blockedBy=${result.selection.blockedBy}: ${result.selection.reason}`}\n`
+    );
     return;
   }
   if (action === 'setup') {
@@ -287,4 +354,91 @@ export async function runResourcesCommand(argv: string[]) {
   throw new Error(
     `Unknown resources action: ${action}. Use ttr resources --help.`
   );
+}
+
+function optionValue(options: string[], name: string) {
+  const index = options.indexOf(name);
+  return index < 0 ? undefined : options[index + 1];
+}
+
+// `--offload auto` offloads only when local lanes are saturated and falls back
+// to the local queue when no eligible runner exists or the server rejected the
+// run; `--offload <runner-id>` always targets that runner and fails instead of
+// falling back. Once a remote run exists (or might exist) neither mode falls
+// back: runBoxOffload stops it and returns a non-zero code instead.
+export async function offloadRun({
+  home,
+  lanes,
+  target,
+  argv,
+  timeout,
+  cwd = process.cwd(),
+  loadBox = () => import('./resources-box-offload.js'),
+  queueStatus = resourceQueueStatus,
+}: {
+  home: string;
+  lanes: number;
+  target: string;
+  argv: string[];
+  timeout?: string;
+  cwd?: string;
+  loadBox?: () => Promise<typeof import('./resources-box-offload.js')>;
+  queueStatus?: typeof resourceQueueStatus;
+}) {
+  const log = (text: string) =>
+    process.stderr.write(`[ttr resources] ${text}\n`);
+  const explicit = target !== 'auto';
+  if (!explicit) {
+    const state = await queueStatus(home, lanes);
+    if (state.occupied < state.effectiveLanes && !state.waiting.length)
+      return undefined;
+  }
+  const box = await loadBox();
+  let creationStarted = false;
+  try {
+    const plan = box.offloadCommitPlan(cwd);
+    const client = await box.createSessionClient();
+    const selection = box.selectOffloadRunner(
+      await box.offloadRequest((signal) =>
+        client.devboxes.fleet.snapshot({ signal })
+      ),
+      target
+    );
+    if (!('runner' in selection)) {
+      if (explicit)
+        throw new Error(
+          `Offload to ${target} is blocked (blockedBy=${selection.blockedBy}): ${selection.reason}`
+        );
+      log(
+        `local lanes saturated; offload blockedBy=${selection.blockedBy}: ${selection.reason}. Queueing locally.`
+      );
+      return undefined;
+    }
+    creationStarted = true;
+    return await box.runBoxOffload({
+      client,
+      runnerId: selection.runner.id,
+      sha: plan.sha,
+      prefix: plan.prefix,
+      argv,
+      timeoutSeconds:
+        (timeout ? parseDurationSeconds(timeout) : undefined) ||
+        box.defaultOffloadTimeoutSeconds,
+    });
+  } catch (error) {
+    if (explicit) throw error;
+    if (
+      creationStarted &&
+      !(error instanceof box.OffloadNotCreatedError && error.rejected)
+    ) {
+      log(
+        `${error instanceof Error ? error.message : String(error)}. The run may exist remotely, so it is not repeated locally; check \`ttr box list\` and stop it with \`ttr box stop <run-id>\`.`
+      );
+      return 1;
+    }
+    log(
+      `offload unavailable: ${error instanceof Error ? error.message : String(error)} Queueing locally.`
+    );
+    return undefined;
+  }
 }
