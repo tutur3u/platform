@@ -531,6 +531,47 @@ ceiling. A managed agent can dispatch independent Judge jobs concurrently within
 the configured process-wide sandbox budget. These settings do
 not limit the current trusted host commands, builds, previews, or tunnels.
 
+### Stale run reaper
+
+Runs left `running` or `cancel_requested` after an agent crash, watchdog exit,
+SIGKILL, or a claim response the agent never received would otherwise count
+against that capacity forever. `private.reap_stale_devbox_runs` finishes them:
+
+- `cancel_requested` unacknowledged for 10 minutes becomes `cancelled`;
+- a run past `started_at + timeout_seconds + 5 minutes` becomes `failed`;
+- a run started over 10 minutes ago on a missing or revoked runner, or one
+  without a heartbeat for 10 minutes, becomes `failed`.
+
+Reaped runs release an unused non-kept lease and record a `reaped` run event with
+the reason. Every claim reaps up to 25 of the claiming runner's stale runs
+before counting capacity, so both the Cloudflare control Worker and the web
+poll route free slots without a scheduler. Runs without a timeout on a healthy
+runner (long `serve` or `tunnel` jobs) are never reaped. Disabling a runner's
+heartbeat takes it offline, so its active runs are reaped after 10 minutes.
+
+**MANUAL sweep or on-claim self-reap only.** No trigger schedules a global
+sweep today. Runners that never claim again retain their stale runs until an
+operator invokes `POST /api/v1/infrastructure/devboxes/runs/reap-stale` on the
+Infrastructure app. It uses the same gate as runner drain and features: root
+workspace membership plus `manage_workspace_secrets` or `manage_workspace_roles`.
+Each call reaps at most 200 runs across all runners and returns
+`{ limit, reaped }`. There is deliberately no `/api/cron` route for it.
+
+Browser operators authenticate with the Infrastructure app-session audience
+`infra`. The manual POST requires an `Origin` matching the request URL exactly
+and rejects a supplied `Sec-Fetch-Site` other than `same-origin`. Forwarded hosts
+do not expand the allowed origin. CLI access bearer tokens retain the same
+root permission gate as runner drain and may omit `Origin`; a supplied origin
+must still match. A CLI token in a cookie does not receive that exemption.
+
+Adding a Cloudflare Cron Control trigger is a follow-up under the billable-work
+rules: bounded calls/retries, idempotent progress, terminal scheduling and a
+tested durable stop fence. Do not add a Vercel cron or pg_cron entry. Regression
+coverage lives in `apps/database/supabase/tests/devbox-stale-run-reaper.sql`
+and `apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runs/reap-stale/`
+(`route.test.ts` and `access.test.ts`). The access tests exercise real signed
+app-session and CLI tokens with fixture permission and storage boundaries.
+
 ## Judge setup
 
 The Judge executor requires a Docker engine with the `runsc` gVisor runtime
@@ -1053,6 +1094,32 @@ without a final assertion report leaves the underlying cause unproven. Preserve
 allocated fixtures until successful final cleanup or independently verified
 resource absence, and use the next exact-source CI result for runtime evidence.
 
+### Composing devbox claim migrations
+
+Apply trust pools (`20261023100000`), drain hardening (`20261023103000`),
+mode admission (`20261024094600`), then stale-run reaping (`20261024095000`).
+The final claim keeps the mode and drain admission predicates and lease move,
+and reaps at most 25 runs for the claiming runner after acquiring its advisory
+lock and before counting capacity. Run the trust-pool, drain-hardening, mode
+admission and stale-run reaper pgTAP suites against this combined sequence;
+validating each migration in isolation cannot prove the final claim behavior.
+
+Reaping releases a non-kept lease only after every queued, running or
+cancel-requested sibling finishes. Multiple runs may reuse one lease; a stale
+run cannot invalidate a healthy sibling's next claim. The reaper locks affected
+leases in ID order before checking siblings in a fresh statement snapshot;
+enqueue locks the lease for sharing and rejects inactive leases after waiting. The stale-run reaper
+pgTAP suite covers queued and running siblings and final-sibling release.
+
+For the lease race regression, run
+`supabase/fixtures/devbox-reaper-lease-race.sql` as `supabase_admin` inside the
+repository isolated local database before its lifecycle cleanup. It opens two
+committed sessions to prove each lease-lock winner. Normal Supabase pgTAP uses
+the restricted `postgres` role, which cannot use dblink with loopback trust
+authentication. Keep this privileged fixture inside a disposable local stack;
+its setup commits rows and its teardown removes only its actor's devbox rows.
+The lifecycle's full database cleanup removes the test account and its automatic
+workspace membership.
 
 ## Trusted command execution boundary
 

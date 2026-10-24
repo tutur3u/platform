@@ -23480,6 +23480,10 @@ export type Database = {
         Args: { p_actor: string; p_teacher?: string; p_ws: string };
         Returns: Json;
       };
+      reap_stale_devbox_runs: {
+        Args: { p_limit?: number; p_runner_id?: string };
+        Returns: number;
+      };
       reconcile_creator_handle_owners: { Args: never; Returns: undefined };
       reconcile_employee_restore: {
         Args: {
