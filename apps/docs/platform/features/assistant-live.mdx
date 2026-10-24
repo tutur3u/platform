@@ -84,6 +84,47 @@ shell consumes the keyboard inset once. Regressions cover controller and capture
 transitions, retained dock identity, transparent tool inspection, and actual shell
 geometry in `apps/mobile/test/features/assistant/widgets/`.
 
+### Mobile message actions and appearance
+
+Long-press a message for Copy. Saved messages in native Assistant conversations
+also offer Reply and reactions. The reply preview stays inside the existing
+floating composer and can be cancelled before sending. Native replies retain the
+original target through retries; reactions reuse `private.chat_message_reactions`
+and the authenticated Chat API, so native web Chat and mobile see the same data.
+The server derives the actor from authentication and validates conversation access;
+one actor can remove only their own reaction. Optimistic rows, Live drafts and
+local-only model messages cannot receive persisted reactions or reply references.
+Legacy `ai-chat-*` and `legacy-ai-*` conversations keep Copy, but cannot use private
+Chat message IDs. Legacy dashboard Mira reaction/reply parity requires its own
+adapter work; IDs must never be stripped or guessed to enable it.
+
+Reaction toggles do not enter the offline queue. An uncertain outcome retains a
+write fence: **Refresh reactions** reads saved summaries but cannot establish that
+the original timed-out request has finished. Changes remain paused for that
+message after an unknown outcome, including across restarts. Releasing this hold
+requires terminal operation evidence or a future idempotent server contract.
+Missing targets also keep the fence. Reaction receipts update summaries without
+replacing current message content. A separate actor/workspace/conversation/message
+Hive journal must accept and flush the pending marker to disk before dispatch.
+Replacing the conversation cache cannot erase that marker;
+only the original toggle's acknowledged receipt clears it. Coverage includes
+`assistant_chat_reaction_persistence_test.dart`,
+`assistant_chat_reply_persistence_test.dart`,
+`assistant_native_reply_transport_test.dart` and
+`assistant_message_actions_test.dart`.
+
+Open the Assistant's More menu and choose **Chat appearance**. Presets adapt to
+the app's light/dark mode and offer solid, gradient and ombre backgrounds. The
+Advanced editor starts collapsed and separates message palette, text accent,
+background palette/style and intensity. Classic is the default. Appearance is
+device-local and scoped to the signed-in actor across all of that actor's
+Assistant conversations and workspaces; it does not change the shell, web UI or
+another actor's preferences. It does not synchronize across devices. Both remote
+and on-device conversations use the selected appearance. The theme controller
+retires delayed edits on logout or session replacement. Preset contrast, storage
+round trips, actor/session fences and the collapsed editor are covered under
+`apps/mobile/test/features/assistant/theme/`.
+
 
 
 ### Native mobile reaction operations

@@ -4,6 +4,7 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_receipt.dart';
+import 'package:mobile/features/assistant/widgets/assistant_reply_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -13,6 +14,13 @@ class AssistantTranscriptSection extends StatelessWidget {
     required this.liveState,
     required this.assistantName,
     this.onRetry,
+    this.actorId,
+    this.canPersistMessage,
+    this.needsReactionRefresh,
+    this.isActionCurrent,
+    this.onReply,
+    this.onReact,
+    this.onRefreshReactions,
     super.key,
   });
 
@@ -20,6 +28,13 @@ class AssistantTranscriptSection extends StatelessWidget {
   final AssistantLiveState liveState;
   final String assistantName;
   final VoidCallback? onRetry;
+  final String? actorId;
+  final bool Function(String)? canPersistMessage;
+  final bool Function(String)? needsReactionRefresh;
+  final bool Function()? isActionCurrent;
+  final ValueChanged<String>? onReply;
+  final void Function(String, String)? onReact;
+  final ValueChanged<String>? onRefreshReactions;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +57,13 @@ class AssistantTranscriptSection extends StatelessWidget {
         ...chatState.messages.indexed.map((entry) {
           final (index, message) = entry;
           final toolParts = _messageToolParts(message);
+          final persisted = canPersistMessage?.call(message.id) ?? false;
+          final refreshRequired =
+              needsReactionRefresh?.call(message.id) ??
+              message.reactionRefreshRequired;
+          final reply = chatState.messages
+              .where((candidate) => candidate.id == message.replyToMessageId)
+              .firstOrNull;
           return Padding(
             key: ValueKey((
               'assistant-turn',
@@ -51,6 +73,27 @@ class AssistantTranscriptSection extends StatelessWidget {
             )),
             padding: const EdgeInsets.only(bottom: 14),
             child: AssistantTranscriptBubble(
+              reactions: message.reactions,
+              actorId: actorId,
+              isActionCurrent: isActionCurrent,
+              onReply: persisted && onReply != null
+                  ? () => onReply!(message.id)
+                  : null,
+              onReact: persisted && !refreshRequired && onReact != null
+                  ? (reaction) => onReact!(message.id, reaction)
+                  : null,
+              onRefreshReactions:
+                  persisted && refreshRequired && onRefreshReactions != null
+                  ? () => onRefreshReactions!(message.id)
+                  : null,
+              replyPreview: message.replyToMessageId == null
+                  ? null
+                  : AssistantReplyPreview(
+                      label: context.l10n.assistantReplyMessageAction,
+                      text: reply == null
+                          ? context.l10n.assistantReplyUnavailable
+                          : _messageText(reply),
+                    ),
               activityActive: message.id == activeMessageId,
               label: message.role == 'user'
                   ? context.l10n.assistantYouLabel

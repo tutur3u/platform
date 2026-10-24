@@ -82,6 +82,10 @@ extension _AssistantPageSubmission on _AssistantPageState {
       }
       _chatCubit.takeUploadedComposerAttachments();
     } else {
+      if (_chatCubit.replyBlockedByPendingSubmission) {
+        _showInlineNotice(context.l10n.assistantReplyPending);
+        return;
+      }
       if (!await submitAssistantRemoteChat(
         _chatCubit,
         shellState,
@@ -101,6 +105,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
     if (!operation.current ||
         !mounted ||
         _chatCubit.attachmentScopeVersion != workspaceVersion ||
+        _chatCubit.state.replyTarget != null ||
         _inputController.text != text) {
       return;
     }

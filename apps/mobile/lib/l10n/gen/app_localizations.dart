@@ -21096,6 +21096,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load or save calendar preferences. Retry when online.'**
   String get calendarSettingsError;
+
+  /// No description provided for @assistantReactionCelebrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Celebrate'**
+  String get assistantReactionCelebrate;
+
+  /// No description provided for @assistantReactionInsightful.
+  ///
+  /// In en, this message translates to:
+  /// **'Insightful'**
+  String get assistantReactionInsightful;
+
+  /// No description provided for @assistantReactionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reaction'**
+  String get assistantReactionLabel;
+
+  /// No description provided for @assistantReactionLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get assistantReactionLike;
+
+  /// No description provided for @assistantReactionLove.
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get assistantReactionLove;
+
+  /// No description provided for @assistantReactionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reaction outcome is unknown. Changes are paused for this message; refresh only reads saved reactions.'**
+  String get assistantReactionUnconfirmed;
+
+  /// No description provided for @assistantRefreshReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh reactions'**
+  String get assistantRefreshReactions;
+
+  /// No description provided for @assistantReplyMessageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get assistantReplyMessageAction;
+
+  /// No description provided for @assistantReplyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Original message unavailable'**
+  String get assistantReplyUnavailable;
+
+  /// No description provided for @assistantThemeAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get assistantThemeAdvanced;
+
+  /// No description provided for @assistantThemeBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background colors'**
+  String get assistantThemeBackground;
+
+  /// No description provided for @assistantThemeBackgroundStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background style'**
+  String get assistantThemeBackgroundStyle;
+
+  /// No description provided for @assistantThemeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get assistantThemeCustom;
+
+  /// No description provided for @assistantThemeDeviceScope.
+  ///
+  /// In en, this message translates to:
+  /// **'For your Assistant chats on this device, across workspaces.'**
+  String get assistantThemeDeviceScope;
+
+  /// No description provided for @assistantThemeIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Background intensity'**
+  String get assistantThemeIntensity;
+
+  /// No description provided for @assistantThemeLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading appearance…'**
+  String get assistantThemeLoading;
+
+  /// No description provided for @assistantThemeMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Message colors'**
+  String get assistantThemeMessages;
+
+  /// No description provided for @assistantThemeOmbre.
+  ///
+  /// In en, this message translates to:
+  /// **'Ombre'**
+  String get assistantThemeOmbre;
+
+  /// No description provided for @assistantThemePreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get assistantThemePreset;
+
+  /// No description provided for @assistantThemePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat appearance preview'**
+  String get assistantThemePreview;
+
+  /// No description provided for @assistantThemePreviewAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s make room for what matters.'**
+  String get assistantThemePreviewAssistant;
+
+  /// No description provided for @assistantThemePreviewUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me plan a focused day.'**
+  String get assistantThemePreviewUser;
+
+  /// No description provided for @assistantThemeReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset appearance'**
+  String get assistantThemeReset;
+
+  /// No description provided for @assistantThemeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantThemeRetry;
+
+  /// No description provided for @assistantThemeSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving appearance…'**
+  String get assistantThemeSaving;
+
+  /// No description provided for @assistantThemeStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance could not be saved or loaded on this device.'**
+  String get assistantThemeStorageError;
+
+  /// No description provided for @assistantThemeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text colors'**
+  String get assistantThemeText;
+
+  /// No description provided for @assistantThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat appearance'**
+  String get assistantThemeTitle;
+
+  /// No description provided for @assistantReplyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.'**
+  String get assistantReplyPending;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

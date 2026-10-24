@@ -116,21 +116,29 @@ extension _AssistantPageChrome on _AssistantPageState {
     final choice = await showAppSheet<String>(
       context: context,
       builder: (sheetContext) => Material(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isLiveMode)
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!isLiveMode)
+                AppListTile(
+                  leading: const Icon(LucideIcons.history),
+                  title: Text(context.l10n.assistantHistoryTitle),
+                  onTap: () => Navigator.of(sheetContext).pop('history'),
+                ),
               AppListTile(
-                leading: const Icon(LucideIcons.history),
-                title: Text(context.l10n.assistantHistoryTitle),
-                onTap: () => Navigator.of(sheetContext).pop('history'),
+                leading: const Icon(LucideIcons.slidersHorizontal),
+                title: Text(context.l10n.assistantSettingsTitle),
+                onTap: () => Navigator.of(sheetContext).pop('settings'),
               ),
-            AppListTile(
-              leading: const Icon(LucideIcons.slidersHorizontal),
-              title: Text(context.l10n.assistantSettingsTitle),
-              onTap: () => Navigator.of(sheetContext).pop('settings'),
-            ),
-          ],
+              if (!isLiveMode)
+                AppListTile(
+                  leading: const Icon(LucideIcons.palette),
+                  title: Text(context.l10n.assistantThemeTitle),
+                  onTap: () => Navigator.of(sheetContext).pop('appearance'),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -139,6 +147,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       await _showHistorySheet(context, _loadedWorkspaceId!);
     }
     if (choice == 'settings') await _showLiveSettings();
+    if (choice == 'appearance') await _showChatTheme();
   }
 
   void _toggleLiveDockNavigation() {
