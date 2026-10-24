@@ -134,16 +134,15 @@ void main() {
       expect(find.text('Qwen 3 0.6B'), findsNothing);
       final use = tester.widget<AppIconButton>(_action('Use on this device'));
       expect(use.onPressed, isNull);
+      final remove = tester.widget<AppIconButton>(_action('Remove weights'));
+      expect(remove.onPressed, isNotNull);
       expect(find.text('Remove weights'), findsNothing);
       await tester.tap(find.byTooltip('About Gemma 3 270M'));
       await tester.pumpAndSettle();
       expect(find.byType(AppDialog), findsOneWidget);
       expect(find.text('License'), findsOneWidget);
       expect(find.text('Get model from publisher'), findsOneWidget);
-      final remove = tester.widget<AppButton>(
-        find.widgetWithText(AppButton, 'Remove weights'),
-      );
-      expect(remove.onPressed, isNotNull);
+      expect(find.widgetWithText(AppButton, 'Remove weights'), findsNothing);
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
       expect(find.byType(AppDialog), findsNothing);
