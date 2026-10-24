@@ -86,7 +86,7 @@ test('runPreCommit removes git local environment keys from checks', () => {
   assert.equal(envs[0].GIT_WORK_TREE, undefined);
 });
 
-test('runPreCommit runs bun check only when mobile is untouched', () => {
+test('runPreCommit runs bun validate only when mobile is untouched', () => {
   const commands = [];
 
   const exitCode = runPreCommit({
@@ -100,10 +100,10 @@ test('runPreCommit runs bun check only when mobile is untouched', () => {
   });
 
   assert.equal(exitCode, 0);
-  assert.deepEqual(commands, [['bun', ['check']]]);
+  assert.deepEqual(commands, [['bun', ['validate']]]);
 });
 
-test('runPreCommit runs mobile checks after bun check when mobile is touched', () => {
+test('runPreCommit runs mobile checks after bun validate when mobile is touched', () => {
   const commands = [];
 
   const exitCode = runPreCommit({
@@ -118,7 +118,7 @@ test('runPreCommit runs mobile checks after bun check when mobile is touched', (
 
   assert.equal(exitCode, 0);
   assert.deepEqual(commands, [
-    ['bun', ['check']],
+    ['bun', ['validate']],
     ['bun', ['check:mobile']],
   ]);
 });
@@ -137,7 +137,7 @@ test('runPreCommit stops on the first failing command', () => {
   });
 
   assert.equal(exitCode, 1);
-  assert.deepEqual(commands, [['bun', ['check']]]);
+  assert.deepEqual(commands, [['bun', ['validate']]]);
 });
 
 test('runPreCommit skips checks outside the main branch', () => {

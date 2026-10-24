@@ -57,7 +57,7 @@ report it and write a separate fix plan.
 | Shared route tests | `bun run --cwd packages/users-core test -- src/routes/users/links/manual/route.test.ts` | all new cases pass |
 | Package types | `bun run --cwd packages/users-core type-check` | exit 0 |
 | Contacts build | `bun run --cwd apps/contacts build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated pre-existing blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated pre-existing blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -116,7 +116,7 @@ emails only. Also assert unexpected read/mutation errors map to the existing
 - [ ] Every permission, containment, conflict, success, and compensation branch is covered.
 - [ ] Tests assert mutation absence or exact ordering, not only status codes.
 - [ ] No production file changed.
-- [ ] Users-core typecheck, Contacts build, `bun check`, and whitespace pass.
+- [ ] Users-core typecheck, Contacts build, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

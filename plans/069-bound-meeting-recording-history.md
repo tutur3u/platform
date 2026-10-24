@@ -73,7 +73,7 @@ live, but existing Rust-owned GET methods must change in the same slice.
 | Migration metadata | `bun migration:tanstack:manifest && bun migration:tanstack:check` | changed Web routes remain accurately tracked |
 | Backend gate | `bun check:backend` | Web/Rust GET parity and route ownership pass |
 | Typechecks | `bun run --cwd packages/internal-api type-check && bun run --cwd apps/meet type-check && bun run --cwd apps/web type-check` | all exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | App builds | `bun run --cwd apps/meet build && bun run --cwd apps/web build` | both production builds succeed |
 | Whitespace | `git diff --check` | no output |
 
@@ -192,7 +192,7 @@ retaining the removed session array.
       and failure behavior.
 - [ ] Mobile parses and renders `recordingCount` and no longer expects embedded sessions.
 - [ ] Transcript detail uses the exact documented 200/401/403/404/500 envelope contract.
-- [ ] Focused tests, migration/backend gates, typechecks, `bun check`, builds, and whitespace pass.
+- [ ] Focused tests, migration/backend gates, typechecks, `bun validate`, builds, and whitespace pass.
 - [ ] No mutation, retention, transcription, audio, or unrelated route behavior changes.
 
 ## STOP conditions

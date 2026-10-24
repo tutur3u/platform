@@ -59,7 +59,7 @@ English/Vietnamese keys where possible and run all i18n gates if copy changes.
 | i18n if changed | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | exit 0 |
 | Typechecks | `bun run --cwd packages/internal-api type-check && bun run --cwd apps/cms type-check` | both exit 0 |
 | CMS build | `bun run --cwd apps/cms build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -138,7 +138,7 @@ failure isolation, retry, no full-array subtraction, and publish invalidation.
 ### Step 5: Run all gates
 
 Apply/typegen, run database/route/component/internal-api suites, conditional
-i18n gates, both typechecks, CMS build, `bun check`, and whitespace.
+i18n gates, both typechecks, CMS build, `bun validate`, and whitespace.
 
 ## Done criteria
 

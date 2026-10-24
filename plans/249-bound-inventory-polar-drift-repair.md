@@ -209,7 +209,7 @@ transfers the exact paths.
 | Database focused/full | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/inventory-polar-sync-jobs.sql && bun --cwd apps/database sb:validate:isolated` | job/operation claims, leases, checkpoints, unique identities, ACLs, seeding, retry, and full baseline pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/inventory-polar-sync-jobs.sql` | job/RPC types are current with no unrelated drift |
 | Types/build | `bun run --cwd packages/inventory-core type-check && bun run --cwd packages/internal-api type-check && bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | all exit 0 |
-| Messages/repository | `bun i18n:sort && bun check && git diff --check` | bilingual catalogs sorted; all gates pass; whitespace output empty |
+| Messages/repository | `bun i18n:sort && bun validate && git diff --check` | bilingual catalogs sorted; all gates pass; whitespace output empty |
 
 ## Scope
 

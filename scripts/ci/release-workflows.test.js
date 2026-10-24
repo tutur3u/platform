@@ -654,7 +654,7 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   );
 
   for (const job of [formatJob, lintJob]) {
-    assert.match(job, /uses: actions\/setup-node@v7/u);
+    assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
     assert.match(job, /node-version: 24/u);
     assert.match(job, /printf '%s\\n' "\$biome_output"/u);
     assert.match(job, /Biome exit code \$biome_exit_code/u);
@@ -868,7 +868,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   assert.match(releaseJob, /contents:\s*write/);
   assert.match(releaseJob, /issues:\s*write/);
   assert.match(releaseJob, /pull-requests:\s*write/);
-  assert.match(releaseJob, /uses: actions\/checkout@v7/);
+  assert.match(releaseJob, /uses: actions\/checkout@[0-9a-f]{40} # v7\b/);
   assert.match(releaseJob, /ref: production/);
   assert.match(
     releaseJob,
@@ -878,7 +878,10 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
     releaseJob,
     /GITHUB_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
   );
-  assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
+  assert.match(
+    releaseJob,
+    /uses: googleapis\/release-please-action@[0-9a-f]{40} # v5\b/
+  );
   assert.match(
     releaseJob,
     /- name: Create or update release PR\n {8}id: release/
@@ -1788,7 +1791,7 @@ test('package publish workflows release from production version bumps', () => {
     );
     assert.doesNotMatch(workflow, /\n {2}pull_request:\n/);
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
-    assert.doesNotMatch(workflow, /pull_request\.title/);
+    assert.equal(workflow.includes('pull_request.title'), false);
     assert.doesNotMatch(workflow, /wait-workspace-dependencies/);
     assert.doesNotMatch(workflow, /jsr/);
     assert.doesNotMatch(workflow, /npm\.pkg\.github\.com/);
@@ -1801,7 +1804,6 @@ test('package publish workflows release from production version bumps', () => {
     assert.doesNotMatch(workflow, /secrets\.NPM_TOKEN/);
     assert.match(workflow, /publish-npm:/);
     assert.match(workflow, /registry-url: "https:\/\/registry\.npmjs\.org"/);
-
     assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
     assert.match(rejectJob, /permissions:\s*\{\}/);
     assert.match(rejectJob, rejectMessagePattern);

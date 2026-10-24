@@ -59,7 +59,7 @@ owners. Create one additive migration with
 | i18n if changed | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | exit 0 |
 | Typechecks | `bun run --cwd packages/inventory-core type-check && bun run --cwd packages/internal-api type-check && bun run --cwd apps/inventory type-check` | all exit 0 |
 | Inventory build | `bun run --cwd apps/inventory build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -140,7 +140,7 @@ filter reset, empty state, retry, and summary remaining visible on page failure.
 ### Step 5: Run all gates
 
 Apply/typegen, run database/core/route/component/internal-api suites, conditional
-i18n, typechecks, Inventory build, `bun check`, and whitespace.
+i18n, typechecks, Inventory build, `bun validate`, and whitespace.
 
 ## Done criteria
 

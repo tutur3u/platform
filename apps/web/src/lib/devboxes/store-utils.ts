@@ -17,7 +17,8 @@ const DEVBOX_READINESS_MESSAGE =
 export class DevboxStoreError extends Error {
   constructor(
     message: string,
-    public readonly status = 500
+    public readonly status = 500,
+    public readonly code?: string
   ) {
     super(message);
     this.name = 'DevboxStoreError';
@@ -53,6 +54,10 @@ export function getDevboxStorageError(error: DevboxStorageErrorLike) {
   if (message.startsWith('Runner is draining')) {
     return new DevboxStoreError(message, 409);
   }
+  // Raised by the require_devbox_commit_run_runner trigger.
+  if (message.startsWith('Runner does not support the commit-run protocol')) {
+    return new DevboxStoreError(message, 409);
+  }
 
   return new DevboxStoreError(message);
 }
@@ -63,7 +68,10 @@ export function createDevboxRouteErrorResponse(
 ) {
   if (error instanceof DevboxStoreError) {
     return NextResponse.json(
-      { message: error.message },
+      {
+        ...(error.code ? { code: error.code } : {}),
+        message: error.message,
+      },
       { status: error.status }
     );
   }

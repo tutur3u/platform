@@ -146,3 +146,36 @@ test('all caching mobile jobs use the wrapper, retain version pins and trigger o
   }
   assert.equal(adopted, 9);
 });
+
+test('desktop, release and employee jobs restore through the wrapper even when saving is disabled', () => {
+  const workflows = readAllWorkflows();
+  const expected = {
+    'desktop-beta.yaml': 2,
+    'desktop-store-draft.yaml': 1,
+    'release-please-auto-merge.yaml': 1,
+    'employee-schema-contract.yaml': 1,
+  };
+  for (const [file, count] of Object.entries(expected)) {
+    const steps = Object.values(workflows[file].jobs).flatMap(
+      (job) => job.steps || []
+    );
+    assert.equal(
+      steps.filter(
+        (step) => step.uses === './.github/actions/setup-flutter-with-cache'
+      ).length,
+      count,
+      file
+    );
+    assert.equal(
+      steps.some((step) => step.uses?.startsWith('subosito/flutter-action@')),
+      false,
+      file
+    );
+  }
+  for (const event of ['push', 'pull_request'])
+    assert.ok(
+      workflows['desktop-beta.yaml'].on[event].paths.includes(
+        '.github/actions/setup-flutter-with-cache/**'
+      )
+    );
+});

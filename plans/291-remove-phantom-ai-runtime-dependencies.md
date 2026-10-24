@@ -90,7 +90,7 @@ loads; do not modify their source paths. Read root and nearest package AGENTS.
 | AI package | `bun run --cwd packages/ai type-check && bun run --cwd packages/ai test` | typecheck and package tests pass |
 | Script discovery | `node scripts/run-script-tests.js --list | rg '^scripts/ci/package-runtime-dependency-usage\.test\.js$' && bun run test:scripts` | the invariant is discovered and all script tests pass |
 | Packed artifact | `node scripts/ci/npm-package-artifact-smoke.js --prepare-and-smoke packages/ai` | the clean installed AI tarball imports its configured public subpath |
-| Repository | `bun check && git diff --check` | repository and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | repository and whitespace gates pass |
 | Scope | `git status --short` | only approved manifests, lockfile, test, and Plan 236 smoke paths changed |
 
 ## Scope

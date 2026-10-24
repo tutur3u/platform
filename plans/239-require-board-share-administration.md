@@ -64,7 +64,7 @@ not these exact routes, but coordinate before changing the shared helper. Plan
 | Shared helper | `bun --cwd packages/tasks-api vitest run src/server/board-share-administration.test.ts` | cookie/app-session-safe membership and permission cases pass |
 | Tasks packages | `bun run --cwd packages/tasks-api type-check && bun run --cwd apps/tasks type-check` | both exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 
@@ -104,7 +104,7 @@ or schema changes, and public-link response shapes.
       administration operation through cookie and app-session auth.
 - [ ] Board view/edit permissions outside administration are unchanged.
 - [ ] Denials happen before privileged reads/writes and preserve status bodies.
-- [ ] Focused tests, typechecks/build, `bun check`, and whitespace pass.
+- [ ] Focused tests, typechecks/build, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

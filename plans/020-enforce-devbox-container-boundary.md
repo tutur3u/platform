@@ -68,7 +68,7 @@ and volume names. Never place tokens or environment values in tests/docs.
 | Policy tests | `bun --cwd packages/devbox vitest run src/command-policy.test.ts` | exit 0 |
 | Devbox route tests | `bun --cwd apps/web vitest run src/legacy-api-routes/v1/devboxes/agents/routes.test.ts` | exit 0 |
 | Typechecks | `bun turbo:local run type-check --filter=tuturuuu --filter=@tuturuuu/devbox --filter=@tuturuuu/web` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -160,7 +160,7 @@ host-only files and ambient env; never assert or log real secret values.
 - [ ] Per-lease workspace, cache, environment, lifecycle, and cleanup are tested.
 - [ ] Root membership alone cannot operate devboxes.
 - [ ] Doctor/capabilities/docs describe measured behavior, not a constant.
-- [ ] Focused tests, typechecks, `bun check`, Web build, and whitespace pass.
+- [ ] Focused tests, typechecks, `bun validate`, Web build, and whitespace pass.
 
 ## STOP conditions
 

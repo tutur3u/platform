@@ -102,6 +102,16 @@ it('keeps execution mode and isolation out of heartbeats until opted in', async 
     executionMode: 'judge-only',
     isolation: { checkedAt: '2026-10-23T00:00:00.000Z', dedicatedUser: true },
   });
+  expect(await collect()).not.toHaveProperty('protocols');
   vi.stubEnv('TUTURUUU_DEVBOX_EXECUTION_MODE', 'bogus');
   expect(await collect()).not.toHaveProperty('executionMode');
+});
+it('advertises the commit-run protocol only from opted-in trusted runners', async () => {
+  vi.stubEnv('TUTURUUU_DEVBOX_EXECUTION_MODE', 'trusted');
+  expect(await collect()).not.toHaveProperty('protocols');
+  vi.stubEnv('TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE', 'true');
+  expect(await collect()).toMatchObject({
+    executionMode: 'trusted',
+    protocols: { commitRun: [1] },
+  });
 });

@@ -56,7 +56,7 @@ record the work in a coordination note.
 | Focused data/route | `bun --cwd apps/infrastructure vitest run src/lib/email-audit-data.test.ts src/app/api/workspace-settings-routes.test.ts` | foreign-workspace rows are impossible; permission/error/current-envelope cases pass |
 | Typecheck | `bun run --cwd apps/infrastructure type-check` | exit 0 |
 | Build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

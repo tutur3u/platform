@@ -8,13 +8,17 @@ import { argumentValue } from './cli-args';
 import { collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { runOperator } from './operator-cli';
-import { recommend, recommendAssignments } from './policy';
+import { recommend, recommendAssignments, SIGNAL_TTL_MS } from './policy';
 import { runPositionalAdmit } from './positional-admit';
 import { runReconcile } from './reconcile-cli';
 import { runReroute } from './reroute-cli';
 import { parseReserves } from './reserves';
 import type { Provider, TaskRequest } from './types';
 import { evaluateWatch, type WatchVerdict } from './watch';
+import {
+  windowFreshnessTtlMs,
+  windowObservationIsFresh,
+} from './window-freshness';
 
 const arg = (flag: string) => argumentValue(flag);
 
@@ -155,6 +159,7 @@ async function main(): Promise<void> {
   );
   const reserves = parseReserves();
   if (command === 'status') {
+    const observedAt = new Date();
     const ranking = active
       ? recommend({
           task: {},
@@ -166,6 +171,18 @@ async function main(): Promise<void> {
       : [];
     const result = collapseAccounts(filtered).map((account) => ({
       ...account,
+      windows: account.windows.map((window) => ({
+        ...window,
+        ageMs: observedAt.getTime() - Date.parse(window.observedAt),
+        ttlMs: windowFreshnessTtlMs(window, SIGNAL_TTL_MS[account.provider]),
+        freshness: windowObservationIsFresh(
+          window,
+          observedAt,
+          SIGNAL_TTL_MS[account.provider]
+        )
+          ? 'FRESH'
+          : 'STALE',
+      })),
       ...ranking.find((item) => item.instanceId === account.instanceId),
       ...(!active
         ? {
@@ -193,7 +210,7 @@ async function main(): Promise<void> {
       console.log(
         JSON.stringify(
           {
-            observedAt: new Date().toISOString(),
+            observedAt: observedAt.toISOString(),
             t3ObservedAt,
             t3Error,
             accounts: result,

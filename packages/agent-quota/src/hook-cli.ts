@@ -14,7 +14,12 @@ import {
   switchInput,
   timestamp,
 } from './hook-input';
-import { HookError, readLedger, transactLedger } from './hook-ledger';
+import {
+  HookError,
+  hookDirectory,
+  readLedger,
+  transactLedger,
+} from './hook-ledger';
 import { reconcileChildren, recoveryBlockers } from './reconcile-children';
 import { applyDescendantReceipts, applyRecoveryReceipt } from './recovery';
 import {
@@ -23,7 +28,11 @@ import {
   releaseSwitchLease,
 } from './switch-safety';
 
-export async function runHook(command: string, action?: string): Promise<void> {
+export async function runHook(
+  command: string,
+  action?: string,
+  stateDirectory = hookDirectory()
+): Promise<void> {
   try {
     const source = readFileSync(0, 'utf8');
     if (Buffer.byteLength(source) > 1_000_000)
@@ -94,7 +103,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
         );
         if (recoveryEntry) applyRecoveryReceipt(recoveryEntry, context);
         return admit(request, context);
-      });
+      }, stateDirectory);
     } else {
       const instanceId = id(input.instanceId);
       const account = collected.accounts.find(
@@ -120,36 +129,40 @@ export async function runHook(command: string, action?: string): Promise<void> {
           input.resetsAt === undefined ? undefined : timestamp(input.resetsAt);
         if (resetsAt && Date.parse(resetsAt) <= Date.parse(observedAt))
           throw new HookError('reset-before-observation');
-        result = await transactLedger((ledger) =>
-          recordObservation(
-            ledger,
-            {
-              eventId: id(input.eventId),
-              terminal:
-                input.terminal === undefined ? true : bool(input.terminal),
-              nativeReservationId:
-                input.nativeReservationId === undefined
-                  ? undefined
-                  : id(input.nativeReservationId),
-              instanceId,
-              accountKey: key,
-              outcome,
-              model: input.model === undefined ? undefined : id(input.model),
-              nextEligibleAt:
-                outcome === 'capacity-error'
-                  ? input.nextEligibleAt === undefined
-                    ? new Date(
-                        Date.parse(observedAt) + CAPACITY_COOLDOWN_MS
-                      ).toISOString()
-                    : timestamp(input.nextEligibleAt)
-                  : undefined,
-              observedAt,
-              resetsAt,
-              requestId:
-                input.requestId === undefined ? undefined : id(input.requestId),
-            },
-            now
-          )
+        result = await transactLedger(
+          (ledger) =>
+            recordObservation(
+              ledger,
+              {
+                eventId: id(input.eventId),
+                terminal:
+                  input.terminal === undefined ? true : bool(input.terminal),
+                nativeReservationId:
+                  input.nativeReservationId === undefined
+                    ? undefined
+                    : id(input.nativeReservationId),
+                instanceId,
+                accountKey: key,
+                outcome,
+                model: input.model === undefined ? undefined : id(input.model),
+                nextEligibleAt:
+                  outcome === 'capacity-error'
+                    ? input.nextEligibleAt === undefined
+                      ? new Date(
+                          Date.parse(observedAt) + CAPACITY_COOLDOWN_MS
+                        ).toISOString()
+                      : timestamp(input.nextEligibleAt)
+                    : undefined,
+                observedAt,
+                resetsAt,
+                requestId:
+                  input.requestId === undefined
+                    ? undefined
+                    : id(input.requestId),
+              },
+              now
+            ),
+          stateDirectory
         );
       } else if (command === 'switch-lease') {
         const identity = {
@@ -166,16 +179,19 @@ export async function runHook(command: string, action?: string): Promise<void> {
           if (Date.parse(processStartedAt) > now.getTime())
             throw new HookError('process-start-in-future');
           const ttlMs = number(input.ttlMs, 1000, 300_000);
-          result = await transactLedger((ledger) =>
-            acquireSwitchLease(
-              ledger,
-              { ...identity, pid, processStartedAt, ttlMs },
-              now
-            )
+          result = await transactLedger(
+            (ledger) =>
+              acquireSwitchLease(
+                ledger,
+                { ...identity, pid, processStartedAt, ttlMs },
+                now
+              ),
+            stateDirectory
           );
         } else if (action === 'release')
-          result = await transactLedger((ledger) =>
-            releaseSwitchLease(ledger, identity, now)
+          result = await transactLedger(
+            (ledger) => releaseSwitchLease(ledger, identity, now),
+            stateDirectory
           );
         else throw new HookError('lease-action-invalid');
       } else if (command === 'handover-check') {
@@ -188,7 +204,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
         if (!Number.isInteger(successorCount))
           throw new HookError('successor-count-invalid');
         result = checkHandover(
-          await readLedger(),
+          await readLedger(stateDirectory),
           current,
           switchInput(input, key),
           {
@@ -212,7 +228,11 @@ export async function runHook(command: string, action?: string): Promise<void> {
           now
         );
       } else
-        result = checkSwitch(await readLedger(), switchInput(input, key), now);
+        result = checkSwitch(
+          await readLedger(stateDirectory),
+          switchInput(input, key),
+          now
+        );
     }
     console.log(
       JSON.stringify(

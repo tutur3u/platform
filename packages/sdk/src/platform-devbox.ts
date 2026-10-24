@@ -11,6 +11,11 @@ export interface DevboxRunPayload {
   workload?: 'run' | 'build' | 'serve' | 'tunnel' | 'maintenance';
   env?: DevboxEnv;
   envFiles?: string[];
+  /**
+   * Client operation ID (16-128 of `A-Za-z0-9_-`). The server returns the
+   * existing run for a repeated key instead of creating a second one.
+   */
+  idempotencyKey?: string;
   keep?: boolean;
   leaseId?: string;
   leaseMode: 'auto' | 'existing';
@@ -97,11 +102,12 @@ export class DevboxesClient {
     this.fleet = new DevboxFleetClient(fleetOptions);
   }
 
-  createRun(payload: DevboxRunPayload) {
+  createRun(payload: DevboxRunPayload, options: { signal?: AbortSignal } = {}) {
     return this.api.json<DevboxRunResponse>('/api/v1/devboxes/runs', {
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
+      signal: options.signal,
     });
   }
 
@@ -126,22 +132,46 @@ export class DevboxesClient {
     );
   }
 
-  getRun(runId: string) {
+  getRun(runId: string, options: { signal?: AbortSignal } = {}) {
     return this.api.json<DevboxRunResponse>(
-      `/api/v1/devboxes/runs/${encodePathSegment(runId)}`
+      `/api/v1/devboxes/runs/${encodePathSegment(runId)}`,
+      { signal: options.signal }
     );
   }
 
-  stopRun(runId: string) {
+  stopRun(runId: string, options: { signal?: AbortSignal } = {}) {
     return this.api.json<{ message: string }>(
       `/api/v1/devboxes/runs/${encodePathSegment(runId)}/stop`,
-      { method: 'POST' }
+      { method: 'POST', signal: options.signal }
     );
   }
 
-  getRunLogs(runId: string) {
-    return this.api.json<{ logs: string[] }>(
-      `/api/v1/devboxes/runs/${encodePathSegment(runId)}/logs`
+  /** Stops the caller's run created with this idempotency key. */
+  stopRunByKey(idempotencyKey: string, options: { signal?: AbortSignal } = {}) {
+    return this.api.json<{ message: string; runId: string; status: string }>(
+      '/api/v1/devboxes/runs/stop-by-key',
+      {
+        body: JSON.stringify({ idempotencyKey }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        signal: options.signal,
+      }
+    );
+  }
+
+  /**
+   * One page of run log lines. `next` is the cursor for the following page
+   * (the last per-run event sequence returned, so lines that commit late are
+   * never skipped); servers that predate paging omit it and return only the
+   * first page.
+   */
+  getRunLogs(
+    runId: string,
+    options: { offset?: number; signal?: AbortSignal } = {}
+  ) {
+    return this.api.json<{ logs: string[]; next?: number }>(
+      `/api/v1/devboxes/runs/${encodePathSegment(runId)}/logs`,
+      { query: { offset: options.offset }, signal: options.signal }
     );
   }
 

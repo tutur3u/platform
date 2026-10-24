@@ -13,6 +13,20 @@ const {
   updateEnvContent,
 } = require('./setup-redis');
 
+test('setupRedis refuses an env symlink without changing its target', (t) => {
+  if (process.platform === 'win32') return t.skip('requires POSIX symlinks');
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'redis-safe-write-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const target = path.join(rootDir, 'original');
+  const envFilePath = path.join(rootDir, 'env');
+  fs.writeFileSync(target, 'ORIGINAL=preserved\n', { flag: 'wx' });
+  fs.symlinkSync(target, envFilePath);
+  assert.throws(() => setupRedis({ rootDir, envFilePath, start: false }), {
+    code: 'ELOOP',
+  });
+  assert.equal(fs.readFileSync(target, 'utf8'), 'ORIGINAL=preserved\n');
+});
+
 test('updateEnvContent updates Redis env keys and preserves unrelated lines', () => {
   assert.equal(
     updateEnvContent(
