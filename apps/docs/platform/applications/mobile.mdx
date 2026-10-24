@@ -1,7 +1,7 @@
 ---
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-23'
 ---
 
 The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
@@ -29,9 +29,16 @@ workspace or account privileges. Mail keeps its exact-domain eligibility rule.
 ## Shell and offline expectations
 
 Screens inherit the app shell's background and single top title/actions bar.
-The floating bottom navbar owns in-app Back navigation and scroll clearance.
+On phones and portrait tablets the floating bottom navbar owns in-app Back
+navigation and scroll clearance. On landscape tablets, laptops, and desktops
+(width >= 840dp, shortest side >= 600dp) the same destinations, including Back,
+move to a leading rail and the dock keeps only composers and page actions.
 Full-screen/system forms have their own shell rules. These conventions keep
 controls reachable and avoid duplicate headers.
+
+Every screen uses the same page gutters, section spacing, and wide-screen max
+widths. Only calendar, board, conversation, call, and media/map canvases run
+full-bleed. See the [mobile design system](/build/development-tools/mobile-design-system).
 
 Offline availability is product-specific. Cached data is not proof that an
 edit reached the server. Review queued/sync states and recover through the

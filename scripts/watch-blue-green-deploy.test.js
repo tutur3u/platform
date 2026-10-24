@@ -2335,8 +2335,7 @@ test('removeStaleGitIndexLock removes only stale lock files', () => {
     );
     assert.equal(fs.existsSync(lockPath), false);
     assert.match(logs.at(-1), /Removed stale git index lock/);
-
-    fs.writeFileSync(lockPath, '', 'utf8');
+    fs.writeFileSync(lockPath, '', { flag: 'wx', mode: 0o600 });
     const freshNow = Date.now();
     const freshMtime = new Date(freshNow - 15_000);
     fs.utimesSync(lockPath, freshMtime, freshMtime);
@@ -2445,8 +2444,7 @@ test('removeStaleGitLock removes only stale remote ref lock files', () => {
     );
     assert.equal(fs.existsSync(lockPath), false);
     assert.match(logs.at(-1), /Removed stale git ref lock/);
-
-    fs.writeFileSync(lockPath, '', 'utf8');
+    fs.writeFileSync(lockPath, '', { flag: 'wx', mode: 0o600 });
     const freshNow = Date.now();
     const freshMtime = new Date(freshNow - 15_000);
     fs.utimesSync(lockPath, freshMtime, freshMtime);

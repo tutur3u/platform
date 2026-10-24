@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_body_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -451,8 +452,8 @@ class _MailComposerState extends State<MailComposer> {
         ),
         body: AbsorbPointer(
           absorbing: _busy,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: AppPageListView(
+            kind: AppPageKind.form,
             children: [
               if (_busy) const NovaLoadingIndicator(size: 20),
               Text(widget.fromAddress),

@@ -9,7 +9,7 @@ runs:
       run: node scripts/ci/supabase-baseline.js key
     - name: Restore exact migrated database
       id: baseline-cache
-      uses: actions/cache/restore@v6
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/supabase-baseline
         key: ${{ steps.baseline-key.outputs.key }}
@@ -18,8 +18,8 @@ runs:
       shell: bash
       run: node scripts/ci/supabase-baseline.js prepare
     - name: Save trusted pristine baseline
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.baseline-cache.outputs.cache-hit != 'true' && steps.baseline.outputs.cache-ready == 'true'
-      uses: actions/cache/save@v6
+      if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.baseline-cache.outputs.cache-hit != 'true' && steps.baseline.outputs.cache-ready == 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/supabase-baseline
         key: ${{ steps.baseline-key.outputs.key }}

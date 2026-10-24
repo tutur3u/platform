@@ -60,7 +60,7 @@ integrity are not implemented against two competing route shapes.
 | Core tests | `bun --cwd packages/education-core vitest run 'src/tulearn/test-session.test.ts'` | submission behavior passes |
 | Learn tests | `bun --cwd apps/learn vitest run 'src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/test-session.route.test.ts'` | interleaving cases pass |
 | Learn typecheck | `bun run --cwd apps/learn type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Learn build | `bun run --cwd apps/learn build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -127,7 +127,7 @@ already-submitted attempt.
 - [ ] Graded answers and final attempt score commit atomically.
 - [ ] Transaction functions are server-only and validate all affected identities.
 - [ ] Manual, expiry, double-submit, retry, and rollback cases are deterministic.
-- [ ] DB reset/typegen, tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] DB reset/typegen, tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

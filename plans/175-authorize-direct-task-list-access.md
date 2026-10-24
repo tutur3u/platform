@@ -53,7 +53,7 @@ AGENTS and the canonical TypeScript board-access helper before writing SQL.
 | Full DB | `bun --cwd apps/database sb:validate:isolated` | every pgTAP file passes |
 | Isolated types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/task-list-board-access.sql` | types reflect only intentional helper changes |
 | Tasks API | `bun run --cwd packages/tasks-api type-check` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

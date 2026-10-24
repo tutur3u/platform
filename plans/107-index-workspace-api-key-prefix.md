@@ -55,7 +55,7 @@ index does not change generated TypeScript database types.
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | index contract test passes |
 | Auth test | `bun run --cwd packages/auth test -- src/api-keys.test.ts` | validation suite passes |
 | Auth typecheck | `bun run --cwd packages/auth type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -103,7 +103,7 @@ comments in runtime code.
 
 ### Step 4: Run gates
 
-Apply locally, run database/auth tests and auth typecheck, then `bun check` and
+Apply locally, run database/auth tests and auth typecheck, then `bun validate` and
 whitespace validation. Confirm `git diff -- packages/types/src/supabase.ts` is
 empty.
 

@@ -294,7 +294,7 @@ export async function writeMetadata(disposableRoot, metadata, options = {}) {
   return writeFileAtomically(
     path.join(disposableRoot, METADATA_FILE),
     `${JSON.stringify(metadata, null, 2)}\n`,
-    { ...options, writeOptions: { flag: 'wx', mode: 0o600 } }
+    { ...options, writeOptions: { mode: 0o600 } }
   );
 }
 

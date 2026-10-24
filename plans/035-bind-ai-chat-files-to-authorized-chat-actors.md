@@ -65,7 +65,7 @@ write or delete access.
 | API migration gate | `bun web:api-routes:check` | exit 0; no regenerated legacy wrappers for moved routes |
 | TanStack manifest | `bun migration:tanstack:manifest && bun migration:tanstack:check` | exit 0; routes remain tracked |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -144,7 +144,7 @@ verify the generated manifest records those sources and pending Rust ownership.
 - [ ] All batch paths are authorized before any signed URL is minted.
 - [ ] Reworked handlers are first-class routes and migration tracking is green.
 - [ ] Existing Web/Mind app-session contract tests are updated and pass.
-- [ ] Focused tests, route gates, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Focused tests, route gates, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

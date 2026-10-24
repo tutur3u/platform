@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
@@ -66,20 +67,14 @@ class _TransactionListSkeleton extends StatelessWidget {
   const _TransactionListSkeleton();
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: EdgeInsets.fromLTRB(
-      16,
-      12,
-      16,
-      96 + MediaQuery.paddingOf(context).bottom,
-    ),
-    children: const [
+  Widget build(BuildContext context) => const AppPageListView(
+    children: [
       FinanceSkeletonBlock(height: 108, radius: 22),
-      SizedBox(height: 16),
+      SizedBox(height: AppSpacing.lg),
       FinanceSkeletonBlock(height: 68, radius: 18),
-      SizedBox(height: 8),
+      SizedBox(height: AppSpacing.sm),
       FinanceSkeletonBlock(height: 68, radius: 18),
-      SizedBox(height: 8),
+      SizedBox(height: AppSpacing.sm),
       FinanceSkeletonBlock(height: 68, radius: 18),
     ],
   );
@@ -95,8 +90,6 @@ class _TransactionListView extends StatefulWidget {
 }
 
 class _TransactionListViewState extends State<_TransactionListView> {
-  static const double _fabContentBottomPadding = 96;
-
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   Timer? _debounce;
@@ -218,8 +211,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
     final showAmounts = context.select<FinancePreferencesCubit, bool>(
       (cubit) => cubit.state.showAmounts,
     );
-    final listBottomPadding =
-        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -275,9 +266,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
 
                 if (state.status == TransactionListStatus.error &&
                     state.transactions.isEmpty) {
-                  return ListView(
+                  return AppPageListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
                     children: [
                       FinanceEmptyState(
                         icon: Icons.error_outline,
@@ -297,9 +287,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 }
 
                 if (state.transactions.isEmpty) {
-                  return ListView(
+                  return AppPageListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
                     children: [
                       const shad.Gap(14),
                       FinanceEmptyState(
@@ -332,54 +321,55 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 final repository = context.read<FinanceRepository>();
                 return NovaRefreshIndicator(
                   onRefresh: _onRefresh,
-                  child: GroupedTransactionAccordion(
-                    workspaceId: context
-                        .read<WorkspaceCubit>()
-                        .state
-                        .currentWorkspace
-                        ?.id,
-                    lazy: true,
-                    scrollController: _scrollController,
-                    listPadding: EdgeInsets.fromLTRB(
-                      16,
-                      12,
-                      16,
-                      listBottomPadding,
-                    ),
-                    compactHorizontalPadding: 0,
-                    transactions: state.transactions,
-                    workspaceCurrency: state.workspaceCurrency,
-                    exchangeRates: state.exchangeRates,
-                    showLoadingMore: state.isLoadingMore,
-                    usePanelChrome: false,
-                    emphasizeTransactionRows: true,
-                    collapseBreakdownByDefault: true,
-                    showAmounts: showAmounts,
-                    onTransactionTap: (transaction) async {
-                      final wsId = context
-                          .read<WorkspaceCubit>()
-                          .state
-                          .currentWorkspace
-                          ?.id;
-                      if (wsId == null) {
-                        return;
-                      }
+                  child: LayoutBuilder(
+                    builder: (context, constraints) =>
+                        GroupedTransactionAccordion(
+                          workspaceId: context
+                              .read<WorkspaceCubit>()
+                              .state
+                              .currentWorkspace
+                              ?.id,
+                          lazy: true,
+                          scrollController: _scrollController,
+                          listPadding: AppPageInsets.of(
+                            context,
+                            width: constraints.maxWidth,
+                          ),
+                          compactHorizontalPadding: 0,
+                          transactions: state.transactions,
+                          workspaceCurrency: state.workspaceCurrency,
+                          exchangeRates: state.exchangeRates,
+                          showLoadingMore: state.isLoadingMore,
+                          usePanelChrome: false,
+                          emphasizeTransactionRows: true,
+                          collapseBreakdownByDefault: true,
+                          showAmounts: showAmounts,
+                          onTransactionTap: (transaction) async {
+                            final wsId = context
+                                .read<WorkspaceCubit>()
+                                .state
+                                .currentWorkspace
+                                ?.id;
+                            if (wsId == null) {
+                              return;
+                            }
 
-                      await openTransactionDetailSheet(
-                        context,
-                        wsId: wsId,
-                        transaction: transaction,
-                        repository: repository,
-                        workspaceCurrency: state.workspaceCurrency,
-                        exchangeRates: state.exchangeRates,
-                      );
+                            await openTransactionDetailSheet(
+                              context,
+                              wsId: wsId,
+                              transaction: transaction,
+                              repository: repository,
+                              workspaceCurrency: state.workspaceCurrency,
+                              exchangeRates: state.exchangeRates,
+                            );
 
-                      if (!context.mounted) {
-                        return;
-                      }
+                            if (!context.mounted) {
+                              return;
+                            }
 
-                      await _onRefresh();
-                    },
+                            await _onRefresh();
+                          },
+                        ),
                   ),
                 );
               },

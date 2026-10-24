@@ -65,7 +65,7 @@ change provider calls, or update migration artifacts.
 | Focused TOTP routes | `bun --cwd apps/web vitest run src/__tests__/totp-api-routes.test.ts` | complete method/auth/provider/rate-limit matrix passes |
 | Discovery | `bun --cwd apps/web vitest run --passWithNoTests` | new suite is discovered with the canonical Web tests |
 | Web types | `bun run --cwd apps/web type-check` | exit 0 |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 

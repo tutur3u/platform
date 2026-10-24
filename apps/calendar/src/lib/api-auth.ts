@@ -449,6 +449,8 @@ interface SessionAuthOptions {
    * Set `false` to disable rate limiting entirely (not recommended).
    */
   rateLimit?: RateLimitConfig | false;
+  /** Actor quota only for authenticated preferences behind the guarded gateway. */
+  rateLimitScope?: 'ip-and-user' | 'user';
   /**
    * Classifies the route for rate limiting.
    * Defaults to `method`, which maps GET/HEAD → read and everything else → mutate.
@@ -643,43 +645,40 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 1. Extract IP
     const ipAddress = extractIPFromHeaders(request.headers);
 
     let deferredApiAbuseBlock: BlockInfo | null = null;
 
-    // 2. Check persistent IP block
-    if (ipAddress && ipAddress !== 'unknown') {
-      const blockInfo = await isIPBlocked(ipAddress, {
-        route: endpoint,
-        source: 'api-auth',
-      });
-      if (blockInfo) {
-        const authenticatedSessionMarker = hasAuthenticatedApiSession(request);
+    // An undetermined client IP resolves to the shared 'unknown' bucket,
+    // which is still block-checked and rate-limited rather than skipped.
+    const blockInfo = await isIPBlocked(ipAddress, {
+      route: endpoint,
+      source: 'api-auth',
+    });
+    if (blockInfo) {
+      const authenticatedSessionMarker = hasAuthenticatedApiSession(request);
 
-        // Proxy-side anonymous abuse blocks should not lock out valid signed-in
-        // sessions, but syntactic auth markers are not trusted by themselves.
-        // Defer api_abuse blocks only long enough to validate route auth.
-        if (blockInfo.reason === 'api_abuse' && authenticatedSessionMarker) {
-          deferredApiAbuseBlock = blockInfo;
-        } else {
-          return buildIpBlockResponse(blockInfo);
-        }
+      // Proxy-side anonymous abuse blocks should not lock out valid signed-in
+      // sessions, but syntactic auth markers are not trusted by themselves.
+      // Defer api_abuse blocks only long enough to validate route auth.
+      if (blockInfo.reason === 'api_abuse' && authenticatedSessionMarker) {
+        deferredApiAbuseBlock = blockInfo;
+      } else {
+        return buildIpBlockResponse(blockInfo);
       }
+    }
 
-      // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
-      if (options?.rateLimit !== false) {
-        const config =
-          options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
+    if (options?.rateLimit !== false && options?.rateLimitScope !== 'user') {
+      const config =
+        options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
 
-        if (config !== false) {
-          const rateLimitResult = await checkRateLimit(
-            `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
-            config
-          );
-          if (!('allowed' in rateLimitResult)) {
-            return rateLimitResult;
-          }
+      if (config !== false) {
+        const rateLimitResult = await checkRateLimit(
+          `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
+          config
+        );
+        if (!('allowed' in rateLimitResult)) {
+          return rateLimitResult;
         }
       }
     }

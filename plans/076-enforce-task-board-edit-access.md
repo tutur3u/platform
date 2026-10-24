@@ -55,7 +55,7 @@ clear. Preserve cookie and Tasks app-session actors.
 | Package types | `bun run --cwd packages/tasks-api type-check` | exit 0 |
 | Tasks app types | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -106,7 +106,7 @@ rollout fallback.
 ### Step 4: Verify both request identities and destructive paths
 
 Run shared and app route suites, both typechecks, the real Tasks build, and
-`bun check`. Inspect the final diff for unrelated Tasks work.
+`bun validate`. Inspect the final diff for unrelated Tasks work.
 
 ## Test plan
 
@@ -126,7 +126,7 @@ Run shared and app route suites, both typechecks, the real Tasks build, and
 - [ ] PUT and DELETE cannot run without canonical edit access.
 - [ ] The update payload is strict and explicitly allowlisted.
 - [ ] Manager/edit-share success and member/read-share denial are proven.
-- [ ] Focused tests, types, Tasks build, `bun check`, and whitespace pass.
+- [ ] Focused tests, types, Tasks build, `bun validate`, and whitespace pass.
 - [ ] No active Tasks owner was bypassed and no unrelated file was changed.
 
 ## STOP conditions

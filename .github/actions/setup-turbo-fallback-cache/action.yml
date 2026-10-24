@@ -20,8 +20,8 @@ runs:
   steps:
     - name: Restore trusted Turbo fallback cache
       id: trusted
-      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-      uses: actions/cache/restore@v6
+      if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .turbo/cache
         key: turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
@@ -33,8 +33,8 @@ runs:
     # lookup-only avoids a second download while retaining its success-only post save.
     - name: Register trusted Turbo fallback post-job save
       id: writer
-      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-      uses: actions/cache@v6
+      if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         lookup-only: true
         path: .turbo/cache
@@ -45,8 +45,8 @@ runs:
 
     - name: Restore Turbo fallback cache without saving
       id: readonly
-      if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
-      uses: actions/cache/restore@v6
+      if: ${{ (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' || github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .turbo/cache
         key: turbo-fallback-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('turbo.json') }}-${{ hashFiles('bun.lock') }}-${{ github.event.pull_request.base.sha || github.sha }}

@@ -73,7 +73,7 @@ tests must use disposable temporary fixtures.
 | Discovery | `node scripts/run-script-tests.js --list | rg '^scripts/clean-repository\.test\.js$'` | exactly one matching discovered test path |
 | Full scripts | `bun test:scripts` | Plan 004's discovered script suite passes |
 | Manifest | `node -e "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8'))"` | exit 0 |
-| Repository | `bun check && git diff --check` | canonical checks pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical checks pass; whitespace output is empty |
 
 ## Scope
 
@@ -111,7 +111,7 @@ configuration, CI workflows, or unrelated documentation.
    the pinned Bun version. Document the exceptional reset as a dependency-
    resolution operation requiring explicit review, not as cache cleanup; remove
    the generic `bun upgrade` advice. Keep the narrower Web cleanup guidance.
-6. Run focused/discovery/full script tests, manifest parsing, `bun check`,
+6. Run focused/discovery/full script tests, manifest parsing, `bun validate`,
    whitespace, and exact-scope review.
 
 ## Done criteria

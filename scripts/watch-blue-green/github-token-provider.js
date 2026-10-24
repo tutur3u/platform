@@ -30,9 +30,7 @@ function normalizeTokenEndpointUrl(value) {
 
   try {
     const url = new URL(text);
-    return url.protocol === 'https:' || url.protocol === 'http:'
-      ? url.toString()
-      : null;
+    return url.protocol === 'https:' ? url.toString() : null;
   } catch {
     return null;
   }
@@ -275,6 +273,7 @@ function createGitHubChecksTokenProvider({
 
     const response = await fetchImpl(source.tokenUrl, {
       cache: 'no-store',
+      redirect: 'error',
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${source.clientToken}`,

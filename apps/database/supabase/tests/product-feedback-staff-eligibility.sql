@@ -52,8 +52,8 @@ SELECT ok(NOT has_function_privilege('authenticated','private.assert_product_fee
 SELECT ok(NOT has_function_privilege('anon','private.assert_product_feedback_staff(uuid)','EXECUTE'),'no anonymous helper grant');
 SELECT ok(NOT has_table_privilege('authenticated','private.product_feedback_reports','SELECT'),'report ACL unchanged');
 SELECT ok((SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid='public.check_product_feedback_staff_eligibility(uuid)'::regprocedure),'security definer wrapper');
-SELECT ok((SELECT proconfig @> ARRAY['search_path=""','statement_timeout=3s','lock_timeout=500ms']
- FROM pg_catalog.pg_proc WHERE oid='public.check_product_feedback_staff_eligibility(uuid)'::regprocedure),'empty search path and bounded settings');
+SELECT ok((SELECT proconfig @> ARRAY['search_path=pg_catalog, pg_temp','statement_timeout=3s','lock_timeout=500ms']
+ FROM pg_catalog.pg_proc WHERE oid='public.check_product_feedback_staff_eligibility(uuid)'::regprocedure),'hardened search path and bounded settings');
 SELECT ok(pg_catalog.pg_get_functiondef('public.check_product_feedback_staff_eligibility(uuid)'::regprocedure)
  LIKE '%PERFORM private.assert_product_feedback_staff(p_actor);%','existing assertion invoked');
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AuthScaffold extends StatelessWidget {
@@ -25,9 +24,6 @@ class AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final deviceClass = context.deviceClass;
-    final hPadding = ResponsivePadding.horizontal(deviceClass);
-    final maxFormW = ResponsivePadding.maxFormWidth(deviceClass);
 
     return shad.Scaffold(
       resizeToAvoidBottomInset: true,
@@ -65,50 +61,54 @@ class AuthScaffold extends StatelessWidget {
               ? Brightness.light
               : Brightness.dark,
         ),
+        // A full-screen flow above the shell: SafeArea consumes the system
+        // insets, so the form insets add no dock clearance.
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final insets = AppPageInsets.of(
+                context,
+                width: constraints.maxWidth,
+                kind: AppPageKind.form,
+                topInset: AppSpacing.lg,
+              );
               return SingleChildScrollView(
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  horizontal: hPadding,
-                  vertical: 24,
-                ),
+                padding: insets,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - insets.vertical,
+                  ),
                   child: Align(
                     alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxFormW),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Brand Header
-                          Center(
-                            child: Image.asset(
-                              'assets/logos/transparent.png',
-                              width: 64,
-                              height: 64,
-                            ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Brand Header
+                        Center(
+                          child: Image.asset(
+                            'assets/logos/transparent.png',
+                            width: 64,
+                            height: 64,
                           ),
+                        ),
 
-                          const shad.Gap(48),
+                        const shad.Gap(48),
 
-                          if (title != null) ...[
-                            Text(
-                              title!,
-                              style: theme.typography.h2,
-                              textAlign: TextAlign.center,
-                            ),
-                            const shad.Gap(24),
-                          ],
-
-                          child,
+                        if (title != null) ...[
+                          Text(
+                            title!,
+                            style: theme.typography.h2,
+                            textAlign: TextAlign.center,
+                          ),
+                          const shad.Gap(24),
                         ],
-                      ),
+
+                        child,
+                      ],
                     ),
                   ),
                 ),

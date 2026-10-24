@@ -29,6 +29,7 @@ export default async function NotificationPopover({
       viewAllText={t('notifications.view-all')}
       markAsReadText={t('notifications.mark-as-read')}
       markAsUnreadText={t('notifications.mark-as-unread')}
+      updateErrorText={t('notifications.update-error')}
       inboxText={t('notifications.inbox')}
       archiveText={t('notifications.archive')}
       archiveAllText={t('notifications.archive-all')}
