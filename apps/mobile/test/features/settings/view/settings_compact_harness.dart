@@ -60,7 +60,8 @@ class _SettingsHarness {
       calendar,
       const Stream<CalendarSettingsState>.empty(),
       initialState: const CalendarSettingsState(
-        userLoaded: true, workspaceLoaded: true,
+        userLoaded: true,
+        workspaceLoaded: true,
       ),
     );
     whenListen(
