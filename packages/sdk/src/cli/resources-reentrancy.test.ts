@@ -96,7 +96,7 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
       runner,
       `import {mock} from 'bun:test';import * as cp from 'node:child_process';
       let failures=2;const original=cp.execFileSync;
-      mock.module('node:child_process',()=>({...cp,execFileSync:(command,args,options)=>{if(command==='ps'&&args?.[1]==='pid=,ppid=,pgid='&&failures-->0)throw new Error('ps unavailable');return original(command,args,options)}}));
+      mock.module('node:child_process',()=>({...cp,execFileSync:(command,args,options)=>{if(/(^|\\/)ps$/.test(command)&&args?.[1]==='pid=,ppid=,pgid='&&failures-->0)throw new Error('ps unavailable');return original(command,args,options)}}));
       delete process.env.TTR_RESOURCES_ADMITTED;delete process.env.TTR_RESOURCE_OWNER;
       const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});
       process.exitCode=await queuedResourceCommand(${JSON.stringify(path)},${JSON.stringify(realNode)},['-e',${JSON.stringify(`require('fs').writeFileSync(${JSON.stringify(output)},'ok')`)}],process.env,true,1);`
@@ -150,23 +150,24 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
 });
 
 describe('parallelism hygiene', { timeout: crossProcessTimeout }, () => {
-  it('classifies version, help and read-only commands as trivial', () => {
+  it('classifies only trusted read-only system tools as trivial', () => {
+    for (const [name, args] of [
+      ['cat', ['package.json']],
+      ['echo', ['ok']],
+      ['pwd', []],
+    ] as const)
+      expect(isTrivialCommand(name, [...args]), name).toBe(true);
     for (const [name, args] of [
       ['bun', ['--version']],
       ['node', ['-v']],
       ['flutter', ['--help']],
-      ['ls', ['-la']],
-      ['git', ['status', '--short']],
-      ['git', ['rev-parse', 'HEAD']],
-    ] as const)
-      expect(isTrivialCommand(name, [...args]), name).toBe(true);
-    for (const [name, args] of [
       ['bun', ['run', 'test']],
       ['python3', ['script.py']],
-      ['bun', ['--version', 'test']],
-      ['git', ['-C', '/elsewhere', 'status']],
+      ['git', ['status', '--short']],
+      ['git', ['rev-parse', 'HEAD']],
       ['git', ['commit']],
       ['sh', ['-c', 'ls']],
+      ['ls', ['-la']],
     ] as const)
       expect(isTrivialCommand(name, [...args]), name).toBe(false);
   });
@@ -175,9 +176,9 @@ describe('parallelism hygiene', { timeout: crossProcessTimeout }, () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
     await a.until(() => exists(join(path, 'a.ready')));
-    const probe = await launch(path, ['run', '--', 'node', '--version']).done;
+    const probe = await launch(path, ['run', '--', 'echo', 'probe-ok']).done;
     expect(probe.code, probe.err).toBe(0);
-    expect(probe.out).toMatch(/^v\d+/);
+    expect(probe.out).toContain('probe-ok');
     expect((await resourceQueueStatus(path)).waiting).toHaveLength(0);
     await release(path, 'a');
     await a.done;

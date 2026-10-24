@@ -108,11 +108,11 @@ export function hostLaneCeiling(
     Math.min(maxResourceLanes, Math.floor(memory / 1024 ** 3 / 4), cpus - 2)
   );
 }
+// Base lanes are capped by the host ceiling too: a config written on (or
+// copied from) a larger machine must not admit more lanes than this host can
+// carry.
 export function effectiveResourceLanes(config: ResourceConfig) {
-  return Math.min(
-    resourceMaxLanes(config),
-    Math.max(resourceLanes(config), hostLaneCeiling())
-  );
+  return Math.max(1, Math.min(resourceMaxLanes(config), hostLaneCeiling()));
 }
 export function adaptiveHostBudget(
   memory = totalmem(),
@@ -174,7 +174,7 @@ export function laneResourceConfig(config: ResourceConfig): ResourceConfig {
     vitestWorkers = Math.min(vitestWorkers, budget);
     buildJobs = Math.min(buildJobs, budget);
   }
-  const divisor = adaptive ? effectiveResourceLanes(config) : lanes;
+  const divisor = effectiveResourceLanes(config);
   return {
     ...config,
     turboConcurrency: 1,

@@ -15,6 +15,7 @@ import {
   defaultResourceConfig,
   effectiveResourceLanes,
   laneResourceConfig,
+  type ResourceConfig,
   readResourceConfig,
   resourceLanes,
   resourceMaxLanes,
@@ -44,12 +45,14 @@ export {
 
 export async function resourceQueueStatus(
   home: string,
-  laneCount: ValidationLanes = 1
+  laneCount: ValidationLanes = 1,
+  configured?: ResourceConfig
 ) {
-  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  const config =
+    configured ?? ((await readResourceConfig(home)) || defaultResourceConfig());
   const baseLanes = resourceLanes(config);
   const maxLanes = resourceMaxLanes(config);
-  const state = await occupancy(home);
+  const state = await occupancy(home, false, configured);
   const burst =
     maxLanes === baseLanes
       ? { eligible: false, reason: 'Burst lanes are not configured' }

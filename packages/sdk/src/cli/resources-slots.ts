@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import {
   link,
   lstat,
@@ -14,7 +15,11 @@ import {
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
-import { readResourceConfig, resourceMaxLanes } from './resources-config';
+import {
+  type ResourceConfig,
+  readResourceConfig,
+  resourceMaxLanes,
+} from './resources-config';
 
 const ownerSchema = z.object({
   scheduler: z.literal(2).optional(),
@@ -52,6 +57,22 @@ export function processAlive(pid?: number) {
     return !errno(error, 'ESRCH');
   }
 }
+// Process liveness and ancestry decide admission, so ps must never be resolved
+// through the caller's PATH (a fake ps could fabricate ancestry) or inherit
+// loader variables such as LD_PRELOAD. Without a trusted ps there is no
+// evidence, and callers fail closed.
+const psCandidates = ['/bin/ps', '/usr/bin/ps'];
+export function trustedPs(args: string[], timeout: number) {
+  const ps = psCandidates.find((path) => existsSync(path));
+  if (!ps)
+    throw new Error('No trusted ps executable at /bin/ps or /usr/bin/ps.');
+  return execFileSync(ps, args, {
+    encoding: 'utf8',
+    timeout,
+    maxBuffer: 16 * 1024 * 1024,
+    env: { LC_ALL: 'C' },
+  });
+}
 export function processGroupAlive(pid: number) {
   try {
     process.kill(-pid, 0);
@@ -59,10 +80,7 @@ export function processGroupAlive(pid: number) {
     return !errno(error, 'ESRCH');
   }
   try {
-    return execFileSync('ps', ['-axo', 'pgid=,stat='], {
-      encoding: 'utf8',
-      timeout: 3000,
-    })
+    return trustedPs(['-axo', 'pgid=,stat='], 3000)
       .split('\n')
       .some((row) => {
         const [group, state] = row.trim().split(/\s+/);
@@ -107,11 +125,7 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
   if (lineage && !refresh) return lineage;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const rows = execFileSync('ps', ['-axo', 'pid=,ppid=,pgid='], {
-        encoding: 'utf8',
-        timeout: 5000,
-        maxBuffer: 16 * 1024 * 1024,
-      })
+      const rows = trustedPs(['-axo', 'pid=,ppid=,pgid='], 5000)
         .trim()
         .split('\n');
       const table = new Map<number, { parent: number; group: number }>();
@@ -326,8 +340,12 @@ async function releaseMutex(path: string, token: string) {
   if (current?.token === token) await rm(path, { recursive: true });
   else await rm(join(path, 'reclaim'), { force: true });
 }
-export async function occupancy(home: string, reclaim = false) {
-  const config = await readResourceConfig(home);
+export async function occupancy(
+  home: string,
+  reclaim = false,
+  configured?: ResourceConfig
+) {
+  const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
   const names = await readdir(slots).catch((error) => {
@@ -337,7 +355,9 @@ export async function occupancy(home: string, reclaim = false) {
   if (
     names.some((name) => !/^(0|[1-7])$/.test(name) || Number(name) >= maxLanes)
   )
-    throw new Error('Unknown resource slot; admission is closed.');
+    throw new Error(
+      'Unknown resource slot; admission is closed. A slots/budget-v3 marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
+    );
   const owners: ResourceOwner[] = [];
   const ownerSlots: string[] = [];
   const occupied: string[] = [];
@@ -405,9 +425,10 @@ export async function tickets(home: string, prune = false) {
 }
 const ignoredMarkers = new Set<string>();
 // An admitted job exports its owner token. A marker counts only while it names
-// a live owner, and, when ancestry evidence exists, only inside that owner's
-// process tree, so stale or copied markers cannot bypass admission. Ancestry
-// alone still covers children whose environment was filtered (Turbo strict).
+// a live owner inside that owner's process tree, so stale or copied markers
+// cannot bypass admission. Without process-tree evidence the marker is not
+// trusted and the command queues. Ancestry alone still covers children whose
+// environment was filtered (Turbo strict).
 export async function nestedOwner(
   home: string,
   env: NodeJS.ProcessEnv = process.env,
@@ -420,9 +441,7 @@ export async function nestedOwner(
     : undefined;
   if (!state.owners.length && !marker) return undefined;
   const evidence = state.owners.length ? processLineage(refresh) : undefined;
-  if (!evidence) {
-    if (marked) return marked;
-  } else {
+  if (evidence) {
     if (marked && descendsFrom(marked, evidence)) return marked;
     const related = state.owners.find((owner) => descendsFrom(owner, evidence));
     if (related) return related;
@@ -430,7 +449,9 @@ export async function nestedOwner(
   if (marker && !ignoredMarkers.has(marker)) {
     ignoredMarkers.add(marker);
     process.stderr.write(
-      `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+      evidence || !marked
+        ? `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+        : `[ttr resources] ignoring ${admittedMarker}: the process tree could not be read (ps failed), so the marker cannot be verified; queueing normally.\n`
     );
   }
   return undefined;

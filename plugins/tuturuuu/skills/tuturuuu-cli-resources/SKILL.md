@@ -62,8 +62,9 @@ refuses burst admission while preserving base behavior. Burst memory checks stil
 apply with `--ignore-pressure`. Preserve FIFO order and never interrupt running
 jobs to shrink occupancy.
 
-Effective lanes are `min(maxValidationLanes, max(base, host lane ceiling))`, with
-a host lane ceiling of `min(8, floor(memory GiB / 4), CPUs - 2)`. Worker totals
+Effective lanes are `max(1, min(maxValidationLanes, host lane ceiling))`, with
+a host lane ceiling of `min(8, floor(memory GiB / 4), CPUs - 2)`. Base lanes
+above the ceiling are capped too, and `status` warns about them. Worker totals
 no longer cap lanes. After the aggregate budget is spent, each pressure-gated
 burst lane gets exactly one worker. Multi-lane worker totals clamp to the host
 worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))`.
@@ -79,10 +80,19 @@ Reconcile legacy status consumers and check all owners, not only the compatibili
 export `TTR_RESOURCES_ADMITTED=<token>`. Nested `run` calls and shims pass straight
 through with the owner's caps when that marker names a live owner inside their
 process tree (ancestor or owned process group), or when ancestry alone finds an
-admitted ancestor (filtered env). Stale or copied markers queue normally. Waiters
+admitted ancestor (filtered env). Stale or copied markers queue normally, and
+so does any marker when `ps` cannot read the process tree. Waiters
 recheck ancestry about once per second, so they never deadlock behind their own
-ancestor. Version/help probes and read-only commands such as `ls` and `git status`
-skip the queue. Cancellation releases only its own slot after the
+ancestor. Ancestry uses only `/bin/ps` or `/usr/bin/ps` with an empty
+environment, never PATH. Only read-only coreutils (`cat`, `echo`, ...; never
+`ls`) skip the queue, and only when the executable that would run canonicalizes
+to a root-locked binary under `/bin` or `/usr/bin` (every path component
+root-owned, not group/other writable) and no `LD_*`/`DYLD_*` loader variable is
+set. The CLI spawns that canonical path, never the original symlink. Runtimes and package managers (even `--version`, since
+`NODE_OPTIONS` can preload code) and every git command (fsmonitor, hooks,
+pager, textconv) always queue. Shims classify only the program (first positional), never later arguments,
+and never admit the `ttr` launcher itself (it starts through the bun shim
+when shims are on PATH, e.g. from `~/.zshenv`). Cancellation releases only its own slot after the
 owned child group drains. Do not use separate
 `TTR_RESOURCES_HOME` values across projects: that creates independent queues.
 
@@ -129,9 +139,15 @@ serialize with admission and read the latest policy inside the mutex. `uninstall
 idle queue and removes only owned hooks/shims, preserving shell content and
 backups. Existing processes, absolute binary paths, and replaced PATH values can
 bypass automatic shims; explicitly wrap unrecognized commands. Admission caps apply only when enabled; disabled/out-of-scope/bypass commands
-retain argv/env. Invalid config errors name the field and range but omit values. The queue is cooperative scheduling.
+retain argv/env. Invalid config errors name the field and range but omit values; `status` still
+reports (`config.state`: `invalid`, `disabled`, `enabled` or `missing`, with
+warnings) and exits 1 for an invalid config. The queue is cooperative scheduling.
 
 Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
+
+Node runtime option values must be consumed before classifying the first program. Unknown or incomplete options admit conservatively; never scan an ordinary program's arguments for another tool. `resources-node-options.test.ts` covers diagnostic directories, profiling/report options, worker caps and Node separators.
+
+Treat `--experimental-specifier-resolution` as an equals-only Node option; its bare form queues as ambiguous. Both Node config-file flags (`--experimental-config-file` and `--experimental-default-config-file`) queue as ambiguous in every form because configuration can enable native tests; inject `--test-concurrency` and preserve a positive lower user limit. If a separate option value itself names a tool, ttr launcher or heavy script, also queue as ambiguous: a future or incorrectly modelled flag must not swallow an executable. `resources-node-options.test.ts` covers both rules; real Node 26.4 probes must verify runtime parsing rather than relying on the option table.
 
 Prepare fixture shims once per home; concurrent run loaders wait for that preparation instead of racing shell-file compare-and-swap. Scope barriers to the child, operation or detached group that can produce the awaited state. Allow one second for final writes after liveness ends and emit scoped stderr before the test deadline. Keep synthetic CPU, memory and load telemetry consistent so host contention does not alter policy inputs. Test idle-warning status composition with one injected CPU snapshot, asserting warning data and rendered text plus a busy-snapshot negative control. A preliminary zero sample cannot stabilise a later ps read; do not resample an injected table. Reuse a fixture home only with the same CPU/memory budget; changed host budgets require a fresh home.
 
