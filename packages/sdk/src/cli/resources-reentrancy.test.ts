@@ -324,6 +324,29 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
       });
       expect(text).toContain('python3 /tmp/check.py');
       expect(text).toContain(`WARNING: Owner PID ${owner.pid}`);
+      const now = Date.now();
+      const recentStarted = new Date(now - 5 * 60_000).toISOString();
+      await atomicJson(join(slot, 'owner.json'), {
+        ...owner,
+        startedAt: recentStarted,
+      });
+      await atomicJson(join(slot, 'activity.json'), {
+        token: owner.token,
+        cpuSeconds: 0,
+        sampledAt: new Date(now).toISOString(),
+        lastActiveAt: recentStarted,
+      });
+      const recent = await resourceStatusDetails(
+        await resourceQueueStatus(path),
+        now,
+        table
+      );
+      expect(recent.ownerDetails[0]).toMatchObject({
+        cpuPercent: 0,
+        elapsedSeconds: 5 * 60,
+        idleSeconds: 5 * 60,
+      });
+      expect(recent.warnings).toEqual([]);
       const busy = await resourceStatusDetails(state, Date.now(), busyTable);
       expect(busy.ownerDetails[0]!.cpuPercent).toBe(3);
       expect(busy.ownerDetails[0]!.idleSeconds).toBe(0);
