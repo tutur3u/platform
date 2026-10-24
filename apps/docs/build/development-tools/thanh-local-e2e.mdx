@@ -132,6 +132,15 @@ unbundled; `@tuturuuu/internal-api` builds as CommonJS (`NodeNext` without
 defined`, or `Failed to resolve entry for package "@tuturuuu/internal-api"`
 before it is built. The Next runtime serves the same route handlers.
 
+### Native Worker imports
+
+Workerd rejects random generation during module initialization. Meet and Parley's
+shared chat initializes its unguessable mention marker on first rendering use,
+then reuses it for that module instance. Keep the marker lazy; a fixed marker
+would let authored links impersonate generated mentions. The import and lifetime
+regressions are in `packages/meet-core/src/features/call/lib/assistant-identity-import.test.ts`.
+An authenticated native preview returning 500 is not a valid performance sample.
+
 ## Mobile wiring
 
 `mobile.json` is passed with `--dart-define-from-file` and routes
