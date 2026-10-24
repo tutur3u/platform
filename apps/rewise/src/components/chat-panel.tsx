@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -263,7 +264,12 @@ export async function uploadFile(
 
   const { data, error } = await sbDynamic.storage
     .from('workspaces')
-    .upload(uploadPath, file.rawFile);
+    .upload(encodeStoragePath(uploadPath), file.rawFile);
 
-  return { data, error, tempPath, finalPath };
+  return {
+    data: data ? { ...data, path: uploadPath } : null,
+    error,
+    tempPath,
+    finalPath,
+  };
 }
