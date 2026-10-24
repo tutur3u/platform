@@ -231,7 +231,7 @@ function ttrPrefix(
   try {
     cli = resolveCli();
   } catch (cause) {
-    if ((cause.code ?? cause.cause?.code) !== 'ENOENT') throw cause;
+    if (cause.code !== 'TTR_GLOBAL_NOT_INSTALLED') throw cause;
     warn(
       'check:changed: trusted global ttr is not installed; running checks sequentially with existing worker limits. Run bun add -g tuturuuu to enable resource admission. Workspace binaries are never used.'
     );

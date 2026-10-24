@@ -102,4 +102,35 @@ describe('Web preference guard registration', () => {
       expect(staffOverride).not.toHaveBeenCalled();
     }
   );
+  it('gives only exact bridge GETs an explicit bounded read policy and retains staff rejection', () => {
+    const bridge = request('/native-integrity/turnstile');
+    const options = calendarPreferenceGuardOptions(bridge);
+    expect(options.routePolicies).toHaveLength(1);
+    const policy = options.routePolicies?.[0];
+    expect(policy?.key).toBe('native-integrity-bridge');
+    expect(policy?.rateLimits).toEqual({
+      get: [
+        { window: 'minute', duration: '1 m', limit: 60 },
+        { window: 'hour', duration: '1 h', limit: 240 },
+        { window: 'day', duration: '1 d', limit: 1200 },
+      ],
+      mutate: [],
+    });
+    expect(
+      calendarPreferenceGuardOptions(
+        request('/native-integrity/turnstile', 'POST')
+      )
+    ).toEqual({ prefixBase: 'proxy:web:api' });
+    expect(
+      calendarPreferenceGuardOptions(
+        request('/native-integrity/turnstile/extra')
+      )
+    ).toEqual({ prefixBase: 'proxy:web:api' });
+    const denied = new Response('{}', { status: 429 });
+    const staffOverride = vi.fn(() => new Response(null, { status: 200 }));
+    expect(
+      handleCalendarPreferenceGuardResponse(bridge, denied, staffOverride)
+    ).toBe(denied);
+    expect(staffOverride).not.toHaveBeenCalled();
+  });
 });

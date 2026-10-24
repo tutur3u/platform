@@ -307,4 +307,42 @@ describe('cold-cache native preference reads', () => {
     expect(blocked?.status).toBe(429);
     expect(blocked?.headers.get('X-RateLimit-Policy')).toBe('proxy-ip-block');
   });
+  it('enforces the explicit bridge read quota for anonymous and verified callers', async () => {
+    const bridge = '/native-integrity/turnstile';
+    mocks.buckets.set(
+      'proxy:web:native-integrity-bridge:native-integrity-bridge:anonymous:get:minute:ip:192.0.2.1',
+      59
+    );
+    expect(await request(bridge, 'forged')).toBeNull();
+    const anonymous = await request(bridge, 'forged');
+    expect(anonymous?.status).toBe(429);
+    expect(anonymous?.headers.get('X-RateLimit-Policy')).toBe(
+      'native-integrity-bridge'
+    );
+    expect(anonymous?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'anonymous'
+    );
+    expect(anonymous?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(anonymous?.headers.get('X-RateLimit-Window')).toBe('minute');
+    expect(anonymous?.headers.get('Retry-After')).toBe('30');
+    mocks.buckets.set(
+      'proxy:web:native-integrity-bridge:native-integrity-bridge:authenticated:get:minute:user:actor',
+      60
+    );
+    const authenticated = await request(bridge);
+    expect(authenticated?.status).toBe(429);
+    expect(authenticated?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(authenticated?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+  });
+  it('preserves persistent bridge IP blocks before the explicit read limiter', async () => {
+    mocks.blocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const blocked = await request('/native-integrity/turnstile', 'forged');
+    expect(blocked?.status).toBe(429);
+    expect(blocked?.headers.get('X-RateLimit-Policy')).toBe('proxy-ip-block');
+    expect(mocks.buckets.size).toBe(0);
+  });
 });

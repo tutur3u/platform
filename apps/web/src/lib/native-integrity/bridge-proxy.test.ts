@@ -81,7 +81,16 @@ it('keeps the bridge public without bypassing the shared IP and quota guard', as
     expect.objectContaining({
       prefixBase: 'proxy:web:native-integrity-bridge',
       diagnosticPolicyName: 'native-integrity-bridge',
-      routePolicies: [],
+      routePolicies: [
+        expect.objectContaining({
+          key: 'native-integrity-bridge',
+          rateLimits: expect.objectContaining({
+            get: expect.arrayContaining([
+              { window: 'minute', duration: '1 m', limit: 60 },
+            ]),
+          }),
+        }),
+      ],
       useVerifiedBearerActor: true,
     })
   );

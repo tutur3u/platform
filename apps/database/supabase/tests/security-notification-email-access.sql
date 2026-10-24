@@ -62,8 +62,8 @@ select is(
       'private.claim_email_invite_notifications_for(uuid, text, timestamptz)'::regprocedure
     )
   ),
-  array['search_path=""']::text[],
-  'Claim functions pin an empty search_path'
+  array['search_path=pg_catalog, pg_temp']::text[],
+  'Claim functions pin catalog lookup with pg_temp last'
 );
 
 select ok(

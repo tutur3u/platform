@@ -15,7 +15,9 @@ test('a missing global CLI warns and selects sequential execution', () => {
       () => assert.fail('must not probe PATH'),
       {},
       () => {
-        throw new Error('global absent', { cause: { code: 'ENOENT' } });
+        throw Object.assign(new Error('global absent'), {
+          code: 'TTR_GLOBAL_NOT_INSTALLED',
+        });
       },
       (line) => warnings.push(line)
     ),
@@ -24,6 +26,27 @@ test('a missing global CLI warns and selects sequential execution', () => {
   assert.match(warnings.join('\n'), /sequentially/);
   assert.match(warnings.join('\n'), /bun add -g tuturuuu/);
 });
+
+for (const cause of [
+  Object.assign(new Error('target missing'), { code: 'ENOENT' }),
+  new Error('target missing', { cause: { code: 'ENOENT' } }),
+]) {
+  test(`unclassified ${cause.cause ? 'nested' : 'direct'} ENOENT refuses sequential fallback`, () => {
+    assert.throws(
+      () =>
+        ttrPrefix(
+          true,
+          () => assert.fail('must not probe'),
+          {},
+          () => {
+            throw cause;
+          },
+          () => assert.fail('must not warn as absent')
+        ),
+      /target missing/
+    );
+  });
+}
 
 test('an untrusted installed global CLI still refuses admission', () => {
   assert.throws(
@@ -162,7 +185,7 @@ test('main without a global CLI executes the selected check sequentially', (t) =
     main(['--only', 'script-tests', '--files', 'scripts/probe.test.js'], {
       root,
       env: { HOME: root },
-      resolveCli: () => trustedTtr(root),
+      resolveCli: () => trustedTtr(root, root),
       execFile: (_command, args) => {
         if (args[0] === 'merge-base') return 'base';
         if (args[0] === 'branch') return 'fix/routing';

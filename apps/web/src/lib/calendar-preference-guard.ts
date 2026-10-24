@@ -1,4 +1,22 @@
-import type { GuardOptions } from '@tuturuuu/utils/api-proxy-guard';
+import type {
+  GuardOptions,
+  ProxyRoutePolicy,
+} from '@tuturuuu/utils/api-proxy-guard';
+
+const nativeIntegrityBridgeReadPolicy: ProxyRoutePolicy = {
+  key: 'native-integrity-bridge',
+  matches: (request) =>
+    request.method === 'GET' &&
+    request.nextUrl.pathname === '/native-integrity/turnstile',
+  rateLimits: {
+    get: [
+      { window: 'minute', duration: '1 m', limit: 60 },
+      { window: 'hour', duration: '1 h', limit: 240 },
+      { window: 'day', duration: '1 d', limit: 1200 },
+    ],
+    mutate: [],
+  },
+};
 
 export function calendarPreferenceGuardOptions(request: {
   method: string;
@@ -16,7 +34,7 @@ export function calendarPreferenceGuardOptions(request: {
   )
     return {
       prefixBase: 'proxy:web:native-integrity-bridge',
-      routePolicies: [],
+      routePolicies: [nativeIntegrityBridgeReadPolicy],
       useVerifiedBearerActor: true,
       diagnosticPolicyName: 'native-integrity-bridge',
     };

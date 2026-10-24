@@ -45,6 +45,7 @@ the local Web adapter instead.
 | Mobile repository | Account-scoped cooldown after a genuine 429; no network retry during cooldown | Retains the originating diagnostic; not proof of a fresh request on Settings open |
 | Web hosting | Existing Web native API hosting policy; no WAF/bot exception is declared in `apps/web/vercel.json` | Provider challenges run before route auth; live policy must be checked by the deployment operator |
 | Shared Web guard | Dedicated `proxy:web:calendar-preferences` actor bucket after MFA verification; persistent IP blocks | `native-calendar-preferences` with caller/window/quota headers; `proxy-ip-block` for blocked IPs |
+| Web native integrity bridge GET guard | Exact `/native-integrity/turnstile` GET uses `proxy:web:native-integrity-bridge` with explicit base read limits of 60/minute, 240/hour and 1,200/day | `native-integrity-bridge`; anonymous IP limits, persistent IP blocks and strict staff rejection remain active |
 | Web native integrity POST guard | Exact challenge/enroll POSTs use `proxy:web:native-integrity` with the already MFA-verified Bearer actor and default authenticated mutation quotas; no warm trust-cache dependency or shared-IP actor collision | `native-integrity-challenge`; anonymous quotas and persistent IP blocks remain active, and staff cannot waive quota/IP 429; separate service issuance caps remain 10/minute and 120/hour |
 | Web personal PATCH quota | Additional adaptive authenticated actor quota using `session:user:mutate`, base 60/minute; no pre-auth shared-IP bucket or browser challenge | `calendar-session-user-mutate`, caller `authenticated`, window `minute`; preserves `Retry-After`, `X-Proxy-Block-Reason: rate-limit-exceeded`, `Cache-Control: private, no-store`, numeric `X-RateLimit-*` and adaptive `X-Abuse-*` headers |
 | Infrastructure hosting | Platform bot/WAF/DDoS protections before application code | May return a bare HTML/JSON 429 without application metadata |
@@ -532,3 +533,29 @@ Phase 1 preference routing and authorization regressions:
 These tests establish source behavior at their tested boundaries. Exact-commit
 CI builds, deployed hosting policy and real native read/save acceptance remain
 separate release evidence.
+
+## Retained Web and Tasks Google sync helpers
+
+The `apps/web` and `apps/tasks` copies of
+`src/lib/calendar/incremental-active-sync.ts` log sync-token presence and page
+counts, never the stored sync token or the raw Google page response containing
+`nextSyncToken`. This scope is separate from the native gateway and Calendar's
+current provider-sync implementation.
+
+For a Google error with numeric `code: 410` during incremental fetching, these
+helpers increment `retryCount`, disable token use and attempt to clear the token
+under the same workspace/connection/calendar key. Clear failures are logged and
+swallowed. Despite the retry counter, a first-page 410 exits the pagination loop
+without a date-range request because no `pageToken` exists. After a successful
+clear, the next invocation fetches the configured date range without a sync token
+and stores a returned replacement token, including for an empty event page.
+This is a bounded date-range fetch, not a complete calendar-history rebuild.
+
+A later-page 410 retains the existing page cursor and accumulated events while
+switching to date-range parameters; it does not restart pagination. A 410 already
+in date-range mode, or another Google error, propagates without token recovery.
+The sibling `incremental-active-sync.test.ts` suites exercise the real helpers
+with mocked Google and storage boundaries: token-free logs, pagination/storage,
+first-page 410 clearing and next-invocation fetching, and non-410 propagation.
+They do not prove live Google acceptance, clear-failure recovery, later-page
+recovery correctness, or database event-write behavior.
