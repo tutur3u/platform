@@ -7,7 +7,7 @@ const SENTINEL = 'TUTURUUU_CHECK_CHILD_TEMP_ACTIVE';
 function assertCheckCliAllowed(env = process.env) {
   if (env[SENTINEL] === '1') {
     throw new Error(
-      'Nested bun check cannot run inside a child temp environment; run it separately through the original shared queues.'
+      'Nested bun validate cannot run inside a child temp environment; run it separately through the original shared queues.'
     );
   }
 }

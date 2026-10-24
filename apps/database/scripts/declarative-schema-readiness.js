@@ -30,7 +30,22 @@ export function inventory(directory, prefix = '') {
       if (stat.isSymbolicLink()) throw new Error('inventory-symlink');
       if (stat.isDirectory()) return inventory(absolute, `${relative}/`);
       if (!stat.isFile()) throw new Error('inventory-not-file');
-      return [{ path: relative, sha256: hash(fs.readFileSync(absolute)) }];
+      const fd = fs.openSync(
+        absolute,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW
+      );
+      try {
+        const opened = fs.fstatSync(fd);
+        if (
+          !opened.isFile() ||
+          opened.dev !== stat.dev ||
+          opened.ino !== stat.ino
+        )
+          throw new Error('inventory-file-changed');
+        return [{ path: relative, sha256: hash(fs.readFileSync(fd)) }];
+      } finally {
+        fs.closeSync(fd);
+      }
     });
 }
 

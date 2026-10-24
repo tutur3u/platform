@@ -50,7 +50,7 @@ tests rather than deleting it.
 | Mobile analysis | `cd apps/mobile && flutter analyze` | no issues |
 | Canonical mobile gate | `bun check:mobile` | format, analysis, and mobile tests pass |
 | Docs stale-reference check | `rg -n 'MOBILE_TASK_DESCRIPTION_EDITING_ENABLED' apps/mobile apps/docs` | no output after intentional removal |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -95,7 +95,7 @@ guide found by the exact repository search.
 
 ### Step 4: Verify release-facing truth
 
-Test the reachable editing flow, run analysis and `bun check`, and prove the
+Test the reachable editing flow, run analysis and `bun validate`, and prove the
 flag name no longer exists in mobile source or docs.
 
 ## Done criteria

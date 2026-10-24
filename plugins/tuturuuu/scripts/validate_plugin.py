@@ -423,7 +423,7 @@ def validate_commit_no_verify_guidance(
     for expected in (
         "proof-gated no-verify evidence",
         "git commit --no-verify",
-        "exact staged files would pass the checks normally covered by `bun check`",
+        "exact staged files would pass the checks normally covered by `bun validate`",
         "If ownership is unclear, proof is incomplete, or affected checks",
     ):
         require_text(commit_skill_path, commit_skill_text, expected)
@@ -434,8 +434,8 @@ def validate_commit_no_verify_guidance(
         "git status --short",
         "git diff --cached --stat",
         "git diff --cached --name-only",
-        "separated checks run, mapped to the affected `bun check` components",
-        "skipped `bun check` components listed with path-based rationale",
+        "separated checks run, mapped to the affected `bun validate` components",
+        "skipped `bun validate` components listed with path-based rationale",
         "`bun check:mobile` coverage included when staged or touched paths include",
         "can justify `--no-verify` before",
     ):

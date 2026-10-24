@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -75,8 +76,12 @@ class _Picker extends ProfileBannerPicker {
   final release = Completer<void>();
   final calls = <String>[];
   String? cancelAt;
+  String? deniedAt;
   Future<T?> _step<T>(String name, T value) async {
     calls.add(name);
+    if (name == deniedAt) {
+      throw PlatformException(code: 'photo_access_denied');
+    }
     if (stage == name) {
       entered.complete();
       await release.future;
@@ -90,6 +95,9 @@ class _Picker extends ProfileBannerPicker {
   @override
   Future<File?> pickImage(ImageSource source) =>
       _step('picker', File('/synthetic/banner.png'));
+  @override
+  Future<File?> cropImage(BuildContext context, File file) =>
+      _step('crop', file);
 }
 
 late ValueNotifier<(_Auth, ProfileCubit)> _owners;
@@ -149,7 +157,33 @@ Future<(_Auth, _Repository, ProfileCubit)> _pump(
 }
 
 void main() {
-  for (final stage in ['source', 'picker']) {
+  testWidgets('empty editor keeps upload controls without a duplicate header', (
+    tester,
+  ) async {
+    await _pump(tester, _Picker('none'));
+    expect(find.byType(ProfileBanner), findsNothing);
+    // One Edit profile row; adding a banner opens the picker from it.
+    expect(find.text('Cover banner'), findsOneWidget);
+    expect(find.text('Not set'), findsOneWidget);
+  });
+
+  testWidgets('native permission denial remains scoped to the banner', (
+    tester,
+  ) async {
+    final picker = _Picker('none')..deniedAt = 'picker';
+    final (_, repository, cubit) = await _pump(tester, picker);
+    await tester.tap(find.text('choose'));
+    await tester.pumpAndSettle();
+    expect(repository.writes, isEmpty);
+    expect(
+      cubit.state.mediaFailure?.kind,
+      ProfileMediaFailureKind.authorization,
+    );
+    expect(cubit.state.mediaTarget, ProfileMediaTarget.banner);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final stage in ['source', 'picker', 'crop']) {
     for (final departure in ['switch', 'logout', 'ABA', 'MFA']) {
       testWidgets('$stage $departure never writes', (tester) async {
         final picker = _Picker(stage);
@@ -174,7 +208,11 @@ void main() {
         expect(repository.writes, isEmpty);
         expect(
           picker.calls,
-          stage == 'source' ? ['source'] : ['source', 'picker'],
+          stage == 'source'
+              ? ['source']
+              : stage == 'picker'
+              ? ['source', 'picker']
+              : ['source', 'picker', 'crop'],
         );
       });
     }
@@ -218,7 +256,7 @@ void main() {
       expect(repository.writes, isEmpty);
     });
   }
-  for (final canceled in ['source', 'picker']) {
+  for (final canceled in ['source', 'picker', 'crop']) {
     testWidgets('$canceled cancellation permits a fresh success', (
       tester,
     ) async {
@@ -304,6 +342,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.writes, ['actor-a', 'actor-a']);
     expect(cubit.state.mediaFailure, isNull);
-    expect(picker.calls, ['source', 'picker', 'source', 'picker']);
+    expect(picker.calls, [
+      'source',
+      'picker',
+      'crop',
+      'source',
+      'picker',
+      'crop',
+    ]);
   });
 }

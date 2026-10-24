@@ -58,7 +58,7 @@ continuation source; do not infer completeness only from array length.
 | Git typecheck | `bun run --cwd apps/git type-check` | exit 0 |
 | Localization | `bun i18n:sort` | Git English/Vietnamese bundles sorted |
 | Git build | `bun run --cwd apps/git build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

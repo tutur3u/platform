@@ -1,0 +1,461 @@
+name: Security Checks
+
+# PR and main-push checks scan only what the change touched and fail on newly
+# introduced findings. The daily schedule (the only scan timer) runs CodeQL
+# through codeql.yml and builds the redacted findings register; on Mondays it
+# also runs the weekly deep pass (full-history secret scan).
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      deep:
+        description: Also run the weekly deep pass (full-history secret scan)
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+  BUN_VERSION: 1.4.4
+  BUN_SHA256: bf8ccbfb2b0b80159e0f9a6d15c55317add8077534dbc6130a3edb52fccb395c
+
+jobs:
+  # No ci-check switchboard: its selectors run from the pull request checkout,
+  # so a hostile copy could skip every scan. The scope job below selects scans
+  # with base-commit scripts only and runs everything when they are missing.
+  scope:
+    name: Resolve security scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      deep: ${{ steps.mode.outputs.deep }}
+      dependencies: ${{ steps.scope.outputs.dependencies }}
+      register: ${{ steps.mode.outputs.register }}
+      workflows: ${{ steps.scope.outputs.workflows }}
+    steps:
+      - name: Check out scope inputs
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/github-deployment-markers.ts
+            scripts/ci/resolve-changed-files-core.ts
+            scripts/ci/resolve-changed-files.ts
+            scripts/ci/security-paths.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      # Scope scripts come from the base commit (main for scheduled runs),
+      # never the checkout, so a pull request cannot switch its own gates off.
+      # Without them (bootstrap) every scan runs.
+      - name: Load trusted scope scripts
+        id: trusted_scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          trusted="$GITHUB_SHA"
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+            trusted=""
+            if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+              trusted="$BASE_SHA"
+            fi
+          fi
+          dir="$RUNNER_TEMP/trusted-scope"
+          for file in scripts/ci/github-deployment-markers.ts scripts/ci/resolve-changed-files-core.ts \
+            scripts/ci/resolve-changed-files.ts scripts/ci/security-paths.js; do
+            if [ -z "$trusted" ] || ! git cat-file -e "$trusted:$file" 2>/dev/null; then
+              echo "::warning::Trusted scope scripts are unavailable; running every scan."
+              echo "available=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            mkdir -p "$dir/$(dirname "$file")"
+            git show "$trusted:$file" > "$dir/$file"
+          done
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Compute changed files
+        id: changed_files
+        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push')
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
+          WORKFLOW_NAME: security-checks.yaml
+        run: node --experimental-strip-types "$TRUSTED_SCOPE/scripts/ci/resolve-changed-files.ts"
+
+      - name: Select scans
+        id: scope
+        env:
+          AVAILABLE: ${{ steps.trusted_scope.outputs.available }}
+          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
+        run: |
+          set -euo pipefail
+          if [ "$AVAILABLE" = true ]; then
+            node "$TRUSTED_SCOPE/scripts/ci/security-paths.js" scope
+          else
+            printf '%s\n' 'codeql_languages=["actions","javascript-typescript","python"]' \
+              codeql=true dependencies=true workflows=true | tee -a "$GITHUB_OUTPUT"
+          fi
+
+      - name: Select audit mode
+        id: mode
+        env:
+          DEEP_INPUT: ${{ inputs.deep }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          register=false
+          deep=false
+          if [ "$EVENT_NAME" = schedule ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+            register=true
+            if [ "$DEEP_INPUT" = true ] || { [ "$EVENT_NAME" = schedule ] && [ "$(date -u +%u)" = 1 ]; }; then
+              deep=true
+            fi
+          fi
+          echo "register=$register" >> "$GITHUB_OUTPUT"
+          echo "deep=$deep" >> "$GITHUB_OUTPUT"
+
+  secrets:
+    name: Secret scan
+    needs: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install checksum-verified gitleaks
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            --output "$archive"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+
+      # Configuration, the ignore list and the summarizer come from the trusted
+      # base so a change cannot allowlist or hide its own secret: inline
+      # `gitleaks:allow` comments are ignored, and checkout-local
+      # .gitleaksignore/.gitleaks.toml files are removed before scanning because
+      # gitleaks would otherwise load them from the scanned directory.
+      # Scheduled runs scan main.
+      - name: Scan for secrets
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          DEEP: ${{ needs.scope.outputs.deep }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          trusted="$GITHUB_SHA"
+          log_opts="--since=3.days.ago"
+          mode=register
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+            mode=pr
+            if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && [ "$BASE_SHA" != 0000000000000000000000000000000000000000 ] && git cat-file -e "$BASE_SHA^{commit}"; then
+              trusted="$BASE_SHA"
+              log_opts="$BASE_SHA..$GITHUB_SHA"
+            else
+              log_opts="-n 50 $GITHUB_SHA"
+            fi
+          elif [ "$DEEP" = true ]; then
+            log_opts=""
+          fi
+          unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML
+          rm -f .gitleaksignore .gitleaks.toml
+          if git cat-file -e "$trusted:.github/security/gitleaks.toml" 2>/dev/null; then
+            git show "$trusted:.github/security/gitleaks.toml" > "$RUNNER_TEMP/gitleaks.toml"
+          else
+            printf '[extend]\nuseDefault = true\n' > "$RUNNER_TEMP/gitleaks.toml"
+          fi
+          : > "$RUNNER_TEMP/gitleaksignore"
+          if git cat-file -e "$trusted:.gitleaksignore" 2>/dev/null; then
+            git show "$trusted:.gitleaksignore" > "$RUNNER_TEMP/gitleaksignore"
+          fi
+          # The checkout's copy is never used: without a trusted summarizer
+          # (bootstrap) every finding fails a PR and the register refuses.
+          summarizer=""
+          if git cat-file -e "$trusted:scripts/ci/security-scan-diff.js" 2>/dev/null; then
+            summarizer="$RUNNER_TEMP/security-scan-diff.js"
+            git show "$trusted:scripts/ci/security-scan-diff.js" > "$summarizer"
+          fi
+          range=()
+          if [ -n "$log_opts" ]; then
+            range=(--log-opts "$log_opts")
+          fi
+          "$RUNNER_TEMP/gitleaks" git --config "$RUNNER_TEMP/gitleaks.toml" \
+            --gitleaks-ignore-path "$RUNNER_TEMP/gitleaksignore" --ignore-gitleaks-allow \
+            ${range[@]+"${range[@]}"} --redact \
+            --no-banner --exit-code 0 --report-format json \
+            --report-path "$RUNNER_TEMP/gitleaks.json" .
+          mkdir -p "$RUNNER_TEMP/register-input"
+          if [ -n "$summarizer" ]; then
+            node "$summarizer" gitleaks "$RUNNER_TEMP/gitleaks.json" \
+              "$RUNNER_TEMP/register-input/gitleaks.json" "$mode"
+          elif [ "$mode" = pr ]; then
+            jq -r '.[]? | "::error file=\(.File // ""),line=\(.StartLine // 0)::Possible secret (\(.RuleID // "unknown")); rotate it before removing it from history"' \
+              "$RUNNER_TEMP/gitleaks.json"
+            count="$(jq 'if type == "array" then length else error("bad report") end' "$RUNNER_TEMP/gitleaks.json")"
+            echo "$count possible secret(s); the trusted summarizer is unavailable, so every finding fails."
+            [ "$count" -eq 0 ]
+          else
+            echo "::error::The trusted summarizer is missing at $trusted; refusing to build the register."
+            exit 1
+          fi
+
+      - name: Keep redacted secret-scan input for the register
+        if: needs.scope.outputs.register == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-register-gitleaks
+          path: ${{ runner.temp }}/register-input/gitleaks.json
+          retention-days: 2
+          if-no-files-found: error
+
+      # Runs the suppression regression against the installed release, so a
+      # gitleaks upgrade that changes ignore/config loading fails here. It is
+      # checkout (pull request) code, so it runs only after the scan, its
+      # summary and the register input are final and cannot be tampered with.
+      - name: Prove pull requests cannot suppress findings
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks
+        run: node --test scripts/ci/security-gitleaks-suppression.test.js
+
+  dependency-review:
+    name: Dependency review
+    needs: scope
+    if: github.event_name == 'pull_request' && needs.scope.outputs.dependencies == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          comment-summary-in-pr: never
+          fail-on-severity: high
+          license-check: false
+
+  # GitHub's dependency graph does not read bun.lock, so bun audit covers the
+  # Bun workspace. It reads manifests and the lockfile without installing or
+  # running package scripts.
+  dependency-audit:
+    name: Dependency audit
+    needs: scope
+    if: needs.scope.outputs.dependencies == 'true' || needs.scope.outputs.register == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out manifests
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Nothing from the checkout runs before the audit: no local action, no
+      # setup script and no GITHUB_PATH change. bun is a checksum-verified
+      # release called by absolute path, and both audits read manifests copied
+      # out of git into empty directories, so a checkout-local bunfig.toml or
+      # .npmrc cannot redirect the advisory registry.
+      - name: Install checksum-verified bun
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/bun.zip"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip" \
+            --output "$archive"
+          echo "${BUN_SHA256}  ${archive}" | sha256sum --check --strict
+          unzip -q -o -j "$archive" bun-linux-x64/bun -d "$RUNNER_TEMP/bun-bin"
+          "$RUNNER_TEMP/bun-bin/bun" --version
+
+      - name: Audit locked dependencies
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BUN_BIN: ${{ runner.temp }}/bun-bin/bun
+          BUN_CONFIG_REGISTRY: https://registry.npmjs.org/
+          EVENT_NAME: ${{ github.event_name }}
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: |
+          set -euo pipefail
+          manifests() {
+            mkdir -p "$2"
+            git ls-tree -r --name-only "$1" |
+              grep -E '^(package\.json|bun\.lock|(apps|packages)/[^/]+/package\.json)$' |
+              xargs -r git archive "$1" | tar -x -C "$2"
+            [ -f "$2/package.json" ]
+          }
+          # The audit exits non-zero both when it finds advisories and when it
+          # fails, so the output decides: it must be an object of advisory
+          # arrays, and a non-zero exit must come with at least one advisory.
+          # Anything else (crash, network error, error object) fails closed.
+          audit() {
+            local code=0
+            (cd "$1" && "$BUN_BIN" audit --json > "$2") || code=$?
+            if ! jq -e 'type == "object" and all(.[]; type == "array")' "$2" > /dev/null 2>&1; then
+              echo "::error::Dependency audit output unavailable (exit $code)."
+              exit 1
+            fi
+            if [ "$code" -ne 0 ] && [ "$(jq '[.[][]] | length' "$2")" -eq 0 ]; then
+              echo "::error::The dependency audit failed (exit $code) without reporting advisories."
+              exit 1
+            fi
+          }
+          mkdir -p "$RUNNER_TEMP/register-input"
+          manifests HEAD "$RUNNER_TEMP/head"
+          audit "$RUNNER_TEMP/head" "$RUNNER_TEMP/register-input/bun-audit.json"
+          if [ "$EVENT_NAME" != pull_request ] && [ "$EVENT_NAME" != push ]; then
+            exit 0
+          fi
+          if ! [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$BASE_SHA^{commit}"; then
+            echo "::warning::No base commit; every high/critical advisory counts as new."
+            echo '{}' > "$RUNNER_TEMP/base-audit.json"
+          else
+            manifests "$BASE_SHA" "$RUNNER_TEMP/base"
+            audit "$RUNNER_TEMP/base" "$RUNNER_TEMP/base-audit.json"
+          fi
+          # Never the checkout's copy: without the trusted differ (bootstrap)
+          # every high/critical advisory in the change fails.
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA:scripts/ci/security-scan-diff.js" 2>/dev/null; then
+            differ="$RUNNER_TEMP/security-scan-diff.js"
+            git show "$BASE_SHA:scripts/ci/security-scan-diff.js" > "$differ"
+            node "$differ" bun-audit-diff "$RUNNER_TEMP/register-input/bun-audit.json" "$RUNNER_TEMP/base-audit.json"
+          else
+            # Unknown or missing severities block, as in the trusted differ.
+            count="$(jq '[.[]? | arrays | .[] | select((.severity // "" | ascii_downcase) as $s | ["moderate", "medium", "low", "info"] | index($s) | not)] | length' "$RUNNER_TEMP/register-input/bun-audit.json")"
+            echo "$count high/critical dependency advisory(ies); the trusted differ is unavailable, so every one fails."
+            [ "$count" -eq 0 ]
+          fi
+
+      - name: Keep dependency audit input for the register
+        if: needs.scope.outputs.register == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-register-bun-audit
+          path: ${{ runner.temp }}/register-input/bun-audit.json
+          retention-days: 2
+          if-no-files-found: error
+
+  workflow-trust:
+    name: Workflow trust boundaries
+    needs: scope
+    if: needs.scope.outputs.workflows == 'true' || needs.scope.outputs.register == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      # Covers fork PRs, which do not run the push-only script suite.
+      - name: Run workflow trust-boundary tests
+        run: node scripts/ci/security-trust-tests.js
+
+  codeql:
+    needs: scope
+    if: needs.scope.outputs.register == 'true'
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: write
+    uses: ./.github/workflows/codeql.yml
+
+  register:
+    name: Findings register
+    needs: [scope, secrets, dependency-audit, codeql]
+    if: always() && needs.scope.outputs.register == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: read
+    steps:
+      # Register runs are schedule/dispatch only (never pull_request), so the
+      # builder and the reviewed risk acceptances come from main's checkout.
+      - name: Check out register builder
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/security/risk-acceptances.json
+            scripts/ci/security-findings-register.js
+            scripts/ci/security-paths.js
+            scripts/ci/security-scan-diff.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Collect scanner input
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: security-register-*
+          path: ${{ runner.temp }}/register-input
+          merge-multiple: true
+
+      # Fails while confirmed critical/high findings are open: release blocker.
+      - name: Build findings register
+        env:
+          BUN_AUDIT_FILE: ${{ runner.temp }}/register-input/bun-audit.json
+          GITHUB_TOKEN: ${{ github.token }}
+          GITLEAKS_FILE: ${{ runner.temp }}/register-input/gitleaks.json
+          REGISTER_FILE: ${{ runner.temp }}/security-register.json
+          RISK_ACCEPTANCES_FILE: .github/security/risk-acceptances.json
+        run: node scripts/ci/security-findings-register.js
+
+      - name: Keep redacted findings register
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-findings-register
+          path: ${{ runner.temp }}/security-register.json
+          retention-days: 30
+          if-no-files-found: warn

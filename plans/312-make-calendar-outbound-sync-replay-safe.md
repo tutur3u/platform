@@ -79,7 +79,7 @@ production migration or contact live calendars.
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second isolated type generation is byte-identical |
 | App gates | `bun run --cwd apps/calendar type-check && bun run --cwd apps/calendar build` | Calendar compiles and builds |
 | Size | `wc -l 'apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/sync/route.ts' apps/calendar/src/lib/calendar/outbound-sync.ts` | each substantially edited file is below 700 lines |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

@@ -69,7 +69,7 @@ paths, but migration/type ownership still requires transfer.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/mobile-deployment-transitions.sql && bun --cwd apps/database sb:validate:isolated` | transition, rollback, rollback-on-error, concurrency, index, and ACL assertions pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/mobile-deployment-transitions.sql` | generated RPC types are current; no unrelated drift |
 | Infrastructure | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as compat;
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
@@ -176,14 +177,14 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
     final user = context.watch<AuthCubit>().state.user;
 
     return shad.Scaffold(
-      child: SafeArea(
-        top: false,
-        bottom: false,
+      // The camera viewport is an inset rounded card, so it shares the page
+      // gutters and detail width with the instructions below it.
+      child: AppPageBody(
         child: Column(
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: Stack(
@@ -226,35 +227,27 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    0,
-                    16,
-                    20 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  child: _payload == null
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _ScannerHint(error: _error),
-                            const shad.Gap(12),
-                            shad.OutlineButton(
-                              alignment: Alignment.center,
-                              onPressed: _enterLink,
-                              child: Text(l10n.deviceMfaQrPaste),
-                            ),
-                          ],
-                        )
-                      : _ApprovalPanel(
-                          approving: _approving,
-                          error: _error,
-                          origin: _payload!.origin.origin,
-                          userEmail: user?.email ?? l10n.settingsNoEmail,
-                          onApprove: _approve,
-                          onScanAgain: _scanAgain,
-                        ),
-                ),
+                child: _payload == null
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ScannerHint(error: _error),
+                          const shad.Gap(12),
+                          shad.OutlineButton(
+                            alignment: Alignment.center,
+                            onPressed: _enterLink,
+                            child: Text(l10n.deviceMfaQrPaste),
+                          ),
+                        ],
+                      )
+                    : _ApprovalPanel(
+                        approving: _approving,
+                        error: _error,
+                        origin: _payload!.origin.origin,
+                        userEmail: user?.email ?? l10n.settingsNoEmail,
+                        onApprove: _approve,
+                        onScanAgain: _scanAgain,
+                      ),
               ),
             ),
           ],

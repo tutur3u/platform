@@ -61,7 +61,7 @@ repeat Plan 233's source/RPC migration.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/calendar-schedule-cleanup.sql && bun --cwd apps/database sb:validate:isolated` | valid/foreign/locked/rollback cleanup assertions and full suite pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/calendar-schedule-cleanup.sql` | cleanup RPC types are current with no unrelated drift |
 | Calendar | `bun run --cwd apps/calendar type-check && bun run --cwd apps/calendar build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

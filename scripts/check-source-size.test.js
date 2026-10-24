@@ -391,6 +391,28 @@ test('enforces new-file and grandfathered boundaries at 699, 700, and 701', (t) 
   assert.equal(result.checked, 7);
 });
 
+test('skips source paths that are directories or symlinks', (t) => {
+  const rootDir = createTempDir(t);
+  fs.mkdirSync(path.join(rootDir, 'directory.ts'));
+  const names = ['directory.ts'];
+  if (process.platform !== 'win32') {
+    writeFile(rootDir, 'target', 'unchanged');
+    fs.symlinkSync(path.join(rootDir, 'target'), path.join(rootDir, 'link.ts'));
+    names.push('link.ts');
+  }
+  assert.deepEqual(
+    evaluateChangedFiles(
+      names.map((currentPath) => ({ currentPath, basePath: currentPath })),
+      'HEAD',
+      {
+        rootDir,
+        readBase: () => assert.fail('skipped paths have no base read'),
+      }
+    ),
+    { checked: 0, violations: [] }
+  );
+});
+
 test('skips deletions, non-source files, and binary source files', (t) => {
   const rootDir = createTempDir(t);
   writeFile(rootDir, 'src/binary.ts', Buffer.from([1, 0, 2]));

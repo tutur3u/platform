@@ -15,6 +15,16 @@ import { runHostedCommand } from './hosted-command.mjs';
 import { runCliProbe } from './native-cli.mjs';
 import { runHostedHelper } from './proposal.mjs';
 
+function jsLiteral(value) {
+  const serialized = JSON.stringify(value);
+  if (serialized === undefined)
+    throw new TypeError('JavaScript literals must be JSON-serializable.');
+  return serialized.replace(
+    /[<>&/\u2028\u2029]/gu,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
+}
+
 async function fixture(t) {
   const base = await mkdtemp(path.join(os.tmpdir(), 'subprocess-boundary-'));
   t.after(() => rm(base, { recursive: true, force: true }));
@@ -115,7 +125,7 @@ for (const runner of ['probe', 'command'])
       // The test owns and kills it explicitly; proposal does not claim to kill escapees.
       await writeFile(
         helper,
-        `import {spawn} from 'node:child_process';import {writeFileSync,renameSync} from 'node:fs';process.on('SIGTERM',()=>{});const child=spawn(process.execPath,['-e','setTimeout(()=>process.exit(0),6000)'],{detached:true,stdio:['ignore',1,2]});child.once('spawn',()=>{writeFileSync(process.argv[2]+'.tmp',JSON.stringify({pid:child.pid,token:${JSON.stringify(token)}}));renameSync(process.argv[2]+'.tmp',process.argv[2]);${mode === 'output-limit' ? "process.stderr.write('x'.repeat(256));" : ''}setInterval(()=>{},1000);});`
+        `import {spawn} from 'node:child_process';import {writeFileSync,renameSync} from 'node:fs';process.on('SIGTERM',()=>{});const child=spawn(process.execPath,['-e','setTimeout(()=>process.exit(0),6000)'],{detached:true,stdio:['ignore',1,2]});child.once('spawn',()=>{writeFileSync(process.argv[2]+'.tmp',JSON.stringify({pid:child.pid,token:${jsLiteral(token)}}));renameSync(process.argv[2]+'.tmp',process.argv[2]);${mode === 'output-limit' ? "process.stderr.write('x'.repeat(256));" : ''}setInterval(()=>{},1000);});`
       );
       const signals = new EventEmitter();
       const signalSource = runner === 'command' ? process : signals;

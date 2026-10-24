@@ -9,7 +9,8 @@ up Tuturuuu devbox runners.
   `TUTURUUU_CLI_CONFIG`.
 - Devbox agent poll and heartbeat routes are blocked unless the platform web app
   has `TUTURUUU_DEVBOX_AGENT_API_ENABLED=true`.
-- `bun ttr ...` runs the repo-local SDK CLI.
+- `bun ttr ...` delegates to the trusted global `~/.bun/bin/ttr` (>= 0.28.0).
+- For local source development, use `TUTURUUU_CONFIG=<private-config> TTR_RESOURCES_HOME=<disposable-resource-home> bun packages/sdk/src/cli/index.ts box ...` from the repo root; keep production CLI config and scheduler state separate.
 - `ttr ...` runs the installed CLI.
 - Use `ttr whoami --no-update-check` or equivalent config inspection before
   assuming a command targets local, staging, or production.
@@ -53,7 +54,7 @@ Expected result:
 - `git rev-parse --show-toplevel`
 - `bun --cwd packages/devbox test`
 - A focused package test for the touched code
-- `bun check` after focused tests pass, when the repo rules require it
+- `bun validate` after focused tests pass, when the repo rules require it
 
 ## Build, Serve, Tunnel, And Database Forwarding
 
@@ -137,3 +138,33 @@ Use `ttr box repair --dir .` after upgrading the CLI to regenerate the wrapper
 and system service from the existing token file without registering a new runner
 row. Use `ttr box repair --dir . --dry-run` when checking a host remotely before
 allowing service-file writes or sudo restart commands.
+
+### Trust-tier isolation evidence
+
+`box doctor --isolation --other-user <user>` requires readable ACL evidence for
+the credential, home, checkout, checkout `.env*` files and their ancestors. Linux
+uses numeric `getfacl` entries with effective masks; macOS uses `ls -le`. Effective
+extended grants conservatively fail even for unrelated identities. Missing tools
+or malformed ACL output are `unknown` and fail required evidence. Regressions
+live in `devbox-isolation-acl.test.ts`.
+
+`repair --execution-mode` does not authorize replacing another service mode;
+that guard requires `--force`. Setup normalizes token paths before both the
+overwrite guard and registration. Cover these boundaries with
+`devbox-repair.test.ts` and `devbox-isolation.test.ts`; confirm refusal occurs
+before credential issuance or file changes.
+
+
+## Command-line injection triage
+
+General jobs are intentionally arbitrary execution for authenticated root-workspace
+members. Trace submission authorization, private-table/RPC access, runner token
+verification and Judge/playground routing before classifying a launcher alert.
+`shell: false` protects literal argv but does not sandbox an explicit interpreter
+or project script. Exact-commit origin reachability proves provenance, not safety.
+The launcher rejects malformed executable names and NUL arguments; do not turn
+these guardrails into a claimed executable allowlist. Use the SDK process-group,
+runner-trust and commit-run tests, and the API runs authorization tests. Separate
+source evidence from deployed grants, pool configuration and token custody.
+See `apps/docs/build/development-tools/remote-devboxes.mdx`, section
+“Trusted command execution boundary”, for the complete boundary and exceptions.

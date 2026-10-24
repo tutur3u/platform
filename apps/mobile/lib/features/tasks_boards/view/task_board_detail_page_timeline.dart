@@ -102,7 +102,6 @@ class _TaskBoardTimelineView extends StatefulWidget {
     required this.board,
     required this.lists,
     required this.tasksByList,
-    required this.bottomPadding,
     required this.hasMoreTasks,
     required this.isLoadingMoreTasks,
     required this.verticalScrollController,
@@ -115,7 +114,6 @@ class _TaskBoardTimelineView extends StatefulWidget {
   final TaskBoardDetail board;
   final List<TaskBoardList> lists;
   final Map<String, List<TaskBoardTask>> tasksByList;
-  final double bottomPadding;
   final bool hasMoreTasks;
   final bool isLoadingMoreTasks;
   final ScrollController verticalScrollController;
@@ -178,10 +176,10 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
         }
         return false;
       },
-      child: ListView(
+      child: AppPageListView(
+        kind: AppPageKind.root,
         controller: widget.verticalScrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 0, 16, widget.bottomPadding),
         children: [
           DecoratedBox(
             decoration: BoxDecoration(

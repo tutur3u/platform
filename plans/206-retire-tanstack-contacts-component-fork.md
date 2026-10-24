@@ -66,7 +66,7 @@ run `bun setup` immediately; do not cherry-pick shared dirty plan files.
 | Dependency proof | `rg -n '"[^"]+"' apps/tanstack-web/package.json` plus one scoped `rg` per removal candidate | each removed package has zero remaining consumer |
 | Typecheck | `bun run --cwd apps/tanstack-web type-check` | exit 0 |
 | Build | `bun run --cwd apps/tanstack-web build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

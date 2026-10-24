@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -229,49 +227,40 @@ class _StorefrontDetailPageState extends State<StorefrontDetailPage> {
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => unawaited(_reload()),
-        child: ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: NovaRefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                16,
-                8,
-                16,
-                40 + MediaQuery.paddingOf(context).bottom,
-              ),
-              children: [
-                if (_loading && storefront == null)
-                  const _StorefrontDetailSkeleton()
-                else if (_error != null && storefront == null)
-                  FinanceEmptyState(
-                    icon: Icons.cloud_off_outlined,
-                    title: context.l10n.commonSomethingWentWrong,
-                    body: _error!,
-                    action: shad.SecondaryButton(
-                      onPressed: _reload,
-                      child: Text(context.l10n.commonRetry),
-                    ),
-                  )
-                else if (storefront != null) ...[
-                  _StorefrontHeader(
-                    storefront: storefront,
-                    onEdit: _editStorefront,
-                    onPreview: _openPreview,
-                    onDelete: _deleteStorefront,
+        child: NovaRefreshIndicator(
+          onRefresh: _reload,
+          child: AppPageListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              if (_loading && storefront == null)
+                const _StorefrontDetailSkeleton()
+              else if (_error != null && storefront == null)
+                FinanceEmptyState(
+                  icon: Icons.cloud_off_outlined,
+                  title: context.l10n.commonSomethingWentWrong,
+                  body: _error!,
+                  action: shad.SecondaryButton(
+                    onPressed: _reload,
+                    child: Text(context.l10n.commonRetry),
                   ),
-                  const SizedBox(height: 20),
-                  _ListingsSection(
-                    listings: _listings,
-                    productsAvailable: _products.isNotEmpty,
-                    onCreate: _editListing,
-                    onEdit: _editListing,
-                    onDelete: _deleteListing,
-                  ),
-                ],
+                )
+              else if (storefront != null) ...[
+                _StorefrontHeader(
+                  storefront: storefront,
+                  onEdit: _editStorefront,
+                  onPreview: _openPreview,
+                  onDelete: _deleteStorefront,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _ListingsSection(
+                  listings: _listings,
+                  productsAvailable: _products.isNotEmpty,
+                  onCreate: _editListing,
+                  onEdit: _editListing,
+                  onDelete: _deleteListing,
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),

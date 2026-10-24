@@ -71,7 +71,7 @@ dependency.
 | Host contracts | `bun --cwd apps/web vitest run src/lib/auth/otp.test.ts src/legacy-api-routes/v1/mobile/version-check/route.test.ts && bun --cwd apps/infrastructure vitest run src/lib/auth/otp.test.ts src/app/api/v1/infrastructure/mobile-versions/route.test.ts` | OTP and both route contracts pass through compatibility re-exports |
 | Source contract | `test "$(wc -l < apps/web/src/lib/mobile-version-policy.ts | tr -d ' ')" -le 2 && test "$(wc -l < apps/infrastructure/src/lib/mobile-version-policy.ts | tr -d ' ')" -le 2 && ! rg -n 'createAdminClient|STRICT_SEMVER_REGEX|workspace_configs' apps/web/src/lib/mobile-version-policy.ts apps/infrastructure/src/lib/mobile-version-policy.ts` | both host files are logic-free and contain no old implementation marker |
 | Types/builds | `bun run --cwd packages/auth type-check && bun run --cwd apps/web type-check && bun run --cwd apps/infrastructure type-check && bun run --cwd apps/web build && bun run --cwd apps/infrastructure build` | shared package and both live hosts compile/build |
-| Repository | `bun check && git diff --check` | all canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all canonical gates pass; whitespace output is empty |
 
 ## Scope
 
@@ -99,7 +99,7 @@ changing auth policy or errors; unrelated multi-session cleanup.
 4. Run the consolidated package suite and all four representative host suites.
    Run the logic-free source contract and verify the only executable
    TypeScript definitions are package-owned.
-5. Run types, serialized Web/Infrastructure builds, `bun check`, whitespace,
+5. Run types, serialized Web/Infrastructure builds, `bun validate`, whitespace,
    manifest-parse, and exact-scope gates.
 
 ## Done criteria

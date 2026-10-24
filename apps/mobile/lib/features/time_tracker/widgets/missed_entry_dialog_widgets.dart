@@ -94,7 +94,7 @@ class _DateTimePickerState extends State<_DateTimePicker> {
           children: [
             Expanded(
               child: _MissedEntryDateTimeSegment(
-                icon: shad.LucideIcons.calendar,
+                icon: LucideIcons.calendar,
                 text: dateText,
                 onTap: () => unawaited(_pickDate()),
               ),
@@ -102,7 +102,7 @@ class _DateTimePickerState extends State<_DateTimePicker> {
             const shad.Gap(10),
             Expanded(
               child: _MissedEntryDateTimeSegment(
-                icon: shad.LucideIcons.clock,
+                icon: LucideIcons.clock,
                 text: timeText,
                 onTap: () => unawaited(_pickTime()),
               ),
@@ -159,7 +159,7 @@ class _MissedEntryDateTimeSegment extends StatelessWidget {
                 ),
               ),
               Icon(
-                shad.LucideIcons.chevronDown,
+                LucideIcons.chevronDown,
                 size: 14,
                 color: colorScheme.mutedForeground,
               ),

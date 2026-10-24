@@ -71,7 +71,7 @@ and Plans 228/232 for readiness files before editing.
 | Discovery | `bun test:scripts --list` | the new artifact-smoke test is listed |
 | Full scripts | `bun test:scripts` | all discovered script tests pass |
 | AI real smoke | `node scripts/ci/npm-package-artifact-smoke.js --prepare-and-smoke packages/ai` | helper stages tracked files in a unique temp repo, prepares/packs/installs/imports AI, cleans up, and leaves the checkout unchanged |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

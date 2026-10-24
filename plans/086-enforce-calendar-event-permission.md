@@ -55,7 +55,7 @@ migration; no current note owns the Calendar event routes or that migration.
 | Local apply | `bun sb:up` | migration applies locally |
 | Calendar tests | `bun --cwd apps/calendar vitest run 'src/app/api/v1/workspaces/[wsId]/calendar/events/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route.test.ts'` | focused authorization suite passes |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -104,7 +104,7 @@ access.
 ### Step 4: Verify the complete boundary
 
 Apply locally, run focused tests, the Calendar production build, and
-`bun check`. A policy-only migration does not require generated-type churn.
+`bun validate`. A policy-only migration does not require generated-type churn.
 
 ## Done criteria
 

@@ -285,7 +285,7 @@ checks first, then the repo-required checks:
 bunx vitest run packages/internal-api/src/mind.test.ts packages/ai/src/mind/patch.test.ts
 bun i18n:sort
 bun type-check:mind
-bun check
+bun validate
 ```
 
 After applying the local Supabase migration, run `bun sb:typegen` and consume
