@@ -23,7 +23,14 @@ show a calling screen with the real connection status and a cancel action;
 microphone/camera/text/end controls appear only after connection. The connected
 controls replace navigation inside the same shell material at the same adaptive
 navbar width. Expanding navigation or ending the call preserves that surface.
-Text chat grows to at least three lines while focused and at most five lines in the dock. The control above Send opens a full-screen draft editor; minimizing returns the same text and selection to the dock without sending.
+Text chat grows to at most five lines in the dock, then scrolls inside the input.
+The Assistant has no fullscreen/expand draft action. Its single 52dp side action
+remains Send, recording control, or navigation as appropriate. Attachment previews,
+text selection, multiline input and keyboard/dock clearance remain inline.
+`assistant_composer_draft_test.dart`, `assistant_composer_multiline_test.dart`
+and `assistant_composer_geometry_test.dart` cover these mobile rules.
+
+![Mobile Assistant inline composer without an expand action](/images/assistant-inline-composer.png)
 
 Live capture requests PCM16 mono, gain control, echo cancellation, and noise
 suppression. Android uses the communication source/mode and speaker route. The

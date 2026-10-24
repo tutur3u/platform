@@ -229,8 +229,6 @@ class AssistantComposerDock extends StatelessWidget {
   Widget navigationToggle(BuildContext context) =>
       AssistantComposerPrimaryAction(
         controller: controller,
-        attachments: chatState.composerAttachments,
-        onRemoveAttachment: onRemoveAttachment,
         focusNode: focusNode,
         onToggleNavigation: onToggleNavigation,
         onSend: onSend,
