@@ -10,11 +10,15 @@ import { useMiraUiActions } from './use-mira-ui-actions';
 const mocks = vi.hoisted(() => ({
   artifacts: [] as { kind: string; wsId: string }[],
   setTheme: vi.fn(),
+  push: vi.fn(),
   open: vi.fn(),
   close: vi.fn(),
   closeAll: vi.fn(),
   focus: vi.fn(),
   setLayout: vi.fn(),
+}));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mocks.push }),
 }));
 vi.mock('next-themes', () => ({
   useTheme: () => ({ setTheme: mocks.setTheme }),
@@ -235,3 +239,38 @@ it.each(['expanded', 'collapsed', 'hover', 'hidden'] as const)(
     expect(change).not.toHaveBeenCalled();
   }
 );
+
+describe('Mira open_app navigation', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('navigates to the requested app in the selected workspace', () => {
+    renderHook(() =>
+      useMiraUiActions(
+        [
+          message('open_app', {
+            success: true,
+            action: 'open_app',
+            destination: 'time_tracker',
+            wsId: 'ws-1',
+          }),
+        ],
+        'streaming'
+      )
+    );
+    expect(mocks.push).toHaveBeenCalledWith('/ws-1/time-tracker');
+  });
+
+  it.each([
+    { destination: 'admin', wsId: 'ws-1' },
+    { destination: 'mail', wsId: '../evil' },
+    { destination: 'mail', wsId: 42 },
+  ])('ignores unsafe open_app markers %#', (output) => {
+    renderHook(() =>
+      useMiraUiActions(
+        [message('open_app', { success: true, ...output })],
+        'streaming'
+      )
+    );
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+});

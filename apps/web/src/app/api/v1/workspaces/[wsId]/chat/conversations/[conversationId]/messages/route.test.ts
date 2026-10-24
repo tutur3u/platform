@@ -251,6 +251,47 @@ describe('native AI chat message route', () => {
     });
   });
 
+  it.each([
+    { declared: undefined, forwarded: undefined },
+    { declared: ['theme', 'navigate'], forwarded: ['theme', 'navigate'] },
+  ])(
+    'forwards client capabilities $forwarded',
+    async ({ declared, forwarded }) => {
+      mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+        if (name === 'chat_send_user_message_idempotent') {
+          return { message: userMessage, replayed: false };
+        }
+        if (name === 'chat_get_conversation') return conversation;
+        if (name === 'chat_list_messages') return [userMessage];
+        if (name === 'chat_persist_ai_message_batch_idempotent') {
+          return { messages: [assistantMessage], replayed: false };
+        }
+        throw new Error(`Unexpected RPC ${name}`);
+      });
+
+      const { POST } = await import('./route');
+      await POST(
+        createRequest({
+          clientCapabilities: declared,
+          miraMode: true,
+        }) as never,
+        {
+          params: Promise.resolve({
+            conversationId: 'conversation-1',
+            wsId: 'workspace-1',
+          }),
+        }
+      );
+      const body = mocks.aiRouteBodies.at(-1) as Record<string, unknown>;
+      if (forwarded) {
+        expect(body.clientCapabilities).toEqual(forwarded);
+      } else {
+        // Omitted declarations reach the AI route as omitted (no UI tools).
+        expect(body).not.toHaveProperty('clientCapabilities');
+      }
+    }
+  );
+
   it('persists native assistant replies with an atomic batch RPC', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_user_message_idempotent') {

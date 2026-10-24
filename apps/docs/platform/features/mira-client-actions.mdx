@@ -1,0 +1,72 @@
+---
+title: "Mira client actions"
+description: "How Mira UI tools (theme, panels, navigation) are offered only to clients that can apply them."
+---
+
+Some Mira tools change the app rather than workspace data: `set_theme`,
+`set_sidebar`, `show_workspace_artifact`, `manage_workspace`,
+`set_immersive_mode` and `open_app`. The server returns a success marker and the
+client applies the effect. Mira must never report an effect that no client
+applies.
+
+## Capability declaration
+
+Each client declares the effects it applies with `clientCapabilities`:
+
+| Capability | Tools |
+| --- | --- |
+| `theme` | `set_theme` |
+| `sidebar` | `set_sidebar` |
+| `artifact_panels` | `show_workspace_artifact`, `manage_workspace` |
+| `immersive` | `set_immersive_mode` |
+| `navigate` | `open_app` |
+
+The server removes undeclared UI tools from the registry, tool discovery and
+forced tool steps. When a forced tool is unavailable, the step falls back to
+discovery instead of requiring an impossible call. Every request gets a short
+prompt note naming the effects its client cannot apply. For
+example, without `artifact_panels` Mira uses `open_app` or answers in chat.
+Unknown capability names are ignored so newer clients stay compatible. Data
+tools are never gated by capabilities; permissions still apply.
+
+An absent declaration means no UI effects, on every transport. Only clients
+that explicitly declare an effect receive its tool:
+
+- Web Mira chat declares `theme`, `sidebar`, `artifact_panels`, `immersive` and
+  `navigate`.
+- The shared AI chat route, including the retained legacy mobile transport,
+  the native `/chat/conversations/:id/messages` route and canonical Live
+  (`/api/v1/assistant/live/tools/execute`) forward only what the client sends.
+  Without a declaration they expose no UI tools, so older mobile builds lose
+  `set_theme` in chat until they update. That is preferable to Mira claiming
+  effects nobody applies.
+- AI agents and Mind have no client that applies markers and get no UI tools.
+- Canonical Live also resolves the user timezone (client value, then saved
+  personal, then workspace preference).
+- Web dashboard Live declares `open_app` as a client function, alongside the
+  existing theme, sidebar and panel functions.
+
+## `open_app`
+
+`open_app` switches to another app in the current workspace. Destinations:
+`home`, `assistant`, `tasks`, `habits`, `calendar`, `finance`, `time_tracker`,
+`mail`, `drive`, `meet`, `notes`, `chat`. It only navigates; it does not read or
+change data. Each client maps destinations to its own routes. Web uses
+`/:wsId/<segment>`, and Web's proxy redirects satellite segments to their owning
+app. Web ignores markers with an unknown destination or an unsafe workspace
+segment. Web Live navigation leaves the Live page.
+
+## Regression coverage
+
+- `packages/ai/src/tools/mira-client-capabilities.test.ts`: resolution, gating,
+  discovery, prompt note.
+- `packages/ai/src/tools/mira-sdk-tool-search.test.ts`: forced-tool fallback.
+- `packages/ai/src/tools/executors/theme.test.ts`: `open_app` marker.
+- `packages/ai/src/chat/google/route-mira-runtime.test.ts`: declared
+  capabilities reach the tool context and prompt.
+- `apps/web/.../components/use-mira-ui-actions.test.tsx`: Web navigation and
+  unsafe markers.
+- `apps/web/.../assistant/use-live-tools.test.tsx`: Web Live `open_app`.
+- `apps/web/src/app/api/v1/assistant/live/tools/execute/route.test.ts`:
+  canonical defaults and timezone.
+- The native messages `route.test.ts`: forwarded and default capabilities.
