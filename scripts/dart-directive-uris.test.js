@@ -93,3 +93,24 @@ test('malformed escapes and interpolation fail closed', () => {
     UNDECODABLE_URI,
   ]);
 });
+
+test("triple-quoted URIs follow Dart's leading-newline rule", () => {
+  for (const literal of [
+    `'''\n${SHAD}'''`,
+    `"""  \n${SHAD}"""`,
+    `r'''\n${SHAD}'''`,
+    `r"""\t\r\n${SHAD}"""`,
+  ]) {
+    assert.deepEqual(directiveUris(`import ${literal};`), [SHAD], literal);
+  }
+});
+
+test('a URI that still spans lines fails closed', () => {
+  assert.deepEqual(
+    directiveUris(`import '''package:shadcn_flutter/\nshadcn_flutter.dart''';`),
+    [UNDECODABLE_URI]
+  );
+  assert.deepEqual(directiveUris(`import '''x\n${SHAD}''';`), [
+    UNDECODABLE_URI,
+  ]);
+});

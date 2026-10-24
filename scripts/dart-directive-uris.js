@@ -120,6 +120,11 @@ function lexString(source, start) {
   const triple = source.startsWith(quote.repeat(3), i);
   const delimiter = triple ? quote.repeat(3) : quote;
   i += delimiter.length;
+  if (triple) {
+    // Dart drops a first line holding only whitespace (raw strings too).
+    const leading = source.slice(i).match(/^[ \t]*\r?\n/u);
+    if (leading) i += leading[0].length;
+  }
   let value = '';
   // Interpolated or malformed literals have no static value.
   let interpolated = false;
@@ -184,8 +189,11 @@ function directiveUris(source) {
       const part = tokens[j];
       if (part.type === 'punct' && part.value === ';') break;
       if (part.type === 'str') {
+        // A URI never contains a line break; treat one as undecodable.
         pending =
-          part.value == null || pending === UNDECODABLE_URI
+          part.value == null ||
+          pending === UNDECODABLE_URI ||
+          /[\r\n]/u.test(part.value)
             ? UNDECODABLE_URI
             : `${pending ?? ''}${part.value}`;
       } else {

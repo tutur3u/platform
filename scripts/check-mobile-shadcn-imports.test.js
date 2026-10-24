@@ -288,3 +288,19 @@ test('escaped shadcn and shim URIs are caught', () => {
     false
   );
 });
+
+test('multiline shadcn imports are caught', () => {
+  const file = 'lib/features/x/view/page.dart';
+  assert.ok(
+    importsShadcn(
+      "import '''\npackage:shadcn_flutter/shadcn_flutter.dart''' as shad;",
+      file
+    )
+  );
+  assert.ok(
+    importsShadcn(
+      "import r'''\n../../../core/widgets/shadcn_flutter_compat.dart''';",
+      file
+    )
+  );
+});
