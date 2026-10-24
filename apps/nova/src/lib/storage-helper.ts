@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 
 export async function downloadPublicObject({
   supabase,
@@ -99,7 +100,7 @@ export async function uploadObject({
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(filePath, file);
+      .upload(encodeStoragePath(filePath), file);
 
     if (uploadError) throw uploadError;
 

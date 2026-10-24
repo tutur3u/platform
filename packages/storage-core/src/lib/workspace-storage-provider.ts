@@ -20,6 +20,7 @@ import {
   type StorageObject,
 } from '@tuturuuu/types/primitives/StorageObject';
 import {
+  encodeStoragePath,
   sanitizeFilename,
   sanitizeFolderName,
   sanitizePath,
@@ -36,9 +37,6 @@ import { createGuardedSupabaseStorageReadUrl } from './storage-download-sign';
 import { fitsStorageBudget, readStorageUsageBytes } from './storage-quota';
 import { getStorageLimit } from './storage-quota-reader';
 import { assertStorageUploadSize } from './storage-upload-capacity';
-
-export { WorkspaceStorageError } from './storage-download-error';
-
 import {
   DRIVE_R2_ACCESS_KEY_ID_SECRET,
   DRIVE_R2_BUCKET_SECRET,
@@ -50,6 +48,8 @@ import {
   WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   type WorkspaceStorageProvider,
 } from './workspace-storage-config';
+
+export { WorkspaceStorageError } from './storage-download-error';
 
 const R2_SIGNED_URL_TTL_SECONDS = 900;
 const SUPABASE_STORAGE_LIST_PAGE_SIZE = 1000;
@@ -1324,7 +1324,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
 
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .upload(fullPath, buffer, {
+    .upload(encodeStoragePath(fullPath), buffer, {
       contentType: options?.contentType || 'application/octet-stream',
       upsert: options?.upsert ?? false,
     });
@@ -1336,12 +1336,11 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
     );
   }
 
-  const prefix = `${wsId}/`;
+  // storage-js echoes the encoded transport key; return the logical key so it
+  // round-trips through the download and signing helpers unchanged.
   return {
-    path: data.path.startsWith(prefix)
-      ? data.path.substring(prefix.length)
-      : relativePath,
-    fullPath: data.fullPath ?? fullPath,
+    path: relativePath,
+    fullPath: data.fullPath ? `workspaces/${fullPath}` : fullPath,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }
@@ -1513,7 +1512,7 @@ export async function createWorkspaceStorageUploadPayload(
   });
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .createSignedUploadUrl(fullPath, {
+    .createSignedUploadUrl(encodeStoragePath(fullPath), {
       upsert: options?.upsert ?? false,
     });
 
@@ -1604,9 +1603,9 @@ export async function createWorkspaceStorageFolderObject(
   }
 
   const supabase = await createDynamicAdminClient();
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('workspaces')
-    .upload(folderPath, new Uint8Array(0), {
+    .upload(encodeStoragePath(folderPath), new Uint8Array(0), {
       contentType: 'text/plain',
       upsert: false,
     });
@@ -1622,7 +1621,7 @@ export async function createWorkspaceStorageFolderObject(
 
   return {
     path: relativeFolderPath,
-    fullPath: data.path,
+    fullPath: folderPath,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }

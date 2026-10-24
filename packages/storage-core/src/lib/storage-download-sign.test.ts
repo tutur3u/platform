@@ -45,6 +45,18 @@ describe('private Storage URL issuance', () => {
     expect(ticket.expiresAt - ticket.issuedAt).toBe(60);
   });
 
+  it('encodes URL delimiters in a legacy object key before signing', async () => {
+    await createGuardedSupabaseStorageReadUrl(
+      supabase,
+      'ws-1',
+      'ws-1/docs?draft#final'
+    );
+
+    expect(sign).toHaveBeenCalledWith('ws-1/docs%3Fdraft%23final', 3600, {
+      transform: undefined,
+    });
+  });
+
   it('does not issue a direct URL as a fallback after failure or emergency disable', async () => {
     sign.mockRejectedValue(
       new Error('request failed with private-cdn-credential')
