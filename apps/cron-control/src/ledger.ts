@@ -137,7 +137,11 @@ export class LedgerCore {
     slot,
   }: CompleteInput): JobState {
     const state = this.#read(jobId);
-    if (state.lastSlot !== slot || state.generation !== generation)
+    if (
+      state.leaseUntil === 0 ||
+      state.lastSlot !== slot ||
+      state.generation !== generation
+    )
       return state;
     const next: JobState = {
       ...this.#charge(state, outcome, maxConsecutiveFailures),

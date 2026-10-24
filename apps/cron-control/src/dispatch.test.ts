@@ -229,14 +229,9 @@ it('a 200 reporting ok:false is a failed run that exhausts the budget', async ()
   });
 });
 
-it('keeps status-based success for ok:true, non-JSON and oversized bodies', async () => {
-  const bodies = [
-    JSON.stringify({ ok: true }),
-    'done',
-    JSON.stringify({ ok: false, padding: 'x'.repeat(70 * 1024) }),
-  ];
-  for (const body of bodies) {
-    const h = harness(() => new Response(body, { status: 200 }));
+it('accepts complete JSON summaries for existing processor contracts', async () => {
+  for (const body of [{ ok: true }, { deleted: 0 }]) {
+    const h = harness(() => Response.json(body));
     const [report] = await dispatchScheduledJobs(
       DAILY,
       T0,
@@ -244,6 +239,106 @@ it('keeps status-based success for ok:true, non-JSON and oversized bodies', asyn
       h.deps
     );
     expect(report).toMatchObject({ outcome: 'ok', status: 200 });
+  }
+});
+
+it.each([
+  ['non-JSON', 'done'],
+  ['truncated', '{"ok":true'],
+  ['null', 'null'],
+  ['array', '[]'],
+  ['empty', ''],
+  ['oversized', JSON.stringify({ ok: false, padding: 'x'.repeat(70 * 1024) })],
+])(
+  'charges inconclusive 200 summaries against the failure budget: %s',
+  async (_label, body) => {
+    const h = harness(() => new Response(body));
+    const enabled = {
+      ...env,
+      CRON_CONTROL_ENABLED_JOBS: 'tasks-cleanup-media',
+    };
+    for (let day = 0; day < MAX_CONSECUTIVE_FAILURES + 1; day++) {
+      const [report] = await dispatchScheduledJobs(
+        DAILY,
+        T0 + day * DAY,
+        enabled,
+        h.deps
+      );
+      expect(report.outcome).toBe(
+        day < MAX_CONSECUTIVE_FAILURES ? 'unknown' : 'skipped'
+      );
+    }
+    expect(h.calls).toHaveLength(MAX_CONSECUTIVE_FAILURES);
+    expect(h.core.status()['tasks-cleanup-media']).toMatchObject({
+      consecutiveFailures: MAX_CONSECUTIVE_FAILURES,
+      lastOutcome: 'unknown',
+      stopped: true,
+    });
+  }
+);
+
+it.each(['TimeoutError', 'AbortError', 'Error'])(
+  'does not accept a body read %s after 200 headers',
+  async (name) => {
+    const h = harness(
+      () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new DOMException('body read failed', name));
+            },
+          })
+        )
+    );
+    const [report] = await dispatchScheduledJobs(
+      DAILY,
+      T0,
+      { ...env, CRON_CONTROL_ENABLED_JOBS: 'tasks-cleanup-media' },
+      h.deps
+    );
+    expect(report).toMatchObject({
+      attempts: 1,
+      outcome: 'unknown',
+      status: 200,
+    });
+    expect(h.core.status()['tasks-cleanup-media'].consecutiveFailures).toBe(1);
+  }
+);
+
+it('accepts the exact byte cap and cancels a chunk exceeding the remaining budget', async () => {
+  const limit = 64 * 1024;
+  for (const bytes of [limit, limit + 1]) {
+    const body = JSON.stringify({ ok: true, padding: '' });
+    const text = body.replace(
+      '"padding":""',
+      `"padding":"${'x'.repeat(bytes - body.length)}"`
+    );
+    const cancel = vi.fn();
+    const h = harness(
+      () =>
+        new Response(
+          new ReadableStream(
+            {
+              start(controller) {
+                controller.enqueue(new TextEncoder().encode(text));
+              },
+              pull(controller) {
+                controller.close();
+              },
+              cancel,
+            },
+            { highWaterMark: 0 }
+          )
+        )
+    );
+    const [report] = await dispatchScheduledJobs(
+      DAILY,
+      T0,
+      { ...env, CRON_CONTROL_ENABLED_JOBS: 'tasks-cleanup-media' },
+      h.deps
+    );
+    expect(report.outcome).toBe(bytes === limit ? 'ok' : 'unknown');
+    if (bytes > limit) expect(cancel).toHaveBeenCalledOnce();
   }
 });
 
