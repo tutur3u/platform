@@ -2,13 +2,11 @@ part of 'assistant_tool_results_section.dart';
 
 class _AssistantGeneratedImageViewer extends StatefulWidget {
   const _AssistantGeneratedImageViewer({
-    required this.heroTag,
     required this.initialUrl,
     required this.storagePath,
     required this.alt,
   });
 
-  final String heroTag;
   final String initialUrl;
   final String? storagePath;
   final String alt;
@@ -48,21 +46,18 @@ class _AssistantGeneratedImageViewerState
                   child: InteractiveViewer(
                     minScale: 0.75,
                     maxScale: 5,
-                    child: Hero(
-                      tag: widget.heroTag,
-                      child: Image.network(
-                        url,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            LucideIcons.imageOff,
-                            color: AppTokens.of(
-                              context,
-                            ).colorScheme.mutedForeground,
-                            size: 44,
-                          );
-                        },
-                      ),
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          LucideIcons.imageOff,
+                          color: AppTokens.of(
+                            context,
+                          ).colorScheme.mutedForeground,
+                          size: 44,
+                        );
+                      },
                     ),
                   ),
                 );

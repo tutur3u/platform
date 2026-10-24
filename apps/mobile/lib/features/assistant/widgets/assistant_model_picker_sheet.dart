@@ -265,6 +265,7 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
     child: AppChip(
       label: Text(label),
       selected: selected,
+      inMutuallyExclusiveGroup: true,
       onSelected: enabled ? (_) => onSelected() : null,
     ),
   );

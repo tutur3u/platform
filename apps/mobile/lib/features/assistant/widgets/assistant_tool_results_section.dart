@@ -392,9 +392,9 @@ class _AssistantGeneratedImageState extends State<_AssistantGeneratedImage> {
   Future<void> _openFullscreen(String imageUrl) async {
     await showAppSheet<void>(
       context: context,
-      size: AppSheetSize.large,
+      size: AppSheetSize.full,
+      enableDrag: false,
       builder: (_) => _AssistantGeneratedImageViewer(
-        heroTag: _heroTag(imageUrl),
         initialUrl: imageUrl,
         storagePath: widget.storagePath,
         alt: widget.alt,

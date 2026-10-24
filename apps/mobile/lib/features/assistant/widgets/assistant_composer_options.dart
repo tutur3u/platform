@@ -121,8 +121,10 @@ class AssistantComposerOptions extends StatelessWidget {
                       for (final attachment in chatState.composerAttachments)
                         AssistantAttachmentPreview(
                           attachment: attachment,
-                          onRemove: () =>
-                              unawaited(onRemoveAttachment(attachment.id)),
+                          onRemove: () {
+                            Navigator.of(sheetContext).pop();
+                            unawaited(onRemoveAttachment(attachment.id));
+                          },
                         ),
                       option(
                         _ComposerOption.attach,

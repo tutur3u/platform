@@ -140,7 +140,8 @@ class _AssistantMermaidDiagramCardState
   Future<void> _openFullscreen() async {
     await showAppSheet<void>(
       context: context,
-      size: AppSheetSize.large,
+      size: AppSheetSize.full,
+      enableDrag: false,
       builder: (_) => AssistantMermaidViewerPage(definition: widget.definition),
     );
   }

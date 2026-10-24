@@ -4590,7 +4590,6 @@
   "assistantSettingsSelectionDenied": "Bạn không thể thay đổi cài đặt cuộc trò chuyện này. Cài đặt trước đó và bản nháp được giữ lại.",
   "assistantSettingsSelectionUnconfirmed": "Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.",
   "assistantExpandPrompt": "Mở rộng lời nhắc",
-  "assistantMinimizePrompt": "Thu gọn lời nhắc",
   "assistantSettingInfo": "Thông tin về {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4668,5 +4667,6 @@
   "settingsSearchBrowserTerm": "trình duyệt",
   "profilePhoto": "Ảnh đại diện",
   "profileCoverBanner": "Ảnh bìa",
-  "profileMediaSet": "Đã đặt"
+  "profileMediaSet": "Đã đặt",
+  "assistantSubmitSuccess": "Đã gửi thành công"
 }

@@ -52,7 +52,6 @@ void registerSettingsAssistantShellChecks() {
                         capturedCurrent = isCurrent;
                         return AssistantSettingsHub(
                           workspaceId: 'ws',
-                          locations: const {Routes.settings},
                           isScopeCurrent: isCurrent,
                           preferences: preferences,
                           localModels: models,

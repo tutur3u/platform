@@ -31,8 +31,11 @@ Future<void> openPersonality(
 }
 
 void expectChrome() {
-  expect(find.byType(AppSheetScaffold), findsWidgets);
-  expect(find.byKey(const ValueKey('app-sheet-close')), findsWidgets);
+  expect(find.byType(AppSheetScaffold).hitTestable(), findsOneWidget);
+  expect(
+    find.byKey(const ValueKey('app-sheet-close')).hitTestable(),
+    findsOneWidget,
+  );
   expect(find.byType(AppBar), findsNothing);
 }
 
@@ -174,7 +177,12 @@ void main() {
         final dock = tester.getRect(
           find.byKey(const ValueKey('app-sheet-close')).last,
         );
-        expect(dock.bottom, lessThanOrEqualTo(400));
+        expect(
+          find.byKey(const ValueKey('app-sheet-close')).last.hitTestable(),
+          findsOneWidget,
+        );
+        expect(dock.size.height, greaterThanOrEqualTo(48));
+        expect(tester.getRect(save).top, greaterThanOrEqualTo(dock.bottom));
         expect(tester.getRect(save).bottom, lessThanOrEqualTo(400));
         expect(tester.getRect(save).overlaps(dock), isFalse);
         expect(save.hitTestable(), findsOneWidget);

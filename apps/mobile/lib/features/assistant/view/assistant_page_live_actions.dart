@@ -162,16 +162,11 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     await _liveCubit.disconnect();
     await _localCubit.invalidate();
     if (!mounted || scope != _localScope()) return;
-    final location = GoRouterState.of(context).matchedLocation;
     await pushScopedSettingsPage(
       context,
       asSheet: true,
-      builder: (_, isCurrent) => AssistantSettingsHub(
-        hosted: true,
-        workspaceId: wsId,
-        locations: {location},
-        isScopeCurrent: isCurrent,
-      ),
+      builder: (_, isCurrent) =>
+          AssistantSettingsHub(workspaceId: wsId, isScopeCurrent: isCurrent),
     );
     if (!mounted || scope != _localScope()) return;
     await refreshAssistantSettings(

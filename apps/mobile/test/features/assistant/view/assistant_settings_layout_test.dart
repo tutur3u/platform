@@ -45,33 +45,37 @@ void main() {
                 textScaler: TextScaler.linear(scale),
                 padding: const EdgeInsets.fromLTRB(0, 47, 0, 34),
               ),
-              child: AssistantSettingsHub(
-                workspaceId: 'ws',
-                locations: const {'/test'},
-                isScopeCurrent: () => true,
-                preferences: preferences,
-                localModels: models,
+              child: SafeArea(
+                child: AssistantSettingsHub(
+                  workspaceId: 'ws',
+                  isScopeCurrent: () => true,
+                  preferences: preferences,
+                  localModels: models,
+                ),
               ),
             ),
           ),
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsOneWidget);
         expect(find.text('Assistant Settings'), findsOneWidget);
-        final header = tester.getRect(find.byType(MobileSectionAppBar));
+        final header = tester.getRect(find.text('Assistant Settings'));
         final setting = tester.getRect(find.byType(AppToggleRow));
-        expect(header.top, 47);
-        expect(setting.top - header.bottom, inInclusiveRange(0, 12));
+        expect(header.top, greaterThanOrEqualTo(47));
+        expect(setting.top - header.bottom, greaterThanOrEqualTo(0));
         expect(setting.left, 16);
         expect(setting.right, width - 16);
 
-        final dock = tester.getRect(
-          find.byKey(const ValueKey('settings-route-back')),
-        );
-        expect(dock.bottom, lessThanOrEqualTo(844 - 34));
         final scroll = find.byType(ListView).first;
-        await tester.scrollUntilVisible(find.text('On-device models'), 300);
+        await tester.scrollUntilVisible(
+          find.text('On-device models'),
+          300,
+          scrollable: find
+              .descendant(of: scroll, matching: find.byType(Scrollable))
+              .first,
+        );
         expect(tester.getTopLeft(find.text('On-device models')).dx, 16);
         tester
             .state<ScrollableState>(
@@ -103,7 +107,10 @@ void main() {
           l.assistantLocalRemote,
         );
         expect(finalControl, findsOneWidget);
-        expect(tester.getRect(finalControl).bottom, lessThan(dock.top));
+        expect(
+          844 - 34 - tester.getRect(finalControl).bottom,
+          greaterThanOrEqualTo(16),
+        );
         final info = find.byTooltip(
           l.assistantSettingInfo(l.assistantLocalTitle),
         );

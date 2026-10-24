@@ -32,54 +32,59 @@ class AssistantModelPickerTile extends StatelessWidget {
       selected: selected,
       enabled: allowed,
       button: true,
-      child: AppCard(
-        onTap: allowed ? onSelect : null,
-        fillColor: selected
-            ? AppTokens.of(context).colorScheme.muted
-            : AppTokens.of(context).colorScheme.card,
-        child: Row(
-          children: [
-            Icon(allowed ? LucideIcons.sparkles : LucideIcons.lock),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    model.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    [model.provider, if (price != null) price].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (model.description case final description?)
+      child: Opacity(
+        opacity: allowed ? 1 : .5,
+        child: AppCard(
+          onTap: allowed ? onSelect : null,
+          fillColor: selected
+              ? AppTokens.of(context).colorScheme.muted
+              : AppTokens.of(context).colorScheme.card,
+          child: Row(
+            children: [
+              Icon(allowed ? LucideIcons.sparkles : LucideIcons.lock),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  if (model.tags.isNotEmpty)
-                    Text(
-                      model.tags.take(3).join(' · '),
+                      model.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
+                    Text(
+                      [model.provider, if (price != null) price].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (model.description case final description?)
+                      Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    if (model.tags.isNotEmpty)
+                      Text(
+                        model.tags.take(3).join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
-            ),
-            if (showFavorite)
-              AppIconButton(
-                tooltip: favorited
-                    ? context.l10n.assistantModelUnfavorite
-                    : context.l10n.assistantModelFavorite,
-                icon: Icon(favorited ? LucideIcons.star : LucideIcons.starOff),
-                onPressed: favoriteEnabled ? onFavorite : null,
-              ),
-            if (selected) const Icon(LucideIcons.check),
-          ],
+              if (showFavorite)
+                AppIconButton(
+                  tooltip: favorited
+                      ? context.l10n.assistantModelUnfavorite
+                      : context.l10n.assistantModelFavorite,
+                  icon: Icon(
+                    favorited ? LucideIcons.star : LucideIcons.starOff,
+                  ),
+                  onPressed: favoriteEnabled ? onFavorite : null,
+                ),
+              if (selected) const Icon(LucideIcons.check),
+            ],
+          ),
         ),
       ),
     );

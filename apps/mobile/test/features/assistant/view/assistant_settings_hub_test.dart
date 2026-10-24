@@ -30,7 +30,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() => registerFallbackValue(() => true));
   testWidgets(
-    'central editor uses shell chrome and confirms saved preference',
+    'central editor uses the shared sheet and confirms saved preference',
     (tester) async {
       final preferences = _Preferences();
       when(
@@ -48,31 +48,23 @@ void main() {
         AssistantSettingsHub(
           localModels: _localModels(),
           workspaceId: 'ws',
-          locations: const {'/test'},
           isScopeCurrent: () => true,
           preferences: preferences,
         ),
       );
       await tester.pumpAndSettle();
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byType(MobileSectionAppBar), findsOneWidget);
+      expect(find.byType(MobileSectionAppBar), findsNothing);
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
       expect(find.text('Assistant Settings'), findsOneWidget);
-      expect(find.byKey(const ValueKey('settings-route-back')), findsOneWidget);
-      expect(find.byType(Image), findsWidgets);
+      expect(find.byKey(const ValueKey('settings-route-back')), findsNothing);
+      expect(find.byType(Image), findsNothing);
       expect(
         tester.getTopLeft(find.byType(AppToggleRow)).dy,
-        greaterThan(tester.getBottomLeft(find.byType(MobileSectionAppBar)).dy),
+        greaterThan(tester.getBottomLeft(find.text('Assistant Settings')).dy),
       );
-      expect(
-        tester
-            .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
-            .title,
-        'Assistant Settings',
-      );
-      expect(
-        tester.widget<ShellMiniNav>(find.byType(ShellMiniNav)).items.single.id,
-        'back',
-      );
+      expect(find.byType(ShellTitleOverride), findsNothing);
+      expect(find.byType(ShellMiniNav), findsNothing);
       expect(
         tester.widget<AppToggleRow>(find.byType(AppToggleRow)).value,
         isTrue,
@@ -107,7 +99,6 @@ void main() {
       AssistantSettingsHub(
         localModels: _localModels(),
         workspaceId: 'ws',
-        locations: const {'/test'},
         isScopeCurrent: () => true,
         preferences: preferences,
       ),
@@ -140,9 +131,7 @@ void main() {
             context: context,
             size: AppSheetSize.large,
             builder: (_) => AssistantSettingsHub(
-              hosted: true,
               workspaceId: 'ws',
-              locations: const {'/test'},
               isScopeCurrent: () => true,
               preferences: preferences,
               localModels: _localModels(),

@@ -36,11 +36,23 @@ void main() {
           findsOneWidget,
         );
         expect(completed, isFalse);
-        await tester.tap(
-          find.widgetWithText(AppButton, action).evaluate().isEmpty
-              ? find.widgetWithText(AppButton, action)
-              : find.widgetWithText(AppButton, action),
+        final button = find.widgetWithText(AppButton, action);
+        expect(button, findsOneWidget);
+        expect(
+          tester.widget<AppButton>(button).variant,
+          action == 'Start a new chat'
+              ? AppButtonVariant.primary
+              : AppButtonVariant.ghost,
         );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is AppButton &&
+                widget.variant == AppButtonVariant.primary,
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(button);
         await tester.pumpAndSettle();
         expect(completed, isTrue);
         expect(result, switch (action) {

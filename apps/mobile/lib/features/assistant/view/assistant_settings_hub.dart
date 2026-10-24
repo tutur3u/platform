@@ -9,10 +9,6 @@ import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dar
 import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
-import 'package:mobile/features/settings/view/settings_route_frame.dart';
-import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
-import 'package:mobile/features/shell/view/shell_mini_nav.dart';
-import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -20,16 +16,12 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 class AssistantSettingsHub extends StatefulWidget {
   const AssistantSettingsHub({
     required this.workspaceId,
-    required this.locations,
     required this.isScopeCurrent,
     this.preferences,
     this.localModels,
-    this.hosted = false,
     super.key,
   });
-  final bool hosted;
   final String workspaceId;
-  final Set<String> locations;
   final bool Function() isScopeCurrent;
   final AssistantPreferences? preferences;
   final AssistantLocalModelsCubit? localModels;
@@ -56,19 +48,12 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.hosted
-      ? AppSheetScaffold(
-          title: context.l10n.assistantSettingsTitle,
-          slivers: [SliverFillRemaining(child: _body(context))],
-        )
-      : SettingsRouteFrame(
-          customNavigation: true,
-          title: context.l10n.assistantSettingsTitle,
-          child: _body(context),
-        );
-  Widget _body(BuildContext context) => Stack(
-    fit: StackFit.expand,
-    children: [
+  Widget build(BuildContext context) => AppSheetScaffold(
+    title: context.l10n.assistantSettingsTitle,
+    padding: EdgeInsets.zero,
+    slivers: [SliverFillRemaining(child: _body(context))],
+  );
+  Widget _body(BuildContext context) =>
       BlocBuilder<AssistantSettingsCubit, AssistantSettingsState>(
         bloc: _settings,
         builder: (context, state) => state.loading
@@ -118,32 +103,5 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
                   ),
                 ],
               ),
-      ),
-      if (!widget.hosted)
-        ShellTitleOverride(
-          ownerId: 'assistant-settings',
-          locations: widget.locations,
-          title: context.l10n.assistantSettingsTitle,
-        ),
-      if (!widget.hosted)
-        ShellMiniNav(
-          ownerId: 'assistant-settings',
-          locations: widget.locations,
-          items: [
-            ShellMiniNavItemSpec(
-              id: 'back',
-              icon: LucideIcons.chevronLeft,
-              label: context.l10n.navBack,
-              onPressed: () => unawaited(Navigator.of(context).maybePop()),
-            ),
-          ],
-        ),
-      if (!widget.hosted)
-        ShellChromeActions(
-          ownerId: 'assistant-settings',
-          locations: widget.locations,
-          actions: const [],
-        ),
-    ],
-  );
+      );
 }

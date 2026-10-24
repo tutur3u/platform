@@ -20563,12 +20563,6 @@ abstract class AppLocalizations {
   /// **'Expand prompt'**
   String get assistantExpandPrompt;
 
-  /// No description provided for @assistantMinimizePrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Minimize prompt'**
-  String get assistantMinimizePrompt;
-
   /// No description provided for @assistantSettingInfo.
   ///
   /// In en, this message translates to:
@@ -20994,6 +20988,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set'**
   String get profileMediaSet;
+
+  /// No description provided for @assistantSubmitSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted successfully'**
+  String get assistantSubmitSuccess;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

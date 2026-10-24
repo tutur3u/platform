@@ -1,5 +1,4 @@
-// Assistant feature parity module: the generic render_ui catalog renderer is
-// intentionally broad, so some style lints are deferred here.
+// The broad render_ui catalog retains its legacy style exceptions.
 // ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, deprecated_member_use, always_put_required_named_parameters_first, unnecessary_raw_strings
 
 import 'dart:convert';
@@ -14,8 +13,8 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-
 import '../models/assistant_models.dart';
 
 typedef AssistantSubmitText = Future<void> Function(String text);
@@ -782,7 +781,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
       }
 
       if (!context.mounted) return;
-      showAppToast(context, message: 'Submitted successfully');
+      showAppToast(context, message: context.l10n.assistantSubmitSuccess);
     } on Exception catch (error) {
       if (!context.mounted) return;
       showAppToast(
@@ -1334,6 +1333,7 @@ class _RenderTabsState extends State<_RenderTabs> {
               AppChip(
                 label: Text(tab.label),
                 selected: _selectedTabId == tab.id,
+                inMutuallyExclusiveGroup: true,
                 onSelected: (_) => setState(() => _selectedTabId = tab.id),
               ),
           ],

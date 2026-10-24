@@ -274,4 +274,28 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   }
+  testWidgets('phone rename Save is visible and tappable with keyboard open', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+    final repo = _Repository();
+    final h = CompactModelHeaderHarness(repository: repo);
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester);
+    await openName(tester);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+    await tester.enterText(input, 'Nova');
+    final save = find.byKey(const ValueKey('assistant-name-save'));
+    expect(save.hitTestable(), findsOneWidget);
+    expect(tester.getBottomRight(save).dy, lessThanOrEqualTo(544));
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(repo.writes, ['Nova']);
+    expect(input, findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

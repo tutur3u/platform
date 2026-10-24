@@ -52,7 +52,8 @@ class AssistantAttachmentPreview extends StatelessWidget {
                 context: context,
                 builder: (_) =>
                     _MediaPreviewDialog(attachment: attachment, label: label),
-                size: AppSheetSize.large,
+                size: AppSheetSize.full,
+                enableDrag: false,
               )
             : documentUri != null &&
                   attachment.uploadState ==
