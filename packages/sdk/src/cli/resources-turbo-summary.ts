@@ -1,5 +1,5 @@
 import { constants, existsSync, readdirSync } from 'node:fs';
-import { open, readdir, rm } from 'node:fs/promises';
+import { lstat, open, readdir, rm } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 
 // Report Turbo cache reuse after a resource-managed command. Turbo only writes
@@ -16,6 +16,30 @@ export type TurboSummaryPlan = {
 const runners = new Set(['bun', 'bunx', 'npx', 'pnpm', 'yarn']);
 const turboNames = new Set(['turbo', 'turbo:local']);
 const skipFlags = ['--dry', '--dry-run', '--graph', '--help', '-h'];
+
+async function openRegularFile(path: string) {
+  const noFollow = constants.O_NOFOLLOW || 0;
+  const flags = constants.O_RDONLY | noFollow | (constants.O_NONBLOCK || 0);
+  if (noFollow) return open(path, flags);
+  const before = await lstat(path, { bigint: true });
+  if (!before.isFile() || before.ino === 0n)
+    throw new Error('not-a-regular-file');
+  const file = await open(path, flags);
+  try {
+    const after = await file.stat({ bigint: true });
+    if (
+      !after.isFile() ||
+      after.dev !== before.dev ||
+      after.ino !== before.ino
+    ) {
+      throw new Error('file-changed');
+    }
+    return file;
+  } catch (error) {
+    await file.close();
+    throw error;
+  }
+}
 
 function turboRunIndex(name: string, args: string[]) {
   const tool = basename(name);
@@ -193,10 +217,7 @@ export async function reportTurboSummary(
     if (candidates.length !== 1) return;
     const name = candidates[0]!;
     const path = join(directory, name);
-    const file = await open(
-      path,
-      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
-    );
+    const file = await openRegularFile(path);
     let content: string;
     try {
       if (!(await file.stat()).isFile()) return;
