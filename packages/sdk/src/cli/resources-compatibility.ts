@@ -69,6 +69,10 @@ export async function assertBudgetSetupOwner(home: string, incoming: string) {
   const expected = installRoot(verifiedGlobal ?? incoming);
   let upgrading = false;
   for (const entry of await launchers(home)) {
+    if (!entry.content.includes('# Managed by ttr resources'))
+      throw new Error(
+        `Refusing to overwrite unmanaged shim: ${entry.path}. Inspect and move that file explicitly, then rerun setup from ~/.bun/bin/ttr; --force never replaces unmanaged files.`
+      );
     if (entry.content.split('\n').includes(budgetLauncherProtocol)) continue;
     upgrading = true;
     const parsed = / exec ('(?:[^']|'\\'')*') ('(?:[^']|'\\'')*') shim /u.exec(
