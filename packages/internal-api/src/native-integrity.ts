@@ -9,9 +9,9 @@ import type {
   NativeIntegrityProof,
   NativeIntegrityReason,
   NativeIntegrityResult,
-} from './native-integrity-types.js';
+} from './native-integrity-types';
 
-export type * from './native-integrity-types.js';
+export type * from './native-integrity-types';
 
 const hashSchema = z
   .string()
@@ -323,5 +323,5 @@ export class NativeIntegrityService {
   }
 }
 
-export { createAppleIntegrityVerifier } from './native-integrity-apple.js';
-export { createPlayIntegrityVerifier } from './native-integrity-play.js';
+export { createAppleIntegrityVerifier } from './native-integrity-apple';
+export { createPlayIntegrityVerifier } from './native-integrity-play';

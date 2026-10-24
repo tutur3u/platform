@@ -5,7 +5,7 @@ import {
   X509Certificate,
 } from 'node:crypto';
 import { z } from 'zod';
-import { APPLE_APP_ATTEST_ROOT } from './native-integrity-apple-root.js';
+import { APPLE_APP_ATTEST_ROOT } from './native-integrity-apple-root';
 import {
   decodeBase64,
   decodeHash,
@@ -13,7 +13,7 @@ import {
   integrityBytesSchema,
   parseIntegrityDer,
   readIntegrityCbor,
-} from './native-integrity-binary.js';
+} from './native-integrity-binary';
 
 const attestationSchema = z.object({
   fmt: z.literal('apple-appattest'),

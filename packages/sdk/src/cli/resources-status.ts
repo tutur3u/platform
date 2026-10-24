@@ -5,6 +5,7 @@ import {
   processCpuTable,
   readActivity,
 } from './resources-activity';
+import type { budgetStatus } from './resources-budget';
 import type { ResourceOwner } from './resources-slots';
 
 export function formatDuration(seconds: number) {
@@ -74,6 +75,7 @@ export async function resourceStatusDetails(
   return { ownerDetails, waitingDetails, warnings };
 }
 
+const round = (value: number) => Math.round(value * 10) / 10;
 export function renderResourceStatus(result: {
   enabled: boolean;
   machine: { memoryGiB: number; cpus: number };
@@ -90,11 +92,22 @@ export function renderResourceStatus(result: {
     ReturnType<typeof resourceStatusDetails>
   >['waitingDetails'];
   warnings: string[];
+  budget?: ReturnType<typeof budgetStatus>;
 }) {
   const lines = [
     `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs`,
     `Limits: ${result.laneCount} base lane(s), max ${result.maxLanes} (host allows ${result.effectiveLanes}), burst ${result.burst.eligible ? 'eligible' : result.burst.reason}, Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}`,
   ];
+  if (result.budget) {
+    const { ceiling, used } = result.budget;
+    lines.push(
+      `Budget: ${used.lanes}/${ceiling.lanes} lanes, ${used.tokens}/${ceiling.tokens} tokens, ${round(used.memoryGiB)}/${ceiling.memoryGiB} GiB; borrowing ${result.budget.borrow ? 'on' : 'off'}`
+    );
+    for (const project of result.budget.projects)
+      lines.push(
+        `  ${project.id}: ${project.used.lanes}/${project.share.lanes} lanes, ${project.used.tokens}/${project.share.tokens} tokens, ${round(project.used.memoryGiB)}/${project.share.memoryGiB} GiB${project.borrowing.lanes || project.borrowing.tokens || project.borrowing.memoryGiB ? ` (borrowing ${project.borrowing.lanes} lanes, ${project.borrowing.tokens} tokens, ${round(project.borrowing.memoryGiB)} GiB)` : ''}, ${project.waiting} waiting`
+      );
+  }
   if (result.ownerDetails.length) {
     lines.push(`Running (${result.ownerDetails.length}):`);
     for (const owner of result.ownerDetails)

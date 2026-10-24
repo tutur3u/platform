@@ -3,6 +3,7 @@ import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -172,7 +173,7 @@ class _ThemeTile extends StatelessWidget {
                       ),
                     ),
                     if (selected)
-                      Icon(shad.LucideIcons.circleCheck, size: 18, color: ring),
+                      Icon(LucideIcons.circleCheck, size: 18, color: ring),
                   ],
                 ),
               ),

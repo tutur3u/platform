@@ -16,6 +16,8 @@ import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/ui/components/app_option_tile.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -52,6 +54,7 @@ import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
+import 'package:mobile/features/settings/view/timezone_picker_sheet.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -85,6 +88,7 @@ part 'settings_assistant_shell_checks.dart';
 part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
 part 'settings_appearance_shell_checks.dart';
+part 'settings_timezone_picker_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
@@ -96,6 +100,7 @@ void main() {
   registerSettingsAssistantEntrypointChecks();
   registerSettingsSecretsShellChecks();
   registerSettingsAppearanceShellChecks();
+  registerTimezonePickerChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(
@@ -116,6 +121,7 @@ void main() {
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
       'packages/shadcn_flutter/LucideIcons':
           'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
+      'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
@@ -516,17 +522,15 @@ void main() {
     await _settle(tester);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
-    expect(find.byType(ListTile).evaluate().length, lessThan(30));
-    expect(
-      find.widgetWithText(ListTile, supportedTimezones.last),
-      findsNothing,
-    );
-    await tester.enterText(find.byType(TextField), supportedTimezones.last);
+    expect(find.byType(AppOptionTile).evaluate().length, lessThan(30));
+    // Zones sort west to east, so Tongatapu (GMT+13) starts off-screen.
+    const zone = 'Pacific/Tongatapu';
+    expect(supportedTimezones, contains(zone));
+    final last = find.byKey(const ValueKey('timezone-option-$zone'));
+    expect(last, findsNothing);
+    await tester.enterText(find.byType(TextField), 'tongatapu');
     await _settle(tester);
-    expect(
-      find.widgetWithText(ListTile, supportedTimezones.last),
-      findsOneWidget,
-    );
+    expect(last, findsOneWidget);
     await tester.binding.handlePopRoute();
     await _settle(tester);
     verifyNever(() => h.timezone.save(any()));
@@ -596,12 +600,13 @@ void main() {
     addTearDown(tester.view.resetViewInsets);
     await tester.enterText(find.byType(TextField), 'Paris');
     await _settle(tester);
+    final paris = find.byKey(const ValueKey('timezone-option-Europe/Paris'));
     await tester.scrollUntilVisible(
-      find.widgetWithText(ListTile, 'Europe/Paris'),
+      paris,
       60,
       scrollable: find
           .descendant(
-            of: find.byType(CustomScrollView),
+            of: find.byType(TimezonePickerSheet),
             matching: find.byType(Scrollable),
           )
           .first,
@@ -609,7 +614,7 @@ void main() {
     await _settle(tester);
     expect(find.byType(MorphingNavigationBar), findsNothing);
     await _capture(tester, 'settings-timezone-keyboard-large');
-    await tester.tap(find.widgetWithText(ListTile, 'Europe/Paris'));
+    await tester.tap(paris);
     await _settle(tester);
     verify(() => h.timezone.save('Europe/Paris')).called(1);
     expect(h.router.state.matchedLocation, Routes.settings);

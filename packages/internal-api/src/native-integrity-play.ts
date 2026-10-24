@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { decodeHash } from './native-integrity-binary.js';
+import { decodeHash } from './native-integrity-binary';
 
 const decodedSchema = z.object({
   tokenPayloadExternal: z.object({

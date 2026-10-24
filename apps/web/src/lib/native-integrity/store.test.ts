@@ -1,21 +1,9 @@
 // @vitest-environment node
 
-import { type ChildProcess, execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { promisify } from 'node:util';
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nativeIntegrityRuntime } from './runtime';
+import { MemoryNativeIntegrityRedis } from './store-memory-fixture';
 
 const runtimeMocks = vi.hoisted(() => ({ configuredRedis: vi.fn() }));
 vi.mock('./store', async (original) => ({
@@ -30,10 +18,7 @@ import {
   revokeNativeIntegrityActorKeys,
 } from './store';
 
-const execute = promisify(execFile);
-let process: ChildProcess;
-let scratch: string;
-let client: NativeIntegrityRedisAdapter;
+let client: MemoryNativeIntegrityRedis;
 const now = 1_800_000_000_000;
 const challenge = (id: string) => ({
   id,
@@ -53,74 +38,8 @@ const key = {
   platform: 'ios' as const,
 };
 
-beforeAll(async () => {
-  scratch = await mkdtemp(join(tmpdir(), 'native-integrity-redis-'));
-  const socket = join(scratch, 'redis.sock');
-  process = spawn(
-    'redis-server',
-    [
-      '--port',
-      '0',
-      '--unixsocket',
-      socket,
-      '--unixsocketperm',
-      '700',
-      '--save',
-      '',
-      '--appendonly',
-      'no',
-      '--dir',
-      scratch,
-    ],
-    { stdio: ['ignore', 'pipe', 'pipe'] }
-  );
-  await new Promise<void>((resolve, reject) => {
-    const deadline = setTimeout(
-      () => reject(new Error('Redis fixture startup timed out')),
-      4000
-    );
-    process.once('error', reject);
-    process.stdout?.on('data', (chunk: Buffer) => {
-      if (
-        chunk.toString().toLowerCase().includes('ready to accept connections')
-      ) {
-        clearTimeout(deadline);
-        resolve();
-      }
-    });
-    process.once('exit', () =>
-      reject(new Error('Redis fixture exited before ready'))
-    );
-  });
-  const command = async (args: string[]) => {
-    const result = await execute(
-      'redis-cli',
-      ['-s', socket, '--json', ...args],
-      { timeout: 4000, maxBuffer: 32768 }
-    );
-    return JSON.parse(result.stdout);
-  };
-  client = {
-    eval: (script, keys, args) =>
-      command([
-        'EVAL',
-        script,
-        String(keys.length),
-        ...keys,
-        ...args.map(String),
-      ]),
-    get: (name) => command(['GET', name]),
-  };
-});
-afterAll(async () => {
-  if (process && process.exitCode === null) {
-    const closed = new Promise<void>((resolve) =>
-      process.once('exit', () => resolve())
-    );
-    process.kill('SIGTERM');
-    await closed;
-  }
-  if (scratch) await rm(scratch, { recursive: true, force: true });
+beforeEach(() => {
+  client = new MemoryNativeIntegrityRedis();
 });
 
 describe('native integrity atomic Redis operations', () => {
@@ -462,4 +381,42 @@ it('fails closed on a one-call global budget that cannot provide a pre-exhaustio
     )('https://oauth2.googleapis.com/token', { method: 'POST' })
   ).rejects.toThrow('dispatch disabled');
   expect(network).not.toHaveBeenCalled();
+});
+
+it('expires nonces and quota windows without waiting on external Redis', async () => {
+  let clock = now;
+  const store = createNativeIntegrityStore(client, () => clock);
+  const quota = { limit: 1, windowSeconds: 60 };
+  expect(await store.issueChallenge(challenge('ttl-one'), quota)).toBe(true);
+  expect(await store.issueChallenge(challenge('ttl-two'), quota)).toBe(false);
+  client.advance(60_000);
+  clock += 60_000;
+  expect(
+    await store.issueChallenge(
+      { ...challenge('ttl-two'), expiresAt: clock + 120_000 },
+      quota
+    )
+  ).toBe(true);
+  client.advance(60_000);
+  clock += 60_000;
+  expect(await store.consumeChallenge('ttl-one')).toBeNull();
+  expect(await store.consumeChallenge('ttl-two')).not.toBeNull();
+});
+it('retains key TTL across counter updates and expires native capability', async () => {
+  let clock = now;
+  const store = createNativeIntegrityStore(client, () => clock);
+  expect(await store.registerKey('actor', 'expiry-key', key)).toBe(true);
+  await store.recordVerifiedPlayCapability('actor');
+  const day = 86_400_000;
+  client.advance(day);
+  clock += day;
+  expect(await store.advanceCounter('actor', 'expiry-key', 0, 1)).toBe(true);
+  client.advance(89 * day);
+  clock += 89 * day;
+  expect(await store.getKey('actor', 'expiry-key')).toBeNull();
+  expect(await store.hasNativeCapability('actor')).toBe(false);
+  expect(await store.registerKey('actor', 'expiry-key', key)).toBe(true);
+});
+it('rejects unmodeled Lua instead of silently accepting script drift', async () => {
+  await expect(client.eval('return 1', [], [])).rejects.toThrow('Unmodeled');
 });

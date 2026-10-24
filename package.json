@@ -60,7 +60,8 @@
     "nanoid@>=5.0.0 <5.1.16": "5.1.16",
     "@opentelemetry/core@>=2.0.0 <2.8.0": "2.8.0",
     "lodash-es@<4.18.0": "4.18.0",
-    "nanoid@>=3.0.0 <3.3.18": "3.3.18"
+    "nanoid@>=3.0.0 <3.3.18": "3.3.18",
+    "@azure/msal-node": "7.1.1"
   },
   "packageManager": "bun@1.4.4",
   "private": true,
@@ -119,6 +120,8 @@
     "dev": "bun turbo:local run dev --parallel --filter='!@tuturuuu/tanstack-web'",
     "validate": "node scripts/check.js",
     "validate:now": "node scripts/check.js --force-now",
+    "sdk:dev-pack": "node scripts/ci/sdk-dev-pack.js",
+    "sdk:rollout": "node scripts/sdk-rollout.js",
     "check:changed": "node scripts/check-changed.js",
     "check:source-size": "node scripts/check-source-size.js",
     "check:workspace-members": "node scripts/check-workspace-member-type-guard.js",
@@ -127,6 +130,8 @@
     "check:backend": "node scripts/paused-runtimes.js migration",
     "check:mobile": "node scripts/check-mobile.js",
     "check:mobile-api-mappings": "node scripts/check-mobile-api-mappings.js",
+    "check:mobile-lucide": "node scripts/check-mobile-lucide-sync.js",
+    "check:mobile-shadcn": "node scripts/check-mobile-shadcn-imports.js",
     "rust-cache": "node scripts/rust-cache.js",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "dev:mobile:prod": "cd apps/mobile && flutter run --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
