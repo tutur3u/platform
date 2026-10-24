@@ -1,4 +1,4 @@
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import {
   basename,
   dirname,
@@ -64,14 +64,24 @@ const canonical = (path: string) => {
     return resolve(path);
   }
 };
+// A .git directory reads as EISDIR, so one read both classifies and loads
+// the entry without a separate stat that could race with it.
+export const gitEntry = (git: string) => {
+  try {
+    return readFileSync(git, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EISDIR') return undefined;
+    throw error;
+  }
+};
 // The main checkout of a linked worktree (from .git -> gitdir -> commondir),
 // so every Upskii worktree counts against Upskii's share.
 function mainCheckout(cwd: string) {
   for (let dir = resolve(cwd); ; dir = dirname(dir)) {
     try {
-      const git = join(dir, '.git');
-      if (statSync(git).isDirectory()) return dir;
-      const pointer = /^gitdir:\s*(.+)$/mu.exec(readFileSync(git, 'utf8'));
+      const text = gitEntry(join(dir, '.git'));
+      if (text === undefined) return dir;
+      const pointer = /^gitdir:\s*(.+)$/mu.exec(text);
       if (pointer) {
         const gitdir = resolve(dir, pointer[1]!.trim());
         const common = resolve(

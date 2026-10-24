@@ -322,13 +322,14 @@ void main() {
     );
     expect(cubit.state.loading, isFalse);
     expect(cubit.state.resolved, isFalse);
-    expect(find.text('Effective timezone: UTC'), findsNothing);
+    expect(find.text('UTC'), findsNothing);
     expect(api.reads, 0);
     api.personal = 'Asia/Ho_Chi_Minh';
     authEvents.add(_signedIn('user'));
     await tester.pumpAndSettle();
     expect(cubit.state.effective, 'Asia/Ho_Chi_Minh');
     expect(cubit.state.resolved, isTrue);
+    expect(find.text('Ho Chi Minh City\u00a0(GMT+7)'), findsOneWidget);
     expect(find.text('Personal timezone'), findsOneWidget);
     expect(find.text('Workspace timezone'), findsOneWidget);
     expect(api.reads, 2);
@@ -362,7 +363,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(cubit.state.resolved, isFalse);
-      expect(find.text('Effective timezone: UTC'), findsNothing);
+      expect(find.text('UTC'), findsNothing);
       workspaceEvents.add(
         const WorkspaceState(
           status: WorkspaceStatus.loaded,
@@ -374,7 +375,7 @@ void main() {
       delayed.complete({'timezone': 'Asia/Ho_Chi_Minh'});
       await tester.pumpAndSettle();
       expect(cubit.state.effective, 'Europe/London');
-      expect(find.text('Effective timezone: Asia/Ho_Chi_Minh'), findsNothing);
+      expect(find.textContaining('Ho Chi Minh'), findsNothing);
       expect(api.writes, 0);
       await tester.tap(find.text('Workspace timezone'));
       await tester.pump();
@@ -390,7 +391,7 @@ void main() {
     final cubit = await mount(tester, deviceLoader: () => device.future);
     expect(cubit.state.failed, isTrue);
     expect(cubit.state.loading, isFalse);
-    expect(find.text('Effective timezone: UTC'), findsNothing);
+    expect(find.text('UTC'), findsNothing);
     expect(find.text('Unknown'), findsNWidgets(2));
     await cubit.save('UTC');
     expect(api.writes, 0);
@@ -419,7 +420,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       expect(cubit.state.failed, isTrue);
       expect(cubit.state.loading, isFalse);
-      expect(find.text('Effective timezone: UTC'), findsNothing);
+      expect(find.text('UTC'), findsNothing);
       waiting = false;
       api.pending = null;
       await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
@@ -444,12 +445,16 @@ void main() {
       expect(cubit.state.failed, isTrue);
       expect(cubit.state.resolved, isFalse);
       expect(cubit.state.errorMessage, contains('synthetic unavailable'));
-      expect(find.text('Effective timezone: UTC'), findsNothing);
+      expect(find.text('UTC'), findsNothing);
       messenger.setMockMethodCallHandler(channel, (_) async => 'UTC');
       await tester.tap(find.byKey(const ValueKey('timezone-retry-personal')));
       await tester.pumpAndSettle();
       expect(cubit.state.resolved, isTrue);
-      expect(find.text('Effective timezone: UTC'), findsNWidgets(2));
+      // Personal Automatic names the zone in use; the workspace row does
+      // not repeat it.
+      expect(find.text('UTC'), findsOneWidget);
+      expect(find.text('Auto'), findsOneWidget);
+      expect(find.text('Automatic'), findsOneWidget);
       expect(api.writes, 0);
     },
   );

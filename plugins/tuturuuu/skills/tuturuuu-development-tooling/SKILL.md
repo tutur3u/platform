@@ -24,6 +24,8 @@ For observed coordination delays, apply the [autonomy and workflow-learning cont
 For prompt/skill maintenance, use `references/agent-guidance-review.md` for
 placement decisions and realistic routing checks.
 
+- For GitHub App identity and credential boundaries, read
+  `references/bot-identity.md` and the linked owner runbook.
 - For scripts and CI behavior, consult the relevant section of
   `references/ci-tooling-patterns.md`; for protected production publication, use
   `references/production-publication-policy.md`.

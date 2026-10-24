@@ -70,22 +70,14 @@ const serialized = [
   'vercel-production.yaml',
 ];
 // Exceptions retain environment locks, bounded sandbox cleanup, or paused runtimes.
+// Cloudflare app workflows are not exceptions: PR validation supersedes and only
+// the production-only deploy job holds the serialized lock.
 const prExceptions = {
   'desktop-beta.yaml': 'Production publication shares the workflow lock',
-  'colab-cloudflare.yaml': 'Production deployment shares the workflow lock',
-  'coordination-cloudflare.yaml':
-    'Production deployment shares the workflow lock',
-  'cron-control-cloudflare.yaml':
-    'Production deployment shares the workflow lock',
-  'devbox-control-cloudflare.yaml':
-    'Production deployment shares the workflow lock',
-  'lettin-cloudflare.yaml': 'Production deployment shares the workflow lock',
   'calendar-cloudflare.yaml':
     'Staging publication consumes the durable attempt ledger',
   'mail-cloudflare.yaml':
     'Staging publication consumes the durable attempt ledger',
-  'meet-cloudflare.yaml': 'Production deployment shares the workflow lock',
-  'parley-cloudflare.yaml': 'Production deployment shares the workflow lock',
   'playground-runtime-acceptance.yaml':
     'Real sandbox must finish bounded cleanup',
   'docker-setup-check.yaml': 'Docker runtime is paused',
@@ -100,7 +92,12 @@ const mainExceptions = {
   'biome-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
+  'codeql.yml':
+    'Main-push baselines queue so PR new-alert gates compare against a completed scan',
 };
+// Main pushes of these workflows queue (one running, newest pending) instead of
+// cancelling; every other qualification assertion still applies.
+const queuedMainBaselines = new Set(['codeql.yml']);
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)
@@ -310,8 +307,10 @@ test('regression controls reject missing, non-cancelling, SHA-specific and cross
 });
 for (const file of serialized) {
   test(`${file}: expanded queues preserve shared deployment serialization`, () => {
+    // Validation may supersede at workflow level; the deploy job then holds
+    // the serialized production lock.
     const c =
-      workflows[file].concurrency || workflows[file].jobs.deploy.concurrency;
+      workflows[file].jobs?.deploy?.concurrency || workflows[file].concurrency;
     assert.equal(c['cancel-in-progress'], false);
     assert.equal(c.queue, 'max');
     // Staging migrations and Cloudflare deploys are dispatched from main.
@@ -369,7 +368,7 @@ test('preview workflows retain latest-run cancellation instead of a conflicting 
   }
 });
 
-function assertQualification(policy, workflowName) {
+function assertQualification(policy, workflowName, mainPushCancels = true) {
   const first = { ...context('refs/heads/main'), workflow: workflowName };
   const later = { ...first, sha: 'later', run_id: 2 };
   const ordinary = render(policy.group, later);
@@ -393,7 +392,7 @@ function assertQualification(policy, workflowName) {
     qualified.push(group);
   }
   assert.equal(new Set(qualified).size, qualified.length);
-  assert.equal(render(policy['cancel-in-progress'], later), true);
+  assert.equal(render(policy['cancel-in-progress'], later), mainPushCancels);
 }
 for (const [file, workflow] of Object.entries(workflows)) {
   const policies = workflow.concurrency
@@ -404,7 +403,11 @@ for (const [file, workflow] of Object.entries(workflows)) {
   for (const [index, policy] of policies.entries()) {
     if (!policy.group.includes('github.run_attempt')) continue;
     test(`${file} policy ${index}: rerun and dispatch qualify immutable attempts`, () => {
-      assertQualification(policy, workflow.name);
+      assertQualification(
+        policy,
+        workflow.name,
+        !queuedMainBaselines.has(file)
+      );
     });
   }
 }
@@ -542,4 +545,45 @@ test('cancelled Discord PR/main completions never enter the active Modal deploym
     expression(admission, { ...active, event_name: 'workflow_dispatch' }),
     true
   );
+});
+
+test('Cloudflare app PR validation never shares the production deploy lock', () => {
+  for (const file of [
+    'colab-cloudflare.yaml',
+    'coordination-cloudflare.yaml',
+    'cron-control-cloudflare.yaml',
+    'devbox-control-cloudflare.yaml',
+    'lettin-cloudflare.yaml',
+    'meet-cloudflare.yaml',
+    'parley-cloudflare.yaml',
+  ]) {
+    const workflow = workflows[file];
+    const prefix = file.replace(/\.yaml$/u, '');
+    // workflow_call runs inherit the caller's github.workflow, so a literal
+    // prefix keeps one planner's called workflows from replacing each other.
+    assert.ok(workflow.concurrency.group.startsWith(`${prefix}-`), file);
+    assert.notEqual(workflow.concurrency.queue, 'max', file);
+    const deploy = workflow.jobs.deploy;
+    assert.match(String(deploy.if), /refs\/heads\/production/u, file);
+    assert.deepEqual(
+      deploy.concurrency,
+      {
+        group: `${prefix}-production-deploy`,
+        'cancel-in-progress': false,
+        queue: 'max',
+      },
+      file
+    );
+    const pr = context('refs/pull/7/merge', 'a', 1, 'pull_request', 7);
+    const production = context('refs/heads/production', 'b', 2, 'push');
+    assert.equal(render(workflow.concurrency['cancel-in-progress'], pr), true);
+    assert.equal(
+      render(workflow.concurrency['cancel-in-progress'], production),
+      false
+    );
+    assert.notEqual(
+      render(workflow.concurrency.group, pr),
+      render(workflow.concurrency.group, production)
+    );
+  }
 });

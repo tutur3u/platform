@@ -22,10 +22,7 @@ import {
 } from '@/lib/chat/private-rpc';
 import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 import { AiStreamError } from './ai-stream-error';
-import {
-  attachmentSourceDownloadPath,
-  authorizeAttachmentSource,
-} from './attachment-source-access';
+import { authorizeAttachmentSource } from './attachment-source-access';
 
 export type ChatMessageAttachmentInput = {
   contentType?: string | null;
@@ -220,10 +217,11 @@ async function copyAttachmentInputsToAiResources({
       const { provider } = await resolveWorkspaceStorageProvider(
         source.sourceWsId
       );
+      // Pass the literal key; the storage adapter encodes it once for Supabase.
       const downloaded = await downloadWorkspaceStorageObjectForProvider(
         source.sourceWsId,
         provider,
-        attachmentSourceDownloadPath(source.path, provider)
+        source.path
       );
       downloadedBytes += downloaded.buffer.byteLength;
       if (downloadedBytes > MAX_AI_ATTACHMENT_BYTES) {

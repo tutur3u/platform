@@ -456,6 +456,21 @@ current/protected backup. Failed or unknown recovery evidence stays retained.
 Cache pruning preserves archives referenced by the current installation and
 retained backups.
 
+Rollout integrity checks classify and read launcher files, supplier file contents,
+and cache manifests through the same open descriptor. Directory fingerprints
+compare the traversed path's device and inode with the open directory before and
+after enumeration and after hashing children; a replacement aborts the check.
+Cache manifests intentionally follow existing symlinks, while launcher paths
+reject them. Special files fail without waiting on a FIFO.
+
+Run `node --test scripts/sdk-rollout-descriptor.test.js scripts/sdk-rollout-race.test.js`
+for deterministic check/read and directory-swap regressions. The test loader
+injects filesystem hooks without changing the production functions. Set
+`SDK_ROLLOUT_TEST_REF=<git-ref>` to exercise the race tests against historical
+source; FIFO controls run in child processes with a two-second kill deadline.
+These checks do not replace exclusive use of the global package manager during
+rollout and restore.
+
 #### Recover a stale admission fence
 
 A dead preparation owner with no `admission/mutation.json` has not changed the
@@ -1704,6 +1719,8 @@ Cross-machine offload goes through `ttr box`. `ttr resources run --offload auto 
 A runner is eligible only when its heartbeat is fresh (under 60 seconds by the server clock from the snapshot's `Date` header, never the local clock; a list `status` of `online` alone is not freshness), it is not draining, `run` is enabled, it holds no Judge or playground role, it attests `executionMode: trusted`, and it advertises `protocols.commitRun` containing the client's envelope version (`capability_missing` otherwise). Otherwise the diagnostic names a `blockedBy` reason: `local_saturated`, `no_eligible_runner`, `offline`, `stale_heartbeat`, `draining`, `capability_missing` or `trust_cap`. When no runner is eligible, the closest actionable blocker is reported first (`stale_heartbeat`, `offline`, `draining`, `capability_missing`), then `trust_cap`. Queue messages print `blockedBy=local_saturated` with an `--offload auto` hint. `ttr resources offload [--runner <id>] [--json]` shows local saturation, every runner's eligibility and the selected target. `ttr box runners --json` adds the same `trustedWork` verdict per runner. Root admins can use `ttr box feature --runner <id> --feature <name> --enable|--disable` and `ttr box drain --runner <id> [--undo]`. Regression coverage lives in `resources-box-offload.test.ts`, `resources-box-offload-safety.test.ts` and `devbox-fleet.test.ts`.
 
 Elevated memory pressure holds new admission while existing jobs continue. Blocked waiters back off outside admission, remain cancellable, and probe pressure afresh before launch. This is cooperative scheduling; scripts can still fan out within a slot. Sequence lint, tests and browser QA when memory is limited.
+
+For `turbo run` commands (`turbo`, `bun turbo:local`, `bunx turbo`, `bun x turbo`, `bun run turbo`), `run` and turbo shims add `--summarize=true` and print one line after the command exits, for example `turbo cache: 12/15 tasks cached (local 10, remote 2); 3 executed in 41s; saved ~4m10s`. The spawn hook snapshots `.turbo/runs/` after queueing. The report reads only a single new JSON file whose run ID matches its basename, and removes it only when this command requested it. Files present at spawn are always preserved. A user-supplied `--summarize` is reported but kept. Dry runs, `--graph`, other commands and runs without a Turbo root are untouched. Concurrent runs may share `.turbo/runs/`; their files are never selected by timestamps. If the command never spawned, or zero or multiple new JSON files exist, nothing is reported or removed. Child stdio stays inherited and completion follows process exit, so escaped background processes holding stdout cannot hold the lane. The report never changes the exit status. Regression coverage lives in `resources-turbo-summary.test.ts` and `resources-summary-lifecycle.test.ts`.
 
 Shell setup preserves existing content and original backups through marked Zsh/Bash blocks. Open a new shell to activate hooks, or use `--shell none` for explicit queue usage. Absolute paths, custom PATH replacement and existing processes can bypass shims; wrap unrecognized scripts explicitly.
 

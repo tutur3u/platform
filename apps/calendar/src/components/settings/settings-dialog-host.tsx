@@ -3,12 +3,12 @@
 import { claimSettingsDialogIntent } from '@tuturuuu/satellite/settings-dialog-intent';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
-import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useCallback, useEffect } from 'react';
+import { TTR_URL } from '@/constants/common';
 import { SettingsDialog } from './settings-dialog';
-
-const openIntent = 'tuturuuu:settings-dialog-open-intent';
 
 /** One workspace-owned host independent of responsive account-menu mounts. */
 export function SettingsDialogHost({
@@ -18,46 +18,43 @@ export function SettingsDialogHost({
   user: WorkspaceUser | null;
   wsId: string;
 }) {
-  const [query, setQuery] = useQueryStates(
-    {
-      settingsDialog: parseAsStringLiteral(['open']),
-      settingsTab: parseAsString,
-    },
-    { history: 'replace', shallow: true, scroll: false }
-  );
-  const openSettings = useCallback(() => {
-    void setQuery({ settingsDialog: 'open', settingsTab: null });
-  }, [setQuery]);
-  useSettingsDialogShortcut({ enabled: Boolean(user), onOpen: openSettings });
+  const { closeSettings, open, openSettings, tab } =
+    useSettingsDialogUrlState();
+  const openDefaultSettings = useCallback(() => {
+    openSettings(null);
+  }, [openSettings]);
+  useSettingsDialogShortcut({
+    enabled: Boolean(user),
+    onOpen: openDefaultSettings,
+  });
   useEffect(() => {
     if (!user) return;
     const onIntent = (event: Event) => {
       if (!claimSettingsDialogIntent(event)) return;
       const detail = event instanceof CustomEvent ? event.detail : null;
-      void setQuery({
-        settingsDialog: 'open',
-        settingsTab:
-          typeof detail?.settingsTab === 'string' ? detail.settingsTab : null,
-      });
+      openSettings(
+        typeof detail?.settingsTab === 'string' ? detail.settingsTab : null
+      );
     };
-    window.addEventListener(openIntent, onIntent);
-    return () => window.removeEventListener(openIntent, onIntent);
-  }, [user, setQuery]);
+    window.addEventListener(SETTINGS_DIALOG_OPEN_INTENT_EVENT, onIntent);
+    return () =>
+      window.removeEventListener(SETTINGS_DIALOG_OPEN_INTENT_EVENT, onIntent);
+  }, [user, openSettings]);
   if (!user) return null;
-  const open = query.settingsDialog === 'open';
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) void setQuery({ settingsDialog: null, settingsTab: null });
+        if (!next) closeSettings();
       }}
     >
       {open && (
         <SettingsDialog
-          key={`${user.id}:${wsId}:${query.settingsTab ?? 'default'}`}
+          centralUrl={TTR_URL}
+          key={`${user.id}:${wsId}:${tab ?? 'default'}`}
           user={user}
           wsId={wsId}
-          defaultTab={query.settingsTab ?? undefined}
+          defaultTab={tab ?? undefined}
         />
       )}
     </Dialog>

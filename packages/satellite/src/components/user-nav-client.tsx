@@ -6,11 +6,16 @@ import { SatelliteUserMenu } from '@tuturuuu/ui/custom/satellite-user-menu';
 import { SatelliteUserMenuItems } from '@tuturuuu/ui/custom/satellite-user-menu-items';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { DropdownMenuSeparator } from '@tuturuuu/ui/dropdown-menu';
+import {
+  SETTINGS_DIALOG_CLOSE_INTENT_EVENT,
+  SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+} from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
+import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getPublicProfileUrl } from '@tuturuuu/utils/public-profile-url';
 import { useTranslations } from 'next-intl';
-import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import {
   cloneElement,
   isValidElement,
@@ -21,9 +26,9 @@ import {
   useState,
 } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
+import { SatelliteDefaultSettingsDialog } from './account-settings/default-settings-dialog';
 import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
 import { AppGuideOverlay } from './app-guide-overlay';
-import { GuidanceSettingsDialog } from './guidance-settings-dialog';
 import { LanguageWrapper } from './language-wrapper';
 import { claimSettingsDialogIntent } from './settings-dialog-intent';
 import { shouldOwnSettingsDialog } from './settings-dialog-ownership';
@@ -60,29 +65,20 @@ export default function UserNavClient({
   const sidebar = useContext(SidebarContext);
   const workspaceSelector = useWorkspaceSelector();
   const [reportOpen, setReportOpen] = useState(false);
-  const [settingsQuery, setSettingsQuery] = useQueryStates(
-    {
-      settingsDialog: parseAsStringLiteral(['open']),
-      settingsTab: parseAsString,
-    },
-    {
-      history: 'replace',
-      shallow: true,
-      scroll: false,
-    }
-  );
-  const settingsOpen = settingsQuery.settingsDialog === 'open';
-  const effectiveSettingsDialog = settingsDialog ?? <GuidanceSettingsDialog />;
+  const { modKey } = usePlatform();
+  const {
+    closeSettings,
+    open: settingsOpen,
+    openSettings: openSettingsTab,
+    tab: settingsTab,
+  } = useSettingsDialogUrlState();
   const ownsSettingsDialog = shouldOwnSettingsDialog(externalSettingsHost);
 
   // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
   // once here so every satellite app (calendar/tasks/finance/…) gets it.
   const openSettings = useCallback(() => {
-    void setSettingsQuery({
-      settingsDialog: 'open',
-      settingsTab: null,
-    });
-  }, [setSettingsQuery]);
+    openSettingsTab(null);
+  }, [openSettingsTab]);
   useSettingsDialogShortcut({
     enabled: Boolean(user) && ownsSettingsDialog,
     onOpen: openSettings,
@@ -96,39 +92,31 @@ export default function UserNavClient({
 
       const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
         ?.settingsTab;
-      void setSettingsQuery({
-        settingsDialog: 'open',
-        settingsTab: tab ?? null,
-      });
+      openSettingsTab(tab ?? null);
     };
 
     window.addEventListener(
-      'tuturuuu:settings-dialog-open-intent',
+      SETTINGS_DIALOG_OPEN_INTENT_EVENT,
       handleSettingsIntent
     );
     return () =>
       window.removeEventListener(
-        'tuturuuu:settings-dialog-open-intent',
+        SETTINGS_DIALOG_OPEN_INTENT_EVENT,
         handleSettingsIntent
       );
-  }, [ownsSettingsDialog, setSettingsQuery]);
+  }, [openSettingsTab, ownsSettingsDialog]);
 
   useEffect(() => {
-    const closeSettings = () =>
-      void setSettingsQuery({ settingsDialog: null, settingsTab: null });
     const openFeedback = () => setReportOpen(true);
 
-    window.addEventListener(
-      'tuturuuu:settings-dialog-close-intent',
-      closeSettings
-    );
+    window.addEventListener(SETTINGS_DIALOG_CLOSE_INTENT_EVENT, closeSettings);
     window.addEventListener(
       'tuturuuu:report-problem-open-intent',
       openFeedback
     );
     return () => {
       window.removeEventListener(
-        'tuturuuu:settings-dialog-close-intent',
+        SETTINGS_DIALOG_CLOSE_INTENT_EVENT,
         closeSettings
       );
       window.removeEventListener(
@@ -136,20 +124,24 @@ export default function UserNavClient({
         openFeedback
       );
     };
-  }, [setSettingsQuery]);
-
-  const renderedSettingsDialog = isValidElement(effectiveSettingsDialog)
-    ? cloneElement(effectiveSettingsDialog, {
-        defaultTab: settingsQuery.settingsTab ?? undefined,
-        key: settingsQuery.settingsTab ?? 'default',
-      } as Record<string, unknown>)
-    : effectiveSettingsDialog;
+  }, [closeSettings]);
 
   const centralUrl =
     ttrUrl ??
     (process.env.NODE_ENV === 'production'
       ? 'https://tuturuuu.com'
       : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
+  // Apps without their own dialog still get the shared account tabs.
+  const effectiveSettingsDialog = settingsDialog ?? (
+    <SatelliteDefaultSettingsDialog centralUrl={centralUrl} user={user} />
+  );
+  const renderedSettingsDialog = isValidElement(effectiveSettingsDialog)
+    ? cloneElement(effectiveSettingsDialog, {
+        defaultTab: settingsTab ?? undefined,
+        key: settingsTab ?? 'default',
+      } as Record<string, unknown>)
+    : effectiveSettingsDialog;
+
   const publicProfileUrl = getPublicProfileUrl(user?.handle, centralUrl);
   const secondaryLabel = resolveUserNavSecondaryLabel({
     email: user?.email,
@@ -183,10 +175,7 @@ export default function UserNavClient({
           open={settingsOpen}
           onOpenChange={(open) => {
             if (open) return;
-            void setSettingsQuery({
-              settingsDialog: null,
-              settingsTab: null,
-            });
+            closeSettings();
           }}
         >
           {renderedSettingsDialog}
@@ -206,6 +195,15 @@ export default function UserNavClient({
           t={t}
           sidebar={sidebar}
           signedIn={Boolean(user)}
+          settings={
+            user
+              ? {
+                  label: t('common.settings'),
+                  onOpen: openSettings,
+                  shortcut: `${modKey},`,
+                }
+              : undefined
+          }
           publicProfile={
             publicProfileUrl
               ? { href: publicProfileUrl, label: t('common.public_profile') }

@@ -58,3 +58,23 @@ it.each([
     expect(await response.json()).toMatchObject({ message });
   }
 );
+
+it.each([
+  ['docs/', 'ws-1/docs'],
+  ['/docs', 'ws-1/docs'],
+  // The storage key is percent-encoded once, like the upload that wrote it.
+  ['50% done', 'ws-1/50%25%20done'],
+  ['docs?draft#final/a.pdf', 'ws-1/docs%3Fdraft%23final/a.pdf'],
+  ['Báo cáo.pdf', `ws-1/${encodeURIComponent('Báo cáo.pdf')}`],
+])('canonicalizes legacy download path %j', async (path, expectedPath) => {
+  mocks.download.mockResolvedValue({ data: new Blob(['ok']), error: null });
+  const response = await GET(
+    new NextRequest(`https://example.test/api/v1/storage/download/${path}`),
+    {
+      params: Promise.resolve({ path: path.split('/') }),
+      context: { wsId: 'ws-1' },
+    } as never
+  );
+  expect(mocks.download).toHaveBeenCalledWith(expectedPath, undefined);
+  expect(response.status).toBe(200);
+});

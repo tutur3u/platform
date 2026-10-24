@@ -1,34 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shortener (native Start + Void)
 
-## Getting Started
+Shortener is the public redirect runtime for `ttr.gg` and its configured alias
+domains. It runs on TanStack Start SSR, Vite+ and the official Void SDK with a
+custom Worker entry. Production publication is held; the canonical domains keep
+the last Vercel deployment until a reviewed cutover admits this app.
 
-First, run the development server:
+- `cloudflare/worker.ts` wires the request policy to Start, the Supabase store,
+  `bcryptjs` and the retained API abuse guard.
+- `src/native/shortener-request.ts` owns hosts, API ownership, static files,
+  slug redirects and document methods.
+- `src/link/` holds framework-free domain logic: resolution, destination
+  validation, click analytics, password verification and host aliases.
+- `src/routes/` renders only the password, not-found and invalid-destination
+  pages from the model the Worker resolved.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-bun dev
-```
+`next.config.ts` and `src/i18n/` stay only for the repository SEO and next-intl
+registries; they are not the active runtime.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Commands
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `bun run dev` serves the Worker locally through Void on port 3002.
+- `bun run test` runs the focused unit suite. Queue it locally with
+  `ttr resources run -- bun run test`.
+- `bun run build` and `bun run build:cloudflare` run `vp build`. Release builds
+  run in CI only.
+- `bun run test:runtime` exercises the emitted Worker. It requires `CI=true` and
+  `CI_SOURCE_SHA` after the native CI build.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `apps/docs/build/devops/shortener-start-void.mdx` for qualification,
+cutover and rollback.

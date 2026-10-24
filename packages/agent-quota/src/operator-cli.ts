@@ -131,8 +131,7 @@ export function validateUsageImport(
       >[]) {
         if (
           typeof window.resetsAt === 'string' &&
-          (!Number.isFinite(Date.parse(window.resetsAt)) ||
-            Date.parse(window.resetsAt) <= checkedAt)
+          !Number.isFinite(Date.parse(window.resetsAt))
         )
           throw new HookError('usage-import-reset-invalid');
       }

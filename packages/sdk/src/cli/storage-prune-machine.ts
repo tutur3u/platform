@@ -1,4 +1,5 @@
 import { lstatSync, readdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { dockerOverrides, verifyLocalDocker } from './storage-docker-local';
 import { canonicalPath, isInside } from './storage-holds';
@@ -25,6 +26,18 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
   } = ctx;
   const xcodeBusy = /\bxcodebuild\b|Xcode\.app\/Contents\/MacOS\/Xcode/u;
   for (const item of items(category)) {
+    if (!isOwnedDerivedDataRoot(item.path)) {
+      steps.push({
+        category,
+        path: item.path,
+        bytes: 0,
+        description: 'remove DerivedData',
+        status: 'skipped',
+        reason:
+          'DerivedData root or home ancestor is not a real user-owned directory',
+      });
+      continue;
+    }
     if (processRunning(exec, xcodeBusy)) {
       steps.push({
         category,
@@ -54,6 +67,8 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
         description: `remove DerivedData/${child.slice(item.path.length + 1)} (idle > ${olderThanDays}d)`,
         root: item.path,
         run: removeTree(item.path, child, () => {
+          if (!isOwnedDerivedDataRoot(item.path))
+            return 're-check failed: DerivedData directory chain changed';
           if (processRunning(exec, xcodeBusy))
             return 'Xcode or xcodebuild started';
           if (newestMtime(child) > cutoff)
@@ -62,6 +77,25 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
         }),
       });
     });
+  }
+}
+
+/** Only the literal, user-owned Xcode directory may bypass repository refusal. */
+function isOwnedDerivedDataRoot(root: string) {
+  const home = homedir();
+  const expected = join(home, 'Library', 'Developer', 'Xcode', 'DerivedData');
+  const uid = process.geteuid?.() ?? process.getuid?.();
+  if (uid === undefined || root !== expected) return false;
+  try {
+    if (canonicalPath(root) !== expected) return false;
+    for (let current = root; ; current = dirname(current)) {
+      const info = lstatSync(current);
+      if (info.isSymbolicLink() || !info.isDirectory() || info.uid !== uid)
+        return false;
+      if (current === home) return true;
+    }
+  } catch {
+    return false;
   }
 }
 
@@ -99,12 +133,20 @@ export function tmpSteps(ctx: PruneContext, category: StorageCategory) {
       bytes: item.uniqueBytes,
       description: `remove idle tmp dir (${item.label})`,
       root,
-      run: removeTree(root, item.path, () => {
-        if (newestMtime(item.path) > cutoff)
-          return 're-check failed: written recently';
-        const again = tmpScratchRejection(item.path, basename(item.path));
-        return again ? `re-check failed: ${again}` : null;
-      }),
+      // The deleting walk itself refuses any repository found inside, so a
+      // checkout moved in after this re-check is never removed.
+      run: removeTree(
+        root,
+        item.path,
+        () => {
+          if (newestMtime(item.path) > cutoff)
+            return 're-check failed: written recently';
+          const again = tmpScratchRejection(item.path, basename(item.path));
+          return again ? `re-check failed: ${again}` : null;
+        },
+        undefined,
+        { refuseRepositories: true }
+      ),
     });
   }
 }
