@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
-import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// A direct settings link fences editors across account/workspace transitions.
 class AssistantSettingsRoute extends StatefulWidget {
@@ -34,20 +34,26 @@ class _AssistantSettingsRouteState extends State<AssistantSettingsRoute> {
     }
     final revision = _revision;
     if (auth.status != AuthStatus.authenticated || workspace == null) {
-      final loading = auth.status == AuthStatus.unknown || auth.isLoading ||
+      final loading =
+          auth.status == AuthStatus.unknown ||
+          auth.isLoading ||
           (auth.status == AuthStatus.authenticated &&
               (workspaces.status == WorkspaceStatus.initial ||
-               workspaces.status == WorkspaceStatus.loading));
+                  workspaces.status == WorkspaceStatus.loading));
       return AssistantSettingsRouteFrame(
         title: context.l10n.assistantSettingsTitle,
         locations: {Routes.settingsAppPath('assistant')},
         child: Center(
           child: loading
-              ? Semantics(label: context.l10n.commonLoading,
-                  child: const NovaLoadingIndicator(size: 20))
-              : Text(workspaces.status == WorkspaceStatus.error
-                  ? context.l10n.assistantPersonalSettingsError
-                  : context.l10n.workspaceSelectEmpty),
+              ? Semantics(
+                  label: context.l10n.commonLoading,
+                  child: const NovaLoadingIndicator(size: 20),
+                )
+              : Text(
+                  workspaces.status == WorkspaceStatus.error
+                      ? context.l10n.assistantPersonalSettingsError
+                      : context.l10n.workspaceSelectEmpty,
+                ),
         ),
       );
     }

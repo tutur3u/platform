@@ -149,10 +149,10 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
                   : l.commonSave,
             ),
             if (!assistantSettingsUsesDock(context))
-            AppButton.ghost(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(state.saved ? l.commonDone : l.commonCancel),
-            ),
+              AppButton.ghost(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(state.saved ? l.commonDone : l.commonCancel),
+              ),
           ],
         ),
       ),

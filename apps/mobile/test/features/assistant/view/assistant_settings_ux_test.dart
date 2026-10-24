@@ -11,8 +11,8 @@ import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubi
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
-import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_browsing_setting.dart';
+import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';

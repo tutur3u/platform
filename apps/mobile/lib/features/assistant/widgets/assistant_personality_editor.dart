@@ -35,38 +35,42 @@ class AssistantPersonalityEditor extends StatelessWidget {
               const Center(child: NovaLoadingIndicator(size: 20)),
             if (state.failed) ...[
               Text(context.l10n.assistantPersonalSettingsError),
-              AppButton.ghost(onPressed: cubit.load, child: Text(context.l10n.commonRetry)),
+              AppButton.ghost(
+                onPressed: cubit.load,
+                child: Text(context.l10n.commonRetry),
+              ),
             ],
             if (state.snapshot != null)
-            for (final field in AssistantPersonalityField.values)
-              AppListTile(
-                key: ValueKey('assistant-personality-${field.name}'),
-                title: Text(field.title(context)),
-                subtitle: Text(
-                  field.options(context)[field.value(state.snapshot!.soul)] ??
-                      field.value(state.snapshot!.soul),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: const Icon(LucideIcons.chevronRight),
-                enabled: cubit.admitted && state.canEditSoul,
-                onTap: () => cubit.admitted && cubit.state.canEditSoul
-                    ? unawaited(
-                  pushScopedSettingsPage(
-                    context,
-                    builder: (editorContext, isCurrent) =>
-                        AssistantSettingsEditorPage(
-                          title: field.title(editorContext),
-                          child: AssistantPersonalityFieldEditor(
-                            cubit: cubit,
-                            field: field,
-                            isScopeCurrent: () =>
-                                isCurrent() && isScopeCurrent(),
-                          ),
-                        ),
+              for (final field in AssistantPersonalityField.values)
+                AppListTile(
+                  key: ValueKey('assistant-personality-${field.name}'),
+                  title: Text(field.title(context)),
+                  subtitle: Text(
+                    field.options(context)[field.value(state.snapshot!.soul)] ??
+                        field.value(state.snapshot!.soul),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ) : null,
-              ),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  enabled: cubit.admitted && state.canEditSoul,
+                  onTap: () => cubit.admitted && cubit.state.canEditSoul
+                      ? unawaited(
+                          pushScopedSettingsPage(
+                            context,
+                            builder: (editorContext, isCurrent) =>
+                                AssistantSettingsEditorPage(
+                                  title: field.title(editorContext),
+                                  child: AssistantPersonalityFieldEditor(
+                                    cubit: cubit,
+                                    field: field,
+                                    isScopeCurrent: () =>
+                                        isCurrent() && isScopeCurrent(),
+                                  ),
+                                ),
+                          ),
+                        )
+                      : null,
+                ),
           ],
         ),
       );

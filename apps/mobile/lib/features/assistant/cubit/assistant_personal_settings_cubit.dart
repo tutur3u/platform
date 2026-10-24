@@ -86,9 +86,13 @@ class AssistantPersonalSettingsCubit
       final snapshot = await fresh;
       acceptCache = false;
       if (!_current(version)) return;
-      emit(AssistantPersonalSettingsState(
-        snapshot: snapshot, loading: false, soulFresh: true,
-      ));
+      emit(
+        AssistantPersonalSettingsState(
+          snapshot: snapshot,
+          loading: false,
+          soulFresh: true,
+        ),
+      );
     } on Object catch (error) {
       final denied = isAssistantSettingsDenial(error);
       if (denied) acceptCache = false;
@@ -128,9 +132,13 @@ class AssistantPersonalSettingsCubit
     try {
       final snapshot = await action(previous);
       if (!_current(version)) return false;
-      emit(AssistantPersonalSettingsState(
-        snapshot: snapshot, loading: false, soulFresh: soulFresh,
-      ));
+      emit(
+        AssistantPersonalSettingsState(
+          snapshot: snapshot,
+          loading: false,
+          soulFresh: soulFresh,
+        ),
+      );
       return true;
     } on Object catch (error) {
       if (_current(version)) {
@@ -151,14 +159,13 @@ class AssistantPersonalSettingsCubit
   Future<bool> saveSoul(AssistantSoul soul) {
     if (!admitted || !state.canEditSoul) return Future.value(false);
     return _write(
-    (previous) async => AssistantPersonalSettingsSnapshot(
-      soul: await repository.saveSoul(soul),
-      memoryEnabled: previous.memoryEnabled,
-      memories: state.snapshot?.memories ?? previous.memories,
-      products: previous.products,
-    ),
-  );
-
+      (previous) async => AssistantPersonalSettingsSnapshot(
+        soul: await repository.saveSoul(soul),
+        memoryEnabled: previous.memoryEnabled,
+        memories: state.snapshot?.memories ?? previous.memories,
+        products: previous.products,
+      ),
+    );
   }
 
   Future<bool> setMemoryEnabled({required bool enabled}) {

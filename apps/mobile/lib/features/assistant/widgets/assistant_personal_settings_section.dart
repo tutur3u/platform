@@ -133,15 +133,15 @@ class _AssistantPersonalSettingsSectionState
                 enabled: cubit.admitted && state.canEditSoul,
                 onTap: () => cubit.admitted && cubit.state.canEditSoul
                     ? pushScopedSettingsPage(
-                  context,
-                  builder: (_, isCurrent) => AssistantSettingsEditorPage(
-                    title: l.assistantPersonalityTitle,
-                    child: AssistantPersonalityEditor(
-                      cubit: cubit,
-                      isScopeCurrent: () => isCurrent() && cubit.admitted,
-                    ),
-                  ),
-                )
+                        context,
+                        builder: (_, isCurrent) => AssistantSettingsEditorPage(
+                          title: l.assistantPersonalityTitle,
+                          child: AssistantPersonalityEditor(
+                            cubit: cubit,
+                            isScopeCurrent: () => isCurrent() && cubit.admitted,
+                          ),
+                        ),
+                      )
                     : null,
               ),
               AppDisclosure(
@@ -170,7 +170,9 @@ class _AssistantPersonalSettingsSectionState
                   if (snapshot.memoryEnabled == null && state.loading)
                     Semantics(
                       label: l.commonLoading,
-                      child: const Center(child: NovaLoadingIndicator(size: 20)),
+                      child: const Center(
+                        child: NovaLoadingIndicator(size: 20),
+                      ),
                     ),
                   if (snapshot.memoryEnabled == null && !state.loading)
                     Text(l.assistantPersonalSettingsError),
@@ -209,7 +211,9 @@ class _AssistantPersonalSettingsSectionState
                             ),
                       trailing: AppIconButton(
                         tooltip: l.commonDelete,
-                        onPressed: state.busy || state.loading ? null : () => _delete(item),
+                        onPressed: state.busy || state.loading
+                            ? null
+                            : () => _delete(item),
                         icon: const Icon(LucideIcons.trash2),
                       ),
                     ),

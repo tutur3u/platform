@@ -14,37 +14,53 @@ import '../assistant_personal_settings_harness.dart';
 
 class _RestoringRepository extends SettingsRepository {
   @override
-  Future<AssistantSoul?> readCachedSoul() async => const AssistantSoul(name: 'Cached');
+  Future<AssistantSoul?> readCachedSoul() async =>
+      const AssistantSoul(name: 'Cached');
 }
 
 void main() {
-  testWidgets('restored personality stays read-only and unknown memory shows progress', (tester) async {
-    final held = Completer<AssistantPersonalSettingsSnapshot>();
-    final repository = _RestoringRepository()..read = () => held.future;
-    await tester.pumpApp(SingleChildScrollView(child: AssistantPersonalSettingsSection(
-      workspaceId: 'workspace-a', isScopeCurrent: () => true,
-      currentUserId: () => 'actor-a', repository: repository,
-    )));
-    await tester.pump();
-    await tester.pump();
-    final personality = find.byType(AppListTile).first;
-    expect(tester.widget<AppListTile>(personality).enabled, isFalse);
-    await tester.tap(personality);
-    await tester.pump();
-    expect(find.byType(AssistantPersonalityEditor), findsNothing);
-    expect(repository.writes, 0);
-    await tester.tap(find.text('Memory'));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byType(NovaLoadingIndicator), findsOneWidget);
-    expect(find.text('Could not complete this change. Try again.'), findsNothing);
-    expect(find.text('Retry'), findsNothing);
-    held.complete(snapshot);
-    await tester.pumpAndSettle();
-    expect(tester.widget<AppListTile>(find.byType(AppListTile).first).enabled, isTrue);
-    expect(find.byType(NovaLoadingIndicator), findsNothing);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+  testWidgets(
+    'restored personality stays read-only and unknown memory shows progress',
+    (tester) async {
+      final held = Completer<AssistantPersonalSettingsSnapshot>();
+      final repository = _RestoringRepository()..read = () => held.future;
+      await tester.pumpApp(
+        SingleChildScrollView(
+          child: AssistantPersonalSettingsSection(
+            workspaceId: 'workspace-a',
+            isScopeCurrent: () => true,
+            currentUserId: () => 'actor-a',
+            repository: repository,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      final personality = find.byType(AppListTile).first;
+      expect(tester.widget<AppListTile>(personality).enabled, isFalse);
+      await tester.tap(personality);
+      await tester.pump();
+      expect(find.byType(AssistantPersonalityEditor), findsNothing);
+      expect(repository.writes, 0);
+      await tester.tap(find.text('Memory'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
+      expect(
+        find.text('Could not complete this change. Try again.'),
+        findsNothing,
+      );
+      expect(find.text('Retry'), findsNothing);
+      held.complete(snapshot);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<AppListTile>(find.byType(AppListTile).first).enabled,
+        isTrue,
+      );
+      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   for (final locale in ['en', 'vi']) {
     testWidgets('$locale edits actual name and personality controls', (

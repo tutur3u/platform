@@ -9,8 +9,8 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
-import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_browsing_setting.dart';
+import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 

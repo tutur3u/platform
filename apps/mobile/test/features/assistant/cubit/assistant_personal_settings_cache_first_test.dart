@@ -159,24 +159,37 @@ void main() {
   test('cached personality cannot supersede fresh untouched fields', () async {
     final held = Completer<AssistantPersonalSettingsSnapshot>();
     repository.read = () => held.future;
-    final displayed = cubit.stream.firstWhere((state) => state.snapshot != null);
+    final displayed = cubit.stream.firstWhere(
+      (state) => state.snapshot != null,
+    );
     final loading = cubit.load();
     await displayed;
     expect(cubit.state.canEditSoul, isFalse);
     expect(await cubit.saveSoul(const AssistantSoul(name: 'Saved')), isFalse);
     expect(repository.writes, 0);
     expect(cubit.state.loading, isTrue);
-    const freshSoul = AssistantSoul(name: 'Web', tone: 'warm',
-      personality: 'Fresh personality', boundaries: 'Fresh boundaries', chatTone: 'brief');
-    final fresh = AssistantPersonalSettingsSnapshot(soul: freshSoul,
-      memoryEnabled: snapshot.memoryEnabled, memories: snapshot.memories,
-      products: snapshot.products);
+    const freshSoul = AssistantSoul(
+      name: 'Web',
+      tone: 'warm',
+      personality: 'Fresh personality',
+      boundaries: 'Fresh boundaries',
+      chatTone: 'brief',
+    );
+    final fresh = AssistantPersonalSettingsSnapshot(
+      soul: freshSoul,
+      memoryEnabled: snapshot.memoryEnabled,
+      memories: snapshot.memories,
+      products: snapshot.products,
+    );
     held.complete(fresh);
     await loading;
     expect(cubit.state.snapshot, same(fresh));
     expect(cubit.state.canEditSoul, isTrue);
     AssistantSoul? sent;
-    repository.write = (soul) async { sent = soul; return soul; };
+    repository.write = (soul) async {
+      sent = soul;
+      return soul;
+    };
     expect(await cubit.saveSoul(freshSoul.copyWith(name: 'Saved')), isTrue);
     expect(repository.writes, 1);
     expect(sent?.tone, 'warm');

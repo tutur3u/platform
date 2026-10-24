@@ -12,18 +12,23 @@ class AssistantLiveBrowsingSetting extends StatelessWidget {
   });
   final bool keepLiveWhileBrowsing;
   final bool enabled;
-  final Future<void> Function({required bool value}) onKeepLiveWhileBrowsingChanged;
+  final Future<void> Function({required bool value})
+  onKeepLiveWhileBrowsingChanged;
 
   @override
   Widget build(BuildContext context) => AppToggleRow(
     value: keepLiveWhileBrowsing,
-    title: Row(children: [
-      Expanded(child: Text(context.l10n.assistantKeepLiveBrowsingTitle)),
-      AssistantSettingsInfo(
-        title: context.l10n.assistantKeepLiveBrowsingTitle,
-        description: context.l10n.assistantKeepLiveBrowsingDescription,
-      ),
-    ]),
-    onChanged: enabled ? (value) => onKeepLiveWhileBrowsingChanged(value: value) : null,
+    title: Row(
+      children: [
+        Expanded(child: Text(context.l10n.assistantKeepLiveBrowsingTitle)),
+        AssistantSettingsInfo(
+          title: context.l10n.assistantKeepLiveBrowsingTitle,
+          description: context.l10n.assistantKeepLiveBrowsingDescription,
+        ),
+      ],
+    ),
+    onChanged: enabled
+        ? (value) => onKeepLiveWhileBrowsingChanged(value: value)
+        : null,
   );
 }

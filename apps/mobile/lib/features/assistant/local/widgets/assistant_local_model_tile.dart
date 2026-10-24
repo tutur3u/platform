@@ -46,65 +46,69 @@ class AssistantLocalModelTile extends StatelessWidget {
         : l10n.assistantLocalDownload;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [AppListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(model.name),
-      subtitle: Text(status),
-      leading: const Icon(LucideIcons.cpu),
-      selected: selected,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (selected)
-            Tooltip(
-              message: l10n.assistantLocalSelected,
-              child: Semantics(
-                label: l10n.assistantLocalSelected,
-                child: const SizedBox.square(
-                  dimension: 44,
-                  child: Icon(LucideIcons.circleCheck),
+      children: [
+        AppListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(model.name),
+          subtitle: Text(status),
+          leading: const Icon(LucideIcons.cpu),
+          selected: selected,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selected)
+                Tooltip(
+                  message: l10n.assistantLocalSelected,
+                  child: Semantics(
+                    label: l10n.assistantLocalSelected,
+                    child: const SizedBox.square(
+                      dimension: 44,
+                      child: Icon(LucideIcons.circleCheck),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          if (!selected)
-            AppIconButton(
-              tooltip: actionLabel,
-              onPressed: enabled ? (installed ? onSelect : onInstall) : null,
-              icon: Icon(
-                installed
-                    ? LucideIcons.arrowRight
-                    : model.requiresLicensedImport
-                    ? LucideIcons.fileUp
-                    : LucideIcons.download,
-              ),
-            ),
-          AssistantSettingsInfo(
-            title: model.name,
-            description: status,
-            actionsBuilder: (dialogContext) => [
-              AppButton.ghost(
-                onPressed: onLicense,
-                child: Text(l10n.assistantLocalLicense),
-              ),
-              if (model.requiresLicensedImport)
-                AppButton.ghost(
-                  onPressed: onSource,
-                  child: Text(l10n.assistantLocalDownloadSource),
+              if (!selected)
+                AppIconButton(
+                  tooltip: actionLabel,
+                  onPressed: enabled
+                      ? (installed ? onSelect : onInstall)
+                      : null,
+                  icon: Icon(
+                    installed
+                        ? LucideIcons.arrowRight
+                        : model.requiresLicensedImport
+                        ? LucideIcons.fileUp
+                        : LucideIcons.download,
+                  ),
                 ),
+              AssistantSettingsInfo(
+                title: model.name,
+                description: status,
+                actionsBuilder: (dialogContext) => [
+                  AppButton.ghost(
+                    onPressed: onLicense,
+                    child: Text(l10n.assistantLocalLicense),
+                  ),
+                  if (model.requiresLicensedImport)
+                    AppButton.ghost(
+                      onPressed: onSource,
+                      child: Text(l10n.assistantLocalDownloadSource),
+                    ),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    ),
-    if (installed)
-      Align(alignment: Alignment.centerRight,
-        child: AppIconButton(
-          tooltip: l10n.assistantLocalRemove,
-          onPressed: canRemove ? onRemove : null,
-          icon: const Icon(LucideIcons.trash2),
         ),
-      ),
-    ],
+        if (installed)
+          Align(
+            alignment: Alignment.centerRight,
+            child: AppIconButton(
+              tooltip: l10n.assistantLocalRemove,
+              onPressed: canRemove ? onRemove : null,
+              icon: const Icon(LucideIcons.trash2),
+            ),
+          ),
+      ],
     );
   }
 }
