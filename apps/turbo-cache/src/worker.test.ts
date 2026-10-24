@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { sha256Hex } from './auth';
+import { emptyState } from './budget';
+import { BUDGET_KEY } from './budget-store';
 import type { Env } from './config';
 import {
   createBudgetNamespace,
@@ -27,6 +29,7 @@ async function setup(overrides: Partial<Env> = {}) {
   const now = () => clock;
   bucket = new FakeBucket(now);
   storage = new FakeStorage();
+  await bucket.put(BUDGET_KEY, JSON.stringify(emptyState(clock)));
   const created = createBudgetNamespace(storage, () => env, now);
   budget = created.counter;
   env = {
@@ -211,11 +214,14 @@ describe('operation accounting', () => {
     await call('GET', '/v8/artifacts/1111111111111111', TOKENS.branch);
     expect(bucket.ops.get).toBe(4);
     expect(budget.fetches).toBe(4);
+    expect(bucket.controlOps).toEqual({ get: 8, head: 0, put: 5 });
+    expect(storage.values.size).toBe(0);
   });
 
-  it('answers events and status without storage operations', async () => {
+  it('answers events and status without artifact or admission operations', async () => {
     await call('POST', '/v8/artifacts/events', TOKENS.main, { body: '[]' });
     await call('GET', '/v8/artifacts/status', TOKENS.main);
+    expect(bucket.controlOps).toEqual({ get: 1, head: 0, put: 1 });
     expect(bucket.ops).toEqual({ get: 0, head: 0, put: 0 });
     expect(budget.fetches).toBe(0);
   });
@@ -254,7 +260,7 @@ describe('operation accounting', () => {
 
 describe('durable stop fence', () => {
   it('pauses writes at the daily cap and resumes the next UTC day', async () => {
-    await setup({ TURBO_CACHE_DAILY_CLASS_A: '1' });
+    await setup({ TURBO_CACHE_DAILY_CLASS_A: '2' });
     expect((await put(TOKENS.main)).status).toBe(202);
     const denied = await put(TOKENS.main);
     expect(denied.status).toBe(503);
@@ -262,7 +268,7 @@ describe('durable stop fence', () => {
     expect(bucket.ops.put).toBe(1);
     // The isolate memo skips the Durable Object while paused.
     await put(TOKENS.main);
-    expect(budget.fetches).toBe(2);
+    expect(budget.fetches).toBe(1);
     expect(
       await (await call('GET', '/v8/artifacts/status', TOKENS.main)).json()
     ).toEqual({
@@ -273,13 +279,14 @@ describe('durable stop fence', () => {
   });
 
   it('trips a fence at the monthly cap that survives restarts until an operator reset', async () => {
-    await setup({ TURBO_CACHE_MONTHLY_CLASS_A_FENCE: '1' });
+    await setup({ TURBO_CACHE_MONTHLY_CLASS_A_FENCE: '2' });
+    clock = new Date('2026-10-31T23:59:00Z');
     expect((await put(TOKENS.main)).status).toBe(202);
     expect((await put(TOKENS.main)).headers.get('x-turbo-cache-denied')).toBe(
-      'monthly-class-a'
+      'fenced'
     );
     // New day, new isolate, new Durable Object instance: still fenced.
-    clock = new Date(clock.getTime() + 2 * DAY_MS);
+    clock = new Date('2026-11-01T00:00:00Z');
     handle = createHandler({ deniedUntil: {}, now: () => clock });
     const fencedRead = await call('GET', `/v8/artifacts/${HASH}`, TOKENS.main);
     expect(fencedRead.headers.get('x-turbo-cache-denied')).toBe('fenced');

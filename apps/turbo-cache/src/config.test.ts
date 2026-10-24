@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { admit, emptyState } from './budget';
+import { admit, BUDGET_SNAPSHOT_BYTES, emptyState } from './budget';
 import { LIMITS, parseTokens, readConfig } from './config';
 
 const SHA = 'a'.repeat(64);
@@ -66,10 +66,10 @@ describe('configuration bounds', () => {
 
 describe('budget accounting', () => {
   const limits = {
-    dailyClassA: 10,
-    dailyClassB: 10,
-    dailyWriteBytes: 100,
-    monthlyClassAFence: 15,
+    dailyClassA: 12,
+    dailyClassB: 20,
+    dailyWriteBytes: BUDGET_SNAPSHOT_BYTES * 2 + 100,
+    monthlyClassAFence: 22,
   };
 
   it('reserves declared bytes and denies without counting', () => {
@@ -92,29 +92,29 @@ describe('budget accounting', () => {
       allowed: false,
       reason: 'daily-write-bytes',
     });
-    expect(result.state.dailyClassA).toBe(1);
+    expect(result.state.dailyClassA).toBe(2);
   });
 
   it('resets the monthly counter with the month but never the fence', () => {
     let state = emptyState(now);
     state = admit(
       state,
-      { operation: 'class-a', count: 10, bytes: 0 },
+      { operation: 'class-a', count: 11, bytes: 0 },
       limits,
       now
     ).state;
     const nextDay = new Date('2026-11-01T00:01:00Z');
     const fresh = admit(
       state,
-      { operation: 'class-a', count: 10, bytes: 0 },
+      { operation: 'class-a', count: 11, bytes: 0 },
       limits,
       nextDay
     );
     expect(fresh.allowed).toBe(true);
-    expect(fresh.state.monthlyClassA).toBe(10);
+    expect(fresh.state.monthlyClassA).toBe(12);
     const tripped = admit(
       fresh.state,
-      { operation: 'class-a', count: 10, bytes: 0 },
+      { operation: 'class-a', count: 11, bytes: 0 },
       limits,
       nextDay
     );
@@ -122,10 +122,18 @@ describe('budget accounting', () => {
       allowed: false,
       reason: 'monthly-class-a',
     });
+    const terminal = admit(
+      { ...fresh.state, dailyClassA: 0, dailyWriteBytes: 0 },
+      { operation: 'class-a', count: 9, bytes: 0 },
+      limits,
+      nextDay
+    );
+    expect(terminal.allowed).toBe(true);
+    expect(terminal.state.monthlyClassA).toBe(22);
     const nextMonth = new Date('2026-12-01T00:00:00Z');
     expect(
       admit(
-        tripped.state,
+        terminal.state,
         { operation: 'class-b', count: 1, bytes: 0 },
         limits,
         nextMonth

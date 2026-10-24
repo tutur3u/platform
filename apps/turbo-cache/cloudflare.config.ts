@@ -12,7 +12,7 @@ export default defineConfig({
     entrypoint: 'src/worker.ts',
     workersDev: false,
     domains: ['turbo-cache.tuturuuu.com'],
-    limits: { cpuMs: 1000, subrequests: 8 },
+    limits: { cpuMs: 1000, subrequests: 208 },
     observability: { enabled: true, headSamplingRate: 0.01 },
     exports: {
       TurboCacheBudget: exports.durableObject({ storage: 'sqlite' }),
@@ -24,7 +24,7 @@ export default defineConfig({
         exportName: 'TurboCacheBudget',
       }),
       // 600 requests per token per 10 s: ingress smoothing only. The
-      // Durable Object budget is the spend bound.
+      // Durable snapshot bounds admissions; ingress still costs control reads.
       REQUEST_LIMITER: bindings.rateLimit({
         namespace: '4207',
         simple: { limit: 600, period: 10 },

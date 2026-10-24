@@ -7,7 +7,8 @@ import {
   writeArtifact,
 } from './artifacts';
 import { bearerDigest, findToken, timingSafeEqualHex } from './auth';
-import type { OperationClass } from './budget';
+import { type OperationClass, admit as reserve } from './budget';
+import { readBudget } from './budget-store';
 import {
   type CacheConfig,
   type Env,
@@ -18,9 +19,8 @@ import {
 export { TurboCacheBudget } from './budget-object';
 
 const ARTIFACT_PATH = /^\/v8\/artifacts\/([^/]+)$/;
-// After the durable fence or a daily cap denies an operation, this isolate
-// skips further Durable Object admission calls for a short window so a paused
-// cache costs only Worker requests.
+// A short negative cache saves control reads. Correctness across isolates
+// comes from the authoritative R2 snapshot, never this optimization.
 const DENIAL_MEMO_MS = 60_000;
 
 export interface HandlerState {
@@ -53,19 +53,39 @@ async function admit(
   const now = state.now().getTime();
   if ((state.deniedUntil[operation] ?? 0) > now)
     return { allowed: false, reason: 'paused' };
-  const response = await budgetStub(env).fetch('https://budget/admit', {
-    method: 'POST',
-    body: JSON.stringify({ operation, count, bytes }),
-  });
-  const result = (await response.json().catch(() => null)) as {
-    allowed?: boolean;
-    reason?: string;
-  } | null;
-  if (!response.ok || result?.allowed !== true) {
+  try {
+    const snapshot = await readBudget(env.ARTIFACTS);
+    const preflight = snapshot
+      ? reserve(
+          snapshot,
+          { operation, count, bytes },
+          readConfig(env).budget,
+          state.now()
+        )
+      : { allowed: false, reason: 'budget_unavailable' };
+    if (!preflight.allowed) {
+      state.deniedUntil[operation] = now + DENIAL_MEMO_MS;
+      return { allowed: false, reason: preflight.reason };
+    }
+    const response = await budgetStub(env).fetch('https://budget/admit', {
+      method: 'POST',
+      body: JSON.stringify({ operation, count, bytes }),
+    });
+    const result: unknown = await response.json().catch(() => null);
+    if (
+      response.ok &&
+      result &&
+      typeof result === 'object' &&
+      'allowed' in result &&
+      result.allowed === true
+    )
+      return { allowed: true, reason: undefined };
     state.deniedUntil[operation] = now + DENIAL_MEMO_MS;
-    return { allowed: false, reason: result?.reason ?? 'budget_unavailable' };
+    return { allowed: false, reason: 'budget_unavailable' };
+  } catch {
+    state.deniedUntil[operation] = now + DENIAL_MEMO_MS;
+    return { allowed: false, reason: 'budget_unavailable' };
   }
-  return { allowed: true, reason: undefined };
 }
 
 async function handleAdmin(request: Request, env: Env, config: CacheConfig) {
@@ -99,9 +119,19 @@ async function handleArtifacts(
   const method = request.method;
 
   if (pathname === '/v8/artifacts/status' && method === 'GET') {
-    const paused = Object.values(state.deniedUntil).some(
-      (until) => (until ?? 0) > state.now().getTime()
-    );
+    const snapshot = await readBudget(env.ARTIFACTS).catch(() => null);
+    const paused =
+      !snapshot ||
+      !reserve(
+        snapshot,
+        {
+          operation: 'class-b',
+          count: token.read.length,
+          bytes: 0,
+        },
+        config.budget,
+        state.now()
+      ).allowed;
     return json({ status: paused ? 'paused' : 'enabled' });
   }
 

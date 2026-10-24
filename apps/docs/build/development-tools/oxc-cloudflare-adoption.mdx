@@ -334,15 +334,26 @@ separate release evidence. Production publication stays held for all four apps.
 ### Turbo remote cache: R2 operation envelope
 
 `apps/turbo-cache` ships with `TURBO_CACHE_MODE=off`, which performs no R2
-operations. Once enabled, each request makes exactly one Durable Object admission
-call and at most one R2 operation per readable scope; it never retries. Daily
-class A, class B and write-byte caps pause the corresponding operations until the
-next UTC day. Crossing the monthly class A fence trips a durable stop that
-survives restarts until an operator resets it. An unavailable budget object is a
-pause, and a denied read is a cache miss. `apps/turbo-cache/src/worker.test.ts`
-pins the per-request operation counts, the fence restart behavior and the
-fail-closed defaults. The [runbook](../devops/turbo-remote-cache.mdx) owns
-provisioning, the cost estimate, cutover and the stop procedure.
+operations on artifact paths. Its authoritative budget/fence is an R2 snapshot
+outside the artifact lifecycle prefix. The Worker reads that strongly consistent
+snapshot before DO admission; missing/invalid/unreadable state fails closed.
+The DO queues external I/O and persists successful reservations before artifact
+access, charging the control PUT, two control GETs, artifact operations and a
+4 KiB control-write allowance. Denials and repeated unchanged admin actions do
+not write. The snapshot survives isolate/DO restarts and unknown committed PUT
+outcomes. No admission retries or background scheduling exist.
+
+The maximum batch is 50 hashes × four scopes (200 HEADs). Including control,
+DO and rate-limit calls, its conservative operation count is 205; the configured
+subrequest ceiling is 208. `apps/turbo-cache/src/stop-regression.test.ts` checks
+fresh-isolate denial counts, persistent read failure, unknown writes, concurrent
+reservations, coalesced admin actions and this batch envelope with fixtures.
+Exact-commit CI/runtime acceptance remains required. Denied/status ingress still
+costs Worker requests and control reads; failed admission attempts also cost
+resources. The service has no fixed total-spend guarantee. Set mode off to stop
+artifact-path storage/DO calls, or disable the Worker route to stop invocations.
+The [runbook](../devops/turbo-remote-cache.mdx) owns initialization, prior-state
+migration, the revised cost model, cutover and the stop procedure.
 
 ## Incident evidence
 

@@ -1,9 +1,8 @@
 import type { BudgetLimits } from './config';
 
-// Pure admission accounting for billable R2 operations. Class A covers
-// writes (PutObject), class B covers reads (GetObject/HeadObject). Daily caps
-// pause one operation class until the next UTC day; exceeding the monthly
-// class A fence trips a durable stop that only an operator reset clears.
+// Successful reservations include the control snapshot PUT and two GETs.
+// Denied ingress still costs a control GET; that traffic-dependent cost is
+// outside these admitted-operation counters.
 
 export type OperationClass = 'class-a' | 'class-b';
 
@@ -43,6 +42,7 @@ export interface AdmissionResult {
 }
 
 const MAX_COUNT = 200;
+export const BUDGET_SNAPSHOT_BYTES = 4096;
 
 function utcDay(now: Date) {
   return now.toISOString().slice(0, 10);
@@ -99,34 +99,30 @@ export function admit(
   const state = rollState(previous, now);
   if (state.fence.tripped) return { allowed: false, reason: 'fenced', state };
 
-  if (request.operation === 'class-b') {
-    if (state.dailyClassB + request.count > limits.dailyClassB)
-      return { allowed: false, reason: 'daily-class-b', state };
-    return {
-      allowed: true,
-      state: { ...state, dailyClassB: state.dailyClassB + request.count },
-    };
-  }
-
-  if (state.monthlyClassA + request.count > limits.monthlyClassAFence) {
-    return {
-      allowed: false,
-      reason: 'monthly-class-a',
-      state: trip(state, 'monthly-class-a', now),
-    };
-  }
-  if (state.dailyClassA + request.count > limits.dailyClassA)
+  const classA = 1 + (request.operation === 'class-a' ? request.count : 0);
+  const classB = 2 + (request.operation === 'class-b' ? request.count : 0);
+  const writeBytes = BUDGET_SNAPSHOT_BYTES + request.bytes;
+  if (state.monthlyClassA + classA > limits.monthlyClassAFence)
+    return { allowed: false, reason: 'monthly-class-a', state };
+  if (state.dailyClassA + classA > limits.dailyClassA)
     return { allowed: false, reason: 'daily-class-a', state };
-  if (state.dailyWriteBytes + request.bytes > limits.dailyWriteBytes)
+  if (state.dailyClassB + classB > limits.dailyClassB)
+    return { allowed: false, reason: 'daily-class-b', state };
+  if (state.dailyWriteBytes + writeBytes > limits.dailyWriteBytes)
     return { allowed: false, reason: 'daily-write-bytes', state };
+  const next = {
+    ...state,
+    dailyClassA: state.dailyClassA + classA,
+    dailyClassB: state.dailyClassB + classB,
+    dailyWriteBytes: state.dailyWriteBytes + writeBytes,
+    monthlyClassA: state.monthlyClassA + classA,
+  };
   return {
     allowed: true,
-    state: {
-      ...state,
-      dailyClassA: state.dailyClassA + request.count,
-      dailyWriteBytes: state.dailyWriteBytes + request.bytes,
-      monthlyClassA: state.monthlyClassA + request.count,
-    },
+    state:
+      next.monthlyClassA === limits.monthlyClassAFence
+        ? trip(next, 'monthly-class-a', now)
+        : next,
   };
 }
 
@@ -139,4 +135,39 @@ export function trip(state: BudgetState, reason: string, now: Date) {
 
 export function reset(state: BudgetState, now: Date): BudgetState {
   return { ...rollState(state, now), fence: { tripped: false } };
+}
+
+export function isBudgetState(value: unknown): value is BudgetState {
+  if (!value || typeof value !== 'object') return false;
+  if (
+    !('day' in value) ||
+    typeof value.day !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value.day)
+  )
+    return false;
+  if (!('month' in value) || value.month !== value.day.slice(0, 7))
+    return false;
+  for (const key of [
+    'dailyClassA',
+    'dailyClassB',
+    'dailyWriteBytes',
+    'monthlyClassA',
+  ]) {
+    const counter = Reflect.get(value, key);
+    if (
+      typeof counter !== 'number' ||
+      !Number.isSafeInteger(counter) ||
+      counter < 0
+    )
+      return false;
+  }
+  if (!('fence' in value) || !value.fence || typeof value.fence !== 'object')
+    return false;
+  const fence = value.fence;
+  return (
+    'tripped' in fence &&
+    typeof fence.tripped === 'boolean' &&
+    (!('reason' in fence) || typeof fence.reason === 'string') &&
+    (!('at' in fence) || typeof fence.at === 'string')
+  );
 }

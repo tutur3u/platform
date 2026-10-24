@@ -20,6 +20,7 @@ interface StoredObject {
 export class FakeBucket implements R2BucketLike {
   readonly objects = new Map<string, StoredObject>();
   readonly ops = { get: 0, head: 0, put: 0 };
+  readonly controlOps = { get: 0, head: 0, put: 0 };
   constructor(private readonly now: () => Date) {}
 
   private meta(object: StoredObject): R2ObjectLike {
@@ -31,13 +32,13 @@ export class FakeBucket implements R2BucketLike {
   }
 
   async head(key: string) {
-    this.ops.head += 1;
+    (key.startsWith('_control/') ? this.controlOps : this.ops).head += 1;
     const object = this.objects.get(key);
     return object ? this.meta(object) : null;
   }
 
   async get(key: string): Promise<R2ObjectBodyLike | null> {
-    this.ops.get += 1;
+    (key.startsWith('_control/') ? this.controlOps : this.ops).get += 1;
     const object = this.objects.get(key);
     if (!object) return null;
     return { ...this.meta(object), body: new Response(object.bytes).body! };
@@ -48,7 +49,7 @@ export class FakeBucket implements R2BucketLike {
     value: ReadableStream | ArrayBuffer | string,
     options?: { customMetadata?: Record<string, string> }
   ) {
-    this.ops.put += 1;
+    (key.startsWith('_control/') ? this.controlOps : this.ops).put += 1;
     const bytes = await new Response(value).arrayBuffer();
     const object = {
       bytes,
