@@ -816,6 +816,13 @@ lookup. Workspace saving still requires permission and a loaded workspace scope.
 Failed reads retain Unknown with an explicit retry; they never imply an automatic
 preference or cause an implicit save. Failed saves retain the prior preference and
 allow retry. Account/workspace changes invalidate in-flight replies and editors.
+Mobile only marks a timezone resolved after the bundled timezone database accepts
+the effective personal, workspace or native identifier. Unsupported identifiers
+remain a recoverable settings failure rather than throwing from Calendar or the
+personal Agenda clock. An acknowledged save retains its saved value even if its
+new inherited timezone cannot resolve. Existing initialized device-local timezone
+configuration is preserved. `calendar_timezone_failure_test.dart` covers invalid
+saved/native identifiers, rejected writes and acknowledged-save recovery.
 `timezone_settings_http_contract_test.dart` and
 `timezone_settings_http_widget_test.dart` exercise production gateway paths,
 Bearer serialization, failure/retry and explicit saving with synthetic data.

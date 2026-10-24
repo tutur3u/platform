@@ -111,6 +111,13 @@ Meet media failures. Analytics records automatic app usage plus `mobile_error`,
 identify capture, publish, send, receive, or connection stages without recording
 room IDs, user IDs, SDP, ICE credentials, message contents, or media.
 
+For a gray release-build body, inspect Crashlytics `flutter_framework` events
+for the exact version and build before attributing the failure. Compare the
+uploaded source SHA from `mobile-beta-release-history` with the investigated tree;
+the pubspec version alone is not the store build identity. Framework errors already
+retain their original stacks through `FlutterError.onError`. Keep raw event
+payloads private and avoid adding a second reporting integration.
+
 For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
 `meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's
 Analytics events. A successful publisher event means its WebRTC sender reported
