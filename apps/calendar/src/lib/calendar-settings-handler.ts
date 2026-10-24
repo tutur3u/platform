@@ -3,32 +3,48 @@ import {
   personalCalendarSettings,
   workspaceCalendarSettings,
 } from '@tuturuuu/internal-api/calendar-settings-server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   INTERNAL_WORKSPACE_SLUG,
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { enforceRequiredMfaRequest } from '@tuturuuu/utils/required-mfa-runtime';
+import { getVerifiedMfaBearerUser } from '@tuturuuu/utils/required-mfa-runtime';
 import { type NextRequest, NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
+import {
+  resolveSessionAuthContext,
+  type SessionAuthContext,
+} from '@/lib/api-auth';
 
 export async function handleCalendarSettings(
   request: NextRequest,
-  wsId?: string
+  wsId?: string,
+  authenticatedContext?: SessionAuthContext
 ) {
   try {
-    const assurance = await enforceRequiredMfaRequest(request);
-    if (assurance) return assurance;
-    const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth:
-        wsId === undefined ? { targetApp: ['calendar', 'tasks'] } : true,
-    });
+    const verifiedUser = getVerifiedMfaBearerUser(request);
+    const auth = authenticatedContext
+      ? { ok: true as const, ...authenticatedContext }
+      : verifiedUser &&
+          !request.cookies.has('tuturuuu_app_session') &&
+          !request.cookies.has('tuturuuu_web_app_session')
+        ? {
+            ok: true as const,
+            user: verifiedUser,
+            supabase: await createClient(request),
+          }
+        : await resolveSessionAuthContext(request, {
+            allowAppSessionAuth:
+              wsId === undefined ? { targetApp: ['calendar', 'tasks'] } : true,
+          });
     if (!auth.ok) return auth.response;
     const context = { supabase: auth.supabase, userId: auth.user.id };
     const operation =
       request.method === 'PATCH'
-        ? { method: 'PATCH' as const, body: await request.json() }
+        ? wsId === undefined
+          ? { method: 'PATCH' as const, body: await request.json() }
+          : { method: 'PATCH' as const, readBody: () => request.json() }
         : { method: 'GET' as const };
     let result:
       | Awaited<ReturnType<typeof personalCalendarSettings>>

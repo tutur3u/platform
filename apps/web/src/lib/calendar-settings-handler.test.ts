@@ -5,10 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  verified: vi.fn(),
+  client: vi.fn(),
   suspension: vi.fn(),
   quota: vi.fn(),
   finalize: vi.fn(),
-  assurance: vi.fn(),
   personal: vi.fn(),
   workspace: vi.fn(),
   connection: vi.fn(),
@@ -20,8 +21,11 @@ vi.mock('./calendar-personal-mutation-quota', () => ({
   calendarPersonalSessionControls: mocks.quota,
 }));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createClient: mocks.client,
+}));
 vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
-  enforceRequiredMfaRequest: mocks.assurance,
+  getVerifiedMfaBearerUser: mocks.verified,
 }));
 vi.mock(
   '@tuturuuu/internal-api/calendar-settings-server',
@@ -55,7 +59,8 @@ function request(method = 'GET', body?: string) {
 describe('Web calendar settings adapters', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.assurance.mockResolvedValue(null);
+    mocks.verified.mockReturnValue(null);
+    mocks.client.mockResolvedValue({});
     mocks.finalize.mockImplementation((response) => response);
     mocks.quota.mockResolvedValue({
       response: null,
@@ -69,7 +74,10 @@ describe('Web calendar settings adapters', () => {
       supabase: {},
     });
     mocks.personal.mockResolvedValue({ timezone: 'auto' });
-    mocks.workspace.mockResolvedValue({ timezone: 'auto' });
+    mocks.workspace.mockImplementation(async (_context, _wsId, operation) => {
+      if (operation.method === 'PATCH') await operation.readBody();
+      return { timezone: 'auto' };
+    });
   });
   it('opts both GET routes into request time and returns private JSON', async () => {
     const response = await personalGET(request());
@@ -86,6 +94,19 @@ describe('Web calendar settings adapters', () => {
       { method: 'GET' }
     );
   });
+  it('reuses only a server-verified full bearer user for the exact request', async () => {
+    mocks.verified.mockReturnValue({
+      id: 'actor',
+      created_at: '2025-01-01T00:00:00Z',
+    });
+    expect((await personalGET(request())).status).toBe(200);
+    expect(mocks.auth).not.toHaveBeenCalled();
+    expect(mocks.client).toHaveBeenCalledWith(expect.any(NextRequest));
+    expect(mocks.personal).toHaveBeenCalledWith(
+      { supabase: {}, userId: 'actor' },
+      { method: 'GET' }
+    );
+  });
   it('returns auth failures without reading settings', async () => {
     mocks.auth.mockResolvedValue({
       ok: false,
@@ -93,18 +114,6 @@ describe('Web calendar settings adapters', () => {
     });
     expect((await personalGET(request())).status).toBe(401);
     expect(mocks.personal).not.toHaveBeenCalled();
-  });
-  it('returns MFA guard status and diagnostic headers before resolving identity', async () => {
-    mocks.assurance.mockResolvedValue(
-      NextResponse.json(
-        { code: 'MFA_REQUIRED' },
-        { status: 403, headers: { 'X-Tuturuuu-Auth-Assurance': 'required' } }
-      )
-    );
-    const response = await workspaceGET(request(), context);
-    expect(response.status).toBe(403);
-    expect(response.headers.get('X-Tuturuuu-Auth-Assurance')).toBe('required');
-    expect(mocks.auth).not.toHaveBeenCalled();
   });
   it('passes PATCH JSON and normalizes the personal workspace alias', async () => {
     await personalPATCH(request('PATCH', '{"timezone":"auto"}'));
@@ -114,7 +123,7 @@ describe('Web calendar settings adapters', () => {
     expect(mocks.workspace).toHaveBeenCalledWith(
       { supabase: {}, userId: 'actor' },
       'actor',
-      { method: 'PATCH', body: { first_day_of_week: 'monday' } }
+      { method: 'PATCH', readBody: expect.any(Function) }
     );
   });
   it('rejects suspended actors on personal preferences before reading or writing settings', async () => {
@@ -184,4 +193,23 @@ describe('Web calendar settings adapters', () => {
     expect((await personalPATCH(request('PATCH', '{'))).status).toBe(400);
     expect(mocks.personal).not.toHaveBeenCalled();
   });
+  it.each([
+    ['tuturuuu_app_session', 'ttr_app_synthetic'],
+    ['tuturuuu_web_app_session', 'ttr_app_synthetic'],
+    ['tuturuuu_app_session', 'malformed'],
+    ['tuturuuu_app_session', ''],
+    ['tuturuuu_web_app_session', ''],
+  ])(
+    'keeps normal authentication for ambient %s=%s',
+    async (cookieName, cookieValue) => {
+      const req = request();
+      req.cookies.set(cookieName, cookieValue);
+      mocks.verified.mockReturnValue({ id: 'actor', app_metadata: {} });
+      expect((await personalGET(req)).status).toBe(200);
+      expect(mocks.auth).toHaveBeenCalledWith(req, {
+        allowAppSessionAuth: false,
+      });
+      expect(mocks.client).not.toHaveBeenCalled();
+    }
+  );
 });

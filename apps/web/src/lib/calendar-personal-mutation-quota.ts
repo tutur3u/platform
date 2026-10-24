@@ -47,10 +47,15 @@ export async function calendarPersonalSessionControls(
   );
   const result = await checkRateLimit(`session:user:mutate:${user.id}`, config);
   if (!('allowed' in result)) {
-    result.headers.set(
-      'X-RateLimit-Policy',
-      'web-calendar-session-user-mutate'
-    );
+    result.headers.set('X-RateLimit-Policy', 'calendar-session-user-mutate');
+    const reset = Number(result.headers.get('X-RateLimit-Reset'));
+    const retryAfter =
+      Number.isFinite(reset) && reset > 0
+        ? Math.max(1, Math.ceil(reset - Date.now() / 1000))
+        : 60;
+    result.headers.set('Retry-After', String(retryAfter));
+    result.headers.set('X-Proxy-Block-Reason', 'rate-limit-exceeded');
+    result.headers.set('Cache-Control', 'private, no-store');
     result.headers.set('X-RateLimit-Caller-Class', 'authenticated');
     result.headers.set('X-RateLimit-Window', 'minute');
     return { response: result, headers, finalize };

@@ -109,6 +109,24 @@ describe('shared calendar settings domain', () => {
       expect(supabase.from).not.toHaveBeenCalledWith('workspaces');
     }
   );
+  it.each(['missing-member', 'no-permission'])(
+    'authorizes workspace PATCH before reading malformed JSON (%s)',
+    async (reason) => {
+      const { context } = fixture(
+        reason === 'missing-member' ? { member: '' } : { permission: false }
+      );
+      const readBody = vi.fn(async () => {
+        throw new SyntaxError('Malformed JSON');
+      });
+      await expect(
+        workspaceCalendarSettings(context, 'workspace', {
+          method: 'PATCH',
+          readBody,
+        })
+      ).rejects.toMatchObject({ status: 403 });
+      expect(readBody).not.toHaveBeenCalled();
+    }
+  );
   it('requires settings permission before workspace mutation', async () => {
     const { context, supabase, builder } = fixture({ permission: false });
     await expect(

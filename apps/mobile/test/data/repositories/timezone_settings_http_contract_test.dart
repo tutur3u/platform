@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 
 import '../../helpers/timezone_http_harness.dart';
@@ -225,4 +228,49 @@ void main() {
     expect(cubit.state.failed, true);
     expect(h.requests.where((r) => r.method == 'PATCH'), hasLength(1));
   });
+  test(
+    'personal PATCH denial retains adaptive actor quota diagnostics',
+    () async {
+      h.respond = (request) async {
+        expect(request.method, 'PATCH');
+        expect(request.url.host, 'tuturuuu.com');
+        expect(request.url.path, '/api/v1/users/calendar-settings');
+        expect(request.headers['authorization'], 'Bearer synthetic-access');
+        return http.Response(
+          '{"error":"private upstream body"}',
+          429,
+          headers: {
+            'content-type': 'application/json',
+            'x-proxy-block-reason': 'rate-limit-exceeded',
+            'x-ratelimit-policy': 'calendar-session-user-mutate',
+            'x-ratelimit-caller-class': 'authenticated',
+            'x-ratelimit-window': 'minute',
+            'retry-after': '17',
+            'x-vercel-id': 'private-vercel-id',
+            'authorization': 'Bearer private-header-token',
+          },
+        );
+      };
+      try {
+        await h.repository.savePersonal('UTC');
+        fail('Expected mutation quota rejection');
+      } on ApiException catch (error) {
+        expect(error.statusCode, 429);
+        expect(error.retryAfter, 17);
+        final diagnostics = error.rateLimitDiagnostics!;
+        expect(diagnostics.policy, 'calendar-session-user-mutate');
+        expect(diagnostics.reason, 'rate-limit-exceeded');
+        expect(diagnostics.callerClass, 'authenticated');
+        expect(diagnostics.window, 'minute');
+        final summary = SafeErrorDiagnostics.capture(
+          error,
+          DiagnosticStage.timezoneWrite,
+        ).summary;
+        expect(summary, contains('policy=calendar-session-user-mutate'));
+        expect(summary, isNot(contains('private')));
+      }
+      expect(h.requests, hasLength(1));
+      expect(h.refreshes, 0);
+    },
+  );
 }

@@ -45,7 +45,7 @@ the local Web adapter instead.
 | Mobile repository | Account-scoped cooldown after a genuine 429; no network retry during cooldown | Retains the originating diagnostic; not proof of a fresh request on Settings open |
 | Web hosting | Existing Web native API hosting policy; no WAF/bot exception is declared in `apps/web/vercel.json` | Provider challenges run before route auth; live policy must be checked by the deployment operator |
 | Shared Web guard | Dedicated `proxy:web:calendar-preferences` actor bucket after MFA verification; persistent IP blocks | `native-calendar-preferences` with caller/window/quota headers; `proxy-ip-block` for blocked IPs |
-| Web personal PATCH quota | Additional adaptive authenticated actor quota using `session:user:mutate`, base 60/minute; no pre-auth shared-IP bucket or browser challenge | `web-calendar-session-user-mutate`, caller `authenticated`, window `minute`; preserves numeric quota and Retry-After headers |
+| Web personal PATCH quota | Additional adaptive authenticated actor quota using `session:user:mutate`, base 60/minute; no pre-auth shared-IP bucket or browser challenge | `calendar-session-user-mutate`, caller `authenticated`, window `minute`; preserves `Retry-After`, `X-Proxy-Block-Reason: rate-limit-exceeded`, `Cache-Control: private, no-store`, numeric `X-RateLimit-*` and adaptive `X-Abuse-*` headers |
 | Infrastructure hosting | Platform bot/WAF/DDoS protections before application code | May return a bare HTML/JSON 429 without application metadata |
 | Shared Infrastructure guard | Dedicated preferences quotas; already verified MFA Bearer actor, independent of warm trust cache | `native-calendar-preferences`, caller and minute/hour/day; IP blocks use `proxy-ip-block` |
 | Offline download guard | Additional quotas only with explicit offline-download header | `offline-capable-read`; ordinary timezone startup does not mark bulk downloads |
@@ -101,7 +101,7 @@ publish provider firewall configuration:
    private request identities out of reports. A curl control alone does not prove
    acceptance of an affected user's request.
 4. Retain the existing Calendar private-credential rule for older mobile builds.
-   Audit and correct its settings-path coverage as below. Verify old-client
+   The applied predicate coverage is recorded below; retain it and verify old-client
    read/save plus forged gateway credential rejection before calling that path
    recovered. Roll back the mobile origin only with the old route's hosting
    acceptance confirmed; otherwise it restores the original challenge exposure.
@@ -128,14 +128,25 @@ credential. Exit 1 means missing coverage, 0 means both exact settings paths are
 covered, and 2 means an unexpected rule or pending draft requires private review.
 The audit cannot publish a firewall change.
 
-The production owner must replace only the path predicate of the existing
-`Authenticated native Calendar gateway` rule with the audited proposed predicate.
-Keep its exact `x-tuturuuu-calendar-gateway` credential equality, active bypass
-action, unrelated rules and managed bot protection. Do not use mere Bearer
-presence as a hosting bypass. Review any existing draft before publishing. Then
-read back active coverage and verify authenticated native reads/saves plus
-forged-credential rejection. Repository deployment alone does not apply this
-provider configuration; no firewall publication is implied by the audit or PR.
+The user-authoritative production review at **2026-10-24 02:02 UTC** confirms
+the Calendar firewall correction is **applied**, configuration version **8**.
+The read-only audit reported `current=true` for both exact calendar-settings
+paths. This is an operator-provided configuration receipt, not a firewall
+mutation performed by this source change or a fresh readback by this agent.
+Do not reapply the correction blindly.
+
+Retain the `Authenticated native Calendar gateway` rule's exact
+`x-tuturuuu-calendar-gateway` credential equality, active bypass action and
+corrected path predicate. Keep unrelated rules and managed bot protection.
+Do not use mere Bearer presence as a hosting bypass. Future operator changes
+must review any pending draft and read back the resulting active coverage.
+Repository deployment alone does not publish provider configuration.
+
+Remaining acceptance for the already published mobile version is real-device
+personal/workspace GET and PATCH through the gateway, persistence, absence of a
+Vercel challenge and forged-credential rejection. An audit's `current=true`
+proves path coverage in that reviewed configuration, not successful device
+behavior or attribution of the original affected request.
 
 ## Diagnostic interpretation
 

@@ -42,7 +42,13 @@ export type CalendarSettingsContext = {
   supabase: TypedSupabaseClient;
   userId: string;
 };
-type Operation = { method: 'GET' } | { method: 'PATCH'; body: unknown };
+type PatchOperation =
+  | { method: 'PATCH'; body: unknown }
+  | { method: 'PATCH'; readBody: () => Promise<unknown> };
+type Operation = { method: 'GET' } | PatchOperation;
+function readPatchBody(operation: PatchOperation) {
+  return 'readBody' in operation ? operation.readBody() : operation.body;
+}
 export class CalendarSettingsError extends Error {
   constructor(
     readonly status: number,
@@ -86,7 +92,7 @@ export async function personalCalendarSettings(
 ) {
   const payload =
     operation.method === 'PATCH'
-      ? parse(personalCalendarSettingsSchema, operation.body)
+      ? parse(personalCalendarSettingsSchema, await readPatchBody(operation))
       : undefined;
   const query = supabase.from('user_private_details');
   const result =
@@ -147,7 +153,10 @@ export async function workspaceCalendarSettings(
   const query = supabase.from('workspaces');
   const result = await (async () => {
     if (operation.method === 'PATCH') {
-      const payload = parse(workspaceCalendarSettingsSchema, operation.body);
+      const payload = parse(
+        workspaceCalendarSettingsSchema,
+        await readPatchBody(operation)
+      );
       if (!Object.keys(payload).length)
         throw new CalendarSettingsError(400, 'No calendar settings provided');
       return await query

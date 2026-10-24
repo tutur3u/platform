@@ -3,15 +3,15 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { handleCalendarSettings } from '@/lib/calendar-settings-handler';
 
 export const GET = withSessionAuth(
-  async (request) => {
+  async (request, context) => {
     await connection();
-    return handleCalendarSettings(request);
+    return handleCalendarSettings(request, undefined, context);
   },
   { allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] } }
 );
 
 export const PATCH = withSessionAuth(
-  (request) => handleCalendarSettings(request),
+  (request, context) => handleCalendarSettings(request, undefined, context),
   {
     allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
     rateLimitScope: 'user',

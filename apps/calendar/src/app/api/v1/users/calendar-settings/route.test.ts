@@ -12,6 +12,7 @@ vi.mock('@/lib/api-auth', () => ({
 
 vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
   enforceRequiredMfaRequest: async () => null,
+  getVerifiedMfaBearerUser: () => null,
 }));
 
 import { PATCH } from './route';

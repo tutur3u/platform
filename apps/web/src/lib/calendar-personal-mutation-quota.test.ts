@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { NextRequest, NextResponse } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   decision: vi.fn(),
@@ -23,6 +23,7 @@ const request = () =>
     method: 'PATCH',
   });
 describe('personal Calendar actor quota parity', () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.decision.mockResolvedValue({ tier: 'normal', trustMultiplier: 0.5 });
@@ -83,15 +84,15 @@ describe('personal Calendar actor quota parity', () => {
     }
   );
   it('preserves limit and retry metadata and adds safe native diagnostics on adaptive denial', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
     const denial = NextResponse.json(
       {},
       {
         status: 429,
         headers: {
-          'Retry-After': '60',
           'X-RateLimit-Limit': '30',
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': '123',
+          'X-RateLimit-Reset': String(Math.floor(Date.now() / 1000) + 60),
         },
       }
     );
@@ -103,8 +104,10 @@ describe('personal Calendar actor quota parity', () => {
       'retry-after': '60',
       'x-ratelimit-limit': '30',
       'x-ratelimit-remaining': '0',
-      'x-ratelimit-reset': '123',
-      'x-ratelimit-policy': 'web-calendar-session-user-mutate',
+      'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 60),
+      'x-proxy-block-reason': 'rate-limit-exceeded',
+      'cache-control': 'private, no-store',
+      'x-ratelimit-policy': 'calendar-session-user-mutate',
       'x-ratelimit-caller-class': 'authenticated',
       'x-ratelimit-window': 'minute',
     });

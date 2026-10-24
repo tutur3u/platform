@@ -14,6 +14,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
   enforceRequiredMfaRequest: async () => null,
+  getVerifiedMfaBearerUser: () => null,
 }));
 vi.mock('next/server', async (original) => ({
   ...(await original<object>()),
