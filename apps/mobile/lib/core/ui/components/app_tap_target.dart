@@ -7,8 +7,10 @@ import 'package:flutter/widgets.dart';
 const double kAppMinTapTarget = 48;
 
 /// Pads a control's layout and hit region to at least [minSize] while the
-/// child keeps its visual size, centered. Taps anywhere in the padded region
-/// reach the child, like Material's `MaterialTapTargetSize.padded`.
+/// child keeps its visual size, centered. The child is laid out with the
+/// incoming constraints, so tight or stretched widths still size the visual;
+/// padding is only added where the constraints leave room. Taps anywhere in
+/// the padded region reach the child, like `MaterialTapTargetSize.padded`.
 class AppTapTarget extends SingleChildRenderObjectWidget {
   const AppTapTarget({
     required Widget super.child,
@@ -71,7 +73,7 @@ class RenderAppTapTarget extends RenderShiftedBox {
   Size computeDryLayout(covariant BoxConstraints constraints) {
     final child = this.child;
     if (child == null) return constraints.constrain(minSize);
-    return _resolve(constraints, child.getDryLayout(constraints.loosen()));
+    return _resolve(constraints, child.getDryLayout(constraints));
   }
 
   @override
@@ -81,7 +83,9 @@ class RenderAppTapTarget extends RenderShiftedBox {
       size = constraints.constrain(minSize);
       return;
     }
-    child.layout(constraints.loosen(), parentUsesSize: true);
+    // The visual keeps the incoming constraints (a tight width or a stretched
+    // column still sizes the surface); only extra hit area is added.
+    child.layout(constraints, parentUsesSize: true);
     size = _resolve(constraints, child.size);
     (child.parentData! as BoxParentData).offset = Alignment.center.alongOffset(
       size - child.size as Offset,

@@ -229,4 +229,48 @@ void main() {
       expect(taps, before + 1, reason: key);
     }
   });
+
+  testWidgets('tap targets keep tight and stretched widths for the surface', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: SizedBox(
+                width: 320,
+                child: AppButton.primary(
+                  key: const Key('tight'),
+                  onPressed: () {},
+                  child: const Text('Save'),
+                ),
+              ),
+            ),
+            AppButton.outline(
+              key: const Key('stretch'),
+              onPressed: () {},
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+    Size surface(String key) => tester.getSize(
+      find
+          .descendant(of: find.byKey(Key(key)), matching: find.byType(Material))
+          .first,
+    );
+    expect(surface('tight').width, 320);
+    expect(tester.getSize(find.byKey(const Key('tight'))).width, 320);
+    final column = tester.getSize(find.byType(Column).first).width;
+    expect(surface('stretch').width, column);
+    // Heights still pad the 40dp surface to a 48dp hit area.
+    expect(surface('stretch').height, 40);
+    expect(
+      tester.getSize(find.byKey(const Key('stretch'))).height,
+      kAppMinTapTarget,
+    );
+  });
 }
