@@ -11,7 +11,7 @@ This document describes how to run tests, linting, and type checking for the Dis
 
 ```bash
 # From the repository root, runs Discord Python checks when apps/discord files changed
-bun check
+bun validate
 
 # Install dependencies
 uv sync
@@ -32,6 +32,26 @@ uv run ruff format .
 uv run mypy .
 ```
 
+## Focused MarkItDown security checks
+
+From `apps/discord`, use an already provisioned environment without installing
+or updating dependencies:
+
+```bash
+uv run --offline --no-sync pytest tests/test_markitdown_service.py tests/test_markitdown_security.py
+uv run --offline --no-sync ruff check markitdown_service.py tests/test_markitdown_service.py tests/test_markitdown_security.py
+uv run --offline --no-sync ruff format --check markitdown_service.py tests/test_markitdown_service.py tests/test_markitdown_security.py
+```
+
+These tests replace HTTP clients with fixtures and make no external requests.
+They cover configured-origin validation before opening a session, redirects,
+IDNA/case normalization, temporary suffixes, download limits and cleanup, and
+canonical YouTube conversion. They do not verify live Supabase DNS or YouTube
+transcript availability. `UV_PROJECT_ENVIRONMENT` can select an existing compatible
+virtualenv; `--no-sync` must remain set when dependency installation is prohibited.
+If Python or dependencies are absent, report that blocker and use CI; do not
+silently install them. The full checks and builds remain CI gates.
+
 ## Continuous Integration
 
 The CI pipeline automatically runs on every push or pull request that affects:
@@ -39,7 +59,7 @@ The CI pipeline automatically runs on every push or pull request that affects:
 - Files in `apps/discord/`
 - The workflow file `.github/workflows/discord-python-ci.yml`
 
-The root `bun check` command also detects changes to those paths and runs the
+The root `bun validate` command also detects changes to those paths and runs the
 blocking Discord Python checks through `scripts/check-discord-python.js`: locked
 `uv` install, Ruff lint, Ruff formatter check, mypy, pytest, Python compile, and
 import verification.

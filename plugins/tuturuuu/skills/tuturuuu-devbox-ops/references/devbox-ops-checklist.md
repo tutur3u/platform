@@ -9,7 +9,8 @@ up Tuturuuu devbox runners.
   `TUTURUUU_CLI_CONFIG`.
 - Devbox agent poll and heartbeat routes are blocked unless the platform web app
   has `TUTURUUU_DEVBOX_AGENT_API_ENABLED=true`.
-- `bun ttr ...` runs the repo-local SDK CLI.
+- `bun ttr ...` delegates to the trusted global `~/.bun/bin/ttr` (>= 0.28.0).
+- For local source development, use `TUTURUUU_CONFIG=<private-config> TTR_RESOURCES_HOME=<disposable-resource-home> bun packages/sdk/src/cli/index.ts box ...` from the repo root; keep production CLI config and scheduler state separate.
 - `ttr ...` runs the installed CLI.
 - Use `ttr whoami --no-update-check` or equivalent config inspection before
   assuming a command targets local, staging, or production.
@@ -53,7 +54,7 @@ Expected result:
 - `git rev-parse --show-toplevel`
 - `bun --cwd packages/devbox test`
 - A focused package test for the touched code
-- `bun check` after focused tests pass, when the repo rules require it
+- `bun validate` after focused tests pass, when the repo rules require it
 
 ## Build, Serve, Tunnel, And Database Forwarding
 
@@ -138,13 +139,28 @@ and system service from the existing token file without registering a new runner
 row. Use `ttr box repair --dir . --dry-run` when checking a host remotely before
 allowing service-file writes or sudo restart commands.
 
+### Trust-tier isolation evidence
+
+`box doctor --isolation --other-user <user>` requires readable ACL evidence for
+the credential, home, checkout, checkout `.env*` files and their ancestors. Linux
+uses numeric `getfacl` entries with effective masks; macOS uses `ls -le`. Effective
+extended grants conservatively fail even for unrelated identities. Missing tools
+or malformed ACL output are `unknown` and fail required evidence. Regressions
+live in `devbox-isolation-acl.test.ts`.
+
+`repair --execution-mode` does not authorize replacing another service mode;
+that guard requires `--force`. Setup normalizes token paths before both the
+overwrite guard and registration. Cover these boundaries with
+`devbox-repair.test.ts` and `devbox-isolation.test.ts`; confirm refusal occurs
+before credential issuance or file changes.
+
 ## Claim admission regressions
 
 When changing admission SQL, preserve the final drain-aware claim body and add
 only the mode predicate. Judge must reject every reported `trusted` mode even
 with a stale or missing timestamp; only trusted-work admission uses freshness. Judge denial precedes the flag check
-and applies even with the flag off. Keep the flag off until agent reporting and
-both heartbeat handlers support executionMode; do not invent a reporting switch.
+and applies even with the flag off. Keep the flag off until every run-enabled
+runner sends a fresh `TUTURUUU_DEVBOX_EXECUTION_MODE=trusted` report.
 The database owns report timestamps on inserts, identical capability updates
 and timestamp-only writes, and rejects future values in the freshness helper.
 Exercise NULL operator inputs and timestamp forgery in
@@ -153,7 +169,7 @@ fixtures may disable the stamp trigger only within their rolled-back test.
 
 Claim migrations replace one function: compose changes from the latest definition
 rather than moving an older body later. The final stale-run reaper migration
-(`20261023120000`) must retain trust-pool, drain and mode admission, inserting
+(`20261024095000`) must retain trust-pool, drain and mode admission, inserting
 only runner-scoped `reap_stale_devbox_runs(p_runner_id, 25)` after the claim lock.
 Run every devbox pgTAP suite against the final sequence and prove the 25-row
 bound with more than 25 stale rows plus a stale row for another runner.
@@ -174,3 +190,17 @@ four ordinary devbox pgTAP suites. Loopback trust does not consume a supplied
 password, and Supabase's restricted postgres role cannot use dblink_connect_u.
 The isolated lifecycle must destroy the database after committed-session tests,
 including on failure; do not grant new production privileges to run a fixture.
+
+## Command-line injection triage
+
+General jobs are intentionally arbitrary execution for authenticated root-workspace
+members. Trace submission authorization, private-table/RPC access, runner token
+verification and Judge/playground routing before classifying a launcher alert.
+`shell: false` protects literal argv but does not sandbox an explicit interpreter
+or project script. Exact-commit origin reachability proves provenance, not safety.
+The launcher rejects malformed executable names and NUL arguments; do not turn
+these guardrails into a claimed executable allowlist. Use the SDK process-group,
+runner-trust and commit-run tests, and the API runs authorization tests. Separate
+source evidence from deployed grants, pool configuration and token custody.
+See `apps/docs/build/development-tools/remote-devboxes.mdx`, section
+“Trusted command execution boundary”, for the complete boundary and exceptions.

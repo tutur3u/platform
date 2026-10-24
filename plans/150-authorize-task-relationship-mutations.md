@@ -64,7 +64,7 @@ default stack.
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no generated-type change |
 | Package typecheck | `bun run --cwd packages/tasks-api type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -128,7 +128,7 @@ service-role behavior.
 Apply the policy migration through Plan 151's exact-base disposable Supabase
 validator, run
 focused/full database and route tests, assert zero generated-type drift, then
-run package typecheck, Tasks build, `bun check`, and whitespace.
+run package typecheck, Tasks build, `bun validate`, and whitespace.
 
 ## Done criteria
 

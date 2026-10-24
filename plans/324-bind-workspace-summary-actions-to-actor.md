@@ -63,7 +63,7 @@ member/guest workspace directory, tier, creator, and access metadata.
 | Hive | `bun --cwd apps/hive vitest run 'src/app/api/v1/hive/workspaces/route.test.ts' && bun --cwd apps/hive run build` | verified actor forwarding and build pass |
 | Action surface | `rg -n 'userId|providedUserId|providedSupabase|request|requireAuth' packages/ui/src/lib/workspace-actions.ts` | no privileged injectable parameter remains in the action module |
 | Migration | `bun migration:tanstack:manifest && bun web:api-routes:check` | first-class source and manifest are current; no legacy wrapper is generated |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope/size | `git status --short && wc -l packages/ui/src/lib/workspace-actions.ts packages/ui/src/lib/workspace-summaries.server.ts` | only in-scope files changed; both modules remain focused and below 700 lines |
 
 ## Scope
@@ -110,7 +110,7 @@ traffic cutover; other workspace APIs; new dependencies.
   query; legitimate cookie/app-session/Hive results remain compatible.
 - [ ] The Web route is first-class and migration artifacts name its new source.
 - [ ] Focused tests, three package/app checks/builds, route generator, manifest,
-  `bun check`, scope, size, and whitespace gates pass.
+  `bun validate`, scope, size, and whitespace gates pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

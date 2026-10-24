@@ -3,7 +3,14 @@
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import type { ReactNode } from 'react';
@@ -224,6 +231,8 @@ describe('live time tracker contracts', () => {
   });
 
   afterEach(() => {
+    cleanup();
+    if (vi.isFakeTimers()) vi.runOnlyPendingTimers();
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
@@ -504,21 +513,19 @@ describe('live time tracker contracts', () => {
   });
 
   it('ticks elapsed time from the running session start', async () => {
-    const now = new Date('2026-08-10T00:00:10.000Z').getTime();
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-10T00:00:10.000Z'));
     renderTracker({
       current: runningSession({ start_time: '2026-08-10T00:00:05.000Z' }),
     });
-    await openTracker();
-    await waitFor(() =>
-      expect(screen.getAllByText('00:05')).not.toHaveLength(0)
-    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /time tracker/i }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getAllByText('00:05')).not.toHaveLength(0);
 
-    nowSpy.mockReturnValue(now + 1_000);
-    await waitFor(
-      () => expect(screen.getAllByText('00:06')).not.toHaveLength(0),
-      { timeout: 1500 }
-    );
+    await act(() => vi.advanceTimersByTimeAsync(1_000));
+    expect(screen.getAllByText('00:06')).not.toHaveLength(0);
   });
 
   it('shows the live mutation failure toast without invalidating the sidebar', async () => {

@@ -43,6 +43,7 @@ export interface PlanUser {
 export interface GuestUser {
   id?: string | null;
   display_name?: string | null;
-  password_hash?: string;
+  /** Meet guest session issued by the server after guest login. */
+  guest_session?: string;
   is_guest?: boolean | null;
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
@@ -108,7 +109,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(shad.LucideIcons.pencil, size: 14),
+                    const Icon(LucideIcons.pencil, size: 14),
                     const shad.Gap(4),
                     Text(l10n.timerEditSession, style: theme.typography.small),
                   ],
@@ -127,7 +128,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                 children: [
                   // Session title
                   _DetailRow(
-                    icon: shad.LucideIcons.tag,
+                    icon: LucideIcons.tag,
                     label: l10n.timerSessionTitle,
                     value: _session.title?.isNotEmpty == true
                         ? _session.title!
@@ -137,7 +138,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
 
                   // Category
                   _DetailRow(
-                    icon: shad.LucideIcons.folder,
+                    icon: LucideIcons.folder,
                     label: l10n.timerCategory,
                     value: categoryName,
                     colorDot: resolvedCategoryColor,
@@ -147,7 +148,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                   // Start time
                   if (startTime != null) ...[
                     _DetailRow(
-                      icon: shad.LucideIcons.calendar,
+                      icon: LucideIcons.calendar,
                       label: l10n.timerStartTime,
                       value:
                           '${dateFmt.format(startTime.toLocal())}'
@@ -159,7 +160,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                   // End time
                   if (endTime != null) ...[
                     _DetailRow(
-                      icon: shad.LucideIcons.calendarCheck,
+                      icon: LucideIcons.calendarCheck,
                       label: l10n.timerEndTime,
                       value:
                           '${dateFmt.format(endTime.toLocal())}'
@@ -170,7 +171,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
 
                   // Duration
                   _DetailRow(
-                    icon: shad.LucideIcons.clock,
+                    icon: LucideIcons.clock,
                     label: l10n.timerDuration,
                     value: formatTimerDuration(
                       _session.duration,
@@ -208,7 +209,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
             onPressed: () => _showDeleteConfirmation(context),
             child: Row(
               children: [
-                const Icon(shad.LucideIcons.trash2, size: 16),
+                const Icon(LucideIcons.trash2, size: 16),
                 const shad.Gap(8),
                 Text(l10n.timerDeleteSession),
               ],

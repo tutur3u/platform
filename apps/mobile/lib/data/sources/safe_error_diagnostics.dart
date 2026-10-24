@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:mobile/data/sources/api_exception.dart';
-import 'package:mobile/data/sources/api_rate_limit_diagnostics.dart';
 
 /// Fixed fields only: never include a server body, prompt, URL or credentials.
 class SafeErrorDiagnostics {
@@ -20,15 +19,7 @@ class SafeErrorDiagnostics {
         kind: error.failureKind.name,
         status: error.statusCode,
         retryAfter: error.retryAfter,
-        rateLimit: error.rateLimitDiagnostics == null
-            ? null
-            : ApiRateLimitDiagnostics.fromHeaders({
-                'x-proxy-block-reason': error.rateLimitDiagnostics!.reason,
-                'x-ratelimit-policy': error.rateLimitDiagnostics!.policy,
-                'x-ratelimit-caller-class':
-                    error.rateLimitDiagnostics!.callerClass,
-                'x-ratelimit-window': error.rateLimitDiagnostics!.window,
-              }).safeSummary,
+        rateLimit: error.rateLimitDiagnostics?.safeSummary,
       );
     }
     return SafeErrorDiagnostics._(

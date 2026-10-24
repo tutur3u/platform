@@ -18,7 +18,7 @@ timeouts, sequencing, or failure triage for devbox validation.
 
 Prefer devbox offload for:
 
-- `bun check` and other repo-wide validation
+- `bun validate` and other repo-wide validation
 - package test suites that run for more than a short focused pass
 - Docker, Supabase, or browser workflows that consume a lot of local resources
 - repeated validation while implementation continues locally

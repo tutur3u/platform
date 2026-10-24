@@ -1,0 +1,78 @@
+name: Security Review Classification
+
+# Requires a Security review for pull requests whose changed paths touch a
+# sensitive category (scripts/ci/security-paths.js); the security-review-required
+# label is a cosmetic, best-effort hint and never decides membership.
+# pull_request_target runs this file and the classifier from the base/default
+# branch with a write token, so it must never check out, install or execute
+# pull request content: it reads the PR file list through the API only.
+# Removing the label re-runs the classification. There is deliberately no path
+# filter: the
+# Security review check is reported for every pull request (success when no
+# sensitive path changed) so it can be a required status check. Review
+# submissions and dismissals are recomputed by security-review-reclassify.yaml
+# (fast path, signalled by a pull-request-owned relay) and by the scheduled
+# security-review-sweep.yaml (trusted backstop).
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - edited
+      - labeled
+      - unlabeled
+      # Trusted recomputes right before automated merges; a dismissal never
+      # fires a pull_request_target event, so it also relies on the code-owner
+      # rule and security-review-sweep.yaml (see security-cadence.mdx).
+      - auto_merge_enabled
+      - enqueued
+
+# One repository-wide group per pull request, shared with the reclassify job
+# (security-review-reclassify.yaml), so writers of a PR's Security review check
+# never interleave. Non-cancelling: every queued run re-reads live state.
+concurrency:
+  group: security-review-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    name: Classify security review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      checks: write
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out the default-branch classifier only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/security-paths.js
+            scripts/ci/security-review-classification.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Classify, label and record the security review check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
+        run: node scripts/ci/security-review-classification.js

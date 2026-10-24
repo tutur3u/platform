@@ -239,7 +239,7 @@ is tracked in `apps/tanstack-web/migration/route-overrides.json`.
 From `apps/web`, run focused Vitest tests under the dashboard `assistant` directory,
 `src/__tests__/assistant-live-token-routes.test.ts`, and
 `src/__tests__/live/token-builder.test.ts`. Run internal API live-tool tests from
-`packages/internal-api`, followed by `bun check` at the root and `bun run build`
+`packages/internal-api`, followed by `bun validate` at the root and `bun run build`
 in `apps/web`.
 
 Authenticated runtime acceptance requires a configured Gemini key, available AI
@@ -300,6 +300,31 @@ chat route. Routing only search through AI Gateway adds a separate credit and
 authentication dependency; a gateway 403 does not mean Google search is down.
 
 ### Conversation chronology and native presentation
+
+On mobile, Assistant chat inherits the shell background, branded top title and
+single floating navigation dock. Back stays in that dock. The prompt retains its
+height on focus, grows with its content up to five lines, and Enter inserts a
+newline; the side primary action sends. The transcript jump action uses measured
+composer height and shell dock/safe-area clearance, including the resized keyboard
+viewport. Streaming output follows only while the reader is near the bottom;
+reading earlier messages preserves the scroll position.
+
+User receipts show semibold **Delivered** only after the existing saved-user
+acknowledgement replaces an optimistic request ID. **Read** means a subsequent
+Assistant response has begun processing that turn, not that a person read it.
+A newly observed Read transition holds Delivered for 700 milliseconds before
+showing Read. Timestamps use light `HH:mm`; assistant replies and live drafts have
+no delivery timestamp. History without acknowledgement provenance and optimistic
+or failed sends remain timestamp-only. These presentation rules do not establish
+backend persistence; messages whose saved and request IDs match also remain
+unlabelled until explicit receipt state is available.
+
+`assistant_composer_multiline_test.dart`, `assistant_composer_geometry_test.dart`,
+`assistant_scroll_overlay_test.dart`, and `assistant_message_receipt_test.dart`
+cover editing, dock/keyboard clearance and receipt states. Settings retain the
+single branded header labelled Assistant Settings, compact content spacing and a
+bottom Back control; `assistant_settings_layout_test.dart` covers safe areas and
+enlarged text. Widget rasters do not replace installed-device acceptance.
 
 Assistant history stores the ordered provider content for every generation step in
 `metadata.ai.parts`. Tool results update their original call slot, including failed
@@ -493,7 +518,7 @@ performance, chat persistence, or provider operation.
 
 ### Central mobile Mira settings
 
-On mobile, Settings → Product settings → Assistant opens the same live-browsing preference used by Mira quick settings. The shared shell supplies the title and back dock; the editor adds no second navbar. The preference defaults to off and remains scoped to the signed-in actor and workspace. Switching either scope invalidates the open editor and prevents late reads or writes from publishing into the replacement scope. An unreadable preference shows retry without an editable guessed value; a failed save retains the last confirmed value. This surface configures the existing live-browsing setting only, not local-model installation or provider credentials.
+On mobile, Settings → Apps → Assistant opens the same live-browsing preference used by Mira quick settings. The shared shell supplies the title and back dock; the editor adds no second navbar. The preference defaults to off and remains scoped to the signed-in actor and workspace. Switching either scope invalidates the open editor and prevents late reads or writes from publishing into the replacement scope. An unreadable preference shows retry without an editable guessed value; a failed save retains the last confirmed value. This surface configures the existing live-browsing setting only, not local-model installation or provider credentials.
 
 Regression coverage: `assistant_settings_cubit_test.dart`, `assistant_settings_hub_test.dart`, and `assistant_preferences_test.dart` cover persisted values, shared shell publication, failed reads/writes, and async scope invalidation.
 

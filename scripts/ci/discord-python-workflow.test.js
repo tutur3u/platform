@@ -55,14 +55,20 @@ test('workflow-run deployment uses automatic cache protection', () => {
 test('Modal deployment retains trusted main completion and exact checkout', () => {
   assert.deepEqual(modal.permissions, { contents: 'read' });
   assert.deepEqual(modal.on.workflow_run.workflows, ['Discord Python CI']);
-  assert.match(modal.jobs.deploy.if, /workflow_run\.conclusion == 'success'/);
-  assert.match(modal.jobs.deploy.if, /workflow_run\.head_branch == 'main'/);
+  assert.match(modal.jobs.trigger.if, /workflow_run\.conclusion == 'success'/);
+  assert.match(modal.jobs.trigger.if, /workflow_run\.head_branch == 'main'/);
+  // The deploy job only starts after the exact trigger proof succeeded.
+  assert.equal(modal.jobs.deploy.needs, 'trigger');
+  assert.equal(modal.jobs.deploy.if, "needs.trigger.outputs.trusted == 'true'");
   const checkout = modal.jobs.deploy.steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
+  // The deploy job re-proves the trigger itself (a re-run of only this job
+  // must not reuse an earlier check) and checks out that verified SHA.
+  assert.equal(modal.jobs.deploy.steps[0].id, 'trigger');
   assert.match(
     checkout.with.ref,
-    /^\$\{\{ github\.event\.workflow_run\.head_sha \|\| github\.sha \}\}$/
+    /^\$\{\{ steps\.trigger\.outputs\.head_sha \}\}$/
   );
   assert.ok(
     modal.jobs.deploy.steps.some((step) => step.run === 'uv sync --locked')

@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",

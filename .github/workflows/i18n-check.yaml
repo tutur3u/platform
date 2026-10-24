@@ -13,8 +13,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
+permissions:
+  contents: read
+
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: i18n-check.yaml
@@ -31,12 +37,11 @@ jobs:
       is_sorted: ${{ steps.sort-check.outputs.is_sorted }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Check if translations are sorted
         id: sort-check
@@ -70,12 +75,11 @@ jobs:
       has_issues: ${{ steps.i18n-check.outputs.has_issues }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -126,10 +130,9 @@ jobs:
       missing_in_en: ${{ steps.parity-check.outputs.missing_in_en }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
 
@@ -170,17 +173,16 @@ jobs:
       has_issues: ${{ steps.namespace-check.outputs.has_issues }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
 
       - name: Setup Bun for rendered translation tracing
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Run namespace check
         id: namespace-check
@@ -213,7 +215,19 @@ jobs:
       pull-requests: write
     steps:
       - name: Comment on PR with i18n status
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          I18N_KEY_PARITY_CHECK_HAS_ISSUES: ${{ needs.i18n-key-parity-check.outputs.has_issues }}
+          I18N_KEY_PARITY_CHECK_MISSING_IN_EN: ${{ needs.i18n-key-parity-check.outputs.missing_in_en }}
+          I18N_KEY_PARITY_CHECK_MISSING_IN_VI: ${{ needs.i18n-key-parity-check.outputs.missing_in_vi }}
+          I18N_KEY_PARITY_CHECK_RESULT: ${{ needs.i18n-key-parity-check.result }}
+          I18N_NAMESPACE_CHECK_HAS_ISSUES: ${{ needs.i18n-namespace-check.outputs.has_issues }}
+          I18N_NAMESPACE_CHECK_RESULT: ${{ needs.i18n-namespace-check.result }}
+          I18N_SORT_CHECK_IS_SORTED: ${{ needs.i18n-sort-check.outputs.is_sorted }}
+          I18N_SORT_CHECK_RESULT: ${{ needs.i18n-sort-check.result }}
+          I18N_TRANSLATION_CHECK_HAS_ISSUES: ${{ needs.i18n-translation-check.outputs.has_issues }}
+          I18N_TRANSLATION_CHECK_ISSUE_COUNT: ${{ needs.i18n-translation-check.outputs.issue_count }}
+          I18N_TRANSLATION_CHECK_RESULT: ${{ needs.i18n-translation-check.result }}
         with:
           script: |
             const prNumber = context.payload.pull_request?.number;
@@ -223,13 +237,13 @@ jobs:
               return;
             }
 
-            const isSorted = '${{ needs.i18n-sort-check.outputs.is_sorted }}';
-            const hasTranslationIssues = '${{ needs.i18n-translation-check.outputs.has_issues }}';
-            const issueCount = '${{ needs.i18n-translation-check.outputs.issue_count }}';
-            const hasParityIssues = '${{ needs.i18n-key-parity-check.outputs.has_issues }}';
-            const missingInVi = '${{ needs.i18n-key-parity-check.outputs.missing_in_vi }}';
-            const missingInEn = '${{ needs.i18n-key-parity-check.outputs.missing_in_en }}';
-            const hasNamespaceIssues = '${{ needs.i18n-namespace-check.outputs.has_issues }}';
+            const isSorted = process.env.I18N_SORT_CHECK_IS_SORTED ?? '';
+            const hasTranslationIssues = process.env.I18N_TRANSLATION_CHECK_HAS_ISSUES ?? '';
+            const issueCount = process.env.I18N_TRANSLATION_CHECK_ISSUE_COUNT ?? '';
+            const hasParityIssues = process.env.I18N_KEY_PARITY_CHECK_HAS_ISSUES ?? '';
+            const missingInVi = process.env.I18N_KEY_PARITY_CHECK_MISSING_IN_VI ?? '';
+            const missingInEn = process.env.I18N_KEY_PARITY_CHECK_MISSING_IN_EN ?? '';
+            const hasNamespaceIssues = process.env.I18N_NAMESPACE_CHECK_HAS_ISSUES ?? '';
 
             // Missing outputs never prove success or a translation defect.
             const status = (result, output, passingValue, passLabel, failLabel) => {
@@ -237,10 +251,10 @@ jobs:
               if (result === 'failure' && output === (passingValue === 'true' ? 'false' : 'true')) return { kind: 'fail', label: failLabel };
               return { kind: 'incomplete', label: `Incomplete (${result || 'unknown'})` };
             };
-            const sorting = status('${{ needs.i18n-sort-check.result }}', isSorted, 'true', 'Sorted', 'Not sorted');
-            const translation = status('${{ needs.i18n-translation-check.result }}', hasTranslationIssues, 'false', 'All in sync', 'Issues found');
-            const parity = status('${{ needs.i18n-key-parity-check.result }}', hasParityIssues, 'false', 'Keys in sync', 'Keys mismatch');
-            const namespace = status('${{ needs.i18n-namespace-check.result }}', hasNamespaceIssues, 'false', 'All present', 'Missing namespaces');
+            const sorting = status(process.env.I18N_SORT_CHECK_RESULT ?? '', isSorted, 'true', 'Sorted', 'Not sorted');
+            const translation = status(process.env.I18N_TRANSLATION_CHECK_RESULT ?? '', hasTranslationIssues, 'false', 'All in sync', 'Issues found');
+            const parity = status(process.env.I18N_KEY_PARITY_CHECK_RESULT ?? '', hasParityIssues, 'false', 'Keys in sync', 'Keys mismatch');
+            const namespace = status(process.env.I18N_NAMESPACE_CHECK_RESULT ?? '', hasNamespaceIssues, 'false', 'All present', 'Missing namespaces');
             const states = [sorting, translation, parity, namespace];
             const overallSuccess = states.every(state => state.kind === 'pass');
             const confirmedFailure = states.some(state => state.kind === 'fail');

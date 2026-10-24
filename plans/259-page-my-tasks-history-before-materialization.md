@@ -142,7 +142,7 @@ additional numeric-page consumer is a STOP requiring a versioned transition.
 | Rust | `cargo test --manifest-path apps/backend/Cargo.toml users_me_tasks && bun check:backend` | query/envelope parity, auth modes, OpenAPI, native/Worker compile, and tests pass |
 | Rust size | `test "$(wc -l < apps/backend/src/users_me_tasks.rs | tr -d ' ')" -le 700 && find apps/backend/src/users_me_tasks -name '*.rs' -exec sh -c 'test "$(wc -l < "$1" | tr -d " ")" -le 700' _ {} \;` | every edited/new Rust source is at most 700 lines |
 | Types | `bun run --cwd apps/tasks type-check && bun run --cwd packages/internal-api type-check && bun run --cwd packages/tasks-ui type-check` | all affected TypeScript workspaces compile |
-| Build/repository | `bun run --cwd apps/tasks build && bun check && git diff --check` | production build and canonical gates pass; whitespace is empty |
+| Build/repository | `bun run --cwd apps/tasks build && bun validate && git diff --check` | production build and canonical gates pass; whitespace is empty |
 
 ## Scope
 
@@ -202,7 +202,7 @@ Plan 079 work.
 - [ ] Active requests no longer load review/done or personally hidden history.
 - [ ] Tasks UI and Mobile use the opaque cursor; prepared Rust has exact parity.
 - [ ] ACL, focused, >1,000-row, typegen, `bun check:mobile`, typecheck, build,
-      `bun check`, and whitespace gates pass.
+      `bun validate`, and whitespace gates pass.
 - [ ] No unrelated Tasks, Web, Rust, Mobile, or database artifact changed.
 
 ## STOP conditions

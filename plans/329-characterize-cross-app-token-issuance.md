@@ -60,7 +60,7 @@ green.
 | Types | `bun --cwd apps/web run type-check && bun --cwd packages/auth run type-check` | both exit 0 |
 | Wrapper | `bun web:api-routes:check` | generated wrapper remains current; no source is regenerated |
 | Runtime immutability | `git diff --exit-code -- apps/web/src/legacy-api-routes/auth/generate-app-tokens/route.ts apps/web/src/app/api/auth/generate-app-tokens/route.ts packages/auth/src/cross-app/index.ts apps/tanstack-web/migration/route-manifest.json apps/tanstack-web/migration/route-overrides.json` | no runtime or migration-artifact diff |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only the two new test files and plan status changed |
 
 ## Suggested executor toolkit
@@ -127,7 +127,7 @@ not leak token/session material through test logs.
 ### Step 3: Prove test-only scope
 
 Run both suites and typechecks, wrapper consistency, runtime immutability,
-`bun check`, scope, and whitespace gates. Do not run route generators because
+`bun validate`, scope, and whitespace gates. Do not run route generators because
 no runtime route moved.
 
 If the existing tests reveal that arbitrary targets or expiry values are unsafe
@@ -149,7 +149,7 @@ finding. Do not silently tighten this characterization plan.
 - [ ] Shared issuer actor/metadata/RPC/error behavior is characterized.
 - [ ] Tests contain only synthetic token markers and assert no token logging.
 - [ ] Runtime handlers, generated wrapper, database, Rust, and TanStack artifacts are unchanged.
-- [ ] Focused suites, both typechecks, wrapper check, `bun check`, scope, and whitespace pass.
+- [ ] Focused suites, both typechecks, wrapper check, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

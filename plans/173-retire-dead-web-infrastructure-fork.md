@@ -61,7 +61,7 @@ caller reaches while Web continues to typecheck thousands of obsolete lines.
 | Typechecks | `bun run --cwd apps/web type-check && bun run --cwd apps/infrastructure type-check` | both exit 0 |
 | Backend | `bun check:backend` | Rust comments/source compile and tests pass |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/infrastructure build` | both production builds exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Suggested executor toolkit
@@ -131,7 +131,7 @@ handler status, routing, response parity, or executable Rust code.
 
 ### Step 4: Run full gates
 
-Run the Infrastructure suite, both typechecks/builds, `bun check`, and
+Run the Infrastructure suite, both typechecks/builds, `bun validate`, and
 whitespace. Confirm retained Web log drain did not change.
 
 ## Done criteria

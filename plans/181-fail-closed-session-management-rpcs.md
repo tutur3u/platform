@@ -50,7 +50,7 @@ whether service-role execution is supported.
 | Isolated types | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/session-management-rpc-auth.sql` | no signature drift |
 | Backend focused | `cargo test --manifest-path apps/backend/Cargo.toml users_sessions` | focused Rust tests pass |
 | Backend full | `bun check:backend` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

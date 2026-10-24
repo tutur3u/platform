@@ -40,6 +40,7 @@ class _SettingsHarness {
     GoRouterWidgetBuilder? workspaceSecretsBuilder,
   }) {
     whenListen(auth, accounts.stream, initialState: _account('user'));
+    when(() => auth.isClosed).thenReturn(false);
     whenListen(workspaces, scopes.stream, initialState: _workspace('ws'));
     whenListen(
       timezone,
@@ -49,6 +50,8 @@ class _SettingsHarness {
         workspace: 'Europe/Paris',
         loading: false,
         resolved: true,
+        personalLoaded: true,
+        workspaceLoaded: true,
       ),
     );
     whenListen(
@@ -171,7 +174,13 @@ class _SettingsHarness {
   late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   late final GoRouter router;
 
-  Future<void> pump(WidgetTester tester, {double scale = 1}) async {
+  /// [shellChrome] provides the chrome actions registry, as the app does, so
+  /// sheets register dynamic search and modal Back with the shell.
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    bool shellChrome = false,
+  }) async {
     await apps.recordAppOrigin(Routes.apps);
     if (assistantPageBuilder != null) await experiments.load();
     await tester.pumpWidget(
@@ -186,10 +195,10 @@ class _SettingsHarness {
           BlocProvider.value(value: finance),
           BlocProvider.value(value: theme),
           BlocProvider.value(value: locale),
-          if (assistantPageBuilder != null) ...[
+          if (assistantPageBuilder != null || shellChrome)
             BlocProvider.value(value: actions),
+          if (assistantPageBuilder != null)
             BlocProvider.value(value: experiments),
-          ],
           BlocProvider(create: (_) => ShellMiniNavCubit()),
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
           BlocProvider(create: (_) => AssistantChromeCubit()),
@@ -197,8 +206,14 @@ class _SettingsHarness {
         child: RepositoryProvider<AssistantPersonalSettingsRepository?>.value(
           value: assistantSettingsRepository,
           child: shad.ShadcnApp.router(
-            theme: MobileShadTheme.light,
-            darkTheme: MobileShadTheme.dark,
+            theme: AppearanceTheme.shadTheme(
+              theme.state.appearance,
+              Brightness.light,
+            ),
+            darkTheme: AppearanceTheme.shadTheme(
+              theme.state.appearance,
+              Brightness.dark,
+            ),
             themeMode: theme.state.themeMode,
             locale: locale.state.locale,
             localizationsDelegates: const [
@@ -207,15 +222,16 @@ class _SettingsHarness {
             ],
             supportedLocales: AppLocalizations.supportedLocales,
             routerConfig: router,
-            builder: (context, child) => ShadcnMaterialBridge.appBuilder(
-              context,
-              MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(scale)),
-                child: RepaintBoundary(
-                  key: const ValueKey('synthetic-settings-render'),
-                  child: child,
+            // Mirrors App: the appearance backdrop sits outside the bridge.
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: RepaintBoundary(
+                key: const ValueKey('synthetic-settings-render'),
+                child: AppearanceBackdrop(
+                  settings: theme.state.appearance,
+                  child: ShadcnMaterialBridge.appBuilder(context, child),
                 ),
               ),
             ),
@@ -278,7 +294,10 @@ Future<void> _capture(WidgetTester tester, String name) async {
     final boundary = tester.renderObject<RenderRepaintBoundary>(
       find.byKey(const ValueKey('synthetic-settings-render')),
     );
-    final image = await boundary.toImage();
+    final ratio = double.tryParse(
+      Platform.environment['SETTINGS_RENDER_PIXEL_RATIO'] ?? '',
+    );
+    final image = await boundary.toImage(pixelRatio: ratio ?? 1);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     await Directory(output).create(recursive: true);
     await File('$output/$name.png').writeAsBytes(bytes!.buffer.asUint8List());

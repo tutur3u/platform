@@ -131,119 +131,107 @@ extension _CrmPageLayout on _CrmPageState {
                 ),
             ],
           ),
-          ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: selected != null
-                ? _CrmUserDetail(
-                    user: selected,
-                    privateInfo: _userPermissions?.hasPrivateInfo ?? false,
-                    publicInfo: _userPermissions?.hasPublicInfo ?? false,
-                  )
-                : NovaRefreshIndicator(
-                    onRefresh: () => _loadInitial(force: true),
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        8,
-                        16,
-                        24 + MediaQuery.paddingOf(context).bottom,
+          if (selected != null)
+            _CrmUserDetail(
+              user: selected,
+              privateInfo: _userPermissions?.hasPrivateInfo ?? false,
+              publicInfo: _userPermissions?.hasPublicInfo ?? false,
+            )
+          else
+            NovaRefreshIndicator(
+              onRefresh: () => _loadInitial(force: true),
+              child: AppPageListView.builder(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: 2 + (allowed ? count : 0),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: FinanceSectionHeader(
+                        title: usersTab ? l10n.crmUsersTab : l10n.crmAuditTab,
+                        subtitle: allowed
+                            ? NumberFormat.compact().format(total)
+                            : null,
                       ),
-                      itemCount: 2 + (allowed ? count : 0),
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: FinanceSectionHeader(
-                              title: usersTab
-                                  ? l10n.crmUsersTab
-                                  : l10n.crmAuditTab,
-                              subtitle: allowed
-                                  ? NumberFormat.compact().format(total)
-                                  : null,
-                            ),
-                          );
-                        }
-                        if (index == count + 1 || !allowed) {
-                          if (!allowed && !_isLoading) {
-                            return FinanceEmptyState(
-                              icon: Icons.lock_outline_rounded,
-                              title: l10n.crmTitle,
-                              body: l10n.crmPermissionDenied,
-                            );
-                          }
-                          if (_isLoading && count == 0) {
-                            return const _CrmLoadingRows();
-                          }
-                          if (_isLoading || _isLoadingMore) {
-                            return const Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Center(child: NovaLoadingIndicator()),
-                            );
-                          }
-                          if (_error != null && count == 0) {
-                            return FinanceEmptyState(
-                              icon: Icons.error_outline_rounded,
-                              title: l10n.commonSomethingWentWrong,
-                              body: _error!,
-                            );
-                          }
-                          if (count == 0) {
-                            return FinanceEmptyState(
-                              icon: usersTab
-                                  ? Icons.badge_outlined
-                                  : Icons.history_rounded,
-                              title: usersTab
-                                  ? l10n.crmUsersTab
-                                  : l10n.crmAuditTab,
-                              body: usersTab
-                                  ? l10n.crmEmptyUsers
-                                  : l10n.crmEmptyAudit,
-                            );
-                          }
-                          if (_pagingFailed) {
-                            return Center(
-                              child: TextButton(
-                                onPressed: () {
-                                  _pagingFailed = false;
-                                  unawaited(_loadMore());
-                                },
-                                child: Text(l10n.commonRetry),
-                              ),
-                            );
-                          }
-                          return const SizedBox(height: 8);
-                        }
-                        if (!usersTab) {
-                          return _CrmAuditCard(event: _auditEvents[index - 1]);
-                        }
-                        final user = _users[index - 1];
-                        return PendingSyncFrame(
-                          workspaceId: widget.workspaceId,
-                          entityId: user.id,
-                          feature: 'crm',
-                          child: _CrmUserCard(
-                            user: user,
-                            onOpen: () {
-                              _searching = false;
-                              _updateState(() => _selectedUser = user);
-                            },
-                            onEdit: _canUpdateUsers
-                                ? () => _showUserSheet(user: user)
-                                : null,
-                            onDelete: _canDeleteUsers
-                                ? () => _deleteUser(user)
-                                : null,
-                            onFeedback: _canViewFeedbacks
-                                ? () => _showFeedbackSheet(user)
-                                : null,
-                          ),
-                        );
+                    );
+                  }
+                  if (index == count + 1 || !allowed) {
+                    if (!allowed && !_isLoading) {
+                      return FinanceEmptyState(
+                        icon: Icons.lock_outline_rounded,
+                        title: l10n.crmTitle,
+                        body: l10n.crmPermissionDenied,
+                      );
+                    }
+                    if (_isLoading && count == 0) {
+                      return const _CrmLoadingRows();
+                    }
+                    if (_isLoading || _isLoadingMore) {
+                      return const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Center(child: NovaLoadingIndicator()),
+                      );
+                    }
+                    if (_error != null && count == 0) {
+                      return FinanceEmptyState(
+                        icon: Icons.error_outline_rounded,
+                        title: l10n.commonSomethingWentWrong,
+                        body: _error!,
+                      );
+                    }
+                    if (count == 0) {
+                      return FinanceEmptyState(
+                        icon: usersTab
+                            ? Icons.badge_outlined
+                            : Icons.history_rounded,
+                        title: usersTab ? l10n.crmUsersTab : l10n.crmAuditTab,
+                        body: usersTab
+                            ? l10n.crmEmptyUsers
+                            : l10n.crmEmptyAudit,
+                      );
+                    }
+                    if (_pagingFailed) {
+                      return Center(
+                        child: TextButton(
+                          onPressed: () {
+                            _pagingFailed = false;
+                            unawaited(_loadMore());
+                          },
+                          child: Text(l10n.commonRetry),
+                        ),
+                      );
+                    }
+                    return const SizedBox(height: 8);
+                  }
+                  if (!usersTab) {
+                    return _CrmAuditCard(event: _auditEvents[index - 1]);
+                  }
+                  final user = _users[index - 1];
+                  return PendingSyncFrame(
+                    workspaceId: widget.workspaceId,
+                    entityId: user.id,
+                    feature: 'crm',
+                    child: _CrmUserCard(
+                      user: user,
+                      onOpen: () {
+                        _searching = false;
+                        _updateState(() => _selectedUser = user);
                       },
+                      onEdit: _canUpdateUsers
+                          ? () => _showUserSheet(user: user)
+                          : null,
+                      onDelete: _canDeleteUsers
+                          ? () => _deleteUser(user)
+                          : null,
+                      onFeedback: _canViewFeedbacks
+                          ? () => _showFeedbackSheet(user)
+                          : null,
                     ),
-                  ),
-          ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
