@@ -87,3 +87,27 @@ test('icons-only mode rewrites icons and imports the icon barrel', () => {
     "import 'package:mobile/core/ui/ui.dart';\n"
   );
 });
+
+test('the inserted import stays in the package block, before relatives', () => {
+  const source = [
+    "import 'package:flutter/material.dart';",
+    "import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;",
+    '',
+    "import '../../helpers.dart';",
+    '',
+  ].join('\n');
+  assert.equal(
+    addUiImport(
+      source,
+      "import 'package:mobile/core/ui/icons/app_icons.dart';"
+    ),
+    [
+      "import 'package:flutter/material.dart';",
+      "import 'package:mobile/core/ui/icons/app_icons.dart';",
+      "import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;",
+      '',
+      "import '../../helpers.dart';",
+      '',
+    ].join('\n')
+  );
+});

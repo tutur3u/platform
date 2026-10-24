@@ -17,6 +17,7 @@ import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/ui/components/app_option_tile.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -77,7 +78,6 @@ import '../../../helpers/helpers.dart';
 import '../../assistant/assistant_personal_settings_harness.dart' as personal;
 import '../../assistant/local/assistant_local_chat_harness.dart';
 import '../../assistant/view/background_reply_harness.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 
 part 'settings_compact_harness.dart';
 part 'settings_hidden_recovery_checks.dart';

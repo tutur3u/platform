@@ -79,10 +79,16 @@ function addUiImport(source, line = UI_IMPORT) {
   // The barrel already exports the icons.
   if (source.includes(line) || source.includes(UI_IMPORT)) return source;
   const uri = line.match(/'([^']+)'/u)[1];
-  const imports = [...source.matchAll(/^import\s+'([^']+)'.*;$/gmu)];
+  // Anchor among `package:` imports only: relative imports form their own
+  // trailing block (directives_ordering) even though `../` sorts first.
+  const imports = [...source.matchAll(/^import\s+'(package:[^']+)'.*;$/gmu)];
   const after = imports.filter((match) => match[1] < uri);
   const anchor = after.at(-1) ?? null;
-  if (!anchor) return `${line}\n${source}`;
+  if (!anchor) {
+    const first = imports[0];
+    if (!first) return `${line}\n${source}`;
+    return `${source.slice(0, first.index)}${line}\n${source.slice(first.index)}`;
+  }
   const end = anchor.index + anchor[0].length;
   return `${source.slice(0, end)}\n${line}${source.slice(end)}`;
 }
