@@ -44,7 +44,6 @@ class AssistantPersonalityEditor extends StatelessWidget {
                 onTap: () => unawaited(
                   pushScopedSettingsPage(
                     context,
-                    asSheet: true,
                     builder: (editorContext, isCurrent) =>
                         AssistantSettingsEditorPage(
                           title: field.title(editorContext),

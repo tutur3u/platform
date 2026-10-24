@@ -27,7 +27,7 @@ class AssistantSettingsSheetBody extends StatelessWidget {
       child: Padding(
         padding: showTitle
             ? const EdgeInsets.fromLTRB(20, 20, 20, 24)
-            : const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            : EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

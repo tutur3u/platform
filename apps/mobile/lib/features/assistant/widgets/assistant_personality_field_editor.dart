@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_settings_action.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 enum AssistantPersonalityField {
@@ -141,6 +142,8 @@ class _AssistantPersonalityFieldEditorState
         context,
         width: MediaQuery.sizeOf(context).width,
         kind: AppPageKind.form,
+        endGap:
+            AppLayout.scrollEndGap + MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: Form(
         key: _form,
@@ -182,19 +185,19 @@ class _AssistantPersonalityFieldEditorState
                 ),
               ),
             const SizedBox(height: 16),
-            AppButton.primary(
+            AssistantSettingsAction(
+              isScopeCurrent: () => _admitted,
+              loading: _saving,
               onPressed: _saving
                   ? null
                   : _saved
                   ? () => Navigator.of(context).pop()
                   : _save,
-              child: Text(
-                _saving
-                    ? l.commonLoading
-                    : _saved
-                    ? l.commonDone
-                    : l.commonSave,
-              ),
+              label: _saving
+                  ? l.commonLoading
+                  : _saved
+                  ? l.commonDone
+                  : l.commonSave,
             ),
           ],
         ),

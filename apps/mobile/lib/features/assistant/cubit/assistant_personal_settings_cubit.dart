@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
@@ -10,11 +12,13 @@ class AssistantPersonalSettingsState {
     this.loading = true,
     this.busy = false,
     this.failed = false,
+    this.error,
   });
   final AssistantPersonalSettingsSnapshot? snapshot;
   final bool loading;
   final bool busy;
   final bool failed;
+  final Object? error;
 }
 
 class AssistantPersonalSettingsCubit
@@ -45,17 +49,51 @@ class AssistantPersonalSettingsCubit
     if (!admitted || state.busy) return;
     final version = ++_generation;
     emit(AssistantPersonalSettingsState(snapshot: state.snapshot));
+    var acceptCache = true;
+    Future<void> restoreCache() async {
+      try {
+        final soul = await repository.readCachedSoul();
+        if (!_current(version) ||
+            !acceptCache ||
+            soul == null ||
+            state.snapshot != null) {
+          return;
+        }
+        emit(
+          AssistantPersonalSettingsState(
+            snapshot: AssistantPersonalSettingsSnapshot(
+              soul: soul,
+              memoryEnabled: null,
+              memories: const [],
+            ),
+            loading: state.loading,
+            failed: state.failed,
+            error: state.error,
+          ),
+        );
+      } on Object {
+        // An unavailable cache cannot gate fresh settings or change their
+        // error.
+      }
+    }
+
     try {
-      final snapshot = await repository.load(workspaceId);
+      final fresh = repository.load(workspaceId);
+      unawaited(restoreCache());
+      final snapshot = await fresh;
+      acceptCache = false;
       if (!_current(version)) return;
       emit(AssistantPersonalSettingsState(snapshot: snapshot, loading: false));
-    } on Object {
+    } on Object catch (error) {
+      final denied = isAssistantSettingsDenial(error);
+      if (denied) acceptCache = false;
       if (_current(version)) {
         emit(
           AssistantPersonalSettingsState(
-            snapshot: state.snapshot,
+            snapshot: denied ? null : state.snapshot,
             loading: false,
             failed: true,
+            error: error,
           ),
         );
       }
@@ -83,13 +121,14 @@ class AssistantPersonalSettingsCubit
       if (!_current(version)) return false;
       emit(AssistantPersonalSettingsState(snapshot: snapshot, loading: false));
       return true;
-    } on Object {
+    } on Object catch (error) {
       if (_current(version)) {
         emit(
           AssistantPersonalSettingsState(
-            snapshot: previous,
+            snapshot: isAssistantSettingsDenial(error) ? null : previous,
             loading: false,
             failed: true,
+            error: error,
           ),
         );
       }
@@ -106,18 +145,23 @@ class AssistantPersonalSettingsCubit
     ),
   );
 
-  Future<bool> setMemoryEnabled({required bool enabled}) => _write(
-    (previous) async => AssistantPersonalSettingsSnapshot(
-      soul: previous.soul,
-      memoryEnabled: await repository.setMemoryEnabled(
-        workspaceId,
-        enabled: enabled,
+  Future<bool> setMemoryEnabled({required bool enabled}) {
+    if (!admitted || state.snapshot?.memoryEnabled == null) {
+      return Future.value(false);
+    }
+    return _write(
+      (previous) async => AssistantPersonalSettingsSnapshot(
+        soul: previous.soul,
+        memoryEnabled: await repository.setMemoryEnabled(
+          workspaceId,
+          enabled: enabled,
+          products: previous.products,
+        ),
+        memories: state.snapshot?.memories ?? previous.memories,
         products: previous.products,
       ),
-      memories: state.snapshot?.memories ?? previous.memories,
-      products: previous.products,
-    ),
-  );
+    );
+  }
 
   void applyConfirmedMemoryEdit(EditableAssistantMemory memory) {
     if (!admitted || state.snapshot == null) return;
@@ -141,6 +185,7 @@ class AssistantPersonalSettingsCubit
         loading: false,
         busy: state.busy,
         failed: state.failed,
+        error: state.error,
       ),
     );
   }

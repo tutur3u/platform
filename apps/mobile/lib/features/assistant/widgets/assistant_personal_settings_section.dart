@@ -133,7 +133,6 @@ class _AssistantPersonalSettingsSectionState
                 enabled: !state.busy,
                 onTap: () => pushScopedSettingsPage(
                   context,
-                  asSheet: true,
                   builder: (_, isCurrent) => AssistantSettingsEditorPage(
                     title: l.assistantPersonalityTitle,
                     child: AssistantPersonalityEditor(
@@ -191,7 +190,6 @@ class _AssistantPersonalSettingsSectionState
                           ? null
                           : () => pushScopedSettingsPage(
                               context,
-                              asSheet: true,
                               builder: (_, isCurrent) =>
                                   AssistantSettingsEditorPage(
                                     title: l.assistantMemoryEditTitle,
