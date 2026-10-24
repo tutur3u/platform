@@ -37,6 +37,7 @@ class AssistantLiveCallControls extends StatelessWidget {
           children: [
             _CallButton(
               key: const ValueKey('live-control-microphone'),
+              status: state.status,
               label: state.isMicrophoneActive
                   ? l10n.assistantLiveMute
                   : l10n.assistantLiveListen,
@@ -50,6 +51,7 @@ class AssistantLiveCallControls extends StatelessWidget {
             ),
             _CallButton(
               key: const ValueKey('live-control-camera'),
+              status: state.status,
               label: state.isCameraActive
                   ? l10n.assistantLiveHideCamera
                   : l10n.assistantLiveShowCamera,
@@ -63,12 +65,14 @@ class AssistantLiveCallControls extends StatelessWidget {
             ),
             _CallButton(
               key: const ValueKey('live-control-keyboard'),
+              status: state.status,
               label: l10n.assistantLiveTypeMessage,
               icon: LucideIcons.keyboard,
               onPressed: onText,
             ),
             _CallButton(
               key: const ValueKey('live-control-exit'),
+              status: state.status,
               label: connected
                   ? l10n.assistantLiveDisconnect
                   : state.isBusy
@@ -89,6 +93,7 @@ class AssistantLiveCallControls extends StatelessWidget {
 
 class _CallButton extends StatefulWidget {
   const _CallButton({
+    required this.status,
     required this.label,
     required this.icon,
     required this.onPressed,
@@ -96,6 +101,7 @@ class _CallButton extends StatefulWidget {
     this.active,
     this.destructive = false,
   });
+  final AssistantLiveConnectionStatus status;
   final String label;
   final IconData icon;
   final Future<void> Function()? onPressed;
@@ -106,22 +112,34 @@ class _CallButton extends StatefulWidget {
 }
 
 class _CallButtonState extends State<_CallButton> {
-  bool _startingMedia = false;
-  bool _running = false;
+  Object? _startingMediaAttempt;
+  Object? _actionAttempt;
+
+  @override
+  void didUpdateWidget(covariant _CallButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.status != widget.status &&
+        (widget.status == AssistantLiveConnectionStatus.disconnected ||
+            widget.status == AssistantLiveConnectionStatus.error)) {
+      _startingMediaAttempt = null;
+      _actionAttempt = null;
+    }
+  }
 
   bool get _canInvoke =>
       widget.onPressed != null &&
-      !_running &&
-      (!_startingMedia || widget.active == true);
+      _actionAttempt == null &&
+      (_startingMediaAttempt == null || widget.active == true);
 
   Future<void> _invoke() async {
     if (!_canInvoke) return;
     final startingMedia = widget.active == false;
+    final attempt = Object();
     setState(() {
       if (startingMedia) {
-        _startingMedia = true;
+        _startingMediaAttempt = attempt;
       } else {
-        _running = true;
+        _actionAttempt = attempt;
       }
     });
     unawaited(AppHaptics.selection());
@@ -130,10 +148,11 @@ class _CallButtonState extends State<_CallButton> {
     } finally {
       if (mounted) {
         setState(() {
-          if (startingMedia) {
-            _startingMedia = false;
-          } else {
-            _running = false;
+          if (identical(_startingMediaAttempt, attempt)) {
+            _startingMediaAttempt = null;
+          }
+          if (identical(_actionAttempt, attempt)) {
+            _actionAttempt = null;
           }
         });
       }
