@@ -66,8 +66,9 @@ void main() {
           const Stream<TimezoneSettingsState>.empty(),
           initialState: state,
         );
-        when(() => cubit.load(userId: 'user', workspaceId: 'ws'))
-            .thenAnswer((_) async {});
+        when(
+          () => cubit.load(userId: 'user', workspaceId: 'ws'),
+        ).thenAnswer((_) async {});
         when(() => cubit.save('America/New_York')).thenAnswer((_) async {});
         await tester.pumpApp(
           BlocProvider<TimezoneSettingsCubit>.value(

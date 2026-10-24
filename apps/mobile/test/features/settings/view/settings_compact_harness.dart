@@ -62,8 +62,9 @@ class _SettingsHarness {
       const Stream<ShellProfileState>.empty(),
       initialState: const ShellProfileState(),
     );
-    when(() => calendar.loadWorkspacePreference(any()))
-        .thenAnswer((_) async {});
+    when(
+      () => calendar.loadWorkspacePreference(any()),
+    ).thenAnswer((_) async {});
     when(timezone.reload).thenAnswer((_) async {});
     when(
       () => timezone.save(
@@ -221,8 +222,9 @@ class _SettingsHarness {
             routerConfig: router,
             // Mirrors App: the appearance backdrop sits outside the bridge.
             builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
               child: RepaintBoundary(
                 key: const ValueKey('synthetic-settings-render'),
                 child: AppearanceBackdrop(
