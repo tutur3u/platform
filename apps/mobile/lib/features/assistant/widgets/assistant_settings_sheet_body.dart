@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_info.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -39,7 +40,7 @@ class AssistantSettingsSheetBody extends StatelessWidget {
                 ),
               ),
             if (showTitle) const SizedBox(height: 12),
-            SwitchListTile.adaptive(
+            AppToggleRow(
               value: keepLiveWhileBrowsing,
               title: Row(
                 children: [
@@ -53,7 +54,6 @@ class AssistantSettingsSheetBody extends StatelessWidget {
                   ),
                 ],
               ),
-              contentPadding: EdgeInsets.zero,
               onChanged: enabled
                   ? (value) => onKeepLiveWhileBrowsingChanged(value: value)
                   : null,

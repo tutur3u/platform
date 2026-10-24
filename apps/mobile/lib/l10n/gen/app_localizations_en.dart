@@ -10850,9 +10850,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantExpandPrompt => 'Expand prompt';
 
   @override
-  String get assistantMinimizePrompt => 'Minimize prompt';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'About $setting';
   }
@@ -11095,4 +11092,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Set';
+
+  @override
+  String get assistantSubmitSuccess => 'Submitted successfully';
 }

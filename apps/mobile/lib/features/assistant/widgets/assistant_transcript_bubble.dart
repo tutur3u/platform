@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
@@ -233,15 +233,14 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
 }
 
 Future<void> _showMessageActions(BuildContext context, String text) async {
-  final copy = await showAdaptiveSheet<bool>(
+  final copy = await showAppSheet<bool>(
     context: context,
     builder: (sheetContext) => AppDialogScaffold(
       title: context.l10n.assistantMessageActionsTitle,
       child: Material(
         color: Colors.transparent,
-        child: ListTile(
-          dense: true,
-          leading: const Icon(Icons.content_copy_rounded),
+        child: AppListTile(
+          leading: const Icon(LucideIcons.copy),
           title: Text(context.l10n.assistantCopyMessageAction),
           onTap: () => Navigator.of(sheetContext).pop(true),
         ),
@@ -251,7 +250,5 @@ Future<void> _showMessageActions(BuildContext context, String text) async {
   if (copy != true) return;
   await Clipboard.setData(ClipboardData(text: text));
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(context.l10n.assistantCopiedMessageAction)),
-  );
+  showAppToast(context, message: context.l10n.assistantCopiedMessageAction);
 }

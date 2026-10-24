@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 enum AssistantNewChatDecision { inspectHistory, createNew }
 
 Future<AssistantNewChatDecision?> showAssistantNewChatConfirmation(
   BuildContext context,
-) => showDialog<AssistantNewChatDecision>(
+) => showAppDialog<AssistantNewChatDecision>(
   context: context,
   requestFocus: false,
-  builder: (dialogContext) => AlertDialog(
-    title: Text(dialogContext.l10n.assistantNewChatConfirmationTitle),
+  builder: (dialogContext) => AppDialog(
+    title: dialogContext.l10n.assistantNewChatConfirmationTitle,
     content: SingleChildScrollView(
       child: Text(dialogContext.l10n.assistantNewChatConfirmationDescription),
     ),
     actions: [
-      TextButton(
+      AppButton.ghost(
         onPressed: () => Navigator.of(dialogContext).pop(),
         child: Text(dialogContext.l10n.commonCancel),
       ),
-      TextButton(
+      AppButton.ghost(
         onPressed: () => Navigator.of(
           dialogContext,
         ).pop(AssistantNewChatDecision.inspectHistory),
         child: Text(dialogContext.l10n.assistantNewChatInspectHistory),
       ),
-      FilledButton(
+      AppButton.primary(
         onPressed: () =>
             Navigator.of(dialogContext).pop(AssistantNewChatDecision.createNew),
         child: Text(dialogContext.l10n.assistantNewChatConfirmCreation),
@@ -37,18 +38,18 @@ Future<bool> showAssistantNewChatResetStatus(
   BuildContext context, {
   required String message,
 }) async =>
-    await showDialog<bool>(
+    await showAppDialog<bool>(
       context: context,
       requestFocus: false,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.l10n.assistantNewChatConfirmationTitle),
+      builder: (dialogContext) => AppDialog(
+        title: dialogContext.l10n.assistantNewChatConfirmationTitle,
         content: SingleChildScrollView(child: Text(message)),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(dialogContext.l10n.commonDone),
           ),
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(dialogContext.l10n.assistantNewChatInspectHistory),
           ),

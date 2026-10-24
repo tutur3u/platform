@@ -10722,9 +10722,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantExpandPrompt => 'Mở rộng lời nhắc';
 
   @override
-  String get assistantMinimizePrompt => 'Thu gọn lời nhắc';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'Thông tin về $setting';
   }
@@ -10960,4 +10957,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Đã đặt';
+
+  @override
+  String get assistantSubmitSuccess => 'Đã gửi thành công';
 }

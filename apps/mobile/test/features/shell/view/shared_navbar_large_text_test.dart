@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -506,7 +507,7 @@ void main() {
           await _pump(tester);
           final input = find.byKey(const ValueKey('assistant-name-input'));
           expect(input, findsOneWidget);
-          expect(tester.widget<TextField>(input).autofocus, isTrue);
+          expect(tester.widget<AppTextField>(input).autofocus, isTrue);
           await tester.enterText(input, 'Nova');
           await tester.testTextInput.receiveAction(TextInputAction.done);
           await _pump(tester);

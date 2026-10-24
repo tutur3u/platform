@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -35,8 +36,7 @@ class AssistantLocalModelTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            dense: true,
+          AppListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(model.name),
             subtitle: Text(
@@ -49,10 +49,8 @@ class AssistantLocalModelTile extends StatelessWidget {
                 if (selected) l10n.assistantLocalSelected,
               ].join(' · '),
             ),
-            leading: const Icon(Icons.memory_rounded),
-            trailing: selected
-                ? const Icon(Icons.check_circle_outline_rounded)
-                : null,
+            leading: const Icon(LucideIcons.cpu),
+            trailing: selected ? const Icon(LucideIcons.circleCheck) : null,
             selected: selected,
           ),
           Wrap(
@@ -60,16 +58,16 @@ class AssistantLocalModelTile extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (installed) ...[
-                FilledButton.tonal(
+                AppButton.secondary(
                   onPressed: enabled ? onSelect : null,
                   child: Text(l10n.assistantLocalUse),
                 ),
-                TextButton(
+                AppButton.ghost(
                   onPressed: canRemove ? onRemove : null,
                   child: Text(l10n.assistantLocalRemove),
                 ),
               ] else
-                FilledButton.tonal(
+                AppButton.secondary(
                   onPressed: enabled ? onInstall : null,
                   child: Text(
                     model.requiresLicensedImport
@@ -77,12 +75,12 @@ class AssistantLocalModelTile extends StatelessWidget {
                         : l10n.assistantLocalDownload,
                   ),
                 ),
-              TextButton(
+              AppButton.ghost(
                 onPressed: onLicense,
                 child: Text(l10n.assistantLocalLicense),
               ),
               if (model.requiresLicensedImport)
-                TextButton(
+                AppButton.ghost(
                   onPressed: onSource,
                   child: Text(l10n.assistantLocalDownloadSource),
                 ),

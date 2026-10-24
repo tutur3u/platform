@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -66,7 +67,7 @@ void main() {
               BlocProvider<WorkspaceCubit>.value(value: workspaces),
             ],
             child: Builder(
-              builder: (context) => TextButton(
+              builder: (context) => AppButton.ghost(
                 onPressed: () => unawaited(
                   pushScopedSettingsPage(
                     context,
@@ -99,11 +100,11 @@ void main() {
           );
           await tester.pumpAndSettle();
           await tester.enterText(
-            find.byType(TextFormField),
+            find.byType(AppTextFormField),
             'Synthetic late name',
           );
           repository.write = (_) => write.future;
-          await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+          await tester.tap(find.widgetWithText(AppButton, 'Save'));
           await tester.pump();
           if (operation == 'covered save') {
             navigator = Navigator.of(

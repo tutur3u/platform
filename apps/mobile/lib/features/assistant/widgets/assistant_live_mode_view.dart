@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';

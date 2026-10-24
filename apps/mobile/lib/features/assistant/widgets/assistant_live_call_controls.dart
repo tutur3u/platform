@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -35,9 +36,7 @@ class AssistantLiveCallControls extends StatelessWidget {
           label: state.isMicrophoneActive
               ? context.l10n.assistantLiveMute
               : context.l10n.assistantLiveListen,
-          icon: state.isMicrophoneActive
-              ? Icons.mic_rounded
-              : Icons.mic_off_rounded,
+          icon: state.isMicrophoneActive ? LucideIcons.mic : LucideIcons.micOff,
           active: state.isMicrophoneActive,
           onPressed: onMicrophone,
         ),
@@ -45,20 +44,18 @@ class AssistantLiveCallControls extends StatelessWidget {
           label: state.isCameraActive
               ? context.l10n.assistantLiveHideCamera
               : context.l10n.assistantLiveShowCamera,
-          icon: state.isCameraActive
-              ? Icons.videocam_rounded
-              : Icons.videocam_off_rounded,
+          icon: state.isCameraActive ? LucideIcons.video : LucideIcons.videoOff,
           active: state.isCameraActive,
           onPressed: onCamera,
         ),
         _CallButton(
           label: context.l10n.assistantLiveTypeMessage,
-          icon: Icons.keyboard_rounded,
+          icon: LucideIcons.keyboard,
           onPressed: onText,
         ),
         _CallButton(
           label: context.l10n.assistantLiveDisconnect,
-          icon: Icons.call_end_rounded,
+          icon: LucideIcons.phoneOff,
           onPressed: onDisconnect,
         ),
       ],

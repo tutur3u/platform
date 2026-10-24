@@ -14,10 +14,6 @@ lib/core/widgets/shadcn_localizations_fallback.dart
 lib/core/widgets/shadcn_material_bridge.dart
 lib/counter/view/counter_page.dart
 lib/features/app_version/view/app_version_gate.dart
-lib/features/assistant/view/assistant_page.dart
-lib/features/assistant/widgets/assistant_composer_launcher.dart
-lib/features/assistant/widgets/assistant_local_status_sheet.dart
-lib/features/assistant/widgets/assistant_render_ui.dart
 lib/features/auth/view/forgot_password_page.dart
 lib/features/auth/view/login_page.dart
 lib/features/auth/view/mfa_verify_page.dart

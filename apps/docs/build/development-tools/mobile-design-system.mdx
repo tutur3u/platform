@@ -397,3 +397,9 @@ onPressed requires selected to be null. Single-choice groups set
 inMutuallyExclusiveGroup. Selected choices show a check on a tonal surface.
 AppTextFormField synchronizes controller edits with validation and restores the
 initial text on Form.reset; `app_form_field_lifecycle_test.dart` covers both.
+
+Scoped settings cancellation removes only the invalidated editor route. A pop
+animation can remain paused when an ancestor covers its nested navigator, so
+privacy and account fences cannot depend on that animation completing. The
+covered account/workspace ABA checks in `settings_assistant_shell_checks.dart`
+retain their no-write and covering-route assertions.

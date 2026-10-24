@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -37,27 +38,20 @@ class AssistantLiveScreenControl extends StatelessWidget {
               child: Text(detail, textAlign: TextAlign.center),
             ),
           ),
-        TextButton.icon(
-          icon: Icon(
-            sharing
-                ? Icons.stop_screen_share_outlined
-                : Icons.screen_share_outlined,
-          ),
-          label: Text(
-            sharing
-                ? l10n.assistantLiveStopScreen
-                : l10n.assistantLiveShareScreen,
+        AppButton.ghost(
+          leading: Icon(
+            sharing ? LucideIcons.screenShareOff : LucideIcons.screenShare,
           ),
           onPressed: () async {
             final cubit = context.read<AssistantLiveCubit>();
             if (!sharing) {
-              final accepted = await showDialog<bool>(
+              final accepted = await showAppDialog<bool>(
                 context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: Text(l10n.assistantLiveShareScreen),
+                builder: (dialogContext) => AppDialog(
+                  title: l10n.assistantLiveShareScreen,
                   content: Text(l10n.assistantLiveScreenPrivacy),
                   actions: [
-                    TextButton(
+                    AppButton.ghost(
                       onPressed: () => Navigator.pop(dialogContext, false),
                       child: Text(
                         MaterialLocalizations.of(
@@ -65,7 +59,7 @@ class AssistantLiveScreenControl extends StatelessWidget {
                         ).cancelButtonLabel,
                       ),
                     ),
-                    FilledButton(
+                    AppButton.primary(
                       onPressed: () => Navigator.pop(dialogContext, true),
                       child: Text(l10n.assistantLiveShareScreen),
                     ),
@@ -80,6 +74,11 @@ class AssistantLiveScreenControl extends StatelessWidget {
               stopMessage: l10n.assistantLiveScreenStopped,
             );
           },
+          child: Text(
+            sharing
+                ? l10n.assistantLiveStopScreen
+                : l10n.assistantLiveShareScreen,
+          ),
         ),
       ],
     );

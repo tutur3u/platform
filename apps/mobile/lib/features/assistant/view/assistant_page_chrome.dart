@@ -58,7 +58,7 @@ extension _AssistantPageChrome on _AssistantPageState {
         ShellActionSpec(
           id: 'assistant-compose',
           inDock: true,
-          icon: Icons.chat_bubble_outline_rounded,
+          icon: LucideIcons.messageCircle,
           tooltip: context.l10n.assistantAskPlaceholder,
           // Opening an unsent local draft needs no network authentication.
           onPressed: guarded(_restoreComposerAndFocus, localDraft: true),
@@ -66,7 +66,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       if (isLiveMode)
         ShellActionSpec(
           id: 'assistant-live-info',
-          icon: Icons.info_outline_rounded,
+          icon: LucideIcons.info,
           tooltip: context.l10n.assistantLiveInfoTitle,
           callbackToken:
               '$wsId:${liveState.status}:${liveState.startupTimings}',
@@ -82,7 +82,7 @@ extension _AssistantPageChrome on _AssistantPageState {
         ),
       ShellActionSpec(
         id: 'assistant-more',
-        icon: Icons.more_horiz_rounded,
+        icon: LucideIcons.ellipsis,
         tooltip: MaterialLocalizations.of(context).showMenuTooltip,
         callbackToken: (_localScope(), isLiveMode),
         onPressed: guarded(() => unawaited(_showAssistantMore(isLiveMode))),
@@ -90,7 +90,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       ShellActionSpec(
         id: 'assistant-mode-chat',
         segmentGroup: 'assistant-modes',
-        icon: Icons.chat_bubble_outline_rounded,
+        icon: LucideIcons.messageCircle,
         tooltip: context.l10n.chatTitle,
         highlighted: !isLiveMode,
         onPressed: isLiveMode
@@ -100,7 +100,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       ShellActionSpec(
         id: 'assistant-mode-live',
         segmentGroup: 'assistant-modes',
-        icon: Icons.graphic_eq_rounded,
+        icon: LucideIcons.audioLines,
         tooltip: context.l10n.commonLive,
         highlighted: isLiveMode,
         onPressed: isLiveMode
@@ -113,20 +113,20 @@ extension _AssistantPageChrome on _AssistantPageState {
   Future<void> _showAssistantMore(bool isLiveMode) async {
     final scope = _localScope();
     if (scope == null) return;
-    final choice = await showAdaptiveSheet<String>(
+    final choice = await showAppSheet<String>(
       context: context,
       builder: (sheetContext) => Material(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!isLiveMode)
-              ListTile(
-                leading: const Icon(Icons.history_rounded),
+              AppListTile(
+                leading: const Icon(LucideIcons.history),
                 title: Text(context.l10n.assistantHistoryTitle),
                 onTap: () => Navigator.of(sheetContext).pop('history'),
               ),
-            ListTile(
-              leading: const Icon(Icons.tune_rounded),
+            AppListTile(
+              leading: const Icon(LucideIcons.slidersHorizontal),
               title: Text(context.l10n.assistantSettingsTitle),
               onTap: () => Navigator.of(sheetContext).pop('settings'),
             ),

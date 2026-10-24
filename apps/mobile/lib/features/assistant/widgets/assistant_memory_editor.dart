@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_memory_editor_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -102,16 +103,14 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
                   child: const Center(child: NovaLoadingIndicator(size: 20)),
                 ),
               if (state.memory != null)
-                TextFormField(
+                AppTextFormField(
                   key: const ValueKey('assistant-memory-edit-field'),
                   controller: _text,
                   minLines: 3,
                   maxLines: 8,
                   maxLength: 20000,
                   onChanged: _cubit.changeDraft,
-                  decoration: InputDecoration(
-                    labelText: l.assistantMemoryEditText,
-                  ),
+                  label: l.assistantMemoryEditText,
                 ),
               if (state.latestContent != null) ...[
                 Text(
@@ -143,7 +142,7 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
                   child: Text(l.assistantMemoryEditAuditWarning),
                 ),
               if (state.failure != null && !state.saving)
-                TextButton(
+                AppButton.ghost(
                   onPressed: state.loading
                       ? null
                       : () => _cubit.load(reviewLatest: state.memory != null),
@@ -154,8 +153,7 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
                   ),
                 ),
               const SizedBox(height: 12),
-              FilledButton(
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+              AppButton.primary(
                 onPressed: state.canSave ? _cubit.save : null,
                 child: Text(
                   state.saving
@@ -165,8 +163,7 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
                       : l.commonSave,
                 ),
               ),
-              TextButton(
-                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              AppButton.ghost(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(state.saved ? l.commonDone : l.commonCancel),
               ),

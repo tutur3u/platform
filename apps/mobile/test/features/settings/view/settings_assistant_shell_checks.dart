@@ -42,7 +42,7 @@ void registerSettingsAssistantShellChecks() {
                   onPressed: () => unawaited(
                     pushScopedSettingsPage(
                       context,
-                      rootNavigator: true,
+                      asSheet: true,
                       builder: (routeContext, isCurrent) {
                         expect(routeContext.read<AuthCubit>(), same(h.auth));
                         expect(
@@ -52,7 +52,6 @@ void registerSettingsAssistantShellChecks() {
                         capturedCurrent = isCurrent;
                         return AssistantSettingsHub(
                           workspaceId: 'ws',
-                          locations: const {Routes.settings},
                           isScopeCurrent: isCurrent,
                           preferences: preferences,
                           localModels: models,
@@ -70,7 +69,7 @@ void registerSettingsAssistantShellChecks() {
               if (!models.isClosed) await models.close();
             });
             await h.locale.setLocale(Locale(language));
-            await h.pump(tester, scale: scale);
+            await h.pump(tester, scale: scale, shellChrome: true);
             await tester.tap(
               find.byKey(const ValueKey('open-real-assistant-settings')),
             );
@@ -148,9 +147,11 @@ void registerSettingsAssistantShellChecks() {
               expect(find.text(l10n.assistantSettingsTitle), findsOneWidget);
             } else if (check == 'back') {
               expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-              await tester.tap(
-                find.byKey(const ValueKey('settings-route-back')),
-              );
+              tester
+                  .widget<MorphingNavigationBar>(
+                    find.byType(MorphingNavigationBar),
+                  )
+                  .onSelected(const ValueKey('back-to-root'));
               await _settle(tester);
               expect(hub, findsNothing);
               expect(
@@ -161,21 +162,18 @@ void registerSettingsAssistantShellChecks() {
               final scrollable = find
                   .descendant(of: hub, matching: find.byType(Scrollable))
                   .first;
-              final back = find.byKey(const ValueKey('settings-route-back'));
-              expect(
-                tester.getBottomLeft(scrollable).dy,
-                lessThanOrEqualTo(tester.getTopLeft(back).dy),
-              );
+              final back = find.byType(MorphingNavigationBar);
+              final dockRect = tester.getRect(back);
               // At large text the whole tile can exceed the viewport. The
               // interactive switch itself must remain reachable and clear Back.
               final control = find.descendant(
                 of: hub,
-                matching: find.byType(Switch),
+                matching: find.byType(AppSwitch),
               );
               await tester.ensureVisible(control);
               await _settle(tester);
               expect(control.hitTestable(), findsOneWidget);
-              expect(tester.widget<Switch>(control).onChanged, isNotNull);
+              expect(tester.widget<AppSwitch>(control).onChanged, isNotNull);
               final controlRect = tester.getRect(control);
               final viewportRect = tester.getRect(scrollable);
               expect(controlRect.top, greaterThanOrEqualTo(viewportRect.top));
@@ -190,11 +188,17 @@ void registerSettingsAssistantShellChecks() {
               );
               await tester.drag(scrollable, const Offset(0, -1200));
               await _settle(tester);
+              expect(tester.getRect(back), dockRect);
+              final lastControl = find.widgetWithText(
+                AppListTile,
+                l10n.assistantLocalRemote,
+              );
+              await tester.ensureVisible(lastControl);
+              await _settle(tester);
+              expect(lastControl.hitTestable(), findsOneWidget);
               expect(
-                tester
-                    .getRect(back)
-                    .overlaps(tester.getRect(find.byType(SettingsRouteFrame))),
-                isTrue,
+                tester.getRect(lastControl).bottom,
+                lessThanOrEqualTo(dockRect.top),
               );
             }
             expect(tester.takeException(), isNull);

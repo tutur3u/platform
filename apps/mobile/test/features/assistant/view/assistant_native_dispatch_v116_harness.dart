@@ -12,6 +12,7 @@ import 'package:http/testing.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
@@ -465,7 +466,7 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('New conversation'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Start a new chat'));
+    await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
     await tester.pumpAndSettle();
     expect(await tester.runAsync(reset.hasUnknownCreation), isFalse);
     expect(port.creates, isEmpty);

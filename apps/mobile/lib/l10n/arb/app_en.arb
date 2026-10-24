@@ -4601,7 +4601,6 @@
   "assistantSettingsSelectionDenied": "You cannot change these chat settings. Your previous settings and draft are retained.",
   "assistantSettingsSelectionUnconfirmed": "The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.",
   "assistantExpandPrompt": "Expand prompt",
-  "assistantMinimizePrompt": "Minimize prompt",
   "assistantSettingInfo": "About {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4738,5 +4737,6 @@
   "settingsSearchBrowserTerm": "browser",
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
-  "profileMediaSet": "Set"
+  "profileMediaSet": "Set",
+  "assistantSubmitSuccess": "Submitted successfully"
 }

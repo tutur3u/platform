@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -465,7 +466,7 @@ void main() {
       expect(
         find.descendant(
           of: primary,
-          matching: find.byIcon(Icons.arrow_upward_rounded),
+          matching: find.byIcon(LucideIcons.arrowUp),
         ),
         findsOneWidget,
       );

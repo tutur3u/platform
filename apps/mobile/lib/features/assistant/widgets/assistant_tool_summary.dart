@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -65,7 +66,7 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.handyman_outlined,
+                      LucideIcons.wrench,
                       size: 16,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -91,8 +92,8 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
                     const SizedBox(width: 4),
                     Icon(
                       _expanded
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
+                          ? LucideIcons.chevronUp
+                          : LucideIcons.chevronDown,
                       size: 16,
                     ),
                   ],

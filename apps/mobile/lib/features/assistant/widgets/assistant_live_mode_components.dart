@@ -18,7 +18,7 @@ class _LiveIdleState extends StatelessWidget {
                 radius: 30,
                 backgroundColor: theme.colorScheme.surfaceContainerHigh,
                 child: Icon(
-                  Icons.graphic_eq_rounded,
+                  LucideIcons.audioLines,
                   size: 28,
                   color: theme.colorScheme.onSurface,
                 ),
@@ -111,7 +111,7 @@ class _LiveModeHeader extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          liveState.isBusy ? Icons.sync_rounded : Icons.graphic_eq_rounded,
+          liveState.isBusy ? LucideIcons.refreshCw : LucideIcons.audioLines,
           size: 20,
           color: _toneColor(theme, liveUiState.tone),
         ),
@@ -142,7 +142,7 @@ class _LiveModeHeader extends StatelessWidget {
           ),
         ),
         if (needsRecovery)
-          TextButton(
+          AppButton.ghost(
             onPressed: onRetry,
             child: Text(context.l10n.assistantLiveRetryAction),
           ),
@@ -219,8 +219,8 @@ class _LiveCallStage extends StatelessWidget {
                 children: [
                   Icon(
                     liveState.isMicrophoneActive
-                        ? Icons.mic_rounded
-                        : Icons.mic_off_rounded,
+                        ? LucideIcons.mic
+                        : LucideIcons.micOff,
                     size: 16,
                   ),
                   const SizedBox(width: 6),

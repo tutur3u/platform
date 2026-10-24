@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
@@ -29,7 +30,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() => registerFallbackValue(() => true));
   testWidgets(
-    'central editor uses shell chrome and confirms saved preference',
+    'central editor uses the shared sheet and confirms saved preference',
     (tester) async {
       final preferences = _Preferences();
       when(
@@ -47,49 +48,41 @@ void main() {
         AssistantSettingsHub(
           localModels: _localModels(),
           workspaceId: 'ws',
-          locations: const {'/test'},
           isScopeCurrent: () => true,
           preferences: preferences,
         ),
       );
       await tester.pumpAndSettle();
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byType(MobileSectionAppBar), findsOneWidget);
+      expect(find.byType(MobileSectionAppBar), findsNothing);
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
       expect(find.text('Assistant Settings'), findsOneWidget);
-      expect(find.byKey(const ValueKey('settings-route-back')), findsOneWidget);
-      expect(find.byType(Image), findsWidgets);
+      expect(find.byKey(const ValueKey('settings-route-back')), findsNothing);
+      expect(find.byType(Image), findsNothing);
       expect(
-        tester.getTopLeft(find.byType(SwitchListTile)).dy,
-        greaterThan(tester.getBottomLeft(find.byType(MobileSectionAppBar)).dy),
+        tester.getTopLeft(find.byType(AppToggleRow)).dy,
+        greaterThan(tester.getBottomLeft(find.text('Assistant Settings')).dy),
       );
+      expect(find.byType(ShellTitleOverride), findsNothing);
+      expect(find.byType(ShellMiniNav), findsNothing);
       expect(
-        tester
-            .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
-            .title,
-        'Assistant Settings',
-      );
-      expect(
-        tester.widget<ShellMiniNav>(find.byType(ShellMiniNav)).items.single.id,
-        'back',
-      );
-      expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        tester.widget<AppToggleRow>(find.byType(AppToggleRow)).value,
         isTrue,
       );
-      await tester.tap(find.byType(SwitchListTile));
+      await tester.tap(find.byType(AppToggleRow));
       await tester.pump();
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+        tester.widget<AppToggleRow>(find.byType(AppToggleRow)).onChanged,
         isNull,
       );
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        tester.widget<AppToggleRow>(find.byType(AppToggleRow)).value,
         isTrue,
       );
       saved.complete();
       await tester.pumpAndSettle();
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        tester.widget<AppToggleRow>(find.byType(AppToggleRow)).value,
         isFalse,
       );
       await tester.pumpWidget(const SizedBox.shrink());
@@ -106,13 +99,12 @@ void main() {
       AssistantSettingsHub(
         localModels: _localModels(),
         workspaceId: 'ws',
-        locations: const {'/test'},
         isScopeCurrent: () => true,
         preferences: preferences,
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(SwitchListTile), findsNothing);
+    expect(find.byType(AppToggleRow), findsNothing);
     expect(find.text('Retry'), findsOneWidget);
     when(
       () => preferences.loadKeepLiveWhileBrowsing('ws'),
@@ -120,9 +112,48 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+      tester.widget<AppToggleRow>(find.byType(AppToggleRow)).value,
       isTrue,
     );
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('quick settings use the modal host and Back retains the page', (
+    tester,
+  ) async {
+    final preferences = _Preferences();
+    when(
+      () => preferences.loadKeepLiveWhileBrowsing('ws'),
+    ).thenAnswer((_) async => true);
+    await tester.pumpApp(
+      Builder(
+        builder: (context) => AppButton.primary(
+          onPressed: () => showAppSheet<void>(
+            context: context,
+            size: AppSheetSize.large,
+            builder: (_) => AssistantSettingsHub(
+              workspaceId: 'ws',
+              isScopeCurrent: () => true,
+              preferences: preferences,
+              localModels: _localModels(),
+            ),
+          ),
+          child: const Text('Open quick settings'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open quick settings'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppSheetScaffold), findsOneWidget);
+    expect(find.byType(MobileSectionAppBar), findsNothing);
+    expect(find.byType(ShellMiniNav), findsNothing);
+    expect(find.byType(ShellTitleOverride), findsNothing);
+    expect(
+      tester.widget<AppToggleRow>(find.byType(AppToggleRow)).value,
+      isTrue,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(AssistantSettingsHub), findsNothing);
+    expect(find.text('Open quick settings'), findsOneWidget);
   });
 }

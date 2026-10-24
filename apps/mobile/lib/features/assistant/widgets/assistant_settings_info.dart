@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantSettingsInfo extends StatelessWidget {
@@ -10,16 +11,16 @@ class AssistantSettingsInfo extends StatelessWidget {
   final String title;
   final String description;
   @override
-  Widget build(BuildContext context) => IconButton(
+  Widget build(BuildContext context) => AppIconButton(
     tooltip: context.l10n.assistantSettingInfo(title),
-    icon: const Icon(Icons.info_outline_rounded),
-    onPressed: () => showDialog<void>(
+    icon: const Icon(LucideIcons.info),
+    onPressed: () => showAppDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
+      builder: (context) => AppDialog(
+        title: title,
         content: SingleChildScrollView(child: Text(description)),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(context.l10n.commonDone),
           ),

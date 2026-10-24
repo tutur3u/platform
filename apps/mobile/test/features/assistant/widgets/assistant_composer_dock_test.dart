@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -170,18 +171,18 @@ void main() {
       expect(navigation, 1);
       controller.text = 'Unsent draft';
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowUp), findsOneWidget);
       expect(
-        find.widgetWithIcon(IconButton, Icons.arrow_upward_rounded),
+        find.widgetWithIcon(AppIconButton, LucideIcons.arrowUp),
         findsNothing,
       );
       await tester.tap(primary);
       expect(sends, 1);
       capture.show(AssistantVoiceCaptureStatus.recording);
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+      expect(find.byIcon(LucideIcons.pause), findsOneWidget);
       expect(
-        find.widgetWithIcon(IconButton, Icons.pause_rounded),
+        find.widgetWithIcon(AppIconButton, LucideIcons.pause),
         findsNothing,
       );
       await tester.tap(find.byKey(const ValueKey('voice-cancel')));
@@ -189,10 +190,10 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
       expect(controller.text, 'Unsent draft');
       expect(tester.element(find.byType(AssistantDockSurface)), same(surface));
-      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowUp), findsOneWidget);
       controller.clear();
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byIcon(LucideIcons.menu), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await capture.close();
@@ -235,7 +236,7 @@ void main() {
       );
       expect(tester.element(find.byType(AssistantComposerDock)), same(dock));
       expect(controller.text, 'Private draft');
-      await tester.tap(find.byIcon(Icons.stop_rounded));
+      await tester.tap(find.byIcon(LucideIcons.square));
       expect(stopped, 1);
       expect(sent, 0);
       controller.clear();
@@ -244,8 +245,8 @@ void main() {
       );
       expect(
         tester
-            .widget<IconButton>(
-              find.widgetWithIcon(IconButton, Icons.mic_none_rounded),
+            .widget<AppIconButton>(
+              find.widgetWithIcon(AppIconButton, LucideIcons.mic),
             )
             .onPressed,
         isNull,
@@ -276,9 +277,9 @@ void main() {
         find.byKey(const ValueKey('assistant-composer-options')),
       );
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.attach_file), findsNothing);
-      expect(find.byIcon(Icons.toll_rounded), findsNothing);
-      await tester.tap(find.byIcon(Icons.memory_rounded));
+      expect(find.byIcon(LucideIcons.paperclip), findsNothing);
+      expect(find.byIcon(LucideIcons.coins), findsNothing);
+      await tester.tap(find.byIcon(LucideIcons.cpu));
       await tester.pumpAndSettle();
       expect(opened, 1);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -365,7 +366,7 @@ void main() {
           },
         ),
       );
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.tap(find.byIcon(LucideIcons.arrowUp));
       expect(
         tester.widget<TextField>(find.byType(TextField)).onSubmitted,
         isNull,
@@ -381,7 +382,7 @@ void main() {
           },
         ),
       );
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      await tester.tap(find.byIcon(LucideIcons.arrowUp));
       expect(sends, 1);
       expect(tester.takeException(), isNull);
     },
@@ -418,7 +419,7 @@ void main() {
             ),
           );
           expect(tester.widget<TextField>(find.byType(TextField)).maxLines, 5);
-          expect(find.byIcon(Icons.fullscreen_rounded), findsNothing);
+          expect(find.byIcon(LucideIcons.fullscreen), findsNothing);
           for (final key in [
             'assistant-composer-options',
             'assistant-navigation-toggle',
@@ -428,7 +429,7 @@ void main() {
             expect(size.height, greaterThanOrEqualTo(44));
           }
           expect(tester.getRect(find.byType(TextField)).width, greaterThan(60));
-          await tester.tap(find.byIcon(Icons.mic_none_rounded));
+          await tester.tap(find.byIcon(LucideIcons.mic));
           await tester.tap(
             find.byKey(const ValueKey('assistant-navigation-toggle')),
           );
@@ -488,7 +489,7 @@ void main() {
             .ancestor(
               of: find.text(label),
               matching: find.byWidgetPredicate(
-                (widget) => widget is PopupMenuEntry,
+                (widget) => widget is AppOptionTile,
               ),
             )
             .first,
@@ -532,8 +533,8 @@ void main() {
           },
         ),
       );
-      expect(find.byIcon(Icons.mic_none_rounded), findsNothing);
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+      expect(find.byIcon(LucideIcons.mic), findsNothing);
+      await tester.tap(find.byIcon(LucideIcons.arrowUp));
       expect(sends, 1);
       expect(find.text('Example.pdf'), findsOneWidget);
       expect(
@@ -545,7 +546,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Example.pdf'), findsNWidgets(2));
-      final remove = find.widgetWithIcon(IconButton, Icons.close_rounded);
+      final remove = find.byTooltip('Delete: Example.pdf').last;
       expect(tester.getSize(remove).height, greaterThanOrEqualTo(44));
       await tester.tap(remove);
       await tester.pumpAndSettle();
