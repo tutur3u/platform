@@ -46,6 +46,7 @@ class GoogleCalendarColorPicker extends StatelessWidget {
             ),
             selected:
                 selected?.kind == option.kind && selected?.id == option.id,
+            inMutuallyExclusiveGroup: true,
             onSelected: (_) => onChanged(option.choice(colors.connectionId)),
           ),
       ],

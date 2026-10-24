@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -92,6 +93,7 @@ class AssistantComposerOptions extends StatelessWidget {
               child: Text(chatState.composerAttachments.length.toString()),
             ),
       onPressed: () {
+        final chatCubit = context.read<AssistantChatCubit?>();
         onDismissKeyboard?.call();
         unawaited(
           showAppSheet<void>(
@@ -112,13 +114,13 @@ class AssistantComposerOptions extends StatelessWidget {
                       }
                     : null,
               );
-              return AppSheetScaffold(
-                title: context.l10n.assistantSettingsTitle,
+              Widget body(AssistantChatState currentChat) => AppSheetScaffold(
+                title: sheetContext.l10n.assistantSettingsTitle,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (!localOnly) ...[
-                      for (final attachment in chatState.composerAttachments)
+                      for (final attachment in currentChat.composerAttachments)
                         AssistantAttachmentPreview(
                           attachment: attachment,
                           onRemove: () {
@@ -129,7 +131,7 @@ class AssistantComposerOptions extends StatelessWidget {
                       option(
                         _ComposerOption.attach,
                         LucideIcons.paperclip,
-                        context.l10n.assistantAttachFilesAction,
+                        sheetContext.l10n.assistantAttachFilesAction,
                       ),
                     ],
                     option(
@@ -154,11 +156,20 @@ class AssistantComposerOptions extends StatelessWidget {
                     option(
                       _ComposerOption.close,
                       LucideIcons.keyboardOff,
-                      context.l10n.assistantCloseComposer,
+                      sheetContext.l10n.assistantCloseComposer,
                     ),
                   ],
                 ),
               );
+              return chatCubit == null
+                  ? body(chatState)
+                  : BlocBuilder<AssistantChatCubit, AssistantChatState>(
+                      bloc: chatCubit,
+                      buildWhen: (previous, next) =>
+                          previous.composerAttachments !=
+                          next.composerAttachments,
+                      builder: (_, state) => body(state),
+                    );
             },
           ),
         );

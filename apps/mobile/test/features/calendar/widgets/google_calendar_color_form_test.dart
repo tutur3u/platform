@@ -114,6 +114,7 @@ void main() {
         find.byKey(ValueKey('google-color-${entry.$1}-${entry.$2}')),
       );
       expect(chip.selected, isTrue);
+      expect(chip.inMutuallyExclusiveGroup, isTrue);
     });
   }
 
