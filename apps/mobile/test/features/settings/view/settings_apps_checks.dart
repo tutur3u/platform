@@ -201,10 +201,14 @@ void registerSettingsAppsChecks() {
           // Exercise Offline's real chrome without unrelated global disk setup.
           final h = _SettingsHarness(
             initial: location,
-            offlineModuleBuilder: offline ? (_, _) => OfflineSearchChrome(
-              moduleId: 'finance', controller: offlineQuery,
-              hint: 'Search saved data', onChanged: (_) {},
-            ) : null,
+            offlineModuleBuilder: offline
+                ? (_, _) => OfflineSearchChrome(
+                    moduleId: 'finance',
+                    controller: offlineQuery,
+                    hint: 'Search saved data',
+                    onChanged: (_) {},
+                  )
+                : null,
           );
           addTearDown(() async {
             await tester.pumpWidget(const SizedBox.shrink());

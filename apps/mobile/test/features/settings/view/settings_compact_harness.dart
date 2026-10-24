@@ -126,7 +126,10 @@ class _SettingsHarness {
                       route.path != Routes.settingsWorkspaceSecrets),
             ),
             if (offlineModuleBuilder != null)
-              GoRoute(path: Routes.settingsOfflineModule, builder: offlineModuleBuilder),
+              GoRoute(
+                path: Routes.settingsOfflineModule,
+                builder: offlineModuleBuilder,
+              ),
             if (workspaceSecretsBuilder != null)
               GoRoute(
                 path: Routes.settingsWorkspaceSecrets,
