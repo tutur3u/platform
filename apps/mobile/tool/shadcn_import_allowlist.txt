@@ -29,7 +29,6 @@ lib/features/auth/widgets/auth_scaffold.dart
 lib/features/auth/widgets/auth_section_card.dart
 lib/features/auth/widgets/security_check_dialog.dart
 lib/features/calendar/view/calendar_page.dart
-lib/features/calendar/widgets/calendar_connections_sheet.dart
 lib/features/calendar/widgets/event_detail_sheet.dart
 lib/features/calendar/widgets/year_view.dart
 lib/features/chat/view/chat_page.dart

@@ -1,9 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
@@ -24,10 +22,9 @@ Future<Map<String, dynamic>?> showEventFormSheet(
   Future<GoogleCalendarColorOptions?>? providerColorsFuture,
   bool Function()? isCurrentScope,
 }) {
-  return showAdaptiveSheet<Map<String, dynamic>>(
+  return showAppSheet<Map<String, dynamic>>(
     context: context,
-    useRootNavigator: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
+
     builder: (context) => _EventFormContent(
       event: event,
       initialStartTime: initialStartTime,
@@ -259,7 +256,7 @@ class _EventFormContentState extends State<_EventFormContent> {
 
   Future<void> _pickDate(bool isStart) async {
     final initial = isStart ? _startDate : _endDate;
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: initial,
       firstDate: calendarDate(2020),
@@ -279,7 +276,10 @@ class _EventFormContentState extends State<_EventFormContent> {
 
   Future<void> _pickTime(bool isStart) async {
     final initial = isStart ? _startTime : _endTime;
-    final picked = await showTimePicker(context: context, initialTime: initial);
+    final picked = await showAppTimePicker(
+      context: context,
+      initialTime: initial,
+    );
     if (picked == null) return;
     setState(() {
       if (isStart) {
@@ -295,177 +295,120 @@ class _EventFormContentState extends State<_EventFormContent> {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat.yMMMd();
-    final verticalInset = MediaQuery.of(context).viewInsets.bottom;
-    final radius = context.isCompact ? 24.0 : 16.0;
 
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOutCubic,
-      padding: EdgeInsets.only(bottom: verticalInset),
-      child: Material(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(radius),
-          bottom: Radius.circular(context.isCompact ? 0 : radius),
+    return AppSheetScaffold(
+      title: _isEditing ? l10n.calendarEditEvent : l10n.calendarNewEvent,
+      actions: [
+        AppButton.ghost(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.calendarEventCancel),
         ),
-        child: SafeArea(
-          top: false,
-          bottom: context.isCompact,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (context.isCompact)
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: colorScheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                if (_dateTimeError != null)
-                  Text(
-                    _dateTimeError!,
-                    style: TextStyle(color: colorScheme.error),
-                  ),
-                // Header.
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(l10n.calendarEventCancel),
-                    ),
-                    const Spacer(),
-                    Text(
-                      _isEditing
-                          ? l10n.calendarEditEvent
-                          : l10n.calendarNewEvent,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    FilledButton(
-                      onPressed: _titleController.text.trim().isNotEmpty
-                          ? _save
-                          : null,
-                      child: Text(l10n.calendarEventSave),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+        AppButton.primary(
+          onPressed: _titleController.text.trim().isNotEmpty ? _save : null,
+          child: Text(l10n.calendarEventSave),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_dateTimeError != null)
+            Text(_dateTimeError!, style: TextStyle(color: colorScheme.error)),
+          // Header.
+          const SizedBox.shrink(),
+          const SizedBox(height: 16),
 
-                // Title.
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    labelText: l10n.calendarEventTitle,
-                    hintText: l10n.calendarEventTitleHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                  autofocus: !_isEditing,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 12),
-
-                // Description.
-                TextField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: l10n.calendarEventDescription,
-                    hintText: l10n.calendarEventDescriptionHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: 12),
-
-                // All-day toggle.
-                SwitchListTile(
-                  title: Text(l10n.calendarEventAllDay),
-                  value: _isAllDay,
-                  onChanged: (v) => setState(() => _isAllDay = v),
-                  contentPadding: EdgeInsets.zero,
-                ),
-
-                // Start date/time.
-                _DateTimeRow(
-                  label: l10n.calendarEventStartDate,
-                  dateText: dateFormat.format(_startDate),
-                  timeText: _isAllDay ? null : _startTime.format(context),
-                  onDateTap: () => _pickDate(true),
-                  onTimeTap: _isAllDay ? null : () => _pickTime(true),
-                ),
-                const SizedBox(height: 8),
-
-                // End date/time.
-                _DateTimeRow(
-                  label: l10n.calendarEventEndDate,
-                  dateText: dateFormat.format(_endDate),
-                  timeText: _isAllDay ? null : _endTime.format(context),
-                  onDateTap: () => _pickDate(false),
-                  onTimeTap: _isAllDay ? null : () => _pickTime(false),
-                ),
-                const SizedBox(height: 16),
-
-                // Color picker.
-                Text(
-                  l10n.calendarEventColor,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 8),
-                if (_canUseProviderColors)
-                  GoogleCalendarColorPicker(
-                    colors: _providerColors!,
-                    selected: _providerColor ?? _initialProviderColor,
-                    onChanged: (choice) =>
-                        setState(() => _providerColor = choice),
-                  )
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: EventColors.allColors.map((name) {
-                      final c = EventColors.fromString(name);
-                      final selected = _color == name;
-                      return GestureDetector(
-                        onTap: () => setState(() => _color = name),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: c,
-                            shape: BoxShape.circle,
-                            border: selected
-                                ? Border.all(
-                                    color: colorScheme.onSurface,
-                                    width: 2,
-                                  )
-                                : null,
-                          ),
-                          child: selected
-                              ? Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: colorScheme.surface,
-                                )
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-              ],
-            ),
+          // Title.
+          AppTextField(
+            controller: _titleController,
+            textCapitalization: TextCapitalization.sentences,
+            autofocus: !_isEditing,
+            onChanged: (_) => setState(() {}),
+            label: l10n.calendarEventTitle,
+            placeholder: l10n.calendarEventTitleHint,
           ),
-        ),
+          const SizedBox(height: 12),
+
+          // Description.
+          AppTextField(
+            controller: _descriptionController,
+            maxLines: 3,
+            textCapitalization: TextCapitalization.sentences,
+            label: l10n.calendarEventDescription,
+            placeholder: l10n.calendarEventDescriptionHint,
+          ),
+          const SizedBox(height: 12),
+
+          // All-day toggle.
+          AppToggleRow(
+            title: Text(l10n.calendarEventAllDay),
+            value: _isAllDay,
+            onChanged: (v) => setState(() => _isAllDay = v),
+          ),
+
+          // Start date/time.
+          _DateTimeRow(
+            label: l10n.calendarEventStartDate,
+            dateText: dateFormat.format(_startDate),
+            timeText: _isAllDay ? null : _startTime.format(context),
+            onDateTap: () => _pickDate(true),
+            onTimeTap: _isAllDay ? null : () => _pickTime(true),
+          ),
+          const SizedBox(height: 8),
+
+          // End date/time.
+          _DateTimeRow(
+            label: l10n.calendarEventEndDate,
+            dateText: dateFormat.format(_endDate),
+            timeText: _isAllDay ? null : _endTime.format(context),
+            onDateTap: () => _pickDate(false),
+            onTimeTap: _isAllDay ? null : () => _pickTime(false),
+          ),
+          const SizedBox(height: 16),
+
+          // Color picker.
+          Text(
+            l10n.calendarEventColor,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 8),
+          if (_canUseProviderColors)
+            GoogleCalendarColorPicker(
+              colors: _providerColors!,
+              selected: _providerColor ?? _initialProviderColor,
+              onChanged: (choice) => setState(() => _providerColor = choice),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: EventColors.allColors.map((name) {
+                final c = EventColors.fromString(name);
+                final selected = _color == name;
+                return GestureDetector(
+                  onTap: () => setState(() => _color = name),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: c,
+                      shape: BoxShape.circle,
+                      border: selected
+                          ? Border.all(color: colorScheme.onSurface, width: 2)
+                          : null,
+                    ),
+                    child: selected
+                        ? Icon(
+                            LucideIcons.check,
+                            size: 16,
+                            color: colorScheme.surface,
+                          )
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
       ),
     );
   }
@@ -488,25 +431,15 @@ class _DateTimeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Row(
       children: [
         Expanded(
           child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
         ),
-        ActionChip(
-          label: Text(dateText),
-          onPressed: onDateTap,
-          side: BorderSide(color: colorScheme.outlineVariant),
-        ),
+        AppChip(label: Text(dateText), onPressed: onDateTap),
         if (timeText != null) ...[
           const SizedBox(width: 8),
-          ActionChip(
-            label: Text(timeText!),
-            onPressed: onTimeTap,
-            side: BorderSide(color: colorScheme.outlineVariant),
-          ),
+          AppChip(label: Text(timeText!), onPressed: onTimeTap),
         ],
       ],
     );
