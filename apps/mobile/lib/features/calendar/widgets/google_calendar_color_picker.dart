@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -21,7 +22,7 @@ class GoogleCalendarColorPicker extends StatelessWidget {
       runSpacing: 8,
       children: [
         for (final option in colors.options)
-          ChoiceChip(
+          AppChip(
             key: ValueKey(
               'google-color-${option.kind}-${option.id ?? "inherit"}',
             ),

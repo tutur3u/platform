@@ -1575,7 +1575,6 @@
   "calendarConnectionsDisconnect": "Disconnect",
   "calendarConnectionsDisconnectConfirm": "Disconnect {account}? Associated calendars will be disabled.",
   "calendarConnectionsEmpty": "No accounts connected",
-  "calendarConnectionsSubtitle": "Connect Google and Microsoft accounts to sync calendars.",
   "calendarConnectionsTitle": "Manage Calendar Accounts",
   "calendarDayView": "Day",
   "calendarDeleteConfirm": "Delete this event?",

@@ -1258,9 +1258,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarConnectionsEmpty => 'No accounts connected';
 
   @override
-  String get calendarConnectionsSubtitle => 'Connect Google and Microsoft accounts to sync calendars.';
-
-  @override
   String get calendarConnectionsTitle => 'Manage Calendar Accounts';
 
   @override
