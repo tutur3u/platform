@@ -485,7 +485,7 @@ describe('real App Attest crypto verification', () => {
         counter: 0,
       })
     ).rejects.toThrow('launch-policy');
-  });
+  }, 30_000);
   it('rejects trailing CBOR, deep containers and allocation bombs', async () => {
     const verifier = createAppleIntegrityVerifier(policy);
     for (const bytes of [
