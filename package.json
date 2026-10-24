@@ -134,6 +134,8 @@
     "check:mobile-lucide": "node scripts/check-mobile-lucide-sync.js",
     "check:mobile-shadcn": "node scripts/check-mobile-shadcn-imports.js",
     "rust-cache": "node scripts/rust-cache.js",
+    "worktree:footprint": "node scripts/worktree-footprint.js report",
+    "worktree:prune-artifacts": "node scripts/worktree-footprint.js prune",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "dev:mobile:prod": "cd apps/mobile && flutter run --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "dev:docs": "node scripts/local-docs.js",

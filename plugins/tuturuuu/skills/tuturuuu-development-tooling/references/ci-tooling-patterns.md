@@ -330,6 +330,28 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   source or an unmerged worktree. Confirmed-merged worktrees should be removed
   after main-green, `bun git-sync`, and production verification so their target
   caches disappear with them.
+- `bun worktree:footprint` reports each registered worktree's allocated and
+  APFS-unique size. On macOS Bun `node_modules` are clones of the shared cache,
+  so `du` overstates a fresh worktree about 14x (4.3 GiB vs ~0.3 GiB unique).
+  `bun worktree:prune-artifacts` is a dry run unless `--apply` is passed. It
+  only removes git-ignored, untracked rebuildable outputs (`.turbo`, `.next`,
+  `.open-next`, `dist`, ignored `build`, Flutter `.dart_tool` build output) from
+  linked worktrees that are clean, unheld, idle,
+  and merged into `--base`. Keep `bunfig.toml` `globalStore = false` and the
+  default clonefile backend unless exact-commit CI type-check/build evidence
+  proves otherwise. Explicit holds-file read errors and fatal check-ignore errors
+  fail closed. Holds resolve filesystem aliases; recursive activity scans cap depth
+  at 32 and entries at 10,000, treating incomplete scans as active. Each apply
+  invocation builds a fresh plan. Checkout scans protect `.git` directories/files
+  and bare `HEAD`/`objects` markers, including ancestors inside the worktree.
+  Deletion walks repeat those boundaries and never recursively remove directories.
+  Before deletion, `lsof +D` checks open files and working directories with a
+  five-second forced-kill deadline and 1 MiB output cap. Missing tools, warnings,
+  failures and ambiguous output preserve artifacts as `liveness-unknown`; live
+  users produce `in-use`. Only an empty, warning-free no-match result admits
+  deletion. Locks and holds remain necessary to fence later owner activity.
+  Rust targets remain owned by rust-cache.
+  See `apps/docs/build/development-tools/worktree-disk-usage.mdx`.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next
