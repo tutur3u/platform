@@ -1692,6 +1692,45 @@ Out-of-range numeric configuration values (lanes `1`–`8`, workers and Turbo `1
 The bounded monitor emits JSONL memory-pressure, T3-tree resident-memory and top-process samples without arguments or environment values. RSS differs from Activity Monitor's footprint and can count shared pages multiple times.
 Offload full validation with `ttr box run --runner <remote-id> -- <command>` only after verifying a different machine and intended checkout. Same-machine runners/containers consume local RAM; resource setup does not configure runners, transmit credentials, or restart Docker.
 
+### Multi-host weighted admission
+
+`ttr resources run --hosts -- COMMAND` admits a job across the hosts in `<resources home>/hosts.json`. Without that file, `--hosts` refuses to run and admission stays the single-host lane FIFO. The CLI never writes or activates `hosts.json`; an operator installs it after a reviewed release. The registry decides where code runs, so it is trusted only from the canonical per-user home `~/.tuturuuu/resources`. That directory must be a real 0700 directory owned by you, `hosts.json` a real 0600 file owned by you, and every parent a non-symlink directory writable only by root or you (a root-owned sticky directory such as `/tmp` is allowed). The file is opened with `O_NOFOLLOW` and re-verified through the descriptor. A home inside an opted-in repository root (`roots`, or a `repositories` checkout) is refused too, as is an invalid `config.json`. When `TTR_RESOURCES_HOME` points anywhere else, or any check fails, the registry is ignored and `--hosts` is disabled (`resources-hosts-trust.test.ts`). `ttr resources hosts [--json]` shows each host's budget, reservations and waiters (or the proposed registry when none is installed). `ttr resources hosts --simulate [--json]` is an offline dry run of the measured queue through the same planner.
+
+- **Classes and weights.** Explicit `--hosts` jobs are `heavy` unless `--class light` is given; trivial commands never queue. Local light work also passes the dequeue disk gate, and the CLI tells a nested `run --hosts` which reservation it runs under through `TTR_RESOURCES_HOST_RESERVATION`. That nested job then runs under the ancestor's reservation, but only while that reservation is live and its broker or owned child group is a verified process ancestor; otherwise it would deadlock behind its own ancestor. No registered host that could ever hold the job (counting `remoteOk`) means it fails fast instead of queueing. Each host has separate `slots.light` and `slots.heavy`, per-class CPU/memory `weights`, and per-class worker caps (`workers`). A job is admitted only if its class slot is free and the weighted sum fits `capacity - reserved`.
+- **Reserved headroom.** `reserved.cpus`, `reserved.memoryGiB` and `reserved.diskGiB` are per host, for co-tenants such as production containers, CI runners, Judge workers and the desktop.
+- **Hosts.** The single `local` host uses the lane FIFO for heavy work. Lane owners count as local heavy load, a heavy `--hosts` job takes a local lane only while no lane waiter is ahead, and light local work holds a ledger reservation. `runner` hosts dispatch the exact pushed commit through the devbox offload transport (`runBoxOffload`, unchanged). Immediately before remote creation the runner is re-validated against a fresh snapshot that carries the server's timestamp. If it is stale, draining or missing, its disk is unknown or low, or the snapshot has no server time, the reservation is released and the job requeues without dispatching. Admission also refuses runners in snapshots without a server timestamp, and runners without activity telemetry (other clients' runs would be invisible). The commit plan is recomputed at dispatch; if it changed, the job falls back to local hosts. SIGHUP is forwarded to the offload transport's cancellation as SIGTERM, so a closed terminal also stops the remote run. Runs that other clients start on that runner count as heavy load. A runner that refuses creation means no remote run exists, so the job is requeued for local hosts; an ambiguous failure is never repeated locally.
+- **Admission.** Admission requires a fresh trusted runner (`evaluateTrustedRunner` plus `telemetryTtlSeconds`) and known free disk at or above `reserved.diskGiB`. Unreachable fleets, stale heartbeats, draining runners and unknown disk are never admitted. Dirty or unpushed trees are local-only.
+- **Canonical reservations.** Tickets and reservations live in `<home>/hosts-state/` and are created only inside the host-wide admission mutex. Concurrent requesters on this machine therefore cannot double-assign a slot. Each reservation is tied to its broker PID (or owned child group). Cancellation (SIGINT/SIGTERM/SIGHUP) releases it, and a dead owner is pruned on the next round. A malformed entry closes admission. Only `scope: "host"` reservations claim capacity: a project-only lock never stands in for host-wide admission.
+- **Fairness.** Waiters are ordered by their project's live share, then age. A project is the repository's common Git directory, so all Upskii worktrees share one identity. A waiter overtaken `fairness.maxBypass` times (default 4) holds every host that could ever fit it until it is placed. This backpressure is what prevents starvation.
+- **Disk at dequeue (REV-6480-1/2).** Every lane-queued job re-checks free disk inside admission, immediately before claim and spawn, using a local `statfs` probe (`resources-disk-gate.ts`).
+  - It uses Lane ST's thresholds: `TTR_STORAGE_MIN_FREE` (default 15 GiB) and `TTR_STORAGE_MIN_FREE_PERCENT` (default 5%).
+  - Below the floor, or when free disk is unknown, the job keeps waiting (fail closed).
+  - Block reasons name only the job volume, the free/floor figures and an errno code, never the working path or raw filesystem errors, and status labels them `blockedBy=disk`.
+  - The probe runs before taking the admission mutex, only for the FIFO head. It is bounded (2 s) and never stacked on a pending probe, so a hung volume counts as unknown and stalls no other admission.
+  - `TTR_RESOURCES_IGNORE_DISK=1` overrides it for one command.
+  - Once Lane ST's `storage-headroom` lands, the probe can delegate to it without changing this hook.
+
+Limits from the 2026-10-23 measurements, old to new (`proposedHostRegistry()`, not activated):
+
+| Host | Measured | Old | New |
+| --- | --- | --- | --- |
+| M4 (local) | 10 CPU, 24 GiB, 20 GiB of 460 GiB disk free (4.3%); load average 9 to 12; memory pressure normal; swap 0.6 GiB; disk IO idle. 2 Upskii owners and 5 to 9 waiters. | `validationLanes` 2 for every class (light work waits behind heavy), `vitestWorkers` 2, `buildJobs` 2, Turbo 1. No disk check at dequeue. | Heavy 2 (unchanged; still the lane ceiling) at 2 CPU / 5 GiB, 2 workers each. Light 0 to 1 at 1 CPU / 1 GiB, 1 worker. Reserved 4 CPU / 8 GiB / 15 GiB disk, leaving a 6 CPU / 16 GiB budget. Disk re-checked at dequeue. |
+| skr-linux-lan (runner) | 20 CPU, 31 GiB (about 23 GiB available), 398 GiB free; load average 2.5 to 9; IO PSI full 14 to 23%, iowait 12 to 17%; 8 GiB swap used. Live PKTM production, 4 Upskii runners, 4 Judge workers. No trusted-development runner is registered. | Not admitted by `ttr resources`. The early-merge validation script uses 2 heavy `flock` slots at nice 10. | Heavy 0 to 2 at 5 CPU / 6 GiB, 5 workers each (matches the existing two validation slots; IO-bound, so not raised). Light 0 to 2 at 1 CPU / 1 GiB. Reserved 8 CPU / 12 GiB / 50 GiB disk, leaving a 12 CPU / 19 GiB budget. |
+| Sonha | IO degraded | Not capacity | Not registered (0/0) |
+| ThanhStudio | Offline | Not capacity | Not registered (0/0) |
+
+Only Linux gains slots. The M4 keeps its heavy ceiling and gains one light slot, because its CPU and disk are already the binding constraints. For the measured queue, the dry run cuts the makespan from 43 to 20 minutes and the maximum wait from 33 to 10 minutes, with every host within its ceiling. Raise Linux heavy slots only after IO PSI `full avg60` stays below 10%.
+
+Before activation:
+- register a trusted-development runner on skr-linux-lan that publishes `capabilities.disk.freeGiB`, because unknown runner disk fails closed;
+- reclaim disk on the M4, or set the floor deliberately: at 4.3% free, the 5% floor holds heavy lane jobs.
+
+Regression coverage:
+- `resources-hosts-plan.test.ts`: ceilings, stale or unknown hosts, fairness and starvation, and project-only locks;
+- `resources-hosts-ledger.test.ts`: concurrent no-double-assignment, process death, cancellation, overlap and stale-runner dispatch;
+- `resources-disk-gate.test.ts`;
+- `resources-hosts-sim.test.ts`.
+
 ### Docker metadata lifecycle diagnostic
 
 The SDK metadata subprocess is silent by default. Disposable CI can opt in with

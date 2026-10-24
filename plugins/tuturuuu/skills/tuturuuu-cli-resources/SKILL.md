@@ -114,6 +114,41 @@ runners; selection excludes them. A runner must also advertise
 `protocols.commitRun` containing the client's envelope version. Otherwise it is
 `blockedBy=capability_missing`, and `auto` queues locally.
 
+## Multi-host weighted admission
+
+`ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off
+until an operator installs that file after a reviewed release; never write or
+activate it from an agent session.
+- The registry is trusted only in the canonical `~/.tuturuuu/resources`
+  (0700 directory, 0600 file, owned by you, no symlinks, no writable parents).
+  A home inside an opted-in repository root is refused. Any other
+  `TTR_RESOURCES_HOME` ignores it and disables `--hosts`.
+- `--hosts` jobs are heavy unless `--class light`. Nested `run --hosts` reuses
+  the ancestor's reservation (verified by process ancestry). The disk probe is
+  bounded, runs outside the mutex, and reports `blockedBy=disk`.
+- Runners are re-validated against a fresh server-timestamped snapshot just
+  before remote creation; if one is no longer eligible, the job requeues.
+- Hosts have separate light and heavy slots, per-class CPU/memory weights, and
+  reserved CPU/memory/disk headroom.
+- Local heavy work keeps the lane FIFO. Runners use the devbox offload
+  transport. Stale or unreachable runners and unknown disk are never admitted.
+- Reservations are created only inside the admission mutex and released on
+  cancel or owner death. Project-only locks never count as host admission.
+- Fairness is by repository share with a bypass bound (`maxBypass`), so no
+  waiter starves.
+- Every lane-queued job re-checks disk at dequeue: `TTR_STORAGE_MIN_FREE`
+  (15 GiB) and `TTR_STORAGE_MIN_FREE_PERCENT` (5%), fail closed;
+  `TTR_RESOURCES_IGNORE_DISK=1` overrides it for one command.
+
+Use `ttr resources hosts --simulate` for the offline dry run. The SDK reference
+has the measured old to new limits table.
+
+| Host | Old | New |
+| --- | --- | --- |
+| M4 | 2 lanes for every class | heavy 2 (2 CPU/5 GiB), light 1 (1 CPU/1 GiB), reserve 4 CPU/8 GiB/15 GiB |
+| skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
+| Sonha, ThanhStudio | none | not registered |
+
 ## SDK supplier updates
 
 For an authorized dev/latest or private-tarball supplier change, use the
