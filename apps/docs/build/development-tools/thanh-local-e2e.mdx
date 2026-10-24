@@ -112,10 +112,18 @@ Web proxies some owner APIs to satellite apps; Calendar's event API is proxied
 to the Calendar app, so without it Agenda shows `ApiException(500): Request
 failed` and web logs `Failed to proxy https://calendar.tuturuuu.localhost/...
 ECONNREFUSED`. `web` therefore also starts each satellite in
-`TUTURUUU_E2E_SATELLITES` (default `calendar`) with `bun run dev:app` on its
-default port, the same local Supabase env, and `WEB_APP_URL`/
-`INTERNAL_WEB_API_ORIGIN` pointing back at web; web gets
-`CALENDAR_APP_URL=http://localhost:7806`. `down` stops web and satellites.
+`TUTURUUU_E2E_SATELLITES` (default `calendar`) on its default port with the
+same local Supabase env and `WEB_APP_URL`/`INTERNAL_WEB_API_ORIGIN` pointing
+back at web; web gets `CALENDAR_APP_URL=http://localhost:7806`. `down` stops
+web and satellites. `web` also builds `@tuturuuu/internal-api`, which Calendar
+imports from `dist/`.
+
+Satellites run on their Next.js runtime (`next dev`), not Vite+ `dev:app`.
+Vite+ dev runs Calendar inside workerd, which loads linked workspace packages
+unbundled; `@tuturuuu/internal-api` builds as CommonJS (`NodeNext` without
+`"type": "module"`), so startup fails with `ReferenceError: exports is not
+defined`, or `Failed to resolve entry for package "@tuturuuu/internal-api"`
+before it is built. The Next runtime serves the same route handlers.
 
 ## Mobile wiring
 
@@ -128,7 +136,9 @@ the local web server, which owns the live API handlers.
 
 `apps/mobile/integration_test/e2e_flows_test.dart` signs in with the seeded
 account, opens Agenda, opens Settings → Preferences, changes the personal
-timezone and returns to Agenda. It fails if an `ErrorWidget` renders at any
+timezone (default `Pacific/Niue`, override with `--dart-define=E2E_TIMEZONE=...`;
+pick a zone near the top of the picker, whose list is lazy and lives in a
+draggable sheet) and returns to Agenda. It fails if an `ErrorWidget` renders at any
 step. At each checkpoint it prints an `E2E_SHOT <name>` marker and holds the
 frame; the runner streams `flutter drive` output and captures the device with
 `xcrun simctl io ... screenshot` or `adb exec-out screencap`, so screenshots

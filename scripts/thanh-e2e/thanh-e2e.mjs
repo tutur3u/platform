@@ -180,9 +180,11 @@ function readPid(file) {
   }
 }
 
-async function waitForHttp(url, timeoutMs) {
+async function waitForHttp(url, timeoutMs, isAlive = () => true) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    if (!isAlive())
+      throw new Error(`Server for ${url} exited before it was ready`);
     try {
       const response = await fetch(url, { redirect: 'manual' });
       if (response.status < 500) return response.status;
@@ -199,8 +201,9 @@ async function web(config, flags) {
   const status = await writeEnvFiles(config);
   const running = readPid(config.webPidFile);
   if (!running && !flags['skip-prebuild']) {
-    // `bun dev:web` watches these dist-exporting packages; build them once.
-    for (const pkg of ['types', 'supabase']) {
+    // Web and satellites import these dist-exporting packages (`bun dev:web`
+    // watches types/supabase; Calendar resolves internal-api); build once.
+    for (const pkg of ['types', 'supabase', 'internal-api']) {
       run('bun', ['run', 'build'], {
         cwd: path.join(repoRoot, 'packages', pkg),
       });
@@ -237,10 +240,22 @@ async function web(config, flags) {
     }
     await startDetached(config, {
       name,
-      command: 'bun',
-      args: ['run', 'dev:app'],
+      // Next.js runtime: Vite+ `dev:app` runs the app in workerd, which cannot
+      // load CommonJS workspace dist (e.g. @tuturuuu/internal-api).
+      command: path.join(
+        repoRoot,
+        'apps',
+        name,
+        'node_modules',
+        '.bin',
+        'next'
+      ),
+      args: ['dev', '-p', String(port), '--turbopack'],
       cwd: path.join(repoRoot, 'apps', name),
-      env: satelliteEnv(config, status, name),
+      env: {
+        ...satelliteEnv(config, status, name),
+        NODE_OPTIONS: '--experimental-require-module',
+      },
       pidFile: config.pidFile(name),
       readyUrl: `${loopbackUrl(port)}/`,
     });
@@ -264,7 +279,11 @@ async function startDetached(
   child.unref();
   fs.writeFileSync(pidFile, String(child.pid));
   log(`${name} starting (pid ${child.pid}); log ${logPath}`);
-  const code = await waitForHttp(readyUrl, 600_000);
+  let exited = false;
+  child.once('exit', () => {
+    exited = true;
+  });
+  const code = await waitForHttp(readyUrl, 600_000, () => !exited);
   log(`${name} ready on ${new URL(readyUrl).origin} (HTTP ${code})`);
 }
 

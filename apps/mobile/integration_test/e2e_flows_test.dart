@@ -14,6 +14,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
+import 'package:mobile/features/settings/view/timezone_picker_sheet.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/main_development.dart' as app;
 
@@ -28,7 +29,8 @@ const _password = String.fromEnvironment(
 );
 const _timezone = String.fromEnvironment(
   'E2E_TIMEZONE',
-  defaultValue: 'Asia/Ho_Chi_Minh',
+  // Listed near the top of the picker, so no lazy-list scrolling is needed.
+  defaultValue: 'Pacific/Niue',
 );
 
 void main() {
@@ -54,8 +56,21 @@ void main() {
       await _pumpUntil(tester, condition, timeout: timeout);
     } on TestFailure {
       await shot(tester, 'timeout-$label');
+      final optionKeys = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget.key is ValueKey<String> &&
+                (widget.key! as ValueKey<String>).value.startsWith(
+                  'timezone-option-',
+                ),
+          )
+          .evaluate()
+          .map((e) => (e.widget.key! as ValueKey<String>).value)
+          .take(8)
+          .join(', ');
       throw TestFailure(
-        'Timed out waiting for $label; visible: ${_visibleTexts()}',
+        'Timed out waiting for $label; visible: ${_visibleTexts()}; '
+        'option keys: $optionKeys',
       );
     }
   }
@@ -125,28 +140,28 @@ void main() {
     await _settle(tester);
     final tile = find.byType(TimezoneSettingsTile);
     await waitFor(tester, 'timezone-tile', () => tile.evaluate().isNotEmpty);
-    await tester.scrollUntilVisible(
-      tile,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.ensureVisible(tile.first);
     await _settle(tester);
     await shot(tester, '05-settings-preferences');
     _expectNoErrorWidget('on Settings');
 
-    await tester.tap(
-      find.descendant(of: tile, matching: find.byType(InkWell)).first,
+    await tester.tap(find.text('Personal timezone').first);
+    await _settle(tester);
+    final picker = find.byType(TimezonePickerSheet);
+    await waitFor(
+      tester,
+      'timezone-picker',
+      () => picker.evaluate().isNotEmpty,
     );
     await _settle(tester);
-    await tester.enterText(find.byType(EditableText).last, _timezone);
-    await _settle(tester);
-    await shot(tester, '06-timezone-search');
+    await shot(tester, '06-timezone-picker');
     final option = find.byKey(const ValueKey('timezone-option-$_timezone'));
     await waitFor(
       tester,
       'timezone-option',
       () => option.evaluate().isNotEmpty,
     );
+    await tester.ensureVisible(option.first);
     await _hideKeyboard(tester);
     await tester.tap(option.first);
     await _settle(tester, seconds: 4);
