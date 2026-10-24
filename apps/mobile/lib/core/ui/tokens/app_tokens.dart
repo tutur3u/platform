@@ -11,8 +11,9 @@ abstract final class AppElevation {
   /// Raised cards and pressed tiles.
   static List<BoxShadow> raised(AppColorTokens colors) => [
     BoxShadow(
-      color: const Color(0xFF000000)
-          .withValues(alpha: colors.isDark ? 0.3 : 0.06),
+      color: const Color(
+        0xFF000000,
+      ).withValues(alpha: colors.isDark ? 0.3 : 0.06),
       blurRadius: 12,
       offset: const Offset(0, 4),
     ),
@@ -21,8 +22,9 @@ abstract final class AppElevation {
   /// Sheets, dialogs, toasts and other overlays.
   static List<BoxShadow> overlay(AppColorTokens colors) => [
     BoxShadow(
-      color: const Color(0xFF000000)
-          .withValues(alpha: colors.isDark ? 0.45 : 0.16),
+      color: const Color(
+        0xFF000000,
+      ).withValues(alpha: colors.isDark ? 0.45 : 0.16),
       blurRadius: 28,
       offset: const Offset(0, 12),
     ),
