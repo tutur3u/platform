@@ -8,7 +8,6 @@ import {
   ownerCpu,
   parseCpuTime,
   parseProcessCpu,
-  processCpuTable,
 } from './resources-activity';
 import { isTrivialCommand } from './resources-command';
 import { atomicJson, readResourceConfig } from './resources-config';
@@ -23,11 +22,9 @@ import {
   crossProcessTimeout,
   entry,
   exists,
-  groupProducer,
   privateFixtures,
   processTimeout,
   realNode,
-  until,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -264,19 +261,28 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
     expect(idleFor(owner, undefined, { percent: 0, seconds: 9 }, now)).toBe(0);
   });
 
-  it('warns for a genuinely idle owner after its CPU sample settles without signalling', async () => {
+  it('renders idle-owner warnings from one CPU snapshot without resampling or signalling', async () => {
     const path = await home(1);
     const slot = join(path, 'slots', '0');
     const idle = spawn('sleep', ['60'], { stdio: 'ignore', detached: true });
+    const probe = vi.spyOn(
+      await import('./resources-activity'),
+      'processCpuTable'
+    );
     try {
       if (idle.pid === undefined)
         throw new Error('Sleep fixture did not start');
-      await until(
-        async () =>
-          (await processCpuTable())?.find((row) => row.pid === idle.pid)
-            ?.percent === 0,
-        [groupProducer(idle.pid)]
-      );
+      const table = [
+        {
+          pid: idle.pid,
+          parent: process.pid,
+          group: idle.pid,
+          percent: 0,
+          seconds: 0,
+        },
+      ];
+      const busyTable = table.map((row) => ({ ...row, percent: 3 }));
+      probe.mockResolvedValue(busyTable);
       const started = new Date(Date.now() - 12 * 60_000).toISOString();
       const owner = {
         ...newOwner('python3', 'python3 /tmp/check.py'),
@@ -291,7 +297,7 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
         lastActiveAt: started,
       });
       const state = await resourceQueueStatus(path);
-      const details = await resourceStatusDetails(state);
+      const details = await resourceStatusDetails(state, Date.now(), table);
       expect(details.ownerDetails[0]).toMatchObject({
         pid: owner.pid,
         childPid: idle.pid,
@@ -314,8 +320,18 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
       });
       expect(text).toContain('python3 /tmp/check.py');
       expect(text).toContain(`WARNING: Owner PID ${owner.pid}`);
+      const busy = await resourceStatusDetails(state, Date.now(), busyTable);
+      expect(busy.ownerDetails[0]!.cpuPercent).toBe(3);
+      expect(busy.ownerDetails[0]!.idleSeconds).toBe(0);
+      expect(busy.warnings).toEqual([]);
+      expect(probe).not.toHaveBeenCalled();
+      const sampled = await resourceStatusDetails(state);
+      expect(sampled.ownerDetails[0]!.cpuPercent).toBe(3);
+      expect(sampled.warnings).toEqual([]);
+      expect(probe).toHaveBeenCalledTimes(1);
       expect(idle.exitCode).toBeNull();
     } finally {
+      probe.mockRestore();
       if (idle.exitCode === null && idle.signalCode === null) {
         const exited = new Promise<void>((resolve) =>
           idle.once('exit', () => resolve())
