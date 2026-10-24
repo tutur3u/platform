@@ -74,6 +74,8 @@ const createMessageSchema = z.object({
   kind: z.enum(['user', 'assistant', 'system']).default('user'),
   miraMode: z.boolean().optional(),
   replyToMessageId: z.string().uuid().nullable().optional(),
+  // Device IANA timezone for Mira date tools; validated again downstream.
+  timezone: z.string().trim().max(64).optional(),
 });
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
@@ -217,6 +219,7 @@ export const POST = withSessionAuth<RouteParams>(
         request,
         miraMode,
         stream: wantsChatMessageStream(request),
+        timezone: parsed.data.timezone,
       });
     }
 
@@ -482,6 +485,7 @@ export const POST = withSessionAuth<RouteParams>(
             conversation,
             request,
             miraMode,
+            timezone: parsed.data.timezone,
             userMessage: message,
           });
         }
@@ -495,6 +499,7 @@ export const POST = withSessionAuth<RouteParams>(
             conversation,
             request,
             miraMode,
+            timezone: parsed.data.timezone,
             userMessage: message,
           });
         } catch (error) {

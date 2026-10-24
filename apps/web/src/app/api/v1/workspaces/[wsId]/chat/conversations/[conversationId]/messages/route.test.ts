@@ -220,6 +220,37 @@ describe('native AI chat message route', () => {
     expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
   });
 
+  it('forwards the device timezone to the Mira chat route', async () => {
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') return [userMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [assistantMessage], replayed: false };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      createRequest({ miraMode: true, timezone: 'Asia/Ho_Chi_Minh' }) as never,
+      {
+        params: Promise.resolve({
+          conversationId: 'conversation-1',
+          wsId: 'workspace-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.aiRouteBodies.at(-1)).toMatchObject({
+      isMiraMode: true,
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
+  });
+
   it('persists native assistant replies with an atomic batch RPC', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_user_message_idempotent') {

@@ -33,6 +33,7 @@ export async function sendAiChatMessage({
   miraMode,
   request,
   stream,
+  timezone,
 }: {
   attachments: ChatMessageAttachmentInput[];
   auth: SessionAuthContext;
@@ -43,6 +44,7 @@ export async function sendAiChatMessage({
   miraMode: boolean;
   request: NextRequest;
   stream: boolean;
+  timezone?: string;
 }) {
   const chatId = getAiChatId(conversationId);
   const trimmedContent = content.trim();
@@ -156,6 +158,7 @@ export async function sendAiChatMessage({
     request,
     supabase: auth.supabase,
     thinkingMode: 'fast',
+    timezone,
     user: auth.user,
     wsId: context.normalizedWsId,
   });
