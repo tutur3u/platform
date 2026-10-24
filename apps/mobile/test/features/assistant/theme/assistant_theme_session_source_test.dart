@@ -102,50 +102,46 @@ void main() {
   }
 
   for (final reauthenticate in [false, true]) {
-    test(
-      'close and reopen reads only the authorized flush: reauth=$reauthenticate',
-      () async {
-        final fixture = await _Fixture.create();
-        addTearDown(fixture.dispose);
-        final gate = fixture.holdPreferences();
-        fixture.controller.onChanged!(_choice);
-        final closed = fixture.closeRoute();
-        await gate.entered.future;
-        if (reauthenticate) {
-          fixture.logout();
-          await fixture.signIn();
-        }
-        final source = AssistantThemeSessionSource(
-          auth: fixture.auth,
-          actorId: 'a',
-        );
-        final replacement = AssistantThemeController(
-          actor: source,
-          store: fixture.store,
-        );
-        addTearDown(() async {
-          replacement.dispose();
-          await source.closeAfter(replacement.writesDrained);
-        });
-        expect(fixture.auth.listeners, 2);
-        gate.release(fixture.preferences);
-        await closed;
-        await replacement.reload();
-        if (reauthenticate) {
-          expect(replacement.value, const AssistantThemePreferences());
-          expect(fixture.preferences.getKeys(), isEmpty);
-        } else {
-          expect(replacement.value, _choice);
-          expect(fixture.stored(), _choice);
-        }
-        final latest = AssistantThemePreferences.preset(
-          AppearanceThemeId.forest,
-        );
-        expect(await replacement.setValue(latest), isTrue);
-        expect(fixture.stored(), latest);
-        expect(fixture.auth.listeners, 1);
-      },
-    );
+    test('close and reopen reads only the authorized flush: '
+        'reauth=$reauthenticate', () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.dispose);
+      final gate = fixture.holdPreferences();
+      fixture.controller.onChanged!(_choice);
+      final closed = fixture.closeRoute();
+      await gate.entered.future;
+      if (reauthenticate) {
+        fixture.logout();
+        await fixture.signIn();
+      }
+      final source = AssistantThemeSessionSource(
+        auth: fixture.auth,
+        actorId: 'a',
+      );
+      final replacement = AssistantThemeController(
+        actor: source,
+        store: fixture.store,
+      );
+      addTearDown(() async {
+        replacement.dispose();
+        await source.closeAfter(replacement.writesDrained);
+      });
+      expect(fixture.auth.listeners, 2);
+      gate.release(fixture.preferences);
+      await closed;
+      await replacement.reload();
+      if (reauthenticate) {
+        expect(replacement.value, const AssistantThemePreferences());
+        expect(fixture.preferences.getKeys(), isEmpty);
+      } else {
+        expect(replacement.value, _choice);
+        expect(fixture.stored(), _choice);
+      }
+      final latest = AssistantThemePreferences.preset(AppearanceThemeId.forest);
+      expect(await replacement.setValue(latest), isTrue);
+      expect(fixture.stored(), latest);
+      expect(fixture.auth.listeners, 1);
+    });
   }
 
   test(

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -158,7 +157,7 @@ Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
 }
 
 void _connect(AssistantLiveCubit live) {
-  // Seed only provider connection state; the page and dispatch Cubits stay real.
+  // Seed provider connection state; page and dispatch Cubits stay real.
   live.emit(
     const AssistantLiveState(
       workspaceId: _workspace,
@@ -257,14 +256,14 @@ void main() {
     tester,
   ) async {
     final h = await _mount(tester);
-    final live = h.pageContext.read<AssistantLiveCubit>();
-    live.emit(
-      const AssistantLiveState(
-        workspaceId: _workspace,
-        chatId: _chat,
-        microphonePermission: AssistantLivePermissionState.denied,
-      ),
-    );
+    final live = h.pageContext.read<AssistantLiveCubit>()
+      ..emit(
+        const AssistantLiveState(
+          workspaceId: _workspace,
+          chatId: _chat,
+          microphonePermission: AssistantLivePermissionState.denied,
+        ),
+      );
     await tester.pumpAndSettle();
     final transcript = find.byType(AssistantTranscriptSection);
     final originalTranscript = tester.element(transcript);
