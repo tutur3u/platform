@@ -48,7 +48,7 @@ exact-source CI and admitted runtime acceptance remain separate evidence.
 
 `mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
 Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
-uses a separate native job on Bun 1.4.3 and Node 24.22.0: build shared dependencies,
+uses a separate native job on Bun 1.4.4 and Node 24.22.0: build shared dependencies,
 run owning Calendar/Web/Tasks UI tests, build with the official Void plugin,
 discover `.wrangler/deploy/config.json`, then generate emitted `CloudflareEnv` bindings in fresh runner scratch because Wrangler rejects the handwritten stub.
 Only successful, regular, nonempty, nonsymlink output replaces stable `cloudflare-env.d.ts`; own scratch is cleaned on success/failure.
@@ -294,6 +294,31 @@ explicit JSON boolean `false` skips a job; missing outputs retain validation.
 A failed configuration job still blocks dependent jobs. Regression coverage:
 `node --test scripts/ci/mail-calendar-tasks-affected.test.js`.
 
+### Lockfile relevance for Worker and Vercel app workflows
+
+`bun.lock` used to be a global input for every Cloudflare app workflow, so adding
+an unrelated workspace (for example a new tooling package) ran Meet, Parley,
+Lettin, Colab, Coordination, Cron Control and Devbox Control validation on every
+push. `ci-check` now passes the resolver's base and head SHAs to
+`check-workflow-config.ts`, which compares the two lockfiles structurally with
+`scripts/ci/lockfile-workspace-delta.ts`. A `bun.lock` change matches a target
+only when an affected workspace is in the target's dependency closure, which
+includes the workspaces behind its `additionalPaths`.
+
+A change is scoped to a workspace only for its `workspaces` entry, its workspace
+link, nested resolutions under it (`@scope/app/dep`), or brand-new top-level
+packages that nothing could have resolved before. Root workspace edits,
+`overrides` and other top-level settings, any modified or removed third-party
+resolution, an unparseable lockfile and a missing base or head keep `bun.lock`
+global, so the workflow runs. Skipped checks still report through the existing
+`check-ci` gate. Regression coverage:
+`node --experimental-strip-types --test scripts/ci/worker-lockfile-relevance.test.mjs`.
+
+The paused `docker-setup-check.yaml` and `rust-backend.yml` workflows trigger
+only on their own runtime inputs. Shared manifests, `bun.lock`, root config and
+documentation no longer allocate a check runner merely to report a disabled
+runtime. Restore the broader triggers when resuming either runtime.
+
 Measure scheduling separately from execution when assessing this optimization:
 run-created to job-start includes prerequisite work; job-created to job-start
 more closely measures job scheduling. Count incomplete jobs separately and do
@@ -301,6 +326,27 @@ not treat cancelled or skipped jobs as zero-duration successful validation.
 Cache archive restoration is separate from Turbo task reuse. Compare exact-head
 hosted runs before claiming push-to-green savings; removing runner demand does
 not promise a particular hosted queue delay.
+
+### Mobile PR build selection
+
+Ordinary mobile PRs build Android as the portable application smoke. iOS, macOS,
+Linux and Windows builds run when their native directory changes. Dependency
+manifests, localization configuration, workflow/tooling inputs and unrecognized
+paths retain every platform build. Missing or empty changed-file data also runs
+all platforms. Every matching main push retains all five builds; release and
+production workflows are unchanged.
+
+Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
+skips the heavy job before runner allocation; do not remove a required-check
+trigger. `scripts/ci/mobile-build-selection.ts` owns this policy, and its
+`mobile-build-selection.test.js` regression suite exercises portable/native edits,
+shared inputs, explicit disable and protected push behavior. Run it with
+`node --test scripts/ci/mobile-build-selection.test.js` alongside
+`check-workflow-config.test.js` and `runner-efficiency.test.js` after edits.
+
+Compare timestamps from exact run/job inventories before and after rollout.
+Runner-minutes removed are projected demand savings; skipped queued work does
+not establish a guaranteed reduction in wall-clock merge or production delay.
 
 ## Coordination native Worker toolchain
 
@@ -335,7 +381,7 @@ changing product tests. `df` can show free space while an individual `/tmp`
 write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
 owning program directory can isolate direct validation from that failure. Set
 `TMPDIR` only in the child payload after resource-broker admission. Do not set it
-before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+before `bun validate`: its `os.tmpdir()`-based check queue would move shared state.
 Verify the destination quota and retain the original failure before one bounded
 validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
 but a private `TMPDIR` was also needed for the observed D1 fixture failure;
@@ -565,14 +611,169 @@ used. A trusted save still archives the complete requested image set. Serial
 matrix execution allows reuse of an already completed contract seed; matrix
 ordering is not a dependency guarantee, so rerun the dispatch after a partial seed.
 
-That main-only dispatch allows seven attempts within
-a ten-minute total pull budget per profile and retains 15-minute job limits. It
-still needs a runner with working registry access; if hosted IPs remain throttled,
-this seed cannot succeed there. Use an admitted trusted runner with registry
-access to run the same seeding action, or wait for registry recovery. Do not treat
-a registry switch as a fix or upload unreviewed image archives to the main scope.
-GitHub's cache scope allows PRs to read main caches; eviction or a version/profile
-change requires another successful seed. Exact-head hosted CI remains required.
+That main-only dispatch allows seven attempts within a ten-minute total pull
+budget per profile and retains 15-minute job limits. Only this trusted Linux x64
+seed path can substitute one existing retry slot after an ECR throttle with an
+anonymous pull from a source-allowlisted official `ghcr.io/supabase/*` publication.
+The allowlist covers every image in the current CLI 2.117.0 and fixed CLI 2.121.0
+seed profiles:
+
+| Image | CLI 2.117.0 tag | CLI 2.121.0 tag |
+| --- | --- | --- |
+| gotrue | v2.196.0 | v2.197.0 |
+| imgproxy | v3.8.0 | v3.26.0 |
+| kong | 2.8.1 | 2.8.1 |
+| mailpit | v1.30.2 | v1.31.3 |
+| postgres-meta | v0.99.0 | v0.100.0 |
+| postgres | 17.6.1.167 | 17.11.0.004 |
+| postgrest | v16.2 | v16.4 |
+| realtime | v2.130.0 | v2.143.4 |
+| storage-api | v1.72.1 | v1.82.1 |
+| studio | 2026.08.24-sha-8ec45b2 | 2026.10.12-sha-3699278 |
+
+All 19 unique tags have equal ECR/GHCR OCI index, linux/amd64 manifest and config
+digests. No image in these seed profiles remains ECR-only. Edge-runtime, Logflare,
+Vector and Supavisor are outside both seed profiles because edge runtime,
+analytics and pooling are disabled; their publication identity is not qualified
+here. Do not enable those services or expand cache keys to obtain a fallback.
+Unlisted tags remain ECR-only.
+
+Pulls use the pinned linux/amd64 manifest digest and verify Docker's RepoDigests,
+config ID, OS and architecture before tagging the canonical ECR reference.
+A fallback must agree with a supplied canonical platform/config pin before its
+pull. Alternate transport failure or identity mismatch stops the seed without
+retrying or tagging. Archives retain the unchanged canonical ECR-tag cache key.
+There is no login, additional attempt budget, arbitrary registry input or PR path.
+
+Regenerate the metadata using only anonymous registry manifest GETs:
+
+```sh
+node scripts/ci/supabase-image-cache-registry.js > /tmp/supabase-image-publications.json
+```
+
+This helper reads the two pinned upstream CLI Dockerfiles, selects only the ten
+seed-profile services (excluding alternate Postgres major versions), queries
+ECR/GHCR tags and linux/amd64 manifests, hashes the returned bytes and records
+config digests. It never pulls image layers, logs in, changes source data or runs
+Docker. Each metadata request has a 30-second timeout and at most three attempts
+for HTTP 429/5xx. A missing publication, metadata error or content mismatch exits
+nonzero; resolve it before qualifying an image. Compare both registries' `amd64`
+and `config` fields, then copy the qualified GHCR `index`, `amd64`, `config` and
+fixed repository into `scripts/ci/supabase-image-cache-seed-data.json` fallbacks.
+For fixed catalogs, retain matching canonical pins. Index equality is recorded
+for these tags; platform/config equality is the runtime identity requirement.
+If content differs or a public GHCR publication is absent, leave that image
+ECR-only and document it. Never replace a failed comparison with a tag-only pull.
+Run the image-cache, seed and registry tests after changing the data.
+
+PR cache misses keep their existing ECR-only pull policy. Credentialless,
+digest-pinned read-only fallback is a possible separate change, but must first
+review allowlist provenance in PR-controlled checkouts, keep the two-minute
+budget and terminal verification, and enforce no cache writes or added privileges.
+Removing the trusted-seed guard alone does not preserve the current trust model.
+
+For premerge CLI 2.121.0 cache preparation, the owner may select the fixed
+`seed_image_catalog=cli-2.121.0` dispatch choice together with
+`seed_images_only=true` on main. This reads reviewed source data without running
+the future CLI or checking out PR code. Every catalog image is pulled by its
+reviewed ECR linux/amd64 manifest digest, verified before save, and tagged with
+the original ECR version reference. The exact tag list still goes through the
+existing key function; the catalog does not change consumer keys, archive paths
+or registry identity. An absent selector or `current` retains installed-CLI
+metadata and supplemental version validation. The fixed catalog is Linux x64
+only and requires the existing trusted 600-second seed mode. Update source
+catalogs only after reviewing the upstream CLI list and anonymous index/platform
+manifest metadata, including platform config digests; never accept a caller list.
+
+GitHub's cache scope allows PRs to read main caches. Cache retention is shared
+with Flutter SDK and Bun archives; capacity pressure can evict previously seeded
+images. Before another owner-controlled seed, inspect the exact cache inventory
+and active runs rather than assuming more retries establish retention. Acceptance
+requires exact producer key/ref/size evidence, a fresh consumer's exact hit and
+successful runtime contracts, then retained entries after the ordinary CI wave.
+Source tests and registry metadata parity do not establish hosted alternate
+transport reachability or runtime success. Exact-head hosted CI remains required.
+
+### Repository cache budget
+
+The repository's 10 GiB Actions cache budget uses least-recently-used eviction.
+Cache misses can make Supabase contracts depend on throttled public ECR pulls.
+Keep heavyweight writes on trusted refs; PRs restore the main cache rather than
+creating a copy under every merge ref. This reduces eviction pressure but does
+not reserve capacity or guarantee image retention.
+
+| Cache family | Observed pressure | Save policy |
+| --- | --- | --- |
+| Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
+| Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch, including desktop, release and employee jobs |
+| Bun downloads | About 1 GiB per observed Linux archive | Main push/dispatch only; one v2 archive per OS, architecture and pinned Bun version |
+| CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
+
+These are incident measurements, not fixed sizes or a guaranteed total. New
+Gradle keys use the `gradle-v1-` namespace; their first main push must populate
+them. PRs cannot warm missing heavyweight caches. The static budget gate is
+`node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
+`bun test:scripts`. It inventories every save-capable cache action and setup cache input in
+workflows and composites, checking trusted and untrusted events/refs. Combined `actions/cache` still registers a post-job save when
+`lookup-only` is enabled, so it remains in the inventory. Unknown keys and paths
+have no implicit exemption. The explicit exceptions compare the complete input
+set and workflow/job: small E2E proof JSON, the MCP tooling pip download cache,
+Discord's pruned, lockfile-scoped uv downloads, and Buildx executable binaries.
+Rust Cargo saves and BuildKit layer exports are explicitly inventoried as paused
+source, with switchboard or job-fence checks and an exact scope list. These are
+not claims that retained archives are small or safe to reactivate. Each exception
+has a recorded reason; expanding paths, inputs or export scopes requires review.
+
+Production mobile jobs only restore the Gradle/Pods caches populated by main
+builds. They register no unreachable main-push saves. The paused Docker E2E jobs
+reuse the exact shared `full` Supabase image profile instead of writing a second
+`supabase-docker-v2` archive of every locally present tag. The registry benchmark
+choice and all pause gates remain in place; this source change does not resume
+Docker or establish hosted runtime acceptance. Only these E2E image-warming
+steps continue after a cache or bounded pull failure, allowing baseline/startup
+to pull any missing images. Only general Playwright shard 1 may create and upload
+an archive on trusted main runs; other shards and the cross-app job restore
+without saving. The shared action's `save` input defaults to true, preserving
+strict contract producers. Allowlisted configuration errors, including enabled
+uncached services, emit a warning annotation and step-summary line before the
+helper fails; E2E fallback does not hide that diagnostic. Raw CLI errors remain
+suppressed. Contract workflows keep strict image-cache setup.
+
+The same-day result planner may reuse shard 1's proof and leave a run without a seeder; its fingerprint covers every image-key input, so input changes invalidate that proof, and a manual `supabase-baseline` dispatch with `seed_images_only=true` provides the fallback.
+
+Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
+without a lockfile hash or prefix fallback. This chooses a coarser immutable
+archive over automatic deletion: lockfile changes cannot create new multi-GiB
+archives or race a cleanup job, and no write-scoped API token or cleanup loop is
+needed. Bun still resolves the current lockfile and fetches missing packages;
+newly added downloads do not enter the archive until the pinned Bun version
+changes. This cache therefore drifts behind `bun.lock`: an exact key hit does
+not mean every current dependency is cached, and newly added packages can be
+downloaded on each run until the Bun version changes. Review a deliberate cache
+namespace refresh if a long-lived Bun pin makes this repeated work material;
+there is no scheduled writer or automatic refresh. Install correctness remains
+bound to the current lockfile.
+The runtime binary uses `bun-runtime-v2-<OS>-<architecture>-<pinned Bun version>`
+with no lockfile hash or restore prefix: a lockfile change does not change the
+pinned executable. Old v1 archives receive no
+restores from v2 and age out under LRU; the first trusted v2 warmup and coexistence
+with old entries can still cause eviction. No immediate space reclamation is
+claimed. After confirming that no workflow or action pins Bun 1.4.3, the release owner can perform this
+one-time cleanup without adding a scheduled maintenance loop:
+
+```sh
+rg -n '1\.4\.3' .github/workflows .github/actions --glob '*.yml' --glob '*.yaml'
+gh cache list --repo tutur3u/platform --key bun-deps-v1- --limit 1000 --json id,key,ref,sizeInBytes
+# Review the inventory, then delete each exact retired-version cache ID:
+gh cache delete <cache-id> --repo tutur3u/platform
+```
+
+The search must return no pins. Delete only inventory rows whose keys match
+`bun-deps-v1-*-1.4.3-*`; repeat inventory if its limit is reached. Deleting an
+already absent ID needs no retry. Do not delete Supabase image keys or add cache
+write permissions to PR jobs. Old PR-scoped Gradle/Pods entries will otherwise
+age out; source gating does not remove existing archives.
 
 For Linux reproduction, isolate the Supabase project ID and ports, use a
 scratch-local Bun matching the repository pin, and remove only that project's
@@ -590,9 +791,10 @@ The combined `rust-backend.yml` workflow is paused in `tuturuuu.ci.ts`.
 Its disabled switch also applies to manual dispatch; skipped verify jobs do not
 prove native or wasm compilation, regardless of the aggregate check result.
 
-`rust-verify.yml` provides a separate manual, main-only CI verification route
-once registered on the default branch. Supply the exact 40-character source
-commit SHA. It verifies the checkout and records source/workflow SHAs,
+`rust-verify.yml` provides a separate manual CI verification route (paused with
+Rust). Dispatch it on the ref whose head is the commit to verify and supply that
+exact 40-character SHA. The workflow rejects any other SHA, so no dispatch input
+selects code to run in a branch's cache scope. It verifies the checkout and records source/workflow SHAs,
 manifest and lock hashes, and the Rust toolchain in the run summary. It uses the
 repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
 checking and a native release build. It uses read-only repository permissions,
@@ -1022,6 +1224,11 @@ Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 - `turbo-unit-tests.yaml`
 - `biome-check.yaml`
 - `codeql.yml`
+- `security-checks.yaml`
+- `security-review-classifier.yaml`
+- `security-review-recheck.yaml` (permissionless review signal)
+- `security-review-reclassify.yaml` (default-branch recompute after reviews)
+- `security-review-sweep.yaml` (hourly default-branch recompute of one 1/24 partition of open PRs; revocation backstop)
 - `codecov.yaml`
 - `i18n-check.yaml`
 - `check-migrations.yml`
@@ -1104,12 +1311,32 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
-Automatic CodeQL uses GitHub's organization-managed
-`dynamic/github-code-scanning/codeql` workflow for JavaScript/TypeScript and
-Python. `codeql.yml` is a manual-only fallback so the repository retains an
-explicit workflow file without duplicating managed push or pull-request scans.
-Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
-the already-scanned `main` commit to `production`.
+CodeQL runs from the repository-owned `codeql.yml` (GitHub default setup is not
+configured; do not enable both). It scans pull requests and `main` pushes for the
+languages the diff touches, and `security-checks.yaml` runs it daily. Neither
+workflow calls the `ci-check` switchboard: its selectors run from the PR checkout,
+so the scope jobs read their selectors from the base commit instead. Pull requests
+fail only on new high/critical results; `bun git-sync` mirrors the already-scanned
+`main` commit to `production`. See [Security review cadence](/build/devops/security-cadence).
+
+`scripts/ci/codeql-new-alerts.js` is the trusted new-alert gate for a
+repository-owned pull request CodeQL workflow. That workflow reads it from the
+pull request's base commit (`HEAD^1` of the merge ref, so never from pull
+request code). It fails only on high/critical results that are absent from
+`main`'s latest analysis of the same category. It pages through `main`'s
+analyses within a fixed bound to find that baseline. A category with no `main`
+analysis fails closed, as does a rule whose severity is unknown or unreadable.
+The public log carries counts only; triage results by alert number in the
+maintainer-only Security tab. A category such as `/language:actions` needs a
+`main` analysis, from default setup or a trusted `main` run, before pull
+requests can pass on pre-existing findings.
+
+`scripts/ci/security-scan-diff.js` is the matching trusted differ for the
+repository-owned dependency audit and secret scan. They load it from the base
+commit as well. A pull request fails only on high/critical advisories absent
+at the base commit, and the public log shows counts by severity. Pre-existing
+advisories are tracked in the findings register, not on unrelated pull
+requests.
 
 E2E suites reuse only exact same-day success proofs from protected `main`.
 See [E2E proof reuse](/build/devops/e2e-proof-reuse) for suite inputs, conservative
@@ -1383,7 +1610,7 @@ and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
 
 Generated release formatting also refreshes Bun workspace-version metadata with
-pinned Bun 1.4.3 using `--lockfile-only --ignore-scripts`. The shared
+pinned Bun 1.4.4 using `--lockfile-only --ignore-scripts`. The shared
 `release-workspace-lock.js` validator accepts only workspace `version` string
 changes matching the generated package manifests. It rejects dependency,
 resolution, workspace identity, root version and unrelated formatting changes;
@@ -1411,7 +1638,7 @@ runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam
 runs `bun git-release-please` and then `bun git-sync`, the same two commands the
 release flow uses locally, so the scheduled path and the manual path cannot
 drift. Those scripts own the merge rules — platform version sync, conflict
-detection, `bun check`, and fast-forward safety — and are covered by
+detection, `bun validate`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The generated PR must have passing checks, no unresolved active review threads,
@@ -1433,7 +1660,7 @@ use the same step-scoped Turbo remote-cache wrapper.
 
 If another PR lands on `main` during release validation, the push step fetches
 and merges the new head, reinstalls its frozen dependency graph and rebuilds the
-dist-only setup packages before rerunning `bun check`. Affected mobile changes
+dist-only setup packages before rerunning `bun validate`. Affected mobile changes
 also refresh `flutter pub get` before mobile checks. The push retries up to four
 times. An install or setup failure stops the retry; checks must never validate a
 new source commit against dependencies installed for an older checkout. A merge conflict or a push error unrelated to
@@ -1473,12 +1700,12 @@ workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
-`bun check`.
+`bun validate`.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. When a release includes
 mobile changes, `touchesMobile()` in `scripts/git-release-please.js` follows
-`bun check` with `bun check:mobile`; without a toolchain `dart-format`,
+`bun validate` with `bun check:mobile`; without a toolchain `dart-format`,
 `flutter-analyze` and `flutter-test` all exit `127`.
 
 Keep every mobile build/deploy workflow on that same Flutter minor. The mobile
@@ -1631,10 +1858,22 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 
 ### Prerequisite guards
 
-- `supabase-staging.yaml` requires a successful `main` platform preview build
-  trigger unless manually dispatched; its checkout-local `ci` boolean must enable it.
+- `supabase-staging.yaml` requires a successful same-repository `push` platform
+  preview build on `main` unless manually dispatched from `main`; its checkout-local `ci`
+  boolean must enable it. Changing the file changes its Git blob. In the same
+  change, update every pin of that blob:
+  - the producer-contract allowlist in `supabase-production.yaml`;
+  - `scripts/ci/production-migration-target.test.js`;
+  - `scripts/ci/staging-contract-allowlist.test.js`, which pins the exact list
+    and requires the current blob as the last entry.
+
+  Keep the list to the current blob plus blobs from `main`'s history, and drop
+  blobs from rejected or intermediate branch heads.
 - Every enabled admitted target, including app-only commits, links staging and runs
-  `supabase db push --include-all` before emitting its exact-target marker.
+  `supabase db push --include-all` before emitting its exact-target marker. The
+  exception is a target whose migrations a descendant `main` commit has already
+  applied, with staging ahead only by `main`'s versions. It records the marker
+  without pushing. A staging version that is not on `main` fails closed.
 - `supabase-production.yaml` runs after the production deployment planner and
   also re-evaluates the current immutable `production` commit after any successful
   `main` staging migration. The staging event's incoming SHA may be newer and
@@ -1654,8 +1893,26 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 
 ### Mobile iOS native assets
 
-Mobile workflows cache the Flutter SDK/pub downloads through the Flutter setup
-action. Android workflows also use the toolchain-aware Gradle cache, and iOS or
+Mobile workflows use `.github/actions/setup-flutter-with-cache` for Flutter
+SDK/pub downloads (Windows retains its deliberate cache-off setup). The wrapper
+resolves identity through the SHA-pinned upstream action before restoring the
+exact cache, then installs that resolved version. SDK keys bind upstream OS,
+channel, version, architecture and release hash; they exclude `pubspec.lock` so
+analysis, test and build jobs share main's SDK archive. Pub download keys still
+include the lock hash. Every ref can restore; only main push/manual runs attach
+the cache save post-step, so mobile runs on PRs, feature branches and
+production do not upload duplicate archives. Desktop beta/store-draft and the
+employee schema contract still set up Flutter with upstream caching on their own
+triggers; move them to the wrapper before relying on main-only Flutter saves
+repository-wide. Pub downloads save after job work, preserving `pub get`
+results. Bun's existing setup helper already uses trusted main saves.
+
+These caches share repository capacity with Supabase image archives. This policy
+reduces duplicate writes; it does not remove existing entries, raise the storage
+limit or guarantee image retention. Observe exact main image-cache keys and sizes
+after seeding and again after the normal CI wave.
+
+Android workflows also use the toolchain-aware Gradle cache, and iOS or
 macOS workflows cache CocoaPods downloads plus the trunk repository. They do
 not cache `apps/mobile/build`, final APK/AAB/IPA/app bundles, `Pods`, or
 `apps/mobile/.dart_tool`. Flutter native asset hook outputs can become stale
@@ -1913,12 +2170,23 @@ policy. Rerunning an older workflow revision does not backport the policy. If th
 candidate has no run with this protection, stop promotion and obtain an authorized
 qualification path for that exact source; do not substitute newer-head evidence.
 
-The explicit PR exceptions are `desktop-beta.yaml`, `colab-cloudflare.yaml`,
-`coordination-cloudflare.yaml`, `cron-control-cloudflare.yaml`,
-`devbox-control-cloudflare.yaml`, `lettin-cloudflare.yaml`, `meet-cloudflare.yaml`
-and `parley-cloudflare.yaml`, which combine validation with production deployment;
-`playground-runtime-acceptance.yaml`, which must finish real sandbox cleanup; and
-the paused `docker-setup-check.yaml` and `rust-backend.yml`. The paused
+The explicit PR exceptions are `desktop-beta.yaml`, whose production build and
+publication share the workflow lock; `calendar-cloudflare.yaml` and
+`mail-cloudflare.yaml`, whose staging publication consumes the durable attempt
+ledger; `playground-runtime-acceptance.yaml`, which must finish real sandbox
+cleanup; and the paused `docker-setup-check.yaml` and `rust-backend.yml`.
+
+The Colab, Coordination, Cron Control, Devbox Control, Lettin, Meet and Parley
+Cloudflare workflows are not exceptions. Their workflow-level group uses the
+standard validation policy with a literal per-workflow prefix, so PR and `main`
+validation supersede older revisions. The prefix matters because a
+`workflow_call` run inherits the caller's `github.workflow`; without it, the
+workflows one production planner run calls would share a group and replace each
+other's pending runs. Only the production-gated `deploy` job holds the
+serialized lock: a static `<workflow>-production-deploy` job group with
+cancellation disabled and `queue: max`. Production and manual runs keep unique
+workflow groups. `scripts/ci/protected-workflow-concurrency.test.js` pins this
+split. The paused
 `tanstack-route-manifest.yaml` retains its existing PR supersession and protected
 main policy. Resuming a paused runtime requires a separate policy review.
 
@@ -1926,7 +2194,10 @@ Mutating production planners, production Vercel and Cloudflare deployments, data
 migrations, package publication, Release Please and store deployments retain their
 shared serialization groups with cancellation disabled and `queue: max`.
 Discord Modal deployment holds its lock on the success/main-guarded deploy job;
-cancelled CI completions never enter that lock. Biome has no workflow-level
+cancelled CI completions never enter that lock. It accepts only same-repository
+`push` completions on `main` or manual dispatch from `main`, and runs in the
+`discord-production` environment (give it a `main`-only branch policy and the
+Modal secrets). Biome has no workflow-level
 cancelling parent: check/config/format/lint jobs cancel by job and ref, while
 format PR creation, PR closure/branch deletion and comment writes share a separate
 non-cancelling `biome-mutations-<ref>` job group with `queue: max`.

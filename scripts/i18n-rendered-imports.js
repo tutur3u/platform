@@ -63,7 +63,8 @@ function resolveImport(root, from, specifier) {
         prefix.length,
         suffix ? -suffix.length : undefined
       );
-      target = exportTarget(pkg.exports[key])?.replace('*', wildcard);
+      // Node substitutes every `*` in the target with the matched subpath.
+      target = exportTarget(pkg.exports[key])?.replaceAll('*', () => wildcard);
       break;
     }
   }

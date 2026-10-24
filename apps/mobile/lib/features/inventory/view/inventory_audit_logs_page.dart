@@ -5,10 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -231,12 +229,13 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
           child: Builder(
             builder: (context) {
               if (_isLoadingInitial && _entries.isEmpty) {
-                return const Center(child: NovaLoadingIndicator());
+                return const AppPageBody(
+                  child: Center(child: NovaLoadingIndicator()),
+                );
               }
 
               if (_error != null && _entries.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
+                return AppPageBody(
                   child: Center(
                     child: FinanceEmptyState(
                       icon: Icons.error_outline,
@@ -252,126 +251,112 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
                 );
               }
 
-              return ResponsiveWrapper(
-                maxWidth: ResponsivePadding.maxContentWidth(
-                  context.deviceClass,
-                ),
-                child: NovaRefreshIndicator(
-                  onRefresh: () => _loadInitial(forceRefresh: true),
-                  child: ListView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      8,
-                      16,
-                      32 + MediaQuery.paddingOf(context).bottom,
+              return NovaRefreshIndicator(
+                onRefresh: () => _loadInitial(forceRefresh: true),
+                child: AppPageListView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    InventorySearchChrome(
+                      location: Routes.inventoryAuditLogs,
+                      controller: _searchController,
+                      hint: context.l10n.inventoryRedesignLoadedSearch,
+                      onChanged: (_) => setState(() {}),
                     ),
-                    children: [
-                      InventorySearchChrome(
-                        location: Routes.inventoryAuditLogs,
-                        controller: _searchController,
-                        hint: context.l10n.inventoryRedesignLoadedSearch,
-                        onChanged: (_) => setState(() {}),
+                    if (_error != null)
+                      InventoryReadWarning(
+                        onRetry: () =>
+                            unawaited(_loadInitial(forceRefresh: true)),
                       ),
-                      if (_error != null)
-                        InventoryReadWarning(
-                          onRetry: () =>
-                              unawaited(_loadInitial(forceRefresh: true)),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: _eventKind ?? '',
+                      items: [
+                        DropdownMenuItem(
+                          value: '',
+                          child: Text(context.l10n.inventoryRedesignAllEvents),
                         ),
-                      DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue: _eventKind ?? '',
-                        items: [
+                        for (final kind
+                            in _entries.map((e) => e.eventKind).toSet())
                           DropdownMenuItem(
-                            value: '',
-                            child: Text(
-                              context.l10n.inventoryRedesignAllEvents,
-                            ),
-                          ),
-                          for (final kind
-                              in _entries.map((e) => e.eventKind).toSet())
-                            DropdownMenuItem(
-                              value: kind,
-                              child: Text(_labelForEventKind(context, kind)),
-                            ),
-                        ],
-                        onChanged: (value) => setState(
-                          () => _eventKind = value?.isEmpty == true
-                              ? null
-                              : value,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        context.l10n.inventoryRedesignRecentSample(
-                          _entries.length,
-                        ),
-                      ),
-                      FinancePanel(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            FinanceStatChip(
-                              label: context.l10n.inventoryAuditLabel,
-                              value: '$_count',
-                              icon: Icons.history_rounded,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const shad.Gap(18),
-                      if (_entries.isEmpty)
-                        FinanceEmptyState(
-                          icon: Icons.history_toggle_off_outlined,
-                          title: context.l10n.inventoryAuditLabel,
-                          body: context.l10n.inventoryAuditEmpty,
-                        )
-                      else ...[
-                        FinanceSectionHeader(
-                          title: context.l10n.inventoryAuditRecentTitle,
-                        ),
-                        const shad.Gap(12),
-                        ..._entries
-                            .where(
-                              (e) =>
-                                  (_eventKind == null ||
-                                      e.eventKind == _eventKind) &&
-                                  [
-                                        e.summary,
-                                        e.entityLabel,
-                                        e.actorDisplayName,
-                                        ...e.changedFields,
-                                      ]
-                                      .whereType<String>()
-                                      .join(' ')
-                                      .toLowerCase()
-                                      .contains(
-                                        _searchController.text
-                                            .trim()
-                                            .toLowerCase(),
-                                      ),
-                            )
-                            .map(
-                              (entry) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _AuditEntryCard(
-                                  entry: entry,
-                                  onTap: () => _openDetails(entry),
-                                ),
-                              ),
-                            ),
-                        if (_isLoadingMore)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: NovaLoadingIndicator(size: 20),
-                            ),
+                            value: kind,
+                            child: Text(_labelForEventKind(context, kind)),
                           ),
                       ],
+                      onChanged: (value) => setState(
+                        () =>
+                            _eventKind = value?.isEmpty == true ? null : value,
+                      ),
+                    ),
+                    const SizedBox(height: AppLayout.itemGap),
+                    Text(
+                      context.l10n.inventoryRedesignRecentSample(
+                        _entries.length,
+                      ),
+                    ),
+                    FinancePanel(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FinanceStatChip(
+                            label: context.l10n.inventoryAuditLabel,
+                            value: '$_count',
+                            icon: Icons.history_rounded,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const shad.Gap(18),
+                    if (_entries.isEmpty)
+                      FinanceEmptyState(
+                        icon: Icons.history_toggle_off_outlined,
+                        title: context.l10n.inventoryAuditLabel,
+                        body: context.l10n.inventoryAuditEmpty,
+                      )
+                    else ...[
+                      FinanceSectionHeader(
+                        title: context.l10n.inventoryAuditRecentTitle,
+                      ),
+                      const shad.Gap(12),
+                      ..._entries
+                          .where(
+                            (e) =>
+                                (_eventKind == null ||
+                                    e.eventKind == _eventKind) &&
+                                [
+                                      e.summary,
+                                      e.entityLabel,
+                                      e.actorDisplayName,
+                                      ...e.changedFields,
+                                    ]
+                                    .whereType<String>()
+                                    .join(' ')
+                                    .toLowerCase()
+                                    .contains(
+                                      _searchController.text
+                                          .trim()
+                                          .toLowerCase(),
+                                    ),
+                          )
+                          .map(
+                            (entry) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppLayout.itemGap,
+                              ),
+                              child: _AuditEntryCard(
+                                entry: entry,
+                                onTap: () => _openDetails(entry),
+                              ),
+                            ),
+                          ),
+                      if (_isLoadingMore)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: NovaLoadingIndicator(size: 20)),
+                        ),
                     ],
-                  ),
+                  ],
                 ),
               );
             },

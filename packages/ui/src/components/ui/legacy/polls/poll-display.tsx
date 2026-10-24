@@ -94,9 +94,9 @@ export function PlanDetailsPollContent({
       optionIds,
       userType: userType as 'PLATFORM' | 'GUEST',
       guestId: userType === 'GUEST' ? (user?.id ?? undefined) : undefined,
-      guestPasswordHash:
+      guestSession:
         userType === 'GUEST' && guestUser?.is_guest
-          ? guestUser.password_hash
+          ? guestUser.guest_session
           : undefined,
     });
     if (result.error) {
@@ -115,9 +115,9 @@ export function PlanDetailsPollContent({
       value,
       userType: userType as 'PLATFORM' | 'GUEST',
       guestId: userType === 'GUEST' ? (user?.id ?? undefined) : undefined,
-      guestPasswordHash:
+      guestSession:
         userType === 'GUEST' && guestUser?.is_guest
-          ? guestUser.password_hash
+          ? guestUser.guest_session
           : undefined,
     });
     if (result.error) {

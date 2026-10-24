@@ -138,7 +138,7 @@ from pg_proc p where p.pronamespace='private'::regnamespace and p.proname like '
 select ok(has_function_privilege('service_role',p.oid,'EXECUTE')=(p.proname in ('read_tutoring_teacher_hours','save_tutoring_hours_default','save_tutoring_hours_override')),'only scoped RPC service capability: '||p.proname)
 from pg_proc p where p.pronamespace='private'::regnamespace and p.proname in
  ('valid_tutoring_hours_week','valid_tutoring_hours_timezone','valid_tutoring_hours_revision','assert_tutoring_hours_actor','lock_tutoring_hours_teacher','audit_tutoring_hours_revision','read_tutoring_teacher_hours','save_tutoring_hours_default','save_tutoring_hours_override');
-select ok(exists(select 1 from unnest(p.proconfig) c where replace(c,'"','')='search_path='),'fixed empty search path: '||p.proname)
+select ok(exists(select 1 from unnest(p.proconfig) c where replace(c,'"','')=case when p.prosecdef then 'search_path=pg_catalog, pg_temp' else 'search_path=' end),'fixed safe search path: '||p.proname)
 from pg_proc p where p.pronamespace='private'::regnamespace and p.proname in
  ('valid_tutoring_hours_week','valid_tutoring_hours_timezone','valid_tutoring_hours_revision','assert_tutoring_hours_actor','lock_tutoring_hours_teacher','audit_tutoring_hours_revision','read_tutoring_teacher_hours','save_tutoring_hours_default','save_tutoring_hours_override');
 select * from finish();

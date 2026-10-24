@@ -6,7 +6,7 @@ describe('devbox fake broker/agent e2e harness', () => {
     const harness = createDevboxHarness();
 
     const result = await harness.run({
-      command: ['bun', 'check'],
+      command: ['bun', 'validate'],
       files: {
         'packages/sdk/src/cli/devbox.ts': 'export const synced = true;',
         'untracked-note.md': 'dirty uncommitted change',
@@ -14,7 +14,7 @@ describe('devbox fake broker/agent e2e harness', () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.logs).toContain('remote$ bun check');
+    expect(result.logs).toContain('remote$ bun validate');
     expect(result.remoteFiles['untracked-note.md']).toBe(
       'dirty uncommitted change'
     );

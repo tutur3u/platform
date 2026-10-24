@@ -7,6 +7,12 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: (handler: unknown) => handler,
+  resolveSessionAuthContext: async () => ({ ok: true, ...context }),
+}));
+
+vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
+  enforceRequiredMfaRequest: async () => null,
+  getVerifiedMfaBearerUser: () => null,
 }));
 
 import { PATCH } from './route';

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 
@@ -12,6 +13,9 @@ Future<T?> showScopedSettingsSheet<T>({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
   double maxDialogWidth = 420,
+
+  /// Opens with the design-system sheet host (`showAppSheet`) at this size.
+  AppSheetSize? sheetSize,
 }) async {
   final auth = context.read<AuthCubit?>();
   final workspace = context.read<WorkspaceCubit?>();
@@ -52,14 +56,23 @@ Future<T?> showScopedSettingsSheet<T>({
     );
   }
   try {
-    final selected = await showAdaptiveSheet<T>(
-      context: context,
-      maxDialogWidth: maxDialogWidth,
-      builder: (sheetContext) {
-        editorRoute = ModalRoute.of(sheetContext);
-        return builder(sheetContext);
-      },
-    );
+    Widget build(BuildContext sheetContext) {
+      editorRoute = ModalRoute.of(sheetContext);
+      return builder(sheetContext);
+    }
+
+    final selected = sheetSize == null
+        ? await showAdaptiveSheet<T>(
+            context: context,
+            maxDialogWidth: maxDialogWidth,
+            builder: build,
+          )
+        : await showAppSheet<T>(
+            context: context,
+            size: sheetSize,
+            maxDialogWidth: maxDialogWidth,
+            builder: build,
+          );
     return invalidated ||
             !context.mounted ||
             (auth?.state.user?.id, auth?.state.status) != account ||

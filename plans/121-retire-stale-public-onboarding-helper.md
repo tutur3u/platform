@@ -63,7 +63,7 @@ deprecation plan.
 | Publication tests | `node --test scripts/ci/package-release-readiness.test.js scripts/ci/prepare-npm-package-manifest.test.js` | package governance remains valid |
 | Prepared manifest | `utils_pack_dir="$(mktemp -d)"; mkdir "$utils_pack_dir/utils"; cp packages/utils/package.json "$utils_pack_dir/utils/package.json"; node scripts/ci/prepare-npm-package-manifest.js "$utils_pack_dir/utils"` | temporary manifest prepares without worktree mutation |
 | Stale contract scan | `rg -n -e 'onboarding-helper' -e 'five-step onboarding' packages/utils apps/docs plugins/tuturuuu` | no obsolete public guidance or source reference remains after removal |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -124,7 +124,7 @@ browser-side workspace mutation helper.
 
 Run canonical onboarding tests, package/internal-api typechecks, publication
 tests, temporary-copy manifest preparation, the stale-contract scan,
-`bun check`, and whitespace. Do not manually bump or publish anything.
+`bun validate`, and whitespace. Do not manually bump or publish anything.
 
 ## Done criteria
 

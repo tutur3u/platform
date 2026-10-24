@@ -18,7 +18,7 @@ class _SheetHeader extends StatelessWidget {
           ),
         ),
         shad.IconButton.ghost(
-          icon: const Icon(shad.LucideIcons.x, size: 18),
+          icon: const Icon(LucideIcons.x, size: 18),
           onPressed: () => unawaited(Navigator.maybePop(context)),
         ),
       ],

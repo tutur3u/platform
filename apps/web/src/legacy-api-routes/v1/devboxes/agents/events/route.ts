@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authorizeDevboxAgent } from '@/lib/devboxes/agent-auth';
 import {
   completeDevboxRun,
+  readDevboxRunControl,
   recordDevboxRunEvents,
 } from '@/lib/devboxes/agent-store';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
@@ -58,7 +59,17 @@ export async function POST(request: Request) {
         })
       : null;
 
+    // Running agents poll this (an empty event batch is allowed) to observe
+    // remote stop requests; older agents ignore the extra field.
+    const control = completion
+      ? null
+      : await readDevboxRunControl({
+          runId: parsed.data.runId,
+          runnerId: authorization.runner.id,
+        });
+
     return NextResponse.json({
+      cancelRequested: control?.cancelRequested ?? false,
       completion,
       events: events.events,
       message: 'events accepted',

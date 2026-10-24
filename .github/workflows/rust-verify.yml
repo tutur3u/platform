@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       source_sha:
-        description: "Exact repository commit to compile and test (40 lowercase hex characters)."
+        description: "Exact commit to compile and test (40 lowercase hex characters); dispatch on the ref whose head is this commit."
         required: true
         type: string
 
@@ -36,12 +36,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          # Dispatch on the ref whose head is the source: no input selects code.
+          [ "$SOURCE_SHA" = "$GITHUB_SHA" ] || exit 1
 
       - name: Checkout exact source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.source_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Verify checked out source
@@ -105,12 +107,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          # Dispatch on the ref whose head is the source: no input selects code.
+          [ "$SOURCE_SHA" = "$GITHUB_SHA" ] || exit 1
 
       - name: Checkout exact source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.source_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Verify checked out source

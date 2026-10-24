@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
@@ -68,51 +69,48 @@ class _MfaRequestPageState extends State<MfaRequestPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return shad.Scaffold(
-      child: SafeArea(
+      child: AppPageBody(
+        kind: AppPageKind.form,
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.verified_user_outlined, size: 40),
-                  const shad.Gap(16),
-                  Text(
-                    l10n.deviceMfaNumberTitle,
-                    style: shad.Theme.of(context).typography.h3,
-                  ),
-                  const shad.Gap(16),
-                  if (_loading)
-                    const NovaLoadingIndicator(size: 20)
-                  else if (_failed)
-                    Text(l10n.deviceMfaError)
-                  else if (_requiresMfa)
-                    Text(l10n.mfaApprovalRequiresMobileMfa)
-                  else if (_approval == null)
-                    Text(l10n.deviceMfaExpired)
-                  else
-                    shad.PrimaryButton(
-                      alignment: Alignment.center,
-                      onPressed: () async {
-                        await showMfaApprovalDialog(
-                          context,
-                          _approval!,
-                          _repository,
-                        );
-                        if (mounted) await _load();
-                      },
-                      child: Text(l10n.deviceMfaReview),
-                    ),
-                  const shad.Gap(16),
-                  shad.OutlineButton(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.verified_user_outlined, size: 40),
+                const shad.Gap(16),
+                Text(
+                  l10n.deviceMfaNumberTitle,
+                  style: shad.Theme.of(context).typography.h3,
+                ),
+                const shad.Gap(16),
+                if (_loading)
+                  const NovaLoadingIndicator(size: 20)
+                else if (_failed)
+                  Text(l10n.deviceMfaError)
+                else if (_requiresMfa)
+                  Text(l10n.mfaApprovalRequiresMobileMfa)
+                else if (_approval == null)
+                  Text(l10n.deviceMfaExpired)
+                else
+                  shad.PrimaryButton(
                     alignment: Alignment.center,
-                    onPressed: () => context.go(Routes.settingsSession),
-                    child: Text(l10n.deviceMfaTitle),
+                    onPressed: () async {
+                      await showMfaApprovalDialog(
+                        context,
+                        _approval!,
+                        _repository,
+                      );
+                      if (mounted) await _load();
+                    },
+                    child: Text(l10n.deviceMfaReview),
                   ),
-                ],
-              ),
+                const shad.Gap(16),
+                shad.OutlineButton(
+                  alignment: Alignment.center,
+                  onPressed: () => context.go(Routes.settingsSession),
+                  child: Text(l10n.deviceMfaTitle),
+                ),
+              ],
             ),
           ),
         ),

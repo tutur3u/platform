@@ -59,7 +59,7 @@ test-path transfer. Treat `bun.lock` as read-only evidence; Mail owns writes.
 | Focused policy | `node --test scripts/type-check-consistency.test.js` | native-preview manifest and release-age family invariants pass |
 | Lock immutability | `git diff --exit-code -- bun.lock` | no lockfile change |
 | Install config | `bun install --frozen-lockfile --dry-run` | locked install accepts the config without rewriting state |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 

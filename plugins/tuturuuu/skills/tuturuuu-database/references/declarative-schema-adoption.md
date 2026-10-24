@@ -26,7 +26,7 @@ Only the installed bundled workspace binary is probed, using `--version` and
 exact command `--help`, with ten-second timeouts and the update notifier explicitly disabled. There is no installer, global
 binary fallback, override, connection flag, or mutation mode. Unsupported CLI
 commands hold adoption rather than falling back to a different diff engine.
-Run the focused Node tests before broad `bun check`.
+Run the focused Node tests before broad `bun validate`.
 
 ## Engine distinction
 

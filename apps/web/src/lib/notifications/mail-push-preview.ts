@@ -5,6 +5,8 @@ export function mailPushPreview(
   if (!value) return null;
   const text = value
     .replace(/<[^>]*>/gu, '')
+    // Nested or unterminated markup can leave delimiters behind; drop them all.
+    .replace(/[<>]/gu, '')
     .replace(/\b(?:[a-z][a-z0-9+.-]*:|www\.)[^\s<>"']+/giu, '…')
     .replace(/\/\/[^\s<>"']+/gu, '…')
     .replace(/[\p{Cc}\u202a-\u202e\u2066-\u2069]/gu, ' ')

@@ -85,7 +85,7 @@ Supabase and generated fixtures; never load production form contents.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/form-response-export-pages.test.sql --typegen packages/types/src/supabase.ts` | atomic immutable snapshots, bounded pages, expiry, and tenant ACL pgTAP pass |
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second isolated generation is byte-identical |
 | Forms | `bun run --cwd apps/forms test && bun run --cwd apps/forms type-check && bun run --cwd apps/forms build` | Forms suite/types/build pass |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

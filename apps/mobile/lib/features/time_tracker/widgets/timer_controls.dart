@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -48,7 +49,7 @@ class TimerControls extends StatelessWidget {
             if (!isRunning && !isPaused)
               // Stopped state: Start button
               _CircleButton(
-                icon: shad.LucideIcons.play,
+                icon: LucideIcons.play,
                 onPressed: areActionButtonsDisabled ? null : onStart,
                 size: primarySize,
                 iconSize: primaryIconSize,
@@ -57,7 +58,7 @@ class TimerControls extends StatelessWidget {
             else if (isRunning) ...[
               // Running state: Pause + Stop (same diameter so they align)
               _CircleButton(
-                icon: shad.LucideIcons.pause,
+                icon: LucideIcons.pause,
                 onPressed: areActionButtonsDisabled ? null : onPause,
                 size: primarySize,
                 iconSize: primaryIconSize,
@@ -66,7 +67,7 @@ class TimerControls extends StatelessWidget {
               ),
               const shad.Gap(24),
               _CircleButton(
-                icon: shad.LucideIcons.square,
+                icon: LucideIcons.square,
                 onPressed: areActionButtonsDisabled ? null : onStop,
                 size: primarySize,
                 iconSize: primaryIconSize,
@@ -76,7 +77,7 @@ class TimerControls extends StatelessWidget {
             ] else ...[
               // Paused state: Resume + Stop (same diameter so they align)
               _CircleButton(
-                icon: shad.LucideIcons.play,
+                icon: LucideIcons.play,
                 onPressed: areActionButtonsDisabled ? null : onResume,
                 size: primarySize,
                 iconSize: primaryIconSize,
@@ -84,7 +85,7 @@ class TimerControls extends StatelessWidget {
               ),
               const shad.Gap(24),
               _CircleButton(
-                icon: shad.LucideIcons.square,
+                icon: LucideIcons.square,
                 onPressed: areActionButtonsDisabled ? null : onStop,
                 size: primarySize,
                 iconSize: primaryIconSize,

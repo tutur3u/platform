@@ -5,45 +5,103 @@
  * Prevents directory traversal attacks and ensures safe file operations.
  */
 
+const UNSAFE_PATH_CHARACTER = /[\p{Cc}\\]/u;
+
+// Decode each maximal run of `%XX` escapes as UTF-8 so continuation bytes in
+// non-ASCII names (`B%C3%A1o`, `%E2%80%93`, NFD combining marks) become code
+// points instead of C1 control characters. A run that is not valid UTF-8 makes
+// the whole value unsafe (null). Text that is not a `%XX` escape, such as
+// `50% done`, is left untouched.
+function decodePercentEscapes(value: string): string | null {
+  let malformed = false;
+  const decoded = value.replace(/(?:%[\da-f]{2})+/gi, (run) => {
+    try {
+      return decodeURIComponent(run);
+    } catch {
+      malformed = true;
+      return run;
+    }
+  });
+  return malformed ? null : decoded;
+}
+
 /**
- * Sanitizes a path component to prevent directory traversal attacks.
+ * Validates an exact relative path without canonicalizing it.
+ *
+ * @returns The path segments, or null if the path is unsafe
+ */
+export function sanitizePathSegments(
+  path: string,
+  options: { strict?: boolean } = {}
+): string[] | null {
+  if (path === '') return [];
+  if (
+    typeof path !== 'string' ||
+    UNSAFE_PATH_CHARACTER.test(path) ||
+    /^[a-z][a-z\d+.-]*:\/\//i.test(path) ||
+    (options.strict && (path.includes('?') || path.includes('#')))
+  ) {
+    return null;
+  }
+
+  const segments = path.split('/');
+  if (segments.some((segment) => segment.length === 0)) return null;
+
+  for (const segment of segments) {
+    let decoded = segment;
+    for (let pass = 0; pass < 5; pass += 1) {
+      const next = decodePercentEscapes(decoded);
+      if (next === null) return null;
+      if (next === decoded) break;
+      decoded = next;
+    }
+    if (
+      decoded === '.' ||
+      decoded === '..' ||
+      decoded.includes('..') ||
+      decoded.includes('/') ||
+      UNSAFE_PATH_CHARACTER.test(decoded)
+    ) {
+      return null;
+    }
+  }
+
+  return segments;
+}
+
+/**
+ * Canonicalizes a legacy relative path, then validates its segments. Literal
+ * `?` and `#` are allowed for callers that encode object keys at the transport
+ * boundary; use `sanitizePathStrict` for paths interpolated into URLs.
  *
  * @param path - The path string to sanitize
- * @returns Sanitized path string, or null if the path contains invalid characters
+ * @returns Canonicalized path string, or null if the path is unsafe
  *
  * @example
  * ```ts
  * sanitizePath('folder/subfolder') // => 'folder/subfolder'
  * sanitizePath('../../../etc/passwd') // => null
- * sanitizePath('folder\\subfolder') // => 'folder/subfolder' (backslashes normalized)
+ * sanitizePath('folder\\subfolder') // => 'folder/subfolder'
  * sanitizePath('') // => ''
  * ```
  */
 export function sanitizePath(path: string): string | null {
-  if (!path) return '';
-
-  // Normalize backslashes to forward slashes (Windows compatibility)
-  let sanitized = path.replace(/\\/g, '/');
-
-  // Trim and remove leading/trailing slashes
-  sanitized = sanitized.trim().replace(/^\/+|\/+$/g, '');
-
-  // Split into segments and validate each
-  const segments = sanitized.split('/').filter(Boolean);
-
-  for (const segment of segments) {
-    // Reject any segment that is '..' or '.' or empty
-    if (segment === '..' || segment === '.' || segment === '') {
-      return null;
-    }
-    // Reject segments with path traversal attempts
-    if (segment.includes('..')) {
-      return null;
-    }
+  if (typeof path !== 'string' || /^[a-z][a-z\d+.-]*:\/\//i.test(path)) {
+    return null;
   }
+  const canonicalPath = path
+    .replaceAll('\\', '/')
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\/{2,}/g, '/');
+  const segments = sanitizePathSegments(canonicalPath);
+  return segments === null ? null : segments.join('/');
+}
 
-  // Rejoin with forward slashes
-  return segments.join('/');
+/** Validate the exact path representation supplied to URL-interpolating APIs. */
+export function sanitizePathStrict(path: string): string | null {
+  const segments = sanitizePathSegments(path, { strict: true });
+  return segments === null ? null : segments.join('/');
 }
 
 /**
@@ -62,24 +120,12 @@ export function sanitizePath(path: string): string | null {
  */
 export function sanitizeFolderName(name: string): string | null {
   if (!name) return null;
-
-  // Trim and remove leading/trailing slashes
-  const trimmed = name.trim().replace(/^\/+|\/+$/g, '');
-
-  // Replace backslashes with forward slashes
-  const normalized = trimmed.replace(/\\/g, '/');
-
-  // Reject if it contains slashes (should be a single name, not a path)
-  if (normalized.includes('/')) {
-    return null;
-  }
-
-  // Reject path traversal attempts
-  if (normalized === '..' || normalized === '.' || normalized.includes('..')) {
-    return null;
-  }
-
-  return normalized;
+  const normalized = name
+    .trim()
+    .replaceAll('\\', '/')
+    .replace(/^\/+|\/+$/g, '');
+  const segments = sanitizePathSegments(normalized);
+  return segments?.length === 1 ? segments[0]! : null;
 }
 
 /**

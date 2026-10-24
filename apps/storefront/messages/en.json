@@ -1011,6 +1011,7 @@
     "mark-as-unread": "Mark as unread",
     "no-notifications": "You have no notifications yet.",
     "notifications": "Notifications",
+    "update-error": "Could not update notification",
     "view-all": "View All Notifications",
     "workspace-invite": "Workspace invite"
   },
