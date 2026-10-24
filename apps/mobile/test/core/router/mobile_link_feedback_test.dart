@@ -57,6 +57,28 @@ void main() {
     }
   }
 
+  testWidgets('failed link without an overlay returns false without throwing', (
+    tester,
+  ) async {
+    late BuildContext context;
+    await tester.pumpWidget(
+      Builder(
+        builder: (value) {
+          context = value;
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+    final opened = await openMobileLink(
+      context,
+      Uri.parse('https://example.invalid'),
+      readPreference: () async => LinkBrowserPreference.external,
+      launch: (_, _) async => false,
+    );
+    expect(opened, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('successful launch has no error notification', (tester) async {
     await _pumpFeedback(
       tester,

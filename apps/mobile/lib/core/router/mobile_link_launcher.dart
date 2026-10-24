@@ -46,7 +46,9 @@ Future<bool> openMobileLink(
     launch: launch,
     readPreference: readPreference,
   );
-  if (!opened && context.mounted) {
+  if (!opened &&
+      context.mounted &&
+      Overlay.maybeOf(context, rootOverlay: true) != null) {
     showAppToast(
       context,
       message: context.l10n.settingsLinkOpenError,
