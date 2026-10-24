@@ -3,6 +3,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { DevboxFleetSnapshot } from '../devbox-fleet-types';
+import { ResourceOwnershipUncertain } from './resources-broker';
 import {
   type DiskGate,
   diskGate,
@@ -28,6 +29,8 @@ import {
   updateHostReservation,
 } from './resources-hosts-ledger';
 import { canEverHold } from './resources-hosts-plan';
+import { requireProcessIdentity } from './resources-process-identity';
+import type { KernelProcessIdentity } from './resources-process-types';
 import { commandSummary } from './resources-queue';
 
 // Fairness is per repository: linked worktrees of one repository (for
@@ -70,7 +73,7 @@ export interface HostDispatchDeps {
     reservation: HostReservation;
     // Exported to the job so nested `run --hosts` reuses this reservation.
     marker: Record<string, string>;
-    onChild: (pid: number) => Promise<void>;
+    onChild: (pid: number, identity: KernelProcessIdentity) => Promise<void>;
   }) => Promise<number>;
   // Reuses #6454's offload transport; `rejected` means no remote run exists.
   runRemote: (input: {
@@ -145,9 +148,12 @@ export async function hostsRun({
   }
   const remoteHosts = hosts.hosts.some((host) => host.kind === 'runner');
   const plan = remoteHosts ? await deps.commitPlan(cwd) : undefined;
+  let retainOwnership = false;
   const ticket: HostTicket = {
     token: randomUUID(),
     pid: process.pid,
+    ownershipVersion: 1,
+    pidStart: requireProcessIdentity(),
     project: projectIdentity(cwd),
     jobClass,
     queuedAt: Date.now(),
@@ -180,7 +186,8 @@ export async function hostsRun({
   let reservation: HostReservation | undefined;
   const requeue = async (reason: string, localOnly: boolean) => {
     log(reason);
-    if (reservation) await releaseHostReservation(home, reservation);
+    if (reservation && !retainOwnership)
+      await releaseHostReservation(home, reservation);
     reservation = undefined;
     if (localOnly) {
       ticket.remoteOk = false;
@@ -242,8 +249,9 @@ export async function hostsRun({
           jobClass,
           reservation: held,
           marker: { [hostReservationMarker]: held.token },
-          onChild: async (pid) => {
+          onChild: async (pid, identity) => {
             held.childPid = pid;
+            held.childStart = identity;
             await updateHostReservation(home, held);
           },
         });
@@ -288,10 +296,14 @@ export async function hostsRun({
       );
       ticket.bypassed = 0;
     }
+  } catch (error) {
+    if (error instanceof ResourceOwnershipUncertain) retainOwnership = true;
+    throw error;
   } finally {
     for (const [signal, handler] of handlers)
       process.removeListener(signal, handler);
     await removeHostTicket(home, ticket);
-    if (reservation) await releaseHostReservation(home, reservation);
+    if (reservation && !retainOwnership)
+      await releaseHostReservation(home, reservation);
   }
 }

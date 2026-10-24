@@ -59,6 +59,7 @@ import {
   hostLaneCeiling,
   laneResourceConfig,
 } from './resources-config';
+import { requireProcessIdentity } from './resources-process-identity';
 import { nestedOwner, newOwner, processLineage } from './resources-slots';
 
 const dirs: string[] = [];
@@ -78,7 +79,11 @@ describe('nested markers need process-tree evidence (REV-6431-1)', () => {
     );
     dirs.push(home);
     // The parent process is a live ancestor, so ancestry can vouch for it.
-    const owner = { ...newOwner('outer'), pid: process.ppid };
+    const owner = {
+      ...newOwner('outer'),
+      pid: process.ppid,
+      pidStart: requireProcessIdentity(process.ppid),
+    };
     await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
     return { home, owner };
   };
@@ -107,7 +112,11 @@ describe('nested markers need process-tree evidence (REV-6431-1)', () => {
     // A live owner outside this process tree: its real token was copied.
     const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
     children.push(unrelated);
-    const owner = { ...newOwner('unrelated'), pid: unrelated.pid! };
+    const owner = {
+      ...newOwner('unrelated'),
+      pid: unrelated.pid!,
+      pidStart: requireProcessIdentity(unrelated.pid),
+    };
     await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
     const env = { TTR_RESOURCES_ADMITTED: owner.token };
     const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
@@ -130,7 +139,11 @@ describe('ancestry ignores a fake ps on PATH (REV-6492-3)', () => {
     dirs.push(home);
     const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
     children.push(unrelated);
-    const owner = { ...newOwner('unrelated'), pid: unrelated.pid! };
+    const owner = {
+      ...newOwner('unrelated'),
+      pid: unrelated.pid!,
+      pidStart: requireProcessIdentity(unrelated.pid),
+    };
     await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
     // The fake claims the unrelated owner is this process's grandparent.
     const sentinel = join(home, 'fake-ps-ran');

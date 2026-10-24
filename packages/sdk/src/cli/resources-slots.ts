@@ -21,33 +21,57 @@ import {
   readResourceConfig,
   resourceMaxLanes,
 } from './resources-config';
+import {
+  originalProcessAlive,
+  ownershipState,
+  processInspection,
+} from './resources-ownership';
+import {
+  ownershipFence,
+  publishOwnershipFence,
+  validOwnershipFence,
+} from './resources-ownership-fence';
+import { validateOwnershipRecord } from './resources-ownership-record';
+import {
+  requireProcessIdentity,
+  snapshotProcesses,
+} from './resources-process-identity';
+import {
+  type ProcessSnapshot,
+  processIdentitySchema,
+} from './resources-process-types';
 
-const ownerSchema = z.object({
-  scheduler: z.literal(2).optional(),
-  pid: z.number().int().positive(),
-  childPid: z.number().int().positive().optional(),
-  token: z.string().min(1),
-  cwd: z.string(),
-  tool: z.string(),
-  command: z.string().optional(),
-  queuedAt: z.string(),
-  startedAt: z.string().optional(),
-  limits: z
-    .object({
-      vitestWorkers: z.number().int().positive(),
-      buildJobs: z.number().int().positive(),
-    })
-    .optional(),
-  // Declared budget demand (project share, worker tokens, memory). Older
-  // schedulers strip it; owners without it retain their recorded worker cost.
-  demand: z
-    .object({
-      project: z.string().min(1),
-      tokens: z.number().int().positive(),
-      memoryGiB: z.number().nonnegative(),
-    })
-    .optional(),
-});
+const ownerSchema = z
+  .object({
+    scheduler: z.literal(2).optional(),
+    pid: z.number().int().positive(),
+    childPid: z.number().int().positive().optional(),
+    ownershipVersion: z.literal(1).optional(),
+    pidStart: processIdentitySchema.optional(),
+    childStart: processIdentitySchema.optional(),
+    token: z.string().min(1),
+    cwd: z.string(),
+    tool: z.string(),
+    command: z.string().optional(),
+    queuedAt: z.string(),
+    startedAt: z.string().optional(),
+    limits: z
+      .object({
+        vitestWorkers: z.number().int().positive(),
+        buildJobs: z.number().int().positive(),
+      })
+      .optional(),
+    // Declared budget demand (project share, worker tokens, memory). Older
+    // schedulers strip it; owners without it retain their recorded worker cost.
+    demand: z
+      .object({
+        project: z.string().min(1),
+        tokens: z.number().int().positive(),
+        memoryGiB: z.number().nonnegative(),
+      })
+      .optional(),
+  })
+  .superRefine(validateOwnershipRecord);
 export type ResourceOwner = z.infer<typeof ownerSchema>;
 export type OwnerState =
   | { kind: 'missing' }
@@ -100,13 +124,10 @@ export function processGroupAlive(pid: number) {
     return true;
   }
 }
-export function ownerAlive(owner: ResourceOwner) {
-  return (
-    processAlive(owner.pid) ||
-    processAlive(owner.childPid) ||
-    (owner.childPid !== undefined && processGroupAlive(owner.childPid))
-  );
+export function ownerAlive(owner: ResourceOwner, snapshot?: ProcessSnapshot) {
+  return ownershipState(owner, snapshot).kind !== 'gone';
 }
+
 export async function ownerState(path: string): Promise<OwnerState> {
   try {
     const parsed = ownerSchema.safeParse(
@@ -128,11 +149,9 @@ export interface ProcessLineage {
   pids: Set<number>;
   group?: number;
 }
-let lineage: ProcessLineage | undefined;
-// Ancestors only change when they exit, so a successful snapshot is reused.
-// Failed snapshots are not cached; callers retry on their next check.
+// Re-read ancestry: cached numeric ancestors can outlive the original process.
 export function processLineage(refresh = false): ProcessLineage | undefined {
-  if (lineage && !refresh) return lineage;
+  void refresh;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const rows = trustedPs(['-axo', 'pid=,ppid=,pgid='], 5000)
@@ -149,15 +168,13 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
         pids.add(parent);
         parent = table.get(parent)?.parent || 1;
       }
-      lineage = { pids, group: table.get(process.pid)?.group || undefined };
-      return lineage;
+      return { pids, group: table.get(process.pid)?.group || undefined };
     } catch {
       /* Retry once; missing evidence never permits nesting by itself. */
     }
   }
   // Linux without a trusted ps: the kernel's /proc is not PATH-controlled.
   const fallback = procLineage();
-  if (fallback) lineage = fallback;
   return fallback;
 }
 // Parent and process group from /proc/<pid>/stat. The command name (field 2)
@@ -196,18 +213,25 @@ export function isAncestor(pid: number) {
 // The owned launcher is a detached session and group leader, so a process in
 // its group descends from the admitted job even after an intermediate parent
 // exits and the process is reparented.
-function descendsFrom(owner: ResourceOwner, evidence: ProcessLineage) {
+function descendsFrom(
+  owner: ResourceOwner,
+  evidence: ProcessLineage,
+  snapshot: ProcessSnapshot
+) {
   return (
-    (processAlive(owner.pid) && evidence.pids.has(owner.pid)) ||
+    (originalProcessAlive(owner.pid, owner.pidStart, snapshot) &&
+      evidence.pids.has(owner.pid)) ||
     (owner.childPid !== undefined &&
-      processAlive(owner.childPid) &&
+      originalProcessAlive(owner.childPid, owner.childStart, snapshot) &&
       (evidence.pids.has(owner.childPid) || evidence.group === owner.childPid))
   );
 }
 export function newOwner(tool: string, command?: string): ResourceOwner {
   return {
     scheduler: 2,
+    ownershipVersion: 1,
     pid: process.pid,
+    pidStart: requireProcessIdentity(),
     token: randomUUID(),
     cwd: process.cwd(),
     tool,
@@ -233,7 +257,10 @@ async function reclaimMutex(path: string) {
   const before = await ownerState(join(path, 'owner.json'));
   if (before.kind === 'invalid')
     throw new Error('Malformed admission mutex; admission is closed.');
-  if (before.kind === 'owner' && ownerAlive(before.owner)) return;
+  if (before.kind === 'owner') {
+    const state = ownershipState(before.owner);
+    if (state.kind !== 'gone') return state;
+  }
   if (before.kind === 'owner' && before.owner.tool === 'rollout') {
     const mutated = await lstat(join(path, 'mutation.json'))
       .then(() => true)
@@ -255,7 +282,15 @@ async function reclaimMutex(path: string) {
   try {
     file = await open(join(path, 'reclaim'), 'wx', 0o600);
   } catch (error) {
-    if (errno(error, 'EEXIST') || errno(error, 'ENOENT')) return;
+    if (errno(error, 'EEXIST')) {
+      const guard = await stat(join(path, 'reclaim'));
+      if (Date.now() - guard.mtimeMs > initializationGrace)
+        throw new Error(
+          'Admission reclaim guard has no verifiable owner. Admission is closed; inspect it under exclusive idle recovery custody before repairing the recorded directory.'
+        );
+      return;
+    }
+    if (errno(error, 'ENOENT')) return;
     throw error;
   }
   await file.close();
@@ -354,6 +389,7 @@ export async function withAdmission<T>(
     flag: 'wx',
   });
   let acquired = false;
+  const verificationDeadline = Date.now() + initializationGrace;
   try {
     while (!acquired) {
       if (cancelled()) return undefined;
@@ -361,10 +397,14 @@ export async function withAdmission<T>(
         await mkdir(path, { mode: 0o700 });
       } catch (error) {
         if (!errno(error, 'EEXIST')) throw error;
-        await reclaimMutex(path).catch((error) => {
+        const holder = await reclaimMutex(path).catch((error) => {
           if (!errno(error, 'ENOENT')) throw error;
         });
-        await sleep(25);
+        if (holder?.kind === 'unknown' && Date.now() >= verificationDeadline)
+          throw new Error(
+            'Admission mutex process identity is unavailable. Admission is closed; restore trusted process inspection or use the documented exclusive idle recovery procedure.'
+          );
+        await sleep(250);
         continue;
       }
       // Hold the inode open; reuse the reclaim fence during owner publication.
@@ -406,7 +446,10 @@ export async function withAdmission<T>(
         await directory.close();
       }
     }
-    if (purpose === 'admission') await publishBudgetFence(home);
+    if (purpose === 'admission') {
+      await publishOwnershipFence(home);
+      await publishBudgetFence(home);
+    }
     return await action();
   } finally {
     if (acquired) await releaseMutex(path, owner.token);
@@ -427,12 +470,14 @@ export async function hasSetupMaintenanceLease(
     owner?.tool === 'rollout' &&
       owner.scheduler === 2 &&
       owner.token === token &&
-      processAlive(owner.pid) &&
+      owner.ownershipVersion === 1 &&
+      originalProcessAlive(owner.pid, owner.pidStart) &&
       processLineage(true)?.pids.has(owner.pid)
   );
 }
 
 async function releaseMutex(path: string, token: string) {
+  const deadline = Date.now() + initializationGrace;
   // Normal release uses the same exclusive removal marker as stale reclaim.
   // A stale observer cannot remove a newly initializing replacement directory.
   for (;;) {
@@ -442,6 +487,10 @@ async function releaseMutex(path: string, token: string) {
       break;
     } catch (error) {
       if (!errno(error, 'EEXIST')) throw error;
+      if (Date.now() >= deadline)
+        throw new Error(
+          'Admission release guard could not be verified. Ownership was retained; inspect the mutex under exclusive idle recovery custody.'
+        );
       await sleep(25);
     }
   }
@@ -452,7 +501,8 @@ async function releaseMutex(path: string, token: string) {
 export async function occupancy(
   home: string,
   reclaim = false,
-  configured?: ResourceConfig
+  configured?: ResourceConfig,
+  inspect = processInspection()
 ) {
   const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
@@ -461,6 +511,8 @@ export async function occupancy(
     if (errno(error, 'ENOENT')) return [];
     throw error;
   });
+  if (names.includes(ownershipFence))
+    await validOwnershipFence(join(slots, ownershipFence));
   if (
     names.includes(budgetFence) &&
     (await readFile(join(slots, budgetFence), 'utf8')) !== '3\n'
@@ -470,13 +522,13 @@ export async function occupancy(
     );
   if (
     names
-      .filter((name) => name !== budgetFence)
+      .filter((name) => name !== budgetFence && name !== ownershipFence)
       .some(
         (name) => !/^(0|[1-9]|1[0-5])$/.test(name) || Number(name) >= maxLanes
       )
   )
     throw new Error(
-      'Unknown resource slot; admission is closed. A slots/budget-v3 marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
+      'Unknown resource slot; admission is closed. A compatibility marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
     );
   const owners: ResourceOwner[] = [];
   const ownerSlots: string[] = [];
@@ -491,7 +543,7 @@ export async function occupancy(
     const state = await ownerState(join(path, 'owner.json'));
     if (state.kind === 'invalid')
       throw new Error('Malformed resource owner; admission is closed.');
-    if (state.kind === 'owner' && ownerAlive(state.owner)) {
+    if (state.kind === 'owner' && ownerAlive(state.owner, inspect())) {
       owners.push(state.owner);
       ownerSlots.push(path);
       occupied.push(path);
@@ -506,11 +558,16 @@ export async function occupancy(
       if (
         current.kind !== state.kind ||
         (current.kind === 'owner' &&
-          (ownerAlive(current.owner) ||
-            state.kind !== 'owner' ||
-            current.owner.token !== state.owner.token))
+          (state.kind !== 'owner' || current.owner.token !== state.owner.token))
       )
         throw new Error('Resource ownership changed during reclaim.');
+      if (current.kind === 'owner' && ownerAlive(current.owner)) {
+        owners.push(current.owner);
+        ownerSlots.push(path);
+        occupied.push(path);
+        if (path === join(home, 'lock')) legacy = true;
+        continue;
+      }
       await rm(path, { recursive: true });
     } else {
       occupied.push(path);
@@ -521,7 +578,11 @@ export async function occupancy(
     throw new Error('Mixed legacy and slot owners; admission is closed.');
   return { owners, ownerSlots, occupied, legacy, initializing };
 }
-export async function tickets(home: string, prune = false) {
+export async function tickets(
+  home: string,
+  prune = false,
+  inspect = processInspection()
+) {
   const queue = join(home, 'queue');
   const files = await readdir(queue).catch((error) => {
     if (errno(error, 'ENOENT')) return [];
@@ -534,11 +595,14 @@ export async function tickets(home: string, prune = false) {
     if (state.kind === 'missing') continue;
     if (state.kind === 'invalid')
       throw new Error('Malformed queue ticket; admission is closed.');
-    if (ownerAlive(state.owner)) live.push({ path, owner: state.owner });
+    if (ownerAlive(state.owner, inspect()))
+      live.push({ path, owner: state.owner });
     else if (prune) {
       const current = await readOwner(path);
-      if (current?.token === state.owner.token && !ownerAlive(current))
-        await rm(path, { force: true });
+      if (current?.token === state.owner.token) {
+        if (ownerAlive(current)) live.push({ path, owner: current });
+        else await rm(path, { force: true });
+      }
     }
   }
   return live;
@@ -562,8 +626,11 @@ export async function nestedOwner(
   if (!state.owners.length && !marker) return undefined;
   const evidence = state.owners.length ? processLineage(refresh) : undefined;
   if (evidence) {
-    if (marked && descendsFrom(marked, evidence)) return marked;
-    const related = state.owners.find((owner) => descendsFrom(owner, evidence));
+    const snapshot = snapshotProcesses();
+    if (marked && descendsFrom(marked, evidence, snapshot)) return marked;
+    const related = state.owners.find((owner) =>
+      descendsFrom(owner, evidence, snapshot)
+    );
     if (related) return related;
   }
   if (marker && !ignoredMarkers.has(marker)) {

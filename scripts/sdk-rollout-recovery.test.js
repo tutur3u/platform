@@ -285,7 +285,11 @@ test('real SDK admission reclaims only dead preparation, preserving mutation fen
       __dirname,
       '../packages/sdk/src/cli/resources-slots.ts'
     );
-    const script = `const {withAdmission}=require(${JSON.stringify(entry)});withAdmission(${JSON.stringify(f.home)},async()=>console.log('admitted')).catch(e=>{console.error(e.message);process.exitCode=1});`;
+    const compatibility = path.resolve(
+      __dirname,
+      '../packages/sdk/src/cli/resources-compatibility.ts'
+    );
+    const script = `const fs=require('node:fs');const {budgetLauncherProtocol,ownershipLauncherProtocol}=require(${JSON.stringify(compatibility)});fs.writeFileSync(${JSON.stringify(path.join(f.home, 'bin/bun'))},['# Managed by ttr resources',budgetLauncherProtocol,ownershipLauncherProtocol,''].join(String.fromCharCode(10)));const {withAdmission}=require(${JSON.stringify(entry)});withAdmission(${JSON.stringify(f.home)},async()=>console.log('admitted')).catch(e=>{console.error(e.message);process.exitCode=1});`;
     const result = spawnSync('bun', ['-e', script], {
       encoding: 'utf8',
       timeout: 10000,

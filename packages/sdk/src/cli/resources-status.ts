@@ -6,6 +6,8 @@ import {
   readActivity,
 } from './resources-activity';
 import type { budgetStatus } from './resources-budget';
+import { ownershipState } from './resources-ownership';
+import { snapshotProcesses } from './resources-process-identity';
 import type { ResourceOwner } from './resources-slots';
 
 export function formatDuration(seconds: number) {
@@ -33,6 +35,7 @@ export async function resourceStatusDetails(
   cpuTable?: Awaited<ReturnType<typeof processCpuTable>>
 ) {
   const table = cpuTable ?? (await processCpuTable());
+  const snapshot = state.owners.length ? snapshotProcesses() : undefined;
   const ownerDetails = await Promise.all(
     state.owners.map(async (owner, index) => {
       const slot = state.ownerSlots[index];
@@ -42,6 +45,7 @@ export async function resourceStatusDetails(
           ? ownerCpu(owner, table)
           : undefined;
       return {
+        ownership: ownershipState(owner, snapshot),
         pid: owner.pid,
         childPid: owner.childPid ?? null,
         tool: owner.tool,
@@ -65,6 +69,12 @@ export async function resourceStatusDetails(
       (owner) =>
         `Owner PID ${owner.pid} (${owner.tool}) has been idle at 0% CPU for ${formatDuration(owner.idleSeconds ?? 0)} (> ${idleWarningMs / 60_000}m). Inspect it; it may be waiting on input or deadlocked. ttr resources never kills owners automatically.`
     );
+  for (const owner of ownerDetails) {
+    if (owner.ownership.kind === 'unknown')
+      warnings.push(
+        `Owner PID ${owner.pid} cannot be verified: ${owner.ownership.reason}. Capacity remains reserved. Restore trusted process inspection or use the documented exclusive idle recovery procedure.`
+      );
+  }
   const waitingDetails = state.waiting.map((ticket) => ({
     pid: ticket.pid,
     tool: ticket.tool,

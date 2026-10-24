@@ -41,6 +41,7 @@ vi.mock('./resources-queue', async (original) => {
 });
 
 import { atomicJson, defaultResourceConfig } from './resources-config';
+import { requireProcessIdentity } from './resources-process-identity';
 import { spawnResourceCommand } from './resources-queue';
 import { newOwner } from './resources-slots';
 
@@ -73,6 +74,7 @@ async function occupiedHome() {
   await atomicJson(join(home, 'slots', '0', 'owner.json'), {
     ...newOwner('holder'),
     pid: holder.pid!,
+    pidStart: requireProcessIdentity(holder.pid),
   });
   const sentinel = join(home, 'payload-ran');
   const payload = join(home, 'payload.sh');

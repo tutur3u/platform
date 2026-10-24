@@ -244,7 +244,12 @@ describe('real cross-process lane admission', {
     const path = await home();
     const legacy = launch(path, [], await held(path, 'legacy'));
     await legacy.until(() => exists(join(path, 'legacy.ready')));
-    const metadata = { ...newOwner('legacy'), pid: legacy.child.pid! };
+    const metadata = {
+      ...newOwner('legacy'),
+      pid: legacy.child.pid!,
+      ownershipVersion: undefined,
+      pidStart: undefined,
+    };
     await mkdir(join(path, 'lock'));
     await atomicJson(join(path, 'lock', 'owner.json'), metadata);
     const a = run(path, await held(path, 'a'));
@@ -383,6 +388,9 @@ describe('real cross-process lane admission', {
     expect(await exists(join(path, 'c.ready'))).toBe(false);
     expect(a.child.exitCode).toBeNull();
     await release(path, 'a');
+    await a.until(
+      async () => a.child.exitCode !== null || a.child.signalCode !== null
+    );
     expect((await a.done).code).toBe(143);
     await c.until(() => exists(join(path, 'c.ready')));
     expect(
@@ -392,7 +400,13 @@ describe('real cross-process lane admission', {
     ).toBe(sibling?.token);
     await release(path, 'b');
     await release(path, 'c');
+    await b.until(
+      async () => b.child.exitCode !== null || b.child.signalCode !== null
+    );
     await b.done;
+    await c.until(
+      async () => c.child.exitCode !== null || c.child.signalCode !== null
+    );
     await c.done;
   });
   it('dead broker retains live child ownership, then reclaims only after child exit', async () => {

@@ -91,7 +91,11 @@ export function hostsDependencies({
           limitCommand(basename(name), command, caps),
           childEnv,
           ignorePressure,
-          resourceLanes(config)
+          resourceLanes(config),
+          undefined,
+          undefined,
+          undefined,
+          onChild
         );
       return spawnResourceCommand(
         real,

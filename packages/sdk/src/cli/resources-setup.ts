@@ -7,6 +7,7 @@ import { resourceShims } from './resources-command';
 import {
   assertBudgetSetupOwner,
   budgetLauncherProtocol,
+  ownershipLauncherProtocol,
 } from './resources-compatibility';
 import {
   assertLaneBudget,
@@ -382,7 +383,7 @@ export async function uninstallResources(home: string) {
 }
 
 function resourceLauncher(home: string, entry: string, name: string) {
-  return `#!/bin/sh\n# Managed by ttr resources\n${budgetLauncherProtocol}\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+  return `#!/bin/sh\n# Managed by ttr resources\n${budgetLauncherProtocol}\n${ownershipLauncherProtocol}\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
 }
 
 async function validResourceShim(path: string, expected: string) {
@@ -453,12 +454,19 @@ export function existingLauncherIdentity(
     0,
     -(shellQuote(process.execPath).length + suffix.length)
   );
-  const protocol = '# Resource scheduler protocol: 3\n';
-  if (prefix.includes(protocol) && !content.includes(protocol)) {
-    const oldPrefix = prefix.replace(protocol, '');
-    if (content.startsWith(oldPrefix) && content.endsWith(suffix))
-      content = prefix + content.slice(oldPrefix.length);
-  }
+  const oldPrefix = [budgetLauncherProtocol, ownershipLauncherProtocol].reduce(
+    (value, protocol) =>
+      content.split('\n').includes(protocol)
+        ? value
+        : value.replace(`${protocol}\n`, ''),
+    prefix
+  );
+  if (
+    oldPrefix !== prefix &&
+    content.startsWith(oldPrefix) &&
+    content.endsWith(suffix)
+  )
+    content = prefix + content.slice(oldPrefix.length);
   if (content.startsWith(prefix) && content.endsWith(suffix)) {
     const runtime = content.slice(prefix.length, -suffix.length);
     if (/^'(?:[^']|'\\'')*'$/u.test(runtime)) {

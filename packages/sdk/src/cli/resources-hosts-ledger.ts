@@ -14,40 +14,56 @@ import {
   type Waiter,
 } from './resources-hosts-plan';
 import {
+  originalProcessAlive,
+  ownershipState,
+  type ProcessOwner,
+  processInspection,
+} from './resources-ownership';
+// Canonical per-host reservations live in the shared resources home and are
+// only created inside the host-wide admission mutex, so concurrent requesters
+// on this machine can never double-assign a slot. Liveness is the owning
+// broker PID (or its owned child group): cancel or process death frees it.
+import { validateOwnershipRecord } from './resources-ownership-record';
+import { snapshotProcesses } from './resources-process-identity';
+import { processIdentitySchema } from './resources-process-types';
+import {
   errno,
   occupancy,
-  processAlive,
-  processGroupAlive,
   processLineage,
   tickets,
   withAdmission,
 } from './resources-slots';
 
-// Canonical per-host reservations live in the shared resources home and are
-// only created inside the host-wide admission mutex, so concurrent requesters
-// on this machine can never double-assign a slot. Liveness is the owning
-// broker PID (or its owned child group): cancel or process death frees it.
-const ticketSchema = z.object({
-  token: z.string().uuid(),
-  pid: z.number().int().positive(),
-  project: z.string().min(1),
-  jobClass: z.enum(['light', 'heavy']),
-  queuedAt: z.number().int().nonnegative(),
-  bypassed: z.number().int().nonnegative(),
-  remoteOk: z.boolean(),
-  command: z.string().optional(),
-});
-const reservationSchema = z.object({
-  token: z.string().uuid(),
-  pid: z.number().int().positive(),
-  childPid: z.number().int().positive().optional(),
-  hostId: z.string().min(1),
-  jobClass: z.enum(['light', 'heavy']),
-  project: z.string().min(1),
-  scope: z.enum(['host', 'project']),
-  createdAt: z.string(),
-  command: z.string().optional(),
-});
+const ticketSchema = z
+  .object({
+    token: z.string().uuid(),
+    pid: z.number().int().positive(),
+    ownershipVersion: z.literal(1).optional(),
+    pidStart: processIdentitySchema.optional(),
+    project: z.string().min(1),
+    jobClass: z.enum(['light', 'heavy']),
+    queuedAt: z.number().int().nonnegative(),
+    bypassed: z.number().int().nonnegative(),
+    remoteOk: z.boolean(),
+    command: z.string().optional(),
+  })
+  .superRefine(validateOwnershipRecord);
+const reservationSchema = z
+  .object({
+    token: z.string().uuid(),
+    pid: z.number().int().positive(),
+    ownershipVersion: z.literal(1).optional(),
+    pidStart: processIdentitySchema.optional(),
+    childPid: z.number().int().positive().optional(),
+    childStart: processIdentitySchema.optional(),
+    hostId: z.string().min(1),
+    jobClass: z.enum(['light', 'heavy']),
+    project: z.string().min(1),
+    scope: z.enum(['host', 'project']),
+    createdAt: z.string(),
+    command: z.string().optional(),
+  })
+  .superRefine(validateOwnershipRecord);
 export type HostTicket = z.infer<typeof ticketSchema>;
 export type HostReservation = z.infer<typeof reservationSchema>;
 
@@ -74,9 +90,6 @@ const tokenAt = async (path: string) => {
     ? String(raw.token)
     : undefined;
 };
-const alive = (entry: { pid: number; childPid?: number }) =>
-  processAlive(entry.pid) ||
-  (entry.childPid !== undefined && processGroupAlive(entry.childPid));
 
 async function entries<T>(dir: string, schema: z.ZodType<T>) {
   const names = await readdir(dir).catch((error) => {
@@ -101,13 +114,29 @@ async function entries<T>(dir: string, schema: z.ZodType<T>) {
 }
 // Live tickets and reservations; dead owners are pruned (inside the mutex).
 export async function hostLedger(home: string, prune = false) {
-  const live = async <T extends { pid: number; childPid?: number }>(
-    list: { path: string; value: T }[]
+  const inspect = processInspection();
+  const live = async <T extends ProcessOwner & { token: string }>(
+    list: { path: string; value: T }[],
+    schema: z.ZodType<T>
   ) => {
     const kept: T[] = [];
     for (const entry of list)
-      if (alive(entry.value)) kept.push(entry.value);
-      else if (prune) await rm(entry.path, { force: true });
+      if (ownershipState(entry.value, inspect()).kind !== 'gone')
+        kept.push(entry.value);
+      else if (prune) {
+        const raw = await readJson(entry.path);
+        if (raw === undefined) continue;
+        const current = schema.safeParse(raw);
+        if (!current.success)
+          throw new Error(
+            'Malformed host ledger entry during recovery; admission is closed.'
+          );
+        if (current.data.token === entry.value.token) {
+          if (ownershipState(current.data).kind === 'gone')
+            await rm(entry.path, { force: true });
+          else kept.push(current.data);
+        }
+      }
     return kept;
   };
   const hosts = await readdir(join(root(home), 'reservations')).catch(
@@ -120,11 +149,15 @@ export async function hostLedger(home: string, prune = false) {
   for (const host of hosts.sort())
     reservations.push(
       ...(await live(
-        await entries(reservationDir(home, host), reservationSchema)
+        await entries(reservationDir(home, host), reservationSchema),
+        reservationSchema
       ))
     );
   return {
-    tickets: await live(await entries(queueDir(home), ticketSchema)),
+    tickets: await live(
+      await entries(queueDir(home), ticketSchema),
+      ticketSchema
+    ),
     reservations,
   };
 }
@@ -311,9 +344,16 @@ export async function nestedHostReservation(
   if (!reservation) return undefined;
   const evidence = processLineage(refresh);
   if (!evidence) return undefined;
+  const snapshot = snapshotProcesses();
   const related =
-    evidence.pids.has(reservation.pid) ||
+    (originalProcessAlive(reservation.pid, reservation.pidStart, snapshot) &&
+      evidence.pids.has(reservation.pid)) ||
     (reservation.childPid !== undefined &&
+      originalProcessAlive(
+        reservation.childPid,
+        reservation.childStart,
+        snapshot
+      ) &&
       (evidence.pids.has(reservation.childPid) ||
         evidence.group === reservation.childPid));
   return related ? reservation : undefined;
@@ -370,6 +410,8 @@ export async function admitHostTicket(
     const reservation: HostReservation = {
       token: ticket.token,
       pid: ticket.pid,
+      ownershipVersion: ticket.ownershipVersion,
+      pidStart: ticket.pidStart,
       hostId: mine.hostId,
       jobClass: ticket.jobClass,
       project: ticket.project,
@@ -406,8 +448,11 @@ export async function updateHostReservation(
 ) {
   await withAdmission(home, async () => {
     const path = reservationPath(home, reservation.hostId, reservation.token);
-    if ((await tokenAt(path)) === reservation.token)
-      await atomicJson(path, reservation);
+    if ((await tokenAt(path)) !== reservation.token)
+      throw new Error(
+        'Owned host reservation changed before child receipt; workload was not launched.'
+      );
+    await atomicJson(path, reservation);
   });
 }
 export async function releaseHostReservation(
