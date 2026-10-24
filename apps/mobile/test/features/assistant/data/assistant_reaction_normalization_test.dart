@@ -87,6 +87,7 @@ void main() {
     late ActionsApi api;
     late ActionsRepository repository;
     late AssistantChatCubit cubit;
+    late int initialIds;
     late List<Map<String, dynamic>> bodies;
     late Future<Map<String, dynamic>> Function(Map<String, dynamic>) dispatch;
     const boxName = 'reaction_normalization';
@@ -143,6 +144,7 @@ void main() {
         return _canonicalReceipt(bodies.last);
       });
       await cubit.openChatById(actionWorkspace, actionChat);
+      initialIds = repository.ids;
     });
 
     tearDown(() async {
@@ -239,7 +241,7 @@ void main() {
             'emoji': 'heart',
             'present': present,
           });
-          expect(repository.ids, 0);
+          expect(repository.ids, initialIds);
           expect(box.containsKey(key), isFalse);
           expect(
             cubit.state.messages.single.reactions,
@@ -282,7 +284,7 @@ void main() {
           AssistantReactionResult.updated,
         );
         expect(bodies, [original, original]);
-        expect(repository.ids, 1);
+        expect(repository.ids, initialIds + 1);
         expect(box.containsKey(key), isFalse);
         expect(cubit.needsReactionRefresh(actionMessage), isFalse);
         verifyNever(() => api.postJson(any(), any()));
@@ -314,7 +316,7 @@ void main() {
           AssistantReactionResult.unavailable,
         );
       }
-      expect(repository.ids, 0);
+      expect(repository.ids, initialIds);
       expect(box.containsKey(key), isFalse);
       expect(bodies, isEmpty);
       verifyZeroInteractions(api);
@@ -331,7 +333,7 @@ void main() {
         );
         expect(box.get(key), invalid);
       }
-      expect(repository.ids, 0);
+      expect(repository.ids, initialIds);
       expect(bodies, isEmpty);
       verifyZeroInteractions(api);
     });
