@@ -226,26 +226,32 @@ describe('Meet guest login', () => {
     ).toBe(true);
   });
 
-  it('requires a creator reset for a legacy guest without writing or issuing a session', async () => {
-    mocks.queue('meet_together_guests:select', {
-      data: {
-        id: 'guest-1',
+  it.each([LEGACY_HASH, '1d455debda48eb', 'scrypt$malformed'])(
+    'requires a creator reset for guest hash %s without writing or issuing a session',
+    async (hash) => {
+      mocks.queue('meet_together_guests:select', {
+        data: {
+          id: 'guest-1',
+          name: 'Ann',
+          password_hash: hash,
+          password_salt: 'abc123',
+        },
+        error: null,
+      });
+      const { guestLogin } = await import('./auth.js');
+
+      const result = await guestLogin(PLAN_ID, {
         name: 'Ann',
-        password_hash: LEGACY_HASH,
-        password_salt: 'abc123',
-      },
-      error: null,
-    });
-    const { guestLogin } = await import('./auth.js');
+        password: 'nope',
+      });
 
-    const result = await guestLogin(PLAN_ID, { name: 'Ann', password: 'nope' });
-
-    expect(result).toMatchObject({ code: 'PASSWORD_RESET_REQUIRED' });
-    expect(result).not.toHaveProperty('data');
-    expect(mutations()).toEqual([]);
-    expect(limits.refund).not.toHaveBeenCalled();
-    expect(limits.check).not.toHaveBeenCalled();
-  });
+      expect(result).toMatchObject({ code: 'PASSWORD_RESET_REQUIRED' });
+      expect(result).not.toHaveProperty('data');
+      expect(mutations()).toEqual([]);
+      expect(limits.refund).not.toHaveBeenCalled();
+      expect(limits.check).not.toHaveBeenCalled();
+    }
+  );
 
   it('refuses to verify once the failure budget is spent', async () => {
     limits.check.mockResolvedValue({ allowed: false, retryAfter: 420 });

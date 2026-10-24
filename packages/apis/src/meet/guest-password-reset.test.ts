@@ -109,6 +109,21 @@ it('lets the verified plan creator replace only the held guest credential, prese
   ]);
 });
 
+it.each(['1d455debda48eb', 'scrypt$malformed'])(
+  'lets the creator recover an unsupported guest hash %s',
+  async (hash) => {
+    const f = fixture();
+    f.guest.password_hash = hash;
+    expect(await f.reset()).toEqual({ data: { success: true } });
+    expect(f.writes).toHaveLength(1);
+    expect(f.writes[0]?.filters).toContainEqual(['password_hash', hash]);
+    expect(
+      await verifyPassword('new password', { hash: f.guest.password_hash })
+    ).toMatchObject({ valid: true, resetRequired: false });
+    expect(f.guest.id).toBe(guestId);
+  }
+);
+
 it.each([null, 'other-user'])(
   'denies reset by actor %s without a write',
   async (actor) => {
@@ -156,15 +171,21 @@ it('fails closed on lookup failure or malformed input before changing a password
   expect(f.writes).toEqual([]);
 });
 
-it('rejects guest session mutations while the backing row requires reset, then accepts a current row', async () => {
-  const f = fixture();
-  const token = createMeetGuestSession({ guestId, planId }).token;
-  expect(await resolveMeetGuestFromSession(f.client, planId, token)).toBeNull();
-  f.guest.password_hash = await hashPassword('current');
-  expect(await resolveMeetGuestFromSession(f.client, planId, token)).toEqual({
-    id: guestId,
-  });
-});
+it.each([legacy, '1d455debda48eb', 'scrypt$malformed'])(
+  'rejects guest session mutations for held hash %s, then accepts a current row',
+  async (hash) => {
+    const f = fixture();
+    f.guest.password_hash = hash;
+    const token = createMeetGuestSession({ guestId, planId }).token;
+    expect(
+      await resolveMeetGuestFromSession(f.client, planId, token)
+    ).toBeNull();
+    f.guest.password_hash = await hashPassword('current');
+    expect(await resolveMeetGuestFromSession(f.client, planId, token)).toEqual({
+      id: guestId,
+    });
+  }
+);
 
 it.each([null, 'GUEST'])(
   'denies a workspace plan creator with membership %s before reading guest credentials',

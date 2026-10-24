@@ -13,7 +13,7 @@ import {
  *
  *   scrypt$<N>$<r>$<p>$<base64url salt>$<base64url derived key>
  *
- * Older unprefixed SHA-256 rows are reset markers. They never verify;
+ * Non-empty values outside the accepted scrypt format are reset markers;
  * the owning product must direct its manager or plan creator to replace them.
  */
 
@@ -41,6 +41,7 @@ const MAX_KEY_BYTES = 64;
 const MAX_SCRYPT_MEMORY_BYTES = 256 * 1024 * 1024;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/u;
 const DECIMAL_PATTERN = /^[1-9][0-9]{0,9}$/u;
+// Diagnostic scheme label only; reset eligibility uses the scrypt parser.
 const LEGACY_HASH_PATTERN = /^[0-9a-f]{64}$/u;
 
 export type PasswordHashScheme = 'scrypt' | 'legacy-sha256' | 'unknown';
@@ -61,7 +62,7 @@ export type PasswordVerification =
   | {
       valid: false;
       needsRehash: false;
-      scheme: 'legacy-sha256';
+      scheme: 'legacy-sha256' | 'unknown';
       resetRequired: true;
     };
 
@@ -191,9 +192,13 @@ export async function hashPassword(password: string) {
   ].join('$');
 }
 
-/** Legacy storage is a durable reset marker, never a verification scheme. */
+/** Unsupported non-empty storage is a reset marker, never a verification scheme. */
 export function passwordRequiresReset(hash: string | null | undefined) {
-  return typeof hash === 'string' && LEGACY_HASH_PATTERN.test(hash);
+  return (
+    typeof hash === 'string' &&
+    hash.length > 0 &&
+    parsePasswordKdfHash(hash) === null
+  );
 }
 
 function safeEqual(left: Buffer, right: Buffer) {
@@ -223,44 +228,32 @@ export async function verifyPassword(
   const hash = stored.hash;
   if (typeof hash !== 'string' || hash.length === 0) return INVALID;
 
-  if (hash.startsWith(`${PASSWORD_KDF_ID}$`)) {
-    const parsed = parsePasswordKdfHash(hash);
-    if (!parsed) return { ...INVALID, scheme: 'scrypt' };
-
-    let derived: Buffer;
-    try {
-      derived = await deriveScryptKey(
-        password,
-        parsed.salt,
-        parsed.key.length,
-        {
-          N: parsed.N,
-          r: parsed.r,
-          p: parsed.p,
-        }
-      );
-    } catch {
-      return { ...INVALID, scheme: 'scrypt' };
-    }
-
-    if (!safeEqual(derived, parsed.key))
-      return { ...INVALID, scheme: 'scrypt' };
-    return {
-      valid: true,
-      needsRehash: passwordHashNeedsRehash(hash),
-      scheme: 'scrypt',
-      resetRequired: false,
-    };
-  }
-
-  if (passwordRequiresReset(hash)) {
+  const parsed = parsePasswordKdfHash(hash);
+  if (!parsed) {
     return {
       valid: false,
       needsRehash: false,
-      scheme: 'legacy-sha256',
+      scheme: LEGACY_HASH_PATTERN.test(hash) ? 'legacy-sha256' : 'unknown',
       resetRequired: true,
     };
   }
 
-  return INVALID;
+  let derived: Buffer;
+  try {
+    derived = await deriveScryptKey(password, parsed.salt, parsed.key.length, {
+      N: parsed.N,
+      r: parsed.r,
+      p: parsed.p,
+    });
+  } catch {
+    return { ...INVALID, scheme: 'scrypt' };
+  }
+
+  if (!safeEqual(derived, parsed.key)) return { ...INVALID, scheme: 'scrypt' };
+  return {
+    valid: true,
+    needsRehash: passwordHashNeedsRehash(hash),
+    scheme: 'scrypt',
+    resetRequired: false,
+  };
 }

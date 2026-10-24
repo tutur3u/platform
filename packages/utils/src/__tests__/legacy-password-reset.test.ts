@@ -31,8 +31,34 @@ it('requires reset for a legacy row without hashing or checking its password', a
   expect(crypto).not.toHaveProperty('hashLegacyPassword');
 });
 
+it.each(['1d455debda48eb', 'malformed', 'scrypt$malformed'])(
+  'requires reset for unsupported stored hash %s without computing SHA-256',
+  async (hash) => {
+    vi.mocked(nodeCrypto.createHash).mockClear();
+    expect(await crypto.verifyPassword('password', { hash })).toMatchObject({
+      valid: false,
+      needsRehash: false,
+      resetRequired: true,
+    });
+    expect(crypto.passwordRequiresReset(hash)).toBe(true);
+    expect(nodeCrypto.createHash).not.toHaveBeenCalled();
+  }
+);
+
+it.each(['', null, undefined])(
+  'does not classify an absent credential %s as requiring reset',
+  async (hash) => {
+    expect(crypto.passwordRequiresReset(hash)).toBe(false);
+    expect(await crypto.verifyPassword('password', { hash })).toMatchObject({
+      valid: false,
+      resetRequired: false,
+    });
+  }
+);
+
 it('continues verifying scrypt credentials', async () => {
   const hash = await crypto.hashPassword('current password');
+  expect(crypto.passwordRequiresReset(hash)).toBe(false);
   expect(
     await crypto.verifyPassword('current password', { hash })
   ).toMatchObject({ valid: true, resetRequired: false, scheme: 'scrypt' });

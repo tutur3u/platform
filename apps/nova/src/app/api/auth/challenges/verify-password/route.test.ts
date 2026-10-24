@@ -168,6 +168,26 @@ describe('Nova challenge password verification', () => {
     }
   );
 
+  it.each(['1d455debda48eb', 'scrypt$malformed'])(
+    'requires reset for unsupported challenge hash %s without granting access',
+    async (hash) => {
+      mocks.challenge = {
+        duration: 3600,
+        id: CHALLENGE_ID,
+        password_hash: hash,
+        password_salt: 'salt',
+      };
+      const response = await verify('password');
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: 'PASSWORD_RESET_REQUIRED',
+      });
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.updates).toEqual([]);
+      expect(limits.check).not.toHaveBeenCalled();
+    }
+  );
+
   it('accepts a scrypt hash without rewriting it', async () => {
     mocks.challenge = {
       duration: 600,

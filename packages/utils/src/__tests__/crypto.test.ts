@@ -175,7 +175,11 @@ describe('password KDF', () => {
       expect(parsePasswordKdfHash(hash)).toBeNull();
       await expect(
         verifyPassword('secret', { hash, salt: 'salt' })
-      ).resolves.toMatchObject({ valid: false, needsRehash: false });
+      ).resolves.toMatchObject({
+        valid: false,
+        needsRehash: false,
+        resetRequired: typeof hash === 'string' && hash.length > 0,
+      });
     });
 
     it('rejects oversized or non-string presented passwords without throwing', async () => {
