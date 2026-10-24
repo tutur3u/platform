@@ -8,6 +8,7 @@ import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/features/assistant/models/assistant_file_mime.dart';
+import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'assistant_message.dart';
 part 'assistant_conversation_settings.dart';
@@ -618,13 +619,15 @@ class AssistantQueuedSubmission extends Equatable {
   const AssistantQueuedSubmission({
     required this.message,
     required this.attachments,
+    this.replyToMessageId,
   });
 
   final String message;
   final List<AssistantAttachment> attachments;
+  final String? replyToMessageId;
 
   @override
-  List<Object?> get props => [message, attachments];
+  List<Object?> get props => [message, attachments, replyToMessageId];
 }
 
 class AssistantFilePickerResult extends Equatable {

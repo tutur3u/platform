@@ -12,6 +12,7 @@ import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
+import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../data/assistant_chat_persistence_contract.dart';
 import '../data/assistant_preferences.dart';
@@ -30,6 +31,7 @@ part 'assistant_chat_stream_reconcile.dart';
 part 'assistant_chat_submission.dart';
 part 'assistant_chat_pending_submission.dart';
 part 'assistant_chat_tool_effects.dart';
+part 'assistant_chat_reactions.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -102,6 +104,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final _streamCancellations = <Future<void>>{};
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
+  String? _messageActorId;
+  final _reactionOperations = <(String, String, String, String), Object>{};
+  final _uncertainReactions = <(String, String, String, String)>{};
   AssistantConversationSettings? _restoredSettings;
   void _publishRestoredSettings(AssistantConversationSettings? settings) {
     _restoredSettings = settings;
@@ -322,12 +327,17 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         if (saved != null) {
           emit(
             state.copyWith(
-              messages: saved.messages,
+              messages: _applyNativeUserReceipt(
+                saved.messages,
+                payload,
+                saved.attachments,
+              ),
               attachmentsByMessageId: saved.attachments,
             ),
           );
         }
         _completeSubmissionAcknowledgment(payload, matched: saved != null);
+        if (saved != null) _persistAssistantChatCache();
         break;
       case 'saved-messages':
         _reconcileSavedMessages(payload);
