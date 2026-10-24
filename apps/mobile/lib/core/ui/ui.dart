@@ -18,6 +18,7 @@ export 'package:mobile/core/ui/components/app_icon_button.dart';
 export 'package:mobile/core/ui/components/app_option_tile.dart';
 export 'package:mobile/core/ui/components/app_scaffold.dart';
 export 'package:mobile/core/ui/components/app_search_field.dart';
+export 'package:mobile/core/ui/components/app_tap_target.dart';
 export 'package:mobile/core/ui/components/app_text_field.dart';
 export 'package:mobile/core/ui/components/app_toast.dart';
 export 'package:mobile/core/ui/icons/app_icons.dart';

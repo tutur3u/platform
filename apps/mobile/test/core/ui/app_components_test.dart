@@ -174,4 +174,59 @@ void main() {
     await tester.pump();
     expect(find.text('Saved'), findsNothing);
   });
+
+  testWidgets('buttons keep their visuals but expose 48dp tap targets', (
+    tester,
+  ) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      _host(
+        Column(
+          children: [
+            AppIconButton(
+              key: const Key('dense'),
+              tooltip: 'Dense',
+              density: AppButtonDensity.iconDense,
+              size: AppButtonSize.small,
+              icon: const Icon(AppIcons.close),
+              onPressed: () => taps++,
+            ),
+            AppIconButton(
+              key: const Key('icon'),
+              tooltip: 'Icon',
+              icon: const Icon(AppIcons.close),
+              onPressed: () => taps++,
+            ),
+            AppButton.primary(
+              key: const Key('small'),
+              size: AppButtonSize.small,
+              onPressed: () => taps++,
+              child: const Text('Go'),
+            ),
+          ],
+        ),
+      ),
+    );
+    for (final (key, visual) in [
+      ('dense', 24.0),
+      ('icon', 40.0),
+      ('small', 32.0),
+    ]) {
+      final target = find.byKey(Key(key));
+      final rect = tester.getRect(target);
+      expect(rect.height, greaterThanOrEqualTo(kAppMinTapTarget), reason: key);
+      expect(rect.width, greaterThanOrEqualTo(kAppMinTapTarget), reason: key);
+      // The painted surface keeps its visual height.
+      final surface = find.descendant(
+        of: target,
+        matching: find.byType(Material),
+      );
+      expect(tester.getSize(surface.first).height, visual, reason: key);
+      // A tap in the padded margin, outside the surface, still activates.
+      final before = taps;
+      await tester.tapAt(rect.topLeft + const Offset(2, 2));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(taps, before + 1, reason: key);
+    }
+  });
 }

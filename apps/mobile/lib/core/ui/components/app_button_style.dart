@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_tap_target.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 enum AppButtonVariant { primary, secondary, outline, ghost, destructive, link }
@@ -98,6 +99,9 @@ class AppButtonStyle {
 }
 
 /// Shared surface, ink and semantics for `AppButton` and `AppIconButton`.
+///
+/// Visual heights stay 32/40/48, but the hit region is padded to
+/// [kAppMinTapTarget] so every button meets the 48dp touch target.
 class AppButtonFrame extends StatelessWidget {
   const AppButtonFrame({
     required this.style,
@@ -135,30 +139,32 @@ class AppButtonFrame extends StatelessWidget {
     final constraints = style.square || shape == AppButtonShape.circle
         ? BoxConstraints.tightFor(width: style.height, height: style.height)
         : BoxConstraints(minHeight: style.height, minWidth: style.height);
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: semanticLabel,
-      child: AnimatedOpacity(
-        opacity: enabled || busy ? 1 : 0.5,
-        duration: AppMotion.fast,
-        child: Material(
-          color: style.background ?? Colors.transparent,
-          shape: outline,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onPressed,
-            onLongPress: onLongPress,
-            focusNode: focusNode,
-            customBorder: outline,
-            overlayColor: WidgetStatePropertyAll(style.overlay),
-            child: ConstrainedBox(
-              constraints: constraints,
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: style.horizontalPadding,
+    return AppTapTarget(
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: semanticLabel,
+        child: AnimatedOpacity(
+          opacity: enabled || busy ? 1 : 0.5,
+          duration: AppMotion.fast,
+          child: Material(
+            color: style.background ?? Colors.transparent,
+            shape: outline,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onPressed,
+              onLongPress: onLongPress,
+              focusNode: focusNode,
+              customBorder: outline,
+              overlayColor: WidgetStatePropertyAll(style.overlay),
+              child: ConstrainedBox(
+                constraints: constraints,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: style.horizontalPadding,
+                  ),
+                  child: Center(widthFactor: 1, heightFactor: 1, child: child),
                 ),
-                child: Center(widthFactor: 1, heightFactor: 1, child: child),
               ),
             ),
           ),
