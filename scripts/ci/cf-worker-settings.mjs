@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 
 function canonical(value) {
   if (Array.isArray(value))
@@ -24,25 +25,38 @@ const digest = (value) =>
     .update(JSON.stringify(canonical(value)))
     .digest('hex');
 
-// Cloudflare API tokens are 40 URL-safe characters; redact any long run of
-// token-shaped characters, not just the supplied token, before truncating.
-const TOKEN_SHAPED = /[A-Za-z0-9_-]{32,}/g;
+// Diagnostics never print free-form server text (error messages, bodies):
+// only HTTP status, numeric error codes, our own request path and fields
+// validated against a fixed shape, so no encoding of a credential can leak.
+const CLOUDFLARE_ID = /^[0-9a-f]{32}$/;
+const ZONE_NAME = /^(?=.{1,253}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
+const TOKEN_STATUSES = new Set(['active', 'disabled', 'expired']);
 
-export function redactToken(text, token) {
-  const withoutToken = token ? text.split(token).join('[redacted]') : text;
-  return withoutToken.replace(TOKEN_SHAPED, '[redacted]');
+// node:assert appends actual values to custom messages; compare without a diff.
+function same(actual, expected, message) {
+  assert.ok(isDeepStrictEqual(actual, expected), message);
 }
 
-/** Cloudflare error codes and messages from a failed response, redacted and bounded. */
-async function apiErrors(response, token) {
+/** A server-provided binding identifier, printed only if identifier-shaped. */
+function label(value) {
+  return typeof value === 'string' &&
+    /^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(value)
+    ? value
+    : 'unrecognized';
+}
+
+/** Numeric Cloudflare error codes from a response body, bounded. */
+function errorCodes(body) {
+  const codes = (Array.isArray(body?.errors) ? body.errors : [])
+    .map((error) => error?.code)
+    .filter((code) => Number.isSafeInteger(code))
+    .slice(0, 3);
+  return codes.length ? ` (codes ${codes.join(', ')})` : '';
+}
+
+async function failedResponseCodes(response) {
   try {
-    const { errors } = await response.json();
-    const text = (Array.isArray(errors) ? errors : [])
-      .slice(0, 3)
-      .map(({ code, message }) => `${code}: ${message}`)
-      .join('; ');
-    const safe = redactToken(text, token).slice(0, 300);
-    return safe ? ` (${safe})` : '';
+    return errorCodes(await response.json());
   } catch {
     return '';
   }
@@ -84,8 +98,10 @@ export async function describeToken({
         const { result } = await response.json();
         const description = {
           owner,
-          id: String(result?.id ?? 'unknown'),
-          status: String(result?.status ?? 'unknown'),
+          id: CLOUDFLARE_ID.test(result?.id) ? result.id : 'unrecognized',
+          status: TOKEN_STATUSES.has(result?.status)
+            ? result.status
+            : 'unrecognized',
         };
         log(
           `Cloudflare API token id ${description.id} status ${description.status} (${owner} token)`
@@ -93,10 +109,13 @@ export async function describeToken({
         return description;
       }
       attempts.push(
-        `${owner} HTTP ${response.status}${await apiErrors(response, token)}`
+        `${owner} HTTP ${response.status}${await failedResponseCodes(response)}`
       );
     } catch (error) {
-      attempts.push(`${owner} ${error?.name ?? 'error'}`);
+      // Local fetch failures only; their names are fixed identifiers.
+      attempts.push(
+        `${owner} ${/^[A-Za-z]{1,40}$/.test(error?.name) ? error.name : 'error'}`
+      );
     }
   }
   log(`Cloudflare API token could not be verified: ${attempts.join('; ')}`);
@@ -128,13 +147,12 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
     if (!response.ok)
       assert.fail(
         `settings snapshot HTTP ${response.status} for ${target}` +
-          (await apiErrors(response, token))
+          (await failedResponseCodes(response))
       );
     const body = await response.json();
-    assert.equal(
-      body.success,
-      true,
-      `settings snapshot API failed for ${target}`
+    assert.ok(
+      body?.success === true,
+      `settings snapshot API failed for ${target}${errorCodes(body)}`
     );
     assert.ok(
       (body.result_info?.total_pages ?? 1) <= 1,
@@ -158,12 +176,14 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   const zones = await list(`/zones?account.id=${account}&per_page=50`);
   assert.ok(zones.length <= 20, 'settings snapshot supports at most 20 zones');
   const zoneRoutes = [];
-  for (const zone of zones)
+  for (const zone of zones) {
+    assert.ok(CLOUDFLARE_ID.test(zone?.id), 'zone list returned an invalid id');
     for (const route of await list(
-      `/zones/${encodeURIComponent(zone.id)}/workers/routes`,
-      typeof zone.name === 'string' ? ` (zone ${zone.name})` : ''
+      `/zones/${zone.id}/workers/routes`,
+      ZONE_NAME.test(zone.name) ? ` (zone ${zone.name})` : ''
     ))
       zoneRoutes.push({ zone: zone.id, route });
+  }
   const deployments = await get(`${script}/deployments`);
   return {
     settings,
@@ -206,7 +226,7 @@ function verifyBindings(settings, identity) {
       for (const [attribute, value] of Object.entries(binding))
         assert.ok(
           reviewed.has(attribute) || value === undefined || value === null,
-          `unreviewed ${attribute} on ${binding.type} binding ${binding.name}`
+          `unreviewed ${label(attribute)} on ${label(binding.type)} binding ${label(binding.name)}`
         );
     switch (binding.type) {
       case 'plain_text':
@@ -219,12 +239,14 @@ function verifyBindings(settings, identity) {
         assert.ok(
           binding.script_name === undefined ||
             binding.script_name === identity.name,
-          `Durable Object binding ${binding.name} targets another Worker`
+          `Durable Object binding ${label(binding.name)} targets another Worker`
         );
         durableObjects[binding.name] = { className: binding.class_name };
         break;
       default:
-        assert.fail(`unreviewed ${binding.type} binding ${binding.name}`);
+        assert.fail(
+          `unreviewed ${label(binding.type)} binding ${label(binding.name)}`
+        );
     }
   }
   // Name only the differing vars: assertion diffs would print text values.
@@ -233,12 +255,13 @@ function verifyBindings(settings, identity) {
     ...new Set([...Object.keys(vars), ...Object.keys(expected)]),
   ]
     .filter((name) => vars[name] !== expected[name])
+    .map(label)
     .sort();
   assert.ok(
     differing.length === 0,
     `Worker vars differ: ${differing.join(', ')}`
   );
-  assert.deepEqual(
+  same(
     canonical(durableObjects),
     canonical(identity.durableObjects ?? {}),
     'Durable Object bindings differ'
@@ -252,18 +275,18 @@ function verifyBindings(settings, identity) {
 
 function verifySettings(raw, identity, { bindings = false } = {}) {
   const { settings, subdomain } = raw;
-  assert.equal(subdomain.enabled, identity.workersDev, 'workers.dev changed');
-  assert.equal(
+  same(subdomain.enabled, identity.workersDev, 'workers.dev changed');
+  same(
     subdomain.previews_enabled,
     identity.previewUrls,
     'preview URL settings differ'
   );
-  assert.equal(
+  same(
     settings.compatibility_date,
     identity.compatibilityDate,
     'compatibility date differs'
   );
-  assert.deepEqual(
+  same(
     [...(settings.compatibility_flags ?? [])].sort(),
     identity.compatibilityFlags,
     'compatibility flags differ'
@@ -281,19 +304,19 @@ function verifySettings(raw, identity, { bindings = false } = {}) {
     },
   };
   for (const key of ['enabled', 'headSamplingRate'])
-    assert.equal(
+    same(
       effective[key],
       identity.observability[key],
       `observability.${key} differs`
     );
-  assert.deepEqual(
+  same(
     effective.logs,
     identity.observability.logs,
     'observability.logs differs'
   );
   const { schedules } = raw;
   assert.ok(Array.isArray(schedules.schedules), 'schedule list unavailable');
-  assert.deepEqual(
+  same(
     schedules.schedules.map((entry) => entry.cron).sort(),
     identity.crons,
     'cron schedules differ'
@@ -308,13 +331,13 @@ function verifySettings(raw, identity, { bindings = false } = {}) {
     .filter(({ route }) => route.script === identity.name)
     .map(({ zone, route }) => ({ zone, pattern: route.pattern }));
   // This pilot has no public routes/custom domains. Adding one needs a new profile.
-  assert.deepEqual(
+  same(
     identity.routes,
     [],
     'settings snapshot profile only supports route-free Workers'
   );
-  assert.deepEqual(routes, [], 'unexpected Worker routes');
-  assert.deepEqual(domains, [], 'unexpected Worker custom domains');
+  same(routes, [], 'unexpected Worker routes');
+  same(domains, [], 'unexpected Worker custom domains');
   const rollback = raw.deployments;
   assert.ok(
     Array.isArray(rollback.deployments) && rollback.deployments.length > 0,
@@ -358,10 +381,16 @@ export function compareSettings(before, after, mutable = []) {
         ([key]) => key !== 'rollback' && !mutable.includes(key)
       )
     );
-  assert.deepEqual(
-    omit(after),
-    omit(before),
-    'deployed Worker settings changed; acceptance is blocked'
+  const current = omit(after);
+  const previous = omit(before);
+  const changed = [
+    ...new Set([...Object.keys(current), ...Object.keys(previous)]),
+  ]
+    .filter((key) => !isDeepStrictEqual(current[key], previous[key]))
+    .sort();
+  assert.ok(
+    changed.length === 0,
+    `deployed Worker settings changed (${changed.join(', ')}); acceptance is blocked`
   );
 }
 

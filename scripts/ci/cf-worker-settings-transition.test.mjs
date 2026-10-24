@@ -306,3 +306,37 @@ for (const [label, binding, error] of [
     });
     await assert.rejects(captureAfter({ plan, ...credentials(target) }), error);
   });
+
+test('server-provided binding identifiers never reach output', async () => {
+  const echo = 'SERVER-CANARY %45%63%68%6F \\u0045\\u0063';
+  const messages = [];
+  for (const bindings of [
+    [...bindingsFor(plan.target), { name: echo, type: echo }],
+    [...bindingsFor(plan.target), { name: echo, type: 'plain_text', text: '' }],
+    [
+      ...bindingsFor(plan.target),
+      { name: 'WEB_ORIGIN', type: 'plain_text', text: 'x', [echo]: echo },
+    ],
+    bindingsFor(plan.target).map((binding) =>
+      binding.type === 'durable_object_namespace'
+        ? { ...binding, class_name: echo }
+        : binding
+    ),
+  ])
+    await assert.rejects(
+      captureAfter({
+        plan,
+        ...credentials(liveWorker(plan.target, { settings: { bindings } })),
+      }),
+      (error) => {
+        messages.push(error.message);
+        return true;
+      }
+    );
+  assert.deepEqual(messages, [
+    'unreviewed unrecognized binding unrecognized',
+    'Worker vars differ: unrecognized',
+    'unreviewed unrecognized on plain_text binding WEB_ORIGIN',
+    'Durable Object bindings differ',
+  ]);
+});

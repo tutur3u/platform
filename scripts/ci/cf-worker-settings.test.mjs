@@ -4,7 +4,6 @@ import {
   captureSettings,
   compareSettings,
   describeToken,
-  redactToken,
 } from './cf-worker-settings.mjs';
 
 const identity = {
@@ -145,140 +144,182 @@ test('API failure and pagination fail closed without replay', async () => {
   assert.equal(calls, 2);
 });
 
-test('a denied request names its path and zone without printing the token', async () => {
-  const api = fixture({ zones: [{ id: 'zone-1', name: 'example.com' }] });
-  const denied = async (url, init) => {
-    if (!url.endsWith('/workers/routes')) return api.fetchImpl(url, init);
-    return {
-      ok: false,
-      status: 403,
-      json: async () => ({
-        success: false,
-        errors: [{ code: 10000, message: 'Authentication error' }],
-      }),
-    };
-  };
+const ZONE = '0123456789abcdef0123456789abcdef';
+const TOKEN = 'Echo_Token-QwErTyUiOpAsDfGhJkLzXcVbNm_98';
+// Every form a log reader could decode back into the credential.
+const TOKEN_FORMS = [
+  TOKEN,
+  [...TOKEN]
+    .map((c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)
+    .join(''),
+  [...TOKEN].map((c) => `%${c.charCodeAt(0).toString(16)}`).join(''),
+  [...TOKEN]
+    .map((c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+    .join(''),
+];
+const CANARY = 'SERVER-CANARY';
+const echo = TOKEN_FORMS.map((form) => `${CANARY} ${form}`).join(' ');
+const reject = (status, body) => ({
+  ok: false,
+  status,
+  json: async () => body,
+});
+
+function assertNoServerText(outputs) {
+  const text = outputs.join('\n');
+  assert.ok(!text.includes(CANARY), 'server-provided text reached output');
+  for (const form of TOKEN_FORMS)
+    assert.ok(!text.includes(form), 'a token encoding reached output');
+  for (let start = 0; start + 8 <= TOKEN.length; start++)
+    assert.ok(!text.includes(TOKEN.slice(start, start + 8)));
+}
+
+test('a denied request prints only status, numeric codes, path and zone', async () => {
+  const api = fixture({ zones: [{ id: ZONE, name: 'example.com' }] });
+  const denied = async (url, init) =>
+    url.endsWith('/workers/routes')
+      ? reject(403, {
+          success: false,
+          errors: [
+            { code: 10000, message: echo },
+            { code: echo, message: echo },
+          ],
+          messages: [echo],
+        })
+      : api.fetchImpl(url, init);
   await assert.rejects(
-    captureSettings({ ...options(api), fetchImpl: denied }),
+    captureSettings({ ...options(api), token: TOKEN, fetchImpl: denied }),
     (error) => {
       assert.equal(
         error.message,
-        'settings snapshot HTTP 403 for GET /zones/zone-1/workers/routes ' +
-          '(zone example.com) (10000: Authentication error)'
+        `settings snapshot HTTP 403 for GET /zones/${ZONE}/workers/routes ` +
+          '(zone example.com) (codes 10000)'
       );
-      assert.ok(!error.message.includes('disposable-fixture'));
       return true;
     }
   );
 });
 
-test('token diagnostics log the token id and status, never the token', async () => {
-  const lines = [];
-  const calls = [];
-  const respond = (byPath) => async (url, init) => {
-    assert.equal(init.method, 'GET');
-    calls.push(url.replace('https://api.cloudflare.com/client/v4', ''));
-    const result = byPath[calls.at(-1)];
-    return result
-      ? { ok: true, json: async () => ({ success: true, result }) }
-      : {
-          ok: false,
-          status: 401,
-          json: async () => ({ errors: [{ code: 1000, message: 'Invalid' }] }),
-        };
+test('no server-provided string reaches output in any token encoding', async () => {
+  const outputs = [];
+  const capture = async (overrides, fetchWrap) => {
+    const api = fixture(overrides);
+    try {
+      await captureSettings({
+        ...options(api),
+        token: TOKEN,
+        fetchImpl: fetchWrap ? fetchWrap(api) : api.fetchImpl,
+      });
+      assert.fail('expected the snapshot to fail closed');
+    } catch (error) {
+      outputs.push(error.message);
+    }
   };
+  // HTTP failure and success:false bodies echoing the token.
+  await capture(
+    {},
+    () => async () =>
+      reject(401, { errors: [{ code: 1000, message: echo }], result: echo })
+  );
+  await capture({}, () => async () => ({
+    ok: true,
+    json: async () => ({
+      success: false,
+      errors: [{ code: 7003, message: echo }],
+    }),
+  }));
+  // Server identifiers carrying the token: zone name, zone id, bindings, crons.
+  await capture(
+    { zones: [{ id: ZONE, name: echo }] },
+    (api) => async (url, init) =>
+      url.endsWith('/workers/routes')
+        ? reject(403, { errors: [{ code: 10000 }] })
+        : api.fetchImpl(url, init)
+  );
+  await capture({ zones: [{ id: TOKEN, name: 'example.com' }] });
+  await capture({ schedules: { schedules: [{ cron: echo }] } });
+  await capture({
+    settings: {
+      compatibility_date: echo,
+      observability: { enabled: true, head_sampling_rate: 0.05 },
+    },
+  });
+  await capture({
+    domains: [{ service: 'fixture', hostname: echo }],
+  });
+  for (const outcome of outputs) assert.match(outcome, /\S/);
+  assert.match(
+    outputs[0],
+    /^settings snapshot HTTP 401 for GET .* \(codes 1000\)$/
+  );
+  assert.match(outputs[1], /API failed for GET .* \(codes 7003\)$/);
+  assert.match(outputs[2], /workers\/routes \(codes 10000\)$/);
+  assert.equal(outputs[3], 'zone list returned an invalid id');
+  assert.equal(outputs[4], 'cron schedules differ');
+  assert.equal(outputs[5], 'compatibility date differs');
+  assert.equal(outputs[6], 'unexpected Worker custom domains');
+
+  const lines = [];
   const base = {
     accountId: 'fixture-account',
-    token: 'disposable-fixture',
+    token: TOKEN,
     log: (line) => lines.push(line),
   };
-  assert.deepEqual(
-    await describeToken({
-      ...base,
-      fetchImpl: respond({
-        '/user/tokens/verify': { id: 'user-token', status: 'active' },
-      }),
-    }),
-    { owner: 'user', id: 'user-token', status: 'active' }
-  );
-  assert.deepEqual(
-    await describeToken({
-      ...base,
-      fetchImpl: respond({
-        '/accounts/fixture-account/tokens/verify': {
-          id: 'account-token',
-          status: 'active',
-        },
-      }),
-    }),
-    { owner: 'account', id: 'account-token', status: 'active' }
-  );
-  assert.equal(await describeToken({ ...base, fetchImpl: respond({}) }), null);
-  assert.deepEqual(lines, [
-    'Cloudflare API token id user-token status active (user token)',
-    'Cloudflare API token id account-token status active (account token)',
-    'Cloudflare API token could not be verified: user HTTP 401 (1000: Invalid); ' +
-      'account HTTP 401 (1000: Invalid)',
-  ]);
-  assert.equal(calls.length, 5);
-  assert.ok(!lines.join('\n').includes('disposable-fixture'));
-});
-
-test('server error text is redacted before truncation and never echoes a token', async () => {
-  const token = 'Echo_Token-0123456789abcdefghijABCDEFGHIJ';
-  const otherToken = 'zZ9_' + 'q'.repeat(36);
-  // The supplied token straddles the 300-character truncation boundary.
-  const echoed = {
-    ok: false,
-    status: 403,
-    json: async () => ({
-      errors: [
-        { code: 10000, message: `${'x '.repeat(140)}bad ${token}` },
-        { code: 9109, message: `Bearer ${otherToken} rejected` },
-      ],
-    }),
-  };
-  const api = fixture();
-  await assert.rejects(
-    captureSettings({
-      ...options(api),
-      token,
-      fetchImpl: async () => echoed,
-    }),
-    (error) => {
-      for (let start = 0; start + 8 <= token.length; start++)
-        assert.ok(!error.message.includes(token.slice(start, start + 8)));
-      assert.ok(!error.message.includes(otherToken.slice(4, 20)));
-      assert.match(error.message, /10000: /);
-      return true;
-    }
-  );
-  const lines = [];
   await describeToken({
-    accountId: 'fixture-account',
-    token,
+    ...base,
     fetchImpl: async () => ({
-      ok: false,
-      status: 401,
-      json: async () => ({
-        errors: [{ code: 1000, message: `Invalid token ${token}` }],
-      }),
+      ok: true,
+      json: async () => ({ success: true, result: { id: echo, status: echo } }),
     }),
-    log: (line) => lines.push(line),
+  });
+  await describeToken({
+    ...base,
+    fetchImpl: async () =>
+      reject(401, { errors: [{ code: 1000, message: echo }, { code: echo }] }),
+  });
+  await describeToken({
+    ...base,
+    fetchImpl: async () => {
+      const error = new Error(echo);
+      error.name = echo;
+      throw error;
+    },
   });
   assert.deepEqual(lines, [
-    'Cloudflare API token could not be verified: user HTTP 401 (1000: Invalid token [redacted]); ' +
-      'account HTTP 401 (1000: Invalid token [redacted])',
+    'Cloudflare API token id unrecognized status unrecognized (user token)',
+    'Cloudflare API token could not be verified: user HTTP 401 (codes 1000); ' +
+      'account HTTP 401 (codes 1000)',
+    'Cloudflare API token could not be verified: user error; account error',
   ]);
+  assertNoServerText([...outputs, ...lines]);
 });
 
-test('token redaction covers the supplied token and token-shaped text', () => {
-  assert.equal(
-    redactToken('a short-token and secretvalue123 stay', 'short-token'),
-    'a [redacted] and secretvalue123 stay'
-  );
-  assert.equal(
-    redactToken(`id ${'a'.repeat(40)} end`, undefined),
-    'id [redacted] end'
-  );
+test('token diagnostics print a well-formed token id and status', async () => {
+  const lines = [];
+  const id = 'fedcba9876543210fedcba9876543210';
+  const calls = [];
+  const description = await describeToken({
+    accountId: 'fixture-account',
+    token: TOKEN,
+    log: (line) => lines.push(line),
+    fetchImpl: async (url, init) => {
+      assert.equal(init.method, 'GET');
+      calls.push(url);
+      return url.includes('/user/')
+        ? reject(401, { errors: [{ code: 1000 }] })
+        : {
+            ok: true,
+            json: async () => ({
+              success: true,
+              result: { id, status: 'active' },
+            }),
+          };
+    },
+  });
+  assert.deepEqual(description, { owner: 'account', id, status: 'active' });
+  assert.deepEqual(lines, [
+    `Cloudflare API token id ${id} status active (account token)`,
+  ]);
+  assert.equal(calls.length, 2);
+  assert.ok(calls[1].endsWith('/accounts/fixture-account/tokens/verify'));
 });
