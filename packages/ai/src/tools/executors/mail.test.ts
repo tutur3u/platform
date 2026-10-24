@@ -300,7 +300,7 @@ describe('draft_email_reply', () => {
       ])
     );
     api.createDraft.mockResolvedValue({
-      message: { id: 'draft-id', threadId: THREAD },
+      message: { id: 'draft-id', threadId: THREAD, status: 'draft' },
     });
     const result = await executeMailTool(
       'draft_email_reply',
@@ -335,7 +335,7 @@ describe('draft_email_reply', () => {
     api.getThread.mockResolvedValue(threadDetail([message()]));
     api.aiDraft.mockResolvedValue({ content: 'Generated reply' });
     api.createDraft.mockResolvedValue({
-      message: { id: 'draft-id', threadId: THREAD },
+      message: { id: 'draft-id', threadId: THREAD, status: 'draft' },
     });
     const result = await executeMailTool(
       'draft_email_reply',

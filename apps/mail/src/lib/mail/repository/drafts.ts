@@ -118,6 +118,13 @@ async function ensureThread(
   return data;
 }
 
+/** A concurrent request already inserted this client-supplied message id. */
+class ClientMessageIdConflictError extends Error {
+  constructor() {
+    super('Mail message id is already in use');
+  }
+}
+
 async function persistMessage(
   admin: AnyRecord,
   ctx: MailRouteContext,
@@ -158,6 +165,8 @@ async function persistMessage(
     .single();
 
   if (error) {
+    if (error.code === '23505' && payload.clientMessageId)
+      throw new ClientMessageIdConflictError();
     throw new Error(`Failed to persist mail message: ${error.message}`);
   }
 
@@ -182,27 +191,44 @@ export async function createMailDraft({
   ]);
   if (!access) return null;
 
-  if (payload.clientMessageId) {
+  // A repeated clientMessageId is an idempotent retry: return the caller's
+  // existing message instead of creating a second draft.
+  const findExisting = async (clientMessageId: string) => {
     const { data: existing, error } = await mailMessageTable(access, ctx)
       .select('id')
-      .eq('id', payload.clientMessageId)
+      .eq('id', clientMessageId)
       .eq('mailbox_id', mailboxId)
       .eq('created_by', ctx.user.id)
       .maybeSingle();
     if (error) throw new Error(`Failed to find draft: ${error.message}`);
-    if (existing) {
-      return getMailMessage({ ctx, mailboxId, messageId: existing.id });
-    }
+    return existing
+      ? getMailMessage({ ctx, mailboxId, messageId: existing.id })
+      : null;
+  };
+
+  if (payload.clientMessageId) {
+    const existing = await findExisting(payload.clientMessageId);
+    if (existing) return existing;
   }
 
-  const message = await persistMessage(
-    access.admin,
-    ctx,
-    access.mailbox,
-    payload,
-    'draft'
-  );
-  return getMailMessage({ ctx, mailboxId, messageId: message.id });
+  try {
+    const message = await persistMessage(
+      access.admin,
+      ctx,
+      access.mailbox,
+      payload,
+      'draft'
+    );
+    return getMailMessage({ ctx, mailboxId, messageId: message.id });
+  } catch (error) {
+    if (!(error instanceof ClientMessageIdConflictError)) throw error;
+    // Lost a concurrent race for the same key; never create a second draft.
+    const existing = payload.clientMessageId
+      ? await findExisting(payload.clientMessageId)
+      : null;
+    if (existing) return existing;
+    throw new Error('Mail message id is already in use');
+  }
 }
 
 export async function updateMailDraft({

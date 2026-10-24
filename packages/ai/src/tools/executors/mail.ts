@@ -3,8 +3,6 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api/client';
 import {
-  createMailDraft,
-  generateMailAiDraft,
   getMailBootstrap,
   getMailThread,
   type ListMailThreadsParams,
@@ -15,9 +13,9 @@ import {
 import { Effect, Either } from '@tuturuuu/utils/effect';
 import type { MiraToolContext } from '../mira-tool-types';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
+import { draftEmailReply } from './mail-draft';
 import {
   boundedRecipients,
-  buildReplyRecipients,
   describeMailError,
   MAIL_LIST_DEFAULT_LIMIT,
   MAIL_LIST_MAX_LIMIT,
@@ -31,17 +29,12 @@ import {
   MAIL_UNTRUSTED_NOTICE,
   messagePlainText,
   normalizeWhitespace,
-  replyReferences,
-  replySubject,
   resolveMailBaseUrl,
   truncateText,
 } from './mail-helpers';
 
 type MailArgs = Record<string, unknown>;
 type MailFolder = NonNullable<ListMailThreadsParams['folder']>;
-
-const DRAFT_NOTE =
-  'Draft created in Mail. It has NOT been sent. Tell the user you created a draft and that they review and send it in Mail.';
 
 const clampInt = (
   value: unknown,
@@ -81,7 +74,11 @@ export async function executeMailTool(
           case 'get_email_thread':
             return getEmailThread(wsId, args, options);
           case 'draft_email_reply':
-            return draftEmailReply(wsId, args, options);
+            return draftEmailReply(
+              { userId: ctx.userId, wsId, chatId: ctx.chatId },
+              args,
+              options
+            );
           default:
             return Promise.resolve({
               success: false,
@@ -315,103 +312,5 @@ async function getEmailThread(
     omittedOlderMessages: all.length - included.length,
     bodiesTruncated,
     messages: included,
-  };
-}
-
-async function draftEmailReply(
-  wsId: string,
-  args: MailArgs,
-  options: InternalApiClientOptions
-) {
-  const mailboxId = optionalString(args.mailboxId);
-  const threadId = optionalString(args.threadId);
-  const body = optionalString(args.body);
-  const instructions = optionalString(args.instructions);
-  if (!mailboxId || !threadId)
-    return { success: false, error: 'mailboxId and threadId are required.' };
-  if (!body && !instructions)
-    return {
-      success: false,
-      error:
-        'Provide either a reply body or instructions for the Mail draft assistant.',
-    };
-  const replyAll = args.replyAll === true;
-  const [mailboxes, detail] = await Promise.all([
-    loadMailboxes(wsId, options),
-    getMailThread(wsId, mailboxId, threadId, options),
-  ]);
-  const target = [...(detail.messages ?? [])]
-    .reverse()
-    .find((message) => message.status !== 'draft');
-  if (!target)
-    return {
-      success: false,
-      error: 'This thread has no sent or received message to reply to.',
-    };
-  const ownAddresses = new Set(
-    mailboxes.map((mailbox) => mailbox.address.toLowerCase())
-  );
-  const recipients = buildReplyRecipients(target, ownAddresses, replyAll);
-  if (recipients.to.length === 0)
-    return {
-      success: false,
-      error: 'Could not determine who to reply to. No draft was created.',
-    };
-  const subject = replySubject(target.subject);
-
-  let bodyText = body;
-  let bodySource: 'model' | 'mail_ai' = 'model';
-  if (!bodyText) {
-    const generated = await generateMailAiDraft(
-      wsId,
-      mailboxId,
-      {
-        instructions: (instructions ?? '').slice(0, 4000),
-        mode: 'draft',
-        recipients: recipients.to,
-        subject,
-        threadId,
-      },
-      options
-    );
-    bodyText = generated.content?.trim();
-    bodySource = 'mail_ai';
-    if (!bodyText)
-      return {
-        success: false,
-        error:
-          'The Mail draft assistant returned an empty reply. No draft was created.',
-      };
-  }
-
-  // Draft only: this tool never calls the Mail send endpoint.
-  const created = await createMailDraft(
-    wsId,
-    mailboxId,
-    {
-      bodyText: bodyText.slice(0, 20_000),
-      cc: recipients.cc,
-      inReplyTo: target.internetMessageId,
-      recipientDisplayNames: recipients.displayNames,
-      references: replyReferences(target),
-      subject,
-      to: recipients.to,
-    },
-    options
-  );
-  return {
-    success: true,
-    status: 'draft created',
-    sent: false,
-    workspaceId: wsId,
-    draftId: created.message.id,
-    mailboxId,
-    threadId: created.message.threadId ?? threadId,
-    to: recipients.to,
-    cc: recipients.cc,
-    subject,
-    bodySource,
-    bodyPreview: truncateText(bodyText, 600).text,
-    note: DRAFT_NOTE,
   };
 }

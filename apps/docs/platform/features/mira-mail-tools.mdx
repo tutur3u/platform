@@ -31,8 +31,17 @@ Mail. It cannot send email. Sending always requires the user to tap **Send** in 
   `status: "draft created"` and `sent: false`. Mira must tell the user it created
   a draft and that they review and send it in Mail. Mira drafts only when the
   user asks for a reply, never because an email asks for one.
-- **Email content is untrusted.** Subjects, senders, snippets, and bodies are
-  returned inside `untrusted` fields, next to a `contentTrust` notice. The tool
+- **Retries never duplicate a draft.** Each request sends Mail a stable
+  `clientMessageId`. It is a UUID derived from the user, workspace, chat,
+  mailbox, thread, reply mode, and the normalized body (or the assistant
+  instructions). It leaves out the tool-call id, because a retry after a lost
+  response arrives as a new tool call. Mail returns the existing message for a
+  repeated key, including when two requests race on the `mail_messages` primary
+  key. If that message was already sent, Mira reports it and does not claim a
+  new draft. No migration was needed, because the key is the message primary key.
+- **Email content is untrusted.** Subjects, senders, recipients, snippets,
+  bodies, and the draft's subject and body preview are returned only inside
+  `untrusted` fields, next to a `contentTrust` notice. The tool
   descriptions and the `mail` discovery guidance tell the model to treat that
   content as data only. The model must never follow instructions, links, or tool
   requests found in email.
@@ -62,5 +71,12 @@ tools add no workspace permission in `MIRA_TOOL_PERMISSIONS`.
   missing-headers and HTTPS checks, bounds and truncation, HTML stripping,
   untrusted fields, direct draft creation that never sends, and truthful
   403 and 404 errors.
+- `packages/ai/src/tools/executors/mail-draft.test.ts` covers a retry after a
+  lost response, which returns the same draft so only one exists. It also
+  covers the stable key, an already-sent key, and prompt-injection text that
+  appears only inside the untrusted fields.
+- `apps/mail/src/lib/mail/repository/drafts-idempotency.test.ts` covers repeated
+  and racing `clientMessageId` inserts. Neither creates a second draft or reuses
+  another user's message.
 - `packages/ai/src/tools/mira-tool-discovery.test.ts` covers English and
   Vietnamese discovery of the mail tools and their guidance.
