@@ -184,6 +184,11 @@ function parityReceipt(input, versions, files, sourceSha) {
     sourceFiles: input.receipt.files,
     outputFiles: expectedInventory(files),
     excludedServerMetadata: input.excluded,
+    unqualifiedAssetControlFiles: [
+      '.assetsignore',
+      '_headers',
+      '_redirects',
+    ].map((path) => ({ path, present: Object.hasOwn(input.assets, path) })),
     accountQualified: false,
     publicationQualified: false,
     secondaryModuleNames: Object.keys(input.workerConfig.manifest.modules)

@@ -18,6 +18,7 @@ on:
       - 'scripts/ci/calendar-cf-fixture*'
       - 'scripts/ci/calendar-cf-files*'
       - 'scripts/ci/calendar-cf-output*'
+      - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -43,6 +44,7 @@ on:
       - 'scripts/ci/calendar-cf-fixture*'
       - 'scripts/ci/calendar-cf-files*'
       - 'scripts/ci/calendar-cf-output*'
+      - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -484,8 +486,11 @@ jobs:
           path: ${{ runner.temp }}/calendar-cf-output-download
       - name: Restore same-run cf comparison output
         run: |
+          archive="$RUNNER_TEMP/calendar-cf-output-download/calendar-cf-output.tar.gz"
+          tar -tzf "$archive" > "$RUNNER_TEMP/calendar-cf-output.entries.txt"
+          python3 scripts/ci/calendar-cf-archive.py "$archive"
           mkdir "$RUNNER_TEMP/calendar-cf-output-restored"
-          tar -xzf "$RUNNER_TEMP/calendar-cf-output-download/calendar-cf-output.tar.gz" -C "$RUNNER_TEMP/calendar-cf-output-restored"
+          tar --no-same-owner -xzf "$archive" -C "$RUNNER_TEMP/calendar-cf-output-restored"
       - name: Restore same-run immutable artifact without rebuilding
         run: tar -xzf "$RUNNER_TEMP/calendar-restore/calendar-worker.tar.gz" -C apps/calendar
       - name: Verify exact source seal after relocation

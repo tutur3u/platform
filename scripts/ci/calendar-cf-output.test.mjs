@@ -101,6 +101,11 @@ test('complete output preserves module paths, binary/static assets and immutable
   assert.equal(receipt.suppliers['@cloudflare/build-output-utils'], '0.9.3');
   assert.equal(receipt.publicationQualified, false);
   assert.equal(receipt.accountQualified, false);
+  assert.deepEqual(receipt.unqualifiedAssetControlFiles, [
+    { path: '.assetsignore', present: false },
+    { path: '_headers', present: true },
+    { path: '_redirects', present: true },
+  ]);
   assert.deepEqual(receipt.secondaryModuleNames, [
     { source: 'nested/chunk.js', cfUpload: './nested/chunk.js' },
   ]);
@@ -337,6 +342,7 @@ test('archive transport preserves the exact inventory including empty directorie
     'comparison tree requires archive packing before upload'
   );
   assert.ok(unpack?.run, 'comparison archive requires explicit restore');
+  assert.match(unpack.run, /--no-same-owner/);
   const f = fixture(t);
   const destination = join(f.directory, 'calendar-cf-output');
   const receipt = await emitCalendarOutput({ ...options(f), destination });
@@ -366,3 +372,62 @@ test('archive transport preserves the exact inventory including empty directorie
     receipt
   );
 });
+
+for (const kind of ['absolute', 'traversal', 'symlink', 'hardlink']) {
+  test(`actual comparison restore rejects ${kind} members before extraction`, (t) => {
+    const require = createRequire(import.meta.url);
+    const { readWorkflow } = require('./workflow-yaml-test-helper.js');
+    const step = readWorkflow('mail-calendar-tasks-builds.yaml').jobs[
+      'calendar-artifact-restore'
+    ].steps.find(
+      (item) => item.name === 'Restore same-run cf comparison output'
+    );
+    const f = fixture(t);
+    const download = join(f.directory, 'calendar-cf-output-download');
+    mkdirSync(download);
+    const archive = join(download, 'calendar-cf-output.tar.gz');
+    const created = spawnSync(
+      'python3',
+      [
+        '-c',
+        `
+import io, sys, tarfile
+archive, kind, root = sys.argv[1:]
+with tarfile.open(archive, 'w:gz') as output:
+    name = root + '/absolute-member.txt' if kind == 'absolute' else '../escaped.txt' if kind == 'traversal' else 'unqualified-link'
+    member = tarfile.TarInfo(name)
+    if kind in ('symlink', 'hardlink'):
+        member.type = tarfile.SYMTYPE if kind == 'symlink' else tarfile.LNKTYPE
+        member.linkname = 'target'
+        output.addfile(member)
+    else:
+        member.size = 7
+        output.addfile(member, io.BytesIO(b'fixture'))
+`,
+        archive,
+        kind,
+        f.directory,
+      ],
+      { encoding: 'utf8' }
+    );
+    assert.ifError(created.error);
+    assert.equal(created.status, 0, created.stderr);
+    const result = spawnSync(
+      'bash',
+      ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step.run],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env: { ...process.env, RUNNER_TEMP: f.directory },
+      }
+    );
+    assert.ifError(result.error);
+    assert.notEqual(result.status, 0);
+    assert.equal(
+      existsSync(join(f.directory, 'calendar-cf-output-restored')),
+      false
+    );
+    assert.equal(existsSync(join(f.directory, 'escaped.txt')), false);
+    assert.equal(existsSync(join(f.directory, 'absolute-member.txt')), false);
+  });
+}
