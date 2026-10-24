@@ -7,6 +7,24 @@
 
 const UNSAFE_PATH_CHARACTER = /[\p{Cc}\\]/u;
 
+// Decode each maximal run of `%XX` escapes as UTF-8 so continuation bytes in
+// non-ASCII names (`B%C3%A1o`, `%E2%80%93`, NFD combining marks) become code
+// points instead of C1 control characters. A run that is not valid UTF-8 makes
+// the whole value unsafe (null). Text that is not a `%XX` escape, such as
+// `50% done`, is left untouched.
+function decodePercentEscapes(value: string): string | null {
+  let malformed = false;
+  const decoded = value.replace(/(?:%[\da-f]{2})+/gi, (run) => {
+    try {
+      return decodeURIComponent(run);
+    } catch {
+      malformed = true;
+      return run;
+    }
+  });
+  return malformed ? null : decoded;
+}
+
 /**
  * Validates an exact relative path without canonicalizing it.
  *
@@ -32,9 +50,8 @@ export function sanitizePathSegments(
   for (const segment of segments) {
     let decoded = segment;
     for (let pass = 0; pass < 5; pass += 1) {
-      const next = decoded.replace(/%([\da-f]{2})/gi, (_match, byte: string) =>
-        String.fromCharCode(Number.parseInt(byte, 16))
-      );
+      const next = decodePercentEscapes(decoded);
+      if (next === null) return null;
       if (next === decoded) break;
       decoded = next;
     }
