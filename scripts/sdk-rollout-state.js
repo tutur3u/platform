@@ -9,6 +9,10 @@ const {
   verifyBytes,
 } = require('./sdk-rollout-artifact');
 
+// O_NONBLOCK keeps a FIFO from stalling an open that is only classified.
+const readOnlyNonBlocking = fs.constants.O_RDONLY | fs.constants.O_NONBLOCK;
+const readOnlyNoFollow = readOnlyNonBlocking | fs.constants.O_NOFOLLOW;
+
 function fenceMutation(home, token, backup, phase) {
   const admission = path.join(home, 'admission');
   if (readJson(path.join(admission, 'owner.json')).token !== token)
@@ -179,7 +183,17 @@ function fingerprint(
   }
   const stat = fs.lstatSync(target);
   const real = fs.realpathSync(target);
-  const info = fs.statSync(real);
+  // Classify and hash one descriptor so the hashed bytes always belong to the
+  // inode whose type and mode were recorded.
+  const fd = fs.openSync(real, readOnlyNoFollow);
+  try {
+    return fingerprintOpened(target, stat, real, fd, ancestry, budget);
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+function fingerprintOpened(target, stat, real, fd, ancestry, budget) {
+  const info = fs.fstatSync(fd);
   budget.files++;
   budget.bytes += info.isFile() ? info.size : 0;
   if (budget.files > 500000 || budget.bytes > 5 * 1024 ** 3)
@@ -206,7 +220,7 @@ function fingerprint(
   }
   if (!info.isFile()) throw new Error('Unsupported supplier state');
   return hash(
-    JSON.stringify([...type, info.mode & 0o777, hash(fs.readFileSync(real))])
+    JSON.stringify([...type, info.mode & 0o777, hash(fs.readFileSync(fd))])
   );
 }
 function currentState(backup) {
@@ -279,12 +293,24 @@ function cacheReferences(userHome, home) {
   const base = path.join(userHome, '.bun/install/global');
   const references = new Set();
   for (const name of ['package.json', 'bun.lock', 'bun.lockb']) {
-    const file = path.join(base, name);
-    if (!fs.existsSync(file)) continue;
-    const stat = fs.statSync(file);
-    if (!stat.isFile() || stat.size > 16 * 1024 * 1024)
-      throw new Error('Global package manifest exceeds cache reference bounds');
-    const contents = fs.readFileSync(file).toString('latin1');
+    let fd;
+    try {
+      fd = fs.openSync(path.join(base, name), readOnlyNonBlocking);
+    } catch (error) {
+      if (error.code === 'ENOENT') continue;
+      throw error;
+    }
+    let contents;
+    try {
+      const stat = fs.fstatSync(fd);
+      if (!stat.isFile() || stat.size > 16 * 1024 * 1024)
+        throw new Error(
+          'Global package manifest exceeds cache reference bounds'
+        );
+      contents = fs.readFileSync(fd).toString('latin1');
+    } finally {
+      fs.closeSync(fd);
+    }
     for (const match of contents.matchAll(/[a-f0-9]{64}\.tgz/g))
       references.add(path.join(home, 'suppliers', match[0]));
   }
