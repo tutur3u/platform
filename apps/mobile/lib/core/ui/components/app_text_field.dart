@@ -1,0 +1,123 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
+
+/// Single- or multi-line text input styled with design tokens.
+///
+/// Replaces `shad.TextField` and `shad.TextArea` (`maxLines: null`).
+/// `shad.InputFeature.leading/trailing` map to [leading] and [trailing].
+class AppTextField extends StatelessWidget {
+  const AppTextField({
+    this.controller,
+    this.focusNode,
+    this.placeholder,
+    this.label,
+    this.errorText,
+    this.leading,
+    this.trailing,
+    this.onChanged,
+    this.onSubmitted,
+    this.onTap,
+    this.keyboardType,
+    this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.inputFormatters,
+    this.autofillHints,
+    this.obscureText = false,
+    this.autofocus = false,
+    this.enabled = true,
+    this.readOnly = false,
+    this.minLines,
+    this.maxLines = 1,
+    this.maxLength,
+    this.filled = false,
+    super.key,
+  });
+
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final String? placeholder;
+
+  /// Visible label above the field; also its accessible name.
+  final String? label;
+  final String? errorText;
+  final Widget? leading;
+  final Widget? trailing;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onTap;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final TextCapitalization textCapitalization;
+  final List<TextInputFormatter>? inputFormatters;
+  final Iterable<String>? autofillHints;
+  final bool obscureText;
+  final bool autofocus;
+  final bool enabled;
+  final bool readOnly;
+  final int? minLines;
+  final int? maxLines;
+  final int? maxLength;
+
+  /// Muted fill instead of an outline; used by search fields.
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    OutlineInputBorder outline(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: tokens.borderRadiusLg,
+          borderSide: filled && width == 1
+              ? BorderSide.none
+              : BorderSide(color: color, width: width),
+        );
+    final style = tokens.typography.base.copyWith(color: c.foreground);
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      onTap: onTap,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      autofillHints: autofillHints,
+      obscureText: obscureText,
+      autofocus: autofocus,
+      enabled: enabled,
+      readOnly: readOnly,
+      minLines: minLines,
+      maxLines: obscureText ? 1 : maxLines,
+      maxLength: maxLength,
+      style: style,
+      cursorColor: c.primary,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: placeholder,
+        errorText: errorText,
+        hintStyle: style.copyWith(color: c.mutedForeground),
+        labelStyle: tokens.typography.small.copyWith(color: c.mutedForeground),
+        prefixIcon: leading,
+        suffixIcon: trailing,
+        prefixIconColor: c.mutedForeground,
+        suffixIconColor: c.mutedForeground,
+        filled: true,
+        fillColor: filled ? c.muted : c.card.withValues(alpha: 0),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        border: outline(c.input),
+        enabledBorder: outline(c.input),
+        disabledBorder: outline(c.input.withValues(alpha: 0.5)),
+        focusedBorder: outline(c.ring, 1.5),
+        errorBorder: outline(c.destructive),
+        focusedErrorBorder: outline(c.destructive, 1.5),
+      ),
+    );
+  }
+}

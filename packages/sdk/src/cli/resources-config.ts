@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { availableParallelism, homedir, totalmem } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
+import { budgetSchema } from './resources-budget';
 
 const resourceConfigSchema = z
   .object({
@@ -14,17 +15,30 @@ const resourceConfigSchema = z
     turboConcurrency: z.number().int().min(1).max(64),
     vitestWorkers: z.number().int().min(1).max(64),
     buildJobs: z.number().int().min(1).max(64),
-    validationLanes: z.number().int().min(1).max(8).optional(),
-    maxValidationLanes: z.number().int().min(1).max(8).optional(),
+    validationLanes: z.number().int().min(1).max(16).optional(),
+    maxValidationLanes: z.number().int().min(1).max(16).optional(),
+    // Optional cross-project budget (worker tokens, memory, per-project
+    // shares) layered on the lanes; see resources-budget.ts.
+    budget: budgetSchema.optional(),
   })
   .refine(
     (config) =>
       (config.maxValidationLanes ?? config.validationLanes ?? 1) >=
       (config.validationLanes ?? 1)
+  )
+  .refine(
+    (config) =>
+      !config.budget ||
+      (config.maxValidationLanes ?? config.validationLanes ?? 1) <=
+        config.budget.lanes,
+    {
+      message: 'maxValidationLanes must not exceed budget.lanes',
+      path: ['budget'],
+    }
   );
 export type ResourceConfig = z.infer<typeof resourceConfigSchema>;
 export type ValidationLanes = number;
-export const maxResourceLanes = 8;
+export const maxResourceLanes = 16;
 
 // Numeric policy fields clamp instead of failing: one out-of-range value must
 // not brick every shim on the machine. Type errors still name the field.
@@ -40,6 +54,8 @@ const fieldExpectations: Record<string, string> = {
   enabled: 'must be true or false',
   roots: 'must be a list of absolute paths',
   repositories: 'must be a list of absolute paths',
+  budget:
+    'must be a valid budget (lanes/tokens/memoryGiB ceiling, unique project ids with roots, shares that fit the ceiling, and maxValidationLanes no higher than budget.lanes)',
 };
 const warned = new Set<string>();
 export function warnResourceConfig(message: string) {
@@ -108,11 +124,11 @@ export function hostLaneCeiling(
     Math.min(maxResourceLanes, Math.floor(memory / 1024 ** 3 / 4), cpus - 2)
   );
 }
+// Base lanes are capped by the host ceiling too: a config written on (or
+// copied from) a larger machine must not admit more lanes than this host can
+// carry.
 export function effectiveResourceLanes(config: ResourceConfig) {
-  return Math.min(
-    resourceMaxLanes(config),
-    Math.max(resourceLanes(config), hostLaneCeiling())
-  );
+  return Math.max(1, Math.min(resourceMaxLanes(config), hostLaneCeiling()));
 }
 export function adaptiveHostBudget(
   memory = totalmem(),
@@ -131,6 +147,7 @@ export function resourcePolicyKey(config: ResourceConfig) {
     config.vitestWorkers,
     config.buildJobs,
     1,
+    config.budget ?? null,
   ]);
 }
 // Explicit setup input fails with the offending option; runtime reads clamp.
@@ -174,7 +191,7 @@ export function laneResourceConfig(config: ResourceConfig): ResourceConfig {
     vitestWorkers = Math.min(vitestWorkers, budget);
     buildJobs = Math.min(buildJobs, budget);
   }
-  const divisor = adaptive ? effectiveResourceLanes(config) : lanes;
+  const divisor = effectiveResourceLanes(config);
   return {
     ...config,
     turboConcurrency: 1,

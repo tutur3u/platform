@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -183,25 +184,25 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                       _MetricCard(
                         label: l10n.timerTotalSessions,
                         value: '${_sessions.length}',
-                        icon: shad.LucideIcons.timer,
+                        icon: LucideIcons.timer,
                         color: theme.colorScheme.primary,
                       ),
                       _MetricCard(
                         label: l10n.timerActiveUsers,
                         value: '${_uniqueUsers()}',
-                        icon: shad.LucideIcons.users,
+                        icon: LucideIcons.users,
                         color: const Color(0xFF22C55E),
                       ),
                       _MetricCard(
                         label: l10n.timerHistoryTotalTime,
                         value: _formatDuration(_totalTrackedDuration),
-                        icon: shad.LucideIcons.clock3,
+                        icon: LucideIcons.clock3,
                         color: const Color(0xFFF59E0B),
                       ),
                       _MetricCard(
                         label: l10n.timerRunning,
                         value: '$_runningSessions',
-                        icon: shad.LucideIcons.play,
+                        icon: LucideIcons.play,
                         color: const Color(0xFF8B5CF6),
                       ),
                     ],
@@ -217,7 +218,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                       child: Column(
                         children: [
                           Icon(
-                            shad.LucideIcons.clock3,
+                            LucideIcons.clock3,
                             size: 40,
                             color: theme.colorScheme.mutedForeground,
                           ),
@@ -594,7 +595,7 @@ class _RangeHeroCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              shad.LucideIcons.chartColumn,
+              LucideIcons.chartColumn,
               size: 20,
               color: theme.colorScheme.primary,
             ),
@@ -766,9 +767,7 @@ class _ManagementSessionTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
-                session.isRunning
-                    ? shad.LucideIcons.play
-                    : shad.LucideIcons.clock3,
+                session.isRunning ? LucideIcons.play : LucideIcons.clock3,
                 size: 18,
                 color: theme.colorScheme.primary,
               ),

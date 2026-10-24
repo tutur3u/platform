@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/router/link_browser_preference.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class LinkBrowserSettingsTile extends StatefulWidget {
   const LinkBrowserSettingsTile({
@@ -67,12 +67,12 @@ class _LinkBrowserSettingsTileState extends State<LinkBrowserSettingsTile> {
         SettingsChoiceOption(
           value: LinkBrowserPreference.builtIn,
           label: l10n.settingsLinkBrowserBuiltIn,
-          icon: shad.LucideIcons.appWindow,
+          icon: LucideIcons.appWindow,
         ),
         SettingsChoiceOption(
           value: LinkBrowserPreference.external,
           label: l10n.settingsLinkBrowserExternal,
-          icon: shad.LucideIcons.externalLink,
+          icon: LucideIcons.externalLink,
         ),
       ],
     );
@@ -100,7 +100,7 @@ class _LinkBrowserSettingsTileState extends State<LinkBrowserSettingsTile> {
     return SettingsTile(
       key: const ValueKey('settings-link-browser-row'),
       grouped: true,
-      icon: shad.LucideIcons.squareArrowOutUpRight,
+      icon: LucideIcons.squareArrowOutUpRight,
       title: l10n.settingsLinkBrowser,
       value: _failed
           ? l10n.settingsLinkBrowserError

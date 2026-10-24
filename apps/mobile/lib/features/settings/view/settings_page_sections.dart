@@ -15,14 +15,14 @@ class _AboutSection extends StatelessWidget {
       children: [
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.sparkles,
+          icon: LucideIcons.sparkles,
           title: l10n.settingsWhatsNew,
           subtitle: l10n.settingsWhatsNewDescription,
           onTap: () => context.push(Routes.settingsWhatsNew),
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.fileText,
+          icon: LucideIcons.fileText,
           title: l10n.settingsLicensesSectionTitle,
           subtitle: l10n.settingsLicenseViewerDescription,
           onTap: () => showSettingsLicensePage(
@@ -33,7 +33,7 @@ class _AboutSection extends StatelessWidget {
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.info,
+          icon: LucideIcons.info,
           title: l10n.settingsAppVersion,
           value: _formatVersionLabel(packageInfo),
           subtitle: l10n.settingsVersionTileDescription,
@@ -57,14 +57,14 @@ class _InfrastructureSection extends StatelessWidget {
       children: [
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.shieldUser,
+          icon: LucideIcons.shieldUser,
           title: l10n.adminAccountsTitle,
           subtitle: l10n.adminAccountsDescription,
           onTap: () => context.push(Routes.settingsInternalAccounts),
         ),
         SettingsTile(
           grouped: true,
-          icon: shad.LucideIcons.download,
+          icon: LucideIcons.download,
           title: l10n.settingsMobileVersions,
           subtitle: l10n.settingsMobileVersionsTileDescription,
           onTap: () => context.push(Routes.settingsMobileVersions),

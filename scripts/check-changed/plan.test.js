@@ -140,6 +140,20 @@ test('mobile changes run gen-l10n first, dart format and flutter analyze', () =>
   assert.deepEqual(mobile[2].args, ['analyze', 'lib', 'test']);
   assert.equal(ids(plan).includes('biome'), false);
   assert.ok(ids(plan).includes('mobile-api-mappings'));
+  assert.ok(ids(plan).includes('mobile-shadcn-ratchet'));
+});
+
+test('web Lucide version changes run the mobile icon sync check', () => {
+  for (const file of [
+    'bun.lock',
+    'apps/mobile/lib/core/ui/icons/generated/lucide_manifest.json',
+    'scripts/mobile-lucide/generate.mjs',
+  ]) {
+    assert.ok(
+      ids(planChecks(changed(file), context())).includes('mobile-lucide-sync'),
+      file
+    );
+  }
 });
 
 test('path-gated guards cover i18n, migrations, docs and API routes', () => {

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -11,7 +12,6 @@ import 'package:mobile/features/settings/view/apps/app_settings_sections.dart';
 import 'package:mobile/features/settings/view/apps/timer_app_settings.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Central settings for one app, shown at `/settings/apps/:appId`. In-app
 /// gear actions deep-link here so every setting has a single editor.
@@ -54,7 +54,7 @@ class AppSettingsPage extends StatelessWidget {
       ],
       _ => const <Widget>[],
     };
-    return shad.Scaffold(
+    return AppScaffold(
       child: AppPageListView(
         key: ValueKey('app-settings-$appId'),
         kind: AppPageKind.root,
@@ -72,7 +72,7 @@ class AppSettingsPage extends StatelessWidget {
                 SettingsTile(
                   key: ValueKey('app-settings-$appId-offline'),
                   grouped: true,
-                  icon: shad.LucideIcons.hardDriveDownload,
+                  icon: LucideIcons.hardDriveDownload,
                   title: context.l10n.settingsAppOfflineData,
                   value: context.l10n.settingsAppOfflineDataDescription,
                   onTap: () =>
