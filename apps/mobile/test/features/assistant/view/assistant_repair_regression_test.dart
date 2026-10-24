@@ -13,7 +13,13 @@ void main() {
   ) async {
     final h = RepairHarness();
     addTearDown(() => h.dispose(tester));
-    await h.mount(tester);
+    await h.mount(
+      tester,
+      initialPreferences: {
+        '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
+            'personal',
+      },
+    );
     final controller = h.composer(tester);
     await h.chat.openChatById(repairWorkspace, repairChat);
     await tester.pumpAndSettle();
@@ -24,12 +30,18 @@ void main() {
     expect(h.chat.state.storedChatId, repairChat);
     expect(h.repository.starts, 0);
   });
-  testWidgets('first-use page offers informed recovery before creation', (
+  testWidgets('legacy page offers informed recovery before creation', (
     tester,
   ) async {
     final h = RepairHarness();
     addTearDown(() => h.dispose(tester));
-    await h.mount(tester);
+    await h.mount(
+      tester,
+      initialPreferences: {
+        '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
+            'personal',
+      },
+    );
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
     expect(h.chat.state.storedChatId, isNull);
     h.composer(tester).text = 'First draft';

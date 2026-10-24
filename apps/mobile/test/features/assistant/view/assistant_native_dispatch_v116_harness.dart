@@ -448,7 +448,7 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     await tester.pumpAndSettle();
   }
 
-  Future<void> acknowledgeNewConversation(WidgetTester tester) async {
+  Future<void> prepareNewConversation(WidgetTester tester) async {
     final actor = port.actor;
     final reset = AssistantResetPreferences(
       actorId: actor,
@@ -456,7 +456,11 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
       isCurrent: () =>
           port.actor == actor && chat.state.workspaceId == repairWorkspace,
     );
-    expect(await tester.runAsync(reset.hasUnknownCreation), isTrue);
+    if (await tester.runAsync(reset.hasUnknownCreation) == false) {
+      expect(port.creates, isEmpty);
+      expect(port.posts, isEmpty);
+      return;
+    }
     actions.state
         .resolveForLocation('/assistant')
         .singleWhere((action) => action.id == 'assistant-more')

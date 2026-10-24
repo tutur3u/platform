@@ -53,9 +53,11 @@ Future<RepairHarness> fresh(WidgetTester tester, InitialApi api) async {
   final h = RepairHarness(api: api);
   addTearDown(() => h.dispose(tester));
   await h.mount(tester);
-  await h.startNew(tester);
-  await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
-  await tester.pumpAndSettle();
+  if (h.chat.state.creationOutcomeUnknown) {
+    await h.startNew(tester);
+    await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
+    await tester.pumpAndSettle();
+  }
   return h;
 }
 
@@ -87,9 +89,7 @@ void main() {
       final h = RepairHarness(api: api);
       addTearDown(() => h.dispose(tester));
       await h.mount(tester);
-      await h.startNew(tester);
-      await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
-      await tester.pumpAndSettle();
+      expect(h.chat.state.creationOutcomeUnknown, isFalse);
       final shell = h.pageContext.read<AssistantShellCubit>();
       await tester.runAsync(() async {
         expect(await shell.setSelectedModel(selectedModel), isTrue);

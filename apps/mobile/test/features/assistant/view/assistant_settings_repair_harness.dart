@@ -234,6 +234,7 @@ class SettingsApi extends ApiClient {
 class RepairChats extends ChatRepository {
   RepairChats(ApiClient api) : super(apiClient: api);
   int sends = 0;
+  Completer<void>? acknowledgmentGate;
   @override
   Stream<ChatMessageStreamEvent> sendMessageStream(
     String wsId,
@@ -249,6 +250,7 @@ class RepairChats extends ChatRepository {
     admission?.recordDispatchPossible();
     final sender = admission?.actorId ?? repairActor;
     sends++;
+    await acknowledgmentGate?.future;
     yield ChatStreamMessageEvent(
       ChatMessage.fromJson({
         'id': '66666666-6666-4666-8666-666666666666',
