@@ -3,9 +3,9 @@ import { ChevronDown, TerminalSquare, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { classNames as cn } from './class-names';
 import {
   type OutputView,
   previewPort,

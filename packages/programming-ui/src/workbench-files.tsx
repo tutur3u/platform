@@ -2,9 +2,9 @@
 import { Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { classNames as cn } from './class-names';
 import { type NewFileError, newFilePathError } from './workbench-layout';
 
 /** Compact file tab strip with inline file creation; no separate form or helper copy. */
