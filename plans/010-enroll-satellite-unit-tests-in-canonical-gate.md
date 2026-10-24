@@ -21,12 +21,12 @@
 
 ## Why this matters
 
-The root `bun check` delegates unit tests to Turbo, and Turbo can only run a
+The root `bun validate` delegates unit tests to Turbo, and Turbo can only run a
 workspace that declares a `test` script. Eight deployed Next workspaces contain
 committed unit tests but declare no canonical unit-test task. At least 213 test
 files are therefore invisible to the required repository gate. Direct execution
 also exposed real stale tests and configuration errors, so adding scripts
-without a repair phase would merely make `bun check` permanently red.
+without a repair phase would merely make `bun validate` permanently red.
 
 ## Current state
 
@@ -169,7 +169,7 @@ bun type-check:inventory
 bun type-check:mail
 bun type-check:tasks
 bun type-check:track
-bun check
+bun validate
 git diff --check
 ```
 
@@ -182,7 +182,7 @@ exists. Expected: all commands exit 0 and `git diff --check` prints nothing.
 - [ ] Vitest never collects Playwright E2E specs.
 - [ ] Tests pass from stable root semantics and do not depend on caller CWD.
 - [ ] No stale assertion was changed without confirming intended behavior.
-- [ ] Filtered Turbo tests, app typechecks, `bun check`, and whitespace checks pass.
+- [ ] Filtered Turbo tests, app typechecks, `bun validate`, and whitespace checks pass.
 - [ ] `plans/README.md` records completion and any split production defects.
 
 ## STOP conditions

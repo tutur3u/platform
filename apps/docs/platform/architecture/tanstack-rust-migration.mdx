@@ -859,7 +859,7 @@ only sanitized session state to client components.
   private Supabase or protected workspace reads directly to browser code.
 - Use TanStack Query for client fetching and mutation. Do not fetch data in
   `useEffect`.
-- `bun check` runs `node scripts/check-tanstack-api-access.js` to enforce that
+- `bun validate` runs `node scripts/check-tanstack-api-access.js` to enforce that
   `apps/tanstack-web/src` does not call relative protected `/api`, `/internal`,
   or `/trpc` paths directly and does not import or create Supabase clients. Run
   the focused command when reviewing a frontend port before the full repo check.
@@ -959,7 +959,7 @@ notes must stay explicit about the app-session versus browser-session boundary.
 `scripts/backend-openapi-migration-contract.test.js` compares the migrated
 Rust-owned route artifacts in `apps/tanstack-web/migration/route-manifest.json`
 with `apps/backend/api/openapi.yaml`. Add or update the OpenAPI operation in the
-same commit that marks a Rust route artifact `migrated`; otherwise `bun check`
+same commit that marks a Rust route artifact `migrated`; otherwise `bun validate`
 fails.
 
 For method-level overrides, the same evidence applies to each migrated method,
@@ -1192,7 +1192,7 @@ visualization, and static solution routes.
 page entries in `apps/tanstack-web/migration/route-manifest.json` with that
 no-auth Playwright spec. When a public marketing, UI docs, redirect, or offline
 page is marked `migrated`, the route needs a concrete default-locale E2E
-example in the shared spec before `bun check` can pass.
+example in the shared spec before `bun validate` can pass.
 
 ## Benchmarks
 
@@ -1344,6 +1344,6 @@ to make a run pass.
 4. `bun benchmark:web-setups -- --setup compare --profile full --require-all` passes or has approved exceptions. HTTPS origins must present a certificate trusted by the host; use the local development CA or `NODE_EXTRA_CA_CERTS` instead of disabling certificate verification.
 5. `bun smoke:cloudflare --output <path>` passes against the preview Workers.
 6. `bun migration:tanstack:gates -- --e2e-report <path> --benchmark-report <path> --cloudflare-smoke-report <path>` passes.
-7. `bun check:docker` and `bun check` pass.
+7. `bun check:docker` and `bun validate` pass.
 8. Legacy `apps/web` remains available as the rollback fixture until production
    monitoring shows the TanStack/Rust path is stable.

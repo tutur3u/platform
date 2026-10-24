@@ -14,6 +14,11 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - "scripts/mobile-lucide/**"
+      - "scripts/check-mobile-lucide-sync.js"
+      - "scripts/check-mobile-shadcn-imports.js"
+      - "scripts/dart-directive-uris.js"
+      - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
     paths:
       - "apps/mobile/**"
@@ -21,6 +26,11 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - "scripts/mobile-lucide/**"
+      - "scripts/check-mobile-lucide-sync.js"
+      - "scripts/check-mobile-shadcn-imports.js"
+      - "scripts/dart-directive-uris.js"
+      - ".github/actions/setup-flutter-with-cache/**"
 
 permissions:
   contents: read
@@ -35,7 +45,7 @@ jobs:
       workflow_name: mobile.yaml
 
   semantic-pull-request:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v2
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@bf86fc749b907c6cc60e655f7f2ef619287b1b15 # v2.0.3
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
 
@@ -50,16 +60,12 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
-          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
 
       - name: 📦 Install Dependencies
         run: flutter pub get --enforce-lockfile
@@ -350,6 +356,22 @@ jobs:
       - name: 🕵️ Analyze
         run: flutter analyze lib test
 
+      - name: 🔣 Lucide icons match the web
+        run: node ../../scripts/check-mobile-lucide-sync.js
+
+      - name: 🧹 shadcn_flutter import ratchet
+        env:
+          # The allowlist may only shrink relative to the PR base or the
+          # previous main commit.
+          RATCHET_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # The check fails closed without a base, so always provide one.
+          if [ -z "$RATCHET_BASE" ] || [ "$RATCHET_BASE" = "0000000000000000000000000000000000000000" ]; then
+            RATCHET_BASE=main
+          fi
+          git fetch --no-tags --depth=1 origin "$RATCHET_BASE"
+          node ../../scripts/check-mobile-shadcn-imports.js --base FETCH_HEAD
+
       - name: ✅ Bloc Lint
         run: |
           flutter pub global activate bloc_tools
@@ -369,14 +391,11 @@ jobs:
       run:
         working-directory: apps/mobile
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
-          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
       - name: Install dependencies
         run: flutter pub get
       - name: Run test shard
@@ -415,18 +434,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
-      - uses: subosito/flutter-action@v2
+      - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
       - run: bun install --frozen-lockfile
       - run: flutter pub get
         working-directory: apps/mobile

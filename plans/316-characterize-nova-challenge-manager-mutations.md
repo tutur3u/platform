@@ -60,7 +60,7 @@ dependency-injection seam is strictly required.
 | Focused route | `bun --cwd apps/nova vitest run 'src/app/api/v1/challenges/[challengeId]/managers/route.test.ts'` | the complete POST/DELETE actor and failure matrix passes |
 | Nova tests | `bun --cwd apps/nova vitest run` | all Nova unit/route tests pass |
 | Typecheck/build | `bun run --cwd apps/nova type-check && bun run --cwd apps/nova build` | Nova compiles and builds |
-| Repository | `bun check && git diff --check` | canonical checks pass and the diff is whitespace-clean |
+| Repository | `bun validate && git diff --check` | canonical checks pass and the diff is whitespace-clean |
 
 ## Scope
 

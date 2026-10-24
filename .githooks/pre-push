@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+set -eu
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+# Optional fast changed-files gate. Opt in with:
+#   git config tuturuuu.prePush true   (or TUTURUUU_PRE_PUSH=1 per push)
+# Git passes <remote> <url>; the gate reads pushed refs from stdin instead.
+exec node scripts/check-changed.js --hook

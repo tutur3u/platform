@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -49,8 +50,6 @@ class _FinanceCheckpointsView extends StatefulWidget {
 }
 
 class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
-  static const double _bottomPadding = 28;
-
   WalletCheckpointSummaryResponse? _summary;
   WalletCheckpointListResponse? _selectedWalletCheckpoints;
   List<TransactionCategory> _categories = const [];
@@ -112,7 +111,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
               locations: {Routes.financeCheckpoints},
             ),
             if (_isLoadingSummary && summary == null)
-              const Center(child: NovaLoadingIndicator())
+              const AppPageBody(child: Center(child: NovaLoadingIndicator()))
             else if (_error != null && summary == null)
               _CheckpointError(error: _error, onRetry: _load)
             else if (summary == null || summary.wallets.isEmpty)
@@ -120,27 +119,21 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
             else
               NovaRefreshIndicator(
                 onRefresh: () => _load(showLoader: false, forceRefresh: true),
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    10,
-                    16,
-                    _bottomPadding + MediaQuery.paddingOf(context).bottom,
-                  ),
+                child: AppPageListView(
                   children: [
                     FinanceCheckpointTotalsPanel(
                       totals: summary.totalsByCurrency,
                       showAmounts: showAmounts,
                       onBatchCheck: _isMutating ? () {} : _openBatchSheet,
                     ),
-                    const shad.Gap(22),
+                    const shad.Gap(AppLayout.sectionGap),
                     WalletCheckpointSelector(
                       wallets: summary.wallets,
                       selectedWalletId: _selectedWalletId,
                       latestByWalletId: _latestByWalletId,
                       onSelected: _selectWallet,
                     ),
-                    const shad.Gap(22),
+                    const shad.Gap(AppLayout.sectionGap),
                     if (_isLoadingWallet && _selectedWalletCheckpoints == null)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 48),
@@ -604,9 +597,8 @@ class _CheckpointError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return AppPageBody(
+      child: Center(
         child: FinanceEmptyState(
           icon: Icons.error_outline,
           title: context.l10n.commonSomethingWentWrong,
@@ -628,9 +620,8 @@ class _CheckpointEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return AppPageBody(
+      child: Center(
         child: FinanceEmptyState(
           icon: Icons.fact_check_outlined,
           title: context.l10n.financeCheckpointsNoWallets,

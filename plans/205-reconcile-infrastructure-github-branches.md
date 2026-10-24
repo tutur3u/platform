@@ -36,7 +36,7 @@ passes 3 files/16 tests; the source-size gate passes at 607/420 lines; and
 `git diff --check` passes. Infrastructure typecheck failed twice: the first
 failure exposed a moved `normalizeBranch` helper and was corrected; the second
 is a test-only `it.each` union inference error at
-`project-github-sync.test.ts:164`. Per the plan STOP rule, build, `bun check`,
+`project-github-sync.test.ts:164`. Per the plan STOP rule, build, `bun validate`,
 and commit were not attempted. Continuation must review the retained diff,
 correct only that typed test matrix, then rerun every mandatory gate from the
 focused suite onward; do not assume the implementation is approved merely
@@ -76,7 +76,7 @@ worktree and run `bun setup` immediately.
 | Source size | `test "$(wc -l < apps/infrastructure/src/lib/infrastructure/projects.ts)" -le 700 && test "$(wc -l < apps/infrastructure/src/lib/infrastructure/project-github-sync.ts)" -le 700` | both authored/edited modules stay within the hard ceiling |
 | Typecheck | `bun run --cwd apps/infrastructure type-check` | exit 0 |
 | Build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -107,7 +107,7 @@ API response redesign, or production operations.
    Tests must assert a constant number of persistence statements independent of
    branch count and zero statements after provider failure.
 4. Preserve route error sanitization and response shape. Run focused tests,
-   typecheck, production build, `bun check`, and whitespace verification.
+   typecheck, production build, `bun validate`, and whitespace verification.
 
 ## Done criteria
 

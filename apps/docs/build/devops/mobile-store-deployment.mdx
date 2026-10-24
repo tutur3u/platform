@@ -111,6 +111,21 @@ Meet media failures. Analytics records automatic app usage plus `mobile_error`,
 identify capture, publish, send, receive, or connection stages without recording
 room IDs, user IDs, SDP, ICE credentials, message contents, or media.
 
+For a gray release-build body, inspect Crashlytics `flutter_framework` events
+for the exact version and build before attributing the failure. Compare the
+uploaded source SHA from `mobile-beta-release-history` with the investigated tree;
+the pubspec version alone is not the store build identity. Framework errors already
+retain their original stacks through `FlutterError.onError`. Keep raw event
+payloads private and avoid adding a second reporting integration.
+
+The authenticated Firebase CLI exposes official Crashlytics tools through
+`firebase mcp --only core,crashlytics`. Read its Crashlytics reports guide, obtain
+the exact `topVersions` display name, filter `topIssues` with that value, then
+fetch events for the issue. `firebase login:list` shows stored accounts but does
+not prove credentials are current; an authentication error requires
+`firebase login --reauth --interactive`. Complete OAuth in the browser rather
+than copying credentials or authorization codes into a transcript.
+
 For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
 `meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's
 Analytics events. A successful publisher event means its WebRTC sender reported
@@ -430,7 +445,7 @@ and failed write readback fail verification rather than masquerading as missing
 history; they require a retry or investigation.
 
 Run focused release checks with `node --experimental-strip-types --test scripts/mobile-deployment/*.test.mjs
-scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
+scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun validate`
 for repository validation and `ttr resources run -- bun check:mobile` for the
 Flutter checks. Normally run the applicable mobile tests and native builds in
 CI on the exact branch commit, even when local checks pass. If the CI queue is

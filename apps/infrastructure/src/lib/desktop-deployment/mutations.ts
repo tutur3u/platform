@@ -143,7 +143,7 @@ export async function validateDesktopDraft(
       errors.push('signing_profile_invalid');
     }
     if (!errors.length) {
-      const certificate = inspectDesktopCertificate({
+      const certificate = await inspectDesktopCertificate({
         platform: version.platform,
         bytes: values.get(profile.files[0])!,
         password:

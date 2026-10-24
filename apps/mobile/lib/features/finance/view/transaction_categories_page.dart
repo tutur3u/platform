@@ -10,6 +10,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -199,7 +200,6 @@ class _TransactionCategoriesViewState
     final showAmounts = context.select<FinancePreferencesCubit, bool>(
       (cubit) => cubit.state.showAmounts,
     );
-    final listBottomPadding = 16.0 + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -245,13 +245,17 @@ class _TransactionCategoriesViewState
             ),
             NovaRefreshIndicator(
               onRefresh: () => _loadCurrentTab(forceRefresh: true),
-              child: _activeTab == _tabCategories
-                  ? _buildCategoriesContent(
-                      l10n,
-                      listBottomPadding,
-                      showAmounts,
-                    )
-                  : _buildTagsContent(l10n, listBottomPadding, showAmounts),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final insets = AppPageInsets.of(
+                    context,
+                    width: constraints.maxWidth,
+                  );
+                  return _activeTab == _tabCategories
+                      ? _buildCategoriesContent(l10n, insets, showAmounts)
+                      : _buildTagsContent(l10n, insets, showAmounts);
+                },
+              ),
             ),
             ShellChromeActions(
               ownerId: 'finance-manage-create',
@@ -282,16 +286,16 @@ class _TransactionCategoriesViewState
 
   Widget _buildCategoriesContent(
     AppLocalizations l10n,
-    double listBottomPadding,
+    EdgeInsets pagePadding,
     bool showAmounts,
   ) {
     if (_categoriesLoading) {
-      return const Center(child: NovaLoadingIndicator());
+      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
     }
     if (_categoriesError != null) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        padding: pagePadding,
         children: [
           FinanceEmptyState(
             icon: Icons.error_outline,
@@ -308,7 +312,7 @@ class _TransactionCategoriesViewState
     if (_categories.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        padding: pagePadding,
         children: [
           FinanceEmptyState(
             icon: Icons.category_outlined,
@@ -325,7 +329,7 @@ class _TransactionCategoriesViewState
     if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
       return ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        padding: pagePadding,
         itemCount: _categories.length.clamp(1, 6),
         separatorBuilder: (context, index) => const shad.Gap(8),
         itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
@@ -333,7 +337,7 @@ class _TransactionCategoriesViewState
     }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+      padding: pagePadding,
       itemCount: _categories.length,
       separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
@@ -356,16 +360,16 @@ class _TransactionCategoriesViewState
 
   Widget _buildTagsContent(
     AppLocalizations l10n,
-    double listBottomPadding,
+    EdgeInsets pagePadding,
     bool showAmounts,
   ) {
     if (_tagsLoading) {
-      return const Center(child: NovaLoadingIndicator());
+      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
     }
     if (_tagsError != null) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        padding: pagePadding,
         children: [
           FinanceEmptyState(
             icon: Icons.error_outline,
@@ -382,7 +386,7 @@ class _TransactionCategoriesViewState
     if (_tags.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        padding: pagePadding,
         children: [
           FinanceEmptyState(
             icon: Icons.sell_outlined,
@@ -399,7 +403,7 @@ class _TransactionCategoriesViewState
     if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
       return ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        padding: pagePadding,
         itemCount: _tags.length.clamp(1, 6),
         separatorBuilder: (context, index) => const shad.Gap(8),
         itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
@@ -407,7 +411,7 @@ class _TransactionCategoriesViewState
     }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+      padding: pagePadding,
       itemCount: _tags.length,
       separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
@@ -1576,26 +1580,6 @@ class _TaxonomyColorSection extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _TaxonomyFieldLabel extends StatelessWidget {
-  const _TaxonomyFieldLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Text(
-      label,
-      style: theme.typography.xSmall.copyWith(
-        color: theme.colorScheme.mutedForeground,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.35,
-      ),
     );
   }
 }

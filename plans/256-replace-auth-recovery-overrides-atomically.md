@@ -84,7 +84,7 @@ exact-path lock.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/private-schema-auth-recovery.sql && bun --cwd apps/database sb:validate:isolated` | rollback, serialization, validation, uniqueness, and ACL assertions pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/private-schema-auth-recovery.sql` | generated RPC types are current with no unrelated drift |
 | Apps | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/web type-check && bun run --cwd apps/infrastructure build && bun run --cwd apps/web build` | typechecks/builds exit 0 serially |
-| Repository | `bun check && git diff --check` | all canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all canonical gates pass; whitespace output is empty |
 
 ## Scope
 

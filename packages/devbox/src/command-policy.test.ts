@@ -3,7 +3,7 @@ import { evaluateDevboxCommandPolicy } from './command-policy';
 
 describe('evaluateDevboxCommandPolicy', () => {
   it.each([
-    ['bun', 'check'],
+    ['bun', 'validate'],
     ['bun', 'test:e2e'],
     ['bun', 'sb:start'],
     ['bun', 'sb:reset'],

@@ -248,6 +248,24 @@ parity, bounded results and oversized-input rejection. Actor-race and failure
 contract tests cover the surrounding repository path.
 
 
+### Mobile profile banners
+
+Mobile profile headers reserve a 3:1 banner area, including an empty placeholder,
+image loading indicator and image-error fallback. Banner selection uses the native
+camera/gallery chooser and a locked 3:1 crop, then the shared optimizer. Upload
+and replacement reuse `POST /api/v1/users/me/banner/upload-url`, the signed PUT,
+and `POST /api/v1/users/me/banner` with `action: finalize`; removal uses the latter
+with `action: remove`. Each mutation retains its operation UUID and reloads the
+actor's profile. These controls do not change shell navigation or account access.
+
+Permission denial, size rejection, connection failure and invalid/expired upload
+tickets have scoped English and Vietnamese guidance. Ticket failure asks for a
+new selection; it does not bypass signature checks. Avatar upload authorization
+continues to use its existing error mapping. Regression coverage lives in
+`profile_banner_lifecycle_test.dart`, `profile_banner_states_test.dart`,
+`profile_banner_picker_test.dart` and `profile_media_failure_contract_test.dart`.
+
+
 ### Browser profile capability uploads
 
 The central avatar and banner upload endpoints expose credential-free CORS for
@@ -329,3 +347,27 @@ App-provided English/Vietnamese labels keep the shared component free of implici
 translation namespace requirements. Regression coverage: `public-content-link.test.ts`,
 `public-link-button.test.tsx` and profile page/projection tests. Hosted clipboard
 permissions and exact-head app/shared-package CI remain separate evidence gates.
+
+## Workspace User Avatar Paths
+
+Web and Contacts user-avatar reads authorize the workspace through the existing
+permission helper, then use its resolved lowercase UUID. Aliases such as
+`personal` remain supported only when authorization resolves them to that UUID.
+The shared read handler signs only `<workspace UUID>/users/<filename>` in the
+`workspaces` bucket. It accepts exactly three original segments; it never repairs
+or decodes a submitted object path. Full URLs, other workspaces, nested paths,
+percent encodings, backslashes and control characters are rejected.
+
+The shared upload handler requires `manage_users`, a PNG, JPEG, WebP or GIF
+content type, and one filename of at most 255 ASCII letters, digits, dots,
+underscores or hyphens starting with a letter or digit. It preserves the filename
+and issues its `avatars` ticket only after charging the verified actor's upload
+budget. These rules apply to shared handler callers; canonical Web and Contacts
+POST routes retain their existing optimized media-ticket flow. There is no
+DELETE handler in the shared user-avatar module.
+
+Regression coverage lives in
+`packages/users-core/src/routes/users/avatar.test.ts`. It exercises read and upload
+traversal, foreign workspaces, invalid resolved IDs, alias resolution, authorization
+and budget ordering with synthetic storage fixtures. Hosted Storage behavior is
+a separate acceptance boundary.

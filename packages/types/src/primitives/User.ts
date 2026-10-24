@@ -17,5 +17,8 @@ export interface User {
     | null;
   is_guest?: boolean;
   password_hash?: string;
+  /** Meet guest session issued by the server after guest login. */
+  guest_session?: string;
+  guest_session_expires_at?: string;
   created_at?: string | null;
 }

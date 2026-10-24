@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
@@ -22,6 +23,7 @@ import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/android_modal_back_bridge.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -29,6 +31,7 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -47,9 +50,9 @@ part 'shell_page_scroll.dart';
 /// Shell layout with adaptive navigation.
 ///
 /// Wraps all tab-level routes via GoRouter's [ShellRoute].
-/// - **compact** → bottom [shad.NavigationBar]
-/// - **medium**  → side [shad.NavigationRail]
-/// - **expanded** → side [shad.NavigationSidebar]
+/// - **compact / medium** → floating bottom dock ([MorphingNavigationBar])
+/// - **expanded tablets/desktops** → leading [ShellNavigationRail]; the dock
+///   keeps only the composer and page actions. See [shellNavigationModeFor].
 class ShellPage extends StatefulWidget {
   const ShellPage({
     required this.child,
@@ -161,6 +164,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
+    AndroidModalBackBridge.install(_hasOpenModal);
     _layerController = PageController(initialPage: 1);
     _hasVisitedRoot = _isRootTabLocation(widget.matchedLocation);
     if (_hasVisitedRoot) _lastRootLocation = widget.matchedLocation;
@@ -589,6 +593,13 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _exitConfirmationToast = null;
   }
 
+  /// Whether Back should close an overlay rather than leave this route.
+  bool _hasOpenModal() =>
+      mounted &&
+      (Navigator.of(context, rootNavigator: true).canPop() ||
+          context.read<ShellChromeActionsCubit?>()?.state.topmostModalOwner !=
+              null);
+
   void _syncAndroidBackState() {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return;
@@ -625,6 +636,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    AndroidModalBackBridge.uninstall(_hasOpenModal);
     unawaited(SystemNavigator.setFrameworkHandlesBack(false));
     _stopLongPressTimer();
     _dismissExitConfirmationToast();

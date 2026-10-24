@@ -3,6 +3,7 @@
 
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('./safe-fs');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -83,9 +84,9 @@ function setupRedis({
   start = true,
 } = {}) {
   const resolvedEnvFilePath = resolveInsideRoot(rootDir, envFilePath);
-  const existing = fsImpl.existsSync(resolvedEnvFilePath)
-    ? fsImpl.readFileSync(resolvedEnvFilePath, 'utf8')
-    : '';
+  const existing =
+    readOptionalFileSync(resolvedEnvFilePath, { fsImpl, encoding: 'utf8' }) ??
+    '';
   const updates = {
     UPSTASH_REDIS_REST_TOKEN: redisToken,
     UPSTASH_REDIS_REST_URL: redisUrl,
@@ -95,7 +96,10 @@ function setupRedis({
 
   if (!dryRun) {
     fsImpl.mkdirSync(path.dirname(resolvedEnvFilePath), { recursive: true });
-    fsImpl.writeFileSync(resolvedEnvFilePath, nextContent);
+    atomicWriteFileSync(resolvedEnvFilePath, nextContent, {
+      fsImpl,
+      mode: 0o600,
+    });
   }
 
   let startResult = null;

@@ -12,6 +12,15 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.membership,
 }));
 
+vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
+  enforceRequiredMfaRequest: async () => null,
+  getVerifiedMfaBearerUser: () => null,
+}));
+vi.mock('next/server', async (original) => ({
+  ...(await original<object>()),
+  connection: async () => {},
+}));
+
 import { GET, PATCH } from './route';
 
 const wsId = '00000000-0000-4000-8000-000000000001';
@@ -37,7 +46,24 @@ beforeEach(() => {
     }),
   };
   mocks.update.mockReturnValue(query);
-  mocks.from.mockReturnValue(query);
+  mocks.from.mockImplementation((table) =>
+    table === 'workspace_members'
+      ? {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: async () => {
+            const result = await mocks.membership();
+            return {
+              data: result.ok ? { type: 'MEMBER' } : null,
+              error:
+                result.error === 'membership_lookup_failed'
+                  ? { message: 'unavailable' }
+                  : null,
+            };
+          },
+        }
+      : query
+  );
   mocks.auth.mockResolvedValue({
     ok: true,
     user: { id: 'verified-user' },
@@ -67,7 +93,7 @@ describe('workspace calendar settings authorization', () => {
     mocks.rpc.mockResolvedValue({ data: false, error: null });
     expect((await PATCH(makeRequest(), params)).status).toBe(403);
     expect(mocks.update).not.toHaveBeenCalled();
-    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalledWith('workspaces');
   });
 
   it('fails closed when permission lookup fails or returns no decision', async () => {

@@ -69,7 +69,7 @@ editing. The Web implementation remains the live source of truth.
 | Migration metadata | `bun migration:tanstack:manifest && bun migration:tanstack:check` | re-keyed first-class Web source is current |
 | Backend migration guard | `bun check:backend` | exact path remains tracked without silent Rust divergence |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | production build succeeds |
 | Whitespace | `git diff --check` | no output |
 
@@ -163,7 +163,7 @@ that directly return the expected response.
 - [ ] Normal owning-workspace member behavior and current response shapes remain intact.
 - [ ] The handler/test live in the first-class Web API tree and migration metadata is current.
 - [ ] Focused Vitest/pgTAP, wrapper/migration/backend guards, Web typecheck,
-      `bun check`, Web build, and whitespace pass.
+      `bun validate`, Web build, and whitespace pass.
 - [ ] Execution changes only the first-class handler that replaces the
       generated wrapper, its new colocated test, removal of the legacy source,
       the new pgTAP file, this route's migration metadata, and the README

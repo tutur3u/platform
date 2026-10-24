@@ -1,11 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { fullSyncMock, getTokenMock, resolveSessionAuthContextMock } =
-  vi.hoisted(() => ({
-    fullSyncMock: vi.fn(),
-    getTokenMock: vi.fn(),
-    resolveSessionAuthContextMock: vi.fn(),
-  }));
+const {
+  fullSyncMock,
+  getTokenMock,
+  resolveSessionAuthContextMock,
+  verifyWorkspaceMembershipTypeMock,
+} = vi.hoisted(() => ({
+  fullSyncMock: vi.fn(),
+  getTokenMock: vi.fn(),
+  resolveSessionAuthContextMock: vi.fn(),
+  verifyWorkspaceMembershipTypeMock: vi.fn(),
+}));
 
 vi.mock('@tuturuuu/google', () => ({
   OAuth2Client: vi.fn(function OAuth2Client(this: {
@@ -42,7 +47,58 @@ vi.mock('@tuturuuu/trigger/google-calendar-full-sync', () => ({
   performFullSyncForWorkspace: fullSyncMock,
 }));
 
+vi.mock('@tuturuuu/supabase/next/server', async () => {
+  const { sharedFakeCalendarOAuthNonceLedger } = await import(
+    '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils'
+  );
+  return {
+    createAdminClient: vi.fn(
+      async () => sharedFakeCalendarOAuthNonceLedger().client
+    ),
+  };
+});
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  verifyWorkspaceMembershipType: verifyWorkspaceMembershipTypeMock,
+}));
+
+import { BASE_URL } from '@/constants/common';
+import { sharedFakeCalendarOAuthNonceLedger } from '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils';
+import {
+  createCalendarOAuthState,
+  deriveCalendarOAuthPkce,
+} from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
+
+const nonceLedger = sharedFakeCalendarOAuthNonceLedger();
+const CALENDAR_ORIGIN = new URL(BASE_URL).origin;
+
+function signedState({
+  secret = 'google-client-secret',
+  userId = 'user-1',
+  wsId = 'workspace-1',
+  now,
+}: {
+  secret?: string;
+  userId?: string;
+  wsId?: string;
+  now?: number;
+} = {}) {
+  return encodeURIComponent(
+    createCalendarOAuthState('google', { userId, wsId }, secret, now).state
+  );
+}
+
+function callbackRequest(
+  state: string,
+  origin = 'https://tuturuuu.com',
+  headers?: HeadersInit
+) {
+  return new Request(
+    `${origin}/api/v1/calendar/auth/callback?code=abc&state=${state}`,
+    { headers }
+  );
+}
 
 interface ExistingCalendarToken {
   id: string;
@@ -138,6 +194,16 @@ describe('Google Calendar OAuth callback route', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    for (const key of [
+      'WEB_APP_URL',
+      'NEXT_PUBLIC_WEB_APP_URL',
+      'NEXT_PUBLIC_APP_URL',
+      'COOLIFY_URL',
+      'COOLIFY_FQDN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
+    nonceLedger.reset();
     vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -145,6 +211,7 @@ describe('Google Calendar OAuth callback route', () => {
     getTokenMock.mockResolvedValue(createTokenResponse());
     mockResolvedAuthContext(createSupabaseClient().client);
     fullSyncMock.mockResolvedValue([]);
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
   });
 
   afterEach(() => {
@@ -157,9 +224,7 @@ describe('Google Calendar OAuth callback route', () => {
       vi.stubEnv(environmentVariable, '');
 
       const response = await GET(
-        new Request(
-          'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback?code=abc&state=workspace-1'
-        )
+        callbackRequest(signedState(), 'https://calendar.tuturuuu.com')
       );
 
       expect(response.status).toBe(503);
@@ -172,19 +237,70 @@ describe('Google Calendar OAuth callback route', () => {
     }
   );
 
-  it('redirects wildcard listener callbacks back to the public Web origin', async () => {
+  it('redirects wildcard listener callbacks to the Calendar workspace page', async () => {
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');
 
     const response = await GET(
-      new Request(
-        'http://0.0.0.0:7803/api/v1/calendar/auth/callback?code=abc&state=workspace-1'
-      )
+      callbackRequest(signedState(), 'http://0.0.0.0:7803')
     );
 
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe(
-      'https://tuturuuu.com/workspace-1/calendar?provider=google&connected=true'
+      `${CALENDAR_ORIGIN}/workspace-1?provider=google&connected=true`
     );
+  });
+
+  it('works in production with no Calendar, Web or Upstash env vars and ignores attacker hosts', async () => {
+    vi.resetModules();
+    vi.stubEnv('NODE_ENV', 'production');
+    for (const key of [
+      'CALENDAR_APP_URL',
+      'NEXT_PUBLIC_CALENDAR_APP_URL',
+      'BASE_URL',
+      'GOOGLE_REDIRECT_URI',
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
+    const { GET: productionGET } = await import('./route');
+    const { OAuth2Client } = await import('@tuturuuu/google');
+
+    const response = await productionGET(
+      callbackRequest(signedState(), 'https://attacker.example', {
+        host: 'attacker.example',
+        'x-forwarded-host': 'attacker.example',
+        'x-forwarded-proto': 'https',
+      })
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'https://calendar.tuturuuu.com/workspace-1?provider=google&connected=true'
+    );
+    expect(vi.mocked(OAuth2Client)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        redirectUri:
+          'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback',
+      })
+    );
+    expect(nonceLedger.calls).toHaveLength(1);
+  });
+
+  it('fails closed before the code exchange when the nonce ledger is unavailable', async () => {
+    nonceLedger.failure = {
+      code: 'PGRST202',
+      message: 'Could not find the function',
+    };
+
+    const response = await GET(callbackRequest(signedState()));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Calendar connection is temporarily unavailable',
+    });
+    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
   it('preserves an existing refresh token when Google omits one on reconnect', async () => {
@@ -197,11 +313,7 @@ describe('Google Calendar OAuth callback route', () => {
     });
     mockResolvedAuthContext(supabase.client);
 
-    const response = await GET(
-      new Request(
-        'https://tuturuuu.com/api/v1/calendar/auth/callback?code=abc&state=workspace-1'
-      )
-    );
+    const response = await GET(callbackRequest(signedState()));
 
     expect(response.status).toBe(302);
     expect(supabase.tokenUpdateMock).toHaveBeenCalledWith(
@@ -225,11 +337,7 @@ describe('Google Calendar OAuth callback route', () => {
     const supabase = createSupabaseClient();
     mockResolvedAuthContext(supabase.client);
 
-    const response = await GET(
-      new Request(
-        'https://tuturuuu.com/api/v1/calendar/auth/callback?code=abc&state=workspace-1'
-      )
-    );
+    const response = await GET(callbackRequest(signedState()));
     const body = (await response.json()) as { error: string };
 
     expect(response.status).toBe(500);
@@ -237,5 +345,142 @@ describe('Google Calendar OAuth callback route', () => {
     expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
     expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an unsigned workspace id', () => 'workspace-1'],
+    ['a state signed with another key', () => signedState({ secret: 'x' })],
+    [
+      'an expired state',
+      () => signedState({ now: Date.now() - 11 * 60 * 1000 }),
+    ],
+    [
+      'a state with a swapped workspace',
+      () => {
+        const [content, signature] = decodeURIComponent(signedState()).split(
+          '.'
+        );
+        const payload = JSON.parse(
+          Buffer.from(content!, 'base64url').toString('utf8')
+        ) as Record<string, unknown>;
+        const swapped = Buffer.from(
+          JSON.stringify({ ...payload, ws: 'workspace-2' })
+        ).toString('base64url');
+        return encodeURIComponent(`${swapped}.${signature}`);
+      },
+    ],
+  ])('rejects %s before exchanging the code', async (_label, buildState) => {
+    const response = await GET(callbackRequest(buildState()));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid OAuth state',
+    });
+    expect(resolveSessionAuthContextMock).not.toHaveBeenCalled();
+    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a state issued to a different signed-in user', async () => {
+    const response = await GET(
+      callbackRequest(signedState({ userId: 'user-2' }))
+    );
+
+    expect(response.status).toBe(403);
+    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthenticated callbacks before exchanging the code', async () => {
+    resolveSessionAuthContextMock.mockResolvedValue({ ok: false });
+
+    const response = await GET(callbackRequest(signedState()));
+
+    expect(response.status).toBe(401);
+    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects callbacks for a workspace the user is not a member of', async () => {
+    const supabase = createSupabaseClient();
+    mockResolvedAuthContext(supabase.client);
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({
+      ok: false,
+      error: 'membership_missing',
+    });
+
+    const response = await GET(callbackRequest(signedState()));
+
+    expect(response.status).toBe(403);
+    expect(verifyWorkspaceMembershipTypeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-1', wsId: 'workspace-1' })
+    );
+    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
+    expect(supabase.calendarConnectionsUpsertMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('redirects to the configured Calendar origin regardless of request host headers', async () => {
+    const response = await GET(
+      callbackRequest(signedState(), 'https://attacker.example', {
+        host: 'attacker.example',
+        'x-forwarded-host': 'attacker.example',
+        'x-forwarded-proto': 'https',
+      })
+    );
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(response.status).toBe(302);
+    expect(location.origin).toBe(CALENDAR_ORIGIN);
+    expect(location.pathname).toBe('/workspace-1');
+  });
+
+  it('exchanges the code with the PKCE verifier bound to the state', async () => {
+    const created = createCalendarOAuthState(
+      'google',
+      { userId: 'user-1', wsId: 'workspace-1' },
+      'google-client-secret'
+    );
+
+    await GET(callbackRequest(encodeURIComponent(created.state)));
+
+    expect(getTokenMock).toHaveBeenCalledWith({
+      code: 'abc',
+      codeVerifier: deriveCalendarOAuthPkce(
+        'google',
+        created.nonce,
+        'google-client-secret'
+      ).codeVerifier,
+    });
+  });
+
+  it('rejects a replayed state even with a fresh code', async () => {
+    const state = signedState();
+
+    const first = await GET(callbackRequest(state));
+    const replay = await GET(
+      new Request(
+        `https://tuturuuu.com/api/v1/calendar/auth/callback?code=fresh&state=${state}`
+      )
+    );
+
+    expect(first.status).toBe(302);
+    expect(replay.status).toBe(400);
+    await expect(replay.json()).resolves.toEqual({
+      error: 'Invalid OAuth state',
+    });
+    expect(getTokenMock).toHaveBeenCalledTimes(1);
+    expect(fullSyncMock).toHaveBeenCalledTimes(1);
+    expect(nonceLedger.calls).toHaveLength(2);
+    expect(nonceLedger.calls[0]).toMatchObject({
+      args: { p_provider: 'google', p_user_id: 'user-1' },
+      fn: 'consume_calendar_oauth_state_nonce',
+      schema: 'private',
+    });
+    expect(nonceLedger.calls[1]?.args.p_nonce).toBe(
+      nonceLedger.calls[0]?.args.p_nonce
+    );
   });
 });

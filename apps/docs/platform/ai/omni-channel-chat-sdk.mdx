@@ -156,3 +156,30 @@ separate product admission.
 Regression coverage lives in `packages/utils/src/read-bounded-response.test.ts`,
 `packages/ai/src/chat-sdk/zalo-personal-attachment.test.ts` and
 `apps/web/src/lib/ai-agents/external-chat-attachment-limits.test.ts`.
+
+## Teams MSAL Security Compatibility
+
+The root dependency override pins `@azure/msal-node` to 7.1.1 for
+GHSA-xcx6-jx8p-x3h5. The direct Microsoft package already uses the patched
+major; Teams apps 2.1.1 still requests `^5.6.0`, including through Chat SDK's
+Teams adapter 4.43.0. Both are the latest published versions checked for this
+upgrade. Remove the override only when the upstream Teams dependency range
+resolves a patched MSAL version without it.
+
+Teams' token manager uses confidential client credentials with a tenant
+specific authority. It does not enable `instanceAware`, request
+`instance_aware`, or use interactive `responseMode`. MSAL 7 removes interactive
+response-mode selection and rejects instance-aware confidential clients; retain
+those rejections rather than enabling legacy behavior for the adapter.
+
+`scripts/teams-msal-compatibility.test.js` follows the installed Teams ancestry,
+requires the patched version, and exercises the actual Teams token manager and
+MSAL client-credentials exchange using a fixture network transport. It also
+checks the interactive and instance-aware rejection boundaries. Run it with
+`node --test scripts/teams-msal-compatibility.test.js` after dependency changes.
+These fixtures do not establish hosted Azure credential acceptance, managed
+identity, or federated identity behavior. Require exact-commit CI and independent
+security review before integration.
+
+Upstream references: [MSAL advisory](https://github.com/AzureAD/microsoft-authentication-library-for-js/security/advisories/GHSA-xcx6-jx8p-x3h5)
+and [MSAL v7 migration guide](https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-node/docs/v7-migration.md).
