@@ -50,6 +50,14 @@ void main() {
     expect(tz.local.name, 'Asia/Ho_Chi_Minh');
   });
 
+  test('repeated invalid lookups do not reload the complete database', () {
+    final alias = timezoneLocation('Asia/Saigon');
+    for (var i = 0; i < 2; i++) {
+      expect(() => timezoneLocation('Invalid/Zone'), throwsException);
+      expect(timezoneLocation('Asia/Saigon'), same(alias));
+    }
+  });
+
   test('unsupported save input is rejected before any write', () async {
     final repository = _Preferences('UTC');
     final preferences = TimezoneSettingsCubit(

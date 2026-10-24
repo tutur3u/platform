@@ -2,6 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/settings/view/timezone_choices.dart';
 
 void main() {
+  test('native alias has a known GMT offset', () {
+    expect(
+      timezoneOffset('Asia/Saigon', DateTime.utc(2030)),
+      const Duration(hours: 7),
+    );
+  });
+
   final january = DateTime.utc(2026, 1, 15);
 
   test('friendly names split city and region', () {
