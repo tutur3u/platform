@@ -1,4 +1,8 @@
 import {
+  type DevboxRunnerControl,
+  listDevboxRunnerControl,
+} from './admin-runner-control';
+import {
   createPrivateDevboxClient,
   type DevboxPrivateSchemaClient,
   type DevboxStorageErrorLike,
@@ -34,7 +38,7 @@ type PrivateAdminTable<T = unknown> = {
   update: (value: unknown) => UpdateQuery;
 };
 
-export interface DevboxAdminRunner {
+export interface DevboxAdminRunner extends Partial<DevboxRunnerControl> {
   actor_id: string;
   capabilities: unknown;
   created_at: string;
@@ -313,7 +317,15 @@ export async function listDevboxControlSnapshot(): Promise<DevboxControlSnapshot
     .order('created_at', { ascending: false })
     .limit(100);
 
-  const runners = assertQueryResult(runnersResult);
+  const control = await listDevboxRunnerControl(client);
+  const runners = assertQueryResult(runnersResult).map((runner) => ({
+    ...runner,
+    ...(control.get(runner.id) ?? {
+      activity: null,
+      drain_requested_at: null,
+      drained: null,
+    }),
+  }));
   const leases = assertQueryResult(leasesResult);
   const runs = assertQueryResult(runsResult);
   const events = assertQueryResult(eventsResult);

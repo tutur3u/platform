@@ -72,6 +72,14 @@ function getSecretCandidates(explicitSecret?: string) {
   return [...new Set(secrets)];
 }
 
+/**
+ * Server signing secrets shared with other short-lived, purpose-bound tokens.
+ * The first entry signs; every entry is accepted for verification.
+ */
+export function getServerTokenSecretCandidates(explicitSecret?: string) {
+  return getSecretCandidates(explicitSecret);
+}
+
 function getSigningSecret(explicitSecret?: string) {
   return getSecretCandidates(explicitSecret)[0]!;
 }

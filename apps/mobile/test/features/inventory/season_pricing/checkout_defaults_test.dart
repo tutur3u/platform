@@ -6,6 +6,7 @@ InventorySalesPeriod _period(
   String id, {
   bool scheduled = true,
   String status = 'active',
+  String zone = 'America/Los_Angeles',
 }) => InventorySalesPeriod(
   id: id,
   name: id,
@@ -14,7 +15,7 @@ InventorySalesPeriod _period(
   startsAt: DateTime(2026, 9, 30),
   endsAt: DateTime(2026, 9, 30),
   pricingMode: scheduled ? 'scheduled' : 'legacy',
-  timeZone: 'America/Los_Angeles',
+  timeZone: zone,
 );
 
 void main() {
@@ -58,6 +59,24 @@ void main() {
       expect(defaults.resolvePeriod([_period('a'), _period('b')], now), isNull);
       expect(
         defaults.resolvePeriod([_period('a', status: 'archived')], now),
+        isNull,
+      );
+    },
+  );
+  test(
+    'native alias selects the period on its local day across UTC midnight',
+    () {
+      const defaults = InventoryCheckoutDefaults();
+      expect(
+        defaults.resolvePeriod([
+          _period('alias', zone: 'Asia/Saigon'),
+        ], DateTime.utc(2026, 9, 29, 20)),
+        'alias',
+      );
+      expect(
+        defaults.resolvePeriod([
+          _period('alias', zone: 'Asia/Saigon'),
+        ], DateTime.utc(2026, 9, 30, 20)),
         isNull,
       );
     },

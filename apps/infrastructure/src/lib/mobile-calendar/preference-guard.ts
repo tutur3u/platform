@@ -1,22 +1,23 @@
 const preferencePath =
   /^\/api\/v1\/mobile-calendar\/api\/v1\/(?:users\/calendar-settings|workspaces\/[a-zA-Z0-9_-]+\/calendar-settings)$/u;
 
-export function isCalendarPreferenceRead(request: {
+export function isCalendarPreferenceRequest(request: {
   method: string;
   nextUrl: { pathname: string };
 }): boolean {
   return (
-    request.method === 'GET' && preferencePath.test(request.nextUrl.pathname)
+    (request.method === 'GET' || request.method === 'PATCH') &&
+    preferencePath.test(request.nextUrl.pathname)
   );
 }
 
 /** Keep the same shared guard limits, auth, MFA and IP blocks, in a bounded
- * preferences bucket independent of event/account fan-out. */
+ * preferences bucket independent of unrelated event/account traffic. */
 export function calendarPreferenceGuardPrefix(request: {
   method: string;
   nextUrl: { pathname: string };
 }): string {
-  return isCalendarPreferenceRead(request)
+  return isCalendarPreferenceRequest(request)
     ? 'proxy:infra:calendar-preferences'
     : 'proxy:infra:api';
 }

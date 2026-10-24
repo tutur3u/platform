@@ -36,7 +36,7 @@ void registerSettingsDetailShellChecks() {
       expect(MediaQuery.paddingOf(listContext).top, 0);
       expect(
         Theme.of(listContext).scaffoldBackgroundColor,
-        shad.Theme.of(listContext).colorScheme.background,
+        AppTokens.of(listContext).colorScheme.background,
       );
       final header = find.byKey(
         const ValueKey('floating-shell-header-surface'),

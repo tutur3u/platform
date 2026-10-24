@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/inventory/inventory_sales_period.dart';
 import 'package:mobile/data/models/inventory/inventory_season_price.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/inventory/controllers/inventory_season_pricing_controller.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import 'sale_journal_fixture.dart';
 
@@ -159,6 +161,34 @@ void main() {
         );
   });
   tearDown(() => controller.dispose());
+  test(
+    'controller recreation preserves timezone data and configured local zone',
+    () {
+      final alias = timezoneLocation('Asia/Saigon');
+      tz.setLocalLocation(alias);
+      addTearDown(() => tz.setLocalLocation(tz.UTC));
+      for (var i = 0; i < 2; i++) {
+        InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          fetch: (_, _) async => quote(),
+          send: (_, _) async => 'invoice',
+          isOnline: () async => true,
+        ).dispose();
+        expect(tz.local, same(alias));
+        expect(timezoneLocation('Asia/Saigon'), same(alias));
+      }
+    },
+  );
+  test('native alias makes scheduled seasonal prices eligible', () async {
+    controller.configure(
+      actorId: 'actor',
+      workspaceId: 'ws',
+      selectedPeriod: period(zone: 'Asia/Saigon', date: '2026-10-01'),
+      currency: 'USD',
+    );
+    await controller.refresh();
+    expect(controller.ready, isTrue);
+  });
   test(
     'cached prices queue a draft without claiming a confirmed sale',
     () async {

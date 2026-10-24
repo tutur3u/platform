@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
@@ -208,6 +209,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         () => resolve().timeout(loadTimeout),
       );
       if (isClosed || generation != _generation) return;
+      timezoneLocation(
+        values[0] != 'auto'
+            ? values[0]
+            : values[1] != 'auto'
+            ? values[1]
+            : values[2],
+      );
       emit(
         TimezoneSettingsState(
           personal: values[0],
@@ -319,8 +327,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       ),
     );
     try {
+      if (zone != 'auto') timezoneLocation(zone);
       var device = previous.device;
-      Object? deviceError;
+      Object? resolutionError;
       final needsDevice =
           zone == 'auto' &&
           (workspace ? previous.personal : previous.workspace) == 'auto';
@@ -330,8 +339,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           if (device.isEmpty) {
             throw Exception('Device timezone is unavailable.');
           }
+          timezoneLocation(device);
         } on Object catch (error) {
-          deviceError = error;
+          resolutionError = error;
           device = '';
         }
         if (isClosed || generation != _generation) return;
@@ -348,15 +358,29 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       final personalKnown = !workspace || previous.personalLoaded;
       final workspaceKnown =
           _workspaceId == null || workspace || previous.workspaceLoaded;
-      final resolved =
+      var resolved =
           personalKnown &&
           (personal != 'auto' ||
               (workspaceKnown &&
                   (workspaceZone != 'auto' || device.isNotEmpty)));
+      if (resolved) {
+        try {
+          timezoneLocation(
+            personal != 'auto'
+                ? personal
+                : workspaceZone != 'auto'
+                ? workspaceZone
+                : device,
+          );
+        } on Exception catch (error) {
+          resolutionError = error;
+          resolved = false;
+        }
+      }
       if (!resolved && personalKnown && workspaceKnown) {
         _operationalReporter.report(
           OperationalPhase.timezoneResolve,
-          deviceError ?? StateError('device_timezone_unavailable'),
+          resolutionError ?? StateError('device_timezone_unavailable'),
         );
       }
       emit(
@@ -371,9 +395,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
               ? !personalKnown || !workspaceKnown
                     ? previous.errorMessage ??
                           'Timezone preferences are unavailable.'
-                    : deviceError == null
+                    : resolutionError == null
                     ? 'Device timezone is unavailable.'
-                    : _failureMessage(deviceError)
+                    : _failureMessage(resolutionError)
               : null,
           personalLoaded: !workspace || previous.personalLoaded,
           workspaceLoaded: workspace || previous.workspaceLoaded,
@@ -413,5 +437,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
 }
 
 String _failureMessage(Object error) => error is ApiException
-    ? '${error.statusCode}: ${error.message}'
+    ? error.code == 'NATIVE_INTEGRITY_REQUIRED'
+          ? 'NATIVE_INTEGRITY_REQUIRED'
+          : '${error.statusCode}: ${error.message}'
     : error.toString();

@@ -17,9 +17,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "ttr": "./dist/cli/index.js",
-    "tuturuuu": "./dist/cli/index.js",
-    "tutur3u": "./dist/cli/index.js"
+    "ttr": "./bin/ttr.cjs",
+    "tuturuuu": "./bin/ttr.cjs",
+    "tutur3u": "./bin/ttr.cjs"
   },
   "exports": {
     ".": {
@@ -79,14 +79,14 @@
       "default": "./dist/platform.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": ["dist", "bin", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "node scripts/portable-build.cjs",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
-    "ttr": "bun src/cli/index.ts",
+    "ttr": "node ../../scripts/trusted-ttr.js",
     "type-check": "tsc --project tsconfig.typecheck.json",
     "clean": "rm -rf dist .turbo tsconfig.build.tsbuildinfo",
     "prepack": "bun run clean && bun run build",
@@ -117,5 +117,5 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

@@ -79,3 +79,23 @@ class _TaxonomyFieldErrorText extends StatelessWidget {
     );
   }
 }
+
+class _TaxonomyFieldLabel extends StatelessWidget {
+  const _TaxonomyFieldLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Text(
+      label,
+      style: theme.typography.xSmall.copyWith(
+        color: theme.colorScheme.mutedForeground,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.35,
+      ),
+    );
+  }
+}

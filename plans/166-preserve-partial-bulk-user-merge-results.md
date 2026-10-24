@@ -91,7 +91,7 @@ note/manifest rather than claiming a Rust implementation.
 | Contacts build | `bun run --cwd apps/contacts build` | exit 0 |
 | Migration manifest | `bun migration:tanstack:manifest` | Web compatibility route remains tracked as `legacy-next` with current shared-handler note |
 | Localization | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | all message gates pass if copy changed |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -158,7 +158,7 @@ Use branch `fix/preserve-partial-bulk-user-merges` and commit
    override for the Web compatibility route as `legacy-next`, noting that the
    shared users-core response is sanitized and that no Rust mutation exists;
    regenerate the manifest. Run typechecks, localization commands, Contacts
-   build, `bun check`, and whitespace verification.
+   build, `bun validate`, and whitespace verification.
 
 ## Done criteria
 

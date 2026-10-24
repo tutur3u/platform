@@ -42,7 +42,7 @@ For wave-1 native publication profiles, use
 
 Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` for plugin edits, then
 focused non-build tests for changed scripts/configuration. Do not run local
-`bun check`, setup or builds; require applicable exact-commit CI checks/builds.
+`bun validate`, setup or builds; require applicable exact-commit CI checks/builds.
 For recurring coordination failures, prefer the evidence-state checker and
 the [program orchestration reference](../tuturuuu-agent-coordination/references/program-orchestration.md) over
 another universal prompt rule. Validation should

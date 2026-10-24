@@ -56,7 +56,7 @@ obtain database/type ownership. Use Plan 151 disposable validation only.
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/habit-completion-atomic.sql` | Plan 163 generates types from the same disposable migrated stack; only expected RPC drift remains |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | production build passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -94,7 +94,7 @@ window; do not push or apply production migrations.
 - [ ] Any internal failure rolls back both writes.
 - [ ] Retry and concurrent opposing mutations have a tested deterministic rule.
 - [ ] Public/authenticated callers cannot spoof the service-role RPC.
-- [ ] Full database suite, generated types, Tasks build, and `bun check` pass.
+- [ ] Full database suite, generated types, Tasks build, and `bun validate` pass.
 
 ## STOP conditions
 

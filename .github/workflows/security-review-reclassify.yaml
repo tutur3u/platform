@@ -1,0 +1,109 @@
+name: Security Review Reclassification
+
+# Recomputes the Security review check after a review is submitted or
+# dismissed (security-review-recheck.yaml). workflow_run always runs this file
+# from the default branch, and the completion is only a wake-up signal: the
+# open pull request whose live head matches, its file list and its current
+# reviews are re-read through the API, so a spoofed or replayed signal can only
+# cause an honest recomputation. Never check out, install or execute pull
+# request content here.
+on:
+  workflow_run:
+    workflows: ["Security Review Recheck"]
+    types:
+      - completed
+
+concurrency:
+  group: security-review-reclassify-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  # Finds the open pull request whose live head matches the signal through the
+  # API. Its outputs are API-derived, never copied from the event.
+  resolve:
+    name: Resolve reviewed pull request
+    if: github.event.workflow_run.event == 'pull_request_review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      author: ${{ steps.resolve.outputs.author }}
+      found: ${{ steps.resolve.outputs.found }}
+      head_sha: ${{ steps.resolve.outputs.head_sha }}
+      number: ${{ steps.resolve.outputs.number }}
+    steps:
+      - name: Check out the default-branch classifier only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/security-paths.js
+            scripts/ci/security-review-classification.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Find the live pull request
+        id: resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SECURITY_REVIEW_RESOLVE_ONLY: "true"
+          TRIGGER_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TRIGGER_HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/ci/security-review-classification.js
+
+  # Evaluates and posts inside the same per-PR group as the classifier
+  # (security-review-pr-<number>), so the two never interleave.
+  reclassify:
+    name: Reclassify security review
+    needs: resolve
+    if: needs.resolve.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: security-review-pr-${{ needs.resolve.outputs.number }}
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      checks: write
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out the default-branch classifier only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/security-paths.js
+            scripts/ci/security-review-classification.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Recompute the security review check from current reviews
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
+          PR_AUTHOR: ${{ needs.resolve.outputs.author }}
+          PR_NUMBER: ${{ needs.resolve.outputs.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
+        run: node scripts/ci/security-review-classification.js

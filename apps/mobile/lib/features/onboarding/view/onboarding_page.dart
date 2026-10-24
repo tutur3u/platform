@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_backdrop.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_choice_slide.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_slide.dart';

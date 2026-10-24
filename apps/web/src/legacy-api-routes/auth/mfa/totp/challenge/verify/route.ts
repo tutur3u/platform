@@ -6,6 +6,10 @@ import {
   extractIPFromHeaders,
   recordMFAVerifyFailure,
 } from '@tuturuuu/utils/abuse-protection';
+import {
+  clearMFAVerifySubjectFailures,
+  reserveMFAVerifySubjectAttempt,
+} from '@tuturuuu/utils/abuse-protection/mfa-subject-limits';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -46,6 +50,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Per-account budget: follows the user and factor across source IPs.
+    // The attempt is reserved before contacting Auth so parallel requests
+    // cannot outrun the counter; a valid code clears it.
+    const subject = { userId: user.id, factorId: String(factorId) };
+    const subjectCheck = await reserveMFAVerifySubjectAttempt(subject);
+    if (!subjectCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: subjectCheck.reason || 'Too many failed attempts',
+          retryAfter: subjectCheck.retryAfter,
+        },
+        { status: 429 }
+      );
+    }
+
     // Verify the challenge with the provided code
     const { data, error } = await supabase.auth.mfa.verify({
       factorId,
@@ -61,6 +80,7 @@ export async function POST(request: Request) {
 
     // Clear failures on success
     void clearMFAVerifyFailures(ipAddress);
+    await clearMFAVerifySubjectFailures(subject);
 
     return NextResponse.json({
       message: 'Challenge verified successfully',

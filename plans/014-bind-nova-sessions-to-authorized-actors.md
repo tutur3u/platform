@@ -53,7 +53,7 @@ manager helper is `canManageNovaChallenge` in
 | Detail route | `bun --cwd apps/nova vitest run 'src/app/api/v1/sessions/[sessionId]/route.test.ts'` | exit 0; owner/manager/foreign matrix passes |
 | Collection regression | `bun --cwd apps/nova vitest run src/app/api/v1/sessions/route.test.ts` | exit 0; list/create remain actor-bound |
 | Nova typecheck | `bun run --cwd apps/nova type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Nova build | `bun run --cwd apps/nova build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -132,7 +132,7 @@ Run every command in the table. Expected: all Bun commands exit 0 and
 - [ ] Session updates cannot transfer ownership.
 - [ ] Unrelated users and wrong-challenge managers cannot read or mutate rows.
 - [ ] Collection GET/POST remain bound to the authenticated actor.
-- [ ] Focused tests, typecheck, `bun check`, Nova build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, Nova build, and whitespace pass.
 
 ## STOP conditions
 

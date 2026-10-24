@@ -66,7 +66,7 @@ stop if a supported client of either legacy path appears.
 | Calendar typecheck | `bun run --cwd apps/calendar type-check` | exit 0 |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -123,7 +123,7 @@ cron credential bypasses it. Assert denials perform no admin/provider work.
 
 ### Step 5: Run both host gates
 
-Run focused tests, source absence, both type/build gates, `bun check`, and
+Run focused tests, source absence, both type/build gates, `bun validate`, and
 whitespace.
 
 ## Done criteria

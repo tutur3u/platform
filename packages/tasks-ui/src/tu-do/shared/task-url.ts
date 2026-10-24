@@ -1,5 +1,14 @@
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 
+/** Linear-time trim of leading and trailing slashes. */
+function trimSlashes(value: string) {
+  let start = 0;
+  let end = value.length;
+  while (start < end && value.charCodeAt(start) === 47) start += 1;
+  while (end > start && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(start, end);
+}
+
 interface BuildWorkspaceTaskUrlOptions {
   boardId: string;
   currentPathname: string;
@@ -68,7 +77,7 @@ export function buildWorkspaceTaskUrl({
     routePrefix ??
     inferRoutePrefix(currentPathname, workspaceSlug, workspaceId);
   const normalizedRoutePrefix = resolvedRoutePrefix
-    ? `/${resolvedRoutePrefix.replace(/^\/+|\/+$/g, '')}`
+    ? `/${trimSlashes(resolvedRoutePrefix)}`
     : '';
   const relativeUrl = `${localePrefix}/${workspaceSlug}${normalizedRoutePrefix}/boards/${boardId}?task=${taskId}`;
 

@@ -57,7 +57,7 @@ mutation. The prepared Rust GET already uses the canonical authorization UUID.
 | Inventory tests | `bun --cwd apps/inventory vitest run src/__tests__/product-supplier-workspace-aliases.test.ts src/__tests__/product-supplier-item-update-payload.test.ts` | UUID, personal, handle, failure, and Plan 275 contracts pass |
 | Rust parity | `cd apps/backend && cargo test workspaces_product_suppliers` | Rust GET alias/UUID parity passes |
 | Apps | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | Inventory typecheck/build pass |
-| Backend/repository | `bun check:backend && bun check && git diff --check` | backend, canonical, and whitespace gates pass |
+| Backend/repository | `bun check:backend && bun validate && git diff --check` | backend, canonical, and whitespace gates pass |
 
 ## Scope
 

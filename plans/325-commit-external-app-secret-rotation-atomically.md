@@ -71,7 +71,7 @@ registry updates.
 | Service | `bun --cwd apps/infrastructure vitest run src/lib/app-coordination/external-apps.test.ts 'src/app/api/v1/infrastructure/external-apps/[appId]/secrets/route.test.ts'` | failure matrix and exact one-time success pass |
 | Infrastructure | `bun --cwd apps/infrastructure run type-check && bun --cwd apps/infrastructure run build` | typecheck and app build pass |
 | No partial helper | `rg -n 'replaceExternalAppFields|getExternalAppById\(id, sbAdmin\)' apps/infrastructure/src/lib/app-coordination/external-apps.ts` | old delete/insert helper and post-rotation read are absent |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only in-scope paths and plan status changed |
 
 ## Scope
@@ -118,7 +118,7 @@ table, automatic consumer rollout, or guaranteeing delivery after network loss.
 - [ ] Plaintext is never persisted/logged; ambiguous transport retry semantics
   are tested and documented without overclaiming delivery.
 - [ ] pgTAP, deterministic typegen, service/route tests, Infrastructure build,
-  `bun check`, scope, and whitespace gates pass.
+  `bun validate`, scope, and whitespace gates pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

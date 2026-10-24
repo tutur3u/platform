@@ -65,7 +65,7 @@ review gates, and delivery rules take precedence over generic skill examples.
 
 Every open PR has an isolated owning worktree under `.worktrees/`. Run `bun install`
 immediately after creating it. Never run `bun setup`, local builds, or local
-`bun check`; use focused non-build checks and exact-head CI.
+`bun validate`; use focused non-build checks and exact-head CI.
 
 Current upstream `gh-stack` supports branches distributed across linked worktrees.
 Its catalog and recovery journals live in Git's common directory, so mutations
