@@ -124,6 +124,27 @@ These are request counts, not billed usage; the processors' own database,
 provider and email work is unchanged. Moving a schedule does not reduce the
 target project's function invocations; moving its processor does.
 
+### First ledger publication
+
+Production still runs the five-minute, `WEB_ORIGIN`-only Worker. The parity
+baseline (`scripts/ci/fixtures/cf-worker-parity/cron-control.json`) records that
+live identity as `previousIdentity` and the nine triggers, origin and stop-fence
+vars and `CRON_LEDGER` binding as `identity`, under transition `CRON-LEDGER-1`.
+The settings preflight admits the move only from that exact live state; see the
+[settings transition rule](/build/development-tools/cf-cli-wrangler-parity#production-cutover-checklist).
+Jobs and Worker processors stay off, so the change adds only the configuration-check
+ticks counted above.
+
+`cf deploy --prebuilt --no-provision` creates the `CronLedger` namespace itself:
+cf 1.0.0-beta.20 sends a non-empty `exports` declaration in the script upload
+instead of migration tags, and `--no-provision` only skips KV, D1, R2, queue,
+AI Search, agent memory, dispatch namespace and Flagship provisioning. This first
+`exports` publication on an existing script is unrehearsed; if the upload is
+rejected, the publication step fails and `after` never runs. After promotion, check
+`/health` and, where the operator token is installed, the ledger-backed
+`GET /control/jobs`. Then remove the transition so later deployments return to the
+unchanged-settings rule.
+
 ### Per-job cutover
 
 Never run both owners unfenced, and never enable a job in production as a side
