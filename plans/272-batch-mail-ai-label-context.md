@@ -81,7 +81,7 @@ not apply production migrations.
 | Focused database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/mail-ai-label-thread-context.sql` | bounds, top-ten/ties, tenant scope, ACL, and query shape pass |
 | Full/typegen database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP passes and generated RPC types update atomically |
 | Mail | `bun run --cwd apps/mail type-check && bun run --cwd apps/mail build` | both exit 0 |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 

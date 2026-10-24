@@ -28,9 +28,10 @@ export async function resourceStatusDetails(
     ownerSlots: string[];
     waiting: ResourceOwner[];
   },
-  now = Date.now()
+  now = Date.now(),
+  cpuTable?: Awaited<ReturnType<typeof processCpuTable>>
 ) {
-  const table = await processCpuTable();
+  const table = cpuTable ?? (await processCpuTable());
   const ownerDetails = await Promise.all(
     state.owners.map(async (owner, index) => {
       const slot = state.ownerSlots[index];

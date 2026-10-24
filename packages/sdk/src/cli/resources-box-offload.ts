@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import {
+  COMMIT_RUN_PROTOCOL_VERSION,
   type DevboxFleetRunner,
   type DevboxFleetSnapshot,
   type DevboxRunnerBlocker,
@@ -14,6 +16,7 @@ import {
   offloadRequest,
   offloadRunIdSchema,
   offloadRunSchema,
+  offloadStopByKeySchema,
 } from './resources-offload-control';
 
 export { offloadRequest } from './resources-offload-control';
@@ -29,6 +32,31 @@ const LOG_PAGE_SIZE = 1000;
 // Consecutive control-plane failures tolerated while following a run before
 // it is stopped remotely.
 const MAX_FOLLOW_FAILURES = 5;
+// Overall bound for cancelling an unacknowledged create by its operation key.
+const STOP_BY_KEY_BUDGET_MS = 10_000;
+const STOP_BY_KEY_ATTEMPTS = 3;
+
+function errorStatus(error: unknown) {
+  return error && typeof error === 'object' && 'status' in error
+    ? error.status
+    : undefined;
+}
+
+// The server refuses keyed creates before writing anything until its key
+// storage is confirmed; that 503 is a definite rejection, not an outage.
+export const IDEMPOTENCY_UNAVAILABLE_CODE = 'DEVBOX_IDEMPOTENCY_UNAVAILABLE';
+function isDefiniteRejection(error: unknown) {
+  const status = errorStatus(error);
+  if (typeof status !== 'number') return false;
+  if (status === 503)
+    return (
+      !!error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === IDEMPOTENCY_UNAVAILABLE_CODE
+    );
+  return [400, 401, 403, 404, 405, 409, 413, 415, 422, 429].includes(status);
+}
 
 /**
  * The run was never confirmed created. `rejected` means the server refused it
@@ -56,7 +84,7 @@ export function commitRunCommand(sha: string, prefix: string, argv: string[]) {
     COMMIT_RUN_ENVELOPE,
     Buffer.from(
       JSON.stringify({
-        v: 1,
+        v: COMMIT_RUN_PROTOCOL_VERSION,
         sha,
         prefix: prefix.replace(/\/+$/u, ''),
         command: argv,
@@ -180,6 +208,8 @@ export async function runBoxOffload({
   write = (text: string) => process.stdout.write(text),
   log = (text: string) => process.stderr.write(`[ttr resources] ${text}\n`),
   pollMs = POLL_MS,
+  stopRetryMs = 1000,
+  operationId = randomUUID(),
 }: {
   client: Pick<TuturuuuUserClient, 'devboxes'>;
   runnerId: string;
@@ -190,6 +220,9 @@ export async function runBoxOffload({
   write?: (text: string) => void;
   log?: (text: string) => void;
   pollMs?: number;
+  stopRetryMs?: number;
+  /** Idempotency key for the create; generated per offload. */
+  operationId?: string;
 }) {
   const deadline = Date.now() + (timeoutSeconds + 60) * 1000;
   let interrupted: number | undefined;
@@ -225,6 +258,43 @@ export async function runBoxOffload({
       );
     }
   };
+  // The create may have succeeded remotely even though its acknowledgement was
+  // lost (Ctrl-C, timeout, dropped connection). The server dedupes on the
+  // operation key, so cancel by key; a 404 can mean the create is still in
+  // flight, so retry briefly before reporting that cancellation is unconfirmed.
+  const stopByKey = async (reason: string) => {
+    const budgetEnd = Date.now() + STOP_BY_KEY_BUDGET_MS;
+    for (let attempt = 1; attempt <= STOP_BY_KEY_ATTEMPTS; attempt += 1) {
+      try {
+        const stopped = offloadStopByKeySchema.safeParse(
+          await offloadRequest(
+            (signal) => client.devboxes.stopRunByKey(operationId, { signal }),
+            {
+              timeoutMs: Math.min(
+                OFFLOAD_REQUEST_TIMEOUT_MS,
+                Math.max(1, budgetEnd - Date.now())
+              ),
+            }
+          )
+        );
+        log(
+          `${reason}; stop requested for run ${stopped.success ? stopped.data.runId : '(id not returned)'} (operation ${operationId})`
+        );
+        return;
+      } catch (error) {
+        if (
+          errorStatus(error) !== 404 ||
+          attempt === STOP_BY_KEY_ATTEMPTS ||
+          budgetEnd - Date.now() <= stopRetryMs
+        )
+          break;
+        await new Promise((resolve) => setTimeout(resolve, stopRetryMs));
+      }
+    }
+    log(
+      `${reason}; the run may exist remotely and its cancellation was not confirmed. Operation key ${operationId}: find the run with \`ttr box list\` and stop it with \`ttr box stop <run-id>\`.`
+    );
+  };
   try {
     let created: unknown;
     try {
@@ -235,6 +305,7 @@ export async function runBoxOffload({
           client.devboxes.createRun(
             {
               command: commitRunCommand(sha, prefix, argv),
+              idempotencyKey: operationId,
               leaseMode: 'auto',
               runnerId,
               timeoutSeconds,
@@ -250,17 +321,20 @@ export async function runBoxOffload({
         }
       );
     } catch (error) {
+      const rejected = isDefiniteRejection(error);
       const code = terminalCode();
+      // Only a definite rejection proves no run exists; anything else may have
+      // created one that nobody will follow.
+      if (!rejected)
+        await stopByKey(
+          code === undefined
+            ? 'creation was not acknowledged'
+            : code === 124
+              ? 'timed out before creation was acknowledged'
+              : 'interrupted before creation was acknowledged'
+        );
       if (code !== undefined) return code;
-      const status =
-        error && typeof error === 'object' && 'status' in error
-          ? error.status
-          : undefined;
-      throw new OffloadNotCreatedError(
-        error,
-        typeof status === 'number' &&
-          [400, 401, 403, 404, 405, 409, 413, 415, 422, 429].includes(status)
-      );
+      throw new OffloadNotCreatedError(error, rejected);
     }
     try {
       const identity = offloadRunIdSchema.safeParse(created);
@@ -356,7 +430,7 @@ export async function runBoxOffload({
 
 export async function createSessionClient() {
   const [{ readCliConfig, resolveCliTasksBaseUrl, writeCliConfig }, platform] =
-    await Promise.all([import('./config'), import('../platform')]);
+    await Promise.all([import('./config.js'), import('../platform.js')]);
   const config = await readCliConfig();
   if (!config.session?.accessToken || !config.session.refreshToken)
     throw new Error('Offload needs a devbox session. Run `ttr login` first.');

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -171,9 +172,8 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
         ),
         RefreshIndicator(
           onRefresh: _reload,
-          child: ListView(
+          child: AppPageListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 108),
             children: [
               if (_failed)
                 InventoryReadWarning(onRetry: () => unawaited(_reload())),

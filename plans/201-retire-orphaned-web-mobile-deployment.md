@@ -59,7 +59,7 @@ necessary.
 | Typechecks | `bun run --cwd apps/web type-check && bun run --cwd apps/infrastructure type-check && bun run --cwd packages/storage-core type-check` | all exit 0 |
 | Backend | `bun check:backend` | comment/source contract remains valid |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/infrastructure build` | both production builds exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

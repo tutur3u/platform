@@ -10,7 +10,10 @@ import { checkRequiredAccountMfa } from './required-mfa-request';
  * borrow another session's assurance. Cookie-only legacy handlers can ignore a
  * Bearer header, so ambient credentials must be checked as well.
  * Uses explicit access tokens and never rotates browser refresh cookies. */
-export async function enforceRequiredMfaRequest(request: NextRequest) {
+export async function enforceRequiredMfaRequest(
+  request: NextRequest,
+  onVerifiedBearerActor?: (userId: string) => void
+) {
   if (
     request.method === 'OPTIONS' ||
     isAccountAssuranceRecoveryPath(request.nextUrl.pathname)
@@ -79,6 +82,13 @@ export async function enforceRequiredMfaRequest(request: NextRequest) {
           }
         );
       }
+      if (
+        !appToken &&
+        request.headers
+          .get('authorization')
+          ?.match(/^Bearer\s+(\S+)$/i)?.[1] === token
+      )
+        onVerifiedBearerActor?.(userId);
     }
     return null;
   } catch {

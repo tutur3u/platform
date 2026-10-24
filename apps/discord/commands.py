@@ -17,6 +17,7 @@ from discord_client import (
     DiscordClient,
     DiscordMissingAccessError,
 )
+from error_reporting import report_error, user_error
 from link_shortener import LinkShortener
 from utils import (
     get_base_url,
@@ -34,6 +35,15 @@ class CommandHandler:
     def __init__(self):
         self.discord_client = DiscordClient()
         self.link_shortener = LinkShortener()
+
+    async def reply_error(
+        self, app_id: str, interaction_token: str, context: str, summary: str, *, error: Exception
+    ) -> None:
+        """Log ``error`` under a correlation ID and send the user fixed text."""
+        error_id = report_error(context, error=error)
+        await self.discord_client.send_response(
+            {"content": user_error(summary, error_id)}, app_id, interaction_token
+        )
 
     def get_command_definitions(self) -> list[dict]:
         """Get all slash command definitions."""
@@ -226,8 +236,8 @@ class CommandHandler:
             print("🤖: Link shortening timed out")
             result = {"error": "Link shortening timed out. Please try again."}
         except Exception as e:
-            print(f"🤖: Error in link shortening: {e}")
-            result = {"error": f"Link shortening failed: {e!s}"}
+            error_id = report_error("link shortening", error=e)
+            result = {"error": f"Link shortening failed. (Error ID: `{error_id}`)"}
 
         # Format and send response
         if result.get("success"):
@@ -246,7 +256,7 @@ class CommandHandler:
             await self.discord_client.send_response({"content": message}, app_id, interaction_token)
             print("🤖: Response sent successfully")
         except Exception as e:
-            print(f"🤖: Error sending response to Discord: {e}")
+            report_error("sending response to Discord", error=e)
 
     async def handle_daily_report_command(
         self,
@@ -353,7 +363,7 @@ class CommandHandler:
                 interaction_token,
             )
         except Exception as e:
-            print(f"Error in daily report command: {e}")
+            report_error("daily report command", error=e)
             await self.discord_client.send_response(
                 {"content": "❌ **Error:** Failed to generate daily report."},
                 app_id,
@@ -442,10 +452,8 @@ class CommandHandler:
             if not plan_id:
                 raise Exception("Missing plan id in response")
         except Exception as e:
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to create plan ({e})."},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "tumeet plan", "Failed to create plan.", error=e
             )
             return
 
@@ -484,10 +492,10 @@ class CommandHandler:
                 app_id,
                 interaction_token,
             )
-            print(f"WOL reminder missing access: {error}")
+            report_error("WOL reminder missing access", error=error)
             return
         except DiscordAPIError as error:
-            print(f"Error sending WOL reminder: {error}")
+            report_error("sending WOL reminder", error=error)
             await self.discord_client.send_response(
                 {
                     "content": (
@@ -593,11 +601,8 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error in ticket command: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to load boards: {e!s}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "ticket command", "Failed to load boards.", error=e
             )
 
     async def handle_boards_command(
@@ -666,11 +671,8 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error in boards command: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to fetch boards: {e!s}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "boards command", "Failed to fetch boards.", error=e
             )
 
     async def handle_lists_command(
@@ -786,11 +788,8 @@ class CommandHandler:
             await self.discord_client.send_response({"content": message}, app_id, interaction_token)
 
         except Exception as e:
-            print(f"Error in lists command: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to fetch lists: {e!s}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "lists command", "Failed to fetch lists.", error=e
             )
 
     async def handle_board_selection_interaction(
@@ -877,11 +876,8 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error in board selection: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to load lists: {e!s}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "board selection", "Failed to load lists.", error=e
             )
 
     async def handle_list_selection_interaction(
@@ -939,11 +935,8 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error in list selection: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to prepare ticket form: {e!s}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "list selection", "Could not open ticket form.", error=e
             )
 
     async def handle_ticket_modal_submission(
@@ -1119,11 +1112,8 @@ class CommandHandler:
             await self.discord_client.send_response({"content": message}, app_id, interaction_token)
 
         except Exception as e:
-            print(f"Error creating ticket: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to create task ticket: {e!s}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "creating ticket", "Failed to create ticket.", error=e
             )
 
     def _validate_assign_inputs(
@@ -1314,7 +1304,7 @@ class CommandHandler:
                         if discord_id:
                             new_mentions.append(f"<@{discord_id}>")
                 except Exception as e:  # likely duplicate
-                    print(f"Assign duplicate or error for user {uid}: {e}")
+                    report_error(f"Assign duplicate or error for user {uid}", error=e)
                     continue
 
             # Prepare response
@@ -1333,11 +1323,8 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error in assign command: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to assign users: {e}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "assign command", "Failed to assign users.", error=e
             )
 
     async def handle_unassign_command(
@@ -1403,7 +1390,7 @@ class CommandHandler:
                         if discord_id:
                             removed_mentions.append(f"<@{discord_id}>")
                 except Exception as e:
-                    print(f"Unassign error for user {uid}: {e}")
+                    report_error(f"Unassign error for user {uid}", error=e)
                     continue
 
             if removed == 0:
@@ -1423,11 +1410,8 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error in unassign command: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to unassign users: {e}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "unassign command", "Failed to unassign users.", error=e
             )
 
     async def handle_assignees_command(
@@ -1571,11 +1555,8 @@ class CommandHandler:
                 interaction_token,
             )
         except Exception as e:
-            print(f"Error in assignees command: {e}")
-            await self.discord_client.send_response(
-                {"content": f"❌ **Error:** Failed to list assignees: {e}"},
-                app_id,
-                interaction_token,
+            await self.reply_error(
+                app_id, interaction_token, "assignees command", "Failed to list assignees.", error=e
             )
 
     async def _make_stats_request(self, url: str) -> tuple[int | None, dict | str | None]:
@@ -1592,8 +1573,8 @@ class CommandHandler:
         except TimeoutError:
             return (None, "timeout")
         except Exception as e:
-            print(f"Request error: {e}")
-            return (None, str(e))
+            report_error("stats request", error=e)
+            return (None, "request_failed")
 
     async def _handle_stats_response(
         self, status: int | None, result: dict | str | None, attempt: int, max_attempts: int
@@ -1674,7 +1655,7 @@ class CommandHandler:
 
             return None
         except Exception as e:
-            print(f"Error fetching time tracking stats (outer): {e}")
+            report_error("fetching time tracking stats (outer)", error=e)
             return None
 
     def _format_daily_report(self, stats: dict, user_info: dict) -> str:
@@ -1799,7 +1780,7 @@ class CommandHandler:
                 )
             return filtered
         except Exception as e:
-            print(f"Error fetching workspace members: {e}")
+            report_error("fetching workspace members", error=e)
             return []
 
     def _calculate_time_buckets(self, target_date=None):
@@ -1848,7 +1829,7 @@ class CommandHandler:
             started = started.replace(tzinfo=datetime.UTC) if started.tzinfo is None else started
             started_local = started.astimezone(tz)
         except Exception as e:
-            print(f"Error parsing time tracking data: {e}")
+            report_error("parsing time tracking data", error=e)
             return
 
         # Update time buckets
@@ -1928,7 +1909,7 @@ class CommandHandler:
             ]
             return aggregated, members
         except Exception as e:
-            print(f"_fetch_workspace_time_tracking_stats fallback due to error: {e}")
+            report_error("_fetch_workspace_time_tracking_stats fallback due to error", error=e)
             return None, []
 
     def _get_discord_user_map(self, _workspace_id: str) -> dict[str, str]:
@@ -1953,7 +1934,7 @@ class CommandHandler:
                     mapping[puid] = duid
             return mapping
         except Exception as e:
-            print(f"_get_discord_user_map error: {e}")
+            report_error("_get_discord_user_map error", error=e)
             return {}
 
     def _render_workspace_report(
@@ -2104,8 +2085,8 @@ class CommandHandler:
             return {"content": content, "components": components}
 
         except Exception as e:
-            print(f"Error in board selection: {e}")
-            return {"content": f"❌ **Error:** Failed to load lists: {e!s}", "components": []}
+            report_error("board selection", error=e)
+            return {"content": "❌ **Error:** Could not load lists.", "components": []}
 
     def create_ticket_form_modal(self, list_id: str, _user_info: dict | None = None) -> dict:
         """Create ticket form modal data."""
@@ -2150,12 +2131,12 @@ class CommandHandler:
             )
 
         except Exception as e:
-            print(f"Error creating modal: {e}")
+            report_error("creating modal", error=e)
             # Return error instead of invalid modal
             return {
                 "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                 "data": {
-                    "content": f"❌ **Error:** Failed to create ticket form: {e!s}",
+                    "content": "❌ **Error:** Could not create the ticket form.",
                     "flags": 64,  # EPHEMERAL flag
                 },
             }

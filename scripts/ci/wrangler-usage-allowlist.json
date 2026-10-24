@@ -1,0 +1,1517 @@
+{
+  "$comment": "Shrink-only allowlist enforced by scripts/ci/wrangler-usage-guard.test.js. Lower counts as usage is removed; a new entry, count growth or changed gap needs a fresh structured admitted object with a repository PR decision URL and reason. Uses conservatively count every Wrangler token, including comments. See apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx.",
+  "gaps": {
+    "do-publication-rehearsal": {
+      "reason": "Existing Durable Object Workers must retain applied v1 production migration tags until disposable same-history migration/data-retention rehearsal proves cf exports publication parity.",
+      "owner": "cf/Void Wrangler-exit lane; release orchestrator owns rehearsal acceptance and the separate publisher promotion.",
+      "removal": "Remove only in a separately reviewed cf publisher change carrying the disposable migration and data-survival rehearsal receipt."
+    },
+    "opennext-adapter": {
+      "reason": "Parley and Lettin publish through @opennextjs/cloudflare, which reads wrangler.jsonc and invokes Wrangler; cf has no OpenNext adapter.",
+      "owner": "Parley/Lettin TanStack Start on Void migration lane (orchestrator assigns)",
+      "removal": "Delete when the app runs on Start + Void and publishes its exact artifact with cf deploy --prebuilt."
+    },
+    "parity-tooling": {
+      "reason": "Migration tooling reads former wrangler.jsonc files and their normalized baselines to prove cf deployment-identity parity; it runs no Wrangler CLI and ships no Wrangler config.",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Delete with the tooling once every native Worker is on cf and its production cutover is verified."
+    },
+    "paused-runtime": {
+      "reason": "Retained paused runtimes (apps/backend, apps/tanstack-web) and their paused CI/tests; AGENTS.md forbids updating them during active work.",
+      "owner": "Runtime resumption owner (orchestrator), see apps/docs/build/devops/active-runtime.mdx",
+      "removal": "Migrate to cf + Void when the runtime resumes, or delete with the runtime when it is retired."
+    },
+    "pending-migration": {
+      "reason": "Native Worker with no cf capability gap for its operations, awaiting its per-service parity PR (Durable Object migrations need manual exports conversion and a disposable rehearsal).",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Delete in the service PR that moves it to cloudflare.config.ts, cf types, Build Output parity and cf deploy --prebuilt."
+    },
+    "producer-inventory": {
+      "reason": "Compiler qualification detects pre-existing wrangler types producers and cf types equivalents; its detector and data-only regression fixture perform no invocation.",
+      "owner": "Development tooling and native type-check qualification owner",
+      "removal": "Remove the compatibility detector and fixture admission after every declaration producer uses cf types and no legacy producer needs recognition."
+    },
+    "shared-toolchain": {
+      "reason": "Root wrangler devDependency supplies the CLI for every remaining gap; trustedDependencies, .wrangler ignores and policy tests cover @cloudflare/vite-plugin 1.x, which depends on the wrangler library.",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Delete when no other allowlist entry needs the Wrangler CLI and @cloudflare/vite-plugin 2.x (no wrangler dependency) is adopted."
+    },
+    "void-wave1-publication": {
+      "reason": "Void deploy always rebuilds and provisions (--skip-build is static-only in Void 1.1.12 and 1.2.1), so Wave 1 Start + Void apps publish the exact Void-emitted config with Wrangler.",
+      "owner": "Wave 1 native Start + Void lane",
+      "removal": "Delete when Void builds emit a cf Build Output (or Void ships a prebuilt Worker deploy) and cf deploy --prebuilt publication is proven byte-identical."
+    }
+  },
+  "files": {
+    ".github/workflows/apps-cloudflare.yaml": {
+      "lines": 9,
+      "uses": 9,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "24ed53e4bdf4d2c96fcef553a50a4d1286b78bf56c22f3f0d4d0c2456a7f1442"
+    },
+    ".github/workflows/colab-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "9db1107ae358039a4c0a1c925f33da6740c0d9c3a1f85351e26b8f512a18e73b"
+    },
+    ".github/workflows/coordination-cloudflare.yaml": {
+      "lines": 14,
+      "uses": 20,
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "digest": "432917c334a10df4f54b39b09d86237638b0b3262568345f46a89319545fdd21"
+    },
+    ".github/workflows/devbox-control-cloudflare.yaml": {
+      "lines": 13,
+      "uses": 18,
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
+    },
+    ".github/workflows/lettin-cloudflare.yaml": {
+      "lines": 1,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a5e511a92544ac9fdf20c4f5933836f11d10fe388be6d4c5c7902dbadf16ea02"
+    },
+    ".github/workflows/mail-calendar-tasks-builds.yaml": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "41921485da0ed2571deaa5229e178d3e2ed68370c7ca1145e6c4a8f0e4daa172"
+    },
+    ".github/workflows/meet-cloudflare.yaml": {
+      "lines": 30,
+      "uses": 34,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "cf6695ee9df5d0771a1d45408d20c86bc921f2eb7dc72db33eebee4f47b19b2d"
+    },
+    ".github/workflows/parley-cloudflare.yaml": {
+      "lines": 3,
+      "uses": 4,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "9277cfdb4d2c575212c57c3969b41d019932f379df4a9e677f27a655e310fb5a"
+    },
+    ".github/workflows/rust-backend.yml": {
+      "lines": 14,
+      "uses": 18,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "73a24e5b941f8f91cd9619cac0afdadfc6fa0d0f55cc214f7387f5722fe51349"
+    },
+    ".github/workflows/rust-verify.yml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
+    },
+    ".github/workflows/wave1-native-app.yaml": {
+      "lines": 6,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "2cd0420e38464d156182a148232c06db5e8606cdac916911bff2025aee6aa556"
+    },
+    ".github/workflows/wave1-native-publish.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
+    },
+    ".gitignore": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "84a45aa3eccd3adcc2055ee0aa8ebc6fd719a2be57fd2643c383b7d3d61d0506"
+    },
+    "apps/apps/cloudflare/gateway-built-worker.test.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "8a21c236b68d2176bbabce2bafe52fa0332316561294cd4a298888b1087eec59"
+    },
+    "apps/apps/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/apps/wrangler.staging.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "6d6556e5136dec3fe17467ddb04a9ceec72abac2a8fc67dbc7722f2870f470f3"
+    },
+    "apps/backend/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "df3f9e7568bde2881c4b73d791468a87eaa6c1c48faf94672890d090b120943c"
+    },
+    "apps/calendar/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "cb164988a4b62ae085f64eaad548e91e9310e9e46a8b1c5d60760ed67a85fb64"
+    },
+    "apps/colab/package.json": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "4c1ed0c6973427416bf15812d5389183f4c091d996df136e5f17cb11f3fe5a47"
+    },
+    "apps/colab/scripts/verify-expiry-runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "54722804b8f8bb2771c4b0e476ceacf2dfd5395f2be64db31231f0672c5434eb"
+    },
+    "apps/colab/test-fixtures/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "6767060afa89f93578d66a2dc9bbdf99bbdc60e553b1abffabaff0dd95a9d4fe"
+    },
+    "apps/colab/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a17ce10f9c0d158ccc88b2c98fcfa861b50b8724ab134e2fa90ad6cf28b98ee6"
+    },
+    "apps/coordination/wrangler.publish.jsonc": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
+      "lines": 2,
+      "uses": 2,
+      "digest": "bcf522b59db5e53edd34048ed5c20f3d9821a45cb0ca0d2be0e7726b91f4aa34"
+    },
+    "apps/devbox-control/wrangler.publish.jsonc": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
+      "lines": 2,
+      "uses": 2,
+      "digest": "020b34ea92ac676f6c33d3c150563c4ede845910adff3f06d109fbaa26aefdb7"
+    },
+    "apps/docs/docs.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "352e8579027bfdbb0ff2c4a66197551c79ca581ce17cba225883cef6015eefea"
+    },
+    "apps/lettin/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/lettin/cloudflare-env.d.ts": {
+      "lines": 1,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "8fa63aee3cbae784f1741e3618327aeb7a57193d8f3bc98f631b0990b9440e6c"
+    },
+    "apps/lettin/package.json": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "b1f6f53eef189d678604d27afca10f69be7484fd77a65facd2606dfc27be3c50"
+    },
+    "apps/lettin/scripts/configure-identity.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5ffdcc88ac8e5cb6681e91b5b99b9a85dc4a95461ab2b1704f9964c19095a04a"
+    },
+    "apps/lettin/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "3218514f9ed29e05a05534f9ddbf401e27d7c17877b40e37662203509e06cf29"
+    },
+    "apps/mail/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "da616828953c974967e03eed951d6ae998524560879081844d1cc370ebdd6ad0"
+    },
+    "apps/mail/wrangler.email-routing.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "bf3f28a750c92bb8c300492836fa2eff1e326b561e156a39a00ba5f68d6cef44"
+    },
+    "apps/meet-realtime/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/meet-realtime/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5885748fa252384100a1ee1796dc8608a4844ea82e9dced2b6ed892add90a490"
+    },
+    "apps/meet-realtime/scripts/verify-worker-runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "0c9bbece107a71a69a473b3461c58f70ebc564b24361ec5fd6cc7d63f1417481"
+    },
+    "apps/meet-realtime/test-fixtures/channel-retry/verify.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a59a1fffc1b79c6413d42bbdaeb8a76fbc8e5118ab76f98444b967cc82b3b715"
+    },
+    "apps/meet-realtime/test-fixtures/channel-retry/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "ce756e82cafb120fa76fd7f092f86c404244243374fc6221b19d7458ca160699"
+    },
+    "apps/meet-realtime/test-fixtures/collaboration-retry/verify.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5f3d56f22cff389c04465ee767d9cf93e510b8a7131255df42c1324e165634a6"
+    },
+    "apps/meet-realtime/test-fixtures/collaboration-retry/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "0bc922c0774e719f0e0a093349e7bbfd17ec8185f09e2cac1b9e7528175caf09"
+    },
+    "apps/meet-realtime/tests/channels-local-check.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "ca01de9ea4cc7543eda4a6825d860e797b2a9de1b6983be45799d1ea6c67e354"
+    },
+    "apps/meet-realtime/tests/local-worker-check.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "57308e1d665710886078a512d2843ce18632fac1ada6b15950bd62cacdd6d1c9"
+    },
+    "apps/meet-realtime/tests/local-worker.ts": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "9c81912259701b4da701e03a74fd6f818f2f8c0a60b6dfb6e5e066be5121d125"
+    },
+    "apps/meet-realtime/tests/mobile-local-check.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "7e7cd62fa8a9335d93e10300d2974984947d0bfbc13e4fcea70c15ae9ba0b612"
+    },
+    "apps/meet-realtime/tests/programming-local-check.ts": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "ecc58801844cc878cce17bacfae5b9b456db314a4bdef4cff17bc7ead28ff504"
+    },
+    "apps/meet-realtime/vite.config.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "9e15c227f35f6c2d0ad3c5586ae959517cd2d997e3959303be8cce73f001bcf8"
+    },
+    "apps/meet-realtime/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "88750e50ee5662410bba8b7ffcf204da235dbeb7b1c8568539bd4b2d4b93d33d"
+    },
+    "apps/meet-realtime/wrangler.staging.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "d2b4325f281ea21cc110263f86567b31b71095d0d36937e4f841e58f438b9c04"
+    },
+    "apps/meet/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/meet/cloudflare-env.d.ts": {
+      "lines": 1,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "91d757b7d0c034688a3b467681e72c2df51c6d284108dcdce4c030c11313623a"
+    },
+    "apps/meet/package.json": {
+      "lines": 3,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "1112d182c8ce02094bb3dc922ad9dd8f7e2d4acd8be521eb0d503e5f0d0164ce"
+    },
+    "apps/meet/wrangler.legacy.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "77f45040daaf542945632c42fecae933033ec540b3bcdb453c79ce096bbc6bb6"
+    },
+    "apps/parley/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/parley/cloudflare-env.d.ts": {
+      "lines": 1,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a26960e633bf187a9c77cfff0150ba5664027eb4d2e2ca7ae384530c328c068b"
+    },
+    "apps/parley/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "756f05b052825d513704165407c366e1c41677707b9592ed0822bf0baff2f7ec"
+    },
+    "apps/parley/scripts/configure-realtime.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "d74417773f1b71014c5cebea5eedad445d536e323dd2c16b92d46de3e21627b4"
+    },
+    "apps/parley/test-fixtures/built-worker/verify.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5f3d56f22cff389c04465ee767d9cf93e510b8a7131255df42c1324e165634a6"
+    },
+    "apps/parley/test-fixtures/built-worker/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "acd8b935822a8b9b9fb4be36ae2132337d14010b7775483da044d323607dd9f5"
+    },
+    "apps/parley/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "b6dc0cd6589acfa0a56eace8fba5d57323ed82f22f8b0f44dea1132509ea8063"
+    },
+    "apps/tanstack-web/package.json": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "0fc97c4b29530c5ade2c3e2f0dbcac61e558de649b40511ff76a5a5a5da20e83"
+    },
+    "apps/tanstack-web/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "6b612c9727845eb4a7916b3ad7d612485f9703e41054512a04ab90ae1a6eef8f"
+    },
+    "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "4a978d748b90fb9eec49f662dcfa9674fe2e6c342f587d3865ec1fd4bed44053"
+    },
+    "apps/web/src/__tests__/lettin-fixture-diagnostics.test.ts": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "1e59666371951ffd119241c49b99fde3d56ab48e3cb2c22f3810b9f0acb3c931"
+    },
+    "bunfig.toml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "b20e66bc0463186704338cba9f507a4dcc9c9a7b4c45f9ee31cecdc00a56c8ae"
+    },
+    "package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "803f248de510df9b06740ce438b78fb030c5b1b1c6e8261bbacfafe762ef345d"
+    },
+    "packages/meet-core/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5885748fa252384100a1ee1796dc8608a4844ea82e9dced2b6ed892add90a490"
+    },
+    "packages/meet-core/test-fixtures/live-finalization/verify.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5f3d56f22cff389c04465ee767d9cf93e510b8a7131255df42c1324e165634a6"
+    },
+    "packages/meet-core/test-fixtures/live-finalization/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "bcbb803436432247ed4dc192bb85735f75fc20f1be4a53fa2aa8497b86b24ad0"
+    },
+    "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "39ea56e901d0145136a7cb3a3f03a23fb34db384262143f6fab8fecd44c02beb"
+    },
+    "scripts/check-cloudflare-workers.js": {
+      "lines": 54,
+      "uses": 62,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "91fcffdfc883a9beecd8ae764395a1e7474eadd57f9fd0a0eff4061ef6198df1"
+    },
+    "scripts/check-cloudflare-workers.test.js": {
+      "lines": 48,
+      "uses": 52,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "066ababd236575df1327eb049f12227da1d7478509a73c8820972f51fb70e61d"
+    },
+    "scripts/ci/apps-native-artifact.py": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "0f7ac500d05ff3e0f99c76d308b6ed1614e7da17d4cc5c9f7eaeb915a11e532c"
+    },
+    "scripts/ci/apps-native-artifact.test.py": {
+      "lines": 17,
+      "uses": 22,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "3c63c4443ea16882b12f5746e528793ba80b6059f255cd0a7594fdf21dc538a0"
+    },
+    "scripts/ci/apps-native-runtime-hidden.test.mjs": {
+      "lines": 11,
+      "uses": 12,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "1ce3e7dbc7da4816fc09c453f6f66c474701c47e3803a4113f5b0c368a9941b2"
+    },
+    "scripts/ci/apps-native-runtime-launcher.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "8d0e1fe5ea667ffb34211542fde51fcb59ec8d342bece9bc204163bc608178ca"
+    },
+    "scripts/ci/apps-native-runtime-plan.mjs": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "791645a65dfe420d9f2451861130937679baddaad690f50e6434b2b17d40ad1b"
+    },
+    "scripts/ci/apps-native-runtime-pointer.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "f5c83eab331de5a29ea673e11b6a67e7332f87d477b249c8f690921486c1e3a7"
+    },
+    "scripts/ci/apps-native-runtime-pointer.test.mjs": {
+      "lines": 11,
+      "uses": 11,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "ecc5546924c1d4372a04c07a9bf1f55574deb586c1a4607b03c292ea5cbd7a7c"
+    },
+    "scripts/ci/apps-native-runtime-receipt.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "76001f99e4d829dab0ef7c9fd47a835d8439675bcbeedf5fe1dd1c616c807490"
+    },
+    "scripts/ci/apps-native-runtime.mjs": {
+      "lines": 4,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a462da8630d1b329519abfcffd3572b0ff88b45e63049757fc0c0fa387a4659f"
+    },
+    "scripts/ci/apps-native-runtime.test.mjs": {
+      "lines": 20,
+      "uses": 23,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "4e37276f800598baeb980bc03127c6746432b2e38489712f1bf91b491689ec30"
+    },
+    "scripts/ci/bun-check-inventory.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6504",
+        "reason": "Detects pre-existing wrangler types producers and cf types equivalents; no invocation."
+      },
+      "digest": "c55f3fd51dac80c324b145cb06f493e3d14d94c5152d9f8e71280e80f7f4092e"
+    },
+    "scripts/ci/bun-check-qualification.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6504",
+        "reason": "Data-only fixture tests pre-existing wrangler types and cf types producer detection; no invocation."
+      },
+      "digest": "44a2d124db1b7ab13e5cfab56303a465538920ea32ada7d464a755611ffb3497"
+    },
+    "scripts/ci/calendar-emitted-defaults.mjs": {
+      "lines": 6,
+      "uses": 9,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "bc2d1e8fd35fad197ba1b39807c46e414a1241da197986711f1a3087fda00e43"
+    },
+    "scripts/ci/calendar-emitted-defaults.test.mjs": {
+      "lines": 14,
+      "uses": 14,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a82872ee01a2cf8dfbb4a7505a21e5cad5dd06bb2e79ec89e11c76fa2858cf0f"
+    },
+    "scripts/ci/calendar-native-artifact.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "14043e7e482dea6e55205cd6acc2171197043635420db43a734cc6235ae2a624"
+    },
+    "scripts/ci/calendar-native-artifact.test.mjs": {
+      "lines": 22,
+      "uses": 22,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a43ecb06e766f543e9d6796ff0b3c9e049f76849ba901833991c24d20928e452"
+    },
+    "scripts/ci/calendar-native-inventory.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "787d643519d52cfccd5de342c53f470799ff2428356dd723c2ab482d9339bd5b"
+    },
+    "scripts/ci/calendar-native-runtime-profile.test.mjs": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "c6cbf99239784e4f5a43f0bfbcfb69da066d287fa1a90757efa1461f0a6982d4"
+    },
+    "scripts/ci/calendar-native-typegen.test.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "8a87ab0c1e03a6fde8f040c44878243d6f6bf5a8da950b7381b2baa31995dd4f"
+    },
+    "scripts/ci/calendar-native-worker.runtime.mjs": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5971dc83b45d5c31b42368aff611c0d16671da85362c9ccf63523fd68d12b25c"
+    },
+    "scripts/ci/calendar-ssr-diagnostics.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "d58d49cc1bf53bd3fb7c9bde9dc3224668a84f46b734b5d6bdd1f7365be65c6f"
+    },
+    "scripts/ci/cf-adoption-docs.test.js": {
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6486",
+        "reason": "REV-6486-6 and REV-6486-7: guard required adoption documentation against conflict-resolution truncation"
+      },
+      "lines": 2,
+      "uses": 2,
+      "digest": "266117b4de2288a62660949298586be14768bbdd9d9a4fac3df4c0c03922e16a"
+    },
+    "scripts/ci/cf-worker-parity.mjs": {
+      "lines": 9,
+      "uses": 10,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "2f27ae7a2350483a1d7661aa41fe487ef52d6722838609d575f4350d13785d61"
+    },
+    "scripts/ci/cf-worker-parity.test.mjs": {
+      "lines": 26,
+      "uses": 31,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487: retained v1 Wrangler production publication and isolated runtime persistence."
+      },
+      "digest": "4c48fc2eb94578c3de929af8f4e4213a09c666c971d5c83cc63d63395bdfc2bb"
+    },
+    "scripts/ci/cf-worker-publication.test.js": {
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "70f59bbcfa3fd76e0da94e71b73769a58dbdf5c5af8899b888ea8d2a5f60f59a"
+    },
+    "scripts/ci/cf-wrangler-publication.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
+      "lines": 5,
+      "uses": 5,
+      "digest": "c3df53888002b532177d7c3af0e8db99492c0e23969954db092377c7ab8cb420"
+    },
+    "scripts/ci/cf-wrangler-publication.runtime.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "lines": 3,
+      "uses": 4,
+      "digest": "2cd8b2315cd469259b44907dd24ee29cc37186483e65b1fc4128da5a52a16080"
+    },
+    "scripts/ci/cf-wrangler-publication.test.mjs": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+      },
+      "lines": 7,
+      "uses": 8,
+      "digest": "6d7ced9576027a42fe58af1112d7b3b486a8702c36f50b8689a9abe518033b01"
+    },
+    "scripts/ci/ci-cache-policy.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "798346c7eea556728b8e9a0f306200404120c8bb7061d59459dc208b2b35e513"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/cron-control.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "73ef7c58b3b698db84910c1906315acd822ea31ff5b91f429b9617829cdab384"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/devbox-control.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
+    },
+    "scripts/ci/meet-build-metadata.test.js": {
+      "lines": 14,
+      "uses": 17,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "9001690986ebd86f4fd912f9cde3a4aedec0f686c5aa2d4e4636e5e462d1880c"
+    },
+    "scripts/ci/meet-cloudflare-render.runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "4d678a888c92d00ee247a90f95dd63eb026c4c2230d9cbc4f329b6d1b7cb9948"
+    },
+    "scripts/ci/meet-dry-run-scratch.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "e701581fed613880855a7ab047f52741ecd0af8964dd355112da189667ad81d2"
+    },
+    "scripts/ci/meet-emitted-defaults.mjs": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "2c5fa912cbfda7aa0b149dfce5e9fba99d8ca8e3bcd5360af00fa5f3d1efca5b"
+    },
+    "scripts/ci/meet-native-admission.test.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "ef596fc001329c7353073776f45bef775ee3d248dbb2d7c531ec17c13f0809f3"
+    },
+    "scripts/ci/meet-native-evidence.test.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5c80a8469be6f1c051770f0c5f4abe672697edd591775f555fe12b21a20bb9ef"
+    },
+    "scripts/ci/meet-native-fixture.mjs": {
+      "lines": 7,
+      "uses": 7,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "3342dbe61a0e949fae9f0b49c295497e9871d78594c84aeb3c9605ea320a296c"
+    },
+    "scripts/ci/meet-native-graph-files.mjs": {
+      "lines": 7,
+      "uses": 7,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "62b805ce664835511d84d7b223cfce44ad8ce9b887e85e007f274b9b8817832c"
+    },
+    "scripts/ci/meet-native-graph.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "c46542cd45829380de4250bc05c56a5bb99f123785d164512c8cd30fb5662214"
+    },
+    "scripts/ci/meet-native-hidden.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "56bd5dacd8a4b07a27d3ac60d6a03c478e302201967713a097467e6532afb4f4"
+    },
+    "scripts/ci/meet-native-inventory.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "48aad8e234a7efbcd099d0dccefa71990734349fc7ee05bb37989922b645442f"
+    },
+    "scripts/ci/meet-native-launcher.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "649887dffa826c7730666189ec709b7efa81456de700c8de98c76a294e3623f4"
+    },
+    "scripts/ci/meet-native-lifecycle.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "6d5307a70cba9f3e0b46e661415f77a3ec285dc135980df299839f07e80a387c"
+    },
+    "scripts/ci/meet-native-profile.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "e31395cfc378f435a22597fffa3f3a80de1afce6a52223abb668adb54894a489"
+    },
+    "scripts/ci/meet-native-supplier.test.mjs": {
+      "lines": 14,
+      "uses": 17,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "6edbc36230f9007f395609f7565a04e90659f5fb959b138f668d236053a81116"
+    },
+    "scripts/ci/meet-ssr-capture.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "6d5307a70cba9f3e0b46e661415f77a3ec285dc135980df299839f07e80a387c"
+    },
+    "scripts/ci/native-config-default-probe.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "e1c00998ea5b5e58444095042051cfbed58f23df7275e273b832866edfdeb8dd"
+    },
+    "scripts/ci/native-emitted-config-receipt.mjs": {
+      "lines": 7,
+      "uses": 10,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "43d439978e00a01435dd614aefae53d7433cf5872249a8c4e163b3f856ac3ab0"
+    },
+    "scripts/ci/native-emitted-config-receipt.test.mjs": {
+      "lines": 18,
+      "uses": 18,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "0651a5b614b6d499157c16accaf16153002f3b75d2d1d50dbc1148089810f342"
+    },
+    "scripts/ci/native-receipt-layout.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "521e2cc3f7e0aa3a35a8323584954b5b51ddca33964e76538a79c458e9aa7ca2"
+    },
+    "scripts/ci/native-worker-cf-artifact.test.js": {
+      "gap": "do-publication-rehearsal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6487",
+        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+      },
+      "lines": 7,
+      "uses": 8,
+      "digest": "c91cade7b1b459a859749acb3467f583f2a9299bb5ce49594e152fad4f4ecad7"
+    },
+    "scripts/ci/native-wrangler-evidence.mjs": {
+      "lines": 17,
+      "uses": 21,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "3e6a8611e224ba18951777161af078ed7c5bdb8fc0fb7d5d0feb6905c6e0da72"
+    },
+    "scripts/ci/native-wrangler-finalizer.fixture.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "a300cef799195cc15fcc4dcd13b4e3a23c5f59b3cf5a7bd7b7121270dcee5dd8"
+    },
+    "scripts/ci/native-wrangler-fixture.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "3b3c35cb1f9103cd0153053b827361737cc8828abbd610abad558c292dda20d6"
+    },
+    "scripts/ci/native-wrangler-observable.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "ee180d971f1d29e1090d388bc81393254d0caefbd65c350540b187d8da8ceaac"
+    },
+    "scripts/ci/native-wrangler-observable.test.mjs": {
+      "lines": 10,
+      "uses": 10,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "e6d1f79164c3903655c47bbd1520c97c1df50d6a337f113effd24f0c797874c6"
+    },
+    "scripts/ci/native-wrangler-runtime.mjs": {
+      "lines": 15,
+      "uses": 15,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "8a4568da697f05c1eed23c2df6dccca023c065aef82252bc81cac5a157dcf1e9"
+    },
+    "scripts/ci/native-wrangler-runtime.runtime.mjs": {
+      "lines": 22,
+      "uses": 24,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "cf672989179440e408b9027debf9a20adeb5f5b6e0b692f731fd852f0f8b7719"
+    },
+    "scripts/ci/native-wrangler-runtime.test.mjs": {
+      "lines": 14,
+      "uses": 14,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "4523e3c35ab0f87e03d5d849025458a7ab241cd49f1399b6bbe437bb0c10b527"
+    },
+    "scripts/ci/native-wrangler-summary.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "b81d2e0ccf8ab5b2a47882c43502a67fd95374000c05ed43a9bc24946a6c2054"
+    },
+    "scripts/ci/production-publication-policy.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "7902b728885910d8a84d66eb479e4e73fa343225b451cdce29599cb5f45001aa"
+    },
+    "scripts/ci/replay-parley-worker.py": {
+      "lines": 16,
+      "uses": 23,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "d5f73e86e8b57d21ec1959a71b3fe34ab3c4b2955bf9659ac72e148082f25627"
+    },
+    "scripts/ci/replay-parley-worker.test.py": {
+      "lines": 15,
+      "uses": 22,
+      "gap": "opennext-adapter",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "aba0d9cb39738a5d38ae942061604adfe84a0f6266913037cdf9d4b47a5ae757"
+    },
+    "scripts/ci/rust-verification-workflow.test.js": {
+      "lines": 8,
+      "uses": 9,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "aba608d10a2c0b039da23ae11403319a8b3a87683a73ff47a572db78dd6de8fe"
+    },
+    "scripts/ci/verify-meet-start-output.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "14043e7e482dea6e55205cd6acc2171197043635420db43a734cc6235ae2a624"
+    },
+    "scripts/ci/verify-meet-start-output.test.js": {
+      "lines": 24,
+      "uses": 24,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "c867d467771e3cf280a1a0d98056ce09965cdabd0abd1c5a210a0b01ea39393c"
+    },
+    "scripts/ci/wave1-native-artifact.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "21483c0dcd7291dffcd7a7277ef38f24f7b492b9ac4aba4375ae365be36dde03"
+    },
+    "scripts/ci/wave1-native-publication.test.js": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "337188d6eb8a642ffba63d4c5903066f6a151b1155140045d7f0c235df8500d3"
+    },
+    "scripts/ci/wave1-native-publish.mjs": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "f676a7e1da9180851870db73a8fd4457f17647bc4964dd5833e9576ffa29acd6"
+    },
+    "scripts/ci/wave1-native-publishers.test.js": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "13de163bf53ff57255e072479452cbb55c1be49feea0e78079f3927d9b651471"
+    },
+    "scripts/ci/wave1-native-runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "4f41e3aa75ca0ec32716503de90d11cc3a57286063f86b7183fb63f44a5bce2c"
+    },
+    "scripts/ci/wave1-native-test-fixture.cjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "5ce11fab75df1f5880c6fc88e29b795d31719025350fb56f46e023691532732f"
+    },
+    "scripts/generate-docs-inventory.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "d74417773f1b71014c5cebea5eedad445d536e323dd2c16b92d46de3e21627b4"
+    },
+    "scripts/smoke-cloudflare-workers.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "73018110e51257baa06cd949067710d9d468983f6a943e38718781c70ce9b361"
+    },
+    "scripts/smoke-cloudflare-workers.test.js": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "paused-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+      },
+      "digest": "baf94f033c6a453806621a425b7a8168436a006d48c8af2159c8880bf313872c"
+    }
+  }
+}

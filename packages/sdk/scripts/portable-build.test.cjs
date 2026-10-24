@@ -161,6 +161,19 @@ test('module parser covers import types, dynamic imports, requires and reexports
   );
 });
 
+test('resource fixture helpers never enter the portable package closure', (t) => {
+  const f = fixture(t);
+  f.write(
+    'packages/sdk/src/cli/resources-test-fixtures.ts',
+    "import {beforeEach} from 'vitest';"
+  );
+  stagePortableSources({ repoRoot: f.root, destination: f.destination });
+  assert.equal(
+    fs.existsSync(path.join(f.destination, 'cli/resources-test-fixtures.ts')),
+    false
+  );
+});
+
 test('stages the actual SDK closure without server dependencies or test-only files', (t) => {
   const destination = fs.mkdtempSync(
     path.join(os.tmpdir(), 'sdk-portable-real-')
@@ -171,6 +184,10 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     destination: path.join(destination, 'src'),
   });
   assert.equal(sources.length, 23);
+  assert.equal(
+    fs.existsSync(path.join(destination, 'src/cli/resources-test-fixtures.ts')),
+    false
+  );
   assert.ok(sources.includes('packages/utils/src/task-description-codec.ts'));
   assert.ok(sources.includes('packages/internal-api/src/users.ts'));
   assert.equal(

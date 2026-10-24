@@ -50,7 +50,7 @@ messages, but is OpenAI-specific and should not become the generic route API.
 | Focused tests | `bun --cwd packages/ai vitest run src/generate src/executions src/chat/google src/route-error.test.ts` | representative thrown errors are sanitized |
 | AI typecheck | `bun run --cwd packages/ai type-check` | exit 0 |
 | Leak scan | `rg -n "error\\.stack|Stack trace|No stack trace available" packages/ai/src --glob 'route.ts'` | no output |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -108,7 +108,7 @@ change.
 - [ ] Unexpected failures consistently return 500 and a stable safe envelope.
 - [ ] Detailed errors remain available through severity-preserving server logs.
 - [ ] Known client-actionable errors retain their existing status and shape.
-- [ ] Focused tests, typecheck, leak scan, `bun check`, and whitespace pass.
+- [ ] Focused tests, typecheck, leak scan, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

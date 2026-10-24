@@ -388,7 +388,7 @@ node --test scripts/check-cloudflare-workers.test.js scripts/ci/check-workflow-c
 bun check:cloudflare
 bun type-check:tanstack-web
 git diff --check
-bun check
+bun validate
 ```
 
 Do not run deploy commands, production Supabase pushes, or long build commands

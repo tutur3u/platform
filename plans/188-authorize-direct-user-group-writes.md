@@ -52,7 +52,7 @@ and obtain backend/G22 review of caller-token read semantics.
 | Users core | `bun run --cwd packages/users-core type-check` | exit 0 |
 | Contacts | `bun run --cwd apps/contacts type-check` | exit 0 |
 | Backend | `bun check:backend` | caller-token/service-route parity passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

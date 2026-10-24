@@ -54,7 +54,7 @@ run `bun setup`.
 | Script suite | `bun test:scripts` | all script tests pass |
 | Plugin | `python3 plugins/tuturuuu/scripts/validate_plugin.py` | plugin and skill references validate |
 | JSON | `python3 -m json.tool package.json` | valid JSON |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

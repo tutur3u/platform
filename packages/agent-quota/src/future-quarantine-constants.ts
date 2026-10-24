@@ -1,0 +1,1 @@
+export const FUTURE_QUARANTINE_TTL_MS = 30 * 86400_000;

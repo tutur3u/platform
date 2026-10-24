@@ -120,7 +120,6 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     /overflow-notes-ci.js[\s\S]+run_e2e=false/
   );
   for (const name of [
-    'codecov.yaml',
     'turbo-unit-tests.yaml',
     'e2e-tests.yaml',
     'biome-check.yaml',

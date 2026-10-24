@@ -1,8 +1,9 @@
 /* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache signing inputs */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { lstat, open, readdir, readFile, rm } from 'node:fs/promises';
+import { lstat, open, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { readRegularFile } from '../safe-fs.js';
 import { codesignDiagnostic } from './codesign-diagnostic.mjs';
 
 const identityOutputLimit = 65536;
@@ -268,7 +269,7 @@ export async function withMacosSigning(
                     : 'nested-application'
               );
           } else if (stat.isFile()) {
-            const bytes = await readFile(path);
+            const bytes = await readRegularFile(path);
             if (
               bytes.length >= 4 &&
               [

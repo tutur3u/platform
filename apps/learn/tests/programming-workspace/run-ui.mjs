@@ -36,6 +36,7 @@ const aliases = [
   { find: '@', replacement: path.join(repo, 'apps/learn/src') },
   { find: 'next/dynamic', replacement: path.join(here, 'dynamic.tsx') },
 ];
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 for (const namespace of ['ui', 'utils', 'icons', 'types']) {
   const pkg = JSON.parse(
     fs.readFileSync(path.join(repo, 'packages', namespace, 'package.json'))
@@ -53,14 +54,15 @@ for (const namespace of ['ui', 'utils', 'icons', 'types']) {
     const find = `@tuturuuu/${namespace}${key === '.' ? '' : key.slice(1)}`;
     if (find.includes('*'))
       aliases.push({
-        find: new RegExp(`^${find.replace('*', '(.+)')}$`),
+        find: new RegExp(`^${find.split('*').map(escapeRegExp).join('(.+)')}$`),
         replacement: path
           .join(repo, 'packages', namespace, target)
-          .replace('*', '$1'),
+          .split('*')
+          .join('$1'),
       });
     else
       aliases.push({
-        find: new RegExp(`^${find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+        find: new RegExp(`^${escapeRegExp(find)}$`),
         replacement: path.join(repo, 'packages', namespace, target),
       });
   }

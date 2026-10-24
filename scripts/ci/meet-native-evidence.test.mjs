@@ -8,7 +8,6 @@ import {
   mkdir,
   mkdtemp,
   readdir,
-  readFile,
   readlink,
   rm,
   symlink,
@@ -18,6 +17,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { readFileSnapshot } from '../safe-fs.js';
 
 const { readWorkflow } = createRequire(import.meta.url)(
   './workflow-yaml-test-helper.js'
@@ -27,7 +27,10 @@ const workflow = readWorkflow('meet-cloudflare.yaml');
 async function inventory(root) {
   const result = [];
   async function visit(path, name) {
-    const info = await lstat(path);
+    let info = await lstat(path);
+    let bytes;
+    if (info.isFile())
+      ({ data: bytes, stat: info } = await readFileSnapshot(path));
     const entry = {
       name,
       mode: info.mode & 0o7777,
@@ -41,9 +44,7 @@ async function inventory(root) {
     } else {
       assert.ok(info.isFile());
       entry.type = 'file';
-      entry.hash = createHash('sha256')
-        .update(await readFile(path))
-        .digest('hex');
+      entry.hash = createHash('sha256').update(bytes).digest('hex');
     }
     result.push(entry);
     if (info.isDirectory())

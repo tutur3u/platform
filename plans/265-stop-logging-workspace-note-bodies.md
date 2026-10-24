@@ -39,7 +39,7 @@ first-class route-move contract instead.
 | Focused route | `bun --cwd apps/web vitest run 'src/legacy-api-routes/v1/workspaces/[wsId]/notes/route.test.ts'` | valid and invalid unique content never appears in any `console.*` argument |
 | Retired log | `rg -n "console\\.(log|info|debug)\\([^\\n]*(body|content|title)" 'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/route.ts'` | exit 1, no output |
 | Web checks | `bun type-check:web && bun --cwd apps/web run build` | types and real Next build pass |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 

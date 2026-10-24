@@ -55,7 +55,7 @@ class _RequestTile extends StatelessWidget {
     final showFooter = _hasActionFooter(request);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colorScheme.border),

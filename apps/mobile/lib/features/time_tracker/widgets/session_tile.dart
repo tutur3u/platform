@@ -85,7 +85,7 @@ class SessionTile extends StatelessWidget {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Material(
             color: theme.colorScheme.card,
             borderRadius: BorderRadius.circular(12),

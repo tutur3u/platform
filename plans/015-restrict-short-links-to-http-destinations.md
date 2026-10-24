@@ -68,7 +68,7 @@ refreshing the matching override and generated manifest.
 | Create route | `bun --cwd apps/web vitest run 'src/legacy-api-routes/v1/link-shortener/shorten/route.test.ts'` | exit 0; unsafe destinations never reach hashing/admin writes |
 | Resolution tests | `bun --cwd apps/shortener vitest run src/lib/utils.test.ts 'src/app/[slug]/server-page.test.tsx' src/app/api/verify/route.test.ts` | exit 0; both public paths fail closed |
 | Migration tracking | `bun migration:tanstack:manifest` | exit 0; only matching route bookkeeping changes |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/shortener build` | both exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -147,7 +147,7 @@ changes a Web API handler and Shortener route behavior.
   destinations before analytics or navigation.
 - [ ] One shared validator defines the protocol contract.
 - [ ] Migration tracking reflects the changed live Next handler.
-- [ ] Focused tests, manifest generation, `bun check`, both builds, and
+- [ ] Focused tests, manifest generation, `bun validate`, both builds, and
   whitespace pass.
 
 ## STOP conditions
