@@ -4,11 +4,14 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
+const { execFileSync } = require('node:child_process');
+
 const {
   collectShadcnImporters,
   formatAllowlist,
   importsShadcn,
   parseAllowlist,
+  readBaseAllowlist,
   validate,
 } = require('./check-mobile-shadcn-imports.js');
 
@@ -100,4 +103,88 @@ test('requires sorted unique entries and dependency removal at zero', () => {
 test('allowlist round-trips through its comment header', () => {
   const entries = ['lib/a.dart', 'test/b_test.dart'];
   assert.deepEqual(parseAllowlist(formatAllowlist(entries)), entries);
+});
+
+test('relative shim imports and conditional URIs cannot bypass the check', () => {
+  const file = 'lib/features/x/view/page.dart';
+  // Reproductions from review: a relative shim path and a conditional import.
+  assert.ok(
+    importsShadcn(
+      "import '../../../core/widgets/shadcn_flutter_compat.dart' as shad;",
+      file
+    )
+  );
+  assert.ok(
+    importsShadcn(
+      [
+        "import 'package:flutter/widgets.dart'",
+        "    if (dart.library.io) 'package:shadcn_flutter/shadcn_flutter.dart'",
+        '    as ui;',
+      ].join('\n'),
+      file
+    )
+  );
+  assert.ok(
+    importsShadcn(
+      "export 'stub.dart' if (dart.library.html) '../../../core/theme/mobile_shad_theme.dart';",
+      file
+    )
+  );
+  // A relative path that only looks similar does not match.
+  assert.equal(
+    importsShadcn("import 'widgets/shadcn_flutter_compat.dart';", file),
+    false
+  );
+  assert.equal(
+    importsShadcn(
+      "/*\nimport 'package:shadcn_flutter/shadcn_flutter.dart';\n*/",
+      file
+    ),
+    false
+  );
+});
+
+test('allowlist additions relative to the base revision fail', () => {
+  const result = validate({
+    importers: ['lib/a.dart', 'lib/new.dart'],
+    allowlist: ['lib/a.dart', 'lib/new.dart'],
+    pubspec: '',
+    baseAllowlist: ['lib/a.dart'],
+  });
+  assert.deepEqual(result.grown, ['lib/new.dart']);
+  assert.match(result.errors[0], /may only shrink/u);
+  // Removals relative to the base pass.
+  assert.deepEqual(
+    validate({
+      importers: ['lib/a.dart'],
+      allowlist: ['lib/a.dart'],
+      pubspec: '',
+      baseAllowlist: ['lib/a.dart', 'lib/b.dart'],
+    }).errors,
+    []
+  );
+});
+
+test('reads the base allowlist from git and fails on a missing revision', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'shadcn-base-'));
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  git('init', '-q');
+  git('config', 'user.email', 'ratchet@example.test');
+  git('config', 'user.name', 'Ratchet');
+  fs.writeFileSync(path.join(root, 'README'), 'x');
+  git('add', '.');
+  git('commit', '-qm', 'no allowlist yet');
+  // First introduction: no allowlist at the base.
+  assert.equal(readBaseAllowlist('HEAD', { rootDir: root }), null);
+  const file = path.join(root, 'apps/mobile/tool/shadcn_import_allowlist.txt');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, formatAllowlist(['lib/a.dart']));
+  git('add', '.');
+  git('commit', '-qm', 'allowlist');
+  assert.deepEqual(readBaseAllowlist('HEAD', { rootDir: root }), [
+    'lib/a.dart',
+  ]);
+  assert.throws(() => readBaseAllowlist('deadbeef', { rootDir: root }));
+  fs.rmSync(root, { recursive: true, force: true });
 });

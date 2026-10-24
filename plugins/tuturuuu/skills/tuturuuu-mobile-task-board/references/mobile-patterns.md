@@ -75,7 +75,9 @@ localization changes.
   shims. `scripts/check-mobile-shadcn-imports.js` (CI Mobile Analysis and
   `bun check:changed`) fails on new importers and on stale entries in
   `apps/mobile/tool/shadcn_import_allowlist.txt`. After migrating a file, run
-  `node scripts/check-mobile-shadcn-imports.js --prune`; never add entries.
+  `node scripts/check-mobile-shadcn-imports.js --prune`; never add entries
+  (the check compares against the base revision's allowlist and parses
+  conditional and relative import URIs).
 - Use the mapping in `apps/docs/build/development-tools/mobile-shadcn-migration.mdx`:
   `AppTokens.of(context)` for `shad.Theme.of`, `AppGap`, `LucideIcons` from
   `lucide_icons_flutter`, `AppButton.*`, `AppIconButton(tooltip:)`,

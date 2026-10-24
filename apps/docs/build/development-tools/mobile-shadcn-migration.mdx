@@ -18,9 +18,16 @@ import of an in-repo shim, as a shadcn import. The shims are
 file must appear in `apps/mobile/tool/shadcn_import_allowlist.txt`.
 
 - A new importer fails with a pointer to `package:mobile/core/ui/ui.dart`.
-- An allowlisted file that no longer imports shadcn also fails, so the list
-  only shrinks. Run `node scripts/check-mobile-shadcn-imports.js --prune`
-  to remove migrated entries. The flag never adds entries.
+- Every URI of every `import`/`export` directive is checked, including
+  conditional `if (dart.library.x)` alternatives and relative paths to a
+  shim, so neither can bypass the check.
+- An allowlisted file that no longer imports shadcn also fails. Run
+  `node scripts/check-mobile-shadcn-imports.js --prune` to remove migrated
+  entries. The flag never adds entries.
+- Entries missing from the allowlist at the base revision fail, so a PR
+  cannot add an importer together with an allowlist line. CI passes the PR
+  base (or the previous `main` commit) with `--base <sha>`. Locally the base
+  defaults to the merge base with `origin/main`.
 - When the list is empty, the check fails until `flutter pub remove
   shadcn_flutter` has run.
 
