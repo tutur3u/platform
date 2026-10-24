@@ -3863,6 +3863,24 @@ export type Database = {
           },
         ];
       };
+      devbox_control_settings: {
+        Row: {
+          id: boolean;
+          require_reported_execution_mode: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          require_reported_execution_mode?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          require_reported_execution_mode?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       devbox_env_revisions: {
         Row: {
           actor_id: string;
@@ -4129,6 +4147,7 @@ export type Database = {
         Row: {
           actor_id: string;
           capabilities: Json;
+          capabilities_updated_at: string | null;
           created_at: string;
           drain_requested_at: string | null;
           enabled_features: Json;
@@ -4143,6 +4162,7 @@ export type Database = {
         Insert: {
           actor_id: string;
           capabilities?: Json;
+          capabilities_updated_at?: string | null;
           created_at?: string;
           drain_requested_at?: string | null;
           enabled_features?: Json;
@@ -4157,6 +4177,7 @@ export type Database = {
         Update: {
           actor_id?: string;
           capabilities?: Json;
+          capabilities_updated_at?: string | null;
           created_at?: string;
           drain_requested_at?: string | null;
           enabled_features?: Json;
@@ -21144,6 +21165,11 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_reports_fresh_trusted: {
+        Args: { p_capabilities: Json; p_capabilities_updated_at: string };
+        Returns: boolean;
+      };
+      devbox_require_reported_execution_mode: { Args: never; Returns: boolean };
       devbox_run_idempotency_ready: {
         Args: never;
         Returns: boolean;
@@ -21157,6 +21183,14 @@ export type Database = {
           runner_id: string;
           running_runs: number;
         }[];
+      };
+      devbox_runner_mode_admits: {
+        Args: {
+          p_capabilities: Json;
+          p_capabilities_updated_at: string;
+          p_workload: string;
+        };
+        Returns: boolean;
       };
       devbox_runner_supports_commit_run: {
         Args: { p_capabilities: Json; p_features: Json };
@@ -23781,6 +23815,10 @@ export type Database = {
           pending_count: number;
           rejected_count: number;
         }[];
+      };
+      set_devbox_require_reported_execution_mode: {
+        Args: { p_enabled: boolean; p_force?: boolean };
+        Returns: Json;
       };
       set_devbox_runner_drain: {
         Args: { p_draining: boolean; p_runner_id: string };
