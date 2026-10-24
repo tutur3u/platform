@@ -21,6 +21,13 @@ environment variables.
   containers, emulators or queue owners.
 </Warning>
 
+Android's dummy Firebase input is created exclusively: an existing file or
+symlink is preserved, including a dangling symlink. PID state is opened without
+following symlinks and classified and read through the same descriptor; malformed
+PID values are ignored, while unsafe file types fail explicitly. Run the focused
+filesystem regressions with `node --test scripts/thanh-e2e/*.test.mjs`; no simulator
+or database setup is required.
+
 ## Toolchain
 
 Everything Tuturuuu-specific lives in user space under
