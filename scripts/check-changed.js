@@ -107,6 +107,18 @@ function tryGit(args, execFile) {
   }
 }
 
+function validationBranch(execFile) {
+  const local = tryGit(['branch', '--show-current'], execFile);
+  if (!local?.startsWith('tmp/')) return { branch: local };
+  const upstream = tryGit(
+    ['for-each-ref', '--format=%(upstream:remoteref)', `refs/heads/${local}`],
+    execFile
+  );
+  return upstream?.startsWith('refs/heads/')
+    ? { branch: upstream.slice('refs/heads/'.length), localBranch: local }
+    : { branch: local };
+}
+
 function resolveBase(explicit, execFile) {
   if (explicit)
     return git(['rev-parse', '--verify', `${explicit}^{commit}`], execFile);
@@ -274,10 +286,10 @@ function runTypeCheck(step, context) {
         parityOutput.push(
           `advisory tsrs parity ${project}: ${parity.onlyActual.length} tsrs-only, ${parity.onlyExpected.length} tsc-only${shadow.crashed ? ', tsrs crashed' : ''}`
         );
-        for (const [label, diagnostics] of [
-          ['tsrs-only', parity.onlyActual],
-          ['tsc-only', parity.onlyExpected],
-        ]) {
+        for (const [label, diagnostics] of Object.entries({
+          'tsrs-only': parity.onlyActual,
+          'tsc-only': parity.onlyExpected,
+        })) {
           parityOutput.push(
             ...diagnostics
               .slice(0, MAX_PRINTED_DIAGNOSTICS)
@@ -394,8 +406,9 @@ function main(argv = process.argv.slice(2), deps = {}) {
   const plan = planChecks(changes, {
     base,
     biomeBinary: localBiome(root),
-    branch: tryGit(['branch', '--show-current'], execFile),
+    ...validationBranch(execFile),
     exists,
+    readSource: (file) => fs.readFileSync(path.join(root, file), 'utf8'),
     workspaces: readWorkspaces(root),
     hasVitest: (workspace) =>
       ['ts', 'mts', 'js', 'mjs'].some((ext) =>

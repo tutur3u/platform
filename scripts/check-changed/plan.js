@@ -90,6 +90,22 @@ function nodeScriptTests(files, exists) {
   return [...selected].sort();
 }
 
+function isNodeTest(file, context) {
+  const workspace = workspaceOf(file);
+  if (!workspace) return NODE_TEST_FILE.test(file);
+  const script = context.workspaces?.find(
+    (entry) => entry.workspace === workspace
+  )?.testScript;
+  const source = context.readSource?.(file) ?? '';
+  const imports = (module) =>
+    new RegExp(
+      `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
+    ).test(source);
+  if (imports('node:test')) return true;
+  if (imports('vitest')) return false;
+  return /\bnode\s+--test(?:\s|$)/.test(script ?? '');
+}
+
 /**
  * Build the ordered step list. `changes` is [{ status, file }] relative to the
  * repository root; deleted files only affect path gating.
@@ -119,7 +135,7 @@ function planChecks(changes, context) {
   if (context.branch) {
     steps.push({
       id: 'branch-name',
-      label: `branch name ${context.branch}`,
+      label: `branch name ${context.branch}${context.localBranch ? ` (tracking for ${context.localBranch})` : ''}`,
       inline: () => isBranchNameValid(context.branch),
       failureHint:
         'Use a type/description branch, for example chore/<topic>; ci/ is rejected.',
@@ -222,20 +238,31 @@ function planChecks(changes, context) {
   }
 
   const workflowTouched = any(/^\.github\/(workflows|actions)\//);
-  const scriptTests = nodeScriptTests(all, exists);
+  const relatedTests = new Map();
+  for (const file of present) {
+    if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
+    for (const related of siblingTests(file, exists)) {
+      relatedTests.set(related, isNodeTest(related, context));
+    }
+  }
+  const scriptTests = nodeScriptTests(present, exists).filter(
+    (file) => !workspaceOf(file) || isNodeTest(file, context)
+  );
   const nodeTests = [
     ...new Set([
       ...scriptTests,
+      ...[...relatedTests].filter(([, node]) => node).map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
     ]),
   ].filter(exists);
   if (nodeTests.length) {
     steps.push(
-      nodeStep('script-tests', `node --test (${nodeTests.length} files)`, [
-        '--test',
-        '--test-concurrency=2',
-        ...nodeTests,
-      ])
+      nodeStep(
+        'script-tests',
+        `node --test (${nodeTests.length} files)`,
+        ['--test', '--test-concurrency=2', ...nodeTests],
+        { heavy: true }
+      )
     );
   }
 
@@ -292,7 +319,7 @@ function planChecks(changes, context) {
     if (!context.hasVitest(workspace)) continue;
     const tests = [
       ...new Set(files.flatMap((file) => siblingTests(file, exists))),
-    ];
+    ].filter((file) => !relatedTests.get(file));
     if (!tests.length) continue;
     steps.push({
       id: `vitest:${workspace}`,

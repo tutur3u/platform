@@ -35,7 +35,7 @@ ttr, steps run sequentially with Vitest capped at two workers.
 | JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
 | `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
 | A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
-| A workspace with a Vitest config | Changed tests plus colocated `foo.test.ts(x)` and `__tests__/foo.test.ts(x)` siblings |
+| A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest. Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
 | `scripts/`, `.github/actions/`, `plugins/` | Changed and sibling `node --test` files |
 | `.github/workflows/` or `.github/actions/` | Workflow concurrency, Bun pin and workflow-config policy tests |
 | `apps/mobile/` | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it |
@@ -45,6 +45,12 @@ ttr, steps run sequentially with Vitest capped at two workers.
 Oxlint stays advisory until a scope records Biome parity under the
 [Oxc adoption rules](/build/development-tools/oxc-cloudflare-adoption); Biome
 remains the blocking formatter and linter. Paused runtimes are excluded.
+
+Local `tmp/` branches with a configured tracking branch validate that tracked
+branch name and print both names. Untracked `tmp/` branches still fail, and other
+local branch names always validate themselves. This keeps the check blocking
+while allowing temporary agent worktrees that track a valid publication branch.
+CI continues to validate the actual published branch name.
 
 ## Type-checking without built declarations
 
