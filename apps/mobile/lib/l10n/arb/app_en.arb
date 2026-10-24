@@ -4738,5 +4738,6 @@
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
   "profileMediaSet": "Set",
-  "assistantSubmitSuccess": "Submitted successfully"
+  "assistantSubmitSuccess": "Submitted successfully",
+  "mailSettingsReadOnly": "Saved settings are read-only until access can be verified."
 }

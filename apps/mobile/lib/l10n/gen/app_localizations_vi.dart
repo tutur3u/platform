@@ -10960,4 +10960,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantSubmitSuccess => 'Đã gửi thành công';
+
+  @override
+  String get mailSettingsReadOnly => 'Cài đặt đã lưu ở chế độ chỉ đọc cho đến khi xác minh được quyền truy cập.';
 }

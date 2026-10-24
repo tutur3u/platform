@@ -20994,6 +20994,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submitted successfully'**
   String get assistantSubmitSuccess;
+
+  /// No description provided for @mailSettingsReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved settings are read-only until access can be verified.'**
+  String get mailSettingsReadOnly;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -2,27 +2,46 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_network.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
 import 'package:mobile/features/mail/data/mail_media_cache.dart';
 import 'package:mobile/features/mail/data/mail_pending_overlay.dart';
+import 'package:mobile/features/mail/data/mail_settings_snapshot.dart';
 
 part 'mail_invitation_repository.dart';
+part 'mail_repository_settings.dart';
 
 /// Uses the same authenticated, workspace-scoped contract as apps/mail.
-class MailRepository extends MailInvitationRepository {
+class MailRepository extends MailSettingsRepository {
   MailRepository({
     ApiClient? apiClient,
     MailCache? cache,
     MailMediaCache? mediaCache,
+    OfflineMutationQueue? settingsQueue,
+    String? Function()? currentUserId,
   }) : _api = apiClient ?? ApiClient(),
        _cache = cache ?? MailCache(),
-       _mediaCache = mediaCache ?? MailMediaCache() {
+       _mediaCache = mediaCache ?? MailMediaCache(),
+       _settingsQueue = settingsQueue ?? OfflineMutationQueue.instance,
+       _settingsCurrentUserId = currentUserId ?? currentCacheUserId,
+       _settingsUserId = (currentUserId ?? currentCacheUserId)() {
     _cache.accessRevoked.addListener(_onAccessRevoked);
   }
   final ApiClient _api;
+  @override
+  ApiClient get _settingsApi => _api;
+  @override
+  MailCache get _settingsCache => _cache;
+  @override
+  final OfflineMutationQueue _settingsQueue;
+  @override
+  final String? Function() _settingsCurrentUserId;
+  @override
+  final String? _settingsUserId;
   @override
   ApiClient get _invitationApi => _api;
   final MailCache _cache;
@@ -374,32 +393,6 @@ class MailRepository extends MailInvitationRepository {
       return;
     }
     await _cache.mutate(wsId, () => _api.deleteJson(path));
-  }
-
-  /// Settings entry requires current membership; never reuse cached grants.
-  Future<Map<String, dynamic>> settingsBootstrap(String wsId) =>
-      _api.getJson('${workspacePath(wsId)}/bootstrap');
-
-  Future<Map<String, dynamic>> settings(String wsId, String mailboxId) =>
-      _api.getJson('${mailboxPath(wsId, mailboxId)}/settings');
-
-  Future<void> updateSettings(
-    String wsId,
-    String mailboxId,
-    Map<String, dynamic> payload,
-  ) async {
-    final path = '${mailboxPath(wsId, mailboxId)}/settings';
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
-      feature: 'mail',
-      method: 'PATCH',
-      path: path,
-      workspaceId: wsId,
-      payload: payload,
-      entityId: mailboxId,
-    )) {
-      return;
-    }
-    await _cache.mutate(wsId, () => _api.patchJson(path, payload));
   }
 
   Future<Map<String, dynamic>> organization(String wsId, String mailboxId) {
