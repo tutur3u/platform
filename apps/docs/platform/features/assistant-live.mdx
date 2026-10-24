@@ -165,6 +165,10 @@ Coverage: `chat-reaction-operations.sql`, the reactions/retire route tests,
 `assistant_reaction_lifecycle_review_test.dart`,
 `api_client_operation_review_test.dart`, and the journal/flush regression suites.
 
+Age-based cleanup is not enabled. The [retention proposal](/platform/features/assistant-reaction-retention)
+requires server-enforced expiry before bounded Cloudflare cleanup can safely
+remove operation or retirement records.
+
 
 ### Web dashboard Live
 

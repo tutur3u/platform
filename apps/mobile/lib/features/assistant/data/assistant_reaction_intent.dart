@@ -6,9 +6,9 @@ enum AssistantReactionBegin { recorded, alreadyPending, failed }
 class AssistantReactionIntent {
   const AssistantReactionIntent({
     required this.opId,
-    required this.emoji,
+    required String emoji,
     required this.present,
-  });
+  }) : _emoji = emoji;
 
   factory AssistantReactionIntent.decode(Object? raw) {
     if (raw is! Map ||
@@ -22,13 +22,14 @@ class AssistantReactionIntent {
     }
     return AssistantReactionIntent(
       opId: raw['opId'] as String,
-      emoji: raw['emoji'] as String,
+      emoji: (raw['emoji'] as String).trim(),
       present: raw['present'] as bool,
     );
   }
 
   final String opId;
-  final String emoji;
+  final String _emoji;
+  String get emoji => _emoji.trim();
   final bool present;
   Map<String, Object> toJson() => {
     'opId': opId,
