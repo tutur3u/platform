@@ -2,6 +2,7 @@ import { availableParallelism, totalmem } from 'node:os';
 import { basename, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { evaluateTrustedRunner, fleetSnapshotNow } from '../devbox-fleet-types';
+import { installedBuildIdentity } from './build-identity';
 import { parseDurationSeconds } from './devbox-duration';
 import {
   commandCwd,
@@ -344,6 +345,7 @@ export async function runResourcesCommand(argv: string[]) {
     ];
     const details = await resourceStatusDetails(state);
     const result = {
+      ...installedBuildIdentity(),
       installed: Boolean(config) || Boolean(configError),
       enabled: config?.enabled ?? false,
       config: configError

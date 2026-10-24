@@ -59,16 +59,28 @@ describe('createSatelliteApiRewrites', () => {
         destination:
           'https://calendar.example.com/api/v1/workspaces/:wsId/calendar/events/:eventId',
       },
-      {
-        source: '/api/v1/users/calendar-settings',
-        destination:
-          'https://calendar.example.com/api/v1/users/calendar-settings',
-      },
-      {
-        source: '/api/v1/workspaces/:wsId/calendar-settings',
-        destination:
-          'https://calendar.example.com/api/v1/workspaces/:wsId/calendar-settings',
-      },
     ]);
   });
+});
+
+it.each([
+  '/api/v1/users/calendar-settings',
+  '/api/v1/workspaces/workspace-1/calendar-settings',
+])('keeps %s on the Web route', async (path) => {
+  const response = await unstable_getResponseFromNextConfig({
+    url: `https://tuturuuu.com${path}`,
+    nextConfig: {
+      async rewrites() {
+        return {
+          beforeFiles: createSatelliteApiRewrites({
+            calendarAppOrigin: 'https://calendar.example.com',
+            infrastructureAppOrigin: 'https://infrastructure.example.com',
+          }),
+          afterFiles: [],
+          fallback: [],
+        };
+      },
+    },
+  });
+  expect(getRewrittenUrl(response)).toBeNull();
 });

@@ -66,15 +66,26 @@ function trustedTtr(home = homedir(), cwd = process.cwd()) {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(root, 'package.json'), 'utf8')
     );
-    const version = /^(\d+)\.(\d+)\.(\d+)$/.exec(manifest.version);
+    const version =
+      /^(\d+)\.(\d+)\.(\d+)(?:-dev\.([1-9]\d*)\.([a-f0-9]{7}))?$/.exec(
+        manifest.version
+      );
+    const devIdentityValid =
+      !version?.[4] ||
+      (manifest.tuturuuuBuild?.channel === 'dev' &&
+        /^[a-f0-9]{40}$/.test(manifest.tuturuuuBuild?.sourceSha || '') &&
+        manifest.tuturuuuBuild.sourceSha.startsWith(version[5]));
     if (
       manifest.name !== 'tuturuuu' ||
       !version ||
+      !devIdentityValid ||
       (Number(version[1]) === 0 && Number(version[2]) < 28) ||
       typeof manifest.bin?.ttr !== 'string' ||
       fs.realpathSync(path.join(root, manifest.bin.ttr)) !== entry
     )
-      throw new Error('requires a stable tuturuuu version >= 0.28.0');
+      throw new Error(
+        'requires tuturuuu >= 0.28.0 stable or an identified dev build'
+      );
     return cli;
   } catch (cause) {
     let missing = false;

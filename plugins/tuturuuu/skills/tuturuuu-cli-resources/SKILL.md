@@ -114,6 +114,13 @@ runners; selection excludes them. A runner must also advertise
 `protocols.commitRun` containing the client's envelope version. Otherwise it is
 `blockedBy=capability_missing`, and `auto` queues locally.
 
+## SDK supplier updates
+
+For an authorized dev/latest or private-tarball supplier change, use the
+[rollout procedure](references/sdk-rollout.md). It preserves the global Bun
+installation and the existing queue, verifies checksums, records rollback, and
+qualifies each host. Source changes never authorize activation.
+
 ## Diagnose and recover
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
 ages. It warns when an owner has been idle at 0% CPU for more than 10 minutes.
