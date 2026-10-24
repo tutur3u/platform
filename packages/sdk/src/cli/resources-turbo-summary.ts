@@ -1,5 +1,5 @@
-import { existsSync, readdirSync } from 'node:fs';
-import { lstat, readdir, readFile, rm } from 'node:fs/promises';
+import { constants, existsSync, readdirSync } from 'node:fs';
+import { open, readdir, rm } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 
 // Report Turbo cache reuse after a resource-managed command. Turbo only writes
@@ -193,8 +193,18 @@ export async function reportTurboSummary(
     if (candidates.length !== 1) return;
     const name = candidates[0]!;
     const path = join(directory, name);
-    if (!(await lstat(path)).isFile()) return;
-    const summary = JSON.parse(await readFile(path, 'utf8'));
+    const file = await open(
+      path,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+    );
+    let content: string;
+    try {
+      if (!(await file.stat()).isFile()) return;
+      content = await file.readFile('utf8');
+    } finally {
+      await file.close();
+    }
+    const summary = JSON.parse(content);
     if (summary.id !== basename(name, '.json')) return;
     const report = summarizeTurboRun(summary);
     if (report.total > 0) write(formatTurboCacheReport(report));
