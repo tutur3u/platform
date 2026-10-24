@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vite-plus/test';
 import { dispatchScheduledJobs, USER_AGENT } from './dispatch';
-import { CRON_JOBS, MAX_CONSECUTIVE_FAILURES } from './jobs';
+import { CRON_JOBS, leaseMs, MAX_CONSECUTIVE_FAILURES } from './jobs';
 import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
 
 const SECRET = 'test-cron-secret-value';
@@ -20,7 +20,9 @@ const DAILY = '17 3 * * *';
 const T0 = Date.parse('2026-10-23T03:17:00.000Z');
 const DAY = 86_400_000;
 
-function harness(respond: (url: URL) => Response | Promise<Response>) {
+function harness(
+  respond: (url: URL, init?: RequestInit) => Response | Promise<Response>
+) {
   const { counts, store } = memoryLedgerStore();
   const core = new LedgerCore(store);
   const ledger = localLedger(core);
@@ -30,7 +32,7 @@ function harness(respond: (url: URL) => Response | Promise<Response>) {
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
       calls.push({ headers: new Headers(init?.headers), init, url });
-      return respond(url);
+      return respond(url, init);
     }
   );
   const sleep = vi.fn(async () => undefined);
@@ -385,3 +387,149 @@ it('fails closed without calling the processor when the ledger is down', async (
   });
   expect(h.calls).toHaveLength(0);
 });
+
+it('runs the checkout-expiry Worker port only when separately selected', async () => {
+  const h = harness((url) =>
+    url.hostname === 'db.example.test'
+      ? Response.json([])
+      : Response.json({ ok: true })
+  );
+  const workerEnv = {
+    ...env,
+    CRON_CONTROL_ENABLED_JOBS: 'inventory-checkout-expiry',
+    SUPABASE_SECRET_KEY: 'service-key',
+    SUPABASE_URL: 'https://db.example.test',
+  };
+  await dispatchScheduledJobs('*/5 * * * *', T0, workerEnv, h.deps);
+  expect(h.calls.map((call) => call.url.pathname)).toEqual([
+    '/api/cron/inventory/checkout-expiry',
+  ]);
+
+  const [report] = await dispatchScheduledJobs(
+    '*/5 * * * *',
+    T0 + 300_000,
+    {
+      ...workerEnv,
+      CRON_CONTROL_WORKER_PROCESSORS: 'inventory-checkout-expiry',
+    },
+    h.deps
+  );
+  expect(report).toEqual({
+    attempts: 1,
+    detail: {
+      batches: 1,
+      expired: 0,
+      pending: 0,
+      quarantined: 0,
+      revalidated: 0,
+    },
+    id: 'inventory-checkout-expiry',
+    outcome: 'ok',
+  });
+  // The idle Worker slot replaces the Vercel invocation with one RPC.
+  expect(h.calls.slice(1).map((call) => call.url.pathname)).toEqual([
+    '/rest/v1/rpc/expire_inventory_checkout_sessions',
+  ]);
+});
+
+it('a Worker deadline retains unconfirmed work and reconciles it on the next slot', async () => {
+  // Worst case: every request hangs until its own timeout.
+  const clock = { now: T0 };
+  const timeouts: number[] = [];
+  const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
+    timeouts.push(ms);
+    return realTimeout(ms);
+  });
+  const workspaces = Array.from(
+    { length: 600 },
+    (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
+  );
+  let expiredOnce = false;
+  let slow = true;
+  const h = harness((url, init) => {
+    if (slow) clock.now += timeouts.at(-1) ?? 0;
+    if (url.hostname !== 'db.example.test') {
+      const items = JSON.parse(String(init?.body))
+        .revalidateWorkspaceIds as string[];
+      return Response.json({
+        results: items.map((wsId) => ({ wsId, ok: true })),
+      });
+    }
+    const rows = expiredOnce ? [] : workspaces.map((ws_id) => ({ ws_id }));
+    expiredOnce = true;
+    return Response.json(rows);
+  });
+  h.deps.now = () => clock.now;
+  const workerEnv = {
+    ...env,
+    CRON_CONTROL_ENABLED_JOBS: 'inventory-checkout-expiry',
+    CRON_CONTROL_WORKER_PROCESSORS: 'inventory-checkout-expiry',
+    SUPABASE_SECRET_KEY: 'service-key',
+    SUPABASE_URL: 'https://db.example.test',
+  };
+  const job = CRON_JOBS.find(
+    (entry) => entry.id === 'inventory-checkout-expiry'
+  );
+  const lease = leaseMs(job!);
+  const [first] = await dispatchScheduledJobs(
+    '*/5 * * * *',
+    T0,
+    workerEnv,
+    h.deps
+  );
+  // An unconfirmed completion keeps its lease for reconciliation.
+  expect(clock.now).toBeLessThanOrEqual(T0 + lease - 30_000);
+  expect(first).toMatchObject({ outcome: 'unknown' });
+  expect(
+    h.core.status()['inventory-checkout-expiry'].leaseUntil
+  ).toBeGreaterThan(clock.now);
+  expect(h.core.pendingWork('inventory-checkout-expiry')).toHaveLength(300);
+
+  // The next slot claims normally and retries the outstanding revalidation.
+  slow = false;
+  clock.now = T0 + 300_000;
+  const [second] = await dispatchScheduledJobs(
+    '*/5 * * * *',
+    T0 + 300_000,
+    workerEnv,
+    h.deps
+  );
+  expect(second).toMatchObject({
+    detail: { expired: 0, pending: 0, revalidated: 300 },
+    outcome: 'ok',
+  });
+  expect(h.core.pendingWork('inventory-checkout-expiry')).toEqual([]);
+});
+
+it.each(['claim', 'complete'] as const)(
+  'bounds a stalled Worker %s RPC by the whole-run deadline',
+  async (phase) => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const h = harness(() => Response.json([]));
+      const ledger = h.ledgerSpy();
+      ledger[phase] = () => new Promise<never>(() => {});
+      const result = dispatchScheduledJobs(
+        '*/5 * * * *',
+        T0,
+        {
+          ...env,
+          CRON_CONTROL_ENABLED_JOBS: 'inventory-checkout-expiry',
+          CRON_CONTROL_WORKER_PROCESSORS: 'inventory-checkout-expiry',
+          SUPABASE_SECRET_KEY: 'service-key',
+          SUPABASE_URL: 'https://db.example.test',
+        },
+        h.deps
+      );
+      await vi.advanceTimersByTimeAsync(240_000);
+      expect(
+        await Promise.race([result, Promise.resolve('still waiting')])
+      ).toEqual([expect.objectContaining({ outcome: 'unknown' })]);
+      expect(h.calls).toHaveLength(phase === 'claim' ? 0 : 1);
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+);

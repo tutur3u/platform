@@ -23,6 +23,9 @@ export interface CronJob {
   path: string;
   target: ProcessorTarget;
   timeoutMs: number;
+  // Job ids listed in CRON_CONTROL_WORKER_PROCESSORS run this Worker port
+  // instead of calling the legacy processor route.
+  workerProcessor?: 'checkout-expiry';
 }
 
 export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
@@ -38,7 +41,9 @@ function job(
   target: ProcessorTarget,
   path: string,
   overlap: OverlapClass,
-  options: { method?: 'GET' | 'POST'; timeoutMs?: number } = {}
+  options: Partial<
+    Pick<CronJob, 'method' | 'timeoutMs' | 'workerProcessor'>
+  > = {}
 ): CronJob {
   return {
     cron,
@@ -48,6 +53,9 @@ function job(
     path,
     target,
     timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    ...(options.workerProcessor
+      ? { workerProcessor: options.workerProcessor }
+      : {}),
   };
 }
 
@@ -132,7 +140,8 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '*/5 * * * *',
     'inventory',
     '/api/cron/inventory/checkout-expiry',
-    'claim-fenced'
+    'claim-fenced',
+    { workerProcessor: 'checkout-expiry' }
   ),
   job(
     'web-deadline-reminders',
@@ -187,6 +196,13 @@ export function maxAttempts(cronJob: CronJob) {
 // slot run even if a completion write was lost.
 export function leaseMs(cronJob: CronJob) {
   return cronJob.timeoutMs * maxAttempts(cronJob) + 30_000;
+}
+
+// Worker processors must finish, and record their outcome, inside the lease
+// so a later slot never claims while a run is still working.
+export const PROCESSOR_LEASE_MARGIN_MS = 30_000;
+export function processorDeadlineMs(cronJob: CronJob) {
+  return leaseMs(cronJob) - PROCESSOR_LEASE_MARGIN_MS;
 }
 
 export function findJob(id: string) {

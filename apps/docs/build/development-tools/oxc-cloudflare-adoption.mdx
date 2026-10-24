@@ -298,6 +298,15 @@ prove bounds under repeated wakes in isolated fixtures and the real local Worker
 Exact-commit CI must exercise the emitted artifact. Keep live account settings,
 alert delivery and hosted shutdown verification as separate production evidence.
 
+Cron Control's default-off checkout Worker uses a 5,000-item combined active and
+quarantine bound, pre-expiry capacity checks, three durable attempts per item,
+per-workspace invalidation receipts and a 240-second whole-run deadline. Stop is
+checked before each expiry batch and invalidation chunk. See the
+[processor runbook](/build/devops/cloudflare-processor-migration) for counted
+operation bounds, restart/deadline/poison regressions and remaining hosted stop
+and cache-freshness evidence. Source and mocked requests do not establish billed
+usage or crash-atomic database-to-ledger persistence.
+
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.
 Choose service-specific limits with measured workloads; do not silently apply an

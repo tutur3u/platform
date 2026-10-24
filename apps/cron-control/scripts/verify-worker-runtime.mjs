@@ -41,7 +41,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every legacy schedule and jobs default off', async () => {
+test('source config keeps every legacy schedule; jobs and processors default off', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -50,6 +50,10 @@ test('source config keeps every legacy schedule and jobs default off', async () 
     TRIGGERS
   );
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
+    type: 'text',
+    value: '',
+  });
+  assert.deepEqual(config.worker.env.CRON_CONTROL_WORKER_PROCESSORS, {
     type: 'text',
     value: '',
   });

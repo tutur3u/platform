@@ -6,14 +6,19 @@ import {
   MAX_CONSECUTIVE_FAILURES,
   maxAttempts,
   parseEnabledJobs,
+  processorDeadlineMs,
   scheduleSlot,
   TARGET_ORIGIN_VARS,
   TARGET_SECRET_VARS,
 } from './jobs';
-import type { Ledger, RunOutcome } from './ledger';
+import type { ClaimResult, Ledger, RunOutcome } from './ledger';
+import { WORKER_PROCESSORS } from './processors';
+import { withinDeadline } from './processors/deadline';
+import type { ProcessorEnv } from './processors/types';
 
 export type DispatchEnv = Partial<Record<string, string>> & {
   CRON_CONTROL_ENABLED_JOBS?: string;
+  CRON_CONTROL_WORKER_PROCESSORS?: string;
 };
 
 export interface DispatchDeps {
@@ -24,7 +29,13 @@ export interface DispatchDeps {
 }
 
 export type JobReport =
-  | { attempts: number; id: string; outcome: RunOutcome; status?: number }
+  | {
+      attempts: number;
+      detail?: Record<string, number>;
+      id: string;
+      outcome: RunOutcome;
+      status?: number;
+    }
   | { id: string; outcome: 'misconfigured'; problem: string }
   | { id: string; outcome: 'skipped'; reason: string };
 
@@ -50,6 +61,18 @@ function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
   if (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:'))
     return { problem: `${TARGET_ORIGIN_VARS[cronJob.target]} must be https` };
   return { secret, url };
+}
+
+// The Worker port is selected separately from enabling the job, so a job can
+// move its schedule first and its processor later. It also needs the
+// database secrets the Worker already holds.
+function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
+  if (!cronJob.workerProcessor) return null;
+  const selected = (env.CRON_CONTROL_WORKER_PROCESSORS ?? '')
+    .split(',')
+    .map((id) => id.trim());
+  if (!selected.includes(cronJob.id)) return null;
+  return WORKER_PROCESSORS[cronJob.workerProcessor];
 }
 
 type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
@@ -151,15 +174,93 @@ async function runJob(
     };
   }
   const ledger = deps.ledger();
-  const claim = await ledger.claim({
-    jobId: cronJob.id,
-    leaseMs: leaseMs(cronJob),
-    maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
-    now: deps.now(),
-    slot,
-  });
+  const claimedAt = deps.now();
+  const processor = workerProcessorFor(cronJob, env);
+  const clock = {
+    deadline: claimedAt + processorDeadlineMs(cronJob),
+    now: deps.now,
+    signal: processor
+      ? AbortSignal.timeout(processorDeadlineMs(cronJob))
+      : undefined,
+  };
+  const claimOperation = () =>
+    ledger.claim({
+      jobId: cronJob.id,
+      leaseMs: leaseMs(cronJob),
+      maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
+      now: claimedAt,
+      slot,
+    });
+  let claim: ClaimResult;
+  try {
+    claim = processor
+      ? await withinDeadline(clock, claimOperation)
+      : await claimOperation();
+  } catch (error) {
+    if (!processor) throw error;
+    console.error('Worker processor claim unconfirmed', {
+      error,
+      id: cronJob.id,
+    });
+    return { attempts: 0, id: cronJob.id, outcome: 'unknown' };
+  }
   if (!claim.granted)
     return { id: cronJob.id, outcome: 'skipped', reason: claim.reason };
+
+  if (processor) {
+    // Worker processors run once per slot; the next slot is the retry. Their
+    // HTTP and ledger RPC waits share one deadline. If completion cannot be
+    // confirmed in time, leave the lease for unknown-outcome reconciliation.
+    try {
+      const result = await withinDeadline(clock, () =>
+        processor({
+          ...clock,
+          env: env as unknown as ProcessorEnv,
+          fetch: deps.fetch,
+          fence: () => ledger.checkFence(cronJob.id, claim.generation),
+          now: deps.now,
+          pending: {
+            add: (items) => ledger.addPendingWork(cronJob.id, items),
+            fail: (items) =>
+              ledger.failPendingWork(cronJob.id, items, {
+                generation: claim.generation,
+                slot,
+              }),
+            quarantined: () => ledger.quarantinedWork(cronJob.id),
+            list: () => ledger.pendingWork(cronJob.id),
+            settle: (items) =>
+              ledger.settlePendingWork(cronJob.id, items, {
+                generation: claim.generation,
+                slot,
+              }),
+          },
+          userAgent: USER_AGENT,
+        })
+      );
+      await withinDeadline(clock, () =>
+        ledger.complete({
+          generation: claim.generation,
+          jobId: cronJob.id,
+          maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
+          now: deps.now(),
+          outcome: result.outcome,
+          slot,
+        })
+      );
+      return {
+        attempts: 1,
+        detail: result.detail,
+        id: cronJob.id,
+        outcome: result.outcome,
+      };
+    } catch (error) {
+      console.error('Worker processor outcome unconfirmed', {
+        error,
+        id: cronJob.id,
+      });
+      return { attempts: 1, id: cronJob.id, outcome: 'unknown' };
+    }
+  }
 
   let outcome: RunOutcome = 'failed';
   let attempts = 0;
