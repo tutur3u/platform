@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${1:-1.4.3}"
+version="${1:-1.4.4}"
 max_attempts="${BUN_SETUP_MAX_ATTEMPTS:-6}"
 delay="${BUN_SETUP_INITIAL_DELAY_SECONDS:-5}"
 max_delay="${BUN_SETUP_MAX_DELAY_SECONDS:-60}"

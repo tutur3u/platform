@@ -73,7 +73,7 @@ checkout; all prune/apply verification must use disposable test fixtures.
 | Focused cache | `node --test scripts/rust-cache.test.js` | descendant activity, hot grace, unresolved excess, stale/cold, force, and argument cases pass |
 | Discovery | `node scripts/run-script-tests.js --list | rg '^scripts/rust-cache\.test\.js$'` | exactly one matching discovered test path |
 | Full scripts | `bun test:scripts` | Plan 004's discovered script suite passes |
-| Repository | `bun check && git diff --check` | canonical checks pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical checks pass; whitespace output is empty |
 
 ## Scope
 
@@ -117,7 +117,7 @@ global Cargo caches, or broad disk cleanup.
    a dry report, and explicitly use `prune --apply --force-hot` only when
    reclaiming hot output is worth the rebuild. Do not imply that auto always
    reaches the cap.
-6. Run real report, focused/discovery/full script tests, `bun check`, whitespace,
+6. Run real report, focused/discovery/full script tests, `bun validate`, whitespace,
    and exact-scope review. Never run apply against `apps/backend/target`.
 
 ## Done criteria

@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -40,7 +38,6 @@ class TaskEstimatesView extends StatefulWidget {
 class _TaskEstimatesViewState extends State<TaskEstimatesView> {
   static const _tabEstimates = 0;
   static const _tabLabels = 1;
-  static const double _fabContentBottomPadding = 96;
 
   int _activeTab = _tabEstimates;
   late final WorkspacePermissionsRepository _permissionsRepository;
@@ -168,8 +165,6 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
       builder: (context, estimatesState) {
         return BlocBuilder<TaskLabelsCubit, TaskLabelsState>(
           builder: (context, labelsState) {
-            final listBottomPadding =
-                _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
             final hasVisibleData =
                 estimatesState.boards.isNotEmpty ||
                 labelsState.labels.isNotEmpty;
@@ -211,29 +206,24 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
               return TaskEstimatesErrorView(error: labelsState.error);
             }
 
-            return ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: NovaRefreshIndicator(
-                onRefresh: () => _reload(context),
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
-                  children: [
-                    if (_activeTab == _tabEstimates)
-                      TaskEstimateBoardsSection(
-                        boards: estimatesState.boards,
-                        isUpdating:
-                            estimatesState.status ==
-                            TaskEstimatesStatus.updating,
-                      )
-                    else
-                      TaskLabelsSection(
-                        labels: labelsState.labels,
-                        isSaving: labelsState.status == TaskLabelsStatus.saving,
-                        onEdit: _openEditLabel,
-                        onDelete: _deleteLabel,
-                      ),
-                  ],
-                ),
+            return NovaRefreshIndicator(
+              onRefresh: () => _reload(context),
+              child: AppPageListView(
+                children: [
+                  if (_activeTab == _tabEstimates)
+                    TaskEstimateBoardsSection(
+                      boards: estimatesState.boards,
+                      isUpdating:
+                          estimatesState.status == TaskEstimatesStatus.updating,
+                    )
+                  else
+                    TaskLabelsSection(
+                      labels: labelsState.labels,
+                      isSaving: labelsState.status == TaskLabelsStatus.saving,
+                      onEdit: _openEditLabel,
+                      onDelete: _deleteLabel,
+                    ),
+                ],
               ),
             );
           },

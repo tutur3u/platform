@@ -675,6 +675,7 @@
     "mark-as-unread": "Đánh dấu chưa đọc",
     "no-notifications": "Bạn không có thông báo nào.",
     "notifications": "Thông báo",
+    "update-error": "Không thể cập nhật thông báo",
     "view-all": "Xem tất cả thông báo"
   },
   "onboarding_guide": {

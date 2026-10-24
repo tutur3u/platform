@@ -58,3 +58,20 @@ it.each([
     expect(await response.json()).toMatchObject({ message });
   }
 );
+
+it.each([
+  ['docs/', 'ws-1/docs'],
+  ['/docs', 'ws-1/docs'],
+  ['50% done', 'ws-1/50% done'],
+])('canonicalizes legacy download path %j', async (path, expectedPath) => {
+  mocks.download.mockResolvedValue({ data: new Blob(['ok']), error: null });
+  const response = await GET(
+    new NextRequest(`https://example.test/api/v1/storage/download/${path}`),
+    {
+      params: Promise.resolve({ path: [path] }),
+      context: { wsId: 'ws-1' },
+    } as never
+  );
+  expect(mocks.download).toHaveBeenCalledWith(expectedPath, undefined);
+  expect(response.status).toBe(200);
+});

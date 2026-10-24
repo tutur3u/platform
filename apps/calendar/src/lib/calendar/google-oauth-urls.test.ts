@@ -1,22 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  buildGoogleCalendarPostAuthRedirectUrl,
-  resolveGoogleCalendarOAuthRedirectUri,
-} from './google-oauth-urls';
-
-const WEB_ORIGIN_ENV_KEYS = [
-  'WEB_APP_URL',
-  'NEXT_PUBLIC_WEB_APP_URL',
-  'NEXT_PUBLIC_APP_URL',
-  'COOLIFY_URL',
-  'COOLIFY_FQDN',
-] as const;
-
-function clearWebOriginEnvs() {
-  for (const key of WEB_ORIGIN_ENV_KEYS) {
-    vi.stubEnv(key, '');
-  }
-}
+import { resolveGoogleCalendarOAuthRedirectUri } from './google-oauth-urls';
 
 describe('Google Calendar OAuth URLs', () => {
   afterEach(() => {
@@ -46,36 +29,43 @@ describe('Google Calendar OAuth URLs', () => {
     );
   });
 
-  it('redirects post-auth callback traffic away from wildcard listener origins', () => {
-    clearWebOriginEnvs();
+  it('uses the Calendar base URL in production instead of forwarded hosts', () => {
+    vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');
 
-    const url = buildGoogleCalendarPostAuthRedirectUrl(
-      {
-        headers: new Headers(),
-      },
-      'workspace-1'
-    );
-
-    expect(url.toString()).toBe(
-      'https://tuturuuu.com/workspace-1/calendar?provider=google&connected=true'
-    );
+    expect(
+      resolveGoogleCalendarOAuthRedirectUri(
+        {
+          headers: new Headers({
+            host: 'attacker.example',
+            'x-forwarded-host': 'attacker.example',
+          }),
+        },
+        'https://calendar.tuturuuu.com'
+      )
+    ).toBe('https://calendar.tuturuuu.com/api/v1/calendar/auth/callback');
   });
 
-  it('uses forwarded public host headers when configured origins are unavailable', () => {
-    clearWebOriginEnvs();
+  it('keeps the forwarded-host fallback outside production only', () => {
+    vi.stubEnv('NODE_ENV', 'development');
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');
+    for (const key of [
+      'WEB_APP_URL',
+      'NEXT_PUBLIC_WEB_APP_URL',
+      'NEXT_PUBLIC_APP_URL',
+      'COOLIFY_URL',
+      'COOLIFY_FQDN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
 
-    const url = buildGoogleCalendarPostAuthRedirectUrl(
-      {
+    expect(
+      resolveGoogleCalendarOAuthRedirectUri({
         headers: new Headers({
-          'x-forwarded-host': 'tuturuuu.com',
-          'x-forwarded-proto': 'https',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
         }),
-      },
-      'workspace-1'
-    );
-
-    expect(url.origin).toBe('https://tuturuuu.com');
+      })
+    ).toBe('http://localhost:7803/api/v1/calendar/auth/callback');
   });
 });

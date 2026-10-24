@@ -56,7 +56,7 @@ enough for general dependency cleanup.
 | Remove dependencies | `bun --cwd apps/shortener remove @tuturuuu/ai @tuturuuu/satellite @tuturuuu/types dayjs` | exit 0; manifest and lockfile updated by Bun |
 | Focused CI test | `node --test scripts/ci/check-workflow-config.test.js` | exit 0; Shortener regression passes |
 | Shortener typecheck | `bun run --cwd apps/shortener type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Shortener build | `bun run --cwd apps/shortener build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -117,7 +117,7 @@ dependency graph changed.
 - [ ] Bun regenerated the lockfile without unrelated churn.
 - [ ] AI-only changes no longer select Shortener production deployment.
 - [ ] Shortener-owned changes still select its deployment.
-- [ ] Focused tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

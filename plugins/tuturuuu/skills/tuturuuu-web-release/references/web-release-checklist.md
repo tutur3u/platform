@@ -74,5 +74,5 @@ bun --cwd packages/utils test src/platform-release.test.ts
 node --test scripts/watch-blue-green-deploy.test.js
 node --test scripts/docker-web.test.js
 python3 plugins/tuturuuu/scripts/validate_plugin.py
-bun check
+bun validate
 ```

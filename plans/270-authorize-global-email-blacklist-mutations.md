@@ -74,7 +74,7 @@ green and all named owners transfer. Do not apply production migrations.
 | Focused database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/email-blacklist-permissions.sql` | read and direct-write matrix passes |
 | Full/typegen database | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts` | full pgTAP passes and generated types are refreshed atomically |
 | App | `bun run --cwd apps/infrastructure type-check && bun run --cwd apps/infrastructure build` | both exit 0 |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 

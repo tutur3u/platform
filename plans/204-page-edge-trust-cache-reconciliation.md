@@ -65,7 +65,7 @@ installed Upstash client before choosing pipeline versus bounded batch.
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/trust-cache-pagination.sql` | focused DB and generated signature pass |
 | Typechecks | `bun run --cwd apps/infrastructure type-check && bun run --cwd packages/utils type-check` | exit 0 |
 | Build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

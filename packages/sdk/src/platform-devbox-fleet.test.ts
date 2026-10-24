@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TuturuuuUserClient } from './platform';
 import {
   type DevboxFleetSnapshot,
+  fleetSnapshotNow,
   getInfrastructureOrigin,
   runnerMaintenanceBlocker,
 } from './platform-devbox-fleet';
@@ -45,6 +46,34 @@ describe('platform-owned fleet boundary', () => {
         'Bearer test-token'
       );
     }
+  });
+  it('stamps snapshots with the server clock from the Date header', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () =>
+        Response.json(
+          { runners: [], runs: [], leases: [] },
+          { headers: { Date: 'Fri, 23 Oct 2026 02:00:05 GMT' } }
+        )
+      );
+    const client = new TuturuuuUserClient({
+      accessToken: 'test-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+    const snapshot = await client.devboxes.fleet.snapshot();
+    expect(snapshot.server_time).toBe('2026-10-23T02:00:05.000Z');
+    expect(fleetSnapshotNow(snapshot, 0)).toBe(
+      Date.parse('2026-10-23T02:00:05.000Z')
+    );
+    expect(fleetSnapshotNow({}, 42)).toBe(42);
+    fetchMock.mockImplementationOnce(async () =>
+      Response.json({ message: 'denied' }, { status: 403 })
+    );
+    await expect(client.devboxes.fleet.snapshot()).rejects.toMatchObject({
+      status: 403,
+      message: 'denied',
+    });
   });
   it('fails closed for busy, stale and truncated snapshots', () => {
     const runner = {

@@ -70,7 +70,7 @@ comment; do not invent an endpoint or log credentials.
 | Cron test | `bun --cwd apps/inventory vitest run src/app/api/cron/inventory/provider-checkout-reconciliation/route.test.ts` | auth, bounds, and result envelope pass |
 | Core typecheck | `bun run --cwd packages/inventory-core type-check` | exit 0 |
 | Inventory build | `bun run --cwd apps/inventory build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

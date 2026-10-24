@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
@@ -50,8 +51,6 @@ class _WalletDetailView extends StatefulWidget {
 }
 
 class _WalletDetailViewState extends State<_WalletDetailView> {
-  static const double _fabContentBottomPadding = 96;
-
   final ScrollController _scrollController = ScrollController();
 
   Wallet? _wallet;
@@ -88,8 +87,6 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final showAmounts = context.select<FinancePreferencesCubit, bool>(
       (cubit) => cubit.state.showAmounts,
     );
-    final listBottomPadding =
-        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
     final wallet = _wallet;
 
     return shad.Scaffold(
@@ -109,84 +106,87 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                   child: NovaRefreshIndicator(
                     onRefresh: _onRefresh,
                     child: _isLoadingInitial && wallet == null
-                        ? const Center(child: NovaLoadingIndicator(size: 20))
+                        ? const AppPageBody(
+                            child: Center(
+                              child: NovaLoadingIndicator(size: 20),
+                            ),
+                          )
                         : _error != null
-                        ? ListView(
+                        ? AppPageListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
                               const SizedBox(height: 120),
                               Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                  ),
-                                  child: Text(
-                                    _error!,
-                                    textAlign: TextAlign.center,
-                                  ),
+                                child: Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             ],
                           )
                         : wallet == null
-                        ? ListView(
+                        ? AppPageListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
                               const SizedBox(height: 120),
                               Center(child: Text(l10n.financeWalletNotFound)),
                             ],
                           )
-                        : GroupedTransactionAccordion(
-                            workspaceId: context
-                                .read<WorkspaceCubit>()
-                                .state
-                                .currentWorkspace
-                                ?.id,
-                            transactions: _transactions,
-                            workspaceCurrency: _workspaceCurrency,
-                            exchangeRates: _exchangeRates,
-                            showLoadingMore: _isLoadingMore,
-                            showAmounts: showAmounts,
-                            compactHorizontalPadding: 0,
-                            lazy: true,
-                            usePanelChrome: false,
-                            emphasizeTransactionRows: true,
-                            collapseBreakdownByDefault: true,
-                            scrollController: _scrollController,
-                            listPadding: EdgeInsets.fromLTRB(
-                              16,
-                              12,
-                              16,
-                              listBottomPadding,
-                            ),
-                            headerChildren: [
-                              WalletDetailSummaryCard(
-                                wallet: wallet,
-                                stats: _stats,
-                                workspaceCurrency: _workspaceCurrency,
-                                exchangeRates: _exchangeRates,
-                                showAmounts: showAmounts,
-                                onEdit: _isLoadingInitial
-                                    ? null
-                                    : _onEditWallet,
-                                onOpenCheckpoints: () => context.push(
-                                  Routes.financeCheckpointsPath(
-                                    walletId: wallet.id,
+                        : LayoutBuilder(
+                            builder: (context, constraints) =>
+                                GroupedTransactionAccordion(
+                                  workspaceId: context
+                                      .read<WorkspaceCubit>()
+                                      .state
+                                      .currentWorkspace
+                                      ?.id,
+                                  transactions: _transactions,
+                                  workspaceCurrency: _workspaceCurrency,
+                                  exchangeRates: _exchangeRates,
+                                  showLoadingMore: _isLoadingMore,
+                                  showAmounts: showAmounts,
+                                  compactHorizontalPadding: 0,
+                                  lazy: true,
+                                  usePanelChrome: false,
+                                  emphasizeTransactionRows: true,
+                                  collapseBreakdownByDefault: true,
+                                  scrollController: _scrollController,
+                                  listPadding: AppPageInsets.of(
+                                    context,
+                                    width: constraints.maxWidth,
                                   ),
+                                  headerChildren: [
+                                    WalletDetailSummaryCard(
+                                      wallet: wallet,
+                                      stats: _stats,
+                                      workspaceCurrency: _workspaceCurrency,
+                                      exchangeRates: _exchangeRates,
+                                      showAmounts: showAmounts,
+                                      onEdit: _isLoadingInitial
+                                          ? null
+                                          : _onEditWallet,
+                                      onOpenCheckpoints: () => context.push(
+                                        Routes.financeCheckpointsPath(
+                                          walletId: wallet.id,
+                                        ),
+                                      ),
+                                    ),
+                                    const shad.Gap(AppLayout.itemGap),
+                                  ],
+                                  emptyState: FinanceEmptyState(
+                                    icon: Icons.receipt_long_outlined,
+                                    title: l10n.financeNoTransactions,
+                                    body:
+                                        l10n.financeOverviewNoTransactionsBody,
+                                    action: shad.SecondaryButton(
+                                      onPressed: _onCreateTransaction,
+                                      child: Text(
+                                        l10n.financeAddFirstTransaction,
+                                      ),
+                                    ),
+                                  ),
+                                  onTransactionTap: _openTransaction,
                                 ),
-                              ),
-                              const shad.Gap(12),
-                            ],
-                            emptyState: FinanceEmptyState(
-                              icon: Icons.receipt_long_outlined,
-                              title: l10n.financeNoTransactions,
-                              body: l10n.financeOverviewNoTransactionsBody,
-                              action: shad.SecondaryButton(
-                                onPressed: _onCreateTransaction,
-                                child: Text(l10n.financeAddFirstTransaction),
-                              ),
-                            ),
-                            onTransactionTap: _openTransaction,
                           ),
                   ),
                 ),

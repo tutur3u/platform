@@ -1,4 +1,7 @@
-import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
+import {
+  sanitizeFilename,
+  sanitizePathStrict,
+} from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWhiteboardAccess } from '../../access';
@@ -42,7 +45,11 @@ export async function GET(
     }
 
     const expectedPrefix = `${wsId}/whiteboards/${parsedParams.boardId}/`;
-    if (!path.startsWith(expectedPrefix) || path.includes('..')) {
+    if (
+      sanitizePathStrict(path) !== path ||
+      !path.startsWith(expectedPrefix) ||
+      path.length === expectedPrefix.length
+    ) {
       return NextResponse.json(
         { error: 'Invalid whiteboard image path' },
         { status: 400 }

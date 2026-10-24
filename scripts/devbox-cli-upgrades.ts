@@ -77,8 +77,7 @@ export function planUpgrades(
 async function cli(args: string[]) {
   return new Promise<Record<string, unknown>>((resolve, reject) => {
     const child = spawn(
-      // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone operator script, never a cached Turbo task.
-      process.env.TUTURUUU_UPGRADE_CLI ?? 'ttr',
+      join(homedir(), '.bun', 'bin', 'ttr'),
       [...args, '--json', '--no-update-check'],
       {
         shell: false,

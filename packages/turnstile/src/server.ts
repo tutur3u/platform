@@ -114,6 +114,57 @@ export interface VerifyTurnstileTokenOptions {
   includeRemoteIp?: boolean;
   fetch?: typeof fetch;
   timeoutMs?: number;
+  expectedHostname?: string;
+  expectedAction?: string;
+  expectedCData?: string;
+}
+
+async function readTurnstileResponse(
+  response: Response,
+  signal: AbortSignal
+): Promise<unknown> {
+  if (!response.body)
+    throw new TurnstileError(
+      'verification_failed',
+      'Turnstile verification failed'
+    );
+  const reader = response.body.getReader();
+  let cancellation: Promise<void> | undefined;
+  const abort = () => {
+    cancellation = reader.cancel().catch(() => {});
+  };
+  signal.addEventListener('abort', abort, { once: true });
+  if (signal.aborted) abort();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      signal.throwIfAborted();
+      const { done, value } = await reader.read();
+      signal.throwIfAborted();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 16_384) {
+        await reader.cancel();
+        throw new TurnstileError(
+          'verification_failed',
+          'Turnstile verification failed'
+        );
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } finally {
+    signal.removeEventListener('abort', abort);
+    await cancellation;
+    reader.releaseLock();
+  }
 }
 
 export async function verifyTurnstileToken(
@@ -154,6 +205,7 @@ export async function verifyTurnstileToken(
   }
 
   const fetchImpl = options.fetch ?? fetch;
+  const signal = AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   const response = await fetchImpl(TURNSTILE_VERIFY_URL, {
     method: 'POST',
     headers: {
@@ -161,7 +213,7 @@ export async function verifyTurnstileToken(
     },
     body,
     cache: 'no-store',
-    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+    signal,
   });
 
   if (!response.ok) {
@@ -171,8 +223,20 @@ export async function verifyTurnstileToken(
     );
   }
 
-  const result = (await response.json()) as { success?: boolean };
-  if (!result.success) {
+  const result = await readTurnstileResponse(response, signal);
+  if (
+    typeof result !== 'object' ||
+    result === null ||
+    !('success' in result) ||
+    result.success !== true ||
+    (options.expectedHostname !== undefined &&
+      (!('hostname' in result) ||
+        result.hostname !== options.expectedHostname)) ||
+    (options.expectedAction !== undefined &&
+      (!('action' in result) || result.action !== options.expectedAction)) ||
+    (options.expectedCData !== undefined &&
+      (!('cdata' in result) || result.cdata !== options.expectedCData))
+  ) {
     throw new TurnstileError(
       'verification_failed',
       'Turnstile verification failed'

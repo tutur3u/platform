@@ -70,7 +70,7 @@ the exact release config/workflow/test paths and the decision is recorded.
 | Focused readiness | `node --test scripts/ci/package-release-readiness.test.js scripts/ci/release-workflows.test.js` | missing-governance fixture fails red first, then all pass |
 | Legal package | `bun run --cwd packages/legal test && bun run --cwd packages/legal type-check` | both exit 0 |
 | Plugin/workflows | `python3 plugins/tuturuuu/scripts/validate_plugin.py && bun test:scripts` | plugin and full script suite pass |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

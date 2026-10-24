@@ -90,7 +90,7 @@ production application remains operator-owned.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/task-progress-metric-administration.test.sql --typegen packages/types/src/supabase.ts` | RLS, seed trigger, ACL, rollback, and concurrency cases pass |
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second isolated type generation is byte-identical |
 | Tasks | `bun run --cwd apps/tasks type-check && bun run --cwd apps/tasks build` | Tasks compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope/size | `git status --short && find 'apps/tasks/src/app/api/v1/workspaces/[wsId]/task-progress' -name '*.ts' -print0 | xargs -0 wc -l | sort -n | tail -20` | only in-scope files changed; no substantially edited source exceeds 700 lines |
 
 ## Scope

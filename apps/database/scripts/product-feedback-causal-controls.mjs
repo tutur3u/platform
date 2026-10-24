@@ -12,7 +12,7 @@ export const causalPins = Object.freeze({
   fixture:
     'apps/database/supabase/tests/product-feedback-staff-eligibility.sql',
   fixtureSha256:
-    '1c1372de99b378542971cff3a0504f661c6e35e23a6c53acbfcc5d87873ba20d',
+    '4be384c033d332f45a578dba1b0d511b2dda7369e847e0d4a57c25f778a845da',
 });
 export const digest = (value) =>
   createHash('sha256').update(value).digest('hex');
@@ -287,7 +287,7 @@ export function readCatalog(result, bodySha256) {
     JSON.stringify([...row.settings].sort()) !==
       JSON.stringify([
         'lock_timeout=500ms',
-        'search_path=""',
+        'search_path=pg_catalog, pg_temp',
         'statement_timeout=3s',
       ]) ||
     !(

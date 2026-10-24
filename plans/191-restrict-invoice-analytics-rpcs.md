@@ -58,7 +58,7 @@ and G19 review before touching shared contracts. Execute after Plan 154 is green
 | Finance typecheck | `bun run --cwd apps/finance type-check` | exit 0 |
 | Finance build | `bun run --cwd apps/finance build` | production build exits 0 |
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no signature/type drift |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

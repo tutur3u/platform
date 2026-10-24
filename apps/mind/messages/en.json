@@ -734,6 +734,7 @@
     "mark-as-unread": "Mark as unread",
     "no-notifications": "No notifications",
     "notifications": "Notifications",
+    "update-error": "Could not update notification",
     "view-all": "View all"
   },
   "onboarding_guide": {

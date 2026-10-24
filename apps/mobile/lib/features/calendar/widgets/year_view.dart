@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
@@ -44,45 +45,57 @@ class YearView extends StatelessWidget {
         20 +
         4;
 
+    // The calendar canvas passes the dock clearance through; the year grid
+    // reads it via the page insets.
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Row(
-              children: [
-                shad.IconButton.ghost(
-                  onPressed: () => onYearChanged(
-                    calendarDate(displayYear - 1, focusedMonth.month),
+        SliverAppPage(
+          kind: AppPageKind.root,
+          includeBottom: false,
+          sliver: SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  shad.IconButton.ghost(
+                    onPressed: () => onYearChanged(
+                      calendarDate(displayYear - 1, focusedMonth.month),
+                    ),
+                    icon: const Icon(Icons.chevron_left_rounded),
                   ),
-                  icon: const Icon(Icons.chevron_left_rounded),
-                ),
-                Expanded(
-                  child: Text(
-                    '$displayYear',
-                    textAlign: TextAlign.center,
-                    style: theme.typography.h4.copyWith(
-                      fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: Text(
+                      '$displayYear',
+                      textAlign: TextAlign.center,
+                      style: theme.typography.h4.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-                shad.IconButton.ghost(
-                  onPressed: () => onYearChanged(
-                    calendarDate(displayYear + 1, focusedMonth.month),
+                  shad.IconButton.ghost(
+                    onPressed: () => onYearChanged(
+                      calendarDate(displayYear + 1, focusedMonth.month),
+                    ),
+                    icon: const Icon(Icons.chevron_right_rounded),
                   ),
-                  icon: const Icon(Icons.chevron_right_rounded),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+        SliverAppPage(
+          kind: AppPageKind.root,
+          includeTop: false,
           sliver: isCompact
               ? SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     return Padding(
-                      padding: EdgeInsets.only(bottom: index == 11 ? 0 : 12),
+                      padding: EdgeInsets.only(
+                        bottom: index == 11 ? 0 : AppLayout.itemGap,
+                      ),
                       child: _YearMonthCard(
                         dayHeight: dayHeight,
                         month: calendarDate(displayYear, index + 1),
@@ -107,8 +120,8 @@ class YearView extends StatelessWidget {
                   }, childCount: 12),
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 360 * textScaler.scale(1),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
+                    mainAxisSpacing: AppLayout.itemGap,
+                    crossAxisSpacing: AppLayout.itemGap,
                     mainAxisExtent: monthHeight,
                   ),
                 ),

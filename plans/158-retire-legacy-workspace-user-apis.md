@@ -73,7 +73,7 @@ to the maintained v1 Contacts contract.
 | Full backend | `bun check:backend` | Rust formatting, clippy, native tests, and worker check pass |
 | App checks | `bun run --cwd apps/contacts type-check && bun run --cwd apps/web type-check` | exit 0 |
 | App builds | `bun run --cwd apps/contacts build && bun run --cwd apps/web build` | both production builds pass |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -120,7 +120,7 @@ commit window. Do not push or apply production migrations.
       maintained projection contract.
 - [ ] Each mutation permission is independently covered by route and pgTAP
       tests, including cross-workspace denial.
-- [ ] Route artifacts, types, full database suite, builds, and `bun check` pass.
+- [ ] Route artifacts, types, full database suite, builds, and `bun validate` pass.
 
 ## STOP conditions
 
