@@ -1,10 +1,19 @@
-import 'package:timezone/data/latest.dart' as data;
+import 'package:timezone/data/latest_all.dart' as data;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Uses the same database for preference resolution and calendar projection.
-/// An identifier must resolve before preferences can be marked usable by UI.
+/// Resolves native IANA aliases as well as canonical preference identifiers.
 tz.Location timezoneLocation(String identifier) {
   if (identifier == 'UTC') return tz.UTC;
-  if (!tz.timeZoneDatabase.isInitialized) data.initializeTimeZones();
+  if (!tz.timeZoneDatabase.isInitialized ||
+      !tz.timeZoneDatabase.locations.containsKey(identifier)) {
+    // Another consumer may have initialized the compact database, which omits
+    // native aliases such as Asia/Saigon. Keep its configured local location.
+    final local = tz.timeZoneDatabase.isInitialized ? tz.local : tz.UTC;
+    try {
+      data.initializeTimeZones();
+    } finally {
+      tz.setLocalLocation(local);
+    }
+  }
   return tz.getLocation(identifier);
 }

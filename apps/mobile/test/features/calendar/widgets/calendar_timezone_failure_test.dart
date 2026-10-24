@@ -38,6 +38,18 @@ void main() {
     expect(tz.local.name, 'Asia/Ho_Chi_Minh');
   });
 
+  test('native IANA aliases resolve after compact initialization', () {
+    data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
+    addTearDown(() => tz.setLocalLocation(tz.UTC));
+    final alias = timezoneLocation('Asia/Saigon');
+    expect(
+      tz.TZDateTime.from(DateTime.utc(2030), alias).timeZoneOffset,
+      const Duration(hours: 7),
+    );
+    expect(tz.local.name, 'Asia/Ho_Chi_Minh');
+  });
+
   test('unsupported save input is rejected before any write', () async {
     final repository = _Preferences('UTC');
     final preferences = TimezoneSettingsCubit(

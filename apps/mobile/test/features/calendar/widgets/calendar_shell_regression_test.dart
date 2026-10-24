@@ -132,60 +132,79 @@ void main() {
     );
   });
 
-  for (final device in [false, true]) {
-    testWidgets('real shell Agenda rejects unsupported '
-        '${device ? 'device' : 'saved'} timezone', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      CalendarCubit.clearCache();
-      tester.view
-        ..devicePixelRatio = 1
-        ..physicalSize = const Size(390, 844);
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('mobile/shell_back'),
-        (_) async => null,
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+  for (final fixture in [
+    (device: false, native: 'UTC', supported: false),
+    (device: true, native: 'GMT+07:00', supported: false),
+    (device: true, native: 'Asia/Saigon', supported: true),
+  ]) {
+    final device = fixture.device;
+    testWidgets(
+      fixture.supported
+          ? 'real shell Agenda accepts a native IANA alias'
+          : 'real shell Agenda rejects unsupported '
+                '${device ? 'device' : 'saved'} timezone',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        CalendarCubit.clearCache();
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(390, 844);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           const MethodChannel('mobile/shell_back'),
-          null,
-        ),
-      );
-      final repository = _CalendarRepository();
-      final zones = _ZonePreferences(device: device);
-      final preferences = TimezoneSettingsCubit(
-        repository: zones,
-        deviceLoader: () async => device ? 'GMT+07:00' : 'UTC',
-      );
-      final harness = _CalendarShellHarness(
-        repository,
-        Brightness.dark,
-        const Workspace(id: 'timezone-regression'),
-        preferences: preferences,
-      );
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
-        await harness.dispose();
-        repository.dispose();
-        zones.dispose();
-      });
-      await tester.pumpWidget(harness.build());
-      await _frames(tester);
-      final calendar = tester
-          .element(find.byType(CalendarMinuteClock))
-          .read<CalendarCubit>();
-      await calendar.setViewMode(CalendarViewMode.agenda);
-      repository.initial.complete([]);
-      await _frames(tester);
-      await preferences.load(userId: 'timezone-regression', workspaceId: null);
-      await _frames(tester);
-      expect(preferences.state.resolved, isFalse);
-      expect(preferences.state.failed, isTrue);
-      expect(find.byType(AgendaView), findsOneWidget);
-      expect(find.byType(ErrorWidget), findsNothing);
-    });
+          (_) async => null,
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            const MethodChannel('mobile/shell_back'),
+            null,
+          ),
+        );
+        final repository = _CalendarRepository();
+        final zones = _ZonePreferences(device: device);
+        final preferences = TimezoneSettingsCubit(
+          repository: zones,
+          deviceLoader: () async => fixture.native,
+        );
+        final harness = _CalendarShellHarness(
+          repository,
+          Brightness.dark,
+          const Workspace(id: 'timezone-regression'),
+          preferences: preferences,
+        );
+        addTearDown(() async {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          await harness.dispose();
+          repository.dispose();
+          zones.dispose();
+        });
+        await tester.pumpWidget(harness.build());
+        await _frames(tester);
+        final calendar = tester
+            .element(find.byType(CalendarMinuteClock))
+            .read<CalendarCubit>();
+        await calendar.setViewMode(CalendarViewMode.agenda);
+        repository.initial.complete([]);
+        await _frames(tester);
+        await preferences.load(
+          userId: 'timezone-regression',
+          workspaceId: null,
+        );
+        await _frames(tester);
+        if (fixture.supported) {
+          expect(preferences.state.resolved, isTrue);
+          expect(preferences.state.failed, isFalse);
+          expect(preferences.state.effective, 'Asia/Saigon');
+        } else {
+          expect(preferences.state.resolved, isFalse);
+          expect(preferences.state.failed, isTrue);
+        }
+        expect(find.byType(AgendaView), findsOneWidget);
+        expect(find.byType(ErrorWidget), findsNothing);
+      },
+    );
   }
 
   for (final size in [const Size(390, 844), const Size(1024, 1366)]) {

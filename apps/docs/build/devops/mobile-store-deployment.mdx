@@ -118,6 +118,14 @@ the pubspec version alone is not the store build identity. Framework errors alre
 retain their original stacks through `FlutterError.onError`. Keep raw event
 payloads private and avoid adding a second reporting integration.
 
+The authenticated Firebase CLI exposes official Crashlytics tools through
+`firebase mcp --only core,crashlytics`. Read its Crashlytics reports guide, obtain
+the exact `topVersions` display name, filter `topIssues` with that value, then
+fetch events for the issue. `firebase login:list` shows stored accounts but does
+not prove credentials are current; an authentication error requires
+`firebase login --reauth --interactive`. Complete OAuth in the browser rather
+than copying credentials or authorization codes into a transcript.
+
 For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
 `meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's
 Analytics events. A successful publisher event means its WebRTC sender reported
