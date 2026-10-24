@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/mobile-v0.25.1...mobile-v0.26.0) (2026-10-24)
+
+
+### Features
+
+* **mobile:** add core/ui design tokens, icons and components ([e924582](https://github.com/tutur3u/platform/commit/e9245822efa2e13eb33c53f35441dbf9a0904c88)) ([#6577](https://github.com/tutur3u/platform/issues/6577)) ([43bf1b8](https://github.com/tutur3u/platform/commit/43bf1b8f218751034db1862ae881d5f0066f6fb7))
+* **mobile:** add design foundation for consistent padding and responsive shell ([4c83120](https://github.com/tutur3u/platform/commit/4c83120b43e2c0a249fdf7a663ad4f5674c6125d)) ([#6530](https://github.com/tutur3u/platform/issues/6530)) ([aaac144](https://github.com/tutur3u/platform/commit/aaac1440f195868787303dd0caa0e29572b9dd6c))
+* **mobile:** add unified sheet and dialog host with modal Back ([31e4712](https://github.com/tutur3u/platform/commit/31e4712077406d6aaef65b5743644ba6b3c90362)) ([#6578](https://github.com/tutur3u/platform/issues/6578)) ([c3b280b](https://github.com/tutur3u/platform/commit/c3b280bf21fc4d78e53d05afa5c080235100dea8))
+* **mobile:** centralize app settings under Settings &gt; Apps ([83fbfab](https://github.com/tutur3u/platform/commit/83fbfab65b45746be4bcb159931539a6d4ce74a4)) ([#6546](https://github.com/tutur3u/platform/issues/6546)) ([8f59398](https://github.com/tutur3u/platform/commit/8f593986ca7ba85ae7621a7788e33cbc3ead429e))
+* **mobile:** consolidate profile and account settings in Edit profile ([29ac9cd](https://github.com/tutur3u/platform/commit/29ac9cdc3b2e194abf65eb558e9e2694d8973153))
+* **mobile:** consolidate profile settings in Edit profile ([#6548](https://github.com/tutur3u/platform/issues/6548)) ([b50d7d7](https://github.com/tutur3u/platform/commit/b50d7d7e63cfefe8a1210ac48af07d9ab0e064df))
+* **mobile:** generate web-parity Lucide and Lucide Lab icon fonts ([d11306c](https://github.com/tutur3u/platform/commit/d11306cfa506e137e1014ff3f811f3fd1adc7c52)) ([#6593](https://github.com/tutur3u/platform/issues/6593)) ([4b00846](https://github.com/tutur3u/platform/commit/4b0084665af9def60263c1a9f420a695cc4bdfde))
+* **mobile:** migrate apps, assistant, auth and account screens to page primitives ([bd4b7f8](https://github.com/tutur3u/platform/commit/bd4b7f86ca031faccc50d43c6276b23bb25594eb)) ([#6539](https://github.com/tutur3u/platform/issues/6539)) ([1477217](https://github.com/tutur3u/platform/commit/1477217c9d2bb8a62020be7f984815f71a488b63))
+* **mobile:** migrate drive, mail, meet, chat, notes and calendar screens to page primitives ([b950947](https://github.com/tutur3u/platform/commit/b95094764fbb230d30c7637320630b545e170b72)) ([#6538](https://github.com/tutur3u/platform/issues/6538)) ([a80f5c8](https://github.com/tutur3u/platform/commit/a80f5c8e8b18b84e6bbc4f3fcac4ce6a8aab0a01))
+* **mobile:** migrate education, CMS and CRM screens to page primitives ([15af7b3](https://github.com/tutur3u/platform/commit/15af7b30c4210780ec9e5df8f54b31f76b8e0486)) ([#6537](https://github.com/tutur3u/platform/issues/6537)) ([7e7fb10](https://github.com/tutur3u/platform/commit/7e7fb10681715e5579490d4f0cfc0d35292977c3))
+* **mobile:** migrate finance, inventory and storefront screens to page primitives ([c3db770](https://github.com/tutur3u/platform/commit/c3db770a3e6f1fc3e51bcfc61cb29c820b5d5053)) ([#6536](https://github.com/tutur3u/platform/issues/6536)) ([ef5292c](https://github.com/tutur3u/platform/commit/ef5292c7782ff13d127d5ad33433e2c316b9c387))
+* **mobile:** migrate task and time tracker screens to page primitives ([bb1ccd0](https://github.com/tutur3u/platform/commit/bb1ccd0292533563f7e9273847b10c9adbc7a41d)) ([#6535](https://github.com/tutur3u/platform/issues/6535)) ([2385749](https://github.com/tutur3u/platform/commit/23857493d285212092a247b37eabc35a0017d708))
+* **mobile:** open the approval threshold editor from the Requests gear ([c5ed9d7](https://github.com/tutur3u/platform/commit/c5ed9d75426e6ba254cb77ddf1ee15f2877bb346))
+* **mobile:** polish Edit profile rows and document the review follow-ups ([4c42b91](https://github.com/tutur3u/platform/commit/4c42b91f8883aafd85ed8afcda3179e0bf49092a))
+* **mobile:** rebuild timezone pickers on the sheet host ([3c968dd](https://github.com/tutur3u/platform/commit/3c968ddaa600c7c0c66ad22459ee27ad2684015e)) ([#6579](https://github.com/tutur3u/platform/issues/6579)) ([07dcbc3](https://github.com/tutur3u/platform/commit/07dcbc3df20df1833330fc6f2d1bdecc72dc17d8))
+* **mobile:** redesign settings and add customizable appearance themes ([8c603fc](https://github.com/tutur3u/platform/commit/8c603fc93cff648f175eca9c94e5627150db4d23)) ([#6534](https://github.com/tutur3u/platform/issues/6534)) ([613b517](https://github.com/tutur3u/platform/commit/613b5176a08e8270788f6d58b55d29aecfe5fc22))
+* **mobile:** route Timer gear actions to central Timer settings ([1d5ab36](https://github.com/tutur3u/platform/commit/1d5ab36eab6f242ddb082d29c194cad390749297)) ([#6547](https://github.com/tutur3u/platform/issues/6547)) ([0ffa154](https://github.com/tutur3u/platform/commit/0ffa1543443b3b3cf54c7cfbf6dbd4ac9c210e27))
+* **security:** add staged native integrity verification ([b9155e4](https://github.com/tutur3u/platform/commit/b9155e45bba5486b9943a4dc3e9cb9b2aedb8b14)) ([#6575](https://github.com/tutur3u/platform/issues/6575)) ([332368d](https://github.com/tutur3u/platform/commit/332368dd35586096f314355eb6bc8f7904ed0868))
+
+
+### Bug Fixes
+
+* **calendar:** preserve native quota diagnostics and reuse verified actors ([88c464c](https://github.com/tutur3u/platform/commit/88c464c75ca1a51014e360ee92aabea0b16d919c))
+* **calendar:** serve native timezone preferences from Web ([ec94bc2](https://github.com/tutur3u/platform/commit/ec94bc262c9ef7e89339309de1d23ff4045224db)) ([#6573](https://github.com/tutur3u/platform/issues/6573)) ([a1bcec6](https://github.com/tutur3u/platform/commit/a1bcec69510d4efaaee91737a563c00ffc253dd4))
+* **mobile:** address settings appearance review findings ([032cedd](https://github.com/tutur3u/platform/commit/032cedddcd74fe0f7c6d3d17023a888f9738b104))
+* **mobile:** address settings appearance review r2 ([fe4883e](https://github.com/tutur3u/platform/commit/fe4883e775d74ac2ea79786f3323f1198c352c0d))
+* **mobile:** address settings appearance review r3 ([c8c74e3](https://github.com/tutur3u/platform/commit/c8c74e3b9b2d684379f8558e1734e940429bf2de))
+* **mobile:** align Assistant chat UX with web and shell ([#6424](https://github.com/tutur3u/platform/issues/6424)) ([158188b](https://github.com/tutur3u/platform/commit/158188ba2ad94c6a45d4bd9483388c4fd3cff886))
+* **mobile:** avoid repeating the offset on fixed-offset timezone rows ([04f0acc](https://github.com/tutur3u/platform/commit/04f0accc1a5d888a3b3e858b169d9b88abf7ea1c))
+* **mobile:** choose chat panes from the body width ([ca4a13d](https://github.com/tutur3u/platform/commit/ca4a13d97bb79701e34b9f3ce5b930685d907fa5))
+* **mobile:** correct timezone quotas and rejection diagnostics ([#6430](https://github.com/tutur3u/platform/issues/6430)) ([8d36fa7](https://github.com/tutur3u/platform/commit/8d36fa73d757b6f66aeb697c57f7dc6cfc721a61))
+* **mobile:** gate every serialized Lucide glyph and keep holes open ([2645e02](https://github.com/tutur3u/platform/commit/2645e024caa4ef84715f45409f4ecfdb9d4aeb25))
+* **mobile:** harden sheet host Back, search placement and Android exit ([00605a7](https://github.com/tutur3u/platform/commit/00605a797af7c2d7d59e0e52700af2863f1b7949))
+* **mobile:** keep codemod imports in the package import block ([782e16d](https://github.com/tutur3u/platform/commit/782e16d14dfa4a06df998a174a1fd7ff995bc3fb))
+* **mobile:** keep incoming constraints for tap-target visuals ([f073278](https://github.com/tutur3u/platform/commit/f073278b695ab61d8d577ec4dfda3f32bf06c59d))
+* **mobile:** keep queued threshold saves visible and polish Settings &gt; Apps ([b5a17db](https://github.com/tutur3u/platform/commit/b5a17db204b21c92876c4cd41a43bbe6b7e18d0a))
+* **mobile:** keep shell body mounted across rail and dock switches ([946273b](https://github.com/tutur3u/platform/commit/946273bf537add2d6904f52f256bdc9410a37f4d))
+* **mobile:** keep the calendar month grid above the dock ([f00d1e9](https://github.com/tutur3u/platform/commit/f00d1e9300dfed422557ed6bb1e4304c45ae8033))
+* **mobile:** move the portfolio project title and Back into the shell ([7ae91f4](https://github.com/tutur3u/platform/commit/7ae91f4f6e2f701af973a450bfbef436cde998ff))
+* **mobile:** nest Lucide contours by the true curve and test what users see ([539df0a](https://github.com/tutur3u/platform/commit/539df0ac0eee936ee8be6ef978d682c39c412da4))
+* **mobile:** pad design-system buttons to 48dp tap targets ([b5202ca](https://github.com/tutur3u/platform/commit/b5202cad9d4097e1646012aa5663d424e9fb1d63))
+* **mobile:** prevent agenda crashes from native timezone aliases ([#6598](https://github.com/tutur3u/platform/issues/6598)) ([ee8789b](https://github.com/tutur3u/platform/commit/ee8789b74011d127822e33af9a9559b039bb21c7))
+* **mobile:** refresh saved request threshold and reach far search jumps ([ea552e0](https://github.com/tutur3u/platform/commit/ea552e01154cf4432e05d9c2fdd5a0cf332fd3a0))
+* **mobile:** resolve native timezone aliases with complete data ([5ca3926](https://github.com/tutur3u/platform/commit/5ca39268bfc7a9c9816cbb4c307389b72f9602c1))
+* **mobile:** reuse shell test app within shadcn ratchet ([8762b2d](https://github.com/tutur3u/platform/commit/8762b2d94d6af88a5b3e592648c8a17366d585e9)) ([#6600](https://github.com/tutur3u/platform/issues/6600)) ([cfcaf87](https://github.com/tutur3u/platform/commit/cfcaf87ce06330484f235582a7f97a08a2d52bba))
+* **mobile:** serialize Android exit Back and stop swallowing overlay Back ([92fc232](https://github.com/tutur3u/platform/commit/92fc2329f252c854ec94703c614c640e2be1caa4))
+* **mobile:** share complete timezone data across app consumers ([2e4b108](https://github.com/tutur3u/platform/commit/2e4b1085c85e0d78083f9758ffd106e0c9a8b7df)) ([#6601](https://github.com/tutur3u/platform/issues/6601)) ([c4aa21c](https://github.com/tutur3u/platform/commit/c4aa21cb43ded03feb5edb322d7332707a78dda9))
+* **mobile:** shell chrome for project detail, body-width chat panes and month grid clearance ([#6544](https://github.com/tutur3u/platform/issues/6544)) ([e3f67e2](https://github.com/tutur3u/platform/commit/e3f67e254a6607f94594f7c62b2a710cc1743d76))
+* **mobile:** show one friendly value line on Time zone rows ([178d2eb](https://github.com/tutur3u/platform/commit/178d2eb6c12b2e65ce20dc382403ce2debf68ccd)) ([#6589](https://github.com/tutur3u/platform/issues/6589)) ([a2b7bb4](https://github.com/tutur3u/platform/commit/a2b7bb4d47a0d40651f9a494a95c3f20b6c728a5))
+* **mobile:** stamp Android Back queries with a route generation ([c2b3624](https://github.com/tutur3u/platform/commit/c2b3624472caec853daccaf8a8521b2499608991))
+* **mobile:** validate calendar timezone resolution ([0beebae](https://github.com/tutur3u/platform/commit/0beebaea403f83de85e90a24262c093793405ea4))
+* **security:** repair native integrity CI and merge main ([667bfef](https://github.com/tutur3u/platform/commit/667bfef571dbb5b0e201bfa48ba3ed4000b7c522))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/mobile-v0.25.0...mobile-v0.25.1) (2026-10-18)
 
 

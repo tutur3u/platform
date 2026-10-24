@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.14.2](https://github.com/tutur3u/platform/compare/git-v0.14.1...git-v0.14.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.14.1](https://github.com/tutur3u/platform/compare/git-v0.14.0...git-v0.14.1) (2026-10-17)
 
 

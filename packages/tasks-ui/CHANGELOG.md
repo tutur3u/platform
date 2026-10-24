@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.17.3](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.2...tasks-ui-v0.17.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** harden regexes, escaping and key handling in shared packages ([d518804](https://github.com/tutur3u/platform/commit/d518804d9fe811cfba3a1ff04a6f253d4fa44c1d))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+
 ## [0.17.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.1...tasks-ui-v0.17.2) (2026-10-17)
 
 

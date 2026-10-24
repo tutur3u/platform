@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.32.2](https://github.com/tutur3u/platform/compare/drive-v0.32.1...drive-v0.32.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.32.1](https://github.com/tutur3u/platform/compare/drive-v0.32.0...drive-v0.32.1) (2026-10-17)
 
 

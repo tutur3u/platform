@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.44.0](https://github.com/tutur3u/platform/compare/database-v1.43.0...database-v1.44.0) (2026-10-24)
+
+
+### Features
+
+* **ci:** restore CodeQL and add a security review cadence ([#6456](https://github.com/tutur3u/platform/issues/6456)) ([10d839a](https://github.com/tutur3u/platform/commit/10d839adb6cfbb11ec7259b965dd4b0167d60719))
+* **devbox:** separate runner trust pools and add an observable drain ([#6450](https://github.com/tutur3u/platform/issues/6450)) ([64401ab](https://github.com/tutur3u/platform/commit/64401abf6f74b9c008d020ed0428ec043d23fc6d))
+* **sdk:** offload saturated resource runs to trusted devbox runners ([#6454](https://github.com/tutur3u/platform/issues/6454)) ([59bce45](https://github.com/tutur3u/platform/commit/59bce451809baf5f62185d172833a99fb5ad0a7c))
+
+
+### Bug Fixes
+
+* **auth:** add per-account MFA verification limits ([95205fe](https://github.com/tutur3u/platform/commit/95205fe35733b55c9eb1d6cf03f47ec3ba2318f0)) ([#6555](https://github.com/tutur3u/platform/issues/6555)) ([b4d67f0](https://github.com/tutur3u/platform/commit/b4d67f008ac7f9a2e103d4f35d039175acc0bf5b))
+* **auth:** grant MFA hook caller schema usage ([c324497](https://github.com/tutur3u/platform/commit/c324497909ada7e3be34147da61ef02ebde95548))
+* **auth:** reserve MFA attempts atomically and restrict the hook ([0c945d5](https://github.com/tutur3u/platform/commit/0c945d5c528c64d3842033bb8bc6eaa262f44bb6))
+* **calendar:** bind provider OAuth state to user and workspace ([#6520](https://github.com/tutur3u/platform/issues/6520)) ([f1685c6](https://github.com/tutur3u/platform/commit/f1685c68630ca83a94125cdc5aceb0874565f80f))
+* **calendar:** DB-backed single-use OAuth state and BASE_URL redirects ([4f203fe](https://github.com/tutur3u/platform/commit/4f203fe6586cbe450c0dac1d1b17059c4fde1d80))
+* **ci:** never let a dispatch input select code in a privileged cache scope ([ff48a7a](https://github.com/tutur3u/platform/commit/ff48a7ac6ad378821e6c94f7d7bd841259f155e6))
+* **database:** date calendar OAuth nonce migration in the past ([16e8f57](https://github.com/tutur3u/platform/commit/16e8f57a6c9ddce6a795c1315fe4e117400461f9))
+* **database:** enforce trusted definer search paths across exposed schemas ([04efff7](https://github.com/tutur3u/platform/commit/04efff7fc30354221dfbcad3c5d78707fa3c8669))
+* **database:** harden remaining legacy chat read policies ([497d419](https://github.com/tutur3u/platform/commit/497d419ac2ca9b11c022cc09d1ab2eea8c4e9243))
+* **database:** narrow notification cleanup and extend access tests ([9b223b5](https://github.com/tutur3u/platform/commit/9b223b5e739e6e92c95f565219cc819f57e050db))
+* **database:** preserve atomic lifecycle metadata replacement ([94b5e42](https://github.com/tutur3u/platform/commit/94b5e42ac796ee8cc758a788223d0f7ce012d467))
+* **database:** preserve server task access and exercise storage catalog ([e206f1d](https://github.com/tutur3u/platform/commit/e206f1db9c945547deb1d939d4e4d100eac5b5fc))
+* **database:** repair hardened file operation tests ([a457fda](https://github.com/tutur3u/platform/commit/a457fdaf63137b39a9a5d5fc29af0dd29bf61ed0))
+* **database:** restrict internal definer functions and add caller checks ([cda8a16](https://github.com/tutur3u/platform/commit/cda8a16687bf0a95e00fabedb7a3fabd5a7ecfda)) ([#6557](https://github.com/tutur3u/platform/issues/6557)) ([0c665ae](https://github.com/tutur3u/platform/commit/0c665ae14a97455872e0fa05b3a8c31f229e789c))
+* **database:** scope email helper to the current caller ([cf7f104](https://github.com/tutur3u/platform/commit/cf7f10431776bb03389439c4698c87cb6269b586)) ([#6550](https://github.com/tutur3u/platform/issues/6550)) ([f261aa0](https://github.com/tutur3u/platform/commit/f261aa03faa17c834a649f6d2cccb5dc9f84bdd8))
+* **database:** scope list-less tasks to their creator ([bfb22e1](https://github.com/tutur3u/platform/commit/bfb22e1e37979f51261dfd84819ebb6ad65eea60))
+* **database:** tighten notification email access ([4b4e13b](https://github.com/tutur3u/platform/commit/4b4e13bb352c1b370bfcda02836be563b7cf05a5)) ([#6552](https://github.com/tutur3u/platform/issues/6552)) ([d9161cc](https://github.com/tutur3u/platform/commit/d9161ccb52569144418f18a7afc11a19ef6eb4c7))
+* **database:** verify final definer callers and server chat boundary ([7a6dcf6](https://github.com/tutur3u/platform/commit/7a6dcf6f8212c9357e2f5b00ce0c4cbf187c81ce))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **devbox:** cancel lost offload creates by key and page logs by run cursor ([aace86b](https://github.com/tutur3u/platform/commit/aace86bdbdef0f44ae31562c61dd2174463a384c))
+* **devbox:** fence keyed creates and enforce the commit-run protocol server-side ([d0dd8c6](https://github.com/tutur3u/platform/commit/d0dd8c6b34e0270e46e595c60bd230dcb1644693))
+* **devbox:** roll out the run log cursor without a long table lock ([6b6b09e](https://github.com/tutur3u/platform/commit/6b6b09e2bda26e6ea5596b4a62877a82b66df3cc))
+* **security:** fence temporary types and preserve managed definers ([83623b2](https://github.com/tutur3u/platform/commit/83623b2bf287c2581bb46aa7a05652409cfe31b1))
+* **security:** harden database file operations ([2d41f91](https://github.com/tutur3u/platform/commit/2d41f91ada203e513a6b166d44d7ff6a4dc7b35a)) ([#6527](https://github.com/tutur3u/platform/issues/6527)) ([521de7c](https://github.com/tutur3u/platform/commit/521de7c4557bc69f7cd084b3ab55d7204360667a))
+* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** reserve password attempts and close guest view grants ([7c1088c](https://github.com/tutur3u/platform/commit/7c1088c6a63f5e42ce6d7c5d00bbadaed1b90f29))
+
 ## [1.43.0](https://github.com/tutur3u/platform/compare/database-v1.42.0...database-v1.43.0) (2026-10-22)
 
 

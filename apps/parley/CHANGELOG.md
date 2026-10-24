@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.2](https://github.com/tutur3u/platform/compare/parley-v1.4.1...parley-v1.4.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **meet:** clarify join states and repair theme initialization ([#6506](https://github.com/tutur3u/platform/issues/6506)) ([f641b5b](https://github.com/tutur3u/platform/commit/f641b5b7def874eeeb4f8562429bd2584aa7eb07))
+* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [1.4.1](https://github.com/tutur3u/platform/compare/parley-v1.4.0...parley-v1.4.1) (2026-10-17)
 
 

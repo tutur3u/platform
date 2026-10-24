@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.2](https://github.com/tutur3u/platform/compare/pay-v0.21.1...pay-v0.21.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+* **security:** sanitize caught-error logs and widen SAML entity ID schemes ([fe834f3](https://github.com/tutur3u/platform/commit/fe834f3987d5dcb7eb81b8f59c0401bab8a7b109))
+* **security:** strip control characters from request-derived log values ([ba4f748](https://github.com/tutur3u/platform/commit/ba4f748d71f2cd37abd18c41796bf5a5fb171a4f))
+
 ## [0.21.1](https://github.com/tutur3u/platform/compare/pay-v0.21.0...pay-v0.21.1) (2026-10-17)
 
 

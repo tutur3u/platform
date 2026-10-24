@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.25.2](https://github.com/tutur3u/platform/compare/mind-v0.25.1...mind-v0.25.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5)) ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/mind-v0.25.0...mind-v0.25.1) (2026-10-17)
 
 

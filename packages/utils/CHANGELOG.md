@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.38.1](https://github.com/tutur3u/platform/compare/utils-v0.38.0...utils-v0.38.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** add per-account MFA verification limits ([95205fe](https://github.com/tutur3u/platform/commit/95205fe35733b55c9eb1d6cf03f47ec3ba2318f0)) ([#6555](https://github.com/tutur3u/platform/issues/6555)) ([b4d67f0](https://github.com/tutur3u/platform/commit/b4d67f008ac7f9a2e103d4f35d039175acc0bf5b))
+* **auth:** reserve MFA attempts atomically and restrict the hook ([0c945d5](https://github.com/tutur3u/platform/commit/0c945d5c528c64d3842033bb8bc6eaa262f44bb6))
+* **calendar:** preserve native quota diagnostics and reuse verified actors ([88c464c](https://github.com/tutur3u/platform/commit/88c464c75ca1a51014e360ee92aabea0b16d919c))
+* **calendar:** serve native timezone preferences from Web ([#6573](https://github.com/tutur3u/platform/issues/6573)) ([a1bcec6](https://github.com/tutur3u/platform/commit/a1bcec69510d4efaaee91737a563c00ffc253dd4))
+* **deps:** pin Bun 1.4.4 for its security fixes ([#6427](https://github.com/tutur3u/platform/issues/6427)) ([4fac363](https://github.com/tutur3u/platform/commit/4fac363e43a7f17b38c2a2f63e076b2e3367f84a))
+* **mobile:** correct timezone quotas and rejection diagnostics ([#6430](https://github.com/tutur3u/platform/issues/6430)) ([8d36fa7](https://github.com/tutur3u/platform/commit/8d36fa73d757b6f66aeb697c57f7dc6cfc721a61))
+* **security:** build request-keyed records without prototype setters ([012dbe1](https://github.com/tutur3u/platform/commit/012dbe18612f9ca5a18c15049df04d0a622ab1e2))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5)) ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e)) ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** harden request-keyed records, push previews and key handoff ([#6521](https://github.com/tutur3u/platform/issues/6521)) ([1c7dfb1](https://github.com/tutur3u/platform/commit/1c7dfb13762c6da6b1935e8ea409aa29dce4c747))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** reserve password attempts and close guest view grants ([7c1088c](https://github.com/tutur3u/platform/commit/7c1088c6a63f5e42ce6d7c5d00bbadaed1b90f29))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+* **security:** sanitize caught-error logs and widen SAML entity ID schemes ([fe834f3](https://github.com/tutur3u/platform/commit/fe834f3987d5dcb7eb81b8f59c0401bab8a7b109))
+* **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
+* **security:** strip control characters from request-derived log values ([ba4f748](https://github.com/tutur3u/platform/commit/ba4f748d71f2cd37abd18c41796bf5a5fb171a4f))
+* **security:** verify workspace avatar paths before deleting storage objects ([#6501](https://github.com/tutur3u/platform/issues/6501)) ([bc2b6c6](https://github.com/tutur3u/platform/commit/bc2b6c652138810cf5afab7464d23b073cd9dba2))
+* **storage:** decode percent-encoded storage paths as UTF-8 ([b27a231](https://github.com/tutur3u/platform/commit/b27a2311d834499ae042defc878d2a7a747bb9f7))
+* **storage:** reject encoded traversal paths ([#6507](https://github.com/tutur3u/platform/issues/6507)) ([b461f77](https://github.com/tutur3u/platform/commit/b461f7733b80e43036a9ae0d2e0188dd276b020e))
+* **utils:** replace empty earlier duplicates in multi-value query parsing ([b0e6152](https://github.com/tutur3u/platform/commit/b0e61521a9c0a3a5d36b6f05948b9cfcab13fd7a))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/utils-v0.37.0...utils-v0.38.0) (2026-10-22)
 
 
