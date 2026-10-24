@@ -349,3 +349,51 @@ window is wider than the body.
   checks that the page list uses the resolved insets, the scrollable stays
   full width, and content stays within the page kind's max width.
   `DESIGN_RENDER_DIR` writes PNG captures.
+
+### Custom selection and date controls
+
+AppSwitch and AppCheckbox draw their own token-based surfaces on every platform. They retain 48dp touch targets, keyboard activation, focus indicators, disabled states and screen-reader state. Use AppToggleRow or AppCheckboxRow for labeled settings. AppChip covers selectable filters and short actions. AppSlider previews through onChanged and commits through onChangeEnd.
+
+Use showAppDatePicker and showAppTimePicker for in-app date/time editing. Both use the modal host so Back dismisses the picker before its parent editor. Date bounds, leap days and 12/24-hour input are preserved; year selection supports the shell search action. Existing framework localizations supply English and Vietnamese picker labels. System-owned permission dialogs remain OS-owned.
+
+Regression coverage: test/core/ui/app_selection_controls_test.dart and test/core/ui/app_date_time_picker_test.dart.
+
+Selection rows respond to taps on their labels as well as the control. Toast
+handles become closed when their overlay is disposed, canceling their dismissal
+timer. Text inputs retain the controller, selection, context menu and multiline
+geometry when used by a composer or form. Scoped settings editors forward
+account/workspace providers into nested sheets and retain their original
+cancellation fences; see the mobile skill reference for migration details.
+
+AppListTile provides token-based action and metadata rows. AppDisclosure owns
+expand/collapse semantics and keyboard activation without platform tile chrome.
+Use AppSheetSearch for searchable modal content and a location-scoped shell action
+for route search. Nested record browsers open their own sheet instead of adding
+competing inline search fields to a page.
+
+Custom button frames establish a semantics boundary, so a nested visibility or
+row action cannot merge with its parent launch action. The existing
+`apps_reorder_grid_accessibility_test.dart` checks that those nodes remain
+separate and independently actionable.
+
+Text-field labels stay above the input border and retain the editable's
+accessible name. Chip avatars use an 18dp swatch inside the shared 48dp touch
+target. `app_field_presentation_test.dart` verifies both presentation contracts.
+
+Short dialogs keep their actions outside the content scroll region. Validation
+errors and enlarged text must not push Save or Retry off the visible surface;
+see `app_dialog_layout_test.dart` and the unchanged Assistant rename retry tests.
+
+`AppChip.selected` is null for display/action chips and a bool for selectable
+choices. Disabled choices retain their selected and disabled accessibility states.
+
+Dialog and fit-sheet hosts consume keyboard insets once. Their content receives
+those consumed insets so an AppSheetScaffold cannot add the same clearance twice.
+Phone regression coverage in `app_phone_picker_test.dart` exercises picker results,
+system Back and tappable OK/Save actions at 390×844 with a 300dp keyboard.
+
+Chip activation callbacks are exclusive: onSelected requires a boolean selected;
+onPressed requires selected to be null. Single-choice groups set
+inMutuallyExclusiveGroup. Selected choices show a check on a tonal surface.
+AppTextFormField synchronizes controller edits with validation and restores the
+initial text on Form.reset; `app_form_field_lifecycle_test.dart` covers both.

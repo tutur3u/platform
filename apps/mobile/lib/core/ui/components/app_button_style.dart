@@ -111,6 +111,8 @@ class AppButtonFrame extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
+    this.tooltip,
     this.busy = false,
     super.key,
   });
@@ -122,6 +124,8 @@ class AppButtonFrame extends StatelessWidget {
   final AppButtonShape shape;
   final FocusNode? focusNode;
   final String? semanticLabel;
+  final bool? selected;
+  final String? tooltip;
   final bool busy;
 
   @override
@@ -139,37 +143,46 @@ class AppButtonFrame extends StatelessWidget {
     final constraints = style.square || shape == AppButtonShape.circle
         ? BoxConstraints.tightFor(width: style.height, height: style.height)
         : BoxConstraints(minHeight: style.height, minWidth: style.height);
-    return AppTapTarget(
-      child: Semantics(
-        button: true,
-        enabled: enabled,
-        label: semanticLabel,
-        child: AnimatedOpacity(
-          opacity: enabled || busy ? 1 : 0.5,
-          duration: AppMotion.fast,
-          child: Material(
-            color: style.background ?? Colors.transparent,
-            shape: outline,
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onPressed,
-              onLongPress: onLongPress,
-              focusNode: focusNode,
-              customBorder: outline,
-              overlayColor: WidgetStatePropertyAll(style.overlay),
-              child: ConstrainedBox(
-                constraints: constraints,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: style.horizontalPadding,
-                  ),
-                  child: Center(widthFactor: 1, heightFactor: 1, child: child),
+    final target = AppTapTarget(
+      child: AnimatedOpacity(
+        opacity: enabled || busy ? 1 : 0.5,
+        duration: AppMotion.fast,
+        child: Material(
+          color: style.background ?? Colors.transparent,
+          shape: outline,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            onLongPress: onLongPress,
+            focusNode: focusNode,
+            customBorder: outline,
+            overlayColor: WidgetStatePropertyAll(style.overlay),
+            child: ConstrainedBox(
+              constraints: constraints,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: style.horizontalPadding,
                 ),
+                child: Center(widthFactor: 1, heightFactor: 1, child: child),
               ),
             ),
           ),
         ),
       ),
+    );
+    return Semantics(
+      container: true,
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      label: semanticLabel,
+      child: tooltip == null
+          ? target
+          : Tooltip(
+              message: tooltip,
+              excludeFromSemantics: true,
+              child: target,
+            ),
     );
   }
 }

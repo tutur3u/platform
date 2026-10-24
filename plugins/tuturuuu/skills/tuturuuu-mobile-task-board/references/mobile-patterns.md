@@ -100,6 +100,9 @@ localization changes.
   with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
   `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
   `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+- Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
+  add a second IME padding layer in their bodies. Verify phone paths with a
+  keyboard open and tap OK/Save; a tablet-only picker test does not cover them.
 - Back must close the topmost overlay first. `AppModalBinding` registers a
   modal entry in `ShellChromeActionsCubit`, so `ShellPage.didPopRoute`, dock
   Back and Android Back resolve to the overlay. A sheet on the shell's nested
