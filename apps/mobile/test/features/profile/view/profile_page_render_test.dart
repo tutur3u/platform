@@ -41,9 +41,19 @@ void main() {
   setUpAll(() async {
     registerFallbackValue(const UserProfile(id: 'fallback'));
     if (output == null) return;
+    // Real glyphs for the Material default family, as in the Settings renders.
+    final materialFont = Platform.environment['SETTINGS_MATERIAL_FONT'];
+    await (FontLoader('Roboto')..addFont(
+          materialFont == null
+              ? rootBundle.load('assets/fonts/NotoSans.ttf')
+              : File(materialFont).readAsBytes().then(ByteData.sublistView),
+        ))
+        .load();
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
+      'packages/shadcn_flutter/LucideIcons':
+          'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
