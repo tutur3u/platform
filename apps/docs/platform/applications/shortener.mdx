@@ -48,7 +48,10 @@ on the native Start + Void runtime:
   on the native runtime.
 
 Regression coverage lives in `apps/shortener/src/link/link.test.ts` and
-`apps/shortener/src/native/shortener-request.test.ts`.
+`apps/shortener/src/native/shortener-request.test.ts`. The emitted Worker suite,
+`apps/shortener/cloudflare/native-built-worker.test.mjs`, runs in CI. The cutover
+and rollback profile is in
+[Shortener on Start + Void](/build/devops/shortener-start-void).
 
 ## Manage links
 

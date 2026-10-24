@@ -334,6 +334,7 @@
                   "build/devops/active-runtime",
                   "build/devops/wave1-native-cutover",
                   "build/devops/apps-viteplus-cloudflare",
+                  "build/devops/shortener-start-void",
                   "build/devops/wave1-native-publishers",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
