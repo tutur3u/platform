@@ -141,11 +141,18 @@ def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=N
         if key not in items:
             raise ValueError("unknown request id")
         item = dict(items[key])
+        stored = json.loads(db.execute("SELECT payload FROM items WHERE id = ?", (key,)).fetchone()[0])
+        if not isinstance(stored, dict) or "id" not in stored or stored.get("status", "captured") not in STATES:
+            # Legacy rows stay readable but are never rewritten in place.
+            raise ValueError(f"request {key} is not a standard record; re-capture it")
+        item.setdefault("owner", "")
+        item.setdefault("links", [])
         if status is not None:
             if status not in STATES:
                 raise ValueError("unknown status")
             if status in {"ready", "active", "verified"}:
-                pending = [d for d in item.get("dependencies", []) if items[d]["status"] != "verified"]
+                pending = [d for d in item.get("dependencies", [])
+                           if d not in items or items[d].get("status") != "verified"]
                 if pending:
                     raise ValueError(f"unverified dependencies: {pending}")
             if status == "active" and not (owner or item["owner"]).strip():

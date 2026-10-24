@@ -49,6 +49,21 @@ class BacklogTests(unittest.TestCase):
         stored = json.loads(self.db.execute(
             "SELECT payload FROM items WHERE id = 'legacy-row'").fetchone()[0])
         self.assertNotIn("id", stored)
+        for change in [{"note": "x"}, {"status": "active"}]:
+            with self.assertRaisesRegex(ValueError, "not a standard record"):
+                update(self.db, "legacy-row", **change)
+        self.assertNotIn("id", json.loads(self.db.execute(
+            "SELECT payload FROM items WHERE id = 'legacy-row'").fetchone()[0]))
+
+    def test_missing_dependency_rejects_promotion_cleanly(self):
+        intake(self.db, [request()])
+        with self.db:
+            row = json.loads(self.db.execute(
+                "SELECT payload FROM items WHERE id = 'repair'").fetchone()[0])
+            row["dependencies"] = ["vanished"]
+            self.db.execute("UPDATE items SET payload = ? WHERE id = 'repair'", (json.dumps(row),))
+        with self.assertRaisesRegex(ValueError, "unverified dependencies"):
+            update(self.db, "repair", status="ready")
 
     def test_changed_duplicate_priority_requires_audited_update(self):
         intake(self.db, [dict(request(), priority=2)])
