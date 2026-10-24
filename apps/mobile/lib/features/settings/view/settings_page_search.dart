@@ -15,6 +15,7 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
   @override
   void dispose() {
     settingsFocusRequest.removeListener(_consumeFocusRequest);
+    // The shell dock detaches its field after the page starts disposing.
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _searchController.dispose(),
     );
