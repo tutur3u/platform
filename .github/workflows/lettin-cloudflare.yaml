@@ -61,7 +61,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -113,7 +113,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -125,10 +125,12 @@ jobs:
       - name: Detect Lettin schema changes
         id: schema
         shell: bash
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
         run: |
-          if [[ "${{ github.event_name }}" != "push" || "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+          if [[ "${{ github.event_name }}" != "push" || "$EVENT_BEFORE" == "0000000000000000000000000000000000000000" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- apps/lettin/migrations; then
+          elif git diff --quiet "$EVENT_BEFORE" "${{ github.sha }}" -- apps/lettin/migrations; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"

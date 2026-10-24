@@ -3,14 +3,14 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
@@ -29,7 +29,6 @@ import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_filters.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
-import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -119,8 +118,6 @@ class _RequestsViewState extends State<_RequestsView> {
   String? _pendingRouteRequestId;
   String? _handledRouteRequestId;
   final Map<String, int> _missedEntryDialogRequestVersionByWorkspace =
-      <String, int>{};
-  final Map<String, int> _thresholdSaveRequestVersionByWorkspace =
       <String, int>{};
   bool _didInitializeWorkspaceLoad = false;
 
@@ -354,7 +351,7 @@ class _RequestsViewState extends State<_RequestsView> {
     return [
       ShellActionSpec(
         id: 'requests-filter',
-        icon: shad.LucideIcons.filter,
+        icon: LucideIcons.filter,
         tooltip: l10n.timerRequestsFilterTitle,
         highlighted: hasActiveFilters(
           selectedFilter: _selectedFilter,
@@ -367,7 +364,7 @@ class _RequestsViewState extends State<_RequestsView> {
       if (showSettingsAction)
         ShellActionSpec(
           id: 'requests-settings',
-          icon: shad.LucideIcons.settings2,
+          icon: LucideIcons.settings2,
           tooltip: l10n.settingsTitle,
           enabled:
               _hasResolvedPermissions &&
@@ -451,159 +448,146 @@ class _RequestsViewState extends State<_RequestsView> {
                 locations: const {Routes.timerRequests},
                 actions: _shellActions(context, wsId),
               ),
-            ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: Builder(
-                builder: (context) {
-                  if (workspaceState.status == WorkspaceStatus.initial ||
-                      workspaceState.status == WorkspaceStatus.loading) {
-                    return const Center(child: NovaLoadingIndicator());
-                  }
+            Builder(
+              builder: (context) {
+                if (workspaceState.status == WorkspaceStatus.initial ||
+                    workspaceState.status == WorkspaceStatus.loading) {
+                  return const Center(child: NovaLoadingIndicator());
+                }
 
-                  if (workspaceState.currentWorkspace == null) {
-                    return Center(
-                      child: Text(
-                        l10n.assistantSelectWorkspace,
-                        style: shad.Theme.of(context).typography.textMuted,
-                      ),
-                    );
-                  }
+                if (workspaceState.currentWorkspace == null) {
+                  return Center(
+                    child: Text(
+                      l10n.assistantSelectWorkspace,
+                      style: AppTokens.of(context).typography.textMuted,
+                    ),
+                  );
+                }
 
-                  return BlocBuilder<
-                    TimeTrackerRequestsCubit,
-                    TimeTrackerRequestsState
-                  >(
-                    builder: (context, state) {
-                      if ((state.status == TimeTrackerRequestsStatus.initial ||
-                              state.status ==
-                                  TimeTrackerRequestsStatus.loading) &&
-                          state.requests.isEmpty) {
-                        return const Center(child: NovaLoadingIndicator());
-                      }
+                return BlocBuilder<
+                  TimeTrackerRequestsCubit,
+                  TimeTrackerRequestsState
+                >(
+                  builder: (context, state) {
+                    if ((state.status == TimeTrackerRequestsStatus.initial ||
+                            state.status ==
+                                TimeTrackerRequestsStatus.loading) &&
+                        state.requests.isEmpty) {
+                      return const Center(child: NovaLoadingIndicator());
+                    }
 
-                      if (state.status == TimeTrackerRequestsStatus.error &&
-                          state.requests.isEmpty) {
-                        return Center(
+                    if (state.status == TimeTrackerRequestsStatus.error &&
+                        state.requests.isEmpty) {
+                      return AppPageBody(
+                        child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                shad.LucideIcons.circleAlert,
+                                LucideIcons.circleAlert,
                                 size: 48,
-                                color: shad.Theme.of(
+                                color: AppTokens.of(
                                   context,
                                 ).colorScheme.destructive,
                               ),
-                              const shad.Gap(16),
+                              const AppGap(16),
                               Text(state.error ?? 'Error'),
-                              const shad.Gap(16),
+                              const AppGap(16),
                               shad.SecondaryButton(
                                 onPressed: () => unawaited(_loadRequests()),
                                 child: Text(l10n.commonRetry),
                               ),
                             ],
                           ),
-                        );
-                      }
+                        ),
+                      );
+                    }
 
-                      return NovaRefreshIndicator(
-                        onRefresh: () => _loadRequests(forceRefresh: true),
-                        child: state.requests.isEmpty
-                            ? ListView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                  bottom: 96,
-                                ),
-                                children: [
-                                  if (_showMetaRow(state))
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        4,
-                                        16,
-                                        16,
-                                      ),
-                                      child: _RequestsMetaRow(
-                                        requestCount: 0,
-                                        hasActiveFilters: hasActiveFilters(
-                                          selectedFilter: _selectedFilter,
-                                          canManageRequests: _canManageRequests,
-                                          selectedUserId: _selectedUserId,
-                                        ),
-                                        activeFilterLabel: _selectedFilterLabel(
-                                          context,
-                                        ),
-                                      ),
-                                    ),
+                    return NovaRefreshIndicator(
+                      onRefresh: () => _loadRequests(forceRefresh: true),
+                      child: state.requests.isEmpty
+                          ? AppPageListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                if (_showMetaRow(state))
                                   Padding(
-                                    padding: EdgeInsets.only(
-                                      top: _showMetaRow(state) ? 24 : 48,
+                                    padding: const EdgeInsets.only(
+                                      top: AppSpacing.xs,
+                                      bottom: AppSpacing.lg,
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        l10n.timerNoSessions,
-                                        style: shad.Theme.of(
-                                          context,
-                                        ).typography.textMuted,
+                                    child: _RequestsMetaRow(
+                                      requestCount: 0,
+                                      hasActiveFilters: hasActiveFilters(
+                                        selectedFilter: _selectedFilter,
+                                        canManageRequests: _canManageRequests,
+                                        selectedUserId: _selectedUserId,
+                                      ),
+                                      activeFilterLabel: _selectedFilterLabel(
+                                        context,
                                       ),
                                     ),
                                   ),
-                                ],
-                              )
-                            : ListView.builder(
-                                itemCount:
-                                    state.requests.length +
-                                    (_showMetaRow(state) ? 1 : 0),
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                  bottom: 96,
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: _showMetaRow(state) ? 24 : 48,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      l10n.timerNoSessions,
+                                      style: AppTokens.of(
+                                        context,
+                                      ).typography.textMuted,
+                                    ),
+                                  ),
                                 ),
-                                itemBuilder: (context, index) {
-                                  final showMetaRow = _showMetaRow(state);
-                                  if (showMetaRow && index == 0) {
-                                    return Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        4,
-                                        16,
-                                        16,
+                              ],
+                            )
+                          : AppPageListView.builder(
+                              itemCount:
+                                  state.requests.length +
+                                  (_showMetaRow(state) ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                final showMetaRow = _showMetaRow(state);
+                                if (showMetaRow && index == 0) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: AppSpacing.xs,
+                                      bottom: AppSpacing.lg,
+                                    ),
+                                    child: _RequestsMetaRow(
+                                      requestCount: state.requests.length,
+                                      hasActiveFilters: hasActiveFilters(
+                                        selectedFilter: _selectedFilter,
+                                        canManageRequests: _canManageRequests,
+                                        selectedUserId: _selectedUserId,
                                       ),
-                                      child: _RequestsMetaRow(
-                                        requestCount: state.requests.length,
-                                        hasActiveFilters: hasActiveFilters(
-                                          selectedFilter: _selectedFilter,
-                                          canManageRequests: _canManageRequests,
-                                          selectedUserId: _selectedUserId,
-                                        ),
-                                        activeFilterLabel: _selectedFilterLabel(
-                                          context,
-                                        ),
+                                      activeFilterLabel: _selectedFilterLabel(
+                                        context,
                                       ),
-                                    );
-                                  }
-                                  final request = state
-                                      .requests[index - (showMetaRow ? 1 : 0)];
-                                  return PendingSyncFrame(
-                                    workspaceId:
-                                        _permissionsWorkspaceId ??
-                                        request.workspaceId ??
-                                        '',
-                                    entityId: request.id,
-                                    feature: 'time_tracker',
-                                    child: _RequestTile(
-                                      request: request,
-                                      onTap: () =>
-                                          _showRequestDetail(context, request),
                                     ),
                                   );
-                                },
-                              ),
-                      );
-                    },
-                  );
-                },
-              ),
+                                }
+                                final request = state
+                                    .requests[index - (showMetaRow ? 1 : 0)];
+                                return PendingSyncFrame(
+                                  workspaceId:
+                                      _permissionsWorkspaceId ??
+                                      request.workspaceId ??
+                                      '',
+                                  entityId: request.id,
+                                  feature: 'time_tracker',
+                                  child: _RequestTile(
+                                    request: request,
+                                    onTap: () =>
+                                        _showRequestDetail(context, request),
+                                  ),
+                                );
+                              },
+                            ),
+                    );
+                  },
+                );
+              },
             ),
             TimeTrackerAddEntryFab(
               enabled: _canOpenAddEntryFab(),

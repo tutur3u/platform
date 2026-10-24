@@ -34,6 +34,7 @@ export interface NotificationPopoverClientProps {
   viewAllText: string;
   markAsReadText: string;
   markAsUnreadText: string;
+  updateErrorText?: string;
   inboxText?: string;
   archiveText?: string;
   archiveAllText?: string;
@@ -72,6 +73,7 @@ export default function SatelliteNotificationPopover({
   viewAllText,
   markAsReadText,
   markAsUnreadText,
+  updateErrorText = 'Failed to update notification',
   inboxText = 'Inbox',
   archiveText = 'Archive',
   archiveAllText = 'Archive all',
@@ -150,7 +152,7 @@ export default function SatelliteNotificationPopover({
       await updateNotification.mutateAsync({ id, read: isUnread });
     } catch (error) {
       console.error('Failed to update notification:', error);
-      toast.error('Failed to update notification');
+      toast.error(updateErrorText);
     }
   };
 

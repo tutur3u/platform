@@ -61,7 +61,7 @@ route extraction and TanStack migration-manifest rules exactly.
 | Migration manifest | `bun migration:tanstack:manifest` | override/manifest matches first-class route ownership |
 | Migration check | `bun migration:tanstack:check` | generated migration artifacts are current |
 | Typechecks | `bun run --cwd apps/web type-check && bun run --cwd packages/ai type-check` | both exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -137,7 +137,7 @@ two workspace ids.
 - [ ] The legacy route is removed and migration tracking names the first-class
       source.
 - [ ] Current Spark response shape remains compatible.
-- [ ] Focused/package tests, manifest generation, typechecks, `bun check`, Web
+- [ ] Focused/package tests, manifest generation, typechecks, `bun validate`, Web
       build, and whitespace pass.
 
 ## STOP conditions

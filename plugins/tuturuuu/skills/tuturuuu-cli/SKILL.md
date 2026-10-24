@@ -6,7 +6,7 @@ description: "Install, authenticate, troubleshoot, or publish the Tuturuuu CLI a
 # Tuturuuu CLI
 
 Use `ttr <group> <action> --help` to discover the requested operation. In the
-monorepo, `bun ttr ...` runs the workspace CLI; elsewhere use installed `ttr`.
+monorepo, `bun ttr ...` delegates to `~/.bun/bin/ttr`; operational commands must never resolve workspace `node_modules/.bin/ttr` or stale SDK dist. Source CLI development uses an explicit source path and a disposable resources home.
 Scoped help must work without login, saved config, or update-network access.
 
 For requested installation/repair or command-help changes, read Installation

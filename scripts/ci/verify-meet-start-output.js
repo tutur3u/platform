@@ -8,6 +8,7 @@ const {
   realpathSync,
   writeFileSync,
 } = require('node:fs');
+const { readRegularFileSync } = require('../safe-fs');
 const { dirname, isAbsolute, relative, resolve, sep } = require('node:path');
 const { isDeepStrictEqual } = require('node:util');
 const {
@@ -144,7 +145,7 @@ function fileHashes(app) {
         'environment files are forbidden'
       );
       hashes[name] = createHash('sha256')
-        .update(readFileSync(path))
+        .update(readRegularFileSync(path))
         .digest('hex');
     }
   }

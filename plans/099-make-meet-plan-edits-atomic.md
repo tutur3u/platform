@@ -58,7 +58,7 @@ actor contract first.
 | API typecheck | `bun run --cwd packages/apis type-check` | exit 0 |
 | Route tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | refreshed contract remains legacy-owned |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

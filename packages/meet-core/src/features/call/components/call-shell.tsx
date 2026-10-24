@@ -9,7 +9,6 @@ import {
   Leaf,
   Sparkles,
   Users,
-  WifiOff,
 } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
@@ -41,13 +40,14 @@ import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { encodeRoomCode } from '../lib/room-code';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
-import { CallResourceNotice, resourceErrorKey } from './call-resource-notice';
+import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
 import { type CallPanel, ControlBar, ControlButton } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
+import { CallConnectionNotice, JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
 import { MeetingActionHint } from './meeting-action-hint';
@@ -135,6 +135,10 @@ function CallShellContent({
   const pendingDevices = useRef(new Set<Device>());
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId, deviceId });
   const { state } = room;
+  const retryConnection = () => {
+    room.leave();
+    window.location.reload();
+  };
   const sharedAudio = useSharedRoomAudio(room, joined && !left);
   const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
     setPanel(next);
@@ -277,6 +281,14 @@ function CallShellContent({
     if (state.ended || state.admission === 'denied') leaveNow();
   }, [state.ended, state.admission, leaveNow]);
 
+  if (state.admission === 'denied' && !state.ended)
+    return (
+      <JoinOutcome
+        reason={state.admissionReason ?? 'denied'}
+        meetingName={meetingName}
+        leaveHref={backHref}
+      />
+    );
   if (left || state.ended)
     return (
       <CallEnded
@@ -299,14 +311,9 @@ function CallShellContent({
       <Lobby
         avatarUrl={defaultAvatarUrl}
         defaultDisplayName={defaultDisplayName}
-        connectionError={
-          room.connectionStatus === 'closed' ||
-          room.connectionStatus === 'error'
-            ? t('signaling_unreachable')
-            : resourceErrorKey(state.error)
-              ? t(resourceErrorKey(state.error)!)
-              : null
-        }
+        connectionStatus={room.connectionStatus}
+        error={state.error}
+        onRetry={retryConnection}
         isJoining={state.admission === 'connecting'}
         meetingName={meetingName}
         waiting={state.admission === 'waiting'}
@@ -388,12 +395,10 @@ function CallShellContent({
             {t('recording')}
           </span>
         )}
-        {room.connectionStatus !== 'open' && (
-          <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
-            <WifiOff className="size-3.5" />
-            {t('reconnecting')}
-          </span>
-        )}
+        <CallConnectionNotice
+          status={room.connectionStatus}
+          onRetry={retryConnection}
+        />
         <RoomAssistantAudio
           room={room}
           audioSuppressed={sharedAudio.shared}

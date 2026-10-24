@@ -107,93 +107,86 @@ extension _CmsPageLayout on _CmsPageState {
                 ),
             ],
           ),
-          ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: NovaRefreshIndicator(
-              onRefresh: () => _reload(force: true),
-              child: ListView.builder(
-                key: ValueKey((_section, widget.actorId, widget.workspaceId)),
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  8,
-                  16,
-                  40 + MediaQuery.paddingOf(context).bottom,
-                ),
-                itemCount: _section == 0 ? 2 : libraryCount + 1,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    if (_isLoading && _summary == null) {
-                      return const CmsLoadingSkeleton();
-                    }
-                    if (_error != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.info_outline_rounded),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(_error!)),
-                            TextButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => _reload(force: true),
-                              child: Text(l10n.commonRetry),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
+          NovaRefreshIndicator(
+            onRefresh: () => _reload(force: true),
+            // The overview is a dashboard grid; the library is a list.
+            child: AppPageListView.builder(
+              key: ValueKey((_section, widget.actorId, widget.workspaceId)),
+              kind: _section == 0 ? AppPageKind.root : AppPageKind.detail,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: _section == 0 ? 2 : libraryCount + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  if (_isLoading && _summary == null) {
+                    return const CmsLoadingSkeleton();
                   }
-                  if (_section == 0) return _buildCmsOverview(this, context);
-                  if (index == 1) return _libraryFilters(context);
-                  if (index == 2) {
-                    return _libraryHeading(
-                      l10n.cmsCollections,
-                      collections.length,
-                    );
-                  }
-                  final offset = index - 3;
-                  if (offset < collections.length) {
-                    final row = collections[offset];
+                  if (_error != null) {
                     return Padding(
-                      key: ValueKey('collection:${row.id}'),
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: PendingSyncFrame(
-                        workspaceId: _wsId,
-                        feature: 'cms',
-                        entityId: row.id,
-                        child: _CollectionTile(
-                          collection: row,
-                          onEdit: () => _showCollectionEditor(row),
-                          onDelete: () => _deleteCollection(row),
-                        ),
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(_error!)),
+                          TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => _reload(force: true),
+                            child: Text(l10n.commonRetry),
+                          ),
+                        ],
                       ),
                     );
                   }
-                  if (offset == collections.length) {
-                    return _libraryHeading(l10n.cmsEntries, entries.length);
-                  }
-                  final row = entries[offset - collections.length - 1];
+                  return const SizedBox.shrink();
+                }
+                if (_section == 0) return _buildCmsOverview(this, context);
+                if (index == 1) return _libraryFilters(context);
+                if (index == 2) {
+                  return _libraryHeading(
+                    l10n.cmsCollections,
+                    collections.length,
+                  );
+                }
+                final offset = index - 3;
+                if (offset < collections.length) {
+                  final row = collections[offset];
                   return Padding(
-                    key: ValueKey('entry:${row.id}'),
+                    key: ValueKey('collection:${row.id}'),
                     padding: const EdgeInsets.only(bottom: 12),
                     child: PendingSyncFrame(
                       workspaceId: _wsId,
                       feature: 'cms',
                       entityId: row.id,
-                      child: _EntryTile(
-                        entry: row,
-                        collectionTitle: titles[row.collectionId],
-                        statusLabel: _statusLabel(context, row.status),
-                        onEdit: () => _showEntryEditor(row),
-                        onDelete: () => _deleteEntry(row),
+                      child: _CollectionTile(
+                        collection: row,
+                        onEdit: () => _showCollectionEditor(row),
+                        onDelete: () => _deleteCollection(row),
                       ),
                     ),
                   );
-                },
-              ),
+                }
+                if (offset == collections.length) {
+                  return _libraryHeading(l10n.cmsEntries, entries.length);
+                }
+                final row = entries[offset - collections.length - 1];
+                return Padding(
+                  key: ValueKey('entry:${row.id}'),
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: PendingSyncFrame(
+                    workspaceId: _wsId,
+                    feature: 'cms',
+                    entityId: row.id,
+                    child: _EntryTile(
+                      entry: row,
+                      collectionTitle: titles[row.collectionId],
+                      statusLabel: _statusLabel(context, row.status),
+                      onEdit: () => _showEntryEditor(row),
+                      onDelete: () => _deleteEntry(row),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],

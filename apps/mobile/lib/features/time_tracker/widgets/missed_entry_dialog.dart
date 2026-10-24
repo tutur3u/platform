@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -268,7 +269,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                       ),
                     ),
                     shad.OutlineButton(
-                      leading: const Icon(shad.LucideIcons.image),
+                      leading: const Icon(LucideIcons.image),
                       onPressed: _images.length >= _maxImages
                           ? null
                           : () => unawaited(_pickImageSource(nestedContext)),

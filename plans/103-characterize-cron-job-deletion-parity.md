@@ -54,7 +54,7 @@ edit route metadata, production handlers, or database schema.
 | Rust library suite | `cd apps/backend && cargo test --locked --lib` | no shared-dispatch regression |
 | Backend gate | `bun check:backend` | native and Worker targets plus route coverage pass |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -100,7 +100,7 @@ PUT/unknown methods return `None` for live Web fallthrough.
 
 ### Step 4: Run focused and shared gates
 
-Run both focused suites, the full Rust library suite, Web typecheck, `bun check`,
+Run both focused suites, the full Rust library suite, Web typecheck, `bun validate`,
 and whitespace validation. Do not regenerate route artifacts for test-only work.
 
 ## Done criteria

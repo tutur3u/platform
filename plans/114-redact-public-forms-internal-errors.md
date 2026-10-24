@@ -51,7 +51,7 @@ archives the note.
 | Response-copy tests | `bun --cwd apps/forms vitest run 'src/app/api/v1/shared/forms/[shareCode]/response-copy/route.test.ts'` | expected 4xx and generic 500 cases pass |
 | Forms typecheck | `bun run --cwd apps/forms type-check` | exit 0 |
 | Forms build | `bun run --cwd apps/forms build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -109,7 +109,7 @@ details, or raw provider messages.
 
 ### Step 4: Run application gates
 
-Run both focused suites, Forms typecheck/build, `bun check`, and whitespace.
+Run both focused suites, Forms typecheck/build, `bun validate`, and whitespace.
 
 ## Done criteria
 

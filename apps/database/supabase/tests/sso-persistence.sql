@@ -168,7 +168,7 @@ SELECT ok(NOT has_table_privilege('anon','private.sso_audit_events','SELECT,INSE
 SELECT ok(NOT has_table_privilege('authenticated','private.sso_audit_events','SELECT,INSERT,UPDATE,DELETE'),'authenticated has no direct audit_events access');
 SELECT ok(NOT has_table_privilege('service_role','private.sso_audit_events','SELECT,INSERT,UPDATE,DELETE'),'service_role has no direct audit_events access');
 SELECT ok((SELECT count(*) = 8 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='private' AND c.relname LIKE 'sso_%' AND c.relkind='r'),'all eight SSO tables enable and force RLS');
-SELECT ok((SELECT bool_and(p.prosecdef AND 'search_path=""' = ANY(p.proconfig)) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'sso_%'),'all exposed RPCs use SECURITY DEFINER and empty search_path');
+SELECT ok((SELECT bool_and(p.prosecdef AND 'search_path=pg_catalog, pg_temp' = ANY(p.proconfig)) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'sso_%'),'all exposed RPCs use SECURITY DEFINER and hardened search_path');
 SET LOCAL ROLE anon;
 SELECT throws_ok($$SELECT * FROM private.sso_transactions$$,'42501',NULL,'anonymous direct table read rejected');
 SELECT throws_ok($$SELECT public.sso_read_own_disclosures('00000000-0000-4000-8000-000000009111')$$,'42501',NULL,'anonymous cannot call disclosure reader');

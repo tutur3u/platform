@@ -63,7 +63,7 @@ new uniquely named migration/test path owner.
 | Type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no generated-type change |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -136,7 +136,7 @@ diff.
 ### Step 4: Run mandatory gates
 
 Run focused/full DB tests, route tests, typecheck, Tasks production build,
-`bun check`, and whitespace. A pre-existing full-DB failure may be reported only
+`bun validate`, and whitespace. A pre-existing full-DB failure may be reported only
 after the new focused suite passes and the exact unrelated baseline is proven;
 the plan remains uncommitted if a mandatory gate cannot pass.
 

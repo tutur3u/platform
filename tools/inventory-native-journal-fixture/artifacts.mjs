@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readRegularFileSync } from '../../scripts/safe-fs.js';
 
 export function validateArtifactItems(items) {
   const names = ['environment.json', 'native-proof.json', 'proof-input.json'];
@@ -31,8 +32,7 @@ export function writeArtifactItems(destination, items) {
 const text = (value, pattern = /^[0-9A-Za-z.+_ -]{1,96}$/) =>
   typeof value === 'string' && pattern.test(value) ? value : null;
 const read = (file, limit = 65_536) => {
-  if (statSync(file).size > limit) throw Error('Input size cap exceeded');
-  return readFileSync(file, 'utf8');
+  return readRegularFileSync(file, { maxBytes: limit, encoding: 'utf8' });
 };
 
 // Failed preparation/build/proof still emits bounded fixed-code evidence.
