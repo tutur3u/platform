@@ -23,6 +23,7 @@ export async function GET(request: Request, { params }: Params) {
       .from('nova_submissions')
       .select('*')
       .eq('id', submissionId)
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
@@ -83,13 +84,13 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.prompt !== undefined) updateData.prompt = body.prompt;
     if (body.problemId !== undefined) updateData.problem_id = body.problemId;
     if (body.sessionId !== undefined) updateData.session_id = body.sessionId;
-    updateData.user_id = user.id;
 
     const { data: updatedSubmission, error: updateError } = await supabase
       .schema('private')
       .from('nova_submissions')
       .update(updateData)
       .eq('id', submissionId)
+      .eq('user_id', user.id)
       .select()
       .single();
 
@@ -131,7 +132,8 @@ export async function DELETE(request: Request, { params }: Params) {
       .schema('private')
       .from('nova_submissions')
       .delete()
-      .eq('id', submissionId);
+      .eq('id', submissionId)
+      .eq('user_id', user.id);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);

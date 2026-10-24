@@ -15,9 +15,12 @@ describe('mobile beta release history', () => {
       return 'fix(mobile): restore sessions (#5482)\nfeat(mobile): improve settings (#5483)\nfix(mobile): restore sessions (#5482)\n';
     });
 
-    assert.deepEqual(changes, ['restore sessions', 'improve settings']);
+    assert.deepEqual(changes, ['Restore sessions', 'Improve settings']);
     assert.deepEqual(calls, [
-      ['git', ['log', '--format=%s', 'old..new', '--', 'apps/mobile']],
+      [
+        'git',
+        ['log', '--no-merges', '--format=%s', 'old..new', '--', 'apps/mobile'],
+      ],
     ]);
   });
 
@@ -63,15 +66,15 @@ describe('mobile beta release history', () => {
         date: '2026-09-24',
         git: (_command, args) => {
           if (args[0] === 'merge-base') return '';
-          return args[2] === 'mobile-v0.11.0..previous'
+          return args[3] === 'mobile-v0.11.0..previous'
             ? 'feat(mobile): first patch (#1)'
             : 'fix(mobile): second patch (#2)';
         },
       });
 
       assert.deepEqual(releases, [
-        { version: '0.11.1', date: '2026-09-23', changes: ['first patch'] },
-        { version: '0.11.2', date: '2026-09-24', changes: ['second patch'] },
+        { version: '0.11.1', date: '2026-09-23', changes: ['First patch'] },
+        { version: '0.11.2', date: '2026-09-24', changes: ['Second patch'] },
       ]);
       assert.ok(paths[2].includes('/v1/preReleaseVersions/v1/builds'));
       assert.ok(
@@ -102,7 +105,7 @@ describe('mobile beta release history', () => {
           date: '2026-09-30',
           git: (_command, args) => {
             if (args[0] === 'merge-base') return '';
-            assert.equal(args[2], 'mobile-v0.21.0..current');
+            assert.equal(args[3], 'mobile-v0.21.0..current');
             return changes;
           },
         });
@@ -113,7 +116,7 @@ describe('mobile beta release history', () => {
                 {
                   version: '0.21.0',
                   date: '2026-09-30',
-                  changes: ['follow-up after release tag'],
+                  changes: ['Follow-up after release tag'],
                 },
               ]
             : []
@@ -162,7 +165,7 @@ describe('mobile beta release history', () => {
       });
       assert.deepEqual(releases, [
         { version: '0.11.1', date: '2026-09-23', changes: [] },
-        { version: '0.11.2', date: '2026-09-24', changes: ['current patch'] },
+        { version: '0.11.2', date: '2026-09-24', changes: ['Current patch'] },
       ]);
       assert.ok(warnings[0].includes('0.11.1 (build 1)'));
     } finally {
@@ -201,11 +204,12 @@ describe('mobile beta release history', () => {
         {
           version: '0.12.1',
           date: '2026-09-25',
-          changes: ['reserve full floating header height'],
+          changes: ['Reserve full floating header height'],
         },
       ]);
-      assert.deepEqual(calls[2].slice(0, 3), [
+      assert.deepEqual(calls[2].slice(0, 4), [
         'log',
+        '--no-merges',
         '--format=%s',
         'mobile-v0.11.0..current',
       ]);
@@ -253,7 +257,7 @@ test('finds product commits introduced by a merge without exposing its tracking 
     const changes = changesBetween(base, 'HEAD', (command, args) =>
       execFileSync(command, args, { cwd: directory, encoding: 'utf8' })
     );
-    assert.deepEqual(changes, ['merge duplicate contacts']);
+    assert.deepEqual(changes, ['Merge duplicate contacts']);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

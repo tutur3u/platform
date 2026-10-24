@@ -29,6 +29,7 @@ function fixture(t, policy) {
   const root = mkdtempSync(join(tmpdir(), 'publication-policy-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const file of [
+    'scripts/safe-fs.js',
     'tuturuuu.ts',
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',

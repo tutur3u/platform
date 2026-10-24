@@ -1,19 +1,34 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Material 3 theme data for light and dark modes.
 abstract final class AppTheme {
+  // Pushed pages carry the appearance background beneath their content, so
+  // transparent scaffolds stay opaque during transitions.
   static const _pageTransitions = PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.fuchsia: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.linux: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.windows: _SmoothPageTransitionsBuilder(),
+      TargetPlatform.android: _AppearancePageTransitionsBuilder(
+        _SmoothPageTransitionsBuilder(),
+      ),
+      TargetPlatform.fuchsia: _AppearancePageTransitionsBuilder(
+        _SmoothPageTransitionsBuilder(),
+      ),
+      TargetPlatform.iOS: _AppearancePageTransitionsBuilder(
+        CupertinoPageTransitionsBuilder(),
+      ),
+      TargetPlatform.macOS: _AppearancePageTransitionsBuilder(
+        CupertinoPageTransitionsBuilder(),
+      ),
+      TargetPlatform.linux: _AppearancePageTransitionsBuilder(
+        _SmoothPageTransitionsBuilder(),
+      ),
+      TargetPlatform.windows: _AppearancePageTransitionsBuilder(
+        _SmoothPageTransitionsBuilder(),
+      ),
     },
   );
 
@@ -182,6 +197,37 @@ abstract final class AppTheme {
       indicatorColor: _darkScheme.primary.withValues(alpha: 0.12),
       elevation: 0,
     ),
+  );
+}
+
+class _AppearancePageTransitionsBuilder extends PageTransitionsBuilder {
+  const _AppearancePageTransitionsBuilder(this.inner);
+
+  final PageTransitionsBuilder inner;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      inner.delegatedTransition;
+
+  @override
+  Duration get transitionDuration => inner.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration => inner.reverseTransitionDuration;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => inner.buildTransitions(
+    route,
+    context,
+    animation,
+    secondaryAnimation,
+    route.opaque ? AppearanceRouteBackground(child: child) : child,
   );
 }
 

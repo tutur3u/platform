@@ -695,5 +695,5 @@ test('createGitHubChecksPublisher reports generated token endpoint failures with
   assert.equal(result.status, 'failed');
   assert.match(warnings[0], /GitHub token endpoint failed with status 502/);
   assert.doesNotMatch(serialized, /watcher-client-token/);
-  assert.doesNotMatch(serialized, /tuturuuu\.example\.com/);
+  assert.equal(serialized.includes('tuturuuu.example.com'), false);
 });

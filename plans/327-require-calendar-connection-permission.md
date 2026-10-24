@@ -76,7 +76,7 @@ operations to every member, so route-only authorization would remain bypassable.
 | Backend | `bun check:backend` | Rust formatting, lint, tests, and route checks pass |
 | Calendar | `bun --cwd apps/calendar run type-check && bun --cwd apps/calendar run build` | typecheck and production build pass |
 | Policy absence | `rg -n 'is_org_member' apps/database/supabase/migrations/<new-migration>.sql` | no membership-only policy expression remains in the replacement migration |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only in-scope paths and plan status changed |
 
 Replace `<new-migration>` with the exact file created by `bun sb:new`; do not
@@ -177,7 +177,7 @@ coverage probe: GET remains covered while mutation methods remain fresh/fallthro
 ### Step 5: Run the full boundary gates
 
 Run route tests, Calendar typecheck/build, isolated database validation,
-`bun check`, scope inspection, and whitespace checks. This policy-only migration
+`bun validate`, scope inspection, and whitespace checks. This policy-only migration
 must not regenerate `packages/types/src/supabase.ts`.
 
 ## Test plan
@@ -201,7 +201,7 @@ must not regenerate `packages/types/src/supabase.ts`.
 - [ ] Direct authenticated RLS denies ordinary members for all four operations and permits `manage_calendar` actors.
 - [ ] Prepared Rust GET enforces the same capability and still falls through for mutation methods.
 - [ ] Connection payloads, provider-token ownership, status/cache envelopes, and service-role access remain unchanged.
-- [ ] Route tests, isolated pgTAP, Rust/backend checks, Calendar typecheck/build, `bun check`, scope, and whitespace gates pass.
+- [ ] Route tests, isolated pgTAP, Rust/backend checks, Calendar typecheck/build, `bun validate`, scope, and whitespace gates pass.
 - [ ] No generated type file or out-of-scope source is modified.
 - [ ] `plans/README.md` status is updated.
 

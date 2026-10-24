@@ -63,7 +63,7 @@ never hand-author a migration filename and never run a production push.
 | Local apply | `bun sb:up && bun sb:typegen` | migration applies; generated type diff is expected only if schema shape requires it |
 | Finance typecheck | `bun run --cwd apps/finance type-check` | exit 0 |
 | Finance build | `bun run --cwd apps/finance build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -132,7 +132,7 @@ same-workspace category and proves the recurring row remains with unchanged
 ### Step 4: Apply and run all gates
 
 Apply locally, regenerate types, run focused/full database gates, Finance
-typecheck/build, `bun check`, and whitespace. Inspect generated types and retain
+typecheck/build, `bun validate`, and whitespace. Inspect generated types and retain
 only deterministic in-scope changes.
 
 ## Done criteria

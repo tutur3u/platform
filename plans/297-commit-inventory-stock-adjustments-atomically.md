@@ -69,7 +69,7 @@ by Plan 163; never push production schema.
 | Focused route | `bun --cwd apps/inventory vitest run 'src/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route.test.ts'` | POST/PATCH/DELETE mapping and zero direct writes pass |
 | Typegen | `bun sb:typegen && cp packages/types/src/supabase.ts /tmp/plan297-supabase.ts && bun sb:typegen && cmp /tmp/plan297-supabase.ts packages/types/src/supabase.ts` | generated output is deterministic; intentional type diff remains |
 | Inventory | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | app compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

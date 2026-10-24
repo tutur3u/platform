@@ -61,7 +61,7 @@ note is `working` or the revenue-bundles note is `handoff` for these paths.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/inventory-owner-workspace-binding.sql && bun --cwd apps/database sb:validate:isolated` | audit, composite FK, delete behavior, and full suite pass |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/inventory-owner-workspace-binding.sql` | generated types reflect the applied schema; no unrelated drift |
 | Inventory | `bun run --cwd apps/inventory type-check && bun run --cwd apps/inventory build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

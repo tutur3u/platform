@@ -29,7 +29,7 @@ function runner(
     last_heartbeat_at: fresh,
     enabled_features: { run: true, build: true, judge: false },
     resource_limits: null,
-    capabilities: { executionMode: 'trusted' },
+    capabilities: { executionMode: 'trusted', protocols: { commitRun: [1] } },
     drain_requested_at: null,
     activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
     ...overrides,
@@ -46,6 +46,13 @@ const fleet = {
   draining: runner('drain-1', { drain_requested_at: fresh }),
   noRun: runner('norun-1', { enabled_features: { run: false } }),
   unattested: runner('legacy-1', { capabilities: {} }),
+  // Trusted but built without the commit-run decoder (#6452).
+  noProtocol: runner('noproto-1', {
+    capabilities: { executionMode: 'trusted' },
+  }),
+  futureProtocol: runner('future-1', {
+    capabilities: { executionMode: 'trusted', protocols: { commitRun: [2] } },
+  }),
   trusted: runner('trusted-1'),
   busyTrusted: runner('trusted-2', {
     activity: { queued_runs: 1, running_runs: 2, active_leases: 1 },
@@ -65,6 +72,8 @@ describe('trusted runner eligibility', () => {
     ['draining', 'draining'],
     ['noRun', 'capability_missing'],
     ['unattested', 'trust_cap'],
+    ['noProtocol', 'capability_missing'],
+    ['futureProtocol', 'capability_missing'],
   ] as const)('%s is blocked by %s', (key, blocker) => {
     expect(evaluateTrustedRunner(fleet[key], now)).toMatchObject({
       eligible: false,

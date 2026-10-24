@@ -201,7 +201,7 @@ function touchesMobile(files) {
 }
 
 function runReleaseChecks({ files = getStagedFiles(), runCommand = run } = {}) {
-  runCommand('bun', ['check']);
+  runCommand('bun', ['validate']);
 
   if (touchesMobile(files)) {
     runCommand('bun', ['check:mobile']);

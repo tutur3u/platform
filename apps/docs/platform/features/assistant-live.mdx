@@ -239,7 +239,7 @@ is tracked in `apps/tanstack-web/migration/route-overrides.json`.
 From `apps/web`, run focused Vitest tests under the dashboard `assistant` directory,
 `src/__tests__/assistant-live-token-routes.test.ts`, and
 `src/__tests__/live/token-builder.test.ts`. Run internal API live-tool tests from
-`packages/internal-api`, followed by `bun check` at the root and `bun run build`
+`packages/internal-api`, followed by `bun validate` at the root and `bun run build`
 in `apps/web`.
 
 Authenticated runtime acceptance requires a configured Gemini key, available AI
@@ -301,6 +301,31 @@ authentication dependency; a gateway 403 does not mean Google search is down.
 
 ### Conversation chronology and native presentation
 
+On mobile, Assistant chat inherits the shell background, branded top title and
+single floating navigation dock. Back stays in that dock. The prompt retains its
+height on focus, grows with its content up to five lines, and Enter inserts a
+newline; the side primary action sends. The transcript jump action uses measured
+composer height and shell dock/safe-area clearance, including the resized keyboard
+viewport. Streaming output follows only while the reader is near the bottom;
+reading earlier messages preserves the scroll position.
+
+User receipts show semibold **Delivered** only after the existing saved-user
+acknowledgement replaces an optimistic request ID. **Read** means a subsequent
+Assistant response has begun processing that turn, not that a person read it.
+A newly observed Read transition holds Delivered for 700 milliseconds before
+showing Read. Timestamps use light `HH:mm`; assistant replies and live drafts have
+no delivery timestamp. History without acknowledgement provenance and optimistic
+or failed sends remain timestamp-only. These presentation rules do not establish
+backend persistence; messages whose saved and request IDs match also remain
+unlabelled until explicit receipt state is available.
+
+`assistant_composer_multiline_test.dart`, `assistant_composer_geometry_test.dart`,
+`assistant_scroll_overlay_test.dart`, and `assistant_message_receipt_test.dart`
+cover editing, dock/keyboard clearance and receipt states. Settings retain the
+single branded header labelled Assistant Settings, compact content spacing and a
+bottom Back control; `assistant_settings_layout_test.dart` covers safe areas and
+enlarged text. Widget rasters do not replace installed-device acceptance.
+
 Assistant history stores the ordered provider content for every generation step in
 `metadata.ai.parts`. Tool results update their original call slot, including failed
 and unfinished calls; they do not move to completion order. The message content
@@ -329,6 +354,20 @@ follow-up, and history GET with the real finish saver and model preparation.
 Mobile `assistant_history_ai_parts_test.dart` covers canonical parts and compact
 offsets; `assistant_chat_persistence_contract_test.dart` covers creation, two sends,
 fresh-repository reloads, saved replies, attachment ownership, and request identity.
+Native Chat treats an upstream SSE error as inconclusive until the bounded
+readback of that request's saved reply finishes. A saved reply is copied through
+the actor/workspace-authorized idempotent batch; no receipt means the turn still
+fails. Leaving the stream does not revoke an accepted save. Mobile reconciles all
+rows of the terminal batch from canonical parts, including long split replies.
+On entry, a cached Assistant snapshot renders immediately and authorized history
+revalidation updates that same selection unless navigation, a settings change, or a new local turn
+has superseded it. Live audio keeps its separate turn-save contract.
+
+Regression coverage: `native-ai-stream-persistence.test.ts` covers upstream errors,
+missing saves, disconnects and replay. `assistant_chat_saved_batch_test.dart` and
+`assistant_chat_revalidation_test.dart` cover batch reconciliation and visible
+cache refresh with navigation fences.
+
 These use database/provider fixtures. Authenticated Web and installed Android/iOS
 verification with real attachments and a provider remains a release check.
 

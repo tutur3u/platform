@@ -160,9 +160,10 @@ function stagePortableSources({ repoRoot, destination }) {
     const target = outputPath(file);
     const source = fs.readFileSync(file, 'utf8');
     const replacements = [];
-    for (const node of /\.[cm]?tsx?$/.test(file)
-      ? moduleSpecifiers(source, file)
-      : []) {
+    // Hoisted: CodeQL's JavaScript extractor misparses a regex literal
+    // directly after `of` and skips the whole file.
+    const isTypeScript = /\.[cm]?tsx?$/.test(file);
+    for (const node of isTypeScript ? moduleSpecifiers(source, file) : []) {
       const specifier = node.value;
       const name = packageName(specifier);
       let dependency;

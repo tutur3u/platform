@@ -78,6 +78,9 @@ export const offloadRunSchema = z.object({
     exitCode: z.number().int().nullable().optional(),
   }),
 });
+export const offloadStopByKeySchema = z.object({
+  runId: z.string().trim().min(1),
+});
 export const offloadLogsSchema = z.object({
   logs: z.array(z.string()),
   next: z.number().int().nonnegative().optional(),

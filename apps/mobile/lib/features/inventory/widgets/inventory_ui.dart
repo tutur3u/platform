@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -291,15 +292,9 @@ class InventoryOverviewSkeleton extends StatelessWidget {
   const InventoryOverviewSkeleton({super.key});
 
   @override
-  Widget build(BuildContext context) => ListView(
-    physics: const AlwaysScrollableScrollPhysics(),
-    padding: EdgeInsets.fromLTRB(
-      16,
-      8,
-      16,
-      32 + MediaQuery.paddingOf(context).bottom,
-    ),
-    children: const [
+  Widget build(BuildContext context) => const AppPageListView(
+    physics: AlwaysScrollableScrollPhysics(),
+    children: [
       FinanceSkeletonBlock(height: 210, radius: 20),
       shad.Gap(24),
       FinanceSkeletonBlock(height: 22, width: 180, radius: 8),

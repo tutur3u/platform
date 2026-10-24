@@ -146,7 +146,7 @@ overlapping.
    `bun web:api-routes:check` both exit 0; the generated diff contains only the
    two dataset routes.
 
-7. **Run repository gates.** Run `bun check`,
+7. **Run repository gates.** Run `bun validate`,
    `bun run --cwd apps/web build`, and `git diff --check`. Expected: both Bun
    commands exit 0 and the whitespace check prints nothing.
 
@@ -157,7 +157,7 @@ overlapping.
   tenant, URL, or creation metadata.
 - [ ] Rust session GET checks the parent tenant and sessionless requests fall
   through to Next for live API-key compatibility.
-- [ ] Focused Next/Rust tests, wrapper check, manifest generation, `bun check`,
+- [ ] Focused Next/Rust tests, wrapper check, manifest generation, `bun validate`,
   the Web build, and `git diff --check` pass.
 - [ ] `git status --short` contains only allowed implementation paths.
 
