@@ -1,13 +1,15 @@
-import {
-  hashLegacyPassword,
-  hashPassword,
-  verifyPassword,
-} from '@tuturuuu/utils/crypto';
+import { hashPassword } from '@tuturuuu/utils/crypto';
+import { createSignedAccessToken } from '@tuturuuu/utils/signed-access-token';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   challengeAccessCookieName,
+  createChallengeAccessGrant,
   hasChallengeAccess,
+  verifyChallengeAccessGrant,
 } from '@/lib/challenge-access';
+
+const LEGACY_HASH =
+  '7a37b85c8918eac19a9089c0fa5a2ab4dce3f90528dcdeec108b23ddf3607b99';
 
 const CHALLENGE_ID = 'c1a2b3c4-d5e6-4f70-8192-a3b4c5d6e7f8';
 
@@ -100,6 +102,22 @@ function cookieStoreFrom(response: Response) {
 }
 
 describe('Nova challenge password verification', () => {
+  it('rejects grants issued by the retired password verifier', () => {
+    const options = { secret: 'test-only-reset-policy-secret-00000000' };
+    const old = createSignedAccessToken(
+      'nova-challenge-access',
+      { cid: CHALLENGE_ID, sub: 'user-1' },
+      600,
+      options
+    );
+    expect(
+      verifyChallengeAccessGrant(
+        old.token,
+        { challengeId: CHALLENGE_ID, userId: 'user-1' },
+        options
+      )
+    ).toBe(false);
+  });
   beforeEach(() => {
     mocks.updates.length = 0;
     mocks.user = { id: 'user-1' };
@@ -129,54 +147,26 @@ describe('Nova challenge password verification', () => {
     });
   });
 
-  it('upgrades a legacy hash and issues a grant without password material', async () => {
-    const legacyHash = hashLegacyPassword('open sesame', 'legacy-salt');
-    mocks.challenge = {
-      duration: 3600,
-      id: CHALLENGE_ID,
-      password_hash: legacyHash,
-      password_salt: 'legacy-salt',
-    };
-
-    const response = await verify('open sesame');
-
-    expect(response.status).toBe(200);
-    expect(limits.refund).toHaveBeenCalledOnce();
-    expect(mocks.updates).toHaveLength(1);
-    expect(mocks.updates[0]!.filters).toEqual([
-      ['id', CHALLENGE_ID],
-      ['password_hash', legacyHash],
-    ]);
-    const upgraded = mocks.updates[0]!.payload as {
-      password_hash: string;
-      password_salt: null;
-    };
-    expect(upgraded.password_salt).toBeNull();
-    expect(
-      (await verifyPassword('open sesame', { hash: upgraded.password_hash }))
-        .valid
-    ).toBe(true);
-
-    const cookies = cookieStoreFrom(response);
-    const setCookies = response.headers.getSetCookie().join('\n');
-    expect(setCookies).not.toContain(legacyHash);
-    expect(setCookies).toMatch(/HttpOnly/i);
-    expect(cookies.raw.get('token')).toBe('');
-    expect(
-      hasChallengeAccess(
-        { id: CHALLENGE_ID, password_hash: upgraded.password_hash },
-        cookies,
-        'user-1'
-      )
-    ).toBe(true);
-    expect(
-      hasChallengeAccess(
-        { id: CHALLENGE_ID, password_hash: upgraded.password_hash },
-        cookies,
-        'user-2'
-      )
-    ).toBe(false);
-  });
+  it.each(['password', 'wrong', LEGACY_HASH])(
+    'requires reset for a legacy row with attempt %s',
+    async (password) => {
+      mocks.challenge = {
+        duration: 3600,
+        id: CHALLENGE_ID,
+        password_hash: LEGACY_HASH,
+        password_salt: 'salt',
+      };
+      const response = await verify(password);
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: 'PASSWORD_RESET_REQUIRED',
+      });
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.updates).toEqual([]);
+      expect(limits.check).not.toHaveBeenCalled();
+      expect(limits.refund).not.toHaveBeenCalled();
+    }
+  );
 
   it('accepts a scrypt hash without rewriting it', async () => {
     mocks.challenge = {
@@ -194,6 +184,31 @@ describe('Nova challenge password verification', () => {
     expect(
       cookieStoreFrom(response).get(challengeAccessCookieName(CHALLENGE_ID))
     ).toBeDefined();
+    const cookies = cookieStoreFrom(response);
+    const setCookies = response.headers.getSetCookie().join('\n');
+    expect(setCookies).not.toContain(mocks.challenge!.password_hash as string);
+    expect(setCookies).toMatch(/HttpOnly/i);
+    expect(cookies.raw.get('token')).toBe('');
+    expect(
+      hasChallengeAccess(
+        {
+          id: CHALLENGE_ID,
+          password_hash: mocks.challenge!.password_hash as string,
+        },
+        cookies,
+        'user-1'
+      )
+    ).toBe(true);
+    expect(
+      hasChallengeAccess(
+        {
+          id: CHALLENGE_ID,
+          password_hash: mocks.challenge!.password_hash as string,
+        },
+        cookies,
+        'user-2'
+      )
+    ).toBe(false);
   });
 
   it('rejects wrong passwords and stored hashes presented as passwords', async () => {
@@ -220,8 +235,23 @@ describe('Nova challenge password verification', () => {
     expect((await verify('anything')).status).toBe(401);
   });
 
+  it('rejects an already-issued grant while the challenge still requires reset', () => {
+    const grant = createChallengeAccessGrant({
+      challengeId: CHALLENGE_ID,
+      userId: 'user-1',
+      ttlSeconds: 600,
+    });
+    expect(
+      hasChallengeAccess(
+        { id: CHALLENGE_ID, password_hash: LEGACY_HASH },
+        { get: () => ({ value: grant.token }) },
+        'user-1'
+      )
+    ).toBe(false);
+  });
+
   it('does not grant access from a cookie holding the stored hash', () => {
-    const storedHash = hashLegacyPassword('open sesame', 'legacy-salt');
+    const storedHash = LEGACY_HASH;
     const challenge = { id: CHALLENGE_ID, password_hash: storedHash };
     const store = (name: string, value: string) => ({
       get: (key: string) => (key === name ? { value } : undefined),

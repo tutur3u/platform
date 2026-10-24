@@ -1,10 +1,10 @@
-import {
-  hashLegacyPassword,
-  hashPassword,
-  verifyPassword,
-} from '@tuturuuu/utils/crypto';
+import { scryptSync } from 'node:crypto';
+import { hashPassword, verifyPassword } from '@tuturuuu/utils/crypto';
 import { verifyMeetGuestSession } from '@tuturuuu/utils/meet-guest-session';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const LEGACY_HASH =
+  '7a37b85c8918eac19a9089c0fa5a2ab4dce3f90528dcdeec108b23ddf3607b99';
 
 const PLAN_ID = '0b6f8a52-3c1e-4f7a-9d2b-5e8c7a6b4d3f';
 const COMPACT_PLAN_ID = PLAN_ID.replaceAll('-', '');
@@ -189,8 +189,10 @@ describe('Meet guest login', () => {
     }
   });
 
-  it('upgrades a legacy hash with a guarded update on successful login', async () => {
-    const legacyHash = hashLegacyPassword('secret', 'abc123');
+  it('upgrades older scrypt parameters with a guarded update on successful login', async () => {
+    const salt = Buffer.alloc(16, 1);
+    const key = scryptSync('secret', salt, 32, { N: 16384, r: 8, p: 1 });
+    const legacyHash = `scrypt$16384$8$1$${salt.toString('base64url')}$${key.toString('base64url')}`;
     mocks.queue('meet_together_guests:select', {
       data: {
         id: 'guest-1',
@@ -224,12 +226,12 @@ describe('Meet guest login', () => {
     ).toBe(true);
   });
 
-  it('rejects a wrong password for a legacy guest without writing', async () => {
+  it('requires a creator reset for a legacy guest without writing or issuing a session', async () => {
     mocks.queue('meet_together_guests:select', {
       data: {
         id: 'guest-1',
         name: 'Ann',
-        password_hash: hashLegacyPassword('secret', 'abc123'),
+        password_hash: LEGACY_HASH,
         password_salt: 'abc123',
       },
       error: null,
@@ -238,14 +240,11 @@ describe('Meet guest login', () => {
 
     const result = await guestLogin(PLAN_ID, { name: 'Ann', password: 'nope' });
 
-    expect(result).toEqual({ error: 'Invalid credentials' });
+    expect(result).toMatchObject({ code: 'PASSWORD_RESET_REQUIRED' });
+    expect(result).not.toHaveProperty('data');
     expect(mutations()).toEqual([]);
     expect(limits.refund).not.toHaveBeenCalled();
-    expect(limits.check).toHaveBeenCalledWith({
-      scope: 'meet-guest',
-      target: `${PLAN_ID}:ann`,
-      ip: '203.0.113.9',
-    });
+    expect(limits.check).not.toHaveBeenCalled();
   });
 
   it('refuses to verify once the failure budget is spent', async () => {
@@ -301,7 +300,7 @@ describe('Meet guest login', () => {
 
   it('rejects the stored hash presented as the password', async () => {
     const storedHash = await hashPassword('secret');
-    const legacyHash = hashLegacyPassword('secret', 'abc123');
+    const legacyHash = LEGACY_HASH;
     mocks.queue('meet_together_guests:select', {
       data: {
         id: 'guest-1',
@@ -327,7 +326,7 @@ describe('Meet guest login', () => {
     ).toEqual({ error: 'Invalid credentials' });
     expect(
       await guestLogin(PLAN_ID, { name: 'Bob', password: legacyHash })
-    ).toEqual({ error: 'Invalid credentials' });
+    ).toMatchObject({ code: 'PASSWORD_RESET_REQUIRED' });
     expect(mutations()).toEqual([]);
   });
 

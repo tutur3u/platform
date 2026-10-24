@@ -13,6 +13,11 @@ export function createLegacyActionPorts({
   const unsigned = async (error: string) =>
     (await actor()) ? null : { error };
   return {
+    async resetGuestPassword(raw: unknown) {
+      const args = legacyActionSchemas.resetGuestPassword.parse(raw);
+      const denied = await unsigned('UNAUTHORIZED');
+      return denied ?? (await load()).resetGuestPassword(...args);
+    },
     async guestLogin(raw: unknown) {
       const args = legacyActionSchemas.guestLogin.parse(raw);
       return (await load()).guestLogin(...args);

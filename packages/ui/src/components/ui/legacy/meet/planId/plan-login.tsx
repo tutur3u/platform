@@ -109,16 +109,18 @@ export default function PlanLogin({
         form.setValue('guestPassword', '');
         form.setError('guestPassword', {
           message:
-            'retryAfter' in result && typeof result.retryAfter === 'number'
-              ? t(
-                  result.limitType === 'join'
-                    ? 'meet-together-plan-details.too_many_join_attempts'
-                    : 'meet-together-plan-details.too_many_attempts',
-                  {
-                    minutes: Math.max(1, Math.ceil(result.retryAfter / 60)),
-                  }
-                )
-              : result.error,
+            'code' in result && result.code === 'PASSWORD_RESET_REQUIRED'
+              ? t('meet-together-plan-details.guest_password_reset_required')
+              : 'retryAfter' in result && typeof result.retryAfter === 'number'
+                ? t(
+                    result.limitType === 'join'
+                      ? 'meet-together-plan-details.too_many_join_attempts'
+                      : 'meet-together-plan-details.too_many_attempts',
+                    {
+                      minutes: Math.max(1, Math.ceil(result.retryAfter / 60)),
+                    }
+                  )
+                : result.error,
         });
         setLoading(false);
       }

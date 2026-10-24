@@ -1,5 +1,4 @@
 import {
-  createHash,
   randomBytes,
   type ScryptOptions,
   scrypt,
@@ -14,10 +13,8 @@ import {
  *
  *   scrypt$<N>$<r>$<p>$<base64url salt>$<base64url derived key>
  *
- * Rows written before the scrypt rollout hold an unprefixed hex SHA-256 digest
- * of `password + salt` with the salt in a separate column. Those rows still
- * verify through {@link verifyPassword}, which reports `needsRehash` so callers
- * can upgrade the stored value in the same request.
+ * Older unprefixed SHA-256 rows are reset markers. They never verify;
+ * the owning product must direct its manager or plan creator to replace them.
  */
 
 export const PASSWORD_KDF_ID = 'scrypt';
@@ -48,20 +45,29 @@ const LEGACY_HASH_PATTERN = /^[0-9a-f]{64}$/u;
 
 export type PasswordHashScheme = 'scrypt' | 'legacy-sha256' | 'unknown';
 
-export interface PasswordVerification {
-  /** Whether the presented password matches the stored hash. */
-  valid: boolean;
-  /**
-   * True when the stored hash verified but uses a legacy scheme or older KDF
-   * parameters, so the caller should replace it with {@link hashPassword}.
-   */
-  needsRehash: boolean;
-  scheme: PasswordHashScheme;
-}
+export type PasswordVerification =
+  | {
+      valid: true;
+      needsRehash: boolean;
+      scheme: 'scrypt';
+      resetRequired: false;
+    }
+  | {
+      valid: false;
+      needsRehash: false;
+      scheme: 'scrypt' | 'unknown';
+      resetRequired: false;
+    }
+  | {
+      valid: false;
+      needsRehash: false;
+      scheme: 'legacy-sha256';
+      resetRequired: true;
+    };
 
 export interface StoredPassword {
   hash: string | null | undefined;
-  /** Only used by legacy salted SHA-256 rows. */
+  /** Retained metadata for callers with old rows; never used to verify them. */
   salt?: string | null;
 }
 
@@ -185,29 +191,25 @@ export async function hashPassword(password: string) {
   ].join('$');
 }
 
-/**
- * Legacy salted SHA-256 digest. Only kept so existing rows can be verified and
- * upgraded; never use it to store a new credential.
- */
-export function hashLegacyPassword(password: string, salt: string) {
-  return createHash('sha256')
-    .update(password + salt, 'utf8')
-    .digest('hex');
+/** Legacy storage is a durable reset marker, never a verification scheme. */
+export function passwordRequiresReset(hash: string | null | undefined) {
+  return typeof hash === 'string' && LEGACY_HASH_PATTERN.test(hash);
 }
 
 function safeEqual(left: Buffer, right: Buffer) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-const INVALID: PasswordVerification = Object.freeze({
+const INVALID = Object.freeze({
   valid: false,
   needsRehash: false,
-  scheme: 'unknown' as const,
-});
+  scheme: 'unknown',
+  resetRequired: false,
+} satisfies PasswordVerification);
 
 /**
- * Verifies a plaintext password against a stored hash. Accepts the current
- * scrypt encoding and the legacy salted SHA-256 format. Never throws for
+ * Verifies a plaintext password against a stored scrypt hash. Legacy rows
+ * return resetRequired without hashing the presented password. Never throws for
  * malformed stored values or oversized input; those simply fail to verify.
  */
 export async function verifyPassword(
@@ -241,23 +243,23 @@ export async function verifyPassword(
       return { ...INVALID, scheme: 'scrypt' };
     }
 
-    const valid = safeEqual(derived, parsed.key);
+    if (!safeEqual(derived, parsed.key))
+      return { ...INVALID, scheme: 'scrypt' };
     return {
-      valid,
-      needsRehash: valid && passwordHashNeedsRehash(hash),
+      valid: true,
+      needsRehash: passwordHashNeedsRehash(hash),
       scheme: 'scrypt',
+      resetRequired: false,
     };
   }
 
-  if (LEGACY_HASH_PATTERN.test(hash)) {
-    const salt = stored.salt;
-    if (typeof salt !== 'string' || salt.length === 0) {
-      return { ...INVALID, scheme: 'legacy-sha256' };
-    }
-
-    const candidate = Buffer.from(hashLegacyPassword(password, salt), 'hex');
-    const valid = safeEqual(candidate, Buffer.from(hash, 'hex'));
-    return { valid, needsRehash: valid, scheme: 'legacy-sha256' };
+  if (passwordRequiresReset(hash)) {
+    return {
+      valid: false,
+      needsRehash: false,
+      scheme: 'legacy-sha256',
+      resetRequired: true,
+    };
   }
 
   return INVALID;
