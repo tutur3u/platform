@@ -155,8 +155,28 @@ not total-spend caps.
 `src/stop-regression.test.ts` pins denied requests across fresh isolates/DO
 restarts, zero denial writes, serialized racing reservations, coalesced admin
 actions, failed reads, unknown committed PUT outcomes and the maximum batch cost.
-These use in-memory R2/DO fixtures. Exact-commit CI builds and hosted Worker
-acceptance remain separate release requirements.
+These use in-memory R2/DO fixtures.
+
+## CI qualification
+
+`.github/workflows/turbo-cache-cloudflare.yaml` runs automatically for cache,
+lockfile, toolchain and runtime-harness changes. Its `build-acceptance` job
+checks out the immutable PR head, runs types, lint, format and unit checks,
+then builds with `bun run build` without restoring compiled artifacts. It runs
+`node --test apps/turbo-cache/scripts/verify-worker-runtime.mjs` against both
+the source Worker and the emitted cf Build Output (the latter with
+`TURBO_CACHE_TEST_BUILD_OUTPUT=1`), retaining the accepted output under the head
+SHA. This workflow qualifies artifacts only and has no publication job.
+
+The real local workerd checks exercise the default-disabled API, unauthorized
+admin rejection, missing-snapshot refusal, authenticated R2 initialization through
+the Durable Object, repeated trip, fence persistence across workerd restart and
+operator reset. They use random disposable credentials, loopback HTTP and an
+isolated temporary persistence directory cleaned on close or failure. Run the
+source check under resource admission; builds and emitted-output checks run in
+exact-commit CI. Enabled artifact traffic, denial operation counts and maximum
+batch bounds have fixture coverage above. Hosted routing, rate-limit behavior,
+account pricing and live storage/stop acceptance remain release-owner gates.
 
 ## Cutover checklist
 

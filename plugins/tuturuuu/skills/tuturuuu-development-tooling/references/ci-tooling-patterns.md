@@ -102,7 +102,13 @@ The runbook records first initialization and prior DO-state migration; never
 replace lost state with empty counters on an enabled cache. Denied ingress and
 failed attempts remain traffic-dependent costs requiring the independent mode-off
 stop. `apps/turbo-cache/src/stop-regression.test.ts` owns the operation-count,
-restart, failure, concurrency and maximum-batch fixtures.
+restart, failure, concurrency and maximum-batch fixtures. The nonpublishing
+`turbo-cache-cloudflare.yaml` / `build-acceptance` job must build the exact PR
+head without a compiled-artifact cache and exercise both source and emitted
+Workers in workerd. The cache runtime script uses the shared cf harness with
+random disposable secrets and isolated temporary persistence; it verifies the
+default-off boundary and authenticated R2/DO initialization, trip and restart.
+Keep hosted enabled-traffic/cost acceptance separate from this local-runtime gate.
 
 ## Cloudflare backend ownership guard
 

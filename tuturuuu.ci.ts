@@ -34,6 +34,7 @@ export const ci = {
   'wave1-native-publish.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
+  'turbo-cache-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': false,
