@@ -324,6 +324,32 @@ synthetic credentials, separate read/write phases, cooldown/recovery, stale
 requests and sink failure. Native authenticated provider/device evidence remains
 pending; this does not identify the cause of any customer's 429.
 
+## Timezone pickers and sheet Back
+
+The Personal timezone and Workspace timezone rows open a large sheet built on
+the shared sheet host (`showAppSheet`). It shows every supported zone by city,
+with its region and current GMT offset (for example, "Ho Chi Minh · Asia ·
+GMT+7"). Zones are sorted west to east. The saved choice is pinned under
+**Current** with a check mark. **Automatic** explains what it means:
+
+- Personal: it follows the workspace timezone, or this device's when the
+  workspace has none, and names the zone it resolves to now.
+- Workspace: members without a personal timezone use their own device's.
+
+Search is the floating dock's dynamic search action. It turns the shell's top
+navbar into the query field, and the sheet has no inline search field. The query
+matches city, region, IANA id or offset (`gmt+7`, `utc-5`, `+05:30`).
+
+System Back, the dock Back and dragging the sheet down all close the picker
+without saving, and the user stays on Settings. The same rule applies to every
+sheet or dialog opened through `showAppSheet`, `showAppDialog` or
+`showAdaptiveSheet`: Back closes the topmost overlay first and never pops the
+page beneath. Saves, rate-limit cooldowns, permissions and the
+account/workspace cancellation of an open editor are unchanged. These defaults
+apply in English and Vietnamese, light and dark, and enlarged text. Coverage:
+`settings_timezone_picker_checks.dart`, `app_sheet_host_test.dart` and
+`timezone_choices_test.dart`.
+
 ## Settings overview and Appearance
 
 The Settings overview opens with a profile header: the signed-in user's avatar,

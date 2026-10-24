@@ -222,7 +222,9 @@ void main() {
           await tester.pumpAndSettle();
           await tester.enterText(find.byType(EditableText), 'london');
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Europe/London'));
+          await tester.tap(
+            find.byKey(const ValueKey('timezone-option-Europe/London')),
+          );
           await tester.pumpAndSettle();
           expect(
             workspace ? cubit.state.workspace : cubit.state.personal,
