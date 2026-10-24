@@ -303,9 +303,15 @@ test('real workflow qualifies before runtime and compares a same-run restored ou
     (step) => step.name === 'Retain Calendar cf comparison output'
   );
   const downloaded = restore.find(
-    (step) => step.name === 'Restore same-run cf comparison output'
+    (step) => step.name === 'Download same-run cf comparison archive'
   );
   assert.equal(uploaded.with.name, downloaded.with.name);
+  assert.match(uploaded.with.path, /\/calendar-cf-output\.tar\.gz$/);
+  assert.match(downloaded.with.path, /\/calendar-cf-output-download$/);
+  assert.ok(
+    at(native, 'Pack verified Calendar cf comparison output') <
+      at(native, 'Retain Calendar cf comparison output')
+  );
   assert.equal(uploaded.with['include-hidden-files'], true);
   assert.equal(uploaded.with['if-no-files-found'], 'error');
   assert.ok(
@@ -313,5 +319,50 @@ test('real workflow qualifies before runtime and compares a same-run restored ou
       restore,
       'Verify relocated cf comparison against the exact sealed source'
     ) > at(restore, 'Verify exact source seal after relocation')
+  );
+});
+
+test('archive transport preserves the exact inventory including empty directories', async (t) => {
+  const require = createRequire(import.meta.url);
+  const { readWorkflow } = require('./workflow-yaml-test-helper.js');
+  const workflow = readWorkflow('mail-calendar-tasks-builds.yaml');
+  const pack = workflow.jobs['calendar-native'].steps.find(
+    (step) => step.name === 'Pack verified Calendar cf comparison output'
+  );
+  const unpack = workflow.jobs['calendar-artifact-restore'].steps.find(
+    (step) => step.name === 'Restore same-run cf comparison output'
+  );
+  assert.ok(
+    pack?.run,
+    'comparison tree requires archive packing before upload'
+  );
+  assert.ok(unpack?.run, 'comparison archive requires explicit restore');
+  const f = fixture(t);
+  const destination = join(f.directory, 'calendar-cf-output');
+  const receipt = await emitCalendarOutput({ ...options(f), destination });
+  const execute = (script) => {
+    const result = spawnSync(
+      'bash',
+      ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
+      { encoding: 'utf8', env: { ...process.env, RUNNER_TEMP: f.directory } }
+    );
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stderr);
+  };
+  execute(pack.run);
+  const download = join(f.directory, 'calendar-cf-output-download');
+  mkdirSync(download);
+  cpSync(
+    join(f.directory, 'calendar-cf-output.tar.gz'),
+    join(download, 'calendar-cf-output.tar.gz')
+  );
+  execute(unpack.run);
+  const restored = join(f.directory, 'calendar-cf-output-restored');
+  assert.ok(
+    existsSync(join(restored, outputPrefix, 'workers/default/assets/empty'))
+  );
+  assert.deepEqual(
+    await verifyCalendarOutput({ ...options(f), destination: restored }),
+    receipt
   );
 });

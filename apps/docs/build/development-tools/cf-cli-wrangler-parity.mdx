@@ -154,6 +154,8 @@ while unqualified server maps or non-ESM modules stop emission.
 
 The existing exact-source CI runs this comparison before Worker runtime checks,
 verifies unchanged source bytes afterward, and verifies a same-run restored copy.
+Transport the comparison as a tar archive: direct artifact upload drops empty
+directories, which remain part of the verified inventory.
 Its receipt records source/config supplier identity, all output hashes, excluded
 metadata and the unqualified account/publication state. This helper never invokes
 the deployment CLI or loads a Worker, environment file or credential.
