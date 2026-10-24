@@ -1,7 +1,7 @@
 ---
 updatedAt: "2026-10-23"
 title: 'Settings dialog'
-description: 'Settings deep links, URL state and history behavior across apps/web and satellites.'
+description: 'Shared account tabs, settings deep links, URL state and history behavior across apps/web and satellites.'
 ---
 
 Every app opens account and app settings in one fullscreen settings dialog. Its
@@ -54,6 +54,63 @@ succeeded, failed or was cancelled. apps/web shows the "linked" success message
 only after a fresh identities read contains that provider. Otherwise it shows a
 neutral "couldn't confirm" message.
 
+## Tabs every app has
+
+Scope: every satellite that renders the shared satellite user menu. Default:
+every such app shows one **Account** group with the same tab ids as apps/web,
+so `?settingsTab=<tab>` means the same thing in every app.
+
+| Tab id | apps/web | Satellites |
+| --- | --- | --- |
+| `profile` | Full profile panel | Shared `SatelliteProfileSettingsPanel`: avatar upload, display name, full name, user id. Email is read-only, with a link to the web profile tab. |
+| `accounts` | Account switcher management | Explains the tab and opens the same tab in apps/web. |
+| `security` | Password, 2FA, passkeys, linked identities | Explains the tab and opens the same tab in apps/web. |
+| `sessions` | Devices and session revocation | Explains the tab and opens the same tab in apps/web. |
+| `appearance` | Theme, language, timezone, time format | Theme and language. |
+
+Apps with their own dialog (ai, calendar, cms, contacts, drive, finance, forms,
+git, infrastructure, inventory, rewise, tasks, track) add the Account group with
+`createAccountSettingsNavGroup` and render `SatelliteAccountSettingsPanel`, next
+to their app tabs. Apps without one (chat, learn, lettin, mail, meet, mind,
+parley, storefront, teach) get `SatelliteDefaultSettingsDialog`: the Account
+group, appearance and the onboarding guide. The satellite user menu has a
+**Settings** item (Cmd/Ctrl+,) that opens the same dialog.
+
+App-specific tabs stay pluggable. An app adds its own nav groups and panels, and
+`SatelliteAccountSettingsPanel` renders nothing for tabs it does not own.
+
+### Security-sensitive tabs stay in apps/web
+
+Satellites do not reimplement password change, 2FA, passkeys, identity linking
+or session revocation, and they do not proxy those mutations. apps/web owns
+re-authentication, the WebAuthn relying party and session revocation. The
+satellite `accounts`, `security` and `sessions` tabs link to
+`<web origin>/personal?settingsDialog=open&settingsTab=<tab>` in a new tab
+(`rel="noopener noreferrer"`), which opens the web dialog on the same tab.
+
+Satellites edit only display name, full name and avatar upload, through the
+existing web profile endpoints (`/api/v1/users/me/*`) in
+`@tuturuuu/internal-api`, using the satellite session and the `/api` proxy
+contract.
+
+- **Email is a link-out.** A satellite session's admin client has no provider
+  session and cannot change the auth email. Satellites show the email read-only
+  and link to `?settingsTab=profile` in apps/web, which owns verification. They
+  never call `PATCH /api/v1/users/me/email`.
+- **Avatar removal is off in satellites**
+  (`SATELLITE_AVATAR_REMOVE_ENABLED`) until the web avatar route fix is merged.
+  Users remove avatars in apps/web.
+
+### Exceptions
+
+- apps/web keeps its own dialog with the full tab set.
+- nova keeps its own single-page profile dialog. It does not use the satellite
+  user menu.
+- hive, pay, apps, tools, external, playground and shortener have no user
+  settings dialog.
+- Personal timezone and notification preferences are only in apps/web.
+- Calendar keeps workspace timezone under its own calendar tabs.
+
 ## Implementation
 
 `packages/ui/src/hooks/settings-dialog-url.ts` is the single source of truth: the
@@ -86,5 +143,15 @@ instead of hand-writing query strings.
 - `apps/web/src/components/settings/account/linked-identities-card.test.tsx`:
   the real card shows no toast while identities are pending, neutral wording
   for an unlinked provider, and success only when the provider is present.
+- `packages/satellite/src/components/account-settings/account-settings.test.tsx`:
+  shared Account group tab ids and the web link-out URL.
+- `packages/satellite/src/components/user-nav-client-settings.test.tsx`: the
+  default dialog for apps without their own, and the menu Settings item.
+- `packages/ui/src/components/ui/custom/satellite-user-menu-items.test.tsx`: the
+  Settings menu item.
+- `packages/satellite/src/components/profile-settings/profile-sensitive-actions.test.tsx`:
+  the email link-out sends no email PATCH, and avatar removal is not offered.
+- `apps/calendar/src/components/settings/settings-dialog.test.tsx`: an
+  app-specific dialog includes the shared account tabs.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root
   redirect.

@@ -15,11 +15,15 @@ import {
   ProfileAvatarEditor,
   satelliteProfileQueryKey,
 } from './profile-avatar-editor';
+import { ProfileEmailLinkOut } from './profile-email-link-out';
 import { ProfileFieldForm } from './profile-field-form';
 
 export function SatelliteProfileSettingsPanel({
+  centralUrl,
   user,
 }: {
+  /** Web app origin; email changes happen in the web settings dialog. */
+  centralUrl: string;
   user: WorkspaceUser;
 }) {
   const t = useTranslations('settings-account');
@@ -109,7 +113,7 @@ export function SatelliteProfileSettingsPanel({
         description={t('email-description')}
       >
         <div className="w-full space-y-2">
-          <ProfileFieldForm field="email" initialValue={profile.email} />
+          <ProfileEmailLinkOut centralUrl={centralUrl} email={profile.email} />
           {profile.new_email ? (
             <p className="text-muted-foreground text-xs">
               {t('check-email-verify', { email: profile.new_email })}
