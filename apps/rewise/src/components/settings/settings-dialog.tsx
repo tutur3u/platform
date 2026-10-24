@@ -7,12 +7,14 @@ import {
   Keyboard,
   Paintbrush,
   PanelLeft,
-  User,
 } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
+import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -32,12 +34,14 @@ import { useSidebar } from '@/context/sidebar-context';
 interface SettingsDialogProps {
   wsId?: string;
   user: WorkspaceUser | null;
+  centralUrl: string;
   defaultTab?: string;
 }
 
 export function SettingsDialog({
   wsId,
   user,
+  centralUrl,
   defaultTab = 'rewise_general',
 }: SettingsDialogProps) {
   const t = useTranslations();
@@ -88,18 +92,7 @@ export function SettingsDialog({
       ],
     },
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-    {
-      label: t('settings.user.title'),
-      items: [
-        {
-          name: 'profile',
-          label: t('settings.user.profile'),
-          icon: User,
-          description: t('settings.user.profile_description'),
-          keywords: ['Profile'],
-        },
-      ],
-    },
+    createAccountSettingsNavGroup(t),
     {
       label: t('settings.preferences.title'),
       items: [
@@ -171,9 +164,11 @@ export function SettingsDialog({
 
       {activeTab === 'calendar_general' && <LunarCalendarSettings />}
 
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'appearance' && (
         <div className="h-full">
