@@ -1,6 +1,6 @@
 ---
 title: 'Mobile design system'
-description: 'Spacing tokens, page primitives, the full-bleed allowlist, breakpoints, and the adaptive shell for apps/mobile.'
+description: 'Spacing tokens, page primitives, components, sheets and dialogs, the full-bleed allowlist, breakpoints, and the adaptive shell for apps/mobile.'
 ---
 
 The Flutter app uses one layout foundation so every screen shares the same
@@ -156,6 +156,64 @@ them with the web SVG drawn by `flutter_svg`. Set `DESIGN_RENDER_DIR` to write
 the light and dark parity grids (`lucide-parity-light.png`,
 `lucide-parity-dark.png`).
 
+## Components and overlays
+
+`package:mobile/core/ui/ui.dart` is the app-owned design system that replaces
+`shadcn_flutter`. New and migrated code imports it. A CI ratchet blocks new
+shadcn imports. See the [migration plan](/build/development-tools/mobile-shadcn-migration).
+
+**Tokens.** `AppTokens.of(context)` (or `context.tokens`) exposes
+`colorScheme` (`AppColorTokens`), `typography` (`AppTypography`), radii and
+brightness. The appearance theme publishes `AppColorTokens` as a Material
+`ThemeExtension` derived from the same scheme as the selected appearance, so
+every theme, accent and light/dark mode applies without extra wiring. Role and
+type names match the legacy shadcn names. `AppElevation` and `AppMotion` hold
+shadows and durations. Spacing and radii stay in `AppSpacing` / `AppRadius`.
+
+**Components.** `AppButton` (`primary`, `secondary`, `outline`, `ghost`,
+`destructive`; densities, sizes, `loading`), `AppIconButton` (required
+`tooltip`), `AppTextField`, `AppSearchField`, `AppCard`, `AppBadge`, `AppAlert`,
+`AppDivider`, `AppSwitch`, `AppCheckbox`, `AppSelect`, `AppOptionTile`,
+`AppTooltip`, `showAppToast`, `AppGap`, `AppScaffold` and `AppTopBar`. Icons are
+the generated web-parity `LucideIcons` and `LucideLabIcons` (see
+[Icons](#icons)), with `AppIcons` for semantic aliases and brand fallbacks.
+
+**Sheets and dialogs.** Open every overlay with `showAppSheet` (compact:
+bottom sheet; wider: centered dialog) or `showAppDialog`. Lay out the body with
+`AppSheetScaffold` or `AppDialog`.
+
+- **Back closes the topmost overlay first.** `AppModalBinding` registers a
+  *modal* entry in `ShellChromeActionsCubit`. While it exists,
+  `backForLocation` returns the overlay's close action, so system Back
+  (`ShellPage.didPopRoute`), the floating-dock Back and the Android back
+  dispatcher close the sheet or dialog and never pop the page beneath. A
+  dialog above a sheet owns Back until it closes. `showAdaptiveSheet` uses the
+  same binding.
+- **The shell chrome stays live.** Sheets open on the nearest (shell)
+  navigator, below the shell's top navbar and floating dock. While an overlay
+  is open, modal registrations replace the page's chrome actions for every
+  location.
+- **Dynamic search.** Pass `search: AppSheetSearch(...)` to
+  `AppSheetScaffold`. Inside the shell, it registers a dock search action;
+  tapping it turns the top navbar into the shell search field bound to the
+  sheet's controller. The action is removed with the sheet. Outside the shell
+  (no `ShellChromeActionsCubit`), an inline `AppSearchField` is rendered.
+- **Sizes.** `AppSheetSize.fit`, `medium` (60% with a drag detent to 94%),
+  `large` (94%) and `full`. The drag handle and drag-to-dismiss are on unless
+  `enableDrag: false`.
+- **Insets.** The body ends above the larger of the dock clearance and the
+  keyboard. When the keyboard or large text leaves less than 280dp (scaled
+  with text), the header, search and actions scroll with the body.
+- **Accessibility.** Overlays scope and name their route for screen readers,
+  keep focus inside the modal route, use live regions for alerts and toasts,
+  and never clamp text scaling.
+- Explicit full-screen forms and system-owned flows still open above the shell
+  with `useRootNavigator: true` and `AppScaffold(headers: [AppTopBar(...)])`.
+
+The Personal and Workspace timezone pickers
+(`features/settings/view/timezone_picker_sheet.dart`) are the reference
+implementation.
+
 ## Full-bleed allowlist
 
 Only these screen types may use `AppPageBody.fullBleed` or skip the gutters:
@@ -275,6 +333,17 @@ window is wider than the body.
   hover-only tooltips.
 - `shell_viewport_checks.dart`: the dock/rail viewport matrix, including the
   root page's first content one `pageTop` gap below the floating header.
+- `test/core/ui/app_components_test.dart`: token resolution from the
+  appearance extension, `AppGap` axes, every component in light and dark at 2x
+  text, and toast placement above the dock.
+- `test/core/ui/app_sheet_host_test.dart`: modal chrome registration, Back
+  from the dock or shell closing only the sheet, dialog-over-sheet ordering,
+  and the inline search fallback outside the shell.
+- `settings_timezone_picker_checks.dart` (in
+  `settings_compact_navigation_test.dart`): the timezone pilot inside the real
+  shell. It covers dock search, system and dock Back, the pinned current zone
+  and Automatic, and keyboard insets. `SETTINGS_RENDER_DIR` with
+  `SETTINGS_RENDER_PIXEL_RATIO=3` writes the 390x844@3x renders.
 - `test/core/layout/page_padding_matrix_test.dart`: representative detail and
   form screens at phone, portrait/landscape tablet and desktop widths. It
   checks that the page list uses the resolved insets, the scrollable stays
