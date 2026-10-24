@@ -1,57 +1,129 @@
 part of 'assistant_repository.dart';
 
 extension AssistantReactionOperations on AssistantRepository {
-  Future<bool> beginMessageReaction({
+  int get reactionActorEpoch =>
+      AssistantReactionJournal.actorEpoch(currentActorId ?? '');
+
+  Future<void> prepareMessageReactions({
     required String wsId,
-    required String chatId,
-    required String messageId,
     required bool Function() isCurrent,
-  }) {
-    final current = _reactionLease(wsId, chatId, messageId, isCurrent);
-    return _reactionJournal.begin(
-      AssistantReactionJournal.keyFor(currentActorId!, wsId, chatId, messageId),
-      isCurrent: current,
-    );
+  }) async {
+    final actor = currentActorId;
+    if (actor == null) throw const AssistantChatCacheCancellation();
+    final epoch = AssistantReactionJournal.actorEpoch(actor);
+    bool current() =>
+        currentActorId == actor &&
+        isCurrent() &&
+        AssistantReactionJournal.actorEpoch(actor) == epoch;
+    for (var batch = 0; batch < 10; batch++) {
+      final ids = (await _reactionJournal.retirementIds(
+        actor,
+      )).take(100).toList();
+      if (!current()) throw const AssistantChatCacheCancellation();
+      if (ids.isEmpty) return;
+      final receipt = await _apiClient.postJsonAcknowledged(
+        '/api/v1/workspaces/$wsId/chat/reactions/retire',
+        {'opIds': ids},
+        actorId: actor,
+        isCurrent: current,
+      );
+      final retired = receipt['retiredOpIds'];
+      if (retired is! List ||
+          retired.length != ids.length ||
+          retired.toSet().length != ids.length ||
+          !retired.toSet().containsAll(ids)) {
+        throw const FormatException('Reaction retirement receipt differs');
+      }
+      await _reactionJournal.finishRetirement(actor, ids);
+    }
+    throw const FormatException('Reaction retirement needs another attempt');
   }
 
-  Future<bool> confirmMessageReaction({
+  Future<AssistantReactionBegin> beginMessageReaction({
     required String wsId,
     required String chatId,
     required String messageId,
-    required bool Function() isCurrent,
-  }) {
-    final current = _reactionLease(wsId, chatId, messageId, isCurrent);
-    return _reactionJournal.confirm(
-      AssistantReactionJournal.keyFor(currentActorId!, wsId, chatId, messageId),
-      isCurrent: current,
-    );
-  }
-
-  /// The actor is captured from authentication, never accepted in the body.
-  /// This toggle must never enter the offline queue or a retrying transport.
-  Future<ChatMessage> toggleMessageReaction({
-    required String wsId,
-    required String chatId,
-    required String messageId,
-    required String emoji,
+    required AssistantReactionIntent intent,
     required bool Function() isCurrent,
   }) async {
     final current = _reactionLease(wsId, chatId, messageId, isCurrent);
-    final actor = currentActorId!;
-    if (emoji.trim().isEmpty) {
-      throw const FormatException('Empty reaction');
-    }
-    final response = await _apiClient.postJsonAcknowledged(
-      '/api/v1/workspaces/$wsId/chat/conversations/$chatId/reactions',
-      {'messageId': messageId, 'emoji': emoji},
-      actorId: actor,
+    await prepareMessageReactions(wsId: wsId, isCurrent: current);
+    return await _reactionJournal.begin(
+      AssistantReactionJournal.keyFor(currentActorId!, wsId, chatId, messageId),
+      intent: intent,
       isCurrent: current,
     );
-    if (!current()) throw const AssistantChatCacheCancellation();
-    return _reactionReceipt(response['message'], chatId, messageId);
   }
 
-  /// Reconcile an uncertain toggle with a fresh read; never repeat the toggle.
+  Future<AssistantReactionIntent?> pendingMessageReaction({
+    required String actorId,
+    required String wsId,
+    required String chatId,
+    required String messageId,
+  }) => _reactionJournal.pending(
+    AssistantReactionJournal.keyFor(actorId, wsId, chatId, messageId),
+  );
+
+  Future<bool> confirmMessageReaction({
+    required String actorId,
+    required String wsId,
+    required String chatId,
+    required String messageId,
+    required String opId,
+  }) => _reactionJournal.confirm(
+    AssistantReactionJournal.keyFor(actorId, wsId, chatId, messageId),
+    opId: opId,
+  );
+
+  /// Desired state receipts clean their origin even after departure.
+  Future<({ChatMessage message, bool confirmed})> setMessageReaction({
+    required String actorId,
+    required String wsId,
+    required String chatId,
+    required String messageId,
+    required AssistantReactionIntent intent,
+    required bool clearIfNotDispatched,
+    required bool Function() isCurrent,
+  }) async {
+    final key = AssistantReactionJournal.keyFor(
+      actorId,
+      wsId,
+      chatId,
+      messageId,
+    );
+    ApiMutationAdmission? admission;
+    var confirmed = false;
+    try {
+      final current = _reactionLease(wsId, chatId, messageId, isCurrent);
+      if (currentActorId != actorId) {
+        throw const AssistantChatCacheCancellation();
+      }
+      await prepareMessageReactions(wsId: wsId, isCurrent: current);
+      admission = ApiMutationAdmission(actorId: actorId, isCurrent: current);
+      final response = await _apiClient.putJsonOperationAcknowledged(
+        '/api/v1/workspaces/$wsId/chat/conversations/$chatId/reactions',
+        {'messageId': messageId, ...intent.toJson()},
+        admission: admission,
+        onAcknowledged: (receipt) async {
+          _requireReactionOperation(receipt['operation'], intent);
+          _reactionReceipt(receipt['message'], chatId, messageId);
+          confirmed = await _reactionJournal.confirm(key, opId: intent.opId);
+        },
+      );
+      _requireReactionOperation(response['operation'], intent);
+      return (
+        message: _reactionReceipt(response['message'], chatId, messageId),
+        confirmed: confirmed,
+      );
+    } on Object {
+      if (clearIfNotDispatched &&
+          (admission == null || admission.definitelyNotDispatched)) {
+        await _reactionJournal.confirm(key, opId: intent.opId);
+      }
+      rethrow;
+    }
+  }
+
   Future<ChatMessage> refreshMessageReactions({
     required String wsId,
     required String chatId,
@@ -60,21 +132,11 @@ extension AssistantReactionOperations on AssistantRepository {
   }) async {
     final current = _reactionLease(wsId, chatId, messageId, isCurrent);
     final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/chat/conversations/$chatId/messages?limit=100',
+      '/api/v1/workspaces/$wsId/chat/conversations/$chatId/reactions'
+      '?messageId=$messageId',
     );
     if (!current()) throw const AssistantChatCacheCancellation();
-    final rows = response['messages'];
-    if (rows is! List) {
-      throw const FormatException('Invalid reaction refresh receipt');
-    }
-    final matching = rows.whereType<Map<String, dynamic>>().where(
-      (row) => row['id'] == messageId,
-    );
-    if (matching.length != 1) {
-      // A missing/older target cannot establish the outcome. Keep the fence.
-      throw const FormatException('Reaction target was not refreshed');
-    }
-    return _reactionReceipt(matching.single, chatId, messageId);
+    return _reactionReceipt(response['message'], chatId, messageId);
   }
 
   bool Function() _reactionLease(
@@ -93,18 +155,29 @@ extension AssistantReactionOperations on AssistantRepository {
       throw const FormatException('Native reaction scope is unavailable');
     }
     final version = _creationGenerationVersion;
+    final actorEpoch = AssistantReactionJournal.actorEpoch(actor);
     var retired = false;
     bool current() {
       retired =
           retired ||
           currentActorId != actor ||
           version != _creationGenerationVersion ||
+          actorEpoch != AssistantReactionJournal.actorEpoch(actor) ||
           !isCurrent();
       return !retired;
     }
 
     if (!current()) throw const AssistantChatCacheCancellation();
     return current;
+  }
+}
+
+void _requireReactionOperation(Object? raw, AssistantReactionIntent intent) {
+  if (raw is! Map ||
+      raw['id'] != intent.opId ||
+      raw['emoji'] != intent.emoji ||
+      raw['present'] != intent.present) {
+    throw const FormatException('Reaction operation receipt differs');
   }
 }
 

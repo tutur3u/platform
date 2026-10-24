@@ -1,5 +1,5 @@
 // Relative imports preserve the existing Assistant module layout.
-// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters, inference_failure_on_collection_literal, unnecessary_breaks
+// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters
 
 import 'dart:async';
 
@@ -16,6 +16,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../data/assistant_chat_persistence_contract.dart';
 import '../data/assistant_preferences.dart';
+import '../data/assistant_reaction_intent.dart';
 import '../data/assistant_repository.dart';
 import '../data/assistant_reset_preferences.dart';
 import '../data/assistant_settings_selection.dart';
@@ -28,6 +29,7 @@ part 'assistant_chat_restore.dart';
 part 'assistant_chat_reset.dart';
 part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
+part 'assistant_chat_stream_events.dart';
 part 'assistant_chat_submission.dart';
 part 'assistant_chat_pending_submission.dart';
 part 'assistant_chat_tool_effects.dart';
@@ -105,8 +107,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
   String? _messageActorId;
-  final _reactionOperations = <(String, String, String, String), Object>{};
-  final _uncertainReactions = <(String, String, String, String)>{};
+  final _reactionState = _AssistantReactionState();
   AssistantConversationSettings? _restoredSettings;
   void _publishRestoredSettings(AssistantConversationSettings? settings) {
     _restoredSettings = settings;
@@ -291,157 +292,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required AssistantThinkingMode thinkingMode,
   }) =>
       _buildExportPayload(wsId: wsId, model: model, thinkingMode: thinkingMode);
-
-  void _handleStreamEvent(
-    AssistantStreamEvent event, {
-    required bool Function() isCurrent,
-    required Set<String> handledToolEffects,
-  }) {
-    if (isClosed || state.status == AssistantChatStatus.error) return;
-    if (event is AssistantDoneStreamEvent) {
-      emit(state.copyWith(status: AssistantChatStatus.idle));
-      _persistAssistantChatCache();
-      return;
-    }
-    if (event is! AssistantJsonStreamEvent) return;
-
-    final payload = event.payload;
-    final type = payload['type'] as String? ?? '';
-
-    switch (type) {
-      case 'start':
-        _activeAssistantMessageId =
-            payload['messageId'] as String? ?? _repository.generateUuid();
-        _activeTextBlockId = null;
-        _activeReasoningBlockId = null;
-        emit(state.copyWith(status: AssistantChatStatus.streaming));
-        break;
-      case 'saved-user-message':
-        final saved = reconcileAssistantUserReceipt(
-          state.messages,
-          state.attachmentsByMessageId,
-          requestId: payload['clientRequestId'] as String,
-          savedId: payload['messageId'] as String,
-          savedText: payload['text'] as String,
-        );
-        if (saved != null) {
-          emit(
-            state.copyWith(
-              messages: _applyNativeUserReceipt(
-                saved.messages,
-                payload,
-                saved.attachments,
-              ),
-              attachmentsByMessageId: saved.attachments,
-            ),
-          );
-        }
-        _completeSubmissionAcknowledgment(payload, matched: saved != null);
-        if (saved != null) _persistAssistantChatCache();
-        break;
-      case 'saved-messages':
-        _reconcileSavedMessages(payload);
-        break;
-      case 'saved-message':
-        _reconcileSavedMessage(payload);
-        break;
-      case 'text-start':
-        _activeTextBlockId = payload['id'] as String?;
-        emit(state.copyWith(status: AssistantChatStatus.streaming));
-        break;
-      case 'text-delta':
-        _appendTextPart(
-          blockId: payload['id'] as String?,
-          delta: payload['delta'] as String? ?? '',
-        );
-        break;
-      case 'reasoning-start':
-        _activeReasoningBlockId = payload['id'] as String?;
-        emit(state.copyWith(status: AssistantChatStatus.streaming));
-        break;
-      case 'reasoning-delta':
-        _appendReasoningPart(
-          blockId: payload['id'] as String?,
-          delta: payload['delta'] as String? ?? '',
-        );
-        break;
-      case 'source-url':
-        _appendPart(
-          AssistantMessagePart(
-            type: 'source-url',
-            sourceId: payload['sourceId'] as String?,
-            url: payload['url'] as String?,
-            title: payload['title'] as String?,
-          ),
-        );
-        break;
-      case 'tool-input-start':
-        _upsertToolPart(
-          toolCallId: payload['toolCallId'] as String?,
-          toolName: payload['toolName'] as String?,
-          toolState: 'input-streaming',
-          input: const {},
-        );
-        break;
-      case 'tool-input-delta':
-        _appendToolInputText(
-          toolCallId: payload['toolCallId'] as String?,
-          delta: payload['inputTextDelta'] as String? ?? '',
-        );
-        break;
-      case 'tool-input-available':
-        _upsertToolPart(
-          toolCallId: payload['toolCallId'] as String?,
-          toolName: payload['toolName'] as String?,
-          toolState: 'input-available',
-          input: payload['input'],
-        );
-        break;
-      case 'tool-output-available':
-        final retainedName = _currentInputToolName(payload['toolCallId']);
-        _upsertToolPart(
-          toolCallId: payload['toolCallId'] as String?,
-          toolName: retainedName ?? payload['toolName'] as String?,
-          toolState: 'output-available',
-          output: payload['output'],
-        );
-        unawaited(
-          _handleToolSideEffect(
-            payload,
-            retainedName: retainedName,
-            isCurrent: isCurrent,
-            handled: handledToolEffects,
-          ),
-        );
-        break;
-      case 'start-step':
-        _appendPart(const AssistantMessagePart(type: 'step-start'));
-        break;
-      case 'error':
-        emit(
-          state.copyWith(
-            messages: _withoutEmptyAssistantReply(
-              state.messages,
-              _activeAssistantMessageId,
-            ),
-            status: AssistantChatStatus.error,
-            error:
-                payload['errorText'] as String? ?? 'Assistant stream failed.',
-            diagnostics: const SafeErrorDiagnostics.streamFailure(),
-          ),
-        );
-        break;
-      case 'finish':
-      case 'finish-step':
-      case 'text-end':
-      case 'reasoning-end':
-      case 'abort':
-        emit(state.copyWith(status: AssistantChatStatus.streaming));
-        break;
-      default:
-        break;
-    }
-  }
 
   void _ensureAssistantMessage(String messageId) {
     if (state.messages.any((message) => message.id == messageId)) return;

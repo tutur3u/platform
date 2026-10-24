@@ -13,6 +13,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 part 'assistant_message.dart';
 part 'assistant_conversation_settings.dart';
 part 'assistant_soul.dart';
+part 'assistant_queued_submission.dart';
 
 enum AssistantCreditSource { workspace, personal }
 
@@ -613,21 +614,6 @@ Map<String, List<AssistantAttachment>> _assistantAttachmentsByMessageIdFromJson(
         .toList();
   }
   return out;
-}
-
-class AssistantQueuedSubmission extends Equatable {
-  const AssistantQueuedSubmission({
-    required this.message,
-    required this.attachments,
-    this.replyToMessageId,
-  });
-
-  final String message;
-  final List<AssistantAttachment> attachments;
-  final String? replyToMessageId;
-
-  @override
-  List<Object?> get props => [message, attachments, replyToMessageId];
 }
 
 class AssistantFilePickerResult extends Equatable {

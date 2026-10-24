@@ -20557,12 +20557,6 @@ abstract class AppLocalizations {
   /// **'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.'**
   String get assistantSettingsSelectionUnconfirmed;
 
-  /// No description provided for @assistantExpandPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Expand prompt'**
-  String get assistantExpandPrompt;
-
   /// No description provided for @assistantSettingInfo.
   ///
   /// In en, this message translates to:

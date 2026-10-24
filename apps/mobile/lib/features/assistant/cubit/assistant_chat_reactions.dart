@@ -9,6 +9,11 @@ enum AssistantReactionResult {
   stale,
 }
 
+class _AssistantReactionState {
+  final operations = <(String, String, String, String), Object>{};
+  final uncertain = <(String, String, String, String)>{};
+}
+
 extension AssistantChatPersistenceActions on AssistantChatCubit {
   bool get replyBlockedByPendingSubmission =>
       state.replyTarget != null &&
@@ -57,7 +62,7 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
       state.storedChatId ?? '',
       messageId,
     );
-    return _uncertainReactions.contains(key) ||
+    return _reactionState.uncertain.contains(key) ||
         (state.messages
                 .where((m) => m.id == messageId)
                 .firstOrNull
@@ -91,7 +96,7 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
       state.storedChatId!,
       messageId,
     );
-    if (_reactionOperations.containsKey(key)) {
+    if (_reactionState.operations.containsKey(key)) {
       return AssistantReactionResult.busy;
     }
     if (emoji != null && needsReactionRefresh(messageId)) {
@@ -101,8 +106,9 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
       return AssistantReactionResult.refreshRequired;
     }
     final version = _workspaceVersion;
+    final actorEpoch = _repository.reactionActorEpoch;
     final operation = Object();
-    _reactionOperations[key] = operation;
+    _reactionState.operations[key] = operation;
     var retired = false;
     bool current() {
       retired =
@@ -110,28 +116,61 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
           _closing ||
           isClosed ||
           version != _workspaceVersion ||
+          actorEpoch != _repository.reactionActorEpoch ||
           _repository.currentActorId != key.$1 ||
           state.workspaceId != key.$2 ||
           state.storedChatId != key.$3 ||
           !state.messages.any((m) => m.id == messageId && m.isPersisted) ||
-          !identical(_reactionOperations[key], operation);
+          !identical(_reactionState.operations[key], operation);
       retired = retired || !(isCurrent?.call() ?? true);
       return !retired;
     }
 
     _emitIfOpen(state.copyWith(reactionResult: null));
+    AssistantReactionIntent? intent;
+    var recorded = false;
+    Future<bool> cleanup() => _repository.confirmMessageReaction(
+      actorId: key.$1,
+      wsId: key.$2,
+      chatId: key.$3,
+      messageId: messageId,
+      opId: intent!.opId,
+    );
     try {
+      await _repository.prepareMessageReactions(
+        wsId: key.$2,
+        isCurrent: current,
+      );
+      if (!current()) return AssistantReactionResult.stale;
       if (emoji != null) {
-        _uncertainReactions.add(key);
-        _patchReactionSummary(messageId, refreshRequired: true);
-        final recorded = await _repository.beginMessageReaction(
+        final row = state.messages.firstWhere((m) => m.id == messageId);
+        intent = AssistantReactionIntent(
+          opId: _repository.generateUuid(),
+          emoji: emoji,
+          present: !row.reactions.any(
+            (r) => r.emoji == emoji && r.userIds.contains(key.$1),
+          ),
+        );
+        final begin = await _repository.beginMessageReaction(
           wsId: key.$2,
           chatId: key.$3,
           messageId: messageId,
+          intent: intent,
           isCurrent: current,
         );
-        if (!current()) return AssistantReactionResult.stale;
-        if (!recorded) {
+        recorded = begin == AssistantReactionBegin.recorded;
+        if (!current()) {
+          if (recorded) await cleanup();
+          return AssistantReactionResult.stale;
+        }
+        if (begin == AssistantReactionBegin.failed) {
+          _emitIfOpen(
+            state.copyWith(reactionResult: AssistantReactionResult.unavailable),
+          );
+          return AssistantReactionResult.unavailable;
+        }
+        if (begin == AssistantReactionBegin.alreadyPending) {
+          _patchReactionSummary(messageId, refreshRequired: true);
           _emitIfOpen(
             state.copyWith(
               reactionResult: AssistantReactionResult.refreshRequired,
@@ -139,53 +178,55 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
           );
           return AssistantReactionResult.refreshRequired;
         }
+        _reactionState.uncertain.add(key);
+        _patchReactionSummary(messageId, refreshRequired: true);
         _persistAssistantChatCache();
-      }
-      final ChatMessage receipt;
-      if (emoji == null) {
-        receipt = await _repository.refreshMessageReactions(
-          wsId: key.$2,
-          chatId: key.$3,
-          messageId: messageId,
-          isCurrent: current,
-        );
       } else {
-        receipt = await _repository.toggleMessageReaction(
+        intent = await _repository.pendingMessageReaction(
+          actorId: key.$1,
           wsId: key.$2,
           chatId: key.$3,
           messageId: messageId,
-          emoji: emoji,
+        );
+        if (!current()) return AssistantReactionResult.stale;
+      }
+      var confirmed = true;
+      if (intent != null) {
+        final result = await _repository.setMessageReaction(
+          actorId: key.$1,
+          wsId: key.$2,
+          chatId: key.$3,
+          messageId: messageId,
+          intent: intent,
+          clearIfNotDispatched: recorded,
           isCurrent: current,
         );
+        confirmed = result.confirmed;
+        if (confirmed) _reactionState.uncertain.remove(key);
+        if (!current()) return AssistantReactionResult.stale;
+        if (emoji != null) {
+          _patchReactionSummary(
+            messageId,
+            reactions: result.message.reactions,
+            refreshRequired: !confirmed,
+          );
+        }
       }
-      if (!current()) return AssistantReactionResult.stale;
       if (emoji == null) {
-        final held = needsReactionRefresh(messageId);
+        final receipt = await _repository.refreshMessageReactions(
+          wsId: key.$2,
+          chatId: key.$3,
+          messageId: messageId,
+          isCurrent: current,
+        );
+        if (!current()) return AssistantReactionResult.stale;
+        if (confirmed) _reactionState.uncertain.remove(key);
         _patchReactionSummary(
           messageId,
           reactions: receipt.reactions,
-          refreshRequired: held,
+          refreshRequired: !confirmed,
         );
-        final result = held
-            ? AssistantReactionResult.unknown
-            : AssistantReactionResult.updated;
-        _emitIfOpen(state.copyWith(reactionResult: result));
-        _persistAssistantChatCache();
-        return result;
       }
-      final confirmed = await _repository.confirmMessageReaction(
-        wsId: key.$2,
-        chatId: key.$3,
-        messageId: messageId,
-        isCurrent: current,
-      );
-      if (!current()) return AssistantReactionResult.stale;
-      if (confirmed) _uncertainReactions.remove(key);
-      _patchReactionSummary(
-        messageId,
-        reactions: receipt.reactions,
-        refreshRequired: !confirmed,
-      );
       final result = confirmed
           ? AssistantReactionResult.updated
           : AssistantReactionResult.refreshRequired;
@@ -193,18 +234,30 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
       _persistAssistantChatCache();
       return result;
     } on AssistantChatCacheCancellation {
+      if (recorded && intent != null) {
+        await cleanup();
+        _reactionState.uncertain.remove(key);
+      }
       return AssistantReactionResult.stale;
-    } on Object {
+    } on Object catch (error) {
+      final unsent = error is ApiMutationNotDispatched && recorded;
+      if (unsent && intent != null) {
+        await cleanup();
+        _reactionState.uncertain.remove(key);
+      }
       if (!current()) return AssistantReactionResult.stale;
-      final result = emoji == null
+      if (unsent) _patchReactionSummary(messageId, refreshRequired: false);
+      final result = (unsent || (!recorded && emoji != null))
+          ? AssistantReactionResult.unavailable
+          : emoji == null
           ? AssistantReactionResult.refreshRequired
           : AssistantReactionResult.unknown;
       _emitIfOpen(state.copyWith(reactionResult: result));
       _persistAssistantChatCache();
       return result;
     } finally {
-      if (identical(_reactionOperations[key], operation)) {
-        _reactionOperations.remove(key);
+      if (identical(_reactionState.operations[key], operation)) {
+        _reactionState.operations.remove(key);
       }
     }
   }

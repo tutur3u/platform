@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/data/assistant_reaction_intent.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -160,24 +161,21 @@ void main() {
     () async {
       for (final prefix in ['ai-chat-', 'legacy-ai-']) {
         await expectLater(
-          repository.toggleMessageReaction(
+          repository.beginMessageReaction(
             wsId: _workspace,
             chatId: '$prefix$_chat',
             messageId: _saved,
-            emoji: 'heart',
+            intent: const AssistantReactionIntent(
+              opId: _request,
+              emoji: 'heart',
+              present: true,
+            ),
             isCurrent: () => true,
           ),
           throwsFormatException,
         );
       }
-      verifyNever(
-        () => api.postJsonAcknowledged(
-          any(),
-          any(),
-          actorId: any(named: 'actorId'),
-          isCurrent: any(named: 'isCurrent'),
-        ),
-      );
+      verifyZeroInteractions(api);
     },
   );
 }

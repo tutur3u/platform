@@ -319,6 +319,14 @@ class ApiClient {
     required bool Function() isCurrent,
   }) => _mutateJsonAcknowledged('POST', path, body, actorId, isCurrent);
 
+  /// Dispatch once under a lease; terminal receipts can clean retired journals.
+  Future<Map<String, dynamic>> putJsonOperationAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required ApiMutationAdmission admission,
+    required Future<void> Function(Map<String, dynamic>) onAcknowledged,
+  }) => _putJsonOperation(path, body, admission, onAcknowledged);
+
   /// PATCH JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].

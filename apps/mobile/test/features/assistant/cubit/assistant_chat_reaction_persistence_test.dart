@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/validation/uuid.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -11,19 +13,20 @@ import 'assistant_chat_persistence_actions_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUpAll(() => registerFallbackValue(() => true));
+  setUpAll(registerActionOperationFallbacks);
   late ActionsApi api;
   late ActionsRepository repository;
+  late ActionsReactionJournal journal;
   late AssistantChatCubit cubit;
   late Completer<Map<String, dynamic>> write;
   late List<Map<String, dynamic>> bodies;
-  late List<bool Function()> leases;
-  var sends = 0;
+  late List<ApiMutationAdmission> admissions;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     api = ActionsApi();
-    repository = ActionsRepository(api);
+    journal = ActionsReactionJournal();
+    repository = ActionsRepository(api, reactionJournal: journal);
     final preferences = ActionsPreferences();
     when(
       () => preferences.saveChatId(
@@ -35,22 +38,24 @@ void main() {
     cubit = actionsCubit(repository, preferences);
     write = Completer<Map<String, dynamic>>();
     bodies = [];
-    leases = [];
-    sends = 0;
+    admissions = [];
     when(
-      () => api.postJsonAcknowledged(
+      () => api.putJsonOperationAcknowledged(
         any(),
         any(),
-        actorId: any(named: 'actorId'),
-        isCurrent: any(named: 'isCurrent'),
+        admission: any(named: 'admission'),
+        onAcknowledged: any(named: 'onAcknowledged'),
       ),
-    ).thenAnswer((call) {
-      sends++;
-      expect(call.namedArguments[#actorId], repository.actor);
-      bodies.add(call.positionalArguments[1] as Map<String, dynamic>);
-      leases.add(call.namedArguments[#isCurrent] as bool Function());
-      return write.future;
-    });
+    ).thenAnswer(
+      (call) => acknowledgeActionOperation(call, (body) {
+        final admission =
+            call.namedArguments[#admission] as ApiMutationAdmission;
+        expect(admission.actorId, repository.actor);
+        admissions.add(admission);
+        bodies.add(body);
+        return write.future;
+      }),
+    );
     await cubit.openChatById(actionWorkspace, actionChat);
   });
   tearDown(() async {
@@ -59,23 +64,34 @@ void main() {
   });
 
   test(
-    'one acknowledged actor-owned body patches summaries and scoped cache',
+    'actor-owned desired state patches only summaries and scoped cache',
     () async {
       final result = cubit.toggleReaction(actionMessage, 'heart');
       await Future<void>.delayed(Duration.zero);
-      expect(sends, 1);
-      expect(bodies.single, {'messageId': actionMessage, 'emoji': 'heart'});
+      expect(bodies, hasLength(1));
+      expect(bodies.single, {
+        'messageId': actionMessage,
+        'emoji': 'heart',
+        'present': true,
+        'opId': isA<String>().having(isUuid, 'valid operation UUID', isTrue),
+      });
+      expect(journal.intents.values.single.toJson(), {
+        'opId': bodies.single['opId'],
+        'emoji': 'heart',
+        'present': true,
+      });
       expect(
         await cubit.toggleReaction(actionMessage, 'heart'),
         AssistantReactionResult.busy,
       );
-      write.complete({'message': actionReceipt()});
+      write.complete(actionOperationReceipt(bodies.single));
       expect(await result, AssistantReactionResult.updated);
       final row = cubit.state.messages.single;
       expect(row.parts.single.text, 'Current content');
       expect(row.reactions.single.userIds, [actionActor]);
       expect(row.reactionRefreshRequired, isFalse);
       expect(row.isPersisted, isTrue);
+      expect(journal.intents, isEmpty);
       expect(repository.snapshots.last.origin.key.userId, actionActor);
       expect(repository.snapshots.last.origin.key.workspaceId, actionWorkspace);
       expect(repository.snapshots.last.restored.messages.single, row);
@@ -83,150 +99,195 @@ void main() {
     },
   );
 
-  test(
-    'reaction completion preserves content changed while POST was pending',
-    () async {
-      await cubit.submit(
-        wsId: actionWorkspace,
-        message: 'Next turn',
-        modelId: 'model',
-        thinkingMode: AssistantThinkingMode.fast,
-        creditSource: AssistantCreditSource.workspace,
-        workspaceContextId: actionWorkspace,
-        timezone: 'UTC',
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      final result = cubit.toggleReaction(actionMessage, 'heart');
-      await Future<void>.delayed(Duration.zero);
-      repository.frames
-        ..add(
-          const AssistantJsonStreamEvent({
-            'type': 'start',
-            'messageId': actionMessage,
-          }),
-        )
-        ..add(
-          const AssistantJsonStreamEvent({
-            'type': 'text-delta',
-            'delta': ' extended',
-          }),
-        );
-      write.complete({'message': actionReceipt()});
-      expect(await result, AssistantReactionResult.updated);
-      final row = cubit.state.messages.firstWhere((m) => m.id == actionMessage);
-      expect(row.parts.single.text, 'Current content extended');
-      expect(row.reactions.single.count, 1);
-      expect(cubit.state.messages.where((m) => m.role == 'user'), hasLength(1));
-    },
-  );
-
-  test('unknown toggle stays fenced after fresh read; '
-      'no replay or invented success', () async {
+  test('receipt preserves content changed while PUT was pending', () async {
+    await cubit.submit(
+      wsId: actionWorkspace,
+      message: 'Next turn',
+      modelId: 'model',
+      thinkingMode: AssistantThinkingMode.fast,
+      creditSource: AssistantCreditSource.workspace,
+      workspaceContextId: actionWorkspace,
+      timezone: 'UTC',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
     final result = cubit.toggleReaction(actionMessage, 'heart');
     await Future<void>.delayed(Duration.zero);
-    write.completeError(StateError('Synthetic uncertain transport'));
-    expect(await result, AssistantReactionResult.unknown);
-    expect(cubit.state.messages.single.reactions, isEmpty);
-    expect(cubit.needsReactionRefresh(actionMessage), isTrue);
-    expect(
-      repository
-          .snapshots
-          .last
-          .restored
-          .messages
-          .single
-          .reactionRefreshRequired,
-      isTrue,
-    );
-    expect(
-      await cubit.toggleReaction(actionMessage, 'heart'),
-      AssistantReactionResult.refreshRequired,
-    );
-    expect(sends, 1);
-    final refresh = Completer<Map<String, dynamic>>();
-    when(() => api.getJson(any())).thenAnswer((_) => refresh.future);
-    final read = cubit.refreshReactions(actionMessage);
-    expect(
-      await cubit.toggleReaction(actionMessage, 'heart'),
-      AssistantReactionResult.busy,
-    );
-    refresh.complete({
-      'messages': [actionReceipt()],
-    });
-    expect(await read, AssistantReactionResult.unknown);
-    expect(cubit.needsReactionRefresh(actionMessage), isTrue);
-    expect(cubit.state.messages.single.parts.single.text, 'Current content');
-    expect(sends, 1);
-    final explicitRetry = cubit.toggleReaction(actionMessage, 'heart');
-    expect(await explicitRetry, AssistantReactionResult.refreshRequired);
-    expect(sends, 1);
-    expect(cubit.state.messages.single.reactions.single.count, 1);
+    repository.frames
+      ..add(
+        const AssistantJsonStreamEvent({
+          'type': 'start',
+          'messageId': actionMessage,
+        }),
+      )
+      ..add(
+        const AssistantJsonStreamEvent({
+          'type': 'text-delta',
+          'delta': ' extended',
+        }),
+      );
+    write.complete(actionOperationReceipt(bodies.single));
+    expect(await result, AssistantReactionResult.updated);
+    final row = cubit.state.messages.firstWhere((m) => m.id == actionMessage);
+    expect(row.parts.single.text, 'Current content extended');
+    expect(row.reactions.single.count, 1);
+    expect(cubit.state.messages.where((m) => m.role == 'user'), hasLength(1));
   });
 
   test(
-    'refresh cannot release a timed-out toggle that can still commit',
+    'unknown operation replays its persisted intent before exact read',
     () async {
+      final result = cubit.toggleReaction(actionMessage, 'heart');
+      await Future<void>.delayed(Duration.zero);
+      write.completeError(StateError('Synthetic uncertain transport'));
+      expect(await result, AssistantReactionResult.unknown);
+      expect(cubit.state.messages.single.reactions, isEmpty);
+      expect(cubit.needsReactionRefresh(actionMessage), isTrue);
+      expect(
+        repository
+            .snapshots
+            .last
+            .restored
+            .messages
+            .single
+            .reactionRefreshRequired,
+        isTrue,
+      );
+      expect(
+        await cubit.toggleReaction(actionMessage, 'heart'),
+        AssistantReactionResult.refreshRequired,
+      );
+      final original = Map<String, dynamic>.of(bodies.single);
+      final order = <String>[];
       when(
-        () => api.postJsonAcknowledged(
+        () => api.putJsonOperationAcknowledged(
           any(),
           any(),
-          actorId: any(named: 'actorId'),
-          isCurrent: any(named: 'isCurrent'),
+          admission: any(named: 'admission'),
+          onAcknowledged: any(named: 'onAcknowledged'),
         ),
-      ).thenAnswer((_) {
-        sends++;
-        return write.future.timeout(Duration.zero);
+      ).thenAnswer(
+        (call) => acknowledgeActionOperation(call, (body) async {
+          order.add('replay');
+          expect(body, original);
+          bodies.add(body);
+          return actionOperationReceipt(body);
+        }),
+      );
+      when(() => api.getJson(any())).thenAnswer((call) async {
+        order.add('read');
+        expect(
+          call.positionalArguments.single,
+          '/api/v1/workspaces/$actionWorkspace/chat/conversations/'
+          '$actionChat/reactions?messageId=$actionMessage',
+        );
+        return {'message': actionReceipt()};
+      });
+      expect(
+        await cubit.refreshReactions(actionMessage),
+        AssistantReactionResult.updated,
+      );
+      expect(order, ['replay', 'read']);
+      expect(bodies, hasLength(2));
+      expect(journal.intents, isEmpty);
+      expect(cubit.needsReactionRefresh(actionMessage), isFalse);
+      expect(cubit.state.messages.single.parts.single.text, 'Current content');
+      expect(cubit.state.messages.single.reactions.single.count, 1);
+    },
+  );
+
+  test(
+    'late timed-out original and replay share identity and cannot invert',
+    () async {
+      final original = Completer<void>();
+      final originalAcknowledged = Completer<void>();
+      final applied = <String>{};
+      var present = false;
+      var dispatches = 0;
+      final requests = <Map<String, dynamic>>[];
+      when(
+        () => api.putJsonOperationAcknowledged(
+          any(),
+          any(),
+          admission: any(named: 'admission'),
+          onAcknowledged: any(named: 'onAcknowledged'),
+        ),
+      ).thenAnswer((call) {
+        final first = dispatches++ == 0;
+        final operation = acknowledgeActionOperation(call, (body) async {
+          requests.add(Map<String, dynamic>.of(body));
+          if (first) await original.future;
+          if (applied.add(body['opId'] as String)) {
+            present = body['present'] as bool;
+          }
+          return actionOperationReceipt(body);
+        });
+        if (!first) return operation;
+        unawaited(operation.then((_) => originalAcknowledged.complete()));
+        return operation.timeout(Duration.zero);
       });
       expect(
         await cubit.toggleReaction(actionMessage, 'heart'),
         AssistantReactionResult.unknown,
       );
-      expect(write.isCompleted, isFalse);
-      when(() => api.getJson(any())).thenAnswer(
-        (_) async => {
-          'messages': [
-            {...actionReceipt(), 'reactions': <Map<String, dynamic>>[]},
-          ],
-        },
-      );
+      expect(original.isCompleted, isFalse);
+      when(() => api.getJson(any())).thenAnswer((_) async {
+        expect(present, isTrue);
+        return {'message': actionReceipt()};
+      });
       expect(
         await cubit.refreshReactions(actionMessage),
-        AssistantReactionResult.unknown,
+        AssistantReactionResult.updated,
       );
-      expect(cubit.state.messages.single.reactions, isEmpty);
-      write.complete({'message': actionReceipt()});
+      expect(requests, hasLength(2));
+      expect(requests[1], requests[0]);
+      expect(applied, hasLength(1));
+      original.complete();
+      await originalAcknowledged.future;
+      expect(present, isTrue);
+      expect(applied, hasLength(1));
+      expect(cubit.needsReactionRefresh(actionMessage), isFalse);
+      expect(journal.intents, isEmpty);
+      expect(cubit.state.messages.single.reactions.single.count, 1);
+    },
+  );
+
+  test(
+    'missing exact target retains refresh fence without a blind toggle',
+    () async {
+      final pending = cubit.toggleReaction(actionMessage, 'heart');
       await Future<void>.delayed(Duration.zero);
+      write.completeError(StateError('Unknown'));
+      await pending;
+      when(
+        () => api.putJsonOperationAcknowledged(
+          any(),
+          any(),
+          admission: any(named: 'admission'),
+          onAcknowledged: any(named: 'onAcknowledged'),
+        ),
+      ).thenAnswer(
+        (call) => acknowledgeActionOperation(call, (body) async {
+          bodies.add(body);
+          return actionOperationReceipt(body);
+        }),
+      );
+      when(() => api.getJson(any())).thenAnswer((_) async => {});
+      expect(
+        await cubit.refreshReactions(actionMessage),
+        AssistantReactionResult.refreshRequired,
+      );
       expect(
         await cubit.toggleReaction(actionMessage, 'heart'),
         AssistantReactionResult.refreshRequired,
       );
-      expect(sends, 1);
-      expect(cubit.needsReactionRefresh(actionMessage), isTrue);
+      expect(bodies, hasLength(2));
+      expect(bodies[1], bodies[0]);
     },
   );
 
-  test('missing refresh target keeps uncertainty and blocks retry', () async {
-    final result = cubit.toggleReaction(actionMessage, 'heart');
-    await Future<void>.delayed(Duration.zero);
-    write.completeError(StateError('Synthetic unknown'));
-    await result;
-    when(
-      () => api.getJson(any()),
-    ).thenAnswer((_) async => {'messages': <Map<String, dynamic>>[]});
-    expect(
-      await cubit.refreshReactions(actionMessage),
-      AssistantReactionResult.refreshRequired,
-    );
-    expect(
-      await cubit.toggleReaction(actionMessage, 'heart'),
-      AssistantReactionResult.refreshRequired,
-    );
-    expect(sends, 1);
-  });
-
   for (final boundary in ['actor', 'workspace', 'conversation', 'ABA']) {
     test(
-      '$boundary change retires response and cannot patch current rows',
+      '$boundary departure cleans origin without patching current rows',
       () async {
         final result = cubit.toggleReaction(actionMessage, 'heart');
         await Future<void>.delayed(Duration.zero);
@@ -241,33 +302,28 @@ void main() {
             await cubit.openChatById(actionWorkspace, actionOther);
             await cubit.openChatById(actionWorkspace, actionChat);
         }
-        expect(leases.single(), isFalse);
+        expect(admissions.single.current, isFalse);
         final publications = repository.snapshots.length;
-        write.complete({'message': actionReceipt()});
+        write.complete(actionOperationReceipt(bodies.single));
         expect(await result, AssistantReactionResult.stale);
+        expect(journal.intents, isEmpty);
         expect(cubit.state.messages.single.reactions, isEmpty);
         expect(repository.snapshots.length, publications);
-        if (boundary == 'ABA') {
-          expect(cubit.needsReactionRefresh(actionMessage), isTrue);
-          expect(
-            await cubit.toggleReaction(actionMessage, 'heart'),
-            AssistantReactionResult.refreshRequired,
-          );
-        }
-        expect(sends, 1);
+        expect(bodies, hasLength(1));
       },
     );
   }
 
-  test('observed actor ABA permanently retires transport lease', () async {
+  test('observed actor ABA permanently retires dispatch admission', () async {
     final result = cubit.toggleReaction(actionMessage, 'heart');
     await Future<void>.delayed(Duration.zero);
     repository.actor = actionOther;
-    expect(leases.single(), isFalse);
+    expect(admissions.single.current, isFalse);
     repository.actor = actionActor;
-    expect(leases.single(), isFalse);
-    write.complete({'message': actionReceipt()});
+    expect(admissions.single.current, isFalse);
+    write.complete(actionOperationReceipt(bodies.single));
     expect(await result, AssistantReactionResult.stale);
+    expect(journal.intents, isEmpty);
     expect(cubit.state.messages.single.reactions, isEmpty);
   });
 }

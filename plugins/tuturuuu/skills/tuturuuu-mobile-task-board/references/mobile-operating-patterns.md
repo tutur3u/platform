@@ -125,9 +125,19 @@ Read only the section relevant to the current feature; paths are repository-rela
 ## 5. Maintainability
 
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+
+After extracting Cubit code, keep protected `emit` access in the subclass or use
+its existing publication helper; extensions do not inherit subclass access.
+Recheck suppressions in both files, search callers of retired APIs, and inspect
+the declared constructor before correcting test fixtures. Qualify the final
+composed source; earlier parent snapshots remain diagnostic evidence. See the
+[formatter context guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx)
+when the local checkout lacks package configuration.
+
 - **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. There is no fullscreen/expand draft action. Keep bounded media/audio previews, upload/removal callbacks and text selection in the inline composer. Limit dock growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. The side action stays 52dp tall. Validate inside `PersistentShellDock` with wrapped drafts, text scale, IME and safe-area variants; a fixed one-line estimate is insufficient.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Assistant Send Recovery**: Distinguish an untouched actor/workspace scope from uncertain creation. Bootstrap a clear envelope under the scope lock only when the envelope, legacy selection/context, creation marker and process authority are all absent; require host acknowledgement before creation. Preserve informed recovery for legacy/pending/held state and retain drafts until a real USER receipt. Exercise first Send, rapid Sends, held ACKs and the first navbar frame (`assistant_send_recovery_test.dart`, `assistant_fresh_scope_test.dart`).
+- **Assistant Reaction Operations**: Use idempotent desired-state PUT with a stable persisted operation ID; never fall back to the legacy POST toggle. Clean exact unsent/acknowledged markers independently of page scope. Logout clears journal metadata but retains operation IDs until server retirement prevents delayed writes; scope admission captures the retirement epoch. Exact-message refresh safely replays the retained intent, then reads its target. See [native reaction decisions](../../../../../apps/docs/platform/features/assistant-live.mdx#native-mobile-reaction-operations) and lifecycle/transport regression suites.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
 ### Offline downloads

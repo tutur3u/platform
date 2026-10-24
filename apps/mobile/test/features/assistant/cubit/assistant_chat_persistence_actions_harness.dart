@@ -16,6 +16,13 @@ const actionWorkspace = '11111111-1111-4111-8111-111111111111';
 const actionChat = '44444444-4444-4444-8444-444444444444';
 const actionMessage = '55555555-5555-4555-8555-555555555555';
 const actionOther = '66666666-6666-4666-8666-666666666666';
+const actionOp = '77777777-7777-4777-8777-777777777777';
+const actionSuccessorOp = '88888888-8888-4888-8888-888888888888';
+const actionIntent = AssistantReactionIntent(
+  opId: actionOp,
+  emoji: 'heart',
+  present: true,
+);
 const actionRow = AssistantMessage(
   id: actionMessage,
   role: 'assistant',
@@ -27,29 +34,105 @@ class ActionsApi extends Mock implements ApiClient {}
 
 class ActionsPreferences extends Mock implements AssistantPreferences {}
 
-class _TestReactionJournal extends AssistantReactionJournal {
-  final _pending = <String>{};
+class ActionsReactionJournal extends AssistantReactionJournal {
+  final intents = <String, AssistantReactionIntent>{};
+  final retirements = <String, List<String>>{};
 
   @override
-  Future<bool> begin(String key, {required bool Function() isCurrent}) async {
-    if (!isCurrent()) return false;
-    return _pending.add(key);
+  Future<List<String>> retirementIds(String actor) async =>
+      List<String>.of(retirements[actor] ?? const []);
+
+  @override
+  Future<void> finishRetirement(String actor, List<String> opIds) async {
+    final completed = opIds.toSet();
+    intents.removeWhere(
+      (key, intent) =>
+          key.startsWith('$actor::mira-reaction-') &&
+          completed.contains(intent.opId),
+    );
+    final remaining = (retirements[actor] ?? const <String>[])
+        .where((id) => !completed.contains(id))
+        .toList();
+    if (remaining.isEmpty) {
+      retirements.remove(actor);
+    } else {
+      retirements[actor] = remaining;
+    }
   }
 
   @override
-  Future<bool> confirm(String key, {required bool Function() isCurrent}) async {
-    if (!isCurrent()) return false;
-    _pending.remove(key);
+  Future<AssistantReactionBegin> begin(
+    String key, {
+    required AssistantReactionIntent intent,
+    required bool Function() isCurrent,
+  }) async {
+    if (!isCurrent()) return AssistantReactionBegin.failed;
+    if (intents.containsKey(key)) return AssistantReactionBegin.alreadyPending;
+    intents[key] = intent;
+    return AssistantReactionBegin.recorded;
+  }
+
+  @override
+  Future<AssistantReactionIntent?> pending(String key) async => intents[key];
+
+  @override
+  Future<bool> confirm(String key, {required String opId}) async {
+    final pending = intents[key];
+    if (pending != null && pending.opId != opId) return false;
+    intents.remove(key);
     return true;
   }
 }
+
+void registerActionOperationFallbacks() {
+  registerFallbackValue(() => true);
+  registerFallbackValue(
+    ApiMutationAdmission(actorId: actionActor, isCurrent: () => true),
+  );
+  registerFallbackValue((Map<String, dynamic> _) async {});
+}
+
+/// Models the transport contract, including origin cleanup after departure.
+Future<Map<String, dynamic>> acknowledgeActionOperation(
+  Invocation call,
+  Future<Map<String, dynamic>> Function(Map<String, dynamic> body) dispatch, {
+  Future<void> Function(ApiMutationAdmission admission)? prepare,
+}) async {
+  final admission = call.namedArguments[#admission] as ApiMutationAdmission;
+  try {
+    await prepare?.call(admission);
+    admission.recordDispatchPossible();
+  } on Object catch (error, stack) {
+    Error.throwWithStackTrace(admission.preparationFailure(error), stack);
+  }
+  final receipt = await dispatch(
+    call.positionalArguments[1] as Map<String, dynamic>,
+  );
+  final acknowledge =
+      call.namedArguments[#onAcknowledged]
+          as Future<void> Function(Map<String, dynamic>);
+  await acknowledge(receipt);
+  return receipt;
+}
+
+Map<String, dynamic> actionOperationReceipt(
+  Map<String, dynamic> body, {
+  Map<String, dynamic>? message,
+}) => {
+  'message': message ?? actionReceipt(),
+  'operation': {
+    'id': body['opId'],
+    'emoji': body['emoji'],
+    'present': body['present'],
+  },
+};
 
 class ActionsRepository extends AssistantRepository {
   ActionsRepository(ActionsApi api, {AssistantReactionJournal? reactionJournal})
     : super(
         apiClient: api,
         tasksApiClient: api,
-        reactionJournal: reactionJournal ?? _TestReactionJournal(),
+        reactionJournal: reactionJournal ?? ActionsReactionJournal(),
       );
   String actor = actionActor;
   List<AssistantMessage> rows = [actionRow];
