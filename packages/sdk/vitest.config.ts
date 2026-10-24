@@ -38,6 +38,9 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     silent,
+    // Fixtures that launch real heavy commands must not depend on this
+    // machine's free disk; admission tests pass explicit env objects.
+    env: { TTR_RESOURCES_IGNORE_DISK: '1' },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

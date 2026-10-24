@@ -85,14 +85,37 @@ describe('heartbeat disk capability', () => {
     );
   });
 
-  it('accepts only exact bucket numbers and known keys', () => {
+  it('throws on an unusable statfs reading so admission sees UNKNOWN', async () => {
+    const stat = async () => ({ dev: 1 });
+    for (const reading of [
+      { bsize: 4096, blocks: 0, bavail: 0, files: 0, ffree: 0 },
+      { bsize: 4096, blocks: Number.NaN, bavail: 1, files: 0, ffree: 0 },
+      { bsize: 0, blocks: 100, bavail: 10, files: 0, ffree: 0 },
+      { bsize: 4096, blocks: 100, bavail: 200, files: 0, ffree: 0 },
+      { bsize: 4096, blocks: 100, bavail: -1, files: 0, ffree: 0 },
+      { bsize: 4096, blocks: 100, bavail: 10, files: 10, ffree: 20 },
+      {
+        bsize: 4096,
+        blocks: Number.POSITIVE_INFINITY,
+        bavail: 1,
+        files: 0,
+        ffree: 0,
+      },
+    ])
+      await expect(probeVolume('/', async () => reading, stat)).rejects.toThrow(
+        /unusable volume reading/u
+      );
+  });
+
+  it('accepts only integer GiB, 5% buckets and known keys', () => {
     expect(
       parseDiskCapability({ freeGiB: 50, freePct: 10, inodeFreePct: 95 })
     ).toEqual({ freeGiB: 50, freePct: 10, inodeFreePct: 95 });
     for (const value of [
       { freeGiB: '50', freePct: 10 },
       { freeGiB: [50], freePct: 10 },
-      { freeGiB: 51, freePct: 10 },
+      { freeGiB: 1.5, freePct: 10 },
+      { freeGiB: -1, freePct: 10 },
       { freeGiB: 50, freePct: 12 },
       { freeGiB: 50, freePct: 10, extra: true },
       { freeGiB: 50, freePct: 10, inodeFreePct: '95' },

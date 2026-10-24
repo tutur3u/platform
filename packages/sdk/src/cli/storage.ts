@@ -38,12 +38,13 @@ import { ghPullRequests } from './storage-worktrees';
 export function storageHelp() {
   return `ttr storage — find what fills a machine's disks and reclaim it safely
 
-Usage: ttr storage <status|analyze|suggest|prune> [options]
+Usage: ttr storage <status|analyze|suggest|prune|fleet> [options]
 
   status [--json] [--path P]   free/used space, pressure and inodes per volume
   analyze [--json]             rank consumers by real unique bytes
   suggest [--json]             cleanup actions with reclaimable bytes, risk and command
   prune [--apply]              dry run by default; --apply removes only within bounds
+  fleet [--json]               disk headroom each devbox runner reports (needs ttr login)
 
 Options:
   --repo <path>                repository to inspect (repeat); default: the
@@ -284,6 +285,20 @@ export async function runStorageCommand(argv: string[]) {
     out({ thresholds, volumes }, () => renderVolumes(volumes));
     if (volumes.some((volume) => volume.pressure === 'critical'))
       process.exitCode = 2;
+    return;
+  }
+  if (options.action === 'fleet') {
+    const box = await import('./resources-box-offload.js');
+    const { fleetStorage, renderFleetStorage } = await import(
+      './storage-fleet.js'
+    );
+    const client = await box.createSessionClient();
+    const rows = fleetStorage(
+      await client.devboxes.fleet.snapshot(),
+      thresholds
+    );
+    out({ thresholds, runners: rows }, () => renderFleetStorage(rows));
+    if (rows.some((row) => row.pressure === 'critical')) process.exitCode = 2;
     return;
   }
   if (!['analyze', 'suggest', 'prune'].includes(options.action))

@@ -14,7 +14,7 @@ import {
   selectBudgetTicket,
   ticketDemand,
 } from './resources-budget';
-import { limitCommand } from './resources-command';
+import { commandCwd, limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
@@ -361,7 +361,7 @@ export async function queuedResourceCommand(
       // head probes; a round without a fresh result never claims.
       const disk =
         (await nextTicket(home)) === ticket
-          ? await diskCheck(process.cwd(), env)
+          ? await diskCheck(commandCwd(originalArgs), env)
           : undefined;
       slot = await withAdmission(
         home,

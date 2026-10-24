@@ -22,6 +22,7 @@ import {
   getPlaygroundReadiness,
   playgroundEnvironmentCount,
 } from './devbox-playground-sandbox';
+import { diskCapability, probeVolume } from './storage-headroom';
 
 const VERSION_TIMEOUT_MS = 1500;
 let staticCapabilitiesPromise: Promise<{
@@ -205,6 +206,23 @@ export async function createDevboxAgentCapabilities() {
         totalBytes: totalmem(),
       },
       uptimeSeconds: uptime(),
+      ...(await reportedDisk()),
     },
   };
+}
+
+// Bucketed disk headroom (~35 bytes; heartbeat bodies are capped at 4 KiB) so
+// offload selection can skip hosts that are about to run out of space.
+async function reportedDisk() {
+  try {
+    return {
+      disk: diskCapability(
+        await probeVolume(
+          process.env.TUTURUUU_DEVBOX_STORAGE_PATH || process.cwd()
+        )
+      ),
+    };
+  } catch {
+    return {};
+  }
 }

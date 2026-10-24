@@ -64,7 +64,7 @@ export async function probeVolume(
   } catch {
     device = null;
   }
-  return {
+  const probe: VolumeProbe = {
     path,
     device,
     totalBytes,
@@ -75,6 +75,26 @@ export async function probeVolume(
     inodesFree: inodesKnown ? ffree : null,
     inodeFreePercent: inodesKnown ? (ffree / files) * 100 : null,
   };
+  // A reading that is not a real volume is UNKNOWN, never "plenty free".
+  const finite = [
+    bsize,
+    probe.totalBytes,
+    probe.freeBytes,
+    probe.usedBytes,
+    probe.freePercent,
+    ...(inodesKnown ? [ffree, probe.inodeFreePercent ?? Number.NaN] : []),
+  ].every((value) => Number.isFinite(value));
+  if (
+    !finite ||
+    !(probe.totalBytes > 0) ||
+    probe.freeBytes < 0 ||
+    probe.freeBytes > probe.totalBytes ||
+    (inodesKnown && (ffree < 0 || ffree > files))
+  )
+    throw new Error(
+      `unusable volume reading for ${path} (total ${info.blocks} x ${info.bsize}, available ${info.bavail})`
+    );
+  return probe;
 }
 
 const UNITS: Record<string, number> = {
@@ -222,7 +242,6 @@ export function diskCapability(probe: VolumeProbe): DiskCapability {
   };
 }
 
-const BUCKET_SET = new Set<number>(DISK_FREE_GIB_BUCKETS);
 const isPercentBucket = (value: unknown): value is number =>
   typeof value === 'number' &&
   Number.isInteger(value) &&
@@ -231,8 +250,9 @@ const isPercentBucket = (value: unknown): value is number =>
   value % 5 === 0;
 
 /**
- * Strict reader for reported capabilities: every field is type-checked rather
- * than coerced, so `["50"]` or `"50"` never passes as a bucket.
+ * Strict reader for reported capabilities, matching the web and Worker
+ * heartbeat schemas: every field is type-checked rather than coerced, so
+ * `["50"]` or `"50"` never passes.
  */
 export function parseDiskCapability(value: unknown): DiskCapability | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -243,7 +263,12 @@ export function parseDiskCapability(value: unknown): DiskCapability | null {
     )
   )
     return null;
-  if (typeof data.freeGiB !== 'number' || !BUCKET_SET.has(data.freeGiB))
+  if (
+    typeof data.freeGiB !== 'number' ||
+    !Number.isInteger(data.freeGiB) ||
+    data.freeGiB < 0 ||
+    data.freeGiB > 1_000_000
+  )
     return null;
   if (!isPercentBucket(data.freePct)) return null;
   if (data.inodeFreePct !== undefined && !isPercentBucket(data.inodeFreePct))

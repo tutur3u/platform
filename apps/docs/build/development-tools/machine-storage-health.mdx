@@ -17,6 +17,7 @@ ttr storage analyze            # ranked consumers by category (add --json)
 ttr storage suggest            # actions: reclaimable bytes, risk, exact command
 ttr storage prune              # dry run of the default safe categories
 ttr storage prune --apply      # re-verifies every fence, then applies the plan
+ttr storage fleet              # disk headroom reported by every devbox runner
 ```
 
 `analyze` and `suggest` walk large trees (Bun cache, stale `node_modules`,
@@ -48,6 +49,47 @@ Free space is what an unprivileged user can allocate (`statfs` `bavail`). On
 APFS every volume shares its container's free space and inode tables grow on
 demand, so the inode percentage only matters on ext4/xfs. Invalid threshold
 values fall back to the default with a warning.
+
+## Disk-aware admission
+
+`ttr resources` checks the volume holding a heavy command's working directory
+before queueing it. At `critical` it refuses with exit code 75 and prints the
+top non-high actions from the last `ttr storage suggest`; at `low` it warns and
+continues. A failed probe is UNKNOWN and is refused too, with the probe error
+and the override. Once queued, the lane queue re-checks free disk at dequeue
+(`TTR_STORAGE_MIN_FREE`, `TTR_STORAGE_MIN_FREE_PERCENT`, and
+`TTR_STORAGE_MIN_FREE_INODE_PERCENT`) and holds the job,
+failing closed, until headroom returns.
+
+- `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides both checks
+  once. Prefer reclaiming space.
+- `--hosts` dispatch skips the queue-time refusal; it applies its own local
+  disk gate per placement, including inode pressure. Both placement and dequeue
+  probe the command directory selected by `--cwd`, `--dir` or `-C`.
+- With `--offload auto`, a critical local disk counts as saturated, so the
+  exact pushed commit runs on a devbox runner when one is eligible.
+- Commands nested inside an admitted job are not checked again.
+
+## Fleet headroom
+
+Each devbox agent adds a bucketed disk report to its existing heartbeat:
+`resources.disk = { freeGiB, freePct, inodeFreePct? }`. Values are
+conservative lower bounds (GiB steps 0, 1, 2, 5, 10, 15, 20, 30, 50, …;
+percentages in 5% steps), about 35 bytes against the 4 KiB heartbeat cap. The
+probed path is the agent's working directory, or
+`TUTURUUU_DEVBOX_STORAGE_PATH`. The web route (zod `.strict()`) and the
+devbox-control Worker (`typeof` checks, no coercion) both reject malformed
+reports.
+
+```bash
+ttr storage fleet          # every registered runner, critical hosts first (exit 2 if any)
+ttr resources offload      # blockedBy=low_disk when every trusted runner is critical
+```
+
+Offload selection skips a trusted runner that reports critical disk. Runners
+that do not report disk yet (older agents) stay eligible and show as
+`unreported`. No new timer or controller is involved: the heartbeat is the
+transport.
 
 ## Categories
 

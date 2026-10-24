@@ -320,6 +320,16 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   the runner's signed Ubuntu sources. Preserve signature checks, native browser
   packages and runner-owned browser downloads; vendor-feed setup errors are not
   application failures. Require exact-commit CI to verify runner layout and packages.
+- `ttr storage status|analyze|suggest|prune|fleet` is the machine-wide storage
+  triage path (Mac, devboxes, runners). Measure with APFS private bytes or
+  allocated blocks with hard links once, never `du -L`. `prune` is a dry run
+  until `--apply`, re-verifies hold files (`~/.t3/cleanup/holds.d`), live cwds
+  and worktree state per step, and delegates artifacts and Rust targets to the
+  repo scripts below. Never auto-remove dirty, unmerged, held, busy or primary
+  checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
+  admission in `ttr resources` and the bucketed heartbeat `resources.disk`
+  (strict on web and Worker) keep work off full disks. See
+  `apps/docs/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,

@@ -140,7 +140,7 @@ describe('--hosts job class (REV-6503-4)', () => {
       await hostsRun({
         home: path,
         command: 'eslint',
-        args: ['file.ts'],
+        args: ['--cwd', path, 'file.ts'],
         jobClass: 'light',
         registry,
         deps: {
@@ -154,6 +154,8 @@ describe('--hosts job class (REV-6503-4)', () => {
       })
     ).toBe(0);
     expect(gate).toHaveBeenCalledTimes(2);
+    expect(gate).toHaveBeenNthCalledWith(1, path);
+    expect(gate).toHaveBeenNthCalledWith(2, path);
     expect(runLocal).toHaveBeenCalledTimes(1);
   });
 });

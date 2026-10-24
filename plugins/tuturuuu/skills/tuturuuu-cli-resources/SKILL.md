@@ -101,6 +101,16 @@ mutex and a fresh pressure probe before launch. Continue lightweight editing. Do
 live lock, or routinely use `TTR_RESOURCES_BYPASS=1` / `--ignore-pressure` to
 avoid waiting. A bypass is a deliberate exception for a known small operation.
 
+Disk admission: a heavy command exits 75 when the volume holding its cwd is
+critical (`TTR_STORAGE_MIN_FREE` 15G, 5% free or 5% inodes) and prints the top
+cached `ttr storage suggest` actions. It is checked before queueing and again
+right before launch; an unmeasurable volume (UNKNOWN) is refused as well. `low` (within 2x) only warns. Reclaim
+space with `ttr storage suggest` / `ttr storage prune` instead of
+`--ignore-disk` / `TTR_RESOURCES_IGNORE_DISK=1`; with `--offload auto` the
+command prefers a devbox runner. Offload skips runners whose heartbeat reports
+critical disk (`blockedBy=low_disk`); `ttr storage fleet` lists every runner's
+reported headroom.
+
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner
 when local lanes are saturated. `--offload <runner-id>` targets one runner.
