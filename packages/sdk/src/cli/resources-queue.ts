@@ -356,7 +356,9 @@ export async function queuedResourceCommand(
       if (!slot) {
         if (Date.now() - announced > 30_000) {
           process.stderr.write(
-            `[ttr resources] queued PID ${process.pid}; ${pressureReason || 'waiting for the shared validation slots'}\n`
+            pressureReason
+              ? `[ttr resources] queued PID ${process.pid}; blockedBy=pressure: ${pressureReason}\n`
+              : `[ttr resources] queued PID ${process.pid}; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.\n`
           );
           announced = Date.now();
         }

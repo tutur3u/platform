@@ -8,6 +8,9 @@ import { getDefaultConfigPath } from './config';
 // The client never sends shell text: only a SHA, a relative directory and an
 // argv, each validated here before any git or process work starts.
 export const COMMIT_RUN_ENVELOPE = '__ttr_commit_run_v1__';
+// Envelope versions this runner decodes; advertised in heartbeats so clients
+// only submit commit runs to runners that understand them.
+export const COMMIT_RUN_PROTOCOL_VERSIONS = [1] as const;
 
 export interface CommitRunSpec {
   sha: string;

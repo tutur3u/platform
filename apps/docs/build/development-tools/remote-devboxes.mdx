@@ -306,6 +306,38 @@ before anything runs. Git error output is not forwarded, because remote URLs can
 credentials. `judge-only` runners and playground pools reject the envelope.
 `ttr resources run --offload` uses it.
 
+A runner advertises the envelope versions it decodes as
+`capabilities.protocols.commitRun` (currently `[1]`). The advertisement ships in
+the same build as the decoder and is sent only by opted-in (`TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true`)
+`trusted` runners. `ttr resources run --offload` submits a commit run only to a
+runner that advertises the client's version. Otherwise the runner is
+`blockedBy=capability_missing`: `auto` queues locally and an explicit runner ID
+fails. This closes the gap where an older trusted runner would execute the
+envelope as a command. Deploy the heartbeat handlers that accept `protocols`
+before upgrading trusted runners, because both handlers reject unknown keys.
+
+The server enforces the same rule, so direct submissions and capability changes
+after selection cannot bypass it (migration
+`20261024030400_devbox_commit_run_protocol.sql`):
+
+- Both heartbeat handlers drop `protocols` unless the report says
+  `executionMode: trusted`. A database trigger also drops it for any runner with
+  Judge or playground enabled.
+- A run whose command is the envelope must be pinned, through `runnerId` and an
+  automatic lease, to a runner that supports the protocol now. The create handler
+  returns 400 or 409, and the `require_devbox_commit_run_runner` trigger enforces
+  the same rule against races.
+- If a claim would hand the envelope to an unsupported runner (for example after
+  re-pinning), the `refuse_unsupported_devbox_commit_run_claim` trigger skips it.
+  It also expires the run's lease so the run is no longer offered, and records a
+  refusal event. Stop the run and submit it again.
+- When a runner stops advertising support, the
+  `cancel_unsupported_devbox_commit_runs` trigger cancels its queued envelope runs.
+
+`claim_next_devbox_run` is not redefined, so concurrent changes to its body stay
+intact. `apps/database/supabase/tests/devbox-commit-run-protocol.sql` covers these
+rules against the real claim function.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
@@ -691,7 +723,8 @@ parent scheduling client omits Playground capabilities until both heartbeat
 contracts support them; `devbox-agent-capabilities.test.ts` exercises its emitted
 body against both current handlers. Both heartbeat handlers (`apps/web` and the
 `devbox-control` Worker) also accept an optional `executionMode`
-(`trusted` or `judge-only`) and an optional `isolation` summary: `checkedAt` plus
+(`trusted` or `judge-only`), an optional `protocols.commitRun` list of envelope
+versions (integers 1-100), and an optional `isolation` summary: `checkedAt` plus
 the boolean checks `dedicatedUser`, `privateTokenDirectory`, `protectedService`,
 `dedicatedDockerSocket`, `gvisorDefault` and `noGeneralDockerGroup`. Unknown keys
 and wrong types are still rejected. These fields are self-reported and advisory:
@@ -782,6 +815,124 @@ passing mock test does not establish real sandbox startup latency; measure cold
 and warm execution on a configured gVisor runner before advertising timings.
 Do not fall back to ordinary Docker isolation when gVisor is missing.
 
+## Resource queue offload cancellation
+
+`ttr resources run --offload auto -- <command>` may queue locally only before
+remote creation starts, or after a definite server rejection. A lost response,
+malformed success acknowledgement, or unexpected error after creation starts
+exits nonzero and never repeats the command locally. When the acknowledgement
+contains a run ID, the CLI requests cancellation of that same run.
+
+Each offload sends a fresh client operation ID as `idempotencyKey`. The create
+handler dedupes on (actor, key), so a retried create returns the original run;
+reusing a key for a different command returns 409. When creation is interrupted,
+times out or fails without a definite rejection, the CLI calls
+`POST /api/v1/devboxes/runs/stop-by-key`, which is scoped to the caller's runs.
+A 404 can mean the create is still in flight, so the CLI retries up to three
+times within a 10-second budget. If cancellation is still unconfirmed, it prints
+the operation key; find the run with `ttr box list` and stop it with
+`ttr box stop <run-id>`. A stop request alone does not prove the remote process
+has exited.
+
+Keyed creates are accepted only once key storage is confirmed:
+`private.devbox_run_idempotency_ready()` reports the unique (actor, key) index as
+valid, and the schema cache knows the column. Until then, the handler returns
+503 with `code: DEVBOX_IDEMPOTENCY_UNAVAILABLE` before writing anything. The CLI
+treats that coded 503 as a definite rejection, so `--offload auto` queues
+locally. Any other 503 stays ambiguous. Unkeyed creates never consult key
+storage.
+
+The proxy exempts trusted CLI identities from its general rate limit, so keyed
+creates and `runs/stop-by-key` each have a per-actor limit of 30 requests per
+minute (`apps/web/src/lib/devboxes/rate-limits.ts`). A 429 is a definite
+rejection.
+
+SIGINT and SIGTERM remain terminal through every creation outcome, including a
+later rejection, and return 130 and 143 respectively. Cancellation or the overall
+deadline is checked before each log page and status request. Fleet, creation,
+status, log and stop requests each have a 15-second bound; follow requests also
+respect the remaining overall deadline. Repeated control-plane failures request
+a remote stop and exit nonzero. A stalled stop request cannot hold the CLI open
+indefinitely.
+
+The focused `resources-offload-interruption.test.ts` suite covers rejected and
+malformed creation after interruption, ambiguous acknowledgements, stalled log
+pages, cancellation between full pages, and SDK transport abort signals.
+`resources-offload-operation-key.test.ts` covers an accepted create whose
+acknowledgement is lost after Ctrl-C, an in-flight create, and the unconfirmed
+notice. `store-run-idempotency.test.ts` covers server-side dedupe and key races.
+These fixtures do not establish hosted runner acceptance.
+
+### Run log cursor
+
+Run events carry a dense per-run `seq`. A `BEFORE INSERT` trigger allocates it
+by updating, or creating, the run's `devbox_run_event_cursors` row. That row
+lock is held until the writer commits, so commit order equals sequence order for
+every writer (web, infrastructure and SQL functions). The logs route pages
+`seq > offset` and returns the last `seq` as `next`. Because sequences start at 1,
+older clients that send raw-row offsets keep working. Paging by a `created_at`
+offset could repeat one line and skip another that committed late with an
+earlier timestamp.
+
+Events written before the migration keep positions `1..n` in the
+`(created_at, id)` order readers already used, and later events start at `n + 1`.
+The cursor row records `legacy_rows` and `legacy_numbered`. The route keeps the
+legacy `created_at` paging for a run until the two match (and when the cursor
+table is missing), then switches to `seq` with consistent offsets.
+
+#### Rollout without a long table lock
+
+The migrations are split so the run events table is never exclusively locked for
+longer than a catalog change:
+
+| Migration | Step | Lock |
+| --- | --- | --- |
+| `20261024030000` | nullable `seq`, cursor table, triggers, functions, `NOT VALID` constraints | brief `ACCESS EXCLUSIVE`, `lock_timeout` 5 s |
+| `030100`, `030150`, `030200` | unique `(run_id, seq)`, partial unsequenced and unique `(actor_id, idempotency_key)` indexes | `CREATE INDEX CONCURRENTLY`, one statement per file |
+| `030300` | backfill of at most 50 000 events in 5 000-row calls | row locks; same-run appends wait |
+| `030350` | `VALIDATE CONSTRAINT` once no event is unsequenced | `SHARE UPDATE EXCLUSIVE` |
+
+The migration runner wraps a multi-statement file in one transaction, and
+`CREATE INDEX CONCURRENTLY` cannot run inside one. Each concurrent index is
+therefore the only statement in its file. If a concurrent build fails, drop the
+invalid index before re-running, because `if not exists` would skip it.
+
+Check production size before applying (read-only):
+
+```sql
+select count(*) as events,
+  pg_size_pretty(pg_total_relation_size('private.devbox_run_events')) as total_size,
+  pg_size_pretty(pg_relation_size('private.devbox_run_events')) as heap_size,
+  (select count(distinct run_id) from private.devbox_run_events) as runs
+from private.devbox_run_events;
+```
+
+If more than 50 000 events exist, `030300` leaves the rest for this one-time job.
+Run it with the service role or as the database owner, one call per transaction,
+until it returns 0, and then validate:
+
+```sql
+select private.backfill_devbox_run_event_seq(5000);  -- repeat until 0
+alter table private.devbox_run_events
+  validate constraint devbox_run_events_seq_present;
+```
+
+Each call numbers at most 5 000 events and locks only the cursor row of the run
+it is numbering.
+
+`store-run-logs.test.ts` models a late commit and the legacy-to-sequence switch.
+`apps/database/supabase/tests/devbox-run-log-cursor.sql` checks density, forged
+sequences, validation, readiness and key constraints. To reproduce the
+concurrency boundary itself, use two sessions on a private socket-only Postgres
+cluster (`initdb`, then `pg_ctl -o "-c listen_addresses='' -k <dir>"`):
+
+1. Session A runs `begin`, inserts an event for a run and sleeps before `commit`.
+2. Session B inserts an event for the same run.
+3. A reader pages `seq > cursor` before and after both commit.
+
+Before the migration the `created_at` reader sees `B,B`. After it, B blocks
+until A commits, and the reader sees `A,B`.
+
 ## Cache Policy
 
 Runners use named cache volumes for Bun installs, Turbo, Playwright browsers,
@@ -869,3 +1020,42 @@ summary rather than authenticated URLs or response bodies. A runner shutdown
 without a final assertion report leaves the underlying cause unproven. Preserve
 allocated fixtures until successful final cleanup or independently verified
 resource absence, and use the next exact-source CI result for runtime evidence.
+
+
+## Trusted command execution boundary
+
+General devbox jobs intentionally execute caller-selected binaries and argv on
+trusted infrastructure. Only verified CLI app sessions or authenticated Supabase
+sessions with `MEMBER` membership in the root workspace can submit them through
+`/api/v1/devboxes/runs`. Membership in another workspace, root guest membership,
+and pull-request content alone do not authorize submission. Root members are
+trusted to execute code on enabled fleet runners; command-policy deny rules are
+operational guardrails, not a sandbox or an executable allowlist.
+
+The API persists the verified actor with the command in `private.devbox_runs`.
+Private tables have RLS enabled, and the claim RPC is restricted to `service_role`.
+Both the Web polling endpoint and the control Worker authenticate a hashed,
+non-revoked runner token and recheck its owner's root membership. The Worker
+supports heartbeat, poll, connect and internal wake notifications, not arbitrary
+job submission. Runner feature selection, active leases and trust-pool constraints
+limit claims. Host-side execution fences reject Judge and playground envelopes
+on ordinary trusted runners, and generic commands on Judge-only runners.
+Learner source reaches the dedicated Judge/playground paths, not generic host
+execution. Keep those pools and their credentials separate.
+
+The exact-commit envelope validates a full SHA and clean relative directory,
+fetches origin branches and requires the SHA to be reachable from an origin
+branch before making a private detached worktree. This proves provenance, not
+that project code or a branch is safe: root members must review what they submit.
+An explicit interpreter such as `sh -c` remains supported for these trusted users.
+
+The process launcher always uses `shell: false` and a separate argv array.
+It rejects control characters and shell metacharacters in the executable and NUL
+in arguments. Shell syntax in ordinary arguments remains literal; these checks
+do not restrict what an explicitly selected interpreter can execute. Regression
+coverage is in `packages/sdk/src/cli/devbox-job-process.test.ts`,
+`devbox-runner-trust.test.ts`, and `devbox-commit-run.test.ts`; API authorization
+coverage is in the devbox runs route tests. CodeQL command-line-injection alerts
+at this launcher require review of the authenticated execution boundary rather
+than treating `shell: false` alone as proof of safety. Source review does not
+verify deployed grants, runner configuration, or token custody.

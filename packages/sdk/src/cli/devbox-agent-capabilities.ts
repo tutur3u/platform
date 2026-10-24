@@ -12,6 +12,7 @@ import {
   uptime,
 } from 'node:os';
 import packageJson from '../../package.json';
+import { COMMIT_RUN_PROTOCOL_VERSIONS } from './devbox-commit-run';
 import {
   collectDevboxIsolation,
   type DevboxIsolationSummary,
@@ -65,6 +66,11 @@ async function reportedTrust() {
   return {
     ...(['trusted', 'judge-only'].includes(mode)
       ? { executionMode: mode as 'trusted' | 'judge-only' }
+      : {}),
+    // Only trusted runners execute commit runs; the advertisement ships with
+    // the decoder so a runner never claims a protocol it cannot run.
+    ...(mode === 'trusted'
+      ? { protocols: { commitRun: [...COMMIT_RUN_PROTOCOL_VERSIONS] } }
       : {}),
     isolation: isolationSnapshot,
   };

@@ -28,6 +28,10 @@ function createPrivateSchema(tables: Record<string, Row[]>) {
         filters.push((row) => row[column] === value);
         return builder;
       },
+      gt(column: string, value: number) {
+        filters.push((row) => Number(row[column]) > value);
+        return builder;
+      },
       in(column: string, values: unknown[]) {
         filters.push((row) => values.includes(row[column]));
         return builder;
@@ -40,6 +44,12 @@ function createPrivateSchema(tables: Record<string, Row[]>) {
       },
       order() {
         return builder;
+      },
+      range(from: number, to: number) {
+        return Promise.resolve({
+          data: matched().slice(from, to + 1),
+          error: null,
+        });
       },
       select() {
         if (!patch) return builder;
@@ -74,8 +84,8 @@ describe('devbox store actor scoping', () => {
         { actor_id: 'owner', id: 'lease-released', status: 'released' },
       ],
       devbox_run_events: [
-        { message: 'hello', run_id: 'run-running' },
-        { message: 'secret', run_id: 'run-other' },
+        { message: 'hello', run_id: 'run-running', seq: 1 },
+        { message: 'secret', run_id: 'run-other', seq: 1 },
       ],
       devbox_runs: [
         { actor_id: 'owner', id: 'run-queued', status: 'queued' },
@@ -180,7 +190,7 @@ describe('devbox store actor scoping', () => {
   it('lists logs only for runs owned by the actor', async () => {
     await expect(
       listDevboxRunLogs({ actorId: 'owner', runId: 'run-running' })
-    ).resolves.toEqual({ logs: ['hello'] });
+    ).resolves.toEqual({ logs: ['hello'], next: 1 });
     await expectNotFound(
       listDevboxRunLogs({ actorId: 'owner', runId: 'run-other' })
     );
