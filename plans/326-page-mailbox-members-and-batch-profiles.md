@@ -64,7 +64,7 @@ entire shared-mailbox directory.
 | UI | `bun --cwd apps/mail vitest run 'src/app/[locale]/(dashboard)/[wsId]/mail-settings-dialog.test.tsx'` | first page, load more, dedupe, error, and disabled-state cases pass |
 | Mail | `bun type-check:mail && bun --cwd apps/mail run build` | typecheck and app build pass |
 | N+1 absence | `rg -n 'getMailboxMemberProfile|\(rows \?\? \[\]\)\.map\(async' apps/mail/src/lib/mail/repository/members.ts` | old per-row resolver/fan-out are absent |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only in-scope paths and plan status changed |
 
 ## Scope
@@ -99,7 +99,7 @@ other settings tabs, or new translations/dependencies.
 4. Convert only the members tab to an infinite query. Flatten pages with a
    user-ID dedupe guard, render the existing fields, and expose a bounded Load
    more button with loading/error behavior using existing translations.
-5. Run focused suites, client/Mail types, Mail build, `bun check`, N+1 absence,
+5. Run focused suites, client/Mail types, Mail build, `bun validate`, N+1 absence,
    scope, and whitespace gates.
 
 ## Done criteria
@@ -112,7 +112,7 @@ other settings tabs, or new translations/dependencies.
   query failures are not rendered as missing data.
 - [ ] The settings tab never eagerly drains later pages and can load them using
   existing localized UI.
-- [ ] Focused tests, client/Mail typechecks, Mail build, `bun check`, scope, and
+- [ ] Focused tests, client/Mail typechecks, Mail build, `bun validate`, scope, and
   whitespace gates pass.
 - [ ] `plans/README.md` status is updated.
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerAddEntryFab extends StatefulWidget {
   const TimeTrackerAddEntryFab({
@@ -38,7 +38,7 @@ class _TimeTrackerAddEntryFabState extends State<TimeTrackerAddEntryFab> {
   @override
   Widget build(BuildContext context) {
     return ExtendedFab(
-      icon: shad.LucideIcons.plus,
+      icon: LucideIcons.plus,
       label: context.l10n.timerAddMissedEntry,
       enabled: widget.enabled,
       loading: _isLoading,

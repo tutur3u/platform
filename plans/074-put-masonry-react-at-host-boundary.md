@@ -52,7 +52,7 @@ commands.
 | Package tests | `bun run --cwd packages/masonry test` | all pass |
 | Package build | `bun run --cwd packages/masonry build` | exit 0 |
 | Release tooling | `node --test scripts/ci/prepare-npm-package-manifest.test.js scripts/ci/package-release-readiness.test.js` | all pass |
-| Workspace gate | `node --test scripts/check-workspace-dependencies.test.js && bun check` | exit 0 |
+| Workspace gate | `node --test scripts/check-workspace-dependencies.test.js && bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -114,7 +114,7 @@ fail according to the package manager; do not encode a brittle message match.
 - [ ] React is a non-optional peer plus local dev dependency, not a production dependency.
 - [ ] React DOM is dev-only and absent from source and the packed production contract.
 - [ ] README states the current host contract without a stale fixed version.
-- [ ] Tests/build/packed-host/release tooling/`bun check` pass.
+- [ ] Tests/build/packed-host/release tooling/`bun validate` pass.
 
 ## STOP conditions
 

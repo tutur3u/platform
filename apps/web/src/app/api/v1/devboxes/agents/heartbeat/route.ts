@@ -6,6 +6,7 @@ import {
   createDevboxAgentApiDisabledResponse,
   isDevboxAgentApiEnabled,
 } from '@/lib/devboxes/agent-traffic-gate';
+import { restrictReportedProtocols } from '@/lib/devboxes/commit-run-guard';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const NullableStringSchema = z.string().trim().max(500).nullable();
@@ -75,6 +76,14 @@ const RunnerCapabilitiesSchema = z
     // Self-reported and advisory: stored for operators and later claim
     // matching, never used to grant a feature or authorize a runner.
     executionMode: z.enum(['trusted', 'judge-only']).optional(),
+    // Envelope protocol versions the runner decodes; clients only submit a
+    // commit run to a runner that advertises it.
+    protocols: z
+      .object({
+        commitRun: z.array(z.number().int().min(1).max(100)).max(10),
+      })
+      .strict()
+      .optional(),
     isolation: z
       .object({
         checkedAt: z.string().trim().max(100).optional(),
@@ -156,7 +165,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       await heartbeatDevboxRunner(
         authorization.runner.id,
-        parsed.data?.capabilities
+        // Only trusted-mode runners may advertise envelope protocols; the
+        // database also drops them for Judge/playground runners.
+        restrictReportedProtocols(parsed.data?.capabilities)
       )
     );
   } catch (error) {

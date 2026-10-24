@@ -56,7 +56,7 @@ coding so retries can safely resume a partial earlier revocation.
 | Route artifacts | `bun migration:tanstack:manifest` | current manifest with unchanged/fallthrough Rust ownership |
 | Web typecheck | `bun run --cwd apps/web type-check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | production build passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

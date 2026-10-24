@@ -173,6 +173,13 @@ export function useTimeTracker({
     return () => clearInterval(interval);
   }, [isRunning, currentSession]);
 
+  useEffect(() => {
+    if (!justCompleted) return;
+
+    const timeout = setTimeout(() => setJustCompleted(null), 3000);
+    return () => clearTimeout(timeout);
+  }, [justCompleted]);
+
   // Load data when dialog opens
   useEffect(() => {
     if (isOpen) {
@@ -296,8 +303,6 @@ export function useTimeTracker({
       setIsRunning(false);
       setElapsedTime(0);
       setActiveTab('recent');
-
-      setTimeout(() => setJustCompleted(null), 3000);
 
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],

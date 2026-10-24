@@ -76,7 +76,7 @@ or run a live calendar sync.
 | Package/app types | `bun run --cwd packages/microsoft type-check && bun run --cwd apps/calendar type-check` | both TypeScript projects compile |
 | Calendar build | `bun run --cwd apps/calendar build` | the production app build succeeds |
 | Source size | `wc -l 'apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/sync/route.ts' apps/calendar/src/lib/calendar/microsoft-inbound-sync.ts` | each substantially edited source is below 700 lines |
-| Repository | `bun check && git diff --check` | canonical checks pass and the diff is whitespace-clean |
+| Repository | `bun validate && git diff --check` | canonical checks pass and the diff is whitespace-clean |
 
 ## Scope
 

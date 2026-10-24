@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -145,106 +143,96 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     return shad.Scaffold(
-      child: ResponsiveWrapper(
-        maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-        child: BlocBuilder<AuthCubit, AuthState>(
-          builder: (context, state) {
-            final accounts = sortStoredAccountsByRecent(state.accounts);
-            final activeAccount = accounts
-                .where((account) => account.id == state.activeAccountId)
-                .firstOrNull;
-            final savedAccounts = activeAccount == null
-                ? accounts
-                : accounts
-                      .where((account) => account.id != activeAccount.id)
-                      .toList(growable: false);
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, state) {
+          final accounts = sortStoredAccountsByRecent(state.accounts);
+          final activeAccount = accounts
+              .where((account) => account.id == state.activeAccountId)
+              .firstOrNull;
+          final savedAccounts = activeAccount == null
+              ? accounts
+              : accounts
+                    .where((account) => account.id != activeAccount.id)
+                    .toList(growable: false);
 
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                20,
-                horizontalPadding,
-                32 + MediaQuery.paddingOf(context).bottom,
-              ),
-              children: [
-                StaggeredEntry(
-                  index: 0,
-                  playOnceKey: 'manage-accounts-hero',
-                  child: _ManageAccountsHeroCard(
-                    onAddAccount: _isMutating ? null : _startAddAccountFlow,
-                  ),
+          return AppPageListView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            children: [
+              StaggeredEntry(
+                index: 0,
+                playOnceKey: 'manage-accounts-hero',
+                child: _ManageAccountsHeroCard(
+                  onAddAccount: _isMutating ? null : _startAddAccountFlow,
                 ),
-                const shad.Gap(20),
-                if (activeAccount != null)
-                  StaggeredEntry(
-                    index: 1,
-                    playOnceKey: 'manage-accounts-current',
-                    child: SettingsSection(
-                      title: context.l10n.authCurrentAccountTitle,
-                      description: context.l10n.authCurrentAccountDescription,
-                      children: [
-                        _ManageAccountCard(
-                          account: activeAccount,
-                          badgeLabel: context.l10n.authCurrentAccountBadge,
-                          badgeIcon: Icons.check_circle_rounded,
-                          actionLabel: context.l10n.authLogOut,
-                          actionIcon: Icons.logout_rounded,
-                          isBusy: _loggingOutAccountId == activeAccount.id,
-                          onAction: _isMutating
-                              ? null
-                              : () => _logOutCurrentAccount(activeAccount),
-                          actionDestructive: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                if (activeAccount != null) const shad.Gap(20),
+              ),
+              const shad.Gap(20),
+              if (activeAccount != null)
                 StaggeredEntry(
-                  index: 2,
-                  playOnceKey: 'manage-accounts-saved',
+                  index: 1,
+                  playOnceKey: 'manage-accounts-current',
                   child: SettingsSection(
-                    title: context.l10n.authSavedAccountsTitle,
-                    description: context.l10n.authSavedAccountsDescription,
-                    children: savedAccounts.isEmpty
-                        ? [
-                            SettingsPanel(
-                              child: Text(
-                                context.l10n.authManageAccountsEmpty,
-                                style: shad.Theme.of(context).typography.small
-                                    .copyWith(
-                                      color: shad.Theme.of(
-                                        context,
-                                      ).colorScheme.mutedForeground,
-                                    ),
-                              ),
-                            ),
-                          ]
-                        : [
-                            for (final account in savedAccounts)
-                              _ManageAccountCard(
-                                account: account,
-                                badgeLabel: context.l10n.authSavedAccountBadge,
-                                badgeIcon: Icons.devices_rounded,
-                                actionLabel: context.l10n.authRemoveAccount,
-                                actionIcon: Icons.delete_outline_rounded,
-                                isBusy: _removingAccountId == account.id,
-                                onAction: _isMutating
-                                    ? null
-                                    : () => _removeAccount(account),
-                                actionDestructive: true,
-                              ),
-                          ],
+                    title: context.l10n.authCurrentAccountTitle,
+                    description: context.l10n.authCurrentAccountDescription,
+                    children: [
+                      _ManageAccountCard(
+                        account: activeAccount,
+                        badgeLabel: context.l10n.authCurrentAccountBadge,
+                        badgeIcon: Icons.check_circle_rounded,
+                        actionLabel: context.l10n.authLogOut,
+                        actionIcon: Icons.logout_rounded,
+                        isBusy: _loggingOutAccountId == activeAccount.id,
+                        onAction: _isMutating
+                            ? null
+                            : () => _logOutCurrentAccount(activeAccount),
+                        actionDestructive: true,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              if (activeAccount != null) const shad.Gap(20),
+              StaggeredEntry(
+                index: 2,
+                playOnceKey: 'manage-accounts-saved',
+                child: SettingsSection(
+                  title: context.l10n.authSavedAccountsTitle,
+                  description: context.l10n.authSavedAccountsDescription,
+                  children: savedAccounts.isEmpty
+                      ? [
+                          SettingsPanel(
+                            child: Text(
+                              context.l10n.authManageAccountsEmpty,
+                              style: shad.Theme.of(context).typography.small
+                                  .copyWith(
+                                    color: shad.Theme.of(
+                                      context,
+                                    ).colorScheme.mutedForeground,
+                                  ),
+                            ),
+                          ),
+                        ]
+                      : [
+                          for (final account in savedAccounts)
+                            _ManageAccountCard(
+                              account: account,
+                              badgeLabel: context.l10n.authSavedAccountBadge,
+                              badgeIcon: Icons.devices_rounded,
+                              actionLabel: context.l10n.authRemoveAccount,
+                              actionIcon: Icons.delete_outline_rounded,
+                              isBusy: _removingAccountId == account.id,
+                              onAction: _isMutating
+                                  ? null
+                                  : () => _removeAccount(account),
+                              actionDestructive: true,
+                            ),
+                        ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,8 +1,6 @@
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/inventory/inventory_sales_period.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
-
-bool _timeZonesReady = false;
 
 /// Workspace defaults use the same current-period selection as Inventory web.
 class InventoryCheckoutDefaults {
@@ -53,14 +51,10 @@ bool inventoryPeriodIsCurrent(InventorySalesPeriod period, DateTime now) {
     return false;
   }
   try {
-    if (!_timeZonesReady) {
-      tzdata.initializeTimeZones();
-      _timeZonesReady = true;
-    }
     final zone = period.timeZone;
     final local = zone == null || zone.isEmpty
         ? now.toLocal()
-        : tz.TZDateTime.from(now, tz.getLocation(zone));
+        : tz.TZDateTime.from(now, timezoneLocation(zone));
     final day = DateTime.utc(local.year, local.month, local.day);
     final start = period.startsAt!;
     final end = period.endsAt!;

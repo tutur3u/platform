@@ -123,7 +123,7 @@ test('nested CLI rejects before check queue creation while imports remain allowe
     { env, encoding: 'utf8' }
   );
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Nested bun check/);
+  assert.match(result.stderr, /Nested bun validate/);
   assert.equal(
     fs.existsSync(path.join(directory, 'tuturuuu-bun-check')),
     false
@@ -283,7 +283,7 @@ test('strict Turbo preserves child temp and nested CLI guard before queue creati
     // Invoke only after the inherited guard has been proven present.
     const nested = spawnSync(process.execPath, [${JSON.stringify(path.join(repo, 'scripts/check.js'))}], { env: process.env, encoding: 'utf8' });
     assert.notEqual(nested.status, 0);
-    assert.match(nested.stderr, /Nested bun check/);
+    assert.match(nested.stderr, /Nested bun validate/);
     assert.equal(fs.existsSync(queue), false);
   `
   );

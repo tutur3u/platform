@@ -84,7 +84,6 @@ class _OriginalHeatmapView extends StatelessWidget {
       height: heatmapHeight,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

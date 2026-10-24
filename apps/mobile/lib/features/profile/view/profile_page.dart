@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
@@ -21,6 +22,7 @@ import 'package:mobile/features/profile/view/profile_avatar_picker.dart';
 import 'package:mobile/features/profile/view/profile_avatar_removal.dart';
 import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/features/profile/view/profile_media_recovery.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -31,6 +33,8 @@ import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'profile_page_widgets.dart';
+part 'profile_identity_group.dart';
+part 'profile_settings_groups.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
@@ -113,7 +117,7 @@ class _ProfileView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const NovaLoadingIndicator(),
-                    const shad.Gap(16),
+                    const AppGap(16),
                     Text(l10n.profileLoading),
                   ],
                 ),
@@ -131,7 +135,7 @@ class _ProfileView extends StatelessWidget {
                         state.error ?? l10n.profileUpdateError,
                         textAlign: TextAlign.center,
                       ),
-                      const shad.Gap(16),
+                      const AppGap(16),
                       shad.PrimaryButton(
                         onPressed: () => context
                             .read<ProfileCubit>()
@@ -156,11 +160,9 @@ class _ProfileView extends StatelessWidget {
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
-                padding: EdgeInsets.fromLTRB(
+                padding: SettingsRowLayout.scrollPadding(
+                  context,
                   ResponsivePadding.horizontal(context.deviceClass),
-                  20,
-                  ResponsivePadding.horizontal(context.deviceClass),
-                  28 + MediaQuery.paddingOf(context).bottom,
                 ),
                 children: [
                   ProfileMediaRecovery(
@@ -173,201 +175,12 @@ class _ProfileView extends StatelessWidget {
                     playOnceKey: 'profile-hero',
                     child: _ProfileHeroCard(profile: profile, state: state),
                   ),
-                  const shad.Gap(20),
-                  PendingSyncFrame(
-                    workspaceId: 'personal',
-                    feature: 'profile',
-                    entityId: profile.id,
-                    child: ProfileBannerSettings(
-                      profile: profile,
-                      busy: state.isLoading,
-                    ),
-                  ),
-                  const shad.Gap(20),
-                  SettingsGroup(
-                    children: [
-                      SettingsTile(
-                        grouped: true,
-                        icon: Icons.manage_accounts_outlined,
-                        title: l10n.authManageAccounts,
-                        onTap: () => context.push(Routes.settingsAccounts),
-                      ),
-                    ],
-                  ),
-                  const shad.Gap(20),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final panels = <Widget>[
-                        PendingSyncFrame(
-                          workspaceId: 'personal',
-                          feature: 'profile',
-                          entityId: profile.id,
-                          child: StaggeredEntry(
-                            index: 1,
-                            playOnceKey: 'profile-identity',
-                            child: _ProfilePanel(
-                              title: l10n.profileIdentitySectionTitle,
-                              description:
-                                  l10n.profileIdentitySectionDescription,
-                              child: Column(
-                                children: [
-                                  _ProfileActionTile(
-                                    icon: Icons.person_outline_rounded,
-                                    title: l10n.profileDisplayName,
-                                    value:
-                                        profile.displayName ??
-                                        l10n.profileMissingValue,
-                                    onTap: () => _showEditFieldSheet(
-                                      context,
-                                      title: l10n.profileDisplayName,
-                                      description:
-                                          l10n.profileDisplayNameDescription,
-                                      initialValue: profile.displayName ?? '',
-                                      placeholder: l10n.profileDisplayNameHint,
-                                      validator: (value) => value.trim().isEmpty
-                                          ? l10n.profileDisplayNameRequired
-                                          : null,
-                                      onSave: (value) => context
-                                          .read<ProfileCubit>()
-                                          .updateDisplayName(value),
-                                    ),
-                                  ),
-                                  const shad.Gap(12),
-                                  _ProfileActionTile(
-                                    icon: Icons.badge_outlined,
-                                    title: l10n.profileFullName,
-                                    value:
-                                        profile.fullName ??
-                                        l10n.profileMissingValue,
-                                    onTap: () => _showEditFieldSheet(
-                                      context,
-                                      title: l10n.profileFullName,
-                                      description:
-                                          l10n.profileFullNameDescription,
-                                      initialValue: profile.fullName ?? '',
-                                      placeholder: l10n.profileFullNameHint,
-                                      validator: (value) => value.trim().isEmpty
-                                          ? l10n.profileFullNameRequired
-                                          : null,
-                                      onSave: (value) => context
-                                          .read<ProfileCubit>()
-                                          .updateFullName(value),
-                                    ),
-                                  ),
-                                  const shad.Gap(12),
-                                  _ProfileActionTile(
-                                    icon: Icons.alternate_email_rounded,
-                                    title: l10n.profileEmail,
-                                    value:
-                                        profile.email ??
-                                        l10n.profileMissingValue,
-                                    subtitle:
-                                        profile.newEmail?.trim().isNotEmpty !=
-                                            true
-                                        ? null
-                                        : l10n.profileEmailPendingChange(
-                                            profile.newEmail!,
-                                          ),
-                                    onTap: () => _showEditFieldSheet(
-                                      context,
-                                      title: l10n.profileEmail,
-                                      description: l10n.profileEmailDescription,
-                                      initialValue: profile.email ?? '',
-                                      placeholder: l10n.profileEmailHint,
-                                      keyboardType: TextInputType.emailAddress,
-                                      validator: (value) => value.contains('@')
-                                          ? null
-                                          : l10n.profileInvalidEmail,
-                                      onSave: (value) => context
-                                          .read<ProfileCubit>()
-                                          .updateEmail(value),
-                                      successMessage:
-                                          l10n.profileEmailUpdateNote,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        StaggeredEntry(
-                          index: 2,
-                          playOnceKey: 'profile-avatar',
-                          child: _ProfilePanel(
-                            title: l10n.profileAvatarSectionTitle,
-                            description: l10n.profileAvatarDescription,
-                            child: Column(
-                              children: [
-                                _ProfileActionTile(
-                                  icon: Icons.photo_camera_back_outlined,
-                                  title: profile.avatarUrl != null
-                                      ? l10n.profileChangeAvatar
-                                      : l10n.profileUploadAvatar,
-                                  value:
-                                      profile.avatarUrl?.trim().isNotEmpty ??
-                                          false
-                                      ? l10n.profileAvatarSet
-                                      : l10n.profileMissingValue,
-                                  onTap: () => pickAndUploadProfileAvatar(
-                                    context,
-                                    picker: avatarPicker,
-                                  ),
-                                ),
-                                if (profile.avatarUrl != null)
-                                  const shad.Gap(12),
-                                if (profile.avatarUrl != null)
-                                  _ProfileActionTile(
-                                    icon: Icons.delete_outline_rounded,
-                                    title: l10n.profileRemoveAvatar,
-                                    value: l10n.profileDangerAction,
-                                    isDestructive: true,
-                                    onTap: () =>
-                                        confirmRemoveProfileAvatar(context),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        StaggeredEntry(
-                          index: 3,
-                          playOnceKey: 'profile-status',
-                          child: _ProfilePanel(
-                            title: l10n.profileAccountStatus,
-                            description: l10n.profileAccountStatusDescription,
-                            child: _ProfileStatusGrid(profile: profile),
-                          ),
-                        ),
-                      ];
-                      final columns = (constraints.maxWidth / 270)
-                          .floor()
-                          .clamp(1, 3);
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var column = 0; column < columns; column++) ...[
-                            if (column > 0) const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (
-                                    var index = column;
-                                    index < panels.length;
-                                    index += columns
-                                  )
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 14,
-                                      ),
-                                      child: panels[index],
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      );
-                    },
+                  const AppGap(SettingsRowLayout.groupGap),
+                  _ProfileSettingsGroups(
+                    profile: profile,
+                    editField: _showEditFieldSheet,
+                    avatarPicker: avatarPicker,
+                    busy: state.isLoading,
                   ),
                 ],
               ),
@@ -486,7 +299,7 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return AppDialogScaffold(
       title: widget.title,
@@ -521,7 +334,7 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
             autofocus: true,
           ),
           if (_error != null) ...[
-            const shad.Gap(8),
+            const AppGap(8),
             Text(
               _error!,
               style: theme.typography.small.copyWith(

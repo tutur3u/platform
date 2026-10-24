@@ -60,16 +60,25 @@ test('checkout uses only a validated immutable SHA and records exact source prov
     ['$(touch unexpected)', false],
   ]) {
     const result = spawnSync('bash', ['-c', validate.run], {
-      env: { ...process.env, SOURCE_SHA: value },
+      env: { ...process.env, GITHUB_SHA: value, SOURCE_SHA: value },
     });
     assert.equal(result.status === 0, succeeds, value);
   }
+  // The source must be the dispatched commit: no input selects other code.
+  const other = spawnSync('bash', ['-c', validate.run], {
+    env: {
+      ...process.env,
+      GITHUB_SHA: 'b'.repeat(40),
+      SOURCE_SHA: 'a'.repeat(40),
+    },
+  });
+  assert.notEqual(other.status, 0);
   const checkout = job.steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
   assert.deepEqual(Object.keys(checkout.with), ['ref', 'persist-credentials']);
   assert.equal(checkout.with['persist-credentials'], false);
-  assert.match(checkout.with.ref, /^\$\{\{ inputs\.source_sha \}\}$/);
+  assert.match(checkout.with.ref, /^\$\{\{ github\.sha \}\}$/);
   const provenance = job.steps.find(
     (step) => step.name === 'Verify checked out source'
   ).run;

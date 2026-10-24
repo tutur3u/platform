@@ -18,6 +18,7 @@ import {
   transformInvoiceData,
   transformInvoiceSearchResults,
 } from '@tuturuuu/utils/finance/transform-invoice-results';
+import { searchParamsToRecord } from '@tuturuuu/utils/search-params-record';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -360,20 +361,7 @@ export async function GET(request: Request, { params }: Params) {
 
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const params_obj: Record<string, string | string[]> = {};
-
-    searchParams.forEach((value, key) => {
-      const existing = params_obj[key];
-      if (existing) {
-        if (Array.isArray(existing)) {
-          existing.push(value);
-        } else {
-          params_obj[key] = [existing, value];
-        }
-      } else {
-        params_obj[key] = value;
-      }
-    });
+    const params_obj = searchParamsToRecord(searchParams, { multi: true });
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {

@@ -48,7 +48,7 @@ automation callers before renaming or adding a script.
 | Script contract | `node --test scripts/mobile-setup-contract.test.js` | setup contains `pub get`, not `pub upgrade`; update command is explicit |
 | Lock preservation | `(cd apps/mobile && shasum pubspec.lock ios/Podfile.lock > /tmp/mobile-locks.before && flutter pub get && shasum pubspec.lock ios/Podfile.lock > /tmp/mobile-locks.after && diff -u /tmp/mobile-locks.before /tmp/mobile-locks.after)` | committed lockfiles are unchanged on the supported toolchain |
 | Mobile checks | `(cd apps/mobile && flutter analyze && flutter test)` | analysis and tests pass |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 

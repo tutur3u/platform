@@ -1,133 +1,26 @@
 name: Run tests and upload coverage
 
-on: push
+on:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
 
 permissions:
   contents: read
 
-# Production and generated release attempts retain immutable evidence.
-# Main and feature branch pushes supersede obsolete validation.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
-  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
-
+# The calling Test workflow owns cancellation and the only test execution.
 jobs:
-  check-ci:
-    permissions:
-      contents: read
-      deployments: read
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: codecov.yaml
-      check_release_only: true
-
-  duplicate-validation:
-    name: Check completed validation
-    needs: [check-ci]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-please--branches--') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    permissions:
-      contents: read
-      actions: read
-    outputs:
-      run_checks: ${{ steps.proof.outputs.run_checks }}
-    steps:
-      - name: Checkout validation helper
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          sparse-checkout: scripts/ci/check-completed-validation.js
-          sparse-checkout-cone-mode: false
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - name: Prove completed duplicate
-        id: proof
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          WORKFLOW_NAME: codecov.yaml
-        run: node scripts/ci/check-completed-validation.js
-
-  test-shards:
-    name: Coverage shard (${{ matrix.shard }})
-    needs: [check-ci, duplicate-validation]
-    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 2
-
-      - name: Setup bun
-        uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.3
-
-      - name: Restore Turbo fallback cache
-        uses: ./.github/actions/setup-turbo-fallback-cache
-        with:
-          family: coverage-${{ matrix.shard }}
-
-      - name: Use Node.js 24
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
-
-      - name: Build workspace setup
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
-          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
-
-      - name: Run tests
-        env:
-          CI_RETRY_MAX_ATTEMPTS: "2"
-          CI_RETRY_INITIAL_DELAY_SECONDS: "15"
-          CI_RETRY_MAX_DELAY_SECONDS: "15"
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: bash scripts/ci/run-with-backoff.sh node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4 --coverage
-          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
-
-      - name: Preserve complete workspace coverage
-        uses: actions/upload-artifact@v7
-        with:
-          name: coverage-shard-${{ matrix.shard }}
-          path: |
-            apps/*/coverage/**
-            packages/*/coverage/**
-          if-no-files-found: error
-          retention-days: 2
-
   test:
     name: Run tests and collect coverage
-    needs: [check-ci, duplicate-validation, test-shards]
-    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Require all coverage shards
-        env:
-          TEST_RESULT: ${{ needs.test-shards.result }}
-        run: test "$TEST_RESULT" = success
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: coverage-shard-*
           merge-multiple: true
       - name: Upload complete results to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

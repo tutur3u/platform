@@ -70,3 +70,41 @@ List<AssistantMessage> _reconcileSavedAssistantMessage(
     ),
   ];
 }
+
+extension _AssistantChatSavedBatch on AssistantChatCubit {
+  void _reconcileSavedMessage(Map<String, dynamic> payload) {
+    final savedId = payload['messageId'] as String?;
+    if (savedId == null || savedId.isEmpty) return;
+    final result = _reconcileSavedAssistantMessage(
+      state.messages,
+      streamedId: _activeAssistantMessageId,
+      savedId: savedId,
+      savedText: payload['text'] as String? ?? '',
+    );
+    _activeAssistantMessageId = savedId;
+    _emitIfOpen(state.copyWith(messages: result));
+  }
+
+  void _reconcileSavedMessages(Map<String, dynamic> payload) {
+    final saved = (payload['messages'] as List)
+        .map(
+          (row) =>
+              AssistantMessage.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
+        .toList(growable: false);
+    final savedIds = saved.map((message) => message.id).toSet();
+    _emitIfOpen(
+      state.copyWith(
+        messages: [
+          ...state.messages.where(
+            (message) =>
+                message.id != _activeAssistantMessageId &&
+                !savedIds.contains(message.id),
+          ),
+          ...saved,
+        ],
+      ),
+    );
+    _activeAssistantMessageId = saved.lastOrNull?.id;
+  }
+}

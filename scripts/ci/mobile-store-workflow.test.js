@@ -40,12 +40,25 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   // Ruby's YAML 1.1 parser represents the unquoted `on` key as true.
   assert.deepEqual(Object.keys(parsed.true), ['push', 'workflow_dispatch']);
   assert.deepEqual(parsed.true.push.branches, ['production']);
+  // OIDC is granted only to the jobs that exchange it for store credentials.
   assert.deepEqual(parsed.permissions, {
     actions: 'read',
     contents: 'read',
     deployments: 'read',
-    'id-token': 'write',
   });
+  for (const id of [
+    'mobile-credentials-preflight',
+    'publish-android-internal',
+    'publish-ios-testflight',
+    'retry-ios-testflight-review',
+  ]) {
+    assert.deepEqual(parsed.jobs[id].permissions, {
+      actions: 'read',
+      contents: 'read',
+      deployments: 'read',
+      'id-token': 'write',
+    });
+  }
   const preflight = parsed.jobs['mobile-credentials-preflight'];
   assert.equal(preflight.environment, 'mobile-store-beta');
   assert.equal(preflight.outputs.has_ci_token, undefined);
@@ -101,9 +114,9 @@ test('mobile store deployment workflow is production-only beta delivery with ver
       'mobile-beta-release-history'
     );
     assert.equal(
-      job.permissions,
-      undefined,
-      'Publish jobs must inherit workflow OIDC permissions'
+      job.permissions['id-token'],
+      'write',
+      'Publish jobs must request OIDC permissions'
     );
     const fetchStep = step(
       job,
@@ -310,6 +323,10 @@ test('TestFlight scheduler dispatches only promoted production retry code', () =
   );
   assert.deepEqual(Object.keys(parsed.true), ['schedule', 'workflow_dispatch']);
   assert.deepEqual(parsed.permissions, {
+    contents: 'read',
+    deployments: 'read',
+  });
+  assert.deepEqual(parsed.jobs.dispatch.permissions, {
     actions: 'write',
     contents: 'read',
     deployments: 'read',
@@ -466,4 +483,29 @@ test('mobile store event guards separate new releases from review retries', () =
       }
     }
   }
+});
+
+test('both store paths use the shared mobile note policy and bounded Play metadata', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github/workflows/mobile-deploy-stores.yaml'),
+    'utf8'
+  );
+  assert.match(workflow, /normalize-release-description\.js --mobile/);
+  assert.match(
+    workflow,
+    /whatsNewDirectory: \$\{\{ env\.MOBILE_PLAY_NOTES \}\}/
+  );
+  assert.match(workflow, /-le 500/);
+  const history = fs.readFileSync(
+    path.join(repoRoot, 'scripts/mobile-deployment/release-history.mjs'),
+    'utf8'
+  );
+  assert.match(history, /['"]--no-merges['"]/);
+  assert.match(history, /normalizer\s*\.normalizeMobileReleaseNotes/);
+  const notes = fs.readFileSync(
+    path.join(repoRoot, 'scripts/mobile-deployment/build-test-notes.mjs'),
+    'utf8'
+  );
+  assert.match(notes, /normalizer\s*\.normalizeMobileReleaseNotes/);
+  assert.match(notes, /notes\.length \+ bullet\.length > 4000/);
 });

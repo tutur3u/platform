@@ -51,7 +51,10 @@ describe('Judge job dispatch', () => {
       },
       {
         baseUrl: 'https://example.com',
-        env: { TUTURUUU_JUDGE_IMAGES: '{}' },
+        env: {
+          TUTURUUU_DEVBOX_EXECUTION_MODE: 'judge-only',
+          TUTURUUU_JUDGE_IMAGES: '{}',
+        },
         token: 'token',
       }
     );
@@ -118,7 +121,12 @@ it('dispatches hosted jobs to the sandbox and saves only through the canonical c
       leaseId: 'lease-1',
       runId: 'run-1',
     },
-    { baseUrl: 'https://example.com', token: 'synthetic-token', fetch: request }
+    {
+      baseUrl: 'https://example.com',
+      env: { TUTURUUU_PLAYGROUND_POOL_ID: 'pool-1' },
+      token: 'synthetic-token',
+      fetch: request,
+    }
   );
   expect(result).toEqual({ exitCode: 0, status: 'succeeded' });
   expect(runPlayground).toHaveBeenCalledOnce();

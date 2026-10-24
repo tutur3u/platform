@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
+import { hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
@@ -135,13 +135,11 @@ export async function POST(request: Request) {
     // Validate request body with Zod
     const validatedData = createChallengeSchema.parse(body);
 
-    let passwordSalt = null;
-    let passwordHash = null;
-
-    if (validatedData.password) {
-      passwordSalt = generateSalt();
-      passwordHash = await hashPassword(validatedData.password, passwordSalt);
-    }
+    // The scrypt encoding embeds its own salt, so password_salt stays null.
+    const passwordSalt = null;
+    const passwordHash = validatedData.password
+      ? await hashPassword(validatedData.password)
+      : null;
 
     const challengeData = {
       title: validatedData.title,

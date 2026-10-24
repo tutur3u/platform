@@ -54,7 +54,7 @@ Inventory every overload, ACL, and caller before writing SQL.
 | Tasks | `bun run --cwd apps/tasks type-check` | exit 0 |
 | AI | `bun run --cwd packages/ai type-check` | exit 0 |
 | Backend | `bun check:backend` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
