@@ -12,91 +12,110 @@ import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.d
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/l10n/l10n.dart';
 
+import 'assistant_composer_dock_test.dart' show composerTestApp;
+
 class _Chat extends MockCubit<AssistantChatState>
     implements AssistantChatCubit {}
 
 void main() {
-  testWidgets(
-    'open options sheet follows upload status from its owning cubit',
-    (tester) async {
-      final chat = _Chat();
-      final changes = StreamController<AssistantChatState>();
-      AssistantChatState state(AssistantAttachmentUploadState upload) =>
-          AssistantChatState(
-            fallbackChatId: 'draft',
-            composerAttachments: [
-              AssistantAttachment(
-                id: 'file',
-                name: 'Draft.pdf',
-                size: 1,
-                type: 'application/pdf',
-                uploadState: upload,
-              ),
-            ],
-          );
-      final initial = state(AssistantAttachmentUploadState.uploading);
-      whenListen(chat, changes.stream, initialState: initial);
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: BlocProvider<AssistantChatCubit>.value(
-            value: chat,
-            child: AppScaffold(
-              child: AssistantComposerOptions(
-                chatState: initial,
-                shellState: const AssistantShellState(),
-                onOpenAttachments: () async {},
-                onOpenCreditSourceSheet: () async {},
-                onThinkingModeChanged: (_) async {},
-                onRemoveAttachment: (_) async {},
-                onCloseComposer: () {},
-                onModelSelected: (_) async {},
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-composer-options')),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(
-        tester
-            .widget<AssistantAttachmentPreview>(
-              find.byType(AssistantAttachmentPreview),
-            )
-            .attachment
-            .uploadState,
-        AssistantAttachmentUploadState.uploading,
-      );
-      changes.add(state(AssistantAttachmentUploadState.error));
-      await tester.pump();
-      await tester.pump();
-      final l10n = AppLocalizations.of(
-        tester.element(find.byType(AssistantAttachmentPreview)),
-      );
-      final failed = 'Draft.pdf · ${l10n.assistantAttachmentFailedShort}';
-      expect(find.text(failed), findsOneWidget);
-      changes.add(state(AssistantAttachmentUploadState.uploaded));
-      await tester.pump();
-      await tester.pump();
-      expect(find.text(failed), findsNothing);
-      expect(find.text('Draft.pdf'), findsOneWidget);
-      expect(
-        tester
-            .widget<AssistantAttachmentPreview>(
-              find.byType(AssistantAttachmentPreview),
-            )
-            .attachment
-            .uploadState,
-        AssistantAttachmentUploadState.uploaded,
-      );
-      expect(find.byType(AppSheetScaffold), findsOneWidget);
-      await tester.pumpWidget(const SizedBox.shrink());
-      await changes.close();
-      await chat.close();
-    },
-  );
+  for (final forwarded in [false, true]) {
+    testWidgets(
+      'open sheet follows upload status with forwarded cubit $forwarded',
+      (tester) async {
+        final chat = _Chat();
+        final controller = TextEditingController();
+        final focus = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focus.dispose);
+        final changes = StreamController<AssistantChatState>();
+        AssistantChatState state(AssistantAttachmentUploadState upload) =>
+            AssistantChatState(
+              fallbackChatId: 'draft',
+              composerAttachments: [
+                AssistantAttachment(
+                  id: 'file',
+                  name: 'Draft.pdf',
+                  size: 1,
+                  type: 'application/pdf',
+                  uploadState: upload,
+                ),
+              ],
+            );
+        final initial = state(AssistantAttachmentUploadState.uploading);
+        whenListen(chat, changes.stream, initialState: initial);
+        await tester.pumpWidget(
+          forwarded
+              ? composerTestApp(
+                  controller: controller,
+                  focus: focus,
+                  chat: initial,
+                  chatCubit: chat,
+                )
+              : MaterialApp(
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  home: BlocProvider<AssistantChatCubit>.value(
+                    value: chat,
+                    child: AppScaffold(
+                      child: AssistantComposerOptions(
+                        chatState: initial,
+                        shellState: const AssistantShellState(),
+                        onOpenAttachments: () async {},
+                        onOpenCreditSourceSheet: () async {},
+                        onThinkingModeChanged: (_) async {},
+                        onRemoveAttachment: (_) async {},
+                        onCloseComposer: () {},
+                        onModelSelected: (_) async {},
+                      ),
+                    ),
+                  ),
+                ),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('assistant-composer-options')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        final sheet = find.byType(AppSheetScaffold);
+        final preview = find.descendant(
+          of: sheet,
+          matching: find.byType(AssistantAttachmentPreview),
+        );
+        expect(preview, findsOneWidget);
+        expect(
+          tester
+              .widget<AssistantAttachmentPreview>(preview)
+              .attachment
+              .uploadState,
+          AssistantAttachmentUploadState.uploading,
+        );
+        changes.add(state(AssistantAttachmentUploadState.error));
+        await tester.pump();
+        await tester.pump();
+        final l10n = AppLocalizations.of(tester.element(preview));
+        final failed = 'Draft.pdf · ${l10n.assistantAttachmentFailedShort}';
+        expect(find.text(failed), findsOneWidget);
+        changes.add(state(AssistantAttachmentUploadState.uploaded));
+        await tester.pump();
+        await tester.pump();
+        expect(find.text(failed), findsNothing);
+        expect(
+          find.descendant(of: sheet, matching: find.text('Draft.pdf')),
+          findsOneWidget,
+        );
+        expect(
+          tester
+              .widget<AssistantAttachmentPreview>(preview)
+              .attachment
+              .uploadState,
+          AssistantAttachmentUploadState.uploaded,
+        );
+        expect(find.byType(AppSheetScaffold), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await changes.close();
+        await chat.close();
+      },
+    );
+  }
 }

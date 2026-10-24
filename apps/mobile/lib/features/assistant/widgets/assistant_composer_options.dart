@@ -26,6 +26,7 @@ class AssistantComposerOptions extends StatelessWidget {
     required this.onRemoveAttachment,
     required this.onCloseComposer,
     this.repository,
+    this.chatCubit,
     this.onDismissKeyboard,
     this.localOnly = false,
     this.localModelLabel,
@@ -38,6 +39,7 @@ class AssistantComposerOptions extends StatelessWidget {
   final VoidCallback onCloseComposer;
   final VoidCallback? onDismissKeyboard;
   final AssistantChatState chatState;
+  final AssistantChatCubit? chatCubit;
   final AssistantShellState shellState;
   final AssistantRepository? repository;
   final Future<void> Function() onOpenAttachments;
@@ -93,7 +95,7 @@ class AssistantComposerOptions extends StatelessWidget {
               child: Text(chatState.composerAttachments.length.toString()),
             ),
       onPressed: () {
-        final chatCubit = context.read<AssistantChatCubit?>();
+        final owningChat = chatCubit ?? context.read<AssistantChatCubit?>();
         onDismissKeyboard?.call();
         unawaited(
           showAppSheet<void>(
@@ -161,10 +163,10 @@ class AssistantComposerOptions extends StatelessWidget {
                   ],
                 ),
               );
-              return chatCubit == null
+              return owningChat == null
                   ? body(chatState)
                   : BlocBuilder<AssistantChatCubit, AssistantChatState>(
-                      bloc: chatCubit,
+                      bloc: owningChat,
                       buildWhen: (previous, next) =>
                           previous.composerAttachments !=
                           next.composerAttachments,
