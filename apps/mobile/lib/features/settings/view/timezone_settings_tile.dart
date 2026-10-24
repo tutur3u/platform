@@ -131,89 +131,89 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => BlocConsumer<TimezoneSettingsCubit, TimezoneSettingsState>(
-    bloc: _cubit,
-    listener: (_, state) => _syncCooldown(state.retryAt),
-    builder: (context, state) {
-      final text = timezoneRowText(
-        context.l10n,
-        state,
-        workspace: widget.workspace,
+  Widget build(BuildContext context) =>
+      BlocConsumer<TimezoneSettingsCubit, TimezoneSettingsState>(
+        bloc: _cubit,
+        listener: (_, state) => _syncCooldown(state.retryAt),
+        builder: (context, state) {
+          final text = timezoneRowText(
+            context.l10n,
+            state,
+            workspace: widget.workspace,
+          );
+          return SettingsTile(
+            grouped: widget.grouped,
+            icon: shad.LucideIcons.earth,
+            title: widget.workspace
+                ? context.l10n.settingsWorkspaceTimezone
+                : context.l10n.settingsTimezone,
+            // Errors and rate limits wrap; every other state is one value line.
+            wrapSupportingText: true,
+            subtitle:
+                _coolingDown ||
+                    (state.failed && state.diagnostics?.status == 429)
+                ? timezoneRateLimitMessage(
+                    context.l10n,
+                    state.diagnostics,
+                    coolingDown: _coolingDown,
+                  )
+                : state.failed
+                ? state.errorMessage == null
+                      ? context.l10n.settingsTimezoneError
+                      : '${context.l10n.settingsTimezoneError}\n'
+                            '${state.errorMessage}'
+                : null,
+            value: text.value,
+            trailingValue: text.trailing,
+            trailing:
+                state.failed &&
+                    (state.failedSaveZone == null ||
+                        state.failedSaveWorkspace == widget.workspace)
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        key: ValueKey(
+                          widget.workspace
+                              ? 'timezone-retry-workspace'
+                              : 'timezone-retry-personal',
+                        ),
+                        tooltip: context.l10n.settingsTimezoneRetry,
+                        onPressed: _coolingDown || state.loading || state.saving
+                            ? null
+                            : () => unawaited(_retry()),
+                        icon: const Icon(shad.LucideIcons.rotateCw),
+                      ),
+                      if (state.diagnostics case final diagnostics?)
+                        InternalDiagnosticsCopy(
+                          diagnostics: diagnostics,
+                          userId: widget.userId,
+                        ),
+                    ],
+                  )
+                : null,
+            showChevron: !widget.workspace || widget.canManageWorkspace,
+            onTap:
+                _coolingDown ||
+                    state.loading ||
+                    state.saving ||
+                    (!state.resolved &&
+                        !state.failed &&
+                        !(widget.workspace
+                            ? state.workspaceLoaded
+                            : state.personalLoaded))
+                ? null
+                : state.failed &&
+                      !(widget.workspace
+                          ? state.workspaceLoaded
+                          : state.personalLoaded)
+                ? () => unawaited(_load())
+                : widget.workspace && !widget.canManageWorkspace
+                ? null
+                : () => unawaited(_choose()),
+          );
+        },
       );
-      return SettingsTile(
-        grouped: widget.grouped,
-        icon: shad.LucideIcons.earth,
-        title: widget.workspace
-            ? context.l10n.settingsWorkspaceTimezone
-            : context.l10n.settingsTimezone,
-        // Errors and rate limits wrap; every other state is one value line.
-        wrapSupportingText: true,
-        subtitle:
-            _coolingDown || (state.failed && state.diagnostics?.status == 429)
-            ? timezoneRateLimitMessage(
-                context.l10n,
-                state.diagnostics,
-                coolingDown: _coolingDown,
-              )
-            : state.failed
-            ? state.errorMessage == null
-                  ? context.l10n.settingsTimezoneError
-                  : '${context.l10n.settingsTimezoneError}\n'
-                        '${state.errorMessage}'
-            : null,
-        value: text.value,
-        trailingValue: text.trailing,
-        trailing:
-            state.failed &&
-                (state.failedSaveZone == null ||
-                    state.failedSaveWorkspace == widget.workspace)
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    key: ValueKey(
-                      widget.workspace
-                          ? 'timezone-retry-workspace'
-                          : 'timezone-retry-personal',
-                    ),
-                    tooltip: context.l10n.settingsTimezoneRetry,
-                    onPressed: _coolingDown || state.loading || state.saving
-                        ? null
-                        : () => unawaited(_retry()),
-                    icon: const Icon(shad.LucideIcons.rotateCw),
-                  ),
-                  if (state.diagnostics case final diagnostics?)
-                    InternalDiagnosticsCopy(
-                      diagnostics: diagnostics,
-                      userId: widget.userId,
-                    ),
-                ],
-              )
-            : null,
-        showChevron: !widget.workspace || widget.canManageWorkspace,
-        onTap:
-            _coolingDown ||
-                state.loading ||
-                state.saving ||
-                (!state.resolved &&
-                    !state.failed &&
-                    !(widget.workspace
-                        ? state.workspaceLoaded
-                        : state.personalLoaded))
-            ? null
-            : state.failed &&
-                  !(widget.workspace
-                      ? state.workspaceLoaded
-                      : state.personalLoaded)
-            ? () => unawaited(_load())
-            : widget.workspace && !widget.canManageWorkspace
-            ? null
-            : () => unawaited(_choose()),
-      );
-    },
-  );
 }
 
 class _TimezoneChooser extends StatefulWidget {
