@@ -102,7 +102,9 @@ export function generateCalendarTypes({
     mkdirSync(custody);
   } catch (error) {
     if (error.code === 'EEXIST')
-      throw new Error('Calendar declaration publication custody is held');
+      throw new Error(
+        `Calendar declaration publication custody is held at ${custody}. Remove this lock directory only after confirming no generator is running.`
+      );
     throw error;
   }
   try {

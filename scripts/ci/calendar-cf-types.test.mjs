@@ -282,7 +282,19 @@ test('publication custody rejects a second generator at the replacement boundary
 test('an existing custody directory is never reclaimed by a generator', (t) => {
   const f = fixture(t);
   const lock = f.put('.cloudflare/calendar-types.lock/owner', 'another owner');
-  assert.throws(() => generateCalendarTypes(options(f)), /custody is held/);
+  assert.throws(
+    () => generateCalendarTypes(options(f)),
+    (error) => {
+      assert.ok(
+        error.message.includes(join(f.app, '.cloudflare/calendar-types.lock'))
+      );
+      assert.match(
+        error.message,
+        /only after confirming no generator is running/
+      );
+      return true;
+    }
+  );
   assert.equal(readFileSync(lock, 'utf8'), 'another owner');
   assert.equal(readFileSync(f.output, 'utf8'), original);
   assert.equal(f.calls.length, 0);

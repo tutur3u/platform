@@ -113,8 +113,11 @@ emitted-artifact validator. The helper creates a disposable literal typed config
 and runs the owning pinned `cf workers types --no-include-runtime` on a supported
 Node executor. It never loads a Worker module, environment file or credential.
 
-The cf-inferred binding and the standalone `CloudflareEnv` compatibility declaration
-must have the exact required ASSETS key and Fetcher type, with no `any`. During CI
+The self-contained `cloudflare-env.d.ts` comes from an ASSETS-only template; cf
+output checks that template rather than supplying the declaration text. A new
+binding requires changing the template and validator together. The cf-inferred
+binding and template must have the exact required ASSETS key and Fetcher type,
+with no `any`. During CI
 qualification the existing producer remains an explicit reference oracle; the
 same checks apply to its declaration. Additional resources, vars, secrets and
 named environments remain rejected by the existing artifact profile.

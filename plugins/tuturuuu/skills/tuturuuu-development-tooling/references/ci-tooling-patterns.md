@@ -66,10 +66,10 @@ planning. Follow the phased plan in the adoption guidance above and recheck
 
 Execute the pinned cf CLI with a Node version satisfying its package engines
 (`cf@1.0.0-beta.20`: `^22.23 || ^24.22 || ^26.12`); Bun cannot run typed-config commands.
-Native scripts use typed config and `.cloudflare/types/index.d.ts`. Calendar's `calendar-cf-types.mjs` validates ASSETS-only config, runs cf without runtime
-types and emits standalone declarations after exact type/artifact parity. Retain the
-CI oracle until pinned-executor qualification passes.
-Discover help/schema outside config/env ancestry; require `cf auth whoami` JSON
+The older discovery minimum does not suffice. Native scripts use typed config and `.cloudflare/types/index.d.ts`.
+Calendar's `calendar-cf-types.mjs` emits ASSETS-only template declarations after cf/artifact checks.
+Retain the CI oracle until pinned-executor qualification passes.
+Use anonymous operation-only queries outside config/env ancestry. Discover help/schema; require `cf auth whoami` JSON
 `authenticated === true`; unauthenticated results can exit zero. cf credentials
 are separate: stop when access is absent; never copy tokens or login files.
 Account selection may write project cache; verify identity and resulting files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
