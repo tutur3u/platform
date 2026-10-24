@@ -33,6 +33,23 @@ class BacklogTests(unittest.TestCase):
         self.db.close()
         self.directory.cleanup()
 
+    def test_legacy_rows_without_id_or_standard_status_stay_readable(self):
+        intake(self.db, [request()])
+        with self.db:
+            self.db.execute("INSERT INTO items(id, payload) VALUES (?, ?)",
+                            ("legacy-row", json.dumps({"status": "done", "title": "External"})))
+            self.db.execute("INSERT INTO items(id, payload) VALUES (?, ?)",
+                            ("legacy-bare", json.dumps({"title": "No status"})))
+        result = snapshot(self.db)
+        self.assertEqual({i["id"] for i in result["items"]}, {"repair", "legacy-row", "legacy-bare"})
+        self.assertEqual(result["nonstandardStatus"], ["legacy-row"])
+        self.assertEqual(result["counts"]["captured"], 2)
+        updated = update(self.db, "repair", status="active", owner="worker")
+        self.assertEqual(updated["status"], "active")
+        stored = json.loads(self.db.execute(
+            "SELECT payload FROM items WHERE id = 'legacy-row'").fetchone()[0])
+        self.assertNotIn("id", stored)
+
     def test_changed_duplicate_priority_requires_audited_update(self):
         intake(self.db, [dict(request(), priority=2)])
         with self.assertRaisesRegex(ValueError, "priority"):
