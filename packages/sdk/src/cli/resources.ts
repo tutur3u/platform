@@ -44,6 +44,7 @@ import {
 } from './resources-status';
 import {
   planTurboSummary,
+  recordTurboSummaryOutput,
   reportTurboSummary,
 } from './resources-turbo-summary';
 
@@ -264,6 +265,10 @@ export async function runResourcesCommand(argv: string[]) {
       queued ? command : args,
       commandCwd(command)
     );
+    const output = summary.root
+      ? (stream: 'stdout' | 'stderr', chunk: Buffer) =>
+          recordTurboSummaryOutput(summary, stream, chunk)
+      : undefined;
     process.exitCode = queued
       ? await queuedResourceCommand(
           home,
@@ -271,9 +276,20 @@ export async function runResourcesCommand(argv: string[]) {
           summary.args,
           env,
           !shim && options.includes('--ignore-pressure'),
-          resourceLanes(total)
+          resourceLanes(total),
+          undefined,
+          undefined,
+          undefined,
+          output
         )
-      : await spawnResourceCommand(trivial ?? real, summary.args, env);
+      : await spawnResourceCommand(
+          trivial ?? real,
+          summary.args,
+          env,
+          false,
+          undefined,
+          output
+        );
     await reportTurboSummary(summary);
     return;
   }

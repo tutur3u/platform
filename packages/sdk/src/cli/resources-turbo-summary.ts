@@ -1,6 +1,7 @@
-import { existsSync } from 'node:fs';
-import { readdir, readFile, rm, stat } from 'node:fs/promises';
+import { existsSync, readdirSync } from 'node:fs';
+import { lstat, readFile, rm } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 // Report Turbo cache reuse after a resource-managed command. Turbo only writes
 // a run summary for `--summarize`, so the flag is added for `turbo run`
@@ -11,6 +12,9 @@ export type TurboSummaryPlan = {
   root?: string;
   startedAt: number;
   owned: boolean;
+  existing?: Set<string>;
+  summaryPath?: string;
+  output?: { stdout: string; stderr: string };
 };
 
 const runners = new Set(['bun', 'bunx', 'npx', 'pnpm', 'yarn']);
@@ -82,12 +86,25 @@ export function planTurboSummary(
     return plain;
   const root = findTurboRoot(cwd);
   if (!root) return plain;
+  let existing: Set<string>;
+  try {
+    existing = new Set(readdirSync(join(root, '.turbo', 'runs')));
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !('code' in error) ||
+      error.code !== 'ENOENT'
+    )
+      return plain;
+    existing = new Set();
+  }
+  const identity = { existing, output: { stdout: '', stderr: '' } };
   if (
     turboFlags.some(
       (arg) => arg === '--summarize' || arg.startsWith('--summarize=')
     )
   )
-    return { args, root, startedAt: now, owned: false };
+    return { args, root, startedAt: now, owned: false, ...identity };
   return {
     args: [
       ...args.slice(0, index + 1),
@@ -97,6 +114,7 @@ export function planTurboSummary(
     root,
     startedAt: now,
     owned: true,
+    ...identity,
   };
 }
 
@@ -166,31 +184,46 @@ export function formatTurboCacheReport(report: TurboCacheReport) {
   );
 }
 
+// Turbo prints its own summary path on the child process output. Only that
+// path may be read, and a summary that predated this invocation is never owned.
+export function recordTurboSummaryOutput(
+  plan: TurboSummaryPlan,
+  stream: 'stdout' | 'stderr',
+  chunk: Buffer
+) {
+  if (!plan.root || !plan.output) return;
+  const text = stripVTControlCharacters(
+    plan.output[stream] + chunk.toString('utf8')
+  );
+  const lines = text.split('\n');
+  plan.output[stream] = (lines.pop() ?? '').slice(-16_384);
+  for (const line of lines) {
+    const match = /^\s*Summary:\s+(.+?)\s*$/u.exec(line);
+    if (!match) continue;
+    const path = resolve(plan.root, match[1]!);
+    const name = basename(path);
+    if (
+      dirname(path) === join(plan.root, '.turbo', 'runs') &&
+      /^[a-zA-Z0-9_-]+\.json$/u.test(name) &&
+      !plan.existing?.has(name)
+    )
+      plan.summaryPath = path;
+  }
+}
+
 // Best effort: never change the command's exit status.
 export async function reportTurboSummary(
   plan: TurboSummaryPlan,
   write: (line: string) => void = (line) => process.stderr.write(line)
 ) {
-  if (!plan.root) return;
+  if (!plan.root || !plan.summaryPath) return;
   try {
-    const directory = join(plan.root, '.turbo', 'runs');
-    const candidates: { path: string }[] = [];
-    for (const entry of await readdir(directory)) {
-      if (!entry.endsWith('.json')) continue;
-      const path = join(directory, entry);
-      const { mtimeMs } = await stat(path);
-      // Allow coarse filesystem timestamps without picking older runs.
-      if (mtimeMs >= plan.startedAt - 1_000) candidates.push({ path });
-    }
-    // A concurrent Turbo run in the same checkout makes ownership ambiguous;
-    // skip rather than report or delete another run's summary.
-    if (candidates.length !== 1) return;
-    const [only] = candidates;
-    const report = summarizeTurboRun(
-      JSON.parse(await readFile(only!.path, 'utf8'))
-    );
+    if (!(await lstat(plan.summaryPath)).isFile()) return;
+    const summary = JSON.parse(await readFile(plan.summaryPath, 'utf8'));
+    if (summary.id !== basename(plan.summaryPath, '.json')) return;
+    const report = summarizeTurboRun(summary);
     if (report.total > 0) write(formatTurboCacheReport(report));
-    if (plan.owned) await rm(only!.path, { force: true });
+    if (plan.owned) await rm(plan.summaryPath, { force: true });
   } catch {
     /* A missing or partial summary only skips the report. */
   }

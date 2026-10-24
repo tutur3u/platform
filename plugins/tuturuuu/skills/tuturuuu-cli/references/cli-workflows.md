@@ -275,6 +275,15 @@ Prefer remote `ttr box` validation for broad checks; verify the runner's actual
 host because same-machine runners and containers are not resource offload.
 
 
+### Turbo summary ownership
+
+Identify the run summary by the exact path printed on the owned child's output,
+then validate its JSON run ID. Snapshot pre-existing names before launch and
+never delete those files. Timestamp proximity and a single new directory entry
+do not establish process ownership. Missing output identity skips the report.
+`resources-turbo-summary.test.ts` covers recent pre-existing files, concurrent
+runs, fragmented output and the spawned-process output boundary.
+
 ### Resource offload failure boundary
 
 For `resources run --offload`, permit local fallback only before creation or

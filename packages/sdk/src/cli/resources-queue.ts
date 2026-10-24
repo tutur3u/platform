@@ -101,7 +101,8 @@ export async function spawnResourceCommand(
   args: string[],
   env: NodeJS.ProcessEnv,
   owned = false,
-  onSpawn?: (pid: number) => Promise<void>
+  onSpawn?: (pid: number) => Promise<void>,
+  onOutput?: (stream: 'stdout' | 'stderr', chunk: Buffer) => void
 ) {
   return new Promise<number>((resolve, reject) => {
     // An owned group waits on fd 3 until its PID receipt is durable. If the
@@ -116,10 +117,25 @@ export async function spawnResourceCommand(
       ? spawn(process.execPath, ['-e', launcher], {
           env,
           shell: false,
-          stdio: ['inherit', 'inherit', 'inherit', 'pipe'],
+          stdio: [
+            'inherit',
+            onOutput ? 'pipe' : 'inherit',
+            onOutput ? 'pipe' : 'inherit',
+            'pipe',
+          ],
           detached: true,
         })
-      : spawn(command, args, { env, shell: false, stdio: 'inherit' });
+      : spawn(command, args, {
+          env,
+          shell: false,
+          stdio: onOutput ? ['inherit', 'pipe', 'pipe'] : 'inherit',
+        });
+    if (onOutput) {
+      for (const stream of ['stdout', 'stderr'] as const) {
+        child[stream]?.on('data', (chunk: Buffer) => onOutput(stream, chunk));
+        child[stream]?.pipe(process[stream], { end: false });
+      }
+    }
     const gate = owned ? child.stdio[3] : undefined;
     if (gate)
       gate.on('error', () => {
@@ -165,7 +181,7 @@ export async function spawnResourceCommand(
       clean();
       reject(error);
     });
-    child.once('exit', (code, signal) => {
+    child.once(onOutput ? 'close' : 'exit', (code, signal) => {
       void (async () => {
         try {
           if (owned && child.pid)
@@ -253,7 +269,8 @@ export async function queuedResourceCommand(
   lanes: ValidationLanes = 1,
   pressureProbe: typeof memoryPressure = memoryPressure,
   burstProbe: typeof burstEligibility = burstEligibility,
-  diskCheck: typeof diskGate = diskGate
+  diskCheck: typeof diskGate = diskGate,
+  onOutput?: (stream: 'stdout' | 'stderr', chunk: Buffer) => void
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
@@ -505,7 +522,8 @@ export async function queuedResourceCommand(
         });
         stopSampler = startActivitySampler(ownedSlot, owner);
         if (cancelled) signalChild(pid, cancelled);
-      }
+      },
+      onOutput
     );
     process.stderr.write(`[ttr resources] finished; exit ${code}\n`);
     return cancelled ? signalCodes[cancelled] : code;
