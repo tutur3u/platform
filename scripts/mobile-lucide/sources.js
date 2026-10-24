@@ -230,6 +230,137 @@ function emitDart({ kind, version, licenseFile, glyphs, aliases }) {
   return lines.join('\n');
 }
 
+/** Parses absolute M/L/Q/C/Z path data into contours of segments. */
+function parseContours(svg) {
+  const tokens = svg.match(/[MLQCZ]|-?\d*\.?\d+(?:e-?\d+)?/giu) ?? [];
+  const contours = [];
+  let current = null;
+  let command = null;
+  let i = 0;
+  const take = (n) => {
+    const values = tokens.slice(i, i + n).map(Number);
+    i += n;
+    return values;
+  };
+  while (i < tokens.length) {
+    if (/^[MLQCZ]$/iu.test(tokens[i])) command = tokens[i++].toUpperCase();
+    if (command === 'M') {
+      const [x, y] = take(2);
+      current = { start: [x, y], segments: [] };
+      contours.push(current);
+      command = 'L';
+    } else if (command === 'L') {
+      current.segments.push({ type: 'L', points: [take(2)] });
+    } else if (command === 'Q') {
+      const v = take(4);
+      current.segments.push({ type: 'Q', points: [v.slice(0, 2), v.slice(2)] });
+    } else if (command === 'C') {
+      const v = take(6);
+      current.segments.push({
+        type: 'C',
+        points: [v.slice(0, 2), v.slice(2, 4), v.slice(4)],
+      });
+    } else if (command === 'Z') {
+      command = null;
+    } else {
+      throw new Error(`Unexpected path token ${tokens[i]}`);
+    }
+  }
+  return contours.filter((contour) => contour.segments.length > 0);
+}
+
+/** Polyline approximation of a contour (curves sampled). */
+function flatten(contour) {
+  const points = [contour.start];
+  let from = contour.start;
+  for (const segment of contour.segments) {
+    const end = segment.points.at(-1);
+    if (segment.type !== 'L') {
+      const ctrl = [from, ...segment.points];
+      for (let k = 1; k < 8; k++) {
+        const t = k / 8;
+        // de Casteljau on the control polygon.
+        let level = ctrl;
+        while (level.length > 1) {
+          level = level
+            .slice(1)
+            .map((p, j) => [
+              level[j][0] + (p[0] - level[j][0]) * t,
+              level[j][1] + (p[1] - level[j][1]) * t,
+            ]);
+        }
+        points.push(level[0]);
+      }
+    }
+    points.push(end);
+    from = end;
+  }
+  return points;
+}
+
+const signedArea = (poly) =>
+  poly.reduce((sum, [x, y], k) => {
+    const [nx, ny] = poly[(k + 1) % poly.length];
+    return sum + x * ny - nx * y;
+  }, 0);
+
+function inside([x, y], poly) {
+  let hit = false;
+  for (let a = 0, b = poly.length - 1; a < poly.length; b = a++) {
+    const [xa, ya] = poly[a];
+    const [xb, yb] = poly[b];
+    if (ya > y !== yb > y && x < ((xb - xa) * (y - ya)) / (yb - ya) + xa) {
+      hit = !hit;
+    }
+  }
+  return hit;
+}
+
+function reverse(contour) {
+  const nodes = [
+    contour.start,
+    ...contour.segments.map((s) => s.points.at(-1)),
+  ];
+  const segments = [];
+  for (let k = contour.segments.length - 1; k >= 0; k--) {
+    const segment = contour.segments[k];
+    const controls = segment.points.slice(0, -1).reverse();
+    segments.push({ type: segment.type, points: [...controls, nodes[k]] });
+  }
+  return { start: nodes.at(-1), segments };
+}
+
+const fmt = (v) => Number(v.toFixed(5)).toString();
+
+/**
+ * Re-orients the contours of a non-overlapping even-odd path (Skia PathOps
+ * output) so it fills identically under the nonzero rule used by fonts:
+ * contours alternate direction with their nesting depth.
+ */
+function orientForNonzero(svg) {
+  const contours = parseContours(svg);
+  const polys = contours.map(flatten);
+  return contours
+    .map((contour, index) => {
+      const probe = polys[index][0];
+      const depth = polys.filter(
+        (poly, other) => other !== index && inside(probe, poly)
+      ).length;
+      const positive = signedArea(polys[index]) > 0;
+      const wantPositive = depth % 2 === 0;
+      const oriented = positive === wantPositive ? contour : reverse(contour);
+      const parts = [`M${fmt(oriented.start[0])} ${fmt(oriented.start[1])}`];
+      for (const segment of oriented.segments) {
+        parts.push(
+          segment.type +
+            segment.points.map(([x, y]) => `${fmt(x)} ${fmt(y)}`).join(' ')
+        );
+      }
+      return `${parts.join('')}Z`;
+    })
+    .join('');
+}
+
 module.exports = {
   DART_RESERVED,
   FIRST_CODEPOINT,
@@ -238,6 +369,8 @@ module.exports = {
   emitDart,
   lockEntry,
   normaliseNode,
+  orientForNonzero,
+  parseContours,
   parseIconModule,
   planGlyphs,
   svgMarkup,

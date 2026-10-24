@@ -11,8 +11,9 @@
 // strokes, so each glyph is the Skia stroke outline (CanvasKit Path.stroke,
 // round caps and joins, unioned with any filled shapes; CanvasKit 0.42
 // path API: PathBuilder, makeStroked and MakeFromOp unions). Skia is the same
-// geometry engine Flutter uses to draw strokes, and every glyph is
-// rasterised against the original stroked shapes before it is accepted.
+// geometry engine Flutter uses to draw strokes. The written font is parsed
+// back and every serialized glyph is rasterised against the original stroked
+// shapes; any glyph more than 1% off fails the run.
 // Output is deterministic: sorted names, fixed font timestamps.
 
 import { execFileSync } from 'node:child_process';
@@ -217,9 +218,15 @@ function outline(ck, shapes) {
       union = next;
     }
   }
-  // Every glyph went through at least one PathOps union (starting from an
-  // empty path), whose output is already simplified and non-overlapping.
-  return union;
+  // PathOps unions return simplified, non-overlapping even-odd paths, but
+  // font outlines always fill nonzero: alternate contour direction with
+  // nesting depth so holes survive (Skia's AsWinding rejects some paths).
+  const winding = ck.Path.MakeFromSVGString(
+    sources.orientForNonzero(union.toSVGString())
+  );
+  union.delete();
+  if (!winding) throw new Error('Winding conversion failed.');
+  return winding;
 }
 
 /** Share of ink pixels that differ between the web rendering and the glyph. */
@@ -328,6 +335,54 @@ function fontPath(svg) {
   return out;
 }
 
+/** A parsed font glyph's outline as SVG path data in the 24-unit grid. */
+function glyphSvg(glyph) {
+  const x = (v) => (v / SCALE).toFixed(4);
+  const y = (v) => (24 - v / SCALE).toFixed(4);
+  return glyph.path.commands
+    .map((c) => {
+      switch (c.type) {
+        case 'M':
+        case 'L':
+          return `${c.type}${x(c.x)} ${y(c.y)}`;
+        case 'Q':
+          return `Q${x(c.x1)} ${y(c.y1)} ${x(c.x)} ${y(c.y)}`;
+        case 'C':
+          return `C${x(c.x1)} ${y(c.y1)} ${x(c.x2)} ${y(c.y2)} ${x(c.x)} ${y(c.y)}`;
+        case 'Z':
+          return 'Z';
+        default:
+          throw new Error(`Unexpected glyph command ${c.type}`);
+      }
+    })
+    .join('');
+}
+
+/** Rejects any serialized glyph that differs from the web by > 1%. */
+function verifySerialized(ck, font, planned, shapesByName) {
+  const parsed = opentype.parse(
+    font.buffer.slice(font.byteOffset, font.byteOffset + font.byteLength)
+  );
+  let worst = { name: null, ratio: 0 };
+  for (const glyph of planned) {
+    const shipped = parsed.charToGlyph(String.fromCodePoint(glyph.codepoint));
+    if (!shipped || shipped.unicode !== glyph.codepoint) {
+      throw new Error(`${glyph.name}: glyph missing from the serialized font.`);
+    }
+    const path = ck.Path.MakeFromSVGString(glyphSvg(shipped));
+    if (!path) throw new Error(`${glyph.name}: unreadable serialized glyph.`);
+    const ratio = mismatch(ck, shapesByName.get(glyph.name), path);
+    path.delete();
+    if (ratio > worst.ratio) worst = { name: glyph.name, ratio };
+    if (ratio > MAX_MISMATCH) {
+      throw new Error(
+        `${glyph.name}: serialized glyph differs from the web rendering (${(ratio * 100).toFixed(2)}%).`
+      );
+    }
+  }
+  return worst;
+}
+
 function buildFont(family, glyphs) {
   const notdef = new opentype.Glyph({
     name: '.notdef',
@@ -399,24 +454,23 @@ async function main() {
     const icons = kind === 'base' ? readBase(pkg) : readLab(pkg);
     const plan = sources.planGlyphs(icons);
     const byName = new Map(icons.map((icon) => [icon.name, icon]));
-    let worst = { name: null, ratio: 0 };
+    const shapesByName = new Map();
     const glyphs = plan.glyphs.map((glyph) => {
       const shapes = sources.normaliseNode(
         byName.get(glyph.name).node,
         glyph.name
       );
+      shapesByName.set(glyph.name, shapes);
       const shape = outline(ck, shapes);
-      const ratio = mismatch(ck, shapes, shape);
-      if (ratio > worst.ratio) worst = { name: glyph.name, ratio };
-      if (ratio > MAX_MISMATCH)
-        throw new Error(
-          `${glyph.name}: glyph differs from the web rendering (${(ratio * 100).toFixed(2)}%).`
-        );
       const svg = shape.toSVGString();
       shape.delete();
       return { ...glyph, path: fontPath(svg) };
     });
     const font = buildFont(spec.font, glyphs);
+    // Gate the shipped artefact: parse the serialized font back and compare
+    // every glyph (after coordinate rounding and CFF encoding) with the web
+    // rendering of its SVG node.
+    const worst = verifySerialized(ck, font, plan.glyphs, shapesByName);
     const fontFile = `assets/fonts/lucide/${spec.font}.otf`;
     fs.writeFileSync(path.join(mobile, fontFile), font);
     const dart = sources.emitDart({

@@ -32,8 +32,8 @@
           "reason": "same Dart name"
         }
       ],
-      "maxParityMismatch": 0.00165,
-      "worstIcon": "waves-arrow-down"
+      "maxParityMismatch": 0.0012,
+      "worstIcon": "hand-grab"
     },
     "lab": {
       "package": "@lucide/lab",
@@ -42,15 +42,15 @@
       "icons": 357,
       "aliases": 0,
       "skippedAliases": [],
-      "maxParityMismatch": 0.0015,
-      "worstIcon": "waves-birds"
+      "maxParityMismatch": 0.00077,
+      "worstIcon": "goblet"
     }
   },
   "files": {
-    "assets/fonts/lucide/LucideIcons.otf": "f9ab1fcbb0314ad8936a5ca14fcba75df674fe0c4025751b613374306678b5bd",
+    "assets/fonts/lucide/LucideIcons.otf": "f16dfca0b5084f52be256adb26ac8b904a3bc0a6124564396c0d3251d9b4b7d1",
     "lib/core/ui/icons/generated/lucide_icons.g.dart": "d376aa5ad9775febcba860b06db4dbda8b0f40607b751ac5d76fd20dec9642d0",
     "assets/fonts/lucide/LICENSE-lucide.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
-    "assets/fonts/lucide/LucideLabIcons.otf": "410c7ec6d805a908becd06a69e1a023d2a3d2ce782ef48af0911b21fc172fbf5",
+    "assets/fonts/lucide/LucideLabIcons.otf": "c26c89bd8d093fa68b884b465c03372f5a343e6bab84d6f8c31a8194c4df8648",
     "lib/core/ui/icons/generated/lucide_lab_icons.g.dart": "4a8afad97d4d7c77c2cd447a3a4d5aecf5e0ae5724221561ed49119b345b258b",
     "assets/fonts/lucide/LICENSE-lucide-lab.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
     "test/fixtures/lucide/parity_samples.json": "b994e0ee68890e3fb54d2470cc2015b6c9d37ddcbdf2010dcc49c68dd26101f6"

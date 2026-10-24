@@ -5,6 +5,8 @@ const {
   dartName,
   emitDart,
   normaliseNode,
+  orientForNonzero,
+  parseContours,
   parseIconModule,
   planGlyphs,
 } = require('./sources.js');
@@ -88,4 +90,28 @@ test('glyph plans are sorted, stable and keep web aliases', () => {
   });
   assert.match(dart, /GENERATED CODE - DO NOT MODIFY BY HAND/u);
   assert.match(dart, /static const IconData home = house;/u);
+});
+
+test('even-odd holes become opposite-direction contours for nonzero fill', () => {
+  // Outer square and an inner square drawn in the same direction: under
+  // nonzero both fill; after orientation the inner one must be reversed.
+  const svg = 'M0 0L10 0L10 10L0 10Z M2 2L8 2L8 8L2 8Z M4 4L6 4L6 6L4 6Z';
+  const oriented = orientForNonzero(svg);
+  const [outer, hole, island] = parseContours(oriented);
+  const area = (contour) => {
+    const pts = [
+      contour.start,
+      ...contour.segments.map((s) => s.points.at(-1)),
+    ];
+    return pts.reduce((sum, [x, y], k) => {
+      const [nx, ny] = pts[(k + 1) % pts.length];
+      return sum + x * ny - nx * y;
+    }, 0);
+  };
+  assert.ok(area(outer) > 0);
+  assert.ok(area(hole) < 0);
+  assert.ok(area(island) > 0);
+  // Curves keep their control points when reversed.
+  const curve = orientForNonzero('M0 0L10 0L10 10L0 10Z M2 2Q5 1 8 2L8 8L2 8Z');
+  assert.match(curve, /Q5 1 2 2/u);
 });

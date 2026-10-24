@@ -118,9 +118,11 @@ and `@lucide/lab` versions in `bun.lock`. Import them through
 - **Glyphs.** Each glyph is the 2px round-stroked outline the web renders at
   24px. `scripts/mobile-lucide/generate.mjs` strokes the pinned SVG nodes
   with Skia (CanvasKit), the engine Flutter draws with, and unions any filled
-  shapes. It rasterises every glyph against the stroked original and rejects
-  any glyph that differs by more than 1% of its ink pixels; the worst icon
-  differs by 0.17%. A font is used because the app passes icons as
+  shapes. Contours are re-oriented for the nonzero fill rule fonts use, so
+  holes stay open. The written font is parsed back, and every serialized
+  glyph is rasterised against the stroked original; any glyph whose visible
+  ink differs by more than 1% fails the run. The worst glyphs differ by
+  0.12% (base) and 0.08% (lab). A font is used because the app passes icons as
   `IconData` (`Icon`, `IconButton`, shell actions). Stroke width is therefore
   fixed at the web default of 2.
 - **Brand marks.** Lucide no longer ships brand icons. `AppIcons` maps the
