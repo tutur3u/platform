@@ -14,16 +14,17 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps'];
+const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener'];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
     {
       state: 'held',
-      reason: 'held for wave-1 cutover',
+      reason: `held for wave-${app === 'shortener' ? 2 : 1} cutover`,
     },
   ])
 );
+const heldReason = /held for wave-\d cutover/;
 
 function fixture(t, policy) {
   const root = mkdtempSync(join(tmpdir(), 'publication-policy-'));
@@ -158,11 +159,11 @@ for (const app of apps) {
         assert.equal(decisions[index].shouldRun, false);
         assert.equal(decisions[index].held, true);
         assert.equal(decisions[index].changeResult.source, 'publication-hold');
-        assert.match(decisions[index].reason, /held for wave-1 cutover/);
+        assert.match(decisions[index].reason, heldReason);
         const result = runPolicy(root, workflow);
         assert.equal(result.output, 'allowed=false\n');
-        assert.match(result.stdout, /held for wave-1 cutover/);
-        assert.match(result.summary, /held for wave-1 cutover/);
+        assert.match(result.stdout, heldReason);
+        assert.match(result.summary, heldReason);
       }
     });
   }
@@ -301,7 +302,7 @@ for (const { workflow, job } of publishers) {
     );
     const result = runPolicy(fixture(t), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
-    assert.match(result.summary, /held for wave-1 cutover/);
+    assert.match(result.summary, heldReason);
   });
 }
 

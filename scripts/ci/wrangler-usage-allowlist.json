@@ -628,6 +628,16 @@
       },
       "digest": "b6dc0cd6589acfa0a56eace8fba5d57323ed82f22f8b0f44dea1132509ea8063"
     },
+    "apps/shortener/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6432",
+        "reason": "Shortener follows the Wave 1 Start + Void Apps template: Void rebuilds on deploy, so the exact Void-emitted Worker is qualified and published with the pinned Wrangler adapter (types, dry-run, built-Worker harness). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/tanstack-web/package.json": {
       "lines": 5,
       "uses": 5,
