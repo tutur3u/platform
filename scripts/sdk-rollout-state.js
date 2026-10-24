@@ -13,9 +13,10 @@ function fenceMutation(home, token, backup, phase) {
   const admission = path.join(home, 'admission');
   if (readJson(path.join(admission, 'owner.json')).token !== token)
     throw new Error('Maintenance lease changed before mutation');
-  atomicJson(path.join(admission, 'mutation.json'), { token, backup, phase });
   // Preparation remains reclaimable. Only a backed-up mutation retains the
-  // old scheduler's exclusive fence across a process crash.
+  // old scheduler's exclusive fence across a process crash. Claim the reclaim
+  // fence before publishing the marker, so no crash point leaves a marker that
+  // older schedulers (which only honour the reclaim file) could reclaim past.
   try {
     fs.writeFileSync(path.join(admission, 'reclaim'), String(process.pid), {
       flag: 'wx',
@@ -24,6 +25,7 @@ function fenceMutation(home, token, backup, phase) {
   } catch (error) {
     if (error.code !== 'EEXIST') throw error;
   }
+  atomicJson(path.join(admission, 'mutation.json'), { token, backup, phase });
 }
 function assertFilesystemIdle(home) {
   for (const directory of ['slots', 'queue']) {
@@ -235,6 +237,19 @@ function assertRollbackState(backup, fenced) {
       'Global packages, scheduler roots/limits or launchers changed since rollout; refusing rollback'
     );
 }
+// In-process restore guard. Qualification runs the candidate, so launcher or
+// config writes after install are candidate defects that must still be
+// restored; only the global package tree identifies a concurrent `bun add -g`.
+function assertGlobalUnchanged(backup) {
+  const receipt = path.join(backup, 'post-state.json');
+  if (!fs.existsSync(receipt)) return; // Install incomplete; fenced restore.
+  const [{ target }] = readJson(path.join(backup, 'restore.json')).files;
+  const recorded = readJson(receipt).find((entry) => entry.target === target);
+  if (!recorded || recorded.hash !== fingerprint(target))
+    throw new Error(
+      'Global packages changed since rollout install; refusing automatic restore'
+    );
+}
 function retainCandidate(home, source, expected) {
   const directory = path.join(home, 'suppliers');
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -359,6 +374,7 @@ module.exports = {
   backupInstallation,
   recordPostState,
   assertRollbackState,
+  assertGlobalUnchanged,
   retainCandidate,
   pruneRetention,
   fingerprint,

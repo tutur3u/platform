@@ -5,7 +5,11 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { worker, rollback, lease } = require('./sdk-rollout-engine');
-const { pruneRetention, retainCandidate } = require('./sdk-rollout-state');
+const {
+  fenceMutation,
+  pruneRetention,
+  retainCandidate,
+} = require('./sdk-rollout-state');
 
 function fixture(t) {
   const userHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-recovery-'));
@@ -294,7 +298,7 @@ test('real SDK admission reclaims only dead preparation, preserving mutation fen
   }
 });
 
-test('finally failures change qualified reports to failed without masking prior evidence', async (t) => {
+test('slot ownership cleanup failures fail the report and hold admission without a rollback claim', async (t) => {
   const f = fixture(t);
   const report = await worker(f.options, {
     userHome: f.userHome,
@@ -306,7 +310,9 @@ test('finally failures change qualified reports to failed without masking prior 
     },
   });
   assert.equal(report.status, 'failed');
-  assert.equal(report.rollback, 'failed');
+  assert.equal(report.rollback, 'not-needed');
+  assert.equal(report.cleanup, 'failed');
+  assert.equal(report.admissionHeld, true);
   assert.ok(report.cleanupErrors.length);
   assert.equal(
     JSON.parse(fs.readFileSync(path.join(report.backup, 'report.json'))).status,
@@ -402,4 +408,104 @@ test('partial rollback resumes under its durable mutation token without a candid
   assert.equal(success.status, 0, success.stderr);
   assert.equal(success.stdout.trim(), 'restored');
   assert.equal(fs.existsSync(admission), false);
+});
+
+test('housekeeping cleanup failures keep a qualified install and release admission', async (t) => {
+  const f = fixture(t);
+  const report = await worker(f.options, {
+    userHome: f.userHome,
+    env: {},
+    run: async (command, args) => {
+      if (args.includes('-e'))
+        fs.mkdirSync(path.join(f.userHome, '.bun/install/global/package.json'));
+      return f.invoke(command, args);
+    },
+  });
+  assert.equal(report.status, 'qualified');
+  assert.equal(report.rollback, 'not-needed');
+  assert.equal(report.cleanup, 'failed');
+  assert.equal(report.admissionHeld, undefined);
+  assert.match(report.cleanupErrors.join('\n'), /cache reference bounds/);
+  assert.equal(fs.existsSync(path.join(f.home, 'admission')), false);
+  assert.equal(
+    JSON.parse(fs.readFileSync(path.join(report.backup, 'report.json')))
+      .rollback,
+    'not-needed'
+  );
+});
+
+test('in-process restore refuses to revert a concurrent global install', async (t) => {
+  for (const drift of [false, true]) {
+    const f = fixture(t);
+    const extra = path.join(f.userHome, '.bun/install/global/new-package');
+    const report = await worker(f.options, {
+      userHome: f.userHome,
+      env: {},
+      run: async (command, args) => {
+        if (args.includes('-e')) {
+          if (drift) fs.writeFileSync(extra, 'concurrent bun add -g');
+          throw new Error('qualification probe failed');
+        }
+        return f.invoke(command, args);
+      },
+    });
+    assert.equal(report.status, 'failed');
+    assert.equal(report.error, 'qualification probe failed');
+    const wrapper = fs.readFileSync(path.join(f.root, 'bin/ttr.cjs'), 'utf8');
+    if (drift) {
+      assert.equal(report.rollback, 'failed');
+      assert.match(
+        report.rollbackError,
+        /Global packages changed since rollout/
+      );
+      assert.equal(fs.readFileSync(extra, 'utf8'), 'concurrent bun add -g');
+      assert.equal(wrapper, 'new wrapper');
+      assert.equal(fs.existsSync(path.join(f.home, 'admission')), true);
+    } else {
+      assert.equal(report.rollback, 'restored');
+      assert.equal(wrapper, 'old wrapper');
+      assert.equal(fs.existsSync(path.join(f.home, 'admission')), false);
+    }
+  }
+});
+
+test('mutation fence claims reclaim before publishing the marker', (t) => {
+  const f = fixture(t);
+  const admission = path.join(f.home, 'admission');
+  fs.mkdirSync(admission);
+  fs.writeFileSync(
+    path.join(admission, 'owner.json'),
+    JSON.stringify({ token: 'fence-token' })
+  );
+  // A directory marker makes the publish step fail like a crash mid-fence.
+  fs.mkdirSync(path.join(admission, 'mutation.json/blocker'), {
+    recursive: true,
+  });
+  assert.throws(() =>
+    fenceMutation(f.home, 'fence-token', '/backup', 'install')
+  );
+  assert.equal(fs.existsSync(path.join(admission, 'reclaim')), true);
+});
+
+test('fleet reports accept cleanup markers and keep held admission staged', () => {
+  const { preserveStaging, validateWorkerReport } = require('./sdk-rollout');
+  const base = {
+    schemaVersion: 1,
+    status: 'qualified',
+    rollback: 'not-needed',
+    backup: '/backup',
+  };
+  const housekeeping = validateWorkerReport({ ...base, cleanup: 'failed' });
+  assert.equal(housekeeping.status, 'qualified');
+  assert.equal(preserveStaging(housekeeping), false);
+  const held = { ...base, status: 'failed', cleanup: 'failed' };
+  assert.equal(
+    preserveStaging(validateWorkerReport({ ...held, admissionHeld: true })),
+    true
+  );
+  for (const invalid of [
+    { ...base, cleanup: 'maybe' },
+    { ...base, cleanup: 'failed', admissionHeld: true },
+  ])
+    assert.throws(() => validateWorkerReport(invalid), /outcome unknown/);
 });
