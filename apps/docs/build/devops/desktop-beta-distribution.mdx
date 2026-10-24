@@ -191,7 +191,7 @@ ttr resources run -- bun check:mobile
 ```
 
 Run focused Infrastructure route, operator UI and source TypeScript checks when
-those surfaces change. Do not run `bun check`, `bun setup`, app/package builds, or
+those surfaces change. Do not run `bun validate`, `bun setup`, app/package builds, or
 native release builds locally. Require the applicable app and desktop release
 builds in CI for the exact source commit. `prepare-macos.mjs` is runner preparation
 that rewrites Firebase metadata and copies the selected flavor plist; it is not a

@@ -61,7 +61,7 @@ this plan must not edit that UI.
 | Refresh manifest | `bun migration:tanstack:manifest` | exact route remains tracked with refreshed evidence |
 | Migration check | `bun migration:tanstack:check` | exit 0 |
 | Web build | `bun run --cwd apps/web build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -112,7 +112,7 @@ both migration checks. Do not mark the route migrated.
 ### Step 4: Run production gates
 
 Run the focused test, wrapper check, migration checks, Web production build,
-`bun check`, and whitespace validation.
+`bun validate`, and whitespace validation.
 
 ## Done criteria
 

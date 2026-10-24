@@ -219,7 +219,7 @@ function parseListTree(
     const line = lines[i];
     if (line === undefined || line.trim() === '') break;
 
-    const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
+    const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(\S.*)?$/);
     if (!match) break;
 
     const indent = match[1] ? match[1].length : 0;
@@ -231,7 +231,7 @@ function parseListTree(
 
     // Check for task list: - [ ] or - [x]
     let checked: boolean | null = null;
-    const taskMatch = content.match(/^\[([ xX])\]\s+(.*)$/);
+    const taskMatch = content.match(/^\[([ xX])\]\s+(\S.*)?$/);
     if (taskMatch) {
       checked = taskMatch[1] ? taskMatch[1].toLowerCase() === 'x' : false;
       content = taskMatch[2] || '';
@@ -434,7 +434,7 @@ export function markdownToHtml(markdown: string): string {
     }
 
     // Code block
-    const codeBlockMatch = line.match(/^\s*```\s*(\w*)\s*$/);
+    const codeBlockMatch = line.trimEnd().match(/^\s*```\s*(\w*)$/);
     if (codeBlockMatch) {
       const lang = codeBlockMatch[1] || '';
       const start = i + 1;
@@ -455,10 +455,11 @@ export function markdownToHtml(markdown: string): string {
     }
 
     // Heading
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    const headingMatch = line.match(/^(#{1,6})\s(.+)$/);
     if (headingMatch) {
       const level = headingMatch[1]!.length;
-      const content = headingMatch[2] || '';
+      const rest = headingMatch[2] || '';
+      const content = rest.trimStart() || rest.slice(-1);
       result.push(`<h${level}>${parseInline(content)}</h${level}>`);
       i++;
       continue;
@@ -495,10 +496,14 @@ export function markdownToHtml(markdown: string): string {
     if (listMatch) {
       const indent = listMatch[1] ? listMatch[1].length : 0;
       const { nodes, endIndex } = parseListTree(lines, i, indent);
-      const ordered = /^\d+\.$/.test(nodes[0]?.marker || '');
-      result.push(renderListTree(nodes, ordered));
-      i = endIndex;
-      continue;
+      // The item parser is stricter than this detector (e.g. a line separator
+      // in the content); fall through to a paragraph instead of stalling.
+      if (endIndex > i) {
+        const ordered = /^\d+\.$/.test(nodes[0]?.marker || '');
+        result.push(renderListTree(nodes, ordered));
+        i = endIndex;
+        continue;
+      }
     }
 
     // Table

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
@@ -241,13 +242,8 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                     child: Text(l10n.commonRetry),
                   ),
                 )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    16 + MediaQuery.paddingOf(context).bottom,
-                  ),
+              : AppPageListView(
+                  kind: AppPageKind.form,
                   children: [
                     SwitchListTile(
                       title: Text(l10n.mailLoadImages),

@@ -69,7 +69,7 @@ schema-free and must not edit migrations or generated database types.
 | Share link | `bun --cwd apps/forms vitest run 'src/app/api/v1/workspaces/[wsId]/forms/[formId]/share-link/route.test.ts'` | existing/create, foreign/missing, auth, and DB errors pass |
 | Save helper | `bun --cwd apps/forms vitest run src/features/forms/server/mutations.test.ts` | scoped existing update and new-create behavior pass |
 | Forms | `bun run --cwd apps/forms type-check && bun run --cwd apps/forms build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 
@@ -106,7 +106,7 @@ atomicity work in Plan 241.
       form through the admin client.
 - [ ] Share links are read/created only after same-workspace form proof.
 - [ ] New-form creation and all supported success envelopes remain unchanged.
-- [ ] Focused tests, Forms typecheck/build, `bun check`, and whitespace pass.
+- [ ] Focused tests, Forms typecheck/build, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

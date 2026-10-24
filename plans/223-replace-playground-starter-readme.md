@@ -50,7 +50,7 @@ a dev server during this documentation-only task.
 | Retired template | `! rg -n 'localhost:3000|app/page\.tsx|npm run dev|yarn dev' apps/playground/README.md` | exit 0 |
 | Canonical contract | `for p in 'bun setup' 'bun run --cwd apps/playground dev' 'playground.tuturuuu.localhost' '3003' 'src/app/page.tsx' 'type-check' 'build'; do rg -Fq -- "$p" apps/playground/README.md || exit 1; done` | exit 0; every required topic is present |
 | Command existence | `node -e 'const p=require("./apps/playground/package.json"); for (const k of ["dev","dev:app","type-check","build"]) if (!p.scripts[k]) process.exit(1)'` | exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

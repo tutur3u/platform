@@ -56,7 +56,7 @@ generated-type owners release their paths.
 | Apply/typegen | `bun sb:up && bun sb:typegen` | intended job/RPC types only |
 | Typechecks | `bun run --cwd apps/teach type-check && bun run --cwd packages/internal-api type-check` | both pass |
 | Build | `bun run --cwd apps/teach build` | production build passes |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Localization | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | bilingual keys are sorted and valid |
 | Whitespace | `git diff --check` | no output |
 

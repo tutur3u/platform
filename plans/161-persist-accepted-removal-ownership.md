@@ -57,7 +57,7 @@ snapshot every historical accepted removal before changing validation.
 | Migration check | `bun migration:tanstack:check` | exit 0 |
 | Script suite | `bun test:scripts` | all script tests pass |
 | Docs JSON, if touched | `python3 -m json.tool apps/docs/docs.json` | valid JSON or no navigation change required |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

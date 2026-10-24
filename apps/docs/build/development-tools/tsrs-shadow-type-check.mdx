@@ -1,0 +1,119 @@
+---
+title: "tsrs shadow type-check"
+description: "Evaluation, shadow CI job and promotion criteria for tsrs, the Rust port of the TypeScript 7 compiler."
+updatedAt: "2026-10-23"
+---
+
+## Decision
+
+[tsrs](https://github.com/oxc-project/tsrs) is a Rust port of the TypeScript 7
+compiler built with the TypeScript team and planned to become part of Oxc. It is
+**experimental**. `tsc` (TypeScript 7.0.2) stays the required type-check gate.
+tsrs runs in two advisory places only:
+
+1. The [pre-push gate](/build/development-tools/pre-push-checks) defaults to tsc.
+   Explicit `--checker tsrs` comparisons are advisory and always confirmed by
+   tsc, including a tsrs pass. Resolution requires a planned qualified project;
+   hook mode accepts only an existing `TSRS_BIN` and never fetches packages.
+   Clean-source parity alone does not qualify detection of seeded errors.
+2. `.github/workflows/tsrs-shadow.yaml` compares tsrs with `tsc` on main pushes
+   that touch qualified projects and reports differences as warnings. The job is
+   `continue-on-error` and is not a required check.
+
+The pin is `tsrs@0.18.0-ts7.1.0-dev.20260929` (version string
+`7.1.0-dev.20260930.4`). It is installed outside the workspace (`npm install
+--prefix` in CI, the `npm exec` cache locally) so the shadow never changes
+`bun.lock`. Set `TSRS_BIN` to use a different binary locally.
+
+## Evaluation (2026-10-23)
+
+Median of three cold runs per checker on a 10-core, 24 GB Apple Silicon machine,
+`-p <project> --noEmit --incremental false --composite false`, queued through
+`ttr resources run`. Workspace `dist` declarations were not built (builds are
+CI-only), so absolute diagnostic counts include missing-module noise; parity is
+still meaningful because every checker saw the same files. Timings were taken
+while other sessions shared the machine, so treat them as relative.
+
+| Project | tsc 7.0.2 | tsc 7.1.0-beta | tsrs | Speedup vs 7.0 | Diagnostics 7.0 / tsrs | Exact parity vs 7.0 | Location parity vs 7.0 | Location parity vs 7.1-beta |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `packages/types` (build config) | 0.49 s / 349 MB | 0.36 s / 232 MB | 0.22 s / 111 MB | 2.2x | 0 / 0 | yes | yes | yes |
+| `packages/utils` | 0.64 s / 1411 MB | 0.56 s / 1107 MB | 0.24 s / 429 MB | 2.7x | 155 / 155 | yes | yes | yes |
+| `packages/ui` | 1.79 s / 1954 MB | 1.51 s / 1249 MB | 0.57 s / 665 MB | 3.1x | 1018 / 1038 | no | no | yes |
+| `packages/supabase` | 0.29 s / 268 MB | 0.27 s / 211 MB | 0.19 s / 115 MB | 1.5x | 8 / 8 | yes | yes | yes |
+| `packages/internal-api` | 0.26 s / 174 MB | 0.24 s / 136 MB | 0.20 s / 77 MB | 1.3x | 84 / 84 | yes | yes | yes |
+| `apps/tasks` | 2.70 s / 2595 MB | 2.10 s / 2158 MB | 0.64 s / 860 MB | 4.2x | 2013 / 2013 | no | yes | yes |
+| `apps/calendar` | 2.42 s / 3321 MB | 3.77 s / 2341 MB | 0.78 s / 1000 MB | 3.1x | 1622 / 1622 | no | yes | yes |
+| `apps/web` | 21.4 s / 3803 MB | 23.6 s / 3968 MB | 3.4 s / 1866 MB | 6.3x | 2296 / 2314 | no | no | yes |
+| **Total** | 30.0 s | 32.4 s | 6.2 s | 4.8x | | | | |
+
+"Exact" compares the full diagnostic multiset including message text,
+independent of order. "Location" compares file, line, column and code.
+
+Findings:
+
+- **tsrs matches TypeScript 7.1, not 7.0.** Every difference from 7.0.2 also
+  appears with `tsc` 7.1.0-beta. `packages/ui` and `apps/web` gain implicit-`any`
+  diagnostics under 7.1 semantics; `apps/tasks` and `apps/calendar` differ only in
+  how long types are printed. Against 7.1-beta, tsrs has location parity on all
+  eight projects and exact parity on seven; `apps/web` differs in two messages
+  where tsrs prints a truncated property type instead of `...`.
+- **Speed and memory.** tsrs is 1.3-6.3x faster (larger projects gain more) with
+  roughly 50-70% less peak memory.
+- **TypeScript 7.1 beta** is 1.1-1.3x faster than 7.0.2 on packages and
+  `apps/tasks`, but slower on `apps/calendar` and `apps/web` in this run, with
+  lower memory. It is a beta and changes diagnostics, so it is not adopted.
+- **Configuration support.** All tsconfig features we use type-check the same:
+  package-name `extends` chains, `paths`, `NodeNext`/`Bundler` resolution, `jsx`
+  `preserve`/`react-jsx`, `types`, `lib` including `webworker`, JSON modules and
+  `include` globs. `--build --dry` resolves the same project-reference graph for
+  `apps/meet` and `apps/web`. `--showConfig` is **not supported**. Emit
+  (declarations, `--build` writes) was not evaluated because it is a build.
+- **Exit status** is 2 for diagnostics where `tsc` 7.0.2 returns 1; compare
+  success versus failure, not exact codes.
+
+## Shadow job
+
+`node scripts/ci/tsrs-shadow.js` runs both checkers per project, records wall
+time and peak RSS (`/usr/bin/time`), compares diagnostic multisets and writes a
+step summary, `::warning` annotations (up to 20 per side) and a JSON report kept
+for 30 days. The default project list is the parity-qualified set: `packages/types`,
+`packages/utils`, `packages/supabase`, `packages/internal-api`, `apps/tasks` and
+`apps/calendar`. CI builds the workspace declarations first, exactly like the
+required type-check, so CI parity is the authoritative evidence. Pull requests run
+the job only when the shadow tooling changes; `workflow_dispatch` runs it on demand.
+
+```bash
+node scripts/ci/tsrs-shadow.js --tsrs <path-to-tsrs> --project apps/web/tsconfig.json
+```
+
+The local flag runs tsrs only for projects in `TSRS_PROJECTS`, even when one
+workspace has both qualified and unqualified configs. Tsc still checks every
+project. Exact diagnostic-key multiset differences are printed as advisory
+`tsrs-only` / `tsc-only` output, including when tsc passes; a shadow mismatch
+never changes the authoritative tsc result.
+
+## Promotion criteria
+
+Do not replace `tsc` as the required gate until **all** of these hold:
+
+1. **Version alignment.** The pinned tsrs release tracks the same TypeScript
+   minor as the repository gate (or the repository adopts the matching stable
+   TypeScript minor), and is a non-`dev` release pinned exactly through the
+   owning workspace's package manager with a reviewed lockfile change.
+2. **Parity over time.** At least 30 consecutive shadow runs on main per
+   promoted project show location parity, matching success/failure status and no
+   tsrs crash, with warm declarations. Message-text differences are reviewed and
+   recorded. Each promoted project must also have a seeded-error corpus that
+   both checkers reject, covering real type errors, path/ambient declarations
+   and reference boundaries. Until then, keep tsc confirmation on passes too.
+3. **Feature coverage.** Every project the required job checks is covered,
+   including project references (`apps/meet`), worker/boundary configs and
+   declaration-emitting builds, or an explicit `tsc` fallback is kept for each
+   unsupported feature.
+4. **Operational evidence.** Linux CI wall time and memory are recorded for the
+   promoted set, and rollback is a single-commit switch back to `tsc`.
+
+Keep tsrs advisory, with tsc confirming every outcome, until all criteria hold.
+Then switch only the qualified scopes, preserving explicit tsc fallbacks and
+emit tasks. Update this page, the project list in `scripts/ci/tsrs-shadow.js`
+and the [pre-push gate](/build/development-tools/pre-push-checks) together.

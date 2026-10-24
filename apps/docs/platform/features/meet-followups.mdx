@@ -73,7 +73,7 @@ fail after a successful write, so the server never automatically retries creatio
 ## Verification
 
 Run the Meet meeting-ai tests, shared AI meeting-generation tests, internal API build,
-`bun check`, and the actual Meet build. Use `NODE_ENV=test` for tests when the shell
+`bun validate`, and the actual Meet build. Use `NODE_ENV=test` for tests when the shell
 inherits production mode. Verify authenticated task assignment, destination and
 calendar timestamps in a dedicated test workspace before claiming production
 end-to-end coverage. These changes require no database migration.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -32,8 +33,7 @@ class InventoryCatalogHub extends StatelessWidget {
   const InventoryCatalogHub({super.key});
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+  Widget build(BuildContext context) => AppPageListView(
     children: [
       for (final section in InventoryCatalogSection.values)
         Card(

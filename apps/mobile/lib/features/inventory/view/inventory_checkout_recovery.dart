@@ -68,6 +68,7 @@ extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
     final payload = record?.payload;
     return InventoryFormScaffold(
       embedded: widget.embedded,
+      kind: AppPageKind.detail,
       title: l10n.inventorySeasonRecoveryTitle,
       primaryActionLabel: l10n.inventorySeasonRecoveryCheck,
       onPrimaryPressed:
@@ -82,7 +83,7 @@ extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
               if (context.canPop()) context.pop(completed ? true : null);
             },
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
         children: [
           Text(
             completed

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -136,7 +137,7 @@ class _ChatComposerState extends State<ChatComposer> {
                             dimension: 18,
                             child: NovaLoadingIndicator(size: 20),
                           )
-                        : const Icon(shad.LucideIcons.paperclip, size: 18),
+                        : const Icon(LucideIcons.paperclip, size: 18),
                     onPressed: widget.isUploadingAttachment || widget.isSending
                         ? null
                         : () => unawaited(_showAttachmentOptions()),
@@ -167,7 +168,7 @@ class _ChatComposerState extends State<ChatComposer> {
                             dimension: 18,
                             child: NovaLoadingIndicator(size: 20),
                           )
-                        : const Icon(shad.LucideIcons.send, size: 18),
+                        : const Icon(LucideIcons.send, size: 18),
                   ),
                 ),
               ],

@@ -66,7 +66,7 @@ their colocated tests and deleting only the superseded legacy files.
 | Rust focused | `cargo test --manifest-path apps/backend/Cargo.toml support_inquiry` | Rust PATCH auth and response parity pass |
 | Route tracking | `bun web:api-routes:check && bun migration:tanstack:manifest && bun migration:tanstack:check` | legacy wrappers stay absent and the intentionally changed manifest is internally fresh/stable |
 | Web gates | `bun run --cwd apps/web type-check && bun run --cwd apps/web build` | Web compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

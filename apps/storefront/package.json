@@ -13,7 +13,7 @@
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7822 --turbopack"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "storefront.tuturuuu",
     "script": "dev:app"

@@ -55,7 +55,7 @@ own this path.
 | Wrapper guard | `bun web:api-routes:check` | no generated-wrapper drift |
 | Migration tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | route ownership stays accurate |
 | Backend guard | `bun check:backend` | migration target remains consistent |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Real app compile | `bun run build:web` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

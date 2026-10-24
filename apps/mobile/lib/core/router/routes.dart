@@ -54,7 +54,29 @@ abstract final class Routes {
   static String settingsOfflineModulePath(String moduleId) =>
       '$settingsOffline/${Uri.encodeComponent(moduleId)}';
 
+  /// Central per-app settings. Each app's gear deep-links here.
+  static const settingsApps = '/settings/apps';
+  static const settingsAppDetail = '/settings/apps/:appId';
+  static String settingsAppPath(String appId, {String? focus}) => Uri(
+    path: '$settingsApps/$appId',
+    queryParameters: focus == null ? null : {'focus': focus},
+  ).toString();
+
+  /// Apps whose settings render as a routed Settings sub-screen. Mail and
+  /// Assistant keep their account-scoped hubs in the same Settings section.
+  static const centralAppSettingsIds = {
+    'tasks',
+    'calendar',
+    'finance',
+    'timer',
+  };
+
+  /// Central settings location for [appId], or `null` without a sub-screen.
+  static String? appSettingsLocation(String? appId) =>
+      centralAppSettingsIds.contains(appId) ? settingsAppPath(appId!) : null;
+
   static const settingsPreferences = '/settings/preferences';
+  static const settingsAppearance = '/settings/appearance';
   static const settingsExperiments = '/settings/experiments';
   static const settingsInfrastructure = '/settings/infrastructure';
   static const settingsFeedback = '/settings/feedback';

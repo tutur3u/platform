@@ -7,13 +7,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/core/utils/timezone.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
-import 'package:timezone/data/latest.dart' as timezone_data;
 import 'package:timezone/timezone.dart' as timezone;
 
 enum PushNotificationEventType { received, opened, archived }
@@ -270,10 +270,9 @@ class PushNotificationService {
   }
 
   Future<void> _configureReminderTimezone() async {
-    timezone_data.initializeTimeZones();
     try {
       timezone.setLocalLocation(
-        timezone.getLocation(await getCurrentTimezoneIdentifier()),
+        timezoneLocation(await getCurrentTimezoneIdentifier()),
       );
     } on Exception {
       timezone.setLocalLocation(timezone.UTC);

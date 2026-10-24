@@ -14,16 +14,139 @@ env:
   MODAL_ENVIRONMENT: ${{ vars.MODAL_ENVIRONMENT }}
 
 jobs:
-  deploy:
-    name: Deploy to Modal
+  trigger:
+    name: Verify trusted trigger
+    # Cheap pre-filter only: expression `==` ignores case and workflow_run
+    # matches producers by name, so the step re-proves the trigger exactly.
     if: >
-      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main'
+      ) ||
       (
         github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.event == 'push' &&
         github.event.workflow_run.head_branch == 'main' &&
         github.event.workflow_run.head_repository.full_name == github.repository
       )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      head_sha: ${{ steps.trigger.outputs.head_sha }}
+      trusted: ${{ steps.trigger.outputs.trusted }}
+    steps:
+      - name: Verify trusted trigger
+        id: trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUIRE_BRANCH_TIP: "true"
+          TIP_TREE_PATH: apps/discord
+          TRUSTED_DISPATCH_REF: refs/heads/main
+          # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
+          TRUSTED_PRODUCERS: |
+            discord-python-ci.yml 207981538 main push success
+        run: |
+          set -euo pipefail
+          # Expression `==` ignores case and workflow_run matches producers by name, so
+          # re-prove the trigger with exact comparisons before any privileged step runs.
+          # Values come from the event file and runner variables, never interpolation.
+          reject() {
+            echo "::error::Untrusted trigger: $1"
+            exit 1
+          }
+          field() {
+            jq -r "$1 // \"\" | tostring" "$GITHUB_EVENT_PATH"
+          }
+          listed() {
+            local item
+            local -a items
+            IFS=',' read -r -a items <<< "$2"
+            for item in "${items[@]}"; do
+              if [ "$item" = "$1" ] || [ "$item" = any ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            workflow_dispatch)
+              if [ -z "${TRUSTED_DISPATCH_REF:-}" ] || [ "$GITHUB_REF" != "$TRUSTED_DISPATCH_REF" ]; then
+                reject "manual runs must start from ${TRUSTED_DISPATCH_REF:-a trusted producer}"
+              fi
+              branch="${TRUSTED_DISPATCH_REF#refs/heads/}"
+              head_sha="$GITHUB_SHA"
+              ;;
+            workflow_run)
+              run_path="$(field .workflow_run.path)"
+              file=""
+              while read -r candidate workflow_id branch events conclusions; do
+                if [ -n "$candidate" ] && [ "$run_path" = ".github/workflows/$candidate" ]; then
+                  file="$candidate"
+                  break
+                fi
+              done <<< "${TRUSTED_PRODUCERS:-}"
+              [ -n "$file" ] || reject "producer path '$run_path' is not trusted"
+              [ -n "$workflow_id" ] && [ "$(field .workflow_run.workflow_id)" = "$workflow_id" ] ||
+                reject "producer workflow ID is not $file's ID $workflow_id"
+              [ "$(field .workflow_run.head_branch)" = "$branch" ] ||
+                reject "producer branch is not exactly '$branch'"
+              listed "$(field .workflow_run.event)" "$events" ||
+                reject "producer event is not one of $events"
+              listed "$(field .workflow_run.conclusion)" "$conclusions" ||
+                reject "producer conclusion is not one of $conclusions"
+              [ "$(field .workflow_run.head_repository.full_name)" = "$GITHUB_REPOSITORY" ] &&
+                [ "$(field .workflow_run.head_repository.id)" = "$GITHUB_REPOSITORY_ID" ] ||
+                reject "producer head repository is not $GITHUB_REPOSITORY"
+              head_sha="$(field .workflow_run.head_sha)"
+              ;;
+            *)
+              reject "unsupported event '$GITHUB_EVENT_NAME'"
+              ;;
+          esac
+
+          [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || reject "head SHA is not a full commit SHA"
+          # Compare against the fully qualified branch ref: a bare name resolves a
+          # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
+          # live branch tip; behind: it is reachable from the branch. Deploy
+          # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          # With TIP_TREE_PATH, a head behind the tip is still current when that
+          # directory's tree is unchanged at the tip (unrelated commits landed).
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
+          if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
+            if [ "$status" = behind ] && [ -n "${TIP_TREE_PATH:-}" ]; then
+              [[ "$TIP_TREE_PATH" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$ ]] ||
+                reject "TIP_TREE_PATH is not a nested repository path"
+              tree_sha() {
+                gh api "repos/$GITHUB_REPOSITORY/contents/${TIP_TREE_PATH%/*}?ref=$1" \
+                  --jq ".[] | select(.type == \"dir\" and .name == \"${TIP_TREE_PATH##*/}\") | .sha"
+              }
+              tip_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha)"
+              [[ "$tip_sha" =~ ^[0-9a-f]{40}$ ]] || reject "cannot resolve the tip of $branch"
+              head_tree="$(tree_sha "$head_sha")"
+              [[ "$head_tree" =~ ^[0-9a-f]{40}$ ]] && [ "$head_tree" = "$(tree_sha "$tip_sha")" ] ||
+                reject "head SHA is behind $branch and $TIP_TREE_PATH changed since"
+            else
+              [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+            fi
+          else
+            [ "$status" = identical ] || [ "$status" = behind ] ||
+              reject "head SHA is not reachable from $branch"
+          fi
+          {
+            echo "trusted=true"
+            echo "head_sha=$head_sha"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+          echo "Trusted trigger: $head_sha on $branch"
+
+  deploy:
+    name: Deploy to Modal
+    needs: trigger
+    # Manual deploys run from main only; the environment lets admins add a
+    # main-only branch policy and environment-scoped Modal secrets.
+    environment: discord-production
+    if: needs.trigger.outputs.trusted == 'true'
     concurrency:
       group: discord-modal-deploy
       cancel-in-progress: false
@@ -33,13 +156,123 @@ jobs:
       run:
         working-directory: ./apps/discord
     steps:
+      # Re-proven in this job: re-running only this job must not reuse an
+      # earlier tip check through needs outputs.
+      - name: Verify trusted trigger
+        id: trigger
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUIRE_BRANCH_TIP: "true"
+          TIP_TREE_PATH: apps/discord
+          TRUSTED_DISPATCH_REF: refs/heads/main
+          # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
+          TRUSTED_PRODUCERS: |
+            discord-python-ci.yml 207981538 main push success
+        run: |
+          set -euo pipefail
+          # Expression `==` ignores case and workflow_run matches producers by name, so
+          # re-prove the trigger with exact comparisons before any privileged step runs.
+          # Values come from the event file and runner variables, never interpolation.
+          reject() {
+            echo "::error::Untrusted trigger: $1"
+            exit 1
+          }
+          field() {
+            jq -r "$1 // \"\" | tostring" "$GITHUB_EVENT_PATH"
+          }
+          listed() {
+            local item
+            local -a items
+            IFS=',' read -r -a items <<< "$2"
+            for item in "${items[@]}"; do
+              if [ "$item" = "$1" ] || [ "$item" = any ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            workflow_dispatch)
+              if [ -z "${TRUSTED_DISPATCH_REF:-}" ] || [ "$GITHUB_REF" != "$TRUSTED_DISPATCH_REF" ]; then
+                reject "manual runs must start from ${TRUSTED_DISPATCH_REF:-a trusted producer}"
+              fi
+              branch="${TRUSTED_DISPATCH_REF#refs/heads/}"
+              head_sha="$GITHUB_SHA"
+              ;;
+            workflow_run)
+              run_path="$(field .workflow_run.path)"
+              file=""
+              while read -r candidate workflow_id branch events conclusions; do
+                if [ -n "$candidate" ] && [ "$run_path" = ".github/workflows/$candidate" ]; then
+                  file="$candidate"
+                  break
+                fi
+              done <<< "${TRUSTED_PRODUCERS:-}"
+              [ -n "$file" ] || reject "producer path '$run_path' is not trusted"
+              [ -n "$workflow_id" ] && [ "$(field .workflow_run.workflow_id)" = "$workflow_id" ] ||
+                reject "producer workflow ID is not $file's ID $workflow_id"
+              [ "$(field .workflow_run.head_branch)" = "$branch" ] ||
+                reject "producer branch is not exactly '$branch'"
+              listed "$(field .workflow_run.event)" "$events" ||
+                reject "producer event is not one of $events"
+              listed "$(field .workflow_run.conclusion)" "$conclusions" ||
+                reject "producer conclusion is not one of $conclusions"
+              [ "$(field .workflow_run.head_repository.full_name)" = "$GITHUB_REPOSITORY" ] &&
+                [ "$(field .workflow_run.head_repository.id)" = "$GITHUB_REPOSITORY_ID" ] ||
+                reject "producer head repository is not $GITHUB_REPOSITORY"
+              head_sha="$(field .workflow_run.head_sha)"
+              ;;
+            *)
+              reject "unsupported event '$GITHUB_EVENT_NAME'"
+              ;;
+          esac
+
+          [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || reject "head SHA is not a full commit SHA"
+          # Compare against the fully qualified branch ref: a bare name resolves a
+          # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
+          # live branch tip; behind: it is reachable from the branch. Deploy
+          # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          # With TIP_TREE_PATH, a head behind the tip is still current when that
+          # directory's tree is unchanged at the tip (unrelated commits landed).
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
+          if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
+            if [ "$status" = behind ] && [ -n "${TIP_TREE_PATH:-}" ]; then
+              [[ "$TIP_TREE_PATH" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$ ]] ||
+                reject "TIP_TREE_PATH is not a nested repository path"
+              tree_sha() {
+                gh api "repos/$GITHUB_REPOSITORY/contents/${TIP_TREE_PATH%/*}?ref=$1" \
+                  --jq ".[] | select(.type == \"dir\" and .name == \"${TIP_TREE_PATH##*/}\") | .sha"
+              }
+              tip_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha)"
+              [[ "$tip_sha" =~ ^[0-9a-f]{40}$ ]] || reject "cannot resolve the tip of $branch"
+              head_tree="$(tree_sha "$head_sha")"
+              [[ "$head_tree" =~ ^[0-9a-f]{40}$ ]] && [ "$head_tree" = "$(tree_sha "$tip_sha")" ] ||
+                reject "head SHA is behind $branch and $TIP_TREE_PATH changed since"
+            else
+              [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+            fi
+          else
+            [ "$status" = identical ] || [ "$status" = behind ] ||
+              reject "head SHA is not reachable from $branch"
+          fi
+          {
+            echo "trusted=true"
+            echo "head_sha=$head_sha"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+          echo "Trusted trigger: $head_sha on $branch"
+
       - name: Checkout code
-        uses: actions/checkout@v7
+        if: steps.trigger.outputs.trusted == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ steps.trigger.outputs.head_sha }}
+          persist-credentials: false
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -51,9 +284,11 @@ jobs:
           cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
+        if: steps.trigger.outputs.trusted == 'true'
         run: uv sync --locked
 
       - name: Verify Modal credentials
+        if: steps.trigger.outputs.trusted == 'true'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
@@ -64,6 +299,7 @@ jobs:
           fi
 
       - name: Deploy app
+        if: steps.trigger.outputs.trusted == 'true'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}

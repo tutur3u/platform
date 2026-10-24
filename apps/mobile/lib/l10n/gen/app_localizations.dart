@@ -1711,6 +1711,18 @@ abstract class AppLocalizations {
   /// **'Reset zoom'**
   String get assistantMermaidZoomReset;
 
+  /// No description provided for @assistantMessageDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get assistantMessageDelivered;
+
+  /// No description provided for @assistantMessageRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get assistantMessageRead;
+
   /// No description provided for @assistantMessageActionsTitle.
   ///
   /// In en, this message translates to:
@@ -1930,7 +1942,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantSettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Assistant settings'**
+  /// **'Assistant Settings'**
   String get assistantSettingsTitle;
 
   /// No description provided for @assistantShowBottomNavLabel.
@@ -13153,6 +13165,246 @@ abstract class AppLocalizations {
   /// **'App version'**
   String get settingsAppVersion;
 
+  /// No description provided for @appearanceAccentAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get appearanceAccentAmber;
+
+  /// No description provided for @appearanceAccentBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get appearanceAccentBlue;
+
+  /// No description provided for @appearanceAccentGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get appearanceAccentGreen;
+
+  /// No description provided for @appearanceAccentIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get appearanceAccentIndigo;
+
+  /// No description provided for @appearanceAccentNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get appearanceAccentNeutral;
+
+  /// No description provided for @appearanceAccentOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get appearanceAccentOrange;
+
+  /// No description provided for @appearanceAccentRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose'**
+  String get appearanceAccentRose;
+
+  /// No description provided for @appearanceAccentTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get appearanceAccentTeal;
+
+  /// No description provided for @appearanceAccentTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Match theme'**
+  String get appearanceAccentTheme;
+
+  /// No description provided for @appearanceAccentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent color'**
+  String get appearanceAccentTitle;
+
+  /// No description provided for @appearanceAccentViolet.
+  ///
+  /// In en, this message translates to:
+  /// **'Violet'**
+  String get appearanceAccentViolet;
+
+  /// No description provided for @appearanceAnimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Animate background'**
+  String get appearanceAnimate;
+
+  /// No description provided for @appearanceAnimateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Blobs drift slowly. Uses a little more battery.'**
+  String get appearanceAnimateDescription;
+
+  /// No description provided for @appearanceAnimateReducedMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce Motion is on, so the background stays still.'**
+  String get appearanceAnimateReducedMotion;
+
+  /// No description provided for @appearanceBackgroundBlobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Blobs'**
+  String get appearanceBackgroundBlobs;
+
+  /// No description provided for @appearanceBackgroundGradient.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradient'**
+  String get appearanceBackgroundGradient;
+
+  /// No description provided for @appearanceBackgroundSolid.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid'**
+  String get appearanceBackgroundSolid;
+
+  /// No description provided for @appearanceBackgroundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get appearanceBackgroundTitle;
+
+  /// No description provided for @appearanceIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity'**
+  String get appearanceIntensity;
+
+  /// No description provided for @appearanceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get appearanceModeTitle;
+
+  /// No description provided for @appearanceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get appearanceNew;
+
+  /// No description provided for @appearancePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get appearancePreviewTitle;
+
+  /// No description provided for @appearanceReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get appearanceReset;
+
+  /// No description provided for @appearanceResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance reset to default'**
+  String get appearanceResetDone;
+
+  /// No description provided for @appearanceSoftness.
+  ///
+  /// In en, this message translates to:
+  /// **'Softness'**
+  String get appearanceSoftness;
+
+  /// No description provided for @appearanceSurfaceOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Card opacity'**
+  String get appearanceSurfaceOpacity;
+
+  /// No description provided for @appearanceSurfacesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Surfaces'**
+  String get appearanceSurfacesTitle;
+
+  /// No description provided for @appearanceThemeAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get appearanceThemeAurora;
+
+  /// No description provided for @appearanceThemeBlossom.
+  ///
+  /// In en, this message translates to:
+  /// **'Blossom'**
+  String get appearanceThemeBlossom;
+
+  /// No description provided for @appearanceThemeClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get appearanceThemeClassic;
+
+  /// No description provided for @appearanceThemeEmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Ember'**
+  String get appearanceThemeEmber;
+
+  /// No description provided for @appearanceThemeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get appearanceThemeForest;
+
+  /// No description provided for @appearanceThemeMono.
+  ///
+  /// In en, this message translates to:
+  /// **'Mono'**
+  String get appearanceThemeMono;
+
+  /// No description provided for @appearanceThemeOcean.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean'**
+  String get appearanceThemeOcean;
+
+  /// No description provided for @appearanceThemeSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get appearanceThemeSunset;
+
+  /// No description provided for @appearanceThemesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get appearanceThemesTitle;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsProfileEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get settingsProfileEdit;
+
+  /// No description provided for @settingsProfileManageWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get settingsProfileManageWorkspace;
+
+  /// No description provided for @settingsProfileWorkspaceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{workspace} other{workspaces}}'**
+  String settingsProfileWorkspaceCount(int count);
+
   /// No description provided for @settingsAppearanceLanguage.
   ///
   /// In en, this message translates to:
@@ -13348,7 +13600,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsGeneralGroup.
   ///
   /// In en, this message translates to:
-  /// **'Personalize'**
+  /// **'General'**
   String get settingsGeneralGroup;
 
   /// No description provided for @settingsHaptics.
@@ -13873,11 +14125,17 @@ abstract class AppLocalizations {
   /// **'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.'**
   String get settingsTimezoneDescription;
 
-  /// No description provided for @settingsTimezoneEffective.
+  /// No description provided for @settingsTimezoneAutoShort.
   ///
   /// In en, this message translates to:
-  /// **'Effective timezone: {timezone}'**
-  String settingsTimezoneEffective(String timezone);
+  /// **'Auto'**
+  String get settingsTimezoneAutoShort;
+
+  /// No description provided for @settingsTimezoneCityHoChiMinh.
+  ///
+  /// In en, this message translates to:
+  /// **'Ho Chi Minh City'**
+  String get settingsTimezoneCityHoChiMinh;
 
   /// No description provided for @settingsTimezoneError.
   ///
@@ -13896,6 +14154,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Too many requests. Please wait before retrying.'**
   String get settingsTimezoneRateLimited;
+
+  /// No description provided for @settingsTimezoneRateLimitedDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit details: {details}'**
+  String settingsTimezoneRateLimitedDetails(Object details);
+
+  /// No description provided for @settingsTimezoneRateLimitedChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'The response indicates a Vercel security challenge. Please contact support if this continues.'**
+  String get settingsTimezoneRateLimitedChallenge;
+
+  /// No description provided for @settingsTimezoneRateLimitedUpstream.
+  ///
+  /// In en, this message translates to:
+  /// **'This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.'**
+  String get settingsTimezoneRateLimitedUpstream;
+
+  /// No description provided for @settingsTimezoneRateLimitedRetryAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'The server asks you to wait {seconds} seconds before retrying.'**
+  String settingsTimezoneRateLimitedRetryAfter(int seconds);
 
   /// No description provided for @settingsTimezoneRetry.
   ///
@@ -20436,6 +20718,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter details of 1–8000 characters.'**
   String get feedbackDetailsRequired;
+
+  /// No description provided for @profileMediaNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect. Check your connection and try again.'**
+  String get profileMediaNetworkError;
+
+  /// No description provided for @profileMediaUploadExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload link expired or is invalid. Select the image again.'**
+  String get profileMediaUploadExpired;
+
+  /// No description provided for @settingsNativeVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify this device. Check your connection and try again.'**
+  String get settingsNativeVerificationFailed;
+
+  /// No description provided for @settingsTimezonePickerAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All timezones'**
+  String get settingsTimezonePickerAll;
+
+  /// No description provided for @settingsTimezonePickerAutoPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the workspace timezone, or this device\'s when the workspace has none.'**
+  String get settingsTimezonePickerAutoPersonal;
+
+  /// No description provided for @settingsTimezonePickerAutoWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Members without a personal timezone use their own device\'s.'**
+  String get settingsTimezonePickerAutoWorkspace;
+
+  /// No description provided for @settingsTimezonePickerAutoResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently {timezone}.'**
+  String settingsTimezonePickerAutoResolved(String timezone);
+
+  /// No description provided for @settingsTimezonePickerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get settingsTimezonePickerCurrent;
+
+  /// No description provided for @settingsTimezonePickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No timezones match “{query}”.'**
+  String settingsTimezonePickerEmpty(String query);
+
+  /// No description provided for @settingsTimezonePickerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search city, region or GMT offset'**
+  String get settingsTimezonePickerSearchHint;
+
+  /// No description provided for @settingsAppsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get settingsAppsGroup;
+
+  /// No description provided for @settingsSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search settings'**
+  String get settingsSearchPlaceholder;
+
+  /// No description provided for @settingsSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No settings match “{query}”.'**
+  String settingsSearchNoResults(String query);
+
+  /// No description provided for @settingsSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 result} other{{count} results}}'**
+  String settingsSearchResults(int count);
+
+  /// No description provided for @settingsAppOfflineData.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline data'**
+  String get settingsAppOfflineData;
+
+  /// No description provided for @settingsAppOfflineDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare and review what this device keeps offline'**
+  String get settingsAppOfflineDataDescription;
+
+  /// No description provided for @settingsAppBoardsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Boards'**
+  String get settingsAppBoardsGroup;
+
+  /// No description provided for @settingsAppWeekGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get settingsAppWeekGroup;
+
+  /// No description provided for @settingsAppConnectionsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected calendars'**
+  String get settingsAppConnectionsGroup;
+
+  /// No description provided for @settingsAppPrivacyGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settingsAppPrivacyGroup;
+
+  /// No description provided for @settingsAppFocusGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get settingsAppFocusGroup;
+
+  /// No description provided for @settingsAppRequestsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get settingsAppRequestsGroup;
+
+  /// No description provided for @settingsPomodoroSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{focus} min focus · {shortBreak} min break'**
+  String settingsPomodoroSummary(int focus, int shortBreak);
+
+  /// No description provided for @settingsRequestThresholdSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{Every missed entry needs approval} =1{Entries older than 1 day need approval} other{Entries older than {days} days need approval}}'**
+  String settingsRequestThresholdSummary(int days);
+
+  /// No description provided for @settingsFirstDaySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'First day: {day}'**
+  String settingsFirstDaySummary(String day);
+
+  /// No description provided for @settingsMailSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailboxes, reading and swipe actions'**
+  String get settingsMailSummary;
+
+  /// No description provided for @settingsAssistantSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Personality, memory and on-device models'**
+  String get settingsAssistantSummary;
+
+  /// No description provided for @settingsTimeZoneGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Time zone'**
+  String get settingsTimeZoneGroup;
+
+  /// No description provided for @settingsAppSettingsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} settings'**
+  String settingsAppSettingsFor(String app);
+
+  /// No description provided for @settingsApprovalThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval threshold'**
+  String get settingsApprovalThreshold;
+
+  /// No description provided for @settingsPomodoroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pomodoro'**
+  String get settingsPomodoroTitle;
+
+  /// No description provided for @settingsRequireApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Require approval'**
+  String get settingsRequireApproval;
+
+  /// No description provided for @settingsApprovalOlderThan.
+  ///
+  /// In en, this message translates to:
+  /// **'For entries older than'**
+  String get settingsApprovalOlderThan;
+
+  /// No description provided for @settingsDaysUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get settingsDaysUnit;
+
+  /// No description provided for @settingsStatusChangeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Status change window'**
+  String get settingsStatusChangeWindow;
+
+  /// No description provided for @settingsFooterDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device.'**
+  String get settingsFooterDevice;
+
+  /// No description provided for @settingsFooterFirstDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account on every device. Auto uses the workspace default.'**
+  String get settingsFooterFirstDay;
+
+  /// No description provided for @settingsFooterWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to everyone in this workspace.'**
+  String get settingsFooterWorkspace;
+
+  /// No description provided for @settingsFooterCalendarAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar accounts connected to this workspace.'**
+  String get settingsFooterCalendarAccounts;
+
+  /// No description provided for @settingsFooterOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Data kept on this device for offline use.'**
+  String get settingsFooterOffline;
+
+  /// No description provided for @settingsTasksSummaryBoardView.
+  ///
+  /// In en, this message translates to:
+  /// **'Board view'**
+  String get settingsTasksSummaryBoardView;
+
+  /// No description provided for @settingsTasksSummaryBoardList.
+  ///
+  /// In en, this message translates to:
+  /// **'Board list'**
+  String get settingsTasksSummaryBoardList;
+
+  /// No description provided for @settingsFinanceAmountsShown.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts shown'**
+  String get settingsFinanceAmountsShown;
+
+  /// No description provided for @settingsFinanceAmountsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts hidden'**
+  String get settingsFinanceAmountsHidden;
+
+  /// No description provided for @settingsSearchBrowserTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'browser'**
+  String get settingsSearchBrowserTerm;
+
+  /// No description provided for @profilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get profilePhoto;
+
+  /// No description provided for @profileCoverBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover banner'**
+  String get profileCoverBanner;
+
+  /// No description provided for @profileMediaSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get profileMediaSet;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

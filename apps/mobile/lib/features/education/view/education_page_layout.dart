@@ -107,10 +107,7 @@ extension _EducationPageLayout on _EducationPageState {
                 ),
             ],
           ),
-          ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: _buildEducationList(context),
-          ),
+          _buildEducationList(context),
         ],
       ),
     );
@@ -143,8 +140,8 @@ extension _EducationPageLayout on _EducationPageState {
       ),
       const SizedBox(height: 14),
       Wrap(
-        spacing: 12,
-        runSpacing: 12,
+        spacing: AppLayout.itemGap,
+        runSpacing: AppLayout.itemGap,
         children: [
           _EducationSummaryTile(
             label: l10n.educationCoursesLabel,
@@ -192,9 +189,9 @@ extension _EducationPageLayout on _EducationPageState {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: AppLayout.sectionGap),
       FinanceSectionHeader(title: l10n.educationOverviewRecentCoursesTitle),
-      const SizedBox(height: 12),
+      const SizedBox(height: AppLayout.itemGap),
       if (_coursePreview.isEmpty)
         FinanceEmptyState(
           icon: Icons.school_outlined,
@@ -213,9 +210,9 @@ extension _EducationPageLayout on _EducationPageState {
             ),
           ),
         ),
-      const SizedBox(height: 24),
+      const SizedBox(height: AppLayout.sectionGap),
       FinanceSectionHeader(title: l10n.educationOverviewRecentAttemptsTitle),
-      const SizedBox(height: 12),
+      const SizedBox(height: AppLayout.itemGap),
       if (_attemptPreview.isEmpty)
         FinanceEmptyState(
           icon: Icons.assignment_outlined,

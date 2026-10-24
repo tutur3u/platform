@@ -401,6 +401,16 @@
       "types": "./dist/sso.d.ts",
       "import": "./dist/sso.js",
       "require": "./dist/sso.js"
+    },
+    "./native-integrity": {
+      "types": "./dist/native-integrity.d.ts",
+      "import": "./dist/native-integrity.js",
+      "require": "./dist/native-integrity.js"
+    },
+    "./calendar-settings-server": {
+      "types": "./dist/calendar-settings-server.d.ts",
+      "import": "./dist/calendar-settings-server.js",
+      "require": "./dist/calendar-settings-server.js"
     }
   },
   "devDependencies": {
@@ -409,11 +419,12 @@
     "typescript": "7.0.2",
     "vitest": "^5.0.5"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
+    "cbor-x": "1.6.0",
     "zod": "4.6.7"
   }
 }

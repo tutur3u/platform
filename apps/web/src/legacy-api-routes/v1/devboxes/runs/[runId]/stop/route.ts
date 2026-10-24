@@ -14,7 +14,9 @@ export async function POST(
   const { runId } = await context.params;
 
   try {
-    return NextResponse.json(await stopDevboxRun(runId));
+    return NextResponse.json(
+      await stopDevboxRun({ actorId: authorization.user.id, runId })
+    );
   } catch (error) {
     return createDevboxRouteErrorResponse(error, 'Failed to stop devbox run');
   }
