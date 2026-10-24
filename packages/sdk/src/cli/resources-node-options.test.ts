@@ -55,6 +55,7 @@ describe('Node runtime option admission', () => {
     ['node', '--diagnostic-dir', program],
     ['node', '--require', 'vitest'],
     ['node', '--title', 'resources-entry.js'],
+    ['node', '--title', 'ttr.cjs'],
     ['node', '--cpu-prof-dir', 'scripts/check.js'],
     ['node', '--env-file', 'run-script-tests.js'],
     ['bun', '--preload', 'playwright'],

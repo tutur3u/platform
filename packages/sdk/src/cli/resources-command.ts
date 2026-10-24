@@ -162,6 +162,7 @@ const nodeSwitches = new Set([
 // shims are on PATH. It does its own admission, so a shim must never admit it.
 const ttrLaunchers = new Set([
   'ttr',
+  'ttr.cjs',
   'tuturuuu',
   'tutur3u',
   'resources-entry.ts',
