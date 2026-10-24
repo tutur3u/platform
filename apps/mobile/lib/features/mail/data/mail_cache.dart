@@ -76,13 +76,11 @@ class MailCache {
     };
     final key = _key(wsId, path);
     final scopeRevision = _store.scopeRevisionFor(key);
-    final resourceRevision = _store.resourceRevisionFor(key);
     void checkScope() {
       if (!_usable ||
           pathRevision != (_pathRevisions[(wsId, path)] ?? 0) ||
           _deniedWorkspaces.contains(wsId) ||
-          scopeRevision != _store.scopeRevisionFor(key) ||
-          (mailboxSettings && resourceRevision != _store.resourceRevisionFor(key))) {
+          scopeRevision != _store.scopeRevisionFor(key)) {
         throw StateError('Mail request scope changed');
       }
     }

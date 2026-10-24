@@ -101,6 +101,20 @@ void main() {
     }
   }
 
+  test('ordinary Mail invalidation retains registered settings refresh', () async {
+    var calls = 0;
+    when(() => api.getJson(path)).thenAnswer((_) async {
+      calls++;
+      return {'settings': {'senderName': 'Read $calls'}};
+    });
+    await repository.settings(ws, mailbox);
+    expect(calls, 1);
+    await cache.mutate(ws, () async {});
+    await store.refreshCachedResources(currentUserId: () => actor);
+    expect(calls, 2);
+    expect((await repository.cachedSettings(ws, mailbox))?['settings'], {'senderName': 'Read 2'});
+  });
+
   test('offline sender delta retains a newer web signature on replay', () async {
     final confirmed = mailSettingsFormValues({'senderName': 'Before', 'signatureText': 'Old'});
     final draft = {...confirmed, 'senderName': 'New'};

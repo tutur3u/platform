@@ -313,7 +313,10 @@ actions. Saves send changed top-level fields only; nested automation and group
 policies remain complete objects. A sender-name edit preserves an unrelated web
 signature change, but concurrent edits to the same field or policy still use the
 server's existing last-write-wins contract. No revision precondition is claimed.
-Further settings saves wait while that mailbox has an unresolved edit. Failed
+Server-setting controls stay read-only while that mailbox has an unresolved
+edit, including when reopened, and until a fresh response installs the next
+confirmed baseline. Retry after a mailbox denial requires a fresh owner/admin
+management grant; cached roles never restore editing. Failed
 edits do not overlay confirmed settings. A mailbox settings 403/404 removes only
 that mailbox's snapshot; workspace bootstrap denial still revokes workspace Mail.
 Authorization denial removes the affected snapshot;

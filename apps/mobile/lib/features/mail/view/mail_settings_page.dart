@@ -83,6 +83,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     widget.repository.accessRevoked?.addListener(_accessRevoked);
     widget.repository.settingsRevoked?.addListener(_mailboxRevoked);
     _hadPendingSettings = _hasPendingSettings;
+    _awaitingConfirmation = _hadPendingSettings;
     OfflineMutationQueue.instance.pending.addListener(_pendingSettingsChanged);
     OfflineMutationQueue.instance.syncRevision.addListener(_syncFinished);
     if (_canEdit || widget.readOnlySnapshot) {
@@ -200,6 +201,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     final pending = _hasPendingSettings;
     final resolved = _hadPendingSettings && !pending;
     _hadPendingSettings = pending;
+    if (pending || resolved) _awaitingConfirmation = true;
     final rejected = OfflineMutationQueue.instance.pending.value.any((edit) =>
       edit.userId == currentCacheUserId() && edit.workspaceId == widget.workspaceId &&
       edit.isMailSettings && edit.path == '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings' &&

@@ -59,8 +59,7 @@ class MailSettingsPendingStatus extends StatelessWidget {
             (item) =>
                 item.userId == currentCacheUserId() &&
                 item.workspaceId == workspaceId &&
-                item.feature == 'mail' &&
-                item.method == 'PATCH' &&
+                item.isMailSettings &&
                 item.path == path,
           )
           .firstOrNull;
@@ -70,7 +69,7 @@ class MailSettingsPendingStatus extends StatelessWidget {
       return PendingSyncFrame(
         workspaceId: workspaceId,
         entityId: edit.entityId ?? mailSettingsEntityId(mailboxId),
-        feature: 'mail',
+        feature: edit.feature,
         child: const SizedBox.shrink(),
       );
     },

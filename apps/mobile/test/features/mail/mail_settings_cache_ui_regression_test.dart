@@ -282,19 +282,26 @@ void main() {
     });
   }
 
-  testWidgets('pending replay freezes edits until fresh baseline then sends only new field', (tester) async {
+  for (final restored in [false, true]) {
+  testWidgets('pending replay restored=$restored freezes edits until fresh baseline then sends only new field', (tester) async {
     final mutations = OfflineMutationQueue.instance.pending;
     final previous = mutations.value;
     mutations.value = [];
     addTearDown(() => mutations.value = previous);
-    var server = <String, dynamic>{'senderName': 'Before'};
+    var server = <String, dynamic>{'senderName': restored ? 'Queued' : 'Before'};
+    if (restored) {
+      mutations.value = [PendingMutationRecord(id: 'restored', feature: 'mail_settings',
+        method: 'PATCH', path: '${MailRepository.mailboxPath('ws', 'box')}/settings',
+        userId: currentCacheUserId(), workspaceId: 'ws', createdAt: DateTime.utc(2026),
+        payload: const {'senderName': 'Queued'}, optimisticPatch: {'entityId': mailSettingsEntityId('box')})];
+    }
     Completer<Map<String, dynamic>>? refresh;
     when(() => repository.settings('ws', 'box')).thenAnswer((_) async =>
-      refresh == null ? {'settings': server} : await refresh!.future);
+      refresh == null ? {'settings': server, 'confirmedSettings': {'senderName': 'Before'}} : await refresh!.future);
     final payloads = <Map<String, dynamic>>[];
     when(() => repository.updateSettings('ws', 'box', any())).thenAnswer((invocation) async {
       payloads.add(Map<String, dynamic>.from(invocation.positionalArguments[2] as Map));
-      if (payloads.length == 1) {
+      if (!restored && payloads.length == 1) {
         mutations.value = [PendingMutationRecord(id: 'first', feature: 'mail_settings',
           method: 'PATCH', path: '${MailRepository.mailboxPath('ws', 'box')}/settings',
           userId: currentCacheUserId(), workspaceId: 'ws', createdAt: DateTime.utc(2026),
@@ -303,10 +310,12 @@ void main() {
     });
     await tester.pumpApp(MailSettingsPage(repository: repository, workspaceId: 'ws', mailboxId: 'box'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'Queued');
-    await tester.tap(find.byTooltip('Save'));
-    await tester.pumpAndSettle();
-    expect(payloads.single, {'senderName': 'Queued'});
+    if (!restored) {
+      await tester.enterText(find.byType(TextField).first, 'Queued');
+      await tester.tap(find.byTooltip('Save'));
+      await tester.pumpAndSettle();
+      expect(payloads.single, {'senderName': 'Queued'});
+    }
     expect(tester.widget<AppTextField>(find.byType(AppTextField).first).enabled, isFalse);
     refresh = Completer<Map<String, dynamic>>();
     mutations.value = [];
@@ -325,6 +334,8 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  }
 
   testWidgets('rejected settings recover only after a fresh management grant', (tester) async {
     when(() => repository.settings('ws', 'box')).thenThrow(const ApiException(message: 'Denied', statusCode: 403));

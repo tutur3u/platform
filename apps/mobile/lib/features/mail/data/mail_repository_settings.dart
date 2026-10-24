@@ -114,11 +114,16 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
   Future<Map<String, dynamic>> settings(String wsId, String mailboxId) async {
     _checkSettingsScope();
     final path = '${MailRepository.mailboxPath(wsId, mailboxId)}/settings';
+    var fresh = false;
     try {
       final result = await _settingsCache.read(
         wsId,
         path,
-        () async => mailSettingsSnapshot(await _fetchSettings(wsId, path)),
+        () async {
+          final result = mailSettingsSnapshot(await _fetchSettings(wsId, path));
+          fresh = true;
+          return result;
+        },
         forceRefresh: true,
         mailboxSettings: true,
       );
@@ -126,7 +131,7 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
         await _settingsQueue.init();
       }
       _checkSettingsScope();
-      return _overlaySettings(wsId, path, result);
+      return {..._overlaySettings(wsId, path, result), 'settingsFresh': fresh};
     } on _MailSettingsChallenge catch (challenge) {
       throw challenge.error;
     }

@@ -14,7 +14,7 @@ extension _MailSettingsPageData on _MailSettingsPageState {
     _forwarding = 'off';
   }
 
-  void _applySettings(Map<String, dynamic> result) {
+  void _applySettings(Map<String, dynamic> result, {bool confirmed = false}) {
     if (_dirty || _saving) {
       return;
     }
@@ -37,7 +37,9 @@ extension _MailSettingsPageData on _MailSettingsPageState {
       );
       _savedDraft = _draft;
       _hasSnapshot = true;
-      _awaitingConfirmation = false;
+      if (confirmed) _failed = false;
+      if (confirmed && !_hasUnresolvedSettings) _awaitingConfirmation = false;
+      if (_awaitingConfirmation && !confirmed && !_hasPendingSettings) _failed = true;
       _busy = false;
     });
   }
@@ -103,7 +105,7 @@ extension _MailSettingsPageData on _MailSettingsPageState {
       if (!isCurrent()) {
         return;
       }
-      _applySettings(result);
+      _applySettings(result, confirmed: result['settingsFresh'] != false);
     } on Object catch (error) {
       if (!isCurrent()) {
         return;

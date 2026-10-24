@@ -109,7 +109,7 @@ Map<String, dynamic> mailSettingsFormValues(Map<String, dynamic> settings) {
   final forwarding = automation?['forwarding'] as Map<String, dynamic>?;
   final group = settings['groupPolicy'] as Map<String, dynamic>?;
   return {
-    'senderName': settings['senderName'] as String? ?? '',
+    'senderName': (settings['senderName'] as String? ?? '').trim(),
     'signatureText': settings['signatureText'] as String? ?? '',
     'aiInstructions': settings['aiInstructions'] as String? ?? '',
     'autoDraftEnabled': settings['autoDraftEnabled'] as bool? ?? false,
@@ -119,7 +119,7 @@ Map<String, dynamic> mailSettingsFormValues(Map<String, dynamic> settings) {
       'smartLabelsEnabled': automation?['smartLabelsEnabled'] as bool? ?? false,
       'forwarding': {
         'mode': forwarding?['mode'] as String? ?? 'off',
-        if (forwarding?['mode'] == 'mailbox') 'address': forwarding?['address'] as String? ?? '',
+        if (forwarding?['mode'] == 'mailbox') 'address': (forwarding?['address'] as String? ?? '').trim(),
       },
     },
   };
