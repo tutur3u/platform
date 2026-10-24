@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/ui-v0.39.2...ui-v0.40.0) (2026-10-24)
+
+
+### Features
+
+* **satellite:** shared account, profile and security settings in every app ([#6477](https://github.com/tutur3u/platform/issues/6477)) ([2cd0879](https://github.com/tutur3u/platform/commit/2cd087939043a1dd91d1bfecee3337e4122badae))
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([ab4b75e](https://github.com/tutur3u/platform/commit/ab4b75ee65bc942e3d113243d8c9a48a8af4b0aa))
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **security:** harden guest and challenge password verification ([6127e0d](https://github.com/tutur3u/platform/commit/6127e0d51b1da4db97a3679d758e674ee110175e))
+* **security:** harden guest and challenge password verification ([#6556](https://github.com/tutur3u/platform/issues/6556)) ([81253df](https://github.com/tutur3u/platform/commit/81253df6d976c47ecb33b6c1f295dc711c94e590))
+* **security:** limit password attempts and enforce challenge grants ([a15d80f](https://github.com/tutur3u/platform/commit/a15d80f7026e4a7c9293a4426c842f9aee32ca5c))
+* **security:** resolve code-scanning findings in shared packages and runtime logs ([#6531](https://github.com/tutur3u/platform/issues/6531)) ([5690b3d](https://github.com/tutur3u/platform/commit/5690b3dc934f358dc8afdcd74fba06ce5eb16850))
+* **security:** scope join budgets and refund verified attempts ([45166df](https://github.com/tutur3u/platform/commit/45166df12005b1fbfd1b6011cd64cd3e6a6981d5))
+* **settings:** open settings dialog from bare settingsTab deep links ([#6466](https://github.com/tutur3u/platform/issues/6466)) ([084040c](https://github.com/tutur3u/platform/commit/084040c40414cc34eeac0204fd2714f8c9df2d9b))
+* **ui:** keep markdown paste conversion from stalling on rejected list lines ([8dbd2c9](https://github.com/tutur3u/platform/commit/8dbd2c98ae4e09b6d5e270849e38d523f9b17fdf))
+
 ## [0.39.2](https://github.com/tutur3u/platform/compare/ui-v0.39.1...ui-v0.39.2) (2026-10-22)
 
 

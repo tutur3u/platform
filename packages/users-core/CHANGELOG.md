@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.2](https://github.com/tutur3u/platform/compare/users-core-v0.11.1...users-core-v0.11.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([ab4b75e](https://github.com/tutur3u/platform/commit/ab4b75ee65bc942e3d113243d8c9a48a8af4b0aa))
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **notifications:** guard wildcard invite email filters ([c9f8ac8](https://github.com/tutur3u/platform/commit/c9f8ac8d227e9d2d9adc95753dbacc7448a09d99))
+* **notifications:** match unclaimed email invites ([0106ff5](https://github.com/tutur3u/platform/commit/0106ff5cec660bafd6dac35b66d0a88939830777))
+* **users-core:** use confirmed email for invite access ([042730e](https://github.com/tutur3u/platform/commit/042730e1624f81997edad4b6f24d9193fdc4b2b7))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.11.1](https://github.com/tutur3u/platform/compare/users-core-v0.11.0...users-core-v0.11.1) (2026-10-17)
 
 

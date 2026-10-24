@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/tutur3u/platform/compare/microsoft-v0.1.1...microsoft-v0.1.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** patch high-severity advisories ([f263ae6](https://github.com/tutur3u/platform/commit/f263ae6e96baa799d43aaa7e3f4cbb2e9010b4ce))
+* **deps:** patch high-severity advisories ([#6569](https://github.com/tutur3u/platform/issues/6569)) ([a67ca56](https://github.com/tutur3u/platform/commit/a67ca56759b100a61a0bec792b40c049a2c44681))
+
 ## [0.1.1](https://github.com/tutur3u/platform/compare/microsoft-v0.1.0...microsoft-v0.1.1) (2026-09-20)
 
 

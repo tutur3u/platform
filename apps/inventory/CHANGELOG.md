@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/inventory-v0.36.1...inventory-v0.37.0) (2026-10-24)
+
+
+### Features
+
+* **cron-control:** port checkout expiry to a default-off Worker processor ([#6473](https://github.com/tutur3u/platform/issues/6473)) ([aabb32b](https://github.com/tutur3u/platform/commit/aabb32bc1fb5eea746d4330f3a77a40113b747ee))
+* **satellite:** shared account, profile and security settings in every app ([#6477](https://github.com/tutur3u/platform/issues/6477)) ([2cd0879](https://github.com/tutur3u/platform/commit/2cd087939043a1dd91d1bfecee3337e4122badae))
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **cron-control:** retain and fairly drain checkout invalidations ([416cda6](https://github.com/tutur3u/platform/commit/416cda6f9fef9bef02c12b3d3a60068efb4fef81))
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5))
+* **security:** derive client IP from trusted proxy headers ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+* **security:** harden request-keyed records, push previews and key handoff ([#6521](https://github.com/tutur3u/platform/issues/6521)) ([1c7dfb1](https://github.com/tutur3u/platform/commit/1c7dfb13762c6da6b1935e8ea409aa29dce4c747))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.36.1](https://github.com/tutur3u/platform/compare/inventory-v0.36.0...inventory-v0.36.1) (2026-10-17)
 
 
