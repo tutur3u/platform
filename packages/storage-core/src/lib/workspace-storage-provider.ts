@@ -37,9 +37,6 @@ import { createGuardedSupabaseStorageReadUrl } from './storage-download-sign';
 import { fitsStorageBudget, readStorageUsageBytes } from './storage-quota';
 import { getStorageLimit } from './storage-quota-reader';
 import { assertStorageUploadSize } from './storage-upload-capacity';
-
-export { WorkspaceStorageError } from './storage-download-error';
-
 import {
   DRIVE_R2_ACCESS_KEY_ID_SECRET,
   DRIVE_R2_BUCKET_SECRET,
@@ -51,6 +48,8 @@ import {
   WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   type WorkspaceStorageProvider,
 } from './workspace-storage-config';
+
+export { WorkspaceStorageError } from './storage-download-error';
 
 const R2_SIGNED_URL_TTL_SECONDS = 900;
 const SUPABASE_STORAGE_LIST_PAGE_SIZE = 1000;
