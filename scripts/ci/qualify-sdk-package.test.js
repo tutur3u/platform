@@ -589,10 +589,11 @@ test('a process-helper-only change selects package qualification', () => {
     ...workflow.split('workflow_dispatch:')[0].matchAll(/^ {6}- "([^"]+)"$/gm),
   ].map((match) => match[1]);
   const helper = 'scripts/ci/sdk-package-process.js';
+  const glob = 'scripts/ci/sdk-package-process*';
   const selected = (paths) =>
     paths.some((rule) => path.matchesGlob(helper, rule));
   assert.equal(
-    selected(rules.filter((rule) => rule !== helper)),
+    selected(rules.filter((rule) => rule !== glob)),
     false,
     'prior trigger excluded a helper-only change'
   );
