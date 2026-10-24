@@ -15,6 +15,7 @@ function remoteTimeoutMs(waitDrain = 0) {
 function preserveStaging(report) {
   return (
     report.status === 'unknown' ||
+    report.admissionHeld === true ||
     ['failed', 'blocked-active-child'].includes(report.rollback)
   );
 }
@@ -28,7 +29,10 @@ function validateWorkerReport(report) {
     !['not-needed', 'restored', 'failed', 'blocked-active-child'].includes(
       report.rollback
     ) ||
-    (report.backup !== null && typeof report.backup !== 'string')
+    (report.backup !== null && typeof report.backup !== 'string') ||
+    ![undefined, 'failed'].includes(report.cleanup) ||
+    ![undefined, true].includes(report.admissionHeld) ||
+    (report.admissionHeld && report.status !== 'failed')
   )
     throw new Error('Invalid remote worker report; outcome unknown');
   if (report.status === 'qualified' && report.rollback !== 'not-needed')

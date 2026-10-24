@@ -26,7 +26,9 @@ stable suppliers may have an unknown source; do not infer runtime activation
 from source tests or a merged PR.
 
 Later rollback refuses changed global packages, roots, limits or launchers rather
-than restoring over newer state. Candidates install from the stable suppliers
+than restoring over newer state; the automatic post-failure restore refuses
+when the global package tree changed after install. `cleanup: "failed"` is housekeeping only and never calls for rollback;
+`admissionHeld: true` marks a slot/lease ownership problem that keeps admission closed. Candidates install from the stable suppliers
 cache; bounded retention preserves referenced cache entries and failed recovery.
 A dead preparation owner without `admission/mutation.json` is reclaimable by
 ordinary admission. For a legacy retained fence, use the operator guide's stale-admission

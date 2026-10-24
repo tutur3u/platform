@@ -21,6 +21,7 @@ const {
   backupInstallation,
   recordPostState,
   assertRollbackState,
+  assertGlobalUnchanged,
   retainCandidate,
   pruneRetention,
   fenceMutation,
@@ -353,6 +354,8 @@ async function worker(options, dependencies = {}) {
       path.join(report.backup, 'saved-1'),
       path.join(home, 'config.json')
     );
+    // Receipt of the installed state; an in-process restore refuses on drift.
+    recordPostState(report.backup);
     // A genuine ancestor owner lets qualification take the existing nested path.
     // The admission mutex remains held, so no other lane can start meanwhile.
     const slots = path.join(home, 'slots');
@@ -395,6 +398,9 @@ async function worker(options, dependencies = {}) {
     if (error.unsettled) report.rollback = 'blocked-active-child';
     else if (mutationStarted) {
       try {
+        // Never revert a concurrent global install made after this
+        // rollout's own install finished; refuse and keep admission closed.
+        assertGlobalUnchanged(report.backup);
         restore(report.backup);
         verifyRestored(userHome, report.backup);
         recordPostState(report.backup, 'restored-state.json');
@@ -405,14 +411,19 @@ async function worker(options, dependencies = {}) {
       }
     }
   } finally {
-    const cleanup = (action) => {
+    // Cleanup failures never rewrite the rollback outcome. Only slot or lease
+    // ownership problems keep admission closed and fail the report.
+    const cleanup = (action, ownership = false) => {
       try {
         action();
       } catch (error) {
         report.cleanupErrors ??= [];
         report.cleanupErrors.push(error.message);
-        report.status = 'failed';
-        report.rollback = 'failed';
+        report.cleanup = 'failed';
+        if (ownership) {
+          report.status = 'failed';
+          report.admissionHeld = true;
+        }
       }
     };
     if (slot && report.rollback !== 'blocked-active-child')
@@ -422,10 +433,13 @@ async function worker(options, dependencies = {}) {
             'Qualification owner changed; maintenance remains held'
           );
         fs.rmSync(slot, { recursive: true });
-      });
+      }, true);
     if (report.backup) cleanup(() => pruneRetention(home, report.backup));
-    if (!['failed', 'blocked-active-child'].includes(report.rollback))
-      cleanup(() => lock.release());
+    if (
+      !report.admissionHeld &&
+      !['failed', 'blocked-active-child'].includes(report.rollback)
+    )
+      cleanup(() => lock.release(), true);
     if (report.backup)
       cleanup(() =>
         atomicJson(path.join(report.backup, 'report.json'), report)

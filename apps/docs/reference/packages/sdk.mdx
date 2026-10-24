@@ -429,6 +429,17 @@ package or a root/limit change.** Do not force a whole-install restore over newe
 state; inspect and reconcile that state first. An interrupted rollback retains
 its same-operation recovery fence so it can resume safely.
 
+The automatic restore after a failed qualification compares the global package
+tree with the installed-state receipt and reports `rollback: "failed"` with the
+drift error instead of reverting a concurrent global install. Launcher and
+configuration writes during qualification are candidate defects and are still
+restored. Report `rollback` describes only
+restore work. Housekeeping failures (retention pruning, report writing) set
+`cleanup: "failed"` with `cleanupErrors` and leave the outcome and admission
+unchanged; only a changed slot or lease owner also sets `admissionHeld: true`,
+fails the report and keeps admission closed. Do not run `rollback.sh` for a
+cleanup-only failure.
+
 Candidates install from the stable content-addressed cache at
 `~/.tuturuuu/resources/suppliers/<sha256>.tgz`, separate from backups. Completed
 rollouts prune old completed backups, retaining five recent backups plus the
