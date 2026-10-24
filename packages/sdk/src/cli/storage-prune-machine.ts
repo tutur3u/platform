@@ -99,12 +99,20 @@ export function tmpSteps(ctx: PruneContext, category: StorageCategory) {
       bytes: item.uniqueBytes,
       description: `remove idle tmp dir (${item.label})`,
       root,
-      run: removeTree(root, item.path, () => {
-        if (newestMtime(item.path) > cutoff)
-          return 're-check failed: written recently';
-        const again = tmpScratchRejection(item.path, basename(item.path));
-        return again ? `re-check failed: ${again}` : null;
-      }),
+      // The deleting walk itself refuses any repository found inside, so a
+      // checkout moved in after this re-check is never removed.
+      run: removeTree(
+        root,
+        item.path,
+        () => {
+          if (newestMtime(item.path) > cutoff)
+            return 're-check failed: written recently';
+          const again = tmpScratchRejection(item.path, basename(item.path));
+          return again ? `re-check failed: ${again}` : null;
+        },
+        undefined,
+        { refuseRepositories: true }
+      ),
     });
   }
 }

@@ -52,6 +52,14 @@ export interface TreeIdentity {
   target: string;
   /** Root first, target last. */
   chain: Link[];
+  /**
+   * Refuse the whole removal when the pre-delete walk finds a git checkout
+   * (`.git` directory or worktree file) or bare repository anywhere inside.
+   * The check is part of the scan that defines what is deleted, so a
+   * repository moved in after earlier checks is either seen here or created
+   * after the scan, which only makes its parent's rmdir fail.
+   */
+  refuseRepositories?: boolean;
 }
 
 /**
@@ -147,7 +155,16 @@ export function removeVerifiedTree(
   owned(target.path, fs.lstat(target.path));
   const scan = (link: Link): Node => {
     const node: Node = { ...link, files: [], dirs: [] };
-    for (const name of fs.readdir(link.path)) {
+    const names = fs.readdir(link.path);
+    if (
+      identity.refuseRepositories &&
+      (names.includes('.git') ||
+        ['HEAD', 'objects', 'refs'].every((name) => names.includes(name)))
+    )
+      throw new Error(
+        `${link.path} contains a git repository; refusing the whole removal`
+      );
+    for (const name of names) {
       const path = join(link.path, name);
       const info = fs.lstat(path);
       owned(path, info);

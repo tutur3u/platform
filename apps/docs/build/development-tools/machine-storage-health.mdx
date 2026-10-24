@@ -63,7 +63,7 @@ values fall back to the default with a warning.
 | `homebrew-cache` | `brew cleanup --prune=<days>` (also removes old formula versions) | safe | named only |
 | `docker` | Build cache older than the age bound; unused images. Verified local daemon only | safe / moderate | named only |
 | `supabase-volumes` | Supabase CLI local volumes | high | only `--name <volume>`, never attached |
-| `tmp-old` | Identified tool scratch dirs (mktemp, `tmp-*`, Vitest, Turbo, Bun, `ttr-*` and similar) directly under a tmp root, idle past the age bound, at least 25 MiB, with no git checkout, linked worktree or bare repository inside | moderate | named only |
+| `tmp-old` | Identified tool scratch dirs (mktemp, `tmp-*`, Vitest, Turbo, Bun, `ttr-*` and similar) directly under a tmp root, idle past the age bound, at least 25 MiB, with no git checkout, linked worktree or bare repository inside (checked again by the deleting walk itself, which refuses the whole removal if one appears) | moderate | named only |
 | `xcode-device-support`, `gradle`, `playwright` | Rebuildable but costly | moderate | manual command only |
 | `trash`, `xcode-archives`, `android-sdk` AVDs, `vm-disks` | User data, signed builds, emulator state, VM images | high | never |
 

@@ -155,7 +155,8 @@ export interface PruneContext {
     root: string,
     target: string,
     recheck?: () => string | null,
-    fencePaths?: string[]
+    fencePaths?: string[],
+    options?: { refuseRepositories?: boolean }
   ) => () => StepResult;
   command: (
     argv: string[],
@@ -340,11 +341,15 @@ export function pruneStorage(options: PruneOptions) {
       root: string,
       target: string,
       recheck?: () => string | null,
-      fencePaths: string[] = [target]
+      fencePaths: string[] = [target],
+      { refuseRepositories = false }: { refuseRepositories?: boolean } = {}
     ) =>
     (): StepResult => {
       // Anchor first, so a swap during the checks below is detected.
-      const identity = captureIdentity(root, target);
+      const identity = {
+        ...captureIdentity(root, target),
+        refuseRepositories,
+      };
       const failed = fences(fencePaths, root) ?? recheck?.() ?? null;
       if (failed) return failed;
       removeTree(identity);

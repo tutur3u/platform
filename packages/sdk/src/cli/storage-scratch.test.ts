@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -6,6 +6,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { StorageItem, StorageReport } from './storage-analyze';
 import { defaultStorageThresholds } from './storage-headroom';
 import { type Exec, pruneStorage } from './storage-prune';
+import {
+  type FsOps,
+  realFsOps,
+  removeVerifiedTree,
+} from './storage-safe-remove';
 import {
   containsGitRepository,
   isScratchDirName,
@@ -181,6 +186,58 @@ describe('tmp-old scratch identity', () => {
       reason: 're-check failed: contains a git repository',
     });
   });
+});
+
+describe('tmp-old deleting walk', () => {
+  // A checkout with unmerged work moved into the scratch dir after every
+  // prune-level check: inside the remover, just before or just after the
+  // deleting walk's scan.
+  async function movableCheckout() {
+    const source = await scratch('ttr-checkout-source-');
+    const repo = join(source, 'repo');
+    await mkdir(join(repo, '.git'), { recursive: true });
+    await writeFile(join(repo, 'unmerged.txt'), 'work');
+    return repo;
+  }
+
+  it.each(['before', 'after'] as const)(
+    'never deletes a checkout moved in %s the walk scans',
+    async (when) => {
+      const dir = await scratch('ttr-walk-');
+      await writeFile(join(dir, 'blob'), 'x');
+      const repo = await movableCheckout();
+      const moved = join(dir, 'clone');
+      let movedIn = false;
+      const moveIn = () => {
+        if (movedIn) return;
+        movedIn = true;
+        renameSync(repo, moved);
+      };
+      const hooked: FsOps = {
+        ...realFsOps,
+        readdir: (path) => {
+          if (when === 'before' && path === dir) moveIn();
+          return realFsOps.readdir(path);
+        },
+        unlink: (path) => {
+          if (when === 'after') moveIn();
+          realFsOps.unlink(path);
+        },
+      };
+      let refused: boolean | undefined;
+      const { result } = prune([item({ path: dir })], undefined, {
+        removeTree: (identity) => {
+          refused = identity.refuseRepositories;
+          removeVerifiedTree(identity, hooked);
+        },
+      });
+      expect(refused).toBe(true);
+      expect(movedIn).toBe(true);
+      expect(result.steps[0]?.status).toBe('failed');
+      expect(existsSync(join(moved, '.git'))).toBe(true);
+      expect(readFileSync(join(moved, 'unmerged.txt'), 'utf8')).toBe('work');
+    }
+  );
 });
 
 describe('npm cache pinning', () => {
