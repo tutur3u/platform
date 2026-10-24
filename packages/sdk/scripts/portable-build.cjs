@@ -130,10 +130,8 @@ function stagePortableSources({ repoRoot, destination }) {
       const file = path.join(directory, entry.name);
       if (entry.isSymbolicLink()) throw new Error('Symlink in portable source');
       if (entry.isDirectory()) walk(file);
-      else if (
-        !/\.(test|spec|acceptance)\./.test(file) &&
-        file !== path.join(sdk, 'src/cli/resources-test-fixtures.ts')
-      )
+      // Test-only modules (specs and shared *-test-fixtures) never ship.
+      else if (!/\.(test|spec|acceptance)\.|-test-fixtures\./.test(file))
         pending.push(file);
     }
   }
