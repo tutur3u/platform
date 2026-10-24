@@ -53,6 +53,7 @@ class MailRepository extends MailSettingsRepository {
   }
 
   ValueListenable<String?>? get accessRevoked => _cache.accessRevoked;
+  ValueListenable<(String, String)?>? get settingsRevoked => _cache.snapshotRevoked;
 
   Future<Map<String, dynamic>?> savedView(String wsId) =>
       _cache.snapshot(wsId, 'view-state');

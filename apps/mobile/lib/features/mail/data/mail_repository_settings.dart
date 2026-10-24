@@ -34,11 +34,6 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
       if (error.isVerificationRequired || error.code == 'MFA_REQUIRED') {
         throw _MailSettingsChallenge(error);
       }
-      if (path.endsWith('/settings') &&
-          (error.statusCode == 403 || error.statusCode == 404)) {
-        await _settingsCache.removeSnapshot(wsId, path);
-        throw _MailSettingsChallenge(error);
-      }
       rethrow;
     }
   }
@@ -125,6 +120,7 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
         path,
         () async => mailSettingsSnapshot(await _fetchSettings(wsId, path)),
         forceRefresh: true,
+        mailboxSettings: true,
       );
       if (_settingsUserId != null) {
         await _settingsQueue.init();
@@ -166,6 +162,7 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
       expectedUserId: _settingsUserId,
       send: () => _forSettingsActor(
         () => _settingsCache.mutate(wsId, () async {
+          final revision = _settingsCache.snapshotRevision(wsId, path);
           final Map<String, dynamic> result;
           try {
             result = await _settingsApi.patchJson(path, safePayload);
@@ -190,6 +187,7 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
               wsId,
               path,
               mailSettingsSnapshot(result),
+              expectedRevision: revision,
             );
           } on FormatException {
             // The write is acknowledged; the next read owns reconciliation.

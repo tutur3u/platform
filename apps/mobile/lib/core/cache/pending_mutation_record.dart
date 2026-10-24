@@ -67,10 +67,17 @@ class PendingMutationRecord {
   /// from inbox actions, even when a settings write needs manual review.
   String get orderingFeature => isMailSettings ? 'mail_settings' : feature;
 
-  bool get isMailSettings =>
-      (feature == 'mail' || feature == 'mail_settings') &&
-      method == 'PATCH' && workspaceId != null &&
-      RegExp('^/api/v1/workspaces/${Uri.encodeComponent(workspaceId!)}/mail/mailboxes/[^/]+/settings$').hasMatch(path);
+  bool get isMailSettings {
+    if ((feature != 'mail' && feature != 'mail_settings') ||
+        method != 'PATCH' || workspaceId == null) return false;
+    final uri = Uri.tryParse(path);
+    if (uri == null || uri.hasQuery || uri.hasFragment) return false;
+    final segments = uri.pathSegments;
+    return segments.length == 8 && segments[0] == 'api' && segments[1] == 'v1' &&
+        segments[2] == 'workspaces' && segments[3] == workspaceId &&
+        segments[4] == 'mail' && segments[5] == 'mailboxes' &&
+        segments[6].isNotEmpty && segments[7] == 'settings';
+  }
 
   final String method;
   final String path;

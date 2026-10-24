@@ -19,6 +19,8 @@ import 'package:mobile/features/mail/view/mail_settings_controls.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/l10n/l10n.dart';
 
+part 'mail_settings_page_data.dart';
+
 class MailSettingsPage extends StatefulWidget {
   const MailSettingsPage({
     required this.repository,
@@ -58,12 +60,15 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   String? _provider;
   Map<String, dynamic> _editBaseline = {};
   bool _settingsRejected = false;
+  bool _awaitingConfirmation = false;
   String? _savedDraft;
   bool _saving = false;
   bool _confirmingExit = false;
   bool _allowExit = false;
   bool _hadPendingSettings = false;
   Map<String, dynamic>? _group;
+
+  void _updateSettingsState(VoidCallback update) => setState(update);
 
   @override
   void initState() {
@@ -76,6 +81,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     unawaited(MailImagePreference.instance.load());
     unawaited(MailPrimaryActionPreference.instance.load());
     widget.repository.accessRevoked?.addListener(_accessRevoked);
+    widget.repository.settingsRevoked?.addListener(_mailboxRevoked);
     _hadPendingSettings = _hasPendingSettings;
     OfflineMutationQueue.instance.pending.addListener(_pendingSettingsChanged);
     OfflineMutationQueue.instance.syncRevision.addListener(_syncFinished);
@@ -95,6 +101,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   @override
   void dispose() {
     widget.repository.accessRevoked?.removeListener(_accessRevoked);
+    widget.repository.settingsRevoked?.removeListener(_mailboxRevoked);
     OfflineMutationQueue.instance.pending.removeListener(
       _pendingSettingsChanged,
     );
@@ -175,6 +182,20 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
             '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings',
   );
 
+  bool get _hasUnresolvedSettings => OfflineMutationQueue.instance.pending.value.any((edit) =>
+    edit.userId == currentCacheUserId() && edit.workspaceId == widget.workspaceId &&
+    edit.isMailSettings && edit.path == '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings');
+  bool get _canChangeSettings => _canEdit && !_hasUnresolvedSettings && !_awaitingConfirmation;
+
+  void _mailboxRevoked() {
+    if (widget.repository.settingsRevoked?.value !=
+        (widget.workspaceId, '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings')) return;
+    if (!mounted) return;
+    _loadGeneration++;
+    _clearSettings();
+    setState(() { _settingsRejected = true; _failed = true; _busy = false; });
+  }
+
   void _pendingSettingsChanged() {
     final pending = _hasPendingSettings;
     final resolved = _hadPendingSettings && !pending;
@@ -216,136 +237,8 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     });
   }
 
-  void _clearSettings() {
-    _savedDraft = null;
-    _hasSnapshot = false;
-    for (final controller in [_sender, _signature, _instructions, _forwardTo]) {
-      controller.clear();
-    }
-    _group = null;
-    _provider = null;
-    _autoDraft = false;
-    _smartLabels = false;
-    _forwarding = 'off';
-  }
-
-  void _applySettings(Map<String, dynamic> result) {
-    if (_dirty || _saving) {
-      return;
-    }
-    final settings = result['settings'] as Map<String, dynamic>;
-    final automation = settings['automation'] as Map<String, dynamic>?;
-    final forwarding = automation?['forwarding'] as Map<String, dynamic>?;
-    _sender.text = settings['senderName'] as String? ?? '';
-    _signature.text = settings['signatureText'] as String? ?? '';
-
-    _instructions.text = settings['aiInstructions'] as String? ?? '';
-    _forwardTo.text = forwarding?['address'] as String? ?? '';
-    setState(() {
-      _autoDraft = settings['autoDraftEnabled'] as bool? ?? false;
-      _provider = settings['outboundProviderOverride'] as String?;
-      _smartLabels = automation?['smartLabelsEnabled'] as bool? ?? false;
-      _forwarding = forwarding?['mode'] as String? ?? 'off';
-      _group = settings['groupPolicy'] as Map<String, dynamic>?;
-      _editBaseline = mailSettingsFormValues(
-        result['confirmedSettings'] as Map<String, dynamic>? ?? settings,
-      );
-      _savedDraft = _draft;
-      _hasSnapshot = true;
-      _busy = false;
-    });
-  }
-
-  Future<void> _load({bool background = false}) async {
-    if (!_scopeCurrent) {
-      return;
-    }
-    final generation = ++_loadGeneration;
-    bool isCurrent() =>
-        mounted && _scopeCurrent && generation == _loadGeneration;
-    setState(() {
-      _busy = !_hasSnapshot;
-      _failed = false;
-    });
-    try {
-      final cached = await widget.repository.cachedSettings(
-        widget.workspaceId,
-        widget.mailboxId,
-      );
-      if (!isCurrent()) {
-        return;
-      }
-      if (cached != null && (!_hasSnapshot || widget.readOnlySnapshot)) {
-        _applySettings(cached);
-      }
-    } on Object {
-      // Keep the network path available when cache storage cannot be read.
-    }
-    if (!isCurrent()) {
-      return;
-    }
-    if (widget.readOnlySnapshot) {
-      setState(() {
-        _busy = false;
-        _failed = !_hasSnapshot;
-      });
-      return;
-    }
-    try {
-      Future<Map<String, dynamic>> fetch() =>
-          widget.repository.settings(widget.workspaceId, widget.mailboxId);
-      final result = await (background && _hasSnapshot
-          ? ApiClient.offlinePreparation(
-              fetch,
-              allowChallenge: false,
-              markBulk: false,
-            )
-          : fetch());
-      if (!isCurrent()) {
-        return;
-      }
-      _applySettings(result);
-    } on Object catch (error) {
-      if (!isCurrent()) {
-        return;
-      }
-      setState(() {
-        if (error is ApiException &&
-            (error.statusCode == 401 ||
-                error.statusCode == 404 ||
-                (error.statusCode == 403 &&
-                    !error.isVerificationRequired &&
-                    error.code != 'MFA_REQUIRED'))) {
-          _clearSettings();
-        }
-        _failed = true;
-      });
-    } finally {
-      if (isCurrent()) {
-        setState(() => _busy = false);
-      }
-    }
-  }
-
-  Map<String, dynamic> get _formSettings => {
-          'senderName': _sender.text.trim(),
-          'signatureText': _signature.text,
-          'aiInstructions': _instructions.text,
-          'autoDraftEnabled': _autoDraft,
-          'outboundProviderOverride': _provider,
-          if (_group != null) 'groupPolicy': _group,
-          if (_group == null)
-            'automation': {
-              'smartLabelsEnabled': _smartLabels,
-              'forwarding': {
-                'mode': _forwarding,
-                if (_forwarding == 'mailbox') 'address': _forwardTo.text.trim(),
-              },
-            },
-        };
-
   Future<void> _save() async {
-    if (!_canEdit || !_scopeCurrent || _saving || !_hasSnapshot || _hasPendingSettings ||
+    if (!_canChangeSettings || !_scopeCurrent || _saving || !_hasSnapshot ||
         mailSettingsChanges(_editBaseline, _formSettings).isEmpty) {
       return;
     }
@@ -366,6 +259,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
       }
       setState(() {
         _savedDraft = _draft;
+        _awaitingConfirmation = _hasPendingSettings;
         _allowExit = false;
       });
       if (!_hasPendingSettings) {
@@ -410,7 +304,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
         onBack: _exit,
         saving: _saving,
         backEnabled: !_saving,
-        onSave: _canEdit && _hasSnapshot && !_busy && !_saving && !_hasPendingSettings ? _save : null,
+        onSave: _canChangeSettings && _hasSnapshot && !_busy && !_saving ? _save : null,
         canManage: _canEdit,
         child: AppScaffold(
           child: _busy
@@ -486,14 +380,14 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                           ),
                           AppTextField(
                             controller: _sender,
-                            enabled: _canEdit,
+                            enabled: _canChangeSettings,
                             maxLength: 160,
                             label: l10n.mailSenderName,
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           AppTextField(
                             controller: _signature,
-                            enabled: _canEdit,
+                            enabled: _canChangeSettings,
                             minLines: 3,
                             maxLines: 8,
                             label: l10n.mailSignature,
@@ -501,7 +395,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                           const SizedBox(height: AppSpacing.lg),
                           AppTextField(
                             controller: _instructions,
-                            enabled: _canEdit,
+                            enabled: _canChangeSettings,
                             minLines: 3,
                             maxLines: 8,
                             label: l10n.mailAiInstructions,
@@ -512,7 +406,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                             ),
                             title: Text(l10n.mailAutoDraft),
                             value: _autoDraft,
-                            onChanged: _canEdit
+                            onChanged: _canChangeSettings
                                 ? (v) => setState(() => _autoDraft = v)
                                 : null,
                           ),
@@ -524,7 +418,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                               'cloudflare': 'Cloudflare',
                               'ses': 'Amazon SES',
                             },
-                            onChanged: _canEdit
+                            onChanged: _canChangeSettings
                                 ? (value) => setState(
                                     () => _provider = value == 'default'
                                         ? null
@@ -539,7 +433,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                               ),
                               title: Text(l10n.mailSmartLabels),
                               value: _smartLabels,
-                              onChanged: _canEdit
+                              onChanged: _canChangeSettings
                                   ? (v) => setState(() => _smartLabels = v)
                                   : null,
                             ),
@@ -551,7 +445,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                                 'catch_all': l10n.mailCatchAll,
                                 'mailbox': l10n.mailMailbox,
                               },
-                              onChanged: _canEdit
+                              onChanged: _canChangeSettings
                                   ? (value) =>
                                         setState(() => _forwarding = value)
                                   : null,
@@ -559,7 +453,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                             if (_forwarding == 'mailbox')
                               AppTextField(
                                 controller: _forwardTo,
-                                enabled: _canEdit,
+                                enabled: _canChangeSettings,
                                 keyboardType: TextInputType.emailAddress,
                                 label: l10n.mailForwardTo,
                               ),
@@ -581,7 +475,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                                   'members': l10n.mailMembers,
                                   'managers': l10n.mailManagers,
                                 },
-                                onChanged: _canEdit
+                                onChanged: _canChangeSettings
                                     ? (value) => setState(
                                         () => _group![field.key] = value,
                                       )

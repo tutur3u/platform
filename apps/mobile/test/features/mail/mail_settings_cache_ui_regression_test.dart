@@ -282,6 +282,72 @@ void main() {
     });
   }
 
+  testWidgets('pending replay freezes edits until fresh baseline then sends only new field', (tester) async {
+    final mutations = OfflineMutationQueue.instance.pending;
+    final previous = mutations.value;
+    mutations.value = [];
+    addTearDown(() => mutations.value = previous);
+    var server = <String, dynamic>{'senderName': 'Before'};
+    Completer<Map<String, dynamic>>? refresh;
+    when(() => repository.settings('ws', 'box')).thenAnswer((_) async =>
+      refresh == null ? {'settings': server} : await refresh!.future);
+    final payloads = <Map<String, dynamic>>[];
+    when(() => repository.updateSettings('ws', 'box', any())).thenAnswer((invocation) async {
+      payloads.add(Map<String, dynamic>.from(invocation.positionalArguments[2] as Map));
+      if (payloads.length == 1) {
+        mutations.value = [PendingMutationRecord(id: 'first', feature: 'mail_settings',
+          method: 'PATCH', path: '${MailRepository.mailboxPath('ws', 'box')}/settings',
+          userId: currentCacheUserId(), workspaceId: 'ws', createdAt: DateTime.utc(2026),
+          payload: payloads.single, optimisticPatch: {'entityId': mailSettingsEntityId('box')})];
+      }
+    });
+    await tester.pumpApp(MailSettingsPage(repository: repository, workspaceId: 'ws', mailboxId: 'box'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Queued');
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(payloads.single, {'senderName': 'Queued'});
+    expect(tester.widget<AppTextField>(find.byType(AppTextField).first).enabled, isFalse);
+    refresh = Completer<Map<String, dynamic>>();
+    mutations.value = [];
+    await tester.pump();
+    expect(tester.widget<AppTextField>(find.byType(AppTextField).first).enabled, isFalse);
+    server = {'senderName': 'New web sender'};
+    refresh!.complete({'settings': server});
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppTextField>(find.byType(AppTextField).first).enabled, isTrue);
+    final instructions = find.byType(AppTextField).at(2);
+    await tester.ensureVisible(instructions);
+    await tester.enterText(find.descendant(of: instructions, matching: find.byType(TextField)), 'New instructions');
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(payloads.last, {'aiInstructions': 'New instructions'});
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('rejected settings recover only after a fresh management grant', (tester) async {
+    when(() => repository.settings('ws', 'box')).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+    when(() => repository.settingsBootstrap('ws')).thenAnswer((_) async => {
+      'mailboxes': [{'id': 'box', 'role': 'owner'}],
+    });
+    await tester.pumpApp(MailSettingsPage(repository: repository, workspaceId: 'ws', mailboxId: 'box'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppTextField), findsNothing);
+    when(() => repository.settings('ws', 'box')).thenAnswer((_) async => {'settings': {'senderName': 'Restored'}});
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    verify(() => repository.settingsBootstrap('ws')).called(1);
+    expect(tester.widget<AppTextField>(find.byType(AppTextField).first).enabled, isTrue);
+    expect(tester.widget<AppTextField>(find.byType(AppTextField).first).controller!.text, 'Restored');
+    await tester.enterText(find.byType(TextField).first, 'Recovered edit');
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    verify(() => repository.updateSettings('ws', 'box', {'senderName': 'Recovered edit'})).called(1);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   for (final width in [320.0, 390.0, 430.0]) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('long account address fits $width at text scale $scale', (

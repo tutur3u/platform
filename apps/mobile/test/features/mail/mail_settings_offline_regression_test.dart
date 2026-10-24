@@ -130,11 +130,32 @@ void main() {
       await cache.saveSnapshot(ws, other, {'settings': {'senderName': 'Other'}});
       await cache.saveSnapshot(ws, 'inbox', {'messages': <dynamic>[]});
       when(() => api.getJson(path)).thenThrow(ApiException(message: 'Mailbox denied', statusCode: status));
-      await expectLater(repository.settings(ws, mailbox), throwsA(anything));
+      await expectLater(repository.settings(ws, mailbox), throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', status)));
       expect(await repository.cachedSettings(ws, mailbox), isNull);
       expect((await cache.snapshot(ws, other))?['settings'], {'senderName': 'Other'});
       expect(await cache.snapshot(ws, 'inbox'), isNotNull);
       expect(cache.accessRevoked.value, isNull);
+    });
+  }
+
+  for (final status in [403, 404]) {
+    test('storage failure preserves mailbox $status and its notification', () async {
+      final storage = _SecureStorage();
+      when(() => storage.read(key: any(named: 'key'))).thenThrow(StateError('Unavailable'));
+      final unavailable = CacheStore.forTesting(secureStorage: storage,
+        directoryResolver: () async => throw StateError('Storage unavailable'));
+      final fallbackCache = MailCache(store: unavailable, currentUserId: () => actor);
+      final fallback = MailRepository(apiClient: api, cache: fallbackCache,
+        settingsQueue: queue, currentUserId: () => actor);
+      when(() => api.getJson(path)).thenAnswer((_) async => {'settings': {'senderName': 'Initial'}});
+      expect((await fallback.settings(ws, mailbox))['settings'], {'senderName': 'Initial'});
+      final denial = ApiException(message: 'Mailbox denied', statusCode: status);
+      when(() => api.getJson(path)).thenThrow(denial);
+      await expectLater(fallback.settings(ws, mailbox), throwsA(same(denial)));
+      expect(fallbackCache.snapshotRevoked.value, (ws, path));
+      expect(fallbackCache.accessRevoked.value, isNull);
+      fallback.dispose();
+      await unavailable.closeForTesting();
     });
   }
 
