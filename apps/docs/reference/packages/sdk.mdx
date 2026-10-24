@@ -1605,4 +1605,4 @@ fi
 ~/.bun/bin/ttr resources run -- bun install
 ```
 
-Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity.
+Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity. Resolve HOME and the Bun install base independently: a symlinked `.bun` or `.bun/install` is supported, while entries outside that resolved install base are still refused.

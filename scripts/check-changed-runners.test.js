@@ -35,6 +35,20 @@ for (const file of ['worker.test.mjs', 'worker.ts']) {
   });
 }
 
+for (const file of [
+  'product-feedback-causal-controls.test.mjs',
+  'product-feedback-causal-controls.mjs',
+]) {
+  test(`database ${file} stays on node --test`, () => {
+    const output = plan([`apps/database/scripts/${file}`]);
+    assert.match(
+      output,
+      /script-tests: node --test .*product-feedback-causal-controls\.test\.mjs/
+    );
+    assert.doesNotMatch(output, /vitest:apps\/database/);
+  });
+}
+
 function fixture(t, script, source) {
   const root = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), 'changed-runners-'))
@@ -113,6 +127,22 @@ test('explicit Vitest imports override a native package default', (t) => {
   assert.doesNotMatch(output, /script-tests:/);
   assert.match(output, /vitest:apps\/example:.*native\.test\.mjs/);
 });
+
+for (const native of [
+  "import test from 'node:test';",
+  "import type { TestContext } from 'node:test';",
+]) {
+  test(`explicit Vitest imports take precedence over ${native}`, (t) => {
+    const root = fixture(
+      t,
+      'vitest run',
+      `${native}\nimport { test as suite } from 'vitest';`
+    );
+    const output = plan(['apps/example/native.test.mjs'], { root });
+    assert.doesNotMatch(output, /script-tests:/);
+    assert.match(output, /vitest:apps\/example:.*native\.test\.mjs/);
+  });
+}
 
 for (const { branch, upstream, expected } of [
   { branch: 'tmp/agent', upstream: 'refs/heads/fix/routing', expected: 0 },

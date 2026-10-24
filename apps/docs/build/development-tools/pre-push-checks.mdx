@@ -143,3 +143,5 @@ a passing frozen install alone does not prove a normal install leaves it stable.
 and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
 ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
+
+Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. An explicit Vitest import selects Vitest when a file also imports Node test helpers or types. This runner partition avoids false “No test suite found” failures.

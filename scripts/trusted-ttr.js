@@ -53,7 +53,8 @@ function trustedTtr(home = homedir()) {
     home = fs.realpathSync(home);
     cli = path.join(home, '.bun/bin/ttr');
     const entry = fs.realpathSync(cli);
-    const relative = path.relative(path.join(home, '.bun/install'), entry);
+    const installBase = fs.realpathSync(path.join(home, '.bun/install'));
+    const relative = path.relative(installBase, entry);
     if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
       throw new Error('global launcher points outside the global installation');
     let root = path.dirname(entry);

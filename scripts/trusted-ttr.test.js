@@ -59,6 +59,39 @@ function fixture(t, orphan = false) {
   return { root, home, worktree, pkg, cli, legacy, launcher, observed, env };
 }
 
+for (const relative of ['.bun', '.bun/install']) {
+  test(`canonicalises a symlinked ${relative} install base and rejects escapes`, (t) => {
+    const f = fixture(t);
+    const base = path.join(f.home, relative);
+    const target = path.join(f.root, 'relocated-install');
+    fs.renameSync(base, target);
+    fs.symlinkSync(target, base, 'dir');
+    const script = path.join(__dirname, 'trusted-ttr.js');
+    const resolve = () =>
+      execFileSync(
+        process.execPath,
+        [
+          '-p',
+          `require(${JSON.stringify(script)}).trustedTtr(${JSON.stringify(f.home)})`,
+        ],
+        { cwd: f.root, env: f.env, encoding: 'utf8', stdio: 'pipe' }
+      ).trim();
+    assert.equal(resolve(), f.cli);
+    assert.equal(fs.existsSync(f.observed), false);
+    fs.unlinkSync(f.cli);
+    fs.symlinkSync(f.legacy, f.cli);
+    assert.throws(
+      resolve,
+      (error) =>
+        error &&
+        typeof error === 'object' &&
+        'stderr' in error &&
+        /outside the global installation/.test(String(error.stderr))
+    );
+    assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
+  });
+}
+
 test('ancestor workspace binary is refused from a worktree without node_modules', (t) => {
   const f = fixture(t, true);
   assert.equal(fs.existsSync(path.join(f.worktree, 'node_modules')), false);
