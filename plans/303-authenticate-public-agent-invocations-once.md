@@ -64,7 +64,7 @@ provider, or credit mutation.
 | Focused | `bun --cwd apps/ai vitest run 'src/app/v1/agents/[agentId]/responses/route.test.ts' src/lib/public-credential.test.ts src/lib/public-api.test.ts` | both credential kinds, single auth, DB mapping, and dispatch pass |
 | AI suite | `bun run --cwd apps/ai test && bun run --cwd apps/ai type-check` | all AI tests/types pass |
 | AI build | `bun run --cwd apps/ai build` | production build passes |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only the agent route/test and plan status changed unless transfer expanded scope |
 
 ## Scope

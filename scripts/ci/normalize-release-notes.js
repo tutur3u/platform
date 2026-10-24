@@ -1,5 +1,5 @@
 const { isReleaseBookkeeping } = require('./release-note-policy');
-const fs = require('node:fs');
+const { atomicWriteFileSync, readOptionalFileSync } = require('../safe-fs');
 const { execFileSync } = require('node:child_process');
 
 const referencePattern =
@@ -31,6 +31,49 @@ function equivalentMobileEntry(entries, description, hashes) {
   if (!existing?.hashes.includes(counterpart.hash)) return undefined;
   existing.description = mobileOfflinePair[1].description;
   return existing;
+}
+
+/** Store summaries contain product changes, without repository bookkeeping. */
+function normalizeMobileReleaseNotes(content) {
+  const entries = content.split('\n').flatMap((line) => {
+    let text = line.replace(/^\s*[-*]\s+/u, '').trim();
+    const typed = /^(\w+)(?:\(([^)]*)\))?!?:\s*/u.exec(text);
+    if (typed && /^(?:chore|ci|test|docs|refactor)$/iu.test(typed[1]))
+      return [];
+    if (
+      isReleaseBookkeeping(text) ||
+      /^merge\s+(?:main|master|production|develop)\s+into\s/iu.test(text)
+    )
+      return [];
+    const preferred =
+      typed &&
+      /^(?:feat|fix)$/iu.test(typed[1]) &&
+      /mobile/iu.test(typed[2] || '');
+    text = text
+      .replace(/^\w+(?:\([^)]*\))?!?:\s*/u, '')
+      .replace(referencePattern, '')
+      .replace(/\s*\(#\d+\)/gu, '')
+      .replace(/(?:\bPR\s*)?#\d+\b/giu, '')
+      .replace(
+        /\b(?:feat|feature|fix|bugfix|hotfix|release|chore|ci|test|docs|style|refactor|perf|dependabot|claude)\/[\w./-]+/giu,
+        ''
+      )
+      .replace(/\s+/gu, ' ')
+      .trim();
+    if (!text) return [];
+    return [{ text: text[0].toUpperCase() + text.slice(1), preferred }];
+  });
+  const seen = new Set();
+  return entries
+    .sort((a, b) => Number(b.preferred) - Number(a.preferred))
+    .filter(({ text }) => {
+      const key = text.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map(({ text }) => `- ${text}`)
+    .join('\n');
 }
 
 /** Only normalize unpublished additions; published release text is immutable. */
@@ -129,9 +172,8 @@ function main(base = 'origin/production') {
   };
   let changed = 0;
   for (const file of paths) {
-    if (!fs.existsSync(file)) continue;
-    if (!fs.lstatSync(file).isFile())
-      throw new Error(`Generated changelog is not a regular file: ${file}`);
+    const content = readOptionalFileSync(file, { encoding: 'utf8' });
+    if (content === undefined) continue;
     let previous = '';
     try {
       previous = readPublishedHistory(base, file);
@@ -139,14 +181,13 @@ function main(base = 'origin/production') {
       if (git('ls-tree', '--name-only', base, '--', file).trim())
         throw new Error(`Cannot read published history: ${file}`);
     }
-    const content = fs.readFileSync(file, 'utf8');
     const normalized = normalizeReleaseNotes(
       content,
       previous,
       isIntegrationCommit
     );
     if (normalized !== content) {
-      fs.writeFileSync(file, normalized);
+      atomicWriteFileSync(file, normalized);
       changed++;
     }
   }
@@ -155,5 +196,5 @@ function main(base = 'origin/production') {
   );
 }
 
-module.exports = { normalizeReleaseNotes };
+module.exports = { normalizeReleaseNotes, normalizeMobileReleaseNotes };
 if (require.main === module) main(process.argv[2]);

@@ -3,6 +3,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -92,16 +93,14 @@ function validateRequestImagePaths(
   requestId: string
 ): { valid: true } | { valid: false; error: string } {
   for (const p of paths) {
-    if (!p.startsWith(`${requestId}/`)) {
+    if (
+      sanitizePathStrict(p) !== p ||
+      !p.startsWith(`${requestId}/`) ||
+      p.length === requestId.length + 1
+    ) {
       return {
         valid: false,
         error: 'Invalid image path: must start with request ID prefix',
-      };
-    }
-    if (p.includes('..')) {
-      return {
-        valid: false,
-        error: 'Invalid image path: path traversal not allowed',
       };
     }
   }

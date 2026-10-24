@@ -9,6 +9,11 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  isCanonicalAvatarWorkspaceId,
+  isUserAvatarFilename,
+  isUserAvatarPath,
+} from './avatar-path';
 
 interface Params {
   params: Promise<{
@@ -34,15 +39,14 @@ export async function handleGetAvatarRequest(
     return NextResponse.json({ message: 'path is required' }, { status: 400 });
   }
 
-  // Ensure the path is within the workspace's user avatars directory
-  if (!path.startsWith(`${wsId}/users/`)) {
-    return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
-  }
-
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req, user: actor });
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!isUserAvatarPath(path, permissions.wsId)) {
+    return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
   }
 
   const sbAdmin = await createAdminClient();
@@ -94,11 +98,19 @@ export async function handleCreateAvatarUploadRequest(
     );
   }
 
-  const { fileName, contentType } = await req.json();
+  const body = await req.json().catch(() => null);
+  const fileName = body?.fileName;
+  const contentType = body?.contentType;
 
-  if (!fileName || !contentType) {
+  if (
+    !isCanonicalAvatarWorkspaceId(permissions.wsId) ||
+    !isUserAvatarFilename(fileName) ||
+    !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(
+      contentType
+    )
+  ) {
     return NextResponse.json(
-      { message: 'fileName and contentType are required' },
+      { message: 'Invalid workspace, fileName or contentType' },
       { status: 400 }
     );
   }
@@ -125,7 +137,7 @@ export async function handleCreateAvatarUploadRequest(
 
   // Issue a privileged ticket only after charging the verified actor's ceilings.
   const sbAdmin = await createAdminClient();
-  const filePath = `${wsId}/users/${fileName}`;
+  const filePath = `${permissions.wsId}/users/${fileName}`;
 
   const { data, error } = await sbAdmin.storage
     .from('avatars')

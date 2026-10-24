@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const access = await getNotificationAccessContext(admin, user);
+    const access = await getNotificationAccessContext(admin, user, admin);
     let query = admin
       .from('notifications')
       .select('*', { count: 'exact', head: true })

@@ -17,6 +17,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
         manageWorkspaceSettingsPermission;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -81,11 +82,9 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
               physics: const AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics(),
               ),
-              padding: EdgeInsets.fromLTRB(
+              padding: SettingsRowLayout.scrollPadding(
+                context,
                 horizontalPadding,
-                20,
-                horizontalPadding,
-                32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 SettingsWorkspaceSection(

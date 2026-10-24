@@ -9,10 +9,35 @@ export interface NotificationAccessContext {
 interface NotificationAuthUser {
   id: string;
   email?: string | null;
+  email_confirmed_at?: string | null;
 }
 
 function quotePostgrestString(value: string) {
   return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+}
+
+async function getConfirmedEmail(
+  identityClient: TypedSupabaseClient,
+  user: NotificationAuthUser
+) {
+  let identity = user;
+
+  if (identity.email_confirmed_at === undefined) {
+    try {
+      const { data, error } = await identityClient.auth.admin.getUserById(
+        user.id
+      );
+
+      if (error || !data.user) return null;
+      identity = data.user;
+    } catch {
+      return null;
+    }
+  }
+
+  return identity.email_confirmed_at
+    ? (identity.email?.trim().toLowerCase() ?? null)
+    : null;
 }
 
 export function buildNotificationAccessFilter(
@@ -20,25 +45,25 @@ export function buildNotificationAccessFilter(
 ) {
   const branches = [
     `and(scope.in.(user,system),user_id.eq.${context.userId})`,
+    // PostgREST rewrites `*` in LIKE values.
+    // Switch to `email.eq` after #6552 stores emails lowercase.
+    ...(context.userEmail && !context.userEmail.includes('*')
+      ? [
+          `and(user_id.is.null,type.eq.workspace_invite,email.ilike.${quotePostgrestString(context.userEmail.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_'))})`,
+        ]
+      : []),
     context.workspaceIds.length > 0
       ? `and(scope.eq.workspace,user_id.eq.${context.userId},or(ws_id.is.null,ws_id.in.(${context.workspaceIds.join(',')})))`
       : `and(scope.eq.workspace,user_id.eq.${context.userId},ws_id.is.null)`,
   ];
-
-  if (context.userEmail) {
-    branches.splice(
-      1,
-      0,
-      `and(scope.in.(user,system),user_id.is.null,email.eq.${quotePostgrestString(context.userEmail)})`
-    );
-  }
 
   return branches.join(',');
 }
 
 export async function getNotificationAccessContext(
   supabase: TypedSupabaseClient,
-  user: NotificationAuthUser
+  user: NotificationAuthUser,
+  identityClient: TypedSupabaseClient
 ): Promise<NotificationAccessContext> {
   const { data: memberships, error } = await supabase
     .from('workspace_members')
@@ -51,9 +76,11 @@ export async function getNotificationAccessContext(
     );
   }
 
+  const userEmail = await getConfirmedEmail(identityClient, user);
+
   return {
     userId: user.id,
-    userEmail: user.email?.trim().toLowerCase() ?? null,
+    userEmail,
     workspaceIds:
       memberships
         ?.map((membership) => membership.ws_id)

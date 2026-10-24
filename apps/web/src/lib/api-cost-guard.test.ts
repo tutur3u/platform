@@ -33,6 +33,7 @@ const request = (path: string, method = 'GET', ip = '192.0.2.1') =>
     headers: { 'x-forwarded-for': ip },
   });
 beforeEach(() => {
+  vi.stubEnv('TRUSTED_PROXY', 'forwarded');
   vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
   mocks.identity.mockReset().mockResolvedValue({});
   mocks.policy

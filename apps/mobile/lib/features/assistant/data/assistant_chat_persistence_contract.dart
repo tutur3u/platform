@@ -11,11 +11,13 @@ final class AssistantChatCacheOrigin {
     required this.epoch,
     required this.revision,
     required this.isCurrent,
+    this.onRevalidated,
   });
   final CacheKey key;
   final int epoch;
   final int revision;
   final bool Function() isCurrent;
+  final Future<void> Function(AssistantRestoredChat?)? onRevalidated;
   void checkScope() {
     if (!isCurrent()) throw const AssistantChatCacheCancellation();
   }

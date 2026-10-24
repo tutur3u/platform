@@ -313,7 +313,7 @@ payload changes additive (new optional fields) and validate untrusted input with
 **Mitigation strategies:**
 
 - Additive payload changes only; avoid removing or retyping existing fields.
-- Let the monorepo's shared types and `bun check` catch mismatches.
+- Let the monorepo's shared types and `bun validate` catch mismatches.
 - Validate external/untrusted payloads with `zod`.
 
 ---

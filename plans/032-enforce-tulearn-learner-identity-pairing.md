@@ -61,7 +61,7 @@ queries only. Do not automatically rewrite ambiguous identity pairs.
 | Database apply | `bun sb:reset` | migration applies locally |
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | all pgTAP tests pass |
 | Database types | `bun sb:typegen` | generated Supabase types match the invariant helper |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Learn build | `bun run --cwd apps/learn build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -132,7 +132,7 @@ missing, and mismatched identities; regenerate types after local application.
       disposition before enforcement.
 - [ ] Service-role writes cannot bypass the invariant.
 - [ ] Route/core/database tests, type generation, typechecks, local reset,
-      `bun check`, build, and whitespace pass.
+      `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

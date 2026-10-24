@@ -76,7 +76,7 @@ required, obtain exact transfer before editing.
 | Focused boundary | `bun --cwd apps/ai vitest run src/lib/bounded-json-body.test.ts src/lib/embedding-execution.test.ts src/app/v1/embeddings/route.test.ts` | byte, aggregate, malformed, early-rejection, success, and settlement cases pass |
 | AI app | `bun run --cwd apps/ai type-check && bun run --cwd apps/ai build` | AI app compiles and builds |
 | Docs JSON | `node -e "JSON.parse(require('fs').readFileSync('apps/docs/docs.json','utf8'))"` | docs navigation configuration remains valid |
-| Repository | `bun check && git diff --check` | repository and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | repository and whitespace gates pass |
 | Scope | `git status --short` | only embedding boundary/tests and the AI Studio API reference changed |
 
 ## Scope

@@ -36,22 +36,25 @@ class AssistantScrollToBottomOverlay extends StatelessWidget {
       bottom: bottom,
       child: IgnorePointer(
         ignoring: !visible,
-        child: Center(
-          child: AnimatedSlide(
-            duration: reducedMotion
-                ? Duration.zero
-                : const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            offset: visible ? Offset.zero : const Offset(0, 1),
-            child: AnimatedOpacity(
+        child: ExcludeSemantics(
+          excluding: !visible,
+          child: Center(
+            child: AnimatedSlide(
               duration: reducedMotion
                   ? Duration.zero
-                  : const Duration(milliseconds: 160),
+                  : const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              opacity: visible ? 1 : 0,
-              child: AssistantScrollToBottomFab(
-                label: context.l10n.assistantScrollToBottomAction,
-                onPressed: onPressed,
+              offset: visible ? Offset.zero : const Offset(0, 1),
+              child: AnimatedOpacity(
+                duration: reducedMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 160),
+                curve: Curves.easeOutCubic,
+                opacity: visible ? 1 : 0,
+                child: AssistantScrollToBottomFab(
+                  label: context.l10n.assistantScrollToBottomAction,
+                  onPressed: onPressed,
+                ),
               ),
             ),
           ),

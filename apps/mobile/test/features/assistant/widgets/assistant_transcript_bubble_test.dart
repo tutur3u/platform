@@ -193,31 +193,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final alignEnd in [false, true]) {
-    testWidgets('both message roles have themed content surfaces $alignEnd', (
-      tester,
-    ) async {
-      await tester.pumpApp(
-        Scaffold(
-          body: AssistantTranscriptBubble(
-            label: 'Role',
-            alignEnd: alignEnd,
-            text: 'Themed content',
-            transcript: '',
-            attachments: const [],
-            timestamp: null,
-            toolNames: const [],
+    testWidgets(
+      'user has a bubble and assistant inherits the background $alignEnd',
+      (tester) async {
+        await tester.pumpApp(
+          Scaffold(
+            body: AssistantTranscriptBubble(
+              label: 'Role',
+              alignEnd: alignEnd,
+              text: 'Themed content',
+              transcript: '',
+              attachments: const [],
+              timestamp: null,
+              toolNames: const [],
+            ),
           ),
-        ),
-      );
-      final surface = find.byKey(const ValueKey('assistant-message-content'));
-      expect(surface, findsOneWidget);
-      final decoration =
-          tester.widget<AnimatedContainer>(surface).decoration!
-              as BoxDecoration;
-      expect(decoration.color, isNotNull);
-      expect(decoration.borderRadius, BorderRadius.circular(22));
-      expect(tester.takeException(), isNull);
-    });
+        );
+        final surface = find.byKey(const ValueKey('assistant-message-content'));
+        expect(surface, findsOneWidget);
+        final decoration =
+            tester.widget<AnimatedContainer>(surface).decoration!
+                as BoxDecoration;
+        final theme = Theme.of(tester.element(surface));
+        expect(
+          decoration.color,
+          alignEnd ? theme.colorScheme.primaryContainer : Colors.transparent,
+        );
+        expect(decoration.borderRadius, BorderRadius.circular(22));
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   for (final reduced in [false, true]) {

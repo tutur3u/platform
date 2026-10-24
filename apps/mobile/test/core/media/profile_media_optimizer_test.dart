@@ -107,7 +107,7 @@ void main() {
           await handle.close();
           await expectLater(
             optimizeProfileMediaFile(file, kind: kind),
-            throwsFormatException,
+            throwsA(isA<ProfileMediaSizeException>()),
           );
         } finally {
           await directory.delete(recursive: true);

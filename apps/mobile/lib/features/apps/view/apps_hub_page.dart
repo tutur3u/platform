@@ -4,9 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
@@ -72,60 +70,62 @@ class _AppsHubPageState extends State<AppsHubPage> {
         .where((module) => cubit.state.hiddenAppIds.contains(module.id))
         .toList();
 
-    return SafeArea(
-      top: false,
-      bottom: false,
-      child: ResponsiveWrapper(
-        maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: _ordering ? () => setState(() => _ordering = false) : null,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            slivers: [
-              SliverToBoxAdapter(
-                child: SizedBox(height: floatingShellHeaderInset(context)),
+    final topInset = floatingShellHeaderInset(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: _ordering ? () => setState(() => _ordering = false) : null,
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          if (modules.isEmpty)
+            SliverAppPage(
+              kind: AppPageKind.root,
+              topInset: topInset,
+              sliver: SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: Text(context.l10n.appsNoMatches)),
               ),
-              if (modules.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: Text(context.l10n.appsNoMatches)),
-                ),
-              if (shown.isNotEmpty)
-                _modulesSliver(shown, hidden: false, hiddenModules: hidden),
-              if (hidden.isNotEmpty)
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: ResponsivePadding.horizontal(
-                      context.deviceClass,
-                    ),
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 16, 0, 4),
-                      child: Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Text(
-                              context.l10n.appsHiddenSection,
-                              style: Theme.of(context).textTheme.labelLarge,
+            )
+          else
+            SliverAppPage(
+              kind: AppPageKind.root,
+              topInset: topInset,
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  if (shown.isNotEmpty)
+                    _modulesSliver(shown, hidden: false, hiddenModules: hidden),
+                  if (hidden.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: shown.isEmpty ? 0 : AppLayout.sectionGap,
+                          bottom: AppLayout.itemGap,
+                        ),
+                        child: Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              child: Text(
+                                context.l10n.appsHiddenSection,
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
                             ),
-                          ),
-                          const Expanded(child: Divider()),
-                        ],
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              if (hidden.isNotEmpty)
-                _modulesSliver(hidden, hidden: true, hiddenModules: hidden),
-            ],
-          ),
-        ),
+                    _modulesSliver(hidden, hidden: true, hiddenModules: hidden),
+                  ],
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -136,63 +136,56 @@ class _AppsHubPageState extends State<AppsHubPage> {
     required List<AppModule> hiddenModules,
   }) {
     final cubit = context.read<AppTabCubit>();
-    return SliverPadding(
-      padding: EdgeInsets.fromLTRB(
-        ResponsivePadding.horizontal(context.deviceClass),
-        widget.showGrid ? 22 : 10,
-        ResponsivePadding.horizontal(context.deviceClass),
-        24 + MediaQuery.paddingOf(context).bottom,
-      ),
-      sliver: widget.showGrid
-          ? SliverToBoxAdapter(
-              child: AppsReorderGrid(
-                modules: modules,
-                hidden: hidden,
-                canReorder: !hidden && widget.query.trim().isEmpty,
-                isOrdering: _ordering,
-                onOrderingStarted: () => setState(() => _ordering = true),
-                onOrderingFinished: () => setState(() => _ordering = false),
-                onSelected: widget.onSelected,
-                onOrderChanged: (ids) => _reorder(ids, hiddenModules),
-                onVisibilityPressed: (module) => unawaited(
-                  changeAppVisibility(context, cubit, module, hidden: hidden),
-                ),
+    return widget.showGrid
+        ? SliverToBoxAdapter(
+            child: AppsReorderGrid(
+              modules: modules,
+              hidden: hidden,
+              canReorder: !hidden && widget.query.trim().isEmpty,
+              isOrdering: _ordering,
+              onOrderingStarted: () => setState(() => _ordering = true),
+              onOrderingFinished: () => setState(() => _ordering = false),
+              onSelected: widget.onSelected,
+              onOrderChanged: (ids) => _reorder(ids, hiddenModules),
+              onVisibilityPressed: (module) => unawaited(
+                changeAppVisibility(context, cubit, module, hidden: hidden),
               ),
-            )
-          : SliverLayoutBuilder(
-              builder: (context, constraints) {
-                final columns = (constraints.crossAxisExtent / 280)
-                    .floor()
-                    .clamp(1, 3);
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var column = 0; column < columns; column++) ...[
-                            if (column > 0) const SizedBox(width: 14),
-                            Expanded(
-                              child: index * columns + column < modules.length
-                                  ? _AppEditorialCard(
-                                      module: modules[index * columns + column],
-                                      index: index * columns + column,
-                                      replayToken: widget.replayToken,
-                                      onSelected: widget.onSelected,
-                                      hidden: hidden,
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  }, childCount: (modules.length / columns).ceil()),
-                );
-              },
             ),
-    );
+          )
+        : SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final columns = (constraints.crossAxisExtent / 280).floor().clamp(
+                1,
+                3,
+              );
+              return SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var column = 0; column < columns; column++) ...[
+                          if (column > 0) const SizedBox(width: 14),
+                          Expanded(
+                            child: index * columns + column < modules.length
+                                ? _AppEditorialCard(
+                                    module: modules[index * columns + column],
+                                    index: index * columns + column,
+                                    replayToken: widget.replayToken,
+                                    onSelected: widget.onSelected,
+                                    hidden: hidden,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }, childCount: (modules.length / columns).ceil()),
+              );
+            },
+          );
   }
 }
 

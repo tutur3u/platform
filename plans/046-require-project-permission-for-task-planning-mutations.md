@@ -56,7 +56,7 @@ exact route ownership must remain non-overlapping. Read database `AGENTS.md`.
 | Database tests | `bun run --cwd apps/database scripts/run-supabase.js test db` | focused policy tests pass |
 | Type generation | `bun sb:typegen` | generated types remain current |
 | Tasks typecheck | `bun type-check:tasks` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Restores the Material infrastructure intentionally removed from
@@ -17,9 +19,12 @@ class ShadcnMaterialBridge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final appearance = AppearanceScope.maybeOf(context)?.settings;
 
     return Theme(
-      data: theme.brightness == Brightness.light
+      data: appearance != null
+          ? AppearanceTheme.materialTheme(appearance, theme.brightness)
+          : theme.brightness == Brightness.light
           ? AppTheme.light
           : AppTheme.dark,
       child: Material(

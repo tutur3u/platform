@@ -2,6 +2,7 @@
 
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
+const { readRegularFileSync } = require('./safe-fs');
 const path = require('node:path');
 
 const DEFAULT_LIMIT = 700;
@@ -328,14 +329,16 @@ function evaluateChangedFiles(changes, base, options = {}) {
     }
 
     const absolutePath = path.join(rootDir, change.currentPath);
-    if (
-      !fsImpl.existsSync(absolutePath) ||
-      !fsImpl.statSync(absolutePath).isFile()
-    ) {
-      continue;
+    let currentContent;
+    try {
+      currentContent = readRegularFileSync(absolutePath, { fsImpl });
+    } catch (error) {
+      if (
+        ['ENOENT', 'ELOOP', 'EISDIR', 'ERR_FS_NOT_REGULAR'].includes(error.code)
+      )
+        continue;
+      throw error;
     }
-
-    const currentContent = fsImpl.readFileSync(absolutePath);
     if (isBinaryContent(currentContent)) {
       continue;
     }
