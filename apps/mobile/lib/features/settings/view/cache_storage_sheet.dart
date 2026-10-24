@@ -126,7 +126,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          AppButton.ghost(
+          AppButton.destructive(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(context.l10n.cacheStorageClear),
           ),
@@ -170,6 +170,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
     const categories = CacheStorageCategory.values;
     return AppSheetScaffold(
       title: l10n.cacheStorageTitle,
+      description: l10n.cacheStorageDescription,
       slivers: [
         SliverList.list(
           children: [
@@ -235,6 +236,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
                     AppChip(
                       label: Text(_formatBytes(bytes)),
                       selected: snapshot.maxBytes == bytes,
+                      inMutuallyExclusiveGroup: true,
                       onSelected: disabled
                           ? null
                           : (_) => unawaited(_setLimit(bytes)),

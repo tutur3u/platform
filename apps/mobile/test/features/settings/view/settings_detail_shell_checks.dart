@@ -28,6 +28,7 @@ void registerSettingsDetailShellChecks() {
       final listContext = tester.element(list);
       final padding = tester.widget<ListView>(list).padding! as EdgeInsets;
       expect(padding.top, AppSpacing.sm);
+      expect(padding.bottom, greaterThanOrEqualTo(68));
       expect(MediaQuery.paddingOf(listContext).bottom, 0);
       expect(
         padding.bottom,

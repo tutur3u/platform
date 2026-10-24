@@ -179,30 +179,30 @@ class _OfflineStoredItemsBrowserState
         onChanged: (value) =>
             setState(() => _query = value.toLowerCase().trim()),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_failed) ...[
-            Text(l10n.offlineInventoryError),
-            AppButton.ghost(onPressed: _load, child: Text(l10n.commonRetry)),
-          ] else if (items == null)
-            const LinearProgressIndicator()
-          else ...[
-            if (items.isEmpty)
-              Text(l10n.offlineNoMatchingItems)
-            else
-              SizedBox(
-                height: 320,
-                child: ListView.builder(
-                  key: ValueKey(('offline-item-list', widget.config.namespace)),
-                  primary: false,
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => _itemTile(items[index]),
+      slivers: [
+        if (_failed)
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                Text(l10n.offlineInventoryError),
+                AppButton.ghost(
+                  onPressed: _load,
+                  child: Text(l10n.commonRetry),
                 ),
-              ),
-          ],
-        ],
-      ),
+              ],
+            ),
+          )
+        else if (items == null)
+          const SliverToBoxAdapter(child: LinearProgressIndicator())
+        else if (items.isEmpty)
+          SliverToBoxAdapter(child: Text(l10n.offlineNoMatchingItems))
+        else
+          SliverList.builder(
+            key: ValueKey(('offline-item-list', widget.config.namespace)),
+            itemCount: items.length,
+            itemBuilder: (context, index) => _itemTile(items[index]),
+          ),
+      ],
     );
   }
 

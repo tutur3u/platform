@@ -117,10 +117,11 @@ void main() {
     await tester.enterText(find.byType(AppSearchField), 'synthetic-1999');
     await tester.pumpAndSettle();
     expect(find.text('Updated product'), findsOneWidget);
-    expect(
-      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
-      'synthetic-1999',
-    );
+    expect(find.byType(AppDisclosure), findsOneWidget);
+    expect(find.text('Product 1999'), findsNothing);
+    await tester.tap(find.text('Updated product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Item ID: synthetic-1999'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

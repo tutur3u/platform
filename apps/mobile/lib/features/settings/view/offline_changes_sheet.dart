@@ -124,7 +124,7 @@ class _PendingChangeCard extends StatelessWidget {
               MaterialLocalizations.of(dialogContext).cancelButtonLabel,
             ),
           ),
-          AppButton.primary(
+          AppButton.destructive(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(dialogContext.l10n.offlineChangesDiscard),
           ),

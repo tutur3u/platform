@@ -82,6 +82,17 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Discard local change'));
     await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AppButton>(
+            find.descendant(
+              of: find.byType(AppDialog),
+              matching: find.widgetWithText(AppButton, 'Discard local change'),
+            ),
+          )
+          .variant,
+      AppButtonVariant.destructive,
+    );
 
     expect(find.textContaining('does not undo'), findsOneWidget);
     expect(queue.pending.value, hasLength(1));

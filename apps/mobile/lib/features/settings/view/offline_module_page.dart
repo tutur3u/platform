@@ -192,7 +192,7 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
         !_allowed ||
         _coordinator.state.value.products[widget.moduleId]?.status ==
             OfflinePreparationStatus.unavailable;
-    final body = RefreshIndicator(
+    final scrollingBody = RefreshIndicator(
       onRefresh: _refresh,
       child: AppPageListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -218,13 +218,6 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
               Text(l10n.offlineLogicalBytes('${inventory.logicalBytes}')),
               Text(l10n.offlinePendingCoverage(inventory.pending)),
               const SizedBox(height: 12),
-              OfflineSearchChrome(
-                moduleId: widget.moduleId,
-                controller: _search,
-                onChanged: (value) =>
-                    setState(() => _query = value.toLowerCase().trim()),
-                hint: l10n.offlineSearchStored,
-              ),
               if (rows!.isEmpty) Text(l10n.offlineNoStoredItems),
               for (final row in rows)
                 Padding(
@@ -290,6 +283,19 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
           ],
         ],
       ),
+    );
+    final body = Column(
+      children: [
+        if (!unavailable && inventory != null)
+          OfflineSearchChrome(
+            moduleId: widget.moduleId,
+            controller: _search,
+            onChanged: (value) =>
+                setState(() => _query = value.toLowerCase().trim()),
+            hint: l10n.offlineSearchStored,
+          ),
+        Expanded(child: scrollingBody),
+      ],
     );
     if (widget.embedded) return body;
     return AppScaffold(child: body);
