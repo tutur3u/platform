@@ -50,6 +50,8 @@ class _SettingsHarness {
         workspace: 'Europe/Paris',
         loading: false,
         resolved: true,
+        personalLoaded: true,
+        workspaceLoaded: true,
       ),
     );
     whenListen(

@@ -9,6 +9,7 @@ import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/timezone_picker_sheet.dart';
 import 'package:mobile/features/settings/view/timezone_rate_limit_message.dart';
+import 'package:mobile/features/settings/view/timezone_row_value.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
 
@@ -140,89 +141,89 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => BlocConsumer<TimezoneSettingsCubit, TimezoneSettingsState>(
-    bloc: _cubit,
-    listener: (_, state) => _syncCooldown(state.retryAt),
-    builder: (context, state) => SettingsTile(
-      grouped: widget.grouped,
-      icon: LucideIcons.earth,
-      title: widget.workspace
-          ? context.l10n.settingsWorkspaceTimezone
-          : context.l10n.settingsTimezone,
-      wrapSupportingText: true,
-      subtitle:
-          _coolingDown || (state.failed && state.diagnostics?.status == 429)
-          ? timezoneRateLimitMessage(
-              context.l10n,
-              state.diagnostics,
-              coolingDown: _coolingDown,
-            )
-          : state.failed
-          ? state.errorMessage == 'NATIVE_INTEGRITY_REQUIRED'
-                ? context.l10n.settingsNativeVerificationFailed
-                : state.errorMessage == null
-                ? context.l10n.settingsTimezoneError
-                : '${context.l10n.settingsTimezoneError}\n${state.errorMessage}'
-          : !state.resolved
-          ? state.loading
-                ? context.l10n.settingsTimezoneLoading
-                : context.l10n.settingsTimezoneAccountPending
-          : context.l10n.settingsTimezoneEffective(state.effective),
-      value: state.loading || state.saving
-          ? '…'
-          : !(widget.workspace ? state.workspaceLoaded : state.personalLoaded)
-          ? context.l10n.settingsTimezoneUnknown
-          : (widget.workspace ? state.workspace : state.personal) == 'auto'
-          ? context.l10n.settingsTimezoneAuto
-          : (widget.workspace ? state.workspace : state.personal),
-      trailing:
-          state.failed &&
-              (state.failedSaveZone == null ||
-                  state.failedSaveWorkspace == widget.workspace)
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  key: ValueKey(
-                    widget.workspace
-                        ? 'timezone-retry-workspace'
-                        : 'timezone-retry-personal',
-                  ),
-                  tooltip: context.l10n.settingsTimezoneRetry,
-                  onPressed: _coolingDown || state.loading || state.saving
-                      ? null
-                      : () => unawaited(_retry()),
-                  icon: const Icon(LucideIcons.rotateCw),
-                ),
-                if (state.diagnostics case final diagnostics?)
-                  InternalDiagnosticsCopy(
-                    diagnostics: diagnostics,
-                    userId: widget.userId,
-                  ),
-              ],
-            )
-          : null,
-      showChevron: !widget.workspace || widget.canManageWorkspace,
-      onTap:
-          _coolingDown ||
-              state.loading ||
-              state.saving ||
-              (!state.resolved &&
-                  !state.failed &&
-                  !(widget.workspace
-                      ? state.workspaceLoaded
-                      : state.personalLoaded))
-          ? null
-          : state.failed &&
-                !(widget.workspace
-                    ? state.workspaceLoaded
-                    : state.personalLoaded)
-          ? () => unawaited(_load())
-          : widget.workspace && !widget.canManageWorkspace
-          ? null
-          : () => unawaited(_choose()),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      BlocConsumer<TimezoneSettingsCubit, TimezoneSettingsState>(
+        bloc: _cubit,
+        listener: (_, state) => _syncCooldown(state.retryAt),
+        builder: (context, state) {
+          final text = timezoneRowText(
+            context.l10n,
+            state,
+            workspace: widget.workspace,
+          );
+          return SettingsTile(
+            grouped: widget.grouped,
+            icon: LucideIcons.earth,
+            title: widget.workspace
+                ? context.l10n.settingsWorkspaceTimezone
+                : context.l10n.settingsTimezone,
+            // Errors and rate limits wrap; every other state is one value line.
+            wrapSupportingText: true,
+            subtitle:
+                _coolingDown ||
+                    (state.failed && state.diagnostics?.status == 429)
+                ? timezoneRateLimitMessage(
+                    context.l10n,
+                    state.diagnostics,
+                    coolingDown: _coolingDown,
+                  )
+                : state.failed
+                ? state.errorMessage == 'NATIVE_INTEGRITY_REQUIRED'
+                      ? context.l10n.settingsNativeVerificationFailed
+                      : state.errorMessage == null
+                      ? context.l10n.settingsTimezoneError
+                      : '${context.l10n.settingsTimezoneError}\n'
+                            '${state.errorMessage}'
+                : null,
+            value: text.value,
+            trailingValue: text.trailing,
+            trailing:
+                state.failed &&
+                    (state.failedSaveZone == null ||
+                        state.failedSaveWorkspace == widget.workspace)
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        key: ValueKey(
+                          widget.workspace
+                              ? 'timezone-retry-workspace'
+                              : 'timezone-retry-personal',
+                        ),
+                        tooltip: context.l10n.settingsTimezoneRetry,
+                        onPressed: _coolingDown || state.loading || state.saving
+                            ? null
+                            : () => unawaited(_retry()),
+                        icon: const Icon(LucideIcons.rotateCw),
+                      ),
+                      if (state.diagnostics case final diagnostics?)
+                        InternalDiagnosticsCopy(
+                          diagnostics: diagnostics,
+                          userId: widget.userId,
+                        ),
+                    ],
+                  )
+                : null,
+            showChevron: !widget.workspace || widget.canManageWorkspace,
+            onTap:
+                _coolingDown ||
+                    state.loading ||
+                    state.saving ||
+                    (!state.resolved &&
+                        !state.failed &&
+                        !(widget.workspace
+                            ? state.workspaceLoaded
+                            : state.personalLoaded))
+                ? null
+                : state.failed &&
+                      !(widget.workspace
+                          ? state.workspaceLoaded
+                          : state.personalLoaded)
+                ? () => unawaited(_load())
+                : widget.workspace && !widget.canManageWorkspace
+                ? null
+                : () => unawaited(_choose()),
+          );
+        },
+      );
 }
