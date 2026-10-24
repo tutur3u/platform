@@ -36,6 +36,50 @@ describe('indexed calendar lookup', () => {
       }
     }
   );
+  it.each(['America/Los_Angeles', 'Asia/Tokyo', 'Pacific/Kiritimati'])(
+    'keeps UTC all-day dates independent of the browser in %s',
+    (browserZone) => {
+      vi.stubEnv('TZ', browserZone);
+      try {
+        const lookup = createCalendarEventLookup(
+          [event('civil', '2026-01-01T00:00:00Z', '2026-01-03T00:00:00Z')],
+          'America/Los_Angeles'
+        );
+        expect(lookup(new Date(2025, 11, 31))).toEqual([]);
+        expect(lookup(new Date(2026, 0, 1)).map((item) => item.id)).toEqual([
+          'civil',
+        ]);
+        expect(lookup(new Date(2026, 0, 2)).map((item) => item.id)).toEqual([
+          'civil',
+        ]);
+        expect(lookup(new Date(2026, 0, 3))).toEqual([]);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
+  );
+  it.each([
+    ['2026-03-08T05:00:00Z', '2026-03-09T04:00:00Z', 2, 8],
+    ['2026-11-01T04:00:00Z', '2026-11-02T05:00:00Z', 10, 1],
+  ] as const)(
+    'uses display-zone civil bounds across DST (%s)',
+    (start, end, month, day) => {
+      vi.stubEnv('TZ', 'Pacific/Honolulu');
+      try {
+        const lookup = createCalendarEventLookup(
+          [event('dst', start, end)],
+          'America/New_York'
+        );
+        expect(lookup(new Date(2026, month, day - 1))).toEqual([]);
+        expect(
+          lookup(new Date(2026, month, day)).map((item) => item.id)
+        ).toEqual(['dst']);
+        expect(lookup(new Date(2026, month, day + 1))).toEqual([]);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
+  );
   it('preserves the existing all-day carrier identity when the calendar zone changes', () => {
     vi.stubEnv('TZ', 'UTC');
     try {

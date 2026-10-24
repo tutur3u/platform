@@ -187,6 +187,56 @@ void main() {
       );
     }
 
+    testWidgets('Edit profile groups every account setting in one place', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: authCubit),
+            BlocProvider(
+              create: (_) =>
+                  ShellProfileCubit(profileRepository: profileRepository),
+            ),
+          ],
+          child: ProfilePage(profileRepository: profileRepository),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final caption in [
+        'Identity',
+        'Avatar',
+        'Account',
+        'Account status',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.text(caption),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text(caption), findsOneWidget);
+      }
+      for (final row in [
+        'profile-display-name-row',
+        'profile-full-name-row',
+        'profile-email-row',
+        'profile-avatar-row',
+        'profile-accounts-row',
+        'profile-sessions-row',
+      ]) {
+        expect(find.byKey(ValueKey(row), skipOffstage: false), findsOneWidget);
+      }
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('profile-display-name-row')),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const ValueKey('profile-display-name-row')));
+      await tester.pumpAndSettle();
+      expect(find.text('Save'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('reloads profile when auth user changes in place', (
       tester,
     ) async {

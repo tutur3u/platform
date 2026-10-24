@@ -39,9 +39,8 @@ class _AccessDeniedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return AppPageBody(
+      child: Center(
         child: TaskSurfaceMessageCard(
           icon: Icons.lock_outline,
           title: title,
@@ -61,9 +60,8 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return AppPageBody(
+      child: Center(
         child: TaskSurfaceMessageCard(
           icon: Icons.error_outline,
           title: context.l10n.taskBoardsLoadError,

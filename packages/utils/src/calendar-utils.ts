@@ -22,9 +22,12 @@ export function isAllDayEvent(
   const durationMs = end.diff(start, 'millisecond');
   const isMultipleOf24Hours = durationMs % (24 * 60 * 60 * 1000) === 0;
 
-  const spansLocalMidnights =
-    start.startOf('day').valueOf() === start.valueOf() &&
-    end.startOf('day').valueOf() === end.valueOf();
+  const isMidnight = (date: dayjs.Dayjs) =>
+    date.hour() === 0 &&
+    date.minute() === 0 &&
+    date.second() === 0 &&
+    date.millisecond() === 0;
+  const spansLocalMidnights = isMidnight(start) && isMidnight(end);
   const wallDuration =
     durationMs + (end.utcOffset() - start.utcOffset()) * 60_000;
   return (

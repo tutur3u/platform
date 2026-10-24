@@ -93,7 +93,7 @@ external caller repository.
 | Route tracking | `bun migration:tanstack:manifest && bun migration:tanstack:check` | generated manifest is current and contains neither retired Web route |
 | Web API guard | `bun web:api-routes:check` | no wrapper/backlog route is regenerated for either retired handler |
 | App builds | `bun run --cwd apps/ai build && bun run --cwd apps/web build` | canonical AI and live Web compile/build after deletion |
-| Repository | `bun check && git diff --check` | canonical checks pass and the diff is whitespace-clean |
+| Repository | `bun validate && git diff --check` | canonical checks pass and the diff is whitespace-clean |
 
 ## Scope
 

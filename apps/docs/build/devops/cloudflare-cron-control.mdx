@@ -24,7 +24,7 @@ secrets. A separate `CRON_CONTROL_DELIVERY_TOKEN` repository secret is
 installed on the Worker and in the web app's production environment to
 authorize the delivery request. CI uses `COLAB_CLOUDFLARE_API_TOKEN` to deploy.
 The Supabase secret key goes only in the `apikey` header for database calls.
-Never add either credential to `wrangler.jsonc` or logs.
+Never add either credential to `cloudflare.config.ts` or logs.
 
 Check the Worker `/health` endpoint and deployment marker after production
 sync. Verify an idle schedule skips the Vercel call, then queue a test
@@ -50,7 +50,7 @@ consent and idempotency rules. Cadences match the live legacy owner, not the sta
 source catalogs. See the [background work inventory](/build/devops/background-work-inventory).
 
 **Every job defaults off.** A job runs only when its id is listed in the
-`CRON_CONTROL_ENABLED_JOBS` Worker var (empty in `wrangler.jsonc`), so enabling one
+`CRON_CONTROL_ENABLED_JOBS` Worker var (empty in `cloudflare.config.ts`), so enabling one
 is a reviewed configuration change. While a job is off its tick performs no storage
 or network work. Each enabled job also needs its target origin var and secret:
 
@@ -167,13 +167,17 @@ and `format:check` are available for explicit parity review. Repository Biome
 remains authoritative until the scope's formatting/rule/editor/generator gates
 migrate together. No global formatting or framework migrator is needed.
 
-The runtime fixture uses dummy credentials and tests complete health JSON,
-rejection of HTTP invocation and unauthenticated control paths, and the scheduled
-job catalog against a loopback processor: no work while disabled, one call per
-slot with the expected auth contract, a slot claim that survives a Durable Object
-eviction, operator stop/resume and failure-budget exhaustion. It never dispatches
-the immediate-notification trigger and cannot certify database recovery, web
-delivery, fanout, hosted schedules or total-spend bounds.
+The runtime fixture (`scripts/verify-worker-runtime.mjs`, on the shared cf Vite
+harness) uses dummy credentials and checks the source config contract (every
+legacy schedule, jobs default off, the `CronLedger` SQLite export), complete
+health JSON, and rejection of HTTP invocation and unauthenticated control paths.
+The harness accepts only declared secrets and the configured job list, so the
+enabled-job contract (no work while disabled, one call per slot with the
+expected auth, a slot claim that survives a ledger restart, operator
+stop/resume and failure-budget exhaustion) is covered by the `ledger`,
+`dispatch` and `control` unit tests rather than a runtime scheduled event. It
+never dispatches the immediate-notification trigger and cannot certify database
+recovery, web delivery, fanout, hosted schedules or total-spend bounds.
 The existing four unit regressions preserve RPC-before-lookup ordering, idle skip,
 authenticated delivery, redirect rejection and failure short-circuiting with
 mocked downstream calls. A successful hosted schedule and terminal batch status,

@@ -241,7 +241,6 @@ export async function performIncrementalActiveSync(
     const syncToken = await getSyncToken(wsId, syncTokenKey);
     console.debug('🔍 [DEBUG] Sync token result:', {
       hasSyncToken: !!syncToken,
-      syncToken,
       calendarId,
     });
 
@@ -298,8 +297,6 @@ export async function performIncrementalActiveSync(
         metrics.apiCallsCount++;
         const res = await calendar.events.list(requestParams);
         metrics.pagesFetched++;
-
-        console.debug('🔍 [DEBUG] Page', pageCount, 'results:', res.data);
 
         const events = res.data.items || [];
         metrics.eventsFetchedTotal += events.length;

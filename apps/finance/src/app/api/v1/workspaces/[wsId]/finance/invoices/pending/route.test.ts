@@ -68,6 +68,8 @@ describe('sanitizePendingInvoiceAvatarRows', () => {
 describe('GET pending invoices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Drop one-shot RPC results a failing test left unconsumed.
+    mocks.rpc.mockReset();
     mocks.resolveFinanceRouteAuthContext.mockResolvedValue({ user: {} });
     mocks.getFinanceRouteContext.mockResolvedValue({
       context: {
@@ -163,6 +165,24 @@ describe('GET pending invoices', () => {
       expect(await response.json()).toEqual({ data: [], count: 2050 });
     }
   );
+
+  it('keeps the non-empty value when an empty duplicate comes first', async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [], error: null })
+      .mockResolvedValueOnce({ data: 0, error: null });
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('https://finance.test/api/pending?page=&page=2&pageSize=10'),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'get_pending_invoices',
+      expect.objectContaining({ p_limit: 10, p_offset: 10 })
+    );
+  });
 
   it.each(['page=0', 'pageSize=0', 'page=1.5', 'groupByUser=invalid'])(
     'rejects invalid pagination: %s',

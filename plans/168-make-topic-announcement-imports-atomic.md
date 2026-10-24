@@ -92,7 +92,7 @@ redirected TanStack user component tree as read-only orphaned evidence.
 | Manifest | `bun migration:tanstack:manifest` | first-class route remains `legacy-next` with updated source ownership |
 | Typechecks | `bun run --cwd apps/web type-check && bun run --cwd packages/internal-api type-check && bun run --cwd apps/contacts type-check` | exit 0 |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/contacts build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -161,7 +161,7 @@ apply production migrations.
 
 5. **Run all gates.** Run `bun web:api-routes:check`, regenerate the manifest,
    and run focused/full isolated database validation and typegen, typechecks,
-   builds, `bun check`, and whitespace verification.
+   builds, `bun validate`, and whitespace verification.
 
 ## Done criteria
 

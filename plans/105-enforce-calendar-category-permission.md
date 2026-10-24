@@ -61,7 +61,7 @@ migration ownership before creating a uniquely named policy-only migration.
 | Local apply | `bun sb:up` | migration applies locally |
 | Category tests | `bun --cwd apps/calendar vitest run 'src/app/api/v1/workspaces/[wsId]/calendar/categories/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/calendar/categories/[categoryId]/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/calendar/categories/reorder/route.test.ts'` | method/actor matrix passes |
 | Calendar build | `bun run --cwd apps/calendar build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -108,7 +108,7 @@ This policy-only change must not produce generated-type churn.
 
 ### Step 4: Run all gates
 
-Apply locally, run database and route tests, build Calendar, then run `bun check`
+Apply locally, run database and route tests, build Calendar, then run `bun validate`
 and whitespace validation.
 
 ## Done criteria

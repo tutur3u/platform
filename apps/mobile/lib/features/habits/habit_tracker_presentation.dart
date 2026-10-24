@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const List<String> habitTrackerIconOptions = [
   'BookOpen',
@@ -458,7 +458,7 @@ IconData habitTrackerIcon(String icon) {
     'Dumbbell' => Icons.fitness_center_outlined,
     'Flame' => Icons.local_fire_department_outlined,
     'Footprints' => Icons.directions_walk_outlined,
-    'ShieldPlus' => shad.LucideIcons.shieldPlus,
+    'ShieldPlus' => LucideIcons.shieldPlus,
     'SlidersHorizontal' => Icons.tune_outlined,
     'Snowflake' => Icons.ac_unit_outlined,
     _ => Icons.repeat_rounded,

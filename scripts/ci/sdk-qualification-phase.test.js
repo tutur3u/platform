@@ -1,9 +1,11 @@
 const assert = require('node:assert/strict');
+const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const test = require('node:test');
+const vm = require('node:vm');
 const {
   workflowPhase,
   registryRewrites,
@@ -15,6 +17,51 @@ function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-phase-test-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;
+}
+
+function publishFixture(t, filename = 'sdk.tgz') {
+  const directory = fixture(t);
+  const options = {
+    directory,
+    sourceSha: 'a'.repeat(40),
+    name: 'tuturuuu',
+    version: '1.0.0',
+  };
+  const archive = path.join(directory, filename);
+  fs.writeFileSync(archive, 'qualified synthetic bytes');
+  const receipt = {
+    version: 2,
+    phase: 'public',
+    qualified: true,
+    sourceSha: options.sourceSha,
+    processGroupsDrained: true,
+    temporaryFixtureDrained: true,
+    modelActivity: false,
+    lifecycleScriptsExecuted: false,
+    package: {
+      name: options.name,
+      version: options.version,
+      archive: filename,
+      sha256: createHash('sha256')
+        .update(fs.readFileSync(archive))
+        .digest('hex'),
+    },
+  };
+  const save = () =>
+    fs.writeFileSync(
+      path.join(directory, 'receipt.json'),
+      JSON.stringify(receipt)
+    );
+  save();
+  return { options, archive, receipt, save };
+}
+
+function isolatedVerifier(overrides) {
+  return vm.runInNewContext(`(${verifyPublishReceipt.toString()})`, {
+    fs: { ...fs, ...overrides },
+    path,
+    createHash,
+  });
 }
 
 test('only same-repository generated production release PR selects SOURCE', (t) => {
@@ -122,6 +169,164 @@ test('publication requires strict successful public receipt for exact SHA and id
   assert.throws(verify, /ENOENT/);
 });
 
+test('publication rejects archive symlinks and directories', (t) => {
+  for (const kind of ['symlink', 'directory']) {
+    const { options, archive } = publishFixture(t);
+    fs.renameSync(archive, `${archive}.original`);
+    if (kind === 'symlink') fs.symlinkSync(`${archive}.original`, archive);
+    else fs.mkdirSync(archive);
+    assert.throws(
+      () => verifyPublishReceipt(options),
+      kind === 'symlink' ? /ELOOP/ : /ARTIFACT_MISMATCH/,
+      kind
+    );
+  }
+});
+
+test('publication rejects a FIFO archive without waiting for a writer', (t) => {
+  const { options, archive } = publishFixture(t);
+  fs.unlinkSync(archive);
+  execFileSync('mkfifo', [archive], { timeout: 2000 });
+  const child = spawnSync(
+    process.execPath,
+    [
+      '-e',
+      `const assert = require('node:assert/strict');
+       const { verifyPublishReceipt } = require(process.argv[1]);
+       assert.throws(() => verifyPublishReceipt(JSON.parse(process.argv[2])),
+         /PUBLIC_QUALIFICATION_ARTIFACT_MISMATCH/);`,
+      require.resolve('./sdk-qualification-phase'),
+      JSON.stringify(options),
+    ],
+    { timeout: 2000, encoding: 'utf8' }
+  );
+  assert.ifError(child.error);
+  assert.equal(child.status, 0, child.stderr);
+});
+
+test('publication only accepts unambiguous archive basenames', (t) => {
+  const { options, archive, receipt, save } = publishFixture(t);
+  for (const filename of [
+    '-sdk.tgz',
+    '--sdk.tgz',
+    'sdk.tgz\n',
+    'sdk\n.tgz',
+    'sdk\r.tgz',
+    'sdk\t.tgz',
+    'sdk\0.tgz',
+    'sdk .tgz',
+    'sdk;echo.tgz',
+    'sdk$(echo).tgz',
+    'sdk`echo`.tgz',
+    '../sdk.tgz',
+    './sdk.tgz',
+    '/sdk.tgz',
+    'nested/sdk.tgz',
+    'nested\\sdk.tgz',
+    '.sdk.tgz',
+    'sdk..tgz',
+    'sdk.tar.tgz',
+    'sdk.tgz.tgz',
+    'sdk.tgz.js',
+    'sdk.TGZ',
+    `${'s'.repeat(252)}.tgz`,
+  ]) {
+    receipt.package.archive = filename;
+    save();
+    const verify = isolatedVerifier({ readdirSync: () => [filename] });
+    assert.throws(() => verify(options), /RECEIPT_MISMATCH/, filename);
+  }
+  for (const filename of [
+    'sdk.tgz',
+    'tuturuuu-1.2.3.tgz',
+    'sdk-1.2.3-beta.1.tgz',
+    'tuturuuu-0.28.0-dev.123.abcdef0.tgz',
+  ]) {
+    receipt.package.archive = filename;
+    save();
+    const verify = isolatedVerifier({
+      readdirSync: () => [filename],
+      openSync: (_filename, flags) => fs.openSync(archive, flags),
+    });
+    assert.equal(verify(options), path.join(options.directory, filename));
+  }
+});
+
+test('publication hashes the opened descriptor even if the archive path changes', (t) => {
+  const { options, archive } = publishFixture(t);
+  let opened;
+  let closed;
+  const verify = isolatedVerifier({
+    openSync(filename, flags) {
+      assert.equal(filename, archive);
+      assert.equal(
+        flags,
+        fs.constants.O_RDONLY |
+          fs.constants.O_NOFOLLOW |
+          fs.constants.O_NONBLOCK
+      );
+      opened = fs.openSync(filename, flags);
+      fs.renameSync(archive, `${archive}.original`);
+      fs.writeFileSync(archive, 'replacement bytes');
+      return opened;
+    },
+    fstatSync(fd) {
+      assert.equal(fd, opened);
+      return fs.fstatSync(fd);
+    },
+    readFileSync(file, ...args) {
+      if (typeof file === 'number') assert.equal(file, opened);
+      else assert.equal(file, path.join(options.directory, 'receipt.json'));
+      return fs.readFileSync(file, ...args);
+    },
+    closeSync(fd) {
+      closed = fd;
+      fs.closeSync(fd);
+    },
+  });
+  assert.equal(verify(options), archive);
+  assert.equal(closed, opened);
+  assert.throws(() => fs.fstatSync(opened), /EBADF/);
+  assert.throws(() => verifyPublishReceipt(options), /ARTIFACT_MISMATCH/);
+});
+
+test('publication closes its descriptor after stat, read or digest failure', (t) => {
+  for (const failure of ['stat', 'read', 'digest']) {
+    const { options, receipt, save } = publishFixture(t);
+    let opened;
+    let closed;
+    if (failure === 'digest') {
+      receipt.package.sha256 = '0'.repeat(64);
+      save();
+    }
+    const verify = isolatedVerifier({
+      openSync(...args) {
+        opened = fs.openSync(...args);
+        return opened;
+      },
+      fstatSync(fd) {
+        if (failure === 'stat') throw new Error('STAT_FAILED');
+        return fs.fstatSync(fd);
+      },
+      readFileSync(file, ...args) {
+        if (typeof file === 'number' && failure === 'read')
+          throw new Error('READ_FAILED');
+        return fs.readFileSync(file, ...args);
+      },
+      closeSync(fd) {
+        closed = fd;
+        fs.closeSync(fd);
+      },
+    });
+    assert.throws(
+      () => verify(options),
+      /STAT_FAILED|READ_FAILED|ARTIFACT_MISMATCH/
+    );
+    assert.equal(closed, opened, failure);
+    assert.throws(() => fs.fstatSync(opened), /EBADF/);
+  }
+});
+
 test('npm cannot silently omit a declared optional or peer runtime package', (t) => {
   const consumer = fixture(t);
   const manifest = { optionalDependencies: { 'optional-runtime': '^1.0.0' } };
@@ -175,10 +380,16 @@ test('OIDC verifier is inline trusted workflow code and consumes artifacts only 
     /verify-receipt\.cjs|actions\/checkout|bun install|npm install|npm pack\b|run build/
   );
   assert.match(publish, /id-token: write/);
+  assert.match(publish, /environment: sdk-release-production/);
   assert.match(
     publish,
-    /npm publish "\$\{\{ steps.artifact.outputs.path \}\}" --ignore-scripts/
+    /PACKAGE_TARBALL: \$\{\{ steps.artifact.outputs.path \}\}/
   );
+  assert.match(publish, /npm publish "\$\{PACKAGE_TARBALL\}" --ignore-scripts/);
+  for (const run of publish.split(/\n {8}run: \|\n/).slice(1)) {
+    const script = run.split(/\n {6}(?=\S)/)[0];
+    assert.doesNotMatch(script, /\$\{\{/);
+  }
   const prepare = workflow
     .split('\n  prepare-publish-npm:')[1]
     .split('\n  publish-npm:')[0];

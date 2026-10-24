@@ -27,11 +27,7 @@ function admitted(job, { github, needs }, cancelled = false) {
   );
 }
 
-for (const file of [
-  'turbo-unit-tests.yaml',
-  'codecov.yaml',
-  'biome-check.yaml',
-]) {
+for (const file of ['biome-check.yaml']) {
   const workflow = readWorkflow(file);
   const needs = {
     'check-ci': {

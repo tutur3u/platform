@@ -175,6 +175,16 @@ it('keeps idle sockets alive without presence writes and recovers a missing pong
   await Promise.resolve();
   const socket = Socket.instances[0]!;
   socket.open();
+  socket.dispatchEvent(
+    new MessageEvent('message', {
+      data: JSON.stringify({
+        type: 'ready',
+        userId: 'self',
+        admission: 'admitted',
+      }),
+    })
+  );
+  options.onMessage.mockClear();
   await vi.advanceTimersByTimeAsync(60_000);
   expect(socket.pings).toBe(1);
   expect(socket.sent).toEqual([]);

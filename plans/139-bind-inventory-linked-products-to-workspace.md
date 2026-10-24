@@ -65,7 +65,7 @@ type owners transfer every exact path. Create the migration only with
 | Apply/typegen | `bun sb:up && bun sb:typegen` | migration applies; generated linked-product type includes required `ws_id` |
 | Typechecks | `bun run --cwd packages/users-core type-check && bun run --cwd apps/contacts type-check && bun run --cwd apps/inventory type-check` | all exit 0 |
 | Builds | `bun run --cwd apps/contacts build && bun run --cwd apps/inventory build` | both production builds exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -146,7 +146,7 @@ missing-parent case has zero write/revalidation calls.
 Before production apply, the operator must execute the migration's exact
 read-only mismatch SELECT against the target and record a zero result; a
 nonzero result blocks rollout. Locally apply, run focused/full DB tests,
-typegen, route tests, all typechecks/builds, `bun check`, and whitespace. Stop
+typegen, route tests, all typechecks/builds, `bun validate`, and whitespace. Stop
 on unrelated typegen or migration drift.
 
 ## Done criteria

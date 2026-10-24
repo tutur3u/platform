@@ -26,7 +26,7 @@ select is(
     where n.nspname = 'public'
       and p.proname = 'clear_task_projects_lead_on_member_delete'
   ),
-  'search_path=public',
+  'search_path=public, pg_temp',
   'clear_task_projects_lead_on_member_delete pins search_path to public'
 );
 

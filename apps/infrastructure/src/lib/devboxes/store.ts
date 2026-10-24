@@ -255,22 +255,86 @@ export async function releaseDevboxLease(leaseId: string) {
   return { message: `Devbox lease ${leaseId} released.` };
 }
 
+type RunStatusUpdateBuilder = {
+  eq: (column: string, value: string) => RunStatusUpdateBuilder;
+  in: (column: string, values: string[]) => RunStatusUpdateBuilder;
+  select: (columns: string) => Promise<{
+    data: unknown[] | null;
+    error: DevboxStorageErrorLike;
+  }>;
+};
+
+// Admin-only stop: any actor's run, but only while it is still active.
 export async function stopDevboxRun(runId: string) {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
-  const { error } = await getPrivateTable(privateClient, 'devbox_runs')
-    .update({
-      status: 'cancel_requested',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', runId);
+  const runs = () =>
+    privateClient.from('devbox_runs') as {
+      update: (value: unknown) => RunStatusUpdateBuilder;
+    };
+  const now = new Date().toISOString();
 
-  if (error) {
-    throw getDevboxStorageError(error);
+  const queued = await runs()
+    .update({ completed_at: now, status: 'cancelled', updated_at: now })
+    .eq('id', runId)
+    .eq('status', 'queued')
+    .select('id');
+
+  if (queued.error) {
+    throw getDevboxStorageError(queued.error);
   }
 
-  return { message: `Devbox run ${runId} cancellation requested.` };
+  if (queued.data?.length) {
+    return {
+      message: `Devbox run ${runId} cancelled.`,
+      status: 'cancelled' as const,
+    };
+  }
+
+  const running = await runs()
+    .update({ status: 'cancel_requested', updated_at: now })
+    .eq('id', runId)
+    .eq('status', 'running')
+    .select('id');
+
+  if (running.error) {
+    throw getDevboxStorageError(running.error);
+  }
+
+  // A stale dashboard row must not throw from the server action.
+  if (!running.data?.length) {
+    const { data, error } = await getPrivateTable(privateClient, 'devbox_runs')
+      .select('status')
+      .eq('id', runId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (error) throw getDevboxStorageError(error);
+    const existing = data?.[0];
+    if (existing && typeof existing === 'object' && 'status' in existing) {
+      const status = existing.status;
+      if (
+        status === 'cancel_requested' ||
+        status === 'cancelled' ||
+        status === 'succeeded' ||
+        status === 'failed'
+      ) {
+        return {
+          message:
+            status === 'cancel_requested'
+              ? `Devbox run ${runId} cancellation requested.`
+              : `Devbox run ${runId} ${status}.`,
+          status,
+        };
+      }
+    }
+    return { message: `Devbox run ${runId} is no longer active.` };
+  }
+
+  return {
+    message: `Devbox run ${runId} cancellation requested.`,
+    status: 'cancel_requested' as const,
+  };
 }
 
 export async function listDevboxRunLogs(runId: string) {
