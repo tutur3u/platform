@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 
 String mailSettingsEntityId(String mailboxId) => 'mail-settings:$mailboxId';
@@ -69,12 +70,13 @@ Map<String, dynamic> overlayPendingMailSettings({
     source['settings'] as Map<String, dynamic>,
   );
   if (userId == null) {
-    return {'settings': settings};
+    return {'settings': settings, 'confirmedSettings': source['settings']};
   }
   for (final edit in pending) {
     if (edit.userId != userId ||
         edit.workspaceId != workspaceId ||
-        edit.feature != 'mail' ||
+        !edit.isMailSettings ||
+        edit.status == PendingMutationStatus.failed ||
         edit.method != 'PATCH' ||
         edit.path != path) {
       continue;
@@ -84,5 +86,41 @@ Map<String, dynamic> overlayPendingMailSettings({
           as Map<String, dynamic>,
     );
   }
-  return {'settings': settings};
+  return {'settings': settings, 'confirmedSettings': source['settings']};
+}
+
+/// Top-level PATCH fields only; nested policy endpoints require full objects.
+Map<String, dynamic> mailSettingsChanges(
+  Map<String, dynamic> baseline,
+  Map<String, dynamic> draft,
+) {
+  const equality = DeepCollectionEquality();
+  final delta = <String, dynamic>{
+    for (final field in draft.entries)
+      if (!equality.equals(baseline[field.key], field.value))
+        field.key: field.value,
+  };
+  if (delta.containsKey('signatureText')) delta['signatureHtml'] = null;
+  return delta;
+}
+
+Map<String, dynamic> mailSettingsFormValues(Map<String, dynamic> settings) {
+  final automation = settings['automation'] as Map<String, dynamic>?;
+  final forwarding = automation?['forwarding'] as Map<String, dynamic>?;
+  final group = settings['groupPolicy'] as Map<String, dynamic>?;
+  return {
+    'senderName': settings['senderName'] as String? ?? '',
+    'signatureText': settings['signatureText'] as String? ?? '',
+    'aiInstructions': settings['aiInstructions'] as String? ?? '',
+    'autoDraftEnabled': settings['autoDraftEnabled'] as bool? ?? false,
+    'outboundProviderOverride': settings['outboundProviderOverride'],
+    if (group != null) 'groupPolicy': Map<String, dynamic>.from(group),
+    if (group == null) 'automation': {
+      'smartLabelsEnabled': automation?['smartLabelsEnabled'] as bool? ?? false,
+      'forwarding': {
+        'mode': forwarding?['mode'] as String? ?? 'off',
+        if (forwarding?['mode'] == 'mailbox') 'address': forwarding?['address'] as String? ?? '',
+      },
+    },
+  };
 }

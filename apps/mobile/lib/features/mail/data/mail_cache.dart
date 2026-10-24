@@ -27,6 +27,8 @@ class MailCache {
 
   final Map<String, int> _mutationRevisions = {};
   final Map<String, Future<void>> _invalidations = {};
+  final Map<(String, String), int> _pathRevisions = {};
+  final Set<(String, String)> _removedPaths = {};
   bool _disabled = false;
   final Set<String> _deniedWorkspaces = {};
   bool get _usable =>
@@ -41,7 +43,8 @@ class MailCache {
       Map<String, dynamic>.from(value! as Map);
 
   Map<String, dynamic>? peek(String wsId, String path) {
-    if (!_usable || _deniedWorkspaces.contains(wsId)) return null;
+    if (!_usable || _deniedWorkspaces.contains(wsId) ||
+        _removedPaths.contains((wsId, path))) return null;
     final cached = _store.peek(key: _key(wsId, path), decode: _decode);
     return cached.data;
   }
@@ -59,10 +62,21 @@ class MailCache {
       throw const ApiException(message: 'Mail access denied', statusCode: 403);
     }
     if (!_usable) return await fetch();
+    final pathRevision = _pathRevisions[(wsId, path)] ?? 0;
+    final originalFetch = fetch;
+    fetch = () async {
+      final result = await originalFetch();
+      if (pathRevision != (_pathRevisions[(wsId, path)] ?? 0)) {
+        throw StateError('Mailbox snapshot removed');
+      }
+      _removedPaths.remove((wsId, path));
+      return result;
+    };
     final key = _key(wsId, path);
     final scopeRevision = _store.scopeRevisionFor(key);
     void checkScope() {
       if (!_usable ||
+          pathRevision != (_pathRevisions[(wsId, path)] ?? 0) ||
           _deniedWorkspaces.contains(wsId) ||
           scopeRevision != _store.scopeRevisionFor(key)) {
         throw StateError('Mail request scope changed');
@@ -146,10 +160,11 @@ class MailCache {
   }
 
   Future<Map<String, dynamic>?> snapshot(String wsId, String path) async {
-    if (!_usable || _deniedWorkspaces.contains(wsId)) return null;
+    if (!_usable || _deniedWorkspaces.contains(wsId) ||
+        _removedPaths.contains((wsId, path))) return null;
     try {
       final cached = await _store.read(key: _key(wsId, path), decode: _decode);
-      if (!_usable) return null;
+      if (!_usable || _removedPaths.contains((wsId, path))) return null;
       return cached.data;
     } on Object {
       return null;
@@ -163,10 +178,13 @@ class MailCache {
     String path,
     Map<String, dynamic> payload,
   ) {
+    final pathRevision = _pathRevisions[(wsId, path)] ?? 0;
     // Serialize local writes: request deduplication must not discard the latest
     // mailbox/filter selection when several UI updates happen together.
     final write = _snapshotWrites.then((_) async {
-      if (!_usable || _deniedWorkspaces.contains(wsId)) return;
+      if (!_usable || _deniedWorkspaces.contains(wsId) ||
+          _removedPaths.contains((wsId, path)) ||
+          pathRevision != (_pathRevisions[(wsId, path)] ?? 0)) return;
       try {
         await _store.prefetch(
           key: _key(wsId, path),
@@ -176,7 +194,9 @@ class MailCache {
           registerRefresh: false,
           tags: const ['mail.view'],
           fetch: () async {
-            if (!_usable || _deniedWorkspaces.contains(wsId)) {
+            if (!_usable || _deniedWorkspaces.contains(wsId) ||
+                pathRevision != (_pathRevisions[(wsId, path)] ?? 0) ||
+                _removedPaths.contains((wsId, path))) {
               throw StateError('Mail snapshot invalidated');
             }
             return payload;
@@ -188,6 +208,20 @@ class MailCache {
     });
     _snapshotWrites = write;
     return write;
+  }
+
+  Future<void> removeSnapshot(String wsId, String path) async {
+    if (!_usable) return;
+    final scope = (wsId, path);
+    _pathRevisions[scope] = (_pathRevisions[scope] ?? 0) + 1;
+    _removedPaths.add(scope);
+    try {
+      await _store.remove(_key(wsId, path), checkScope: () {
+        if (!_usable) throw StateError('Mail actor changed');
+      });
+    } on Object {
+      // Retain the path tombstone if durable cleanup is unavailable.
+    }
   }
 
   Future<void> denyAccess(String wsId) async {

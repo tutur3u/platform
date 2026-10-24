@@ -76,6 +76,82 @@ void main() {
     });
   });
 
+  for (final feature in ['mail', 'mail_settings']) {
+    for (final status in [PendingMutationStatus.conflict, PendingMutationStatus.failed]) {
+      test('$feature $status settings do not hold an archive', () async {
+        final held = PendingMutationRecord(id: 'held', feature: feature, method: 'PATCH',
+          path: path, createdAt: DateTime.utc(2026), userId: actor, workspaceId: ws,
+          status: status, payload: const {'senderName': 'Review'},
+          optimisticPatch: {'entityId': mailSettingsEntityId(mailbox)});
+        await queue.enqueue(held);
+        final archivePath = '${MailRepository.mailboxPath(ws, mailbox)}/messages/message/state';
+        when(() => api.patchJson(archivePath, {'action': 'archive'}))
+          .thenAnswer((_) async => {});
+        await queue.enqueueIfOffline(feature: 'mail', method: 'PATCH', path: archivePath,
+          workspaceId: ws, payload: {'action': 'archive'}, entityId: 'message');
+        online = true;
+        await queue.synchronize();
+        verify(() => api.patchJson(archivePath, {'action': 'archive'})).called(1);
+        final retained = (await queue.listPending()).single;
+        expect(retained.id, held.id);
+        expect(retained.feature, held.feature);
+        expect(retained.status, status);
+        expect(retained.payload, held.payload);
+      });
+    }
+  }
+
+  test('offline sender delta retains a newer web signature on replay', () async {
+    final confirmed = mailSettingsFormValues({'senderName': 'Before', 'signatureText': 'Old'});
+    final draft = {...confirmed, 'senderName': 'New'};
+    final delta = mailSettingsChanges(confirmed, draft);
+    expect(delta, {'senderName': 'New'});
+    final server = {'senderName': 'Before', 'signatureText': 'New web signature', 'aiInstructions': 'Web instructions'};
+    await repository.updateSettings(ws, mailbox, delta);
+    expect(queue.pending.value.single.feature, 'mail_settings');
+    when(() => api.patchJson(path, any())).thenAnswer((invocation) async {
+      server.addAll(invocation.positionalArguments[1] as Map<String, dynamic>);
+      return {'settings': server};
+    });
+    online = true;
+    await queue.synchronize();
+    expect(server['senderName'], 'New');
+    expect(server['signatureText'], 'New web signature');
+    expect(server['aiInstructions'], 'Web instructions');
+    expect(mailSettingsChanges(confirmed, confirmed), isEmpty);
+    expect(mailSettingsChanges(confirmed, {...confirmed, 'signatureText': ''}),
+      {'signatureText': '', 'signatureHtml': null});
+  });
+
+  for (final status in [403, 404]) {
+    test('mailbox $status keeps other mailboxes and inbox snapshots', () async {
+      final other = '${MailRepository.mailboxPath(ws, 'other')}/settings';
+      await cache.saveSnapshot(ws, path, {'settings': {'senderName': 'Private'}});
+      await cache.saveSnapshot(ws, other, {'settings': {'senderName': 'Other'}});
+      await cache.saveSnapshot(ws, 'inbox', {'messages': <dynamic>[]});
+      when(() => api.getJson(path)).thenThrow(ApiException(message: 'Mailbox denied', statusCode: status));
+      await expectLater(repository.settings(ws, mailbox), throwsA(anything));
+      expect(await repository.cachedSettings(ws, mailbox), isNull);
+      expect((await cache.snapshot(ws, other))?['settings'], {'senderName': 'Other'});
+      expect(await cache.snapshot(ws, 'inbox'), isNotNull);
+      expect(cache.accessRevoked.value, isNull);
+    });
+  }
+
+  test('failed settings values never overlay confirmed fields', () async {
+    await cache.saveSnapshot(ws, path, {'settings': {'senderName': 'Confirmed'}});
+    await repository.updateSettings(ws, mailbox, {'senderName': 'Rejected'});
+    when(() => api.patchJson(path, any())).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+    online = true;
+    await queue.synchronize();
+    final rejected = queue.pending.value.single;
+    expect(rejected.status, PendingMutationStatus.failed);
+    final projection = overlayPendingMailSettings(userId: actor, workspaceId: ws, path: path,
+      source: {'settings': {'senderName': 'Confirmed'}}, pending: [rejected]);
+    expect(projection['settings'], {'senderName': 'Confirmed'});
+    expect(await repository.cachedSettings(ws, mailbox), isNull);
+  });
+
   test(
     'group policy keeps required history literal through queue and replay',
     () async {

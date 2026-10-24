@@ -34,8 +34,10 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
       if (error.isVerificationRequired || error.code == 'MFA_REQUIRED') {
         throw _MailSettingsChallenge(error);
       }
-      if (error.statusCode == 404) {
-        await _settingsCache.denyAccess(wsId);
+      if (path.endsWith('/settings') &&
+          (error.statusCode == 403 || error.statusCode == 404)) {
+        await _settingsCache.removeSnapshot(wsId, path);
+        throw _MailSettingsChallenge(error);
       }
       rethrow;
     }
@@ -154,7 +156,7 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
     }
     final path = '${MailRepository.mailboxPath(wsId, mailboxId)}/settings';
     await queueOrSendVoid(
-      feature: 'mail',
+      feature: 'mail_settings',
       method: 'PATCH',
       path: path,
       workspaceId: wsId,
@@ -174,7 +176,11 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
                 (error.statusCode == 401 ||
                     error.statusCode == 403 ||
                     error.statusCode == 404)) {
-              await _settingsCache.denyAccess(wsId);
+              if (error.statusCode == 401) {
+                await _settingsCache.denyAccess(wsId);
+              } else {
+                await _settingsCache.removeSnapshot(wsId, path);
+              }
             }
             rethrow;
           }

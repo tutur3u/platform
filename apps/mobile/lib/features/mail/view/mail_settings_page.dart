@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/features/mail/data/mail_settings_snapshot.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -54,7 +56,8 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   bool _smartLabels = false;
   String _forwarding = 'off';
   String? _provider;
-  String _savedSignature = '';
+  Map<String, dynamic> _editBaseline = {};
+  bool _settingsRejected = false;
   String? _savedDraft;
   bool _saving = false;
   bool _confirmingExit = false;
@@ -156,7 +159,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     }
   }
 
-  bool get _canEdit => widget.canManage && !widget.readOnlySnapshot;
+  bool get _canEdit => widget.canManage && !widget.readOnlySnapshot && !_settingsRejected;
 
   bool get _scopeCurrent => widget.isScopeCurrent?.call() ?? true;
 
@@ -165,7 +168,8 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     (edit) =>
         edit.userId == currentCacheUserId() &&
         edit.workspaceId == widget.workspaceId &&
-        edit.feature == 'mail' &&
+        edit.isMailSettings &&
+        edit.status != PendingMutationStatus.failed &&
         edit.method == 'PATCH' &&
         edit.path ==
             '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings',
@@ -175,8 +179,18 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     final pending = _hasPendingSettings;
     final resolved = _hadPendingSettings && !pending;
     _hadPendingSettings = pending;
-    if (resolved) {
+    final rejected = OfflineMutationQueue.instance.pending.value.any((edit) =>
+      edit.userId == currentCacheUserId() && edit.workspaceId == widget.workspaceId &&
+      edit.isMailSettings && edit.path == '${MailRepository.mailboxPath(widget.workspaceId, widget.mailboxId)}/settings' &&
+      edit.status == PendingMutationStatus.failed);
+    if (rejected && mounted) {
+      _loadGeneration++;
+      _clearSettings();
+      setState(() { _settingsRejected = true; _failed = true; _busy = false; });
+    } else if (resolved) {
       _syncFinished();
+    } else if (mounted) {
+      setState(() {});
     }
   }
 
@@ -224,7 +238,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     final forwarding = automation?['forwarding'] as Map<String, dynamic>?;
     _sender.text = settings['senderName'] as String? ?? '';
     _signature.text = settings['signatureText'] as String? ?? '';
-    _savedSignature = _signature.text;
+
     _instructions.text = settings['aiInstructions'] as String? ?? '';
     _forwardTo.text = forwarding?['address'] as String? ?? '';
     setState(() {
@@ -233,6 +247,9 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
       _smartLabels = automation?['smartLabelsEnabled'] as bool? ?? false;
       _forwarding = forwarding?['mode'] as String? ?? 'off';
       _group = settings['groupPolicy'] as Map<String, dynamic>?;
+      _editBaseline = mailSettingsFormValues(
+        result['confirmedSettings'] as Map<String, dynamic>? ?? settings,
+      );
       _savedDraft = _draft;
       _hasSnapshot = true;
       _busy = false;
@@ -310,24 +327,9 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     }
   }
 
-  Future<void> _save() async {
-    if (!_canEdit || !_scopeCurrent || _saving || !_hasSnapshot) {
-      return;
-    }
-    _loadGeneration++;
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {
-      _saving = true;
-      _allowExit = false;
-    });
-    try {
-      await widget.repository.updateSettings(
-        widget.workspaceId,
-        widget.mailboxId,
-        {
+  Map<String, dynamic> get _formSettings => {
           'senderName': _sender.text.trim(),
           'signatureText': _signature.text,
-          if (_signature.text != _savedSignature) 'signatureHtml': null,
           'aiInstructions': _instructions.text,
           'autoDraftEnabled': _autoDraft,
           'outboundProviderOverride': _provider,
@@ -340,13 +342,29 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                 if (_forwarding == 'mailbox') 'address': _forwardTo.text.trim(),
               },
             },
-        },
+        };
+
+  Future<void> _save() async {
+    if (!_canEdit || !_scopeCurrent || _saving || !_hasSnapshot || _hasPendingSettings ||
+        mailSettingsChanges(_editBaseline, _formSettings).isEmpty) {
+      return;
+    }
+    _loadGeneration++;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _saving = true;
+      _allowExit = false;
+    });
+    try {
+      await widget.repository.updateSettings(
+        widget.workspaceId,
+        widget.mailboxId,
+        mailSettingsChanges(_editBaseline, _formSettings),
       );
       if (!mounted || !_scopeCurrent) {
         return;
       }
       setState(() {
-        _savedSignature = _signature.text;
         _savedDraft = _draft;
         _allowExit = false;
       });
@@ -357,8 +375,14 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
           await Navigator.of(context).maybePop();
         }
       }
-    } on Object {
+    } on Object catch (error) {
       if (mounted && _scopeCurrent) {
+        if (error is ApiException && !error.isVerificationRequired &&
+            error.code != 'MFA_REQUIRED' &&
+            (error.statusCode == 401 || error.statusCode == 403 || error.statusCode == 404)) {
+          _clearSettings();
+          setState(() { _settingsRejected = true; _failed = true; });
+        }
         showAppToast(context, message: context.l10n.commonSomethingWentWrong);
       }
     } finally {
@@ -386,7 +410,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
         onBack: _exit,
         saving: _saving,
         backEnabled: !_saving,
-        onSave: _canEdit && _hasSnapshot && !_busy && !_saving ? _save : null,
+        onSave: _canEdit && _hasSnapshot && !_busy && !_saving && !_hasPendingSettings ? _save : null,
         canManage: _canEdit,
         child: AppScaffold(
           child: _busy

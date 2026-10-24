@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/chat_attachment_delivery.dart';
 import 'package:mobile/core/cache/crm_avatar_delivery.dart';
@@ -254,7 +255,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       (item) =>
           item.userId == _userId() &&
           item.workspaceId == workspaceId &&
-          (item.feature == feature ||
+          (item.orderingFeature == feature ||
               (item.feature == 'workspace' &&
                   item.method == 'WORKSPACE_CREATE') ||
               referencesPendingEntity(path, payload, item.entityId)),
@@ -496,7 +497,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             record.userId != _userId()) {
           continue;
         }
-        final scope = (record.feature, record.workspaceId);
+        final scope = (record.orderingFeature, record.workspaceId);
         if (record.status != PendingMutationStatus.queued) {
           blockedScopes.add(scope);
           remember(record);

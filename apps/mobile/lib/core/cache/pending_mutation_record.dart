@@ -62,6 +62,16 @@ class PendingMutationRecord {
 
   final String id;
   final String feature;
+
+  /// Legacy Mail settings keep their durable identity but order separately
+  /// from inbox actions, even when a settings write needs manual review.
+  String get orderingFeature => isMailSettings ? 'mail_settings' : feature;
+
+  bool get isMailSettings =>
+      (feature == 'mail' || feature == 'mail_settings') &&
+      method == 'PATCH' && workspaceId != null &&
+      RegExp('^/api/v1/workspaces/${Uri.encodeComponent(workspaceId!)}/mail/mailboxes/[^/]+/settings$').hasMatch(path);
+
   final String method;
   final String path;
   final DateTime createdAt;
