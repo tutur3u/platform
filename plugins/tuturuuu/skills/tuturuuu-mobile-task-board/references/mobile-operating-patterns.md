@@ -208,6 +208,23 @@ provider/device operation or production delivery.
 
 - **Assistant settings gutters**: Keep embedded live preferences and local-model sections aligned with personal settings at 16px horizontal padding. Preserve standalone sheet padding. Reuse SettingsRouteFrame for the existing branded title and physical safe area; Assistant hub/field/prompt editors opt into its existing CustomNavigationBar/PersistentShellDock Back surface. Keep other consumers unchanged; do not add feature chrome. The settings layout matrix covers 320/390/430px and 1x/2x text plus final-control scroll clearance; widget geometry does not prove an authenticated installed artifact.
 
+## Profile image uploads
+
+Use `core/media/profile_media_optimizer.dart` for selections and offline replay.
+Keep picker dimensions/quality and the native JPEG crop contract: the iOS picker
+converts HEIC through its native image decoder before Dart decoding. Test native
+options separately from real-device HEIC acceptance. Do not encode opaque phone
+photos as lossless PNG; preserve recommended resolution with bounded JPEG quality
+steps before reducing dimensions. Keep orientation and metadata regression checks.
+
+For a 413, trace the real request from `apps/web/src/proxy.ts` through
+`guardApiProxyRequest` before changing route limits: its default body ceiling can
+reject bytes before the profile handler. Profile-specific proxy limits must match
+storage-core's server caps for exact PUT paths while retaining streamed-byte,
+authentication, one-use ticket, budget and server re-encoding enforcement. See
+`apps/web/src/lib/profile-media-proxy.test.ts` and the user-management feature
+page for recommended dimensions and current limits.
+
 ## Profile avatar removal
 
 Capture `ProfilePickerIntent` before opening the removal confirmation and check
