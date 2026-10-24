@@ -16,6 +16,7 @@ on:
       - ".github/workflows/mobile.yaml"
       - "scripts/mobile-lucide/**"
       - "scripts/check-mobile-lucide-sync.js"
+      - "scripts/check-mobile-shadcn-imports.js"
       - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
     paths:
@@ -26,6 +27,7 @@ on:
       - ".github/workflows/mobile.yaml"
       - "scripts/mobile-lucide/**"
       - "scripts/check-mobile-lucide-sync.js"
+      - "scripts/check-mobile-shadcn-imports.js"
       - ".github/actions/setup-flutter-with-cache/**"
 
 permissions:
@@ -354,6 +356,9 @@ jobs:
 
       - name: 🔣 Lucide icons match the web
         run: node ../../scripts/check-mobile-lucide-sync.js
+
+      - name: 🧹 shadcn_flutter import ratchet
+        run: node ../../scripts/check-mobile-shadcn-imports.js
 
       - name: ✅ Bloc Lint
         run: |

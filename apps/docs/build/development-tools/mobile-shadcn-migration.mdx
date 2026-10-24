@@ -1,0 +1,127 @@
+---
+title: 'Mobile shadcn_flutter migration'
+description: 'Component mapping, batch order, codemod and ratchet for removing shadcn_flutter from apps/mobile.'
+---
+
+`apps/mobile` is replacing `shadcn_flutter` with the app-owned design system in
+`lib/core/ui/` (see [Mobile design system](/build/development-tools/mobile-design-system#components-and-overlays)).
+The migration runs in reviewable batches. A CI ratchet stops new imports, and
+the dependency is removed once nothing imports it.
+
+## Ratchet
+
+`scripts/check-mobile-shadcn-imports.js` scans `apps/mobile/lib` and
+`apps/mobile/test`. It treats a direct `package:shadcn_flutter` import, or an
+import of an in-repo shim, as a shadcn import. The shims are
+`shadcn_flutter_compat.dart`, `shadcn_material_bridge.dart`,
+`shadcn_localizations_fallback.dart` and `mobile_shad_theme.dart`. Each such
+file must appear in `apps/mobile/tool/shadcn_import_allowlist.txt`.
+
+- A new importer fails with a pointer to `package:mobile/core/ui/ui.dart`.
+- An allowlisted file that no longer imports shadcn also fails, so the list
+  only shrinks. Run `node scripts/check-mobile-shadcn-imports.js --prune`
+  to remove migrated entries. The flag never adds entries.
+- When the list is empty, the check fails until `flutter pub remove
+  shadcn_flutter` has run.
+
+The check runs in the **Mobile Analysis** CI job, in `bun check:changed`
+whenever mobile Dart or the allowlist changes, and as `bun check:mobile-shadcn`.
+Part files (`part of`) inherit their library's import. A library is migrated
+only when neither it nor any of its parts uses the prefix.
+
+The initial allowlist (October 2026) has **325** files: 253 under `lib/` and
+72 under `test/`. Counting the 139 part files, **464** files use `shad.`
+identifiers.
+
+## Component mapping
+
+| shadcn_flutter | core/ui replacement | Notes |
+| --- | --- | --- |
+| `shad.Theme.of(context)` | `AppTokens.of(context)` / `context.tokens` | Same `colorScheme.*` and `typography.*` names; `radiusSm…Xl`, `brightness`. Codemod. |
+| `shad.ColorScheme` roles | `AppColorTokens` | Adds `success`, `warning`, `info`. Published as a `ThemeExtension` by the appearance theme. |
+| `shad.Typography` | `AppTypography` | Same sizes and weights (`small` 14, `textSmall` 14/500, `h4` 18/600…). |
+| `shad.Gap(n)` | `AppGap(n)` | Follows the parent `Flex` or scroll axis. Codemod. |
+| `shad.LucideIcons.x` | `LucideIcons.x` (`lucide_icons_flutter`) | Same member names. 17 brand marks and `railSymbol` map to `AppIcons.*`. Codemod. |
+| `shad.PrimaryButton` / `SecondaryButton` / `OutlineButton` / `GhostButton` / `DestructiveButton` | `AppButton.primary` / `.secondary` / `.outline` / `.ghost` / `.destructive` | Keeps `child`, `onPressed`, `leading`, `trailing`, `density`, `size`, `shape`, `enabled`, `alignment`. Adds `loading`. |
+| `shad.ButtonDensity.*`, `ButtonSize.*`, `ButtonShape.*` | `AppButtonDensity`, `AppButtonSize`, `AppButtonShape` | `icon`, `iconDense`, `dense`, `compact`, `comfortable` keep their meaning. |
+| `shad.IconButton` | `AppIconButton(tooltip:)` | `tooltip` is required and is the accessible name. |
+| `shad.TextField` / `shad.TextArea` | `AppTextField` (`maxLines: null` for areas) | `placeholder` is a `String`. `InputFeature.leading/trailing` become `leading`/`trailing`. Keep `contextMenuBuilder` call sites on `PlatformTextContextMenu`. |
+| Search inputs | `AppSearchField`, or `AppSheetSearch` in sheets | Shell pages and sheets register dynamic search instead of inline fields. |
+| `shad.Card` / `shad.SurfaceCard` | `AppCard` (`elevated: true`) | Use `AppGroupedSection` for settings-style rows. |
+| `shad.OutlineBadge` / `PrimaryBadge` / `SecondaryBadge` / `DestructiveBadge` | `AppBadge(variant:)` / `AppBadge.outline` | Adds `success`/`warning`. |
+| `shad.Alert(destructive:)` | `AppAlert(variant:)` / `AppAlert.destructive` | Live region; `info`, `success`, `warning` variants. |
+| `shad.Divider` / `VerticalDivider` | `AppDivider` / `AppDivider.vertical` | |
+| `shad.Switch` | `AppSwitch` | Adaptive; pass `semanticLabel` when no visible label is adjacent. |
+| `shad.Checkbox` + `CheckboxState` | `AppCheckbox(value: bool?)` | `checked` → `true`, `unchecked` → `false`, `indeterminate` → `null` with `tristate`. |
+| `shad.Select`, `DropdownMenu` (single choice) | `AppSelect<T>` | Opens an `AppOptionTile` list in `showAppSheet`. |
+| `shad.Tooltip` | `AppTooltip` | |
+| `shad.showToast` / `ToastOverlay` | `showAppToast` | Sits above the dock clearance; one at a time. |
+| `shad.AlertDialog`, `compat.showDialog` | `showAppDialog` + `AppDialog`, `showAppConfirmDialog` | Correct Back semantics. |
+| `openDrawer`, `showAdaptiveDrawer`, `showAdaptiveSheet`, `AppDialogScaffold` | `showAppSheet` + `AppSheetScaffold` | `showAdaptiveSheet` already uses `AppModalBinding` and remains a compatibility path. |
+| `shad.Scaffold` | `AppScaffold` | Transparent inside the shell. `headers` only for full-screen flows above it. |
+| `shad.AppBar` (outside shell chrome) | `AppTopBar` | Inside the shell, register title and actions with the shell instead. |
+| `shad.NavigationItem`, `NavigationBar`, `Tabs`/`TabItem` | Shell dock (`MorphingNavigationBar`), mini-nav, Material `TabBar` styled with tokens | Shell batch. |
+| `shad.FormKey`, `FormField`, `MenuButton`, `DatePicker`, `CalendarView`, `Slider`, `Toggle`, `LinearProgressIndicator` | Material equivalents themed with `AppTokens`, wrapped as needed | Low counts (≤15 each); migrate in their feature batch. |
+| `shad.ShadcnApp.router`, `ShadcnLocalizations`, `ThemeData`, `ColorSchemes`, `ThemeMode`, `ScaffoldTheme`, `ComponentTheme` | `MaterialApp.router` with `AppearanceTheme.materialTheme`, a local `ThemeMode` | Final batch, with `app.dart`, theme cubit, appearance scope and test helpers. |
+
+## Codemod
+
+`scripts/mobile-shadcn-codemod.js` performs the mechanical renames on whole
+libraries, including their parts:
+
+```bash
+node scripts/mobile-shadcn-codemod.js --dry-run apps/mobile/lib/features/finance
+node scripts/mobile-shadcn-codemod.js apps/mobile/lib/features/finance apps/mobile/test/features/finance
+cd apps/mobile && dart format lib test   # scoped paths in practice
+node ../../scripts/check-mobile-shadcn-imports.js --prune
+```
+
+It rewrites `<prefix>.Gap(` → `AppGap(`, `<prefix>.Theme.of(` →
+`AppTokens.of(`, and `<prefix>.LucideIcons.*` → `LucideIcons.*` or
+`AppIcons.*`. It adds `package:mobile/core/ui/ui.dart` and drops the shadcn
+import once neither the library nor its parts use the prefix. The codemod covers
+1,705 icons, 1,282 gaps and 770 theme reads, about 3,750 of the 5,270 prefixed
+uses. A dry run over the whole app touches 322 files. Afterwards, 263 files
+still import shadcn (62 freed).
+
+After running it, fix values passed into APIs typed `shad.ThemeData`, then
+run `flutter analyze` and the feature's tests on the remote validation lane.
+Replace the remaining ~1,500 widget uses by hand with the table above.
+
+## Batch order
+
+Each batch is one PR, or one layer of a native stack, owned by one lane. Run
+the codemod for its folders, migrate the remaining widgets, prune the
+allowlist, and attach renders for changed screens. LOC and counts cover every
+file that uses `shad.`, parts included.
+
+| Phase | Scope | Files | LOC | Icons / Gap / Theme | Manual uses |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Codemod sweep across all folders (mechanical only, no widget swaps) | 322 | ~148k touched | 1,705 / 1,282 / 770 | 0 |
+| 2 | `core`, `widgets`, `app_version`, `mobile_versions`, `desktop_update`, `onboarding`, `counter` and their tests: shared surfaces first | 52 | 12.1k | 1,520 / 42 / 28 | 165 |
+| 3 | `settings`, `profile`, `security`, `auth` and tests (coordinate with the settings lane) | 92 | 23.0k | 75 / 193 / 120 | 224 |
+| 4 | `finance`, `inventory`, `storefront` and tests | 61 | 26.1k | 0 / 378 / 160 | 226 |
+| 5 | `tasks_boards`, `task_portfolio`, `tasks_estimates`, `tasks`, `task_planning` and tests | 75 | 28.0k | 21 / 349 / 216 | 394 |
+| 6 | `time_tracker`, `habits`, `calendar`, `reminders` and tests | 69 | 23.9k | 58 / 251 / 119 | 254 |
+| 7 | `assistant`, `chat`, `mail`, `meet`, `notes`, `drive`, `documents`, `education`, `crm`, `cms`, `apps`, `dashboard`, `notifications`, `workspace` and tests | 82 | 24.3k | 31 / 42 / 102 | 133 |
+| 8 | `shell`, `app.dart`, `bootstrap`, theme plumbing, `test/shell`, `test/helpers`, `test/app` | 33 | 10.8k | 0 / 27 / 25 | 118 |
+| 9 | Removal: delete the shims, `flutter pub remove shadcn_flutter`, drop the allowlist file and its CI step | — | small | — | — |
+
+Phases 2–7 can run in parallel after phase 1 merges, because they touch
+disjoint folders. Phase 8 waits for 2–7. Large features (`tasks_boards`,
+`time_tracker`, `finance`) should be split by sub-folder into stack layers of
+about 10–15 files.
+
+## Final removal
+
+1. Allowlist empty (`--prune` leaves only the header).
+2. Delete `core/widgets/shadcn_flutter_compat.dart`,
+   `shadcn_material_bridge.dart`, `shadcn_localizations_fallback.dart` and
+   `core/theme/mobile_shad_theme.dart`. Fold `AppearanceTheme.colorScheme`
+   into `AppColorTokens` directly.
+3. `flutter pub remove shadcn_flutter`, then `flutter pub get`, then analyze and
+   test on the validation lane.
+4. Remove the ratchet step from `.github/workflows/mobile.yaml`, the
+   `check-changed` plan entry, the script, its test and the allowlist file.
+5. Update this page and the mobile skill reference to mark the migration
+   complete.

@@ -69,12 +69,43 @@ localization changes.
 - See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
   and its layout/rail regression tests.
 
+## Design System And shadcn Removal
+
+- Import `package:mobile/core/ui/ui.dart`, not `package:shadcn_flutter` or its
+  shims. `scripts/check-mobile-shadcn-imports.js` (CI Mobile Analysis and
+  `bun check:changed`) fails on new importers and on stale entries in
+  `apps/mobile/tool/shadcn_import_allowlist.txt`. After migrating a file, run
+  `node scripts/check-mobile-shadcn-imports.js --prune`; never add entries.
+- Use the mapping in `apps/docs/build/development-tools/mobile-shadcn-migration.mdx`:
+  `AppTokens.of(context)` for `shad.Theme.of`, `AppGap`, `LucideIcons` from
+  `lucide_icons_flutter`, `AppButton.*`, `AppIconButton(tooltip:)`,
+  `AppTextField`, `AppCard`, `AppBadge`, `AppAlert`, `AppSwitch`,
+  `AppCheckbox`, `AppSelect`, `showAppToast`, `AppScaffold`. Run
+  `scripts/mobile-shadcn-codemod.js` for the mechanical Gap/Theme/icon renames
+  on whole libraries; part files inherit their library's import.
+- Colours come from `AppColorTokens`, a `ThemeExtension` derived from the
+  appearance scheme; do not hard-code hues or read shad colour schemes in new
+  code.
+
 ## Overlays And Shell
 
-- Do not call `shad.openDrawer`, `shad.showDialog` for full-screen content, or
-  `shad.showDropdown` for filter/picker content directly.
-- Use `showAdaptiveDrawer` or `showAdaptiveSheet` so compact and expanded
-  overlays share the Android-back-button dismissal behavior.
+- Open sheets and dialogs with `showAppSheet` / `showAppDialog` and lay them out
+  with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
+  `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
+  `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+- Back must close the topmost overlay first. `AppModalBinding` registers a
+  modal entry in `ShellChromeActionsCubit`, so `ShellPage.didPopRoute`, dock
+  Back and Android Back resolve to the overlay. A sheet on the shell's nested
+  navigator is invisible to `Navigator.of(context, rootNavigator: true)`,
+  which is why custom Back handlers must not pop routes directly.
+- Searchable sheets pass `search: AppSheetSearch(...)` so the dock shows a
+  dynamic search action and the top navbar becomes the query field. Do not add
+  an inline search field inside the shell; the scaffold falls back to one only
+  when no `ShellChromeActionsCubit` exists. Dispose the sheet's query
+  controller after the frame because the shell field may still hold it.
+- Verify sheets inside the real shell (`_SettingsHarness.pump(shellChrome:
+  true)`), including system Back, dock Back, keyboard insets at 320x568 with 2x
+  text, and renders through `SETTINGS_RENDER_DIR`.
 - Shell actions should open overlays immediately and let overlay content fetch
   or refresh on mount instead of blocking the tap on pre-open network work.
 - Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
@@ -91,7 +122,7 @@ localization changes.
   dividers at `SettingsRowLayout.textColumn`. Use `SettingsRowLayout.groupFill`
   for grouped fills so ambient appearances get the translucent card.
 - Appearance colours live only in `core/theme/appearance/appearance_palettes.dart`.
-  Read derived tokens via the shad/Material theme, and keep
+  Read derived tokens via `AppTokens.of(context)`, and keep
   `appearance_contrast_test.dart` green when adding a palette or accent.
   `AppearanceBackdrop` makes shad scaffolds transparent for Gradient/Blobs;
   full-screen modal content must use the adaptive sheet helpers or

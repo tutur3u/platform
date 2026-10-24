@@ -245,6 +245,17 @@ function planChecks(changes, context) {
       ])
     );
   }
+  if (
+    any(
+      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/check-mobile-shadcn-imports\.js$)/
+    )
+  ) {
+    steps.push(
+      nodeStep('mobile-shadcn-ratchet', 'mobile shadcn import ratchet', [
+        'scripts/check-mobile-shadcn-imports.js',
+      ])
+    );
+  }
   if (any(/^(apps\/mobile\/lib|apps\/web\/src\/app\/api)\//)) {
     steps.push(
       nodeStep('mobile-api-mappings', 'mobile API mappings', [
