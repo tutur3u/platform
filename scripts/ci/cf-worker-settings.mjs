@@ -24,6 +24,76 @@ const digest = (value) =>
     .update(JSON.stringify(canonical(value)))
     .digest('hex');
 
+/** Cloudflare error codes and messages from a failed response, bounded. */
+async function apiErrors(response) {
+  try {
+    const { errors } = await response.json();
+    const text = (Array.isArray(errors) ? errors : [])
+      .slice(0, 3)
+      .map(({ code, message }) => `${code}: ${message}`)
+      .join('; ')
+      .slice(0, 300);
+    return text ? ` (${text})` : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Diagnostic only: identify which API token CI used. User tokens verify at
+ * /user/tokens/verify and account-owned tokens at the account endpoint. The
+ * token id and status are not secret; the token value is never printed, and
+ * an unverifiable token is reported but left to the settings readback to fail.
+ */
+export async function describeToken({
+  accountId,
+  token,
+  fetchImpl = fetch,
+  log = console.log,
+}) {
+  if (!token) return null;
+  const attempts = [];
+  for (const [owner, path] of [
+    ['user', '/user/tokens/verify'],
+    [
+      'account',
+      `/accounts/${encodeURIComponent(accountId ?? '')}/tokens/verify`,
+    ],
+  ]) {
+    if (owner === 'account' && !accountId) break;
+    try {
+      const response = await fetchImpl(
+        `https://api.cloudflare.com/client/v4${path}`,
+        {
+          method: 'GET',
+          redirect: 'error',
+          signal: AbortSignal.timeout(30_000),
+          headers: { authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.ok) {
+        const { result } = await response.json();
+        const description = {
+          owner,
+          id: String(result?.id ?? 'unknown'),
+          status: String(result?.status ?? 'unknown'),
+        };
+        log(
+          `Cloudflare API token id ${description.id} status ${description.status} (${owner} token)`
+        );
+        return description;
+      }
+      attempts.push(
+        `${owner} HTTP ${response.status}${await apiErrors(response)}`
+      );
+    } catch (error) {
+      attempts.push(`${owner} ${error?.name ?? 'error'}`);
+    }
+  }
+  log(`Cloudflare API token could not be verified: ${attempts.join('; ')}`);
+  return null;
+}
+
 async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   assert.ok(
     accountId && accountId === identity.accountId,
@@ -33,8 +103,10 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   const account = encodeURIComponent(accountId);
   const script = `/accounts/${account}/workers/scripts/${encodeURIComponent(identity.name)}`;
   let requests = 0;
-  async function get(path) {
+  // Paths carry only account/zone IDs; zone names label route requests.
+  async function get(path, label = '') {
     assert.ok(++requests <= 28, 'settings snapshot request budget exceeded');
+    const target = `GET ${path}${label}`;
     const response = await fetchImpl(
       `https://api.cloudflare.com/client/v4${path}`,
       {
@@ -44,17 +116,25 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
         headers: { authorization: `Bearer ${token}` },
       }
     );
-    assert.ok(response.ok, `settings snapshot HTTP ${response.status}`);
+    if (!response.ok)
+      assert.fail(
+        `settings snapshot HTTP ${response.status} for ${target}` +
+          (await apiErrors(response))
+      );
     const body = await response.json();
-    assert.equal(body.success, true, 'settings snapshot API failed');
+    assert.equal(
+      body.success,
+      true,
+      `settings snapshot API failed for ${target}`
+    );
     assert.ok(
       (body.result_info?.total_pages ?? 1) <= 1,
       'settings snapshot refuses truncated pagination'
     );
     return body.result;
   }
-  async function list(path) {
-    const items = await get(path);
+  async function list(path, label) {
+    const items = await get(path, label);
     assert.ok(
       Array.isArray(items) && items.length < 50,
       'settings snapshot refuses unbounded/truncated list'
@@ -71,7 +151,8 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   const zoneRoutes = [];
   for (const zone of zones)
     for (const route of await list(
-      `/zones/${encodeURIComponent(zone.id)}/workers/routes`
+      `/zones/${encodeURIComponent(zone.id)}/workers/routes`,
+      typeof zone.name === 'string' ? ` (zone ${zone.name})` : ''
     ))
       zoneRoutes.push({ zone: zone.id, route });
   const deployments = await get(`${script}/deployments`);
@@ -380,6 +461,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
     token: process.env.CLOUDFLARE_API_TOKEN,
   };
+  await describeToken(credentials);
   const before =
     phase === 'after' ? JSON.parse(readFileSync(beforePath, 'utf8')) : null;
   const snapshot =

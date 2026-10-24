@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { captureSettings, compareSettings } from './cf-worker-settings.mjs';
+import {
+  captureSettings,
+  compareSettings,
+  describeToken,
+} from './cf-worker-settings.mjs';
 
 const identity = {
   name: 'fixture',
@@ -138,4 +142,83 @@ test('API failure and pagination fail closed without replay', async () => {
     );
   }
   assert.equal(calls, 2);
+});
+
+test('a denied request names its path and zone without printing the token', async () => {
+  const api = fixture({ zones: [{ id: 'zone-1', name: 'example.com' }] });
+  const denied = async (url, init) => {
+    if (!url.endsWith('/workers/routes')) return api.fetchImpl(url, init);
+    return {
+      ok: false,
+      status: 403,
+      json: async () => ({
+        success: false,
+        errors: [{ code: 10000, message: 'Authentication error' }],
+      }),
+    };
+  };
+  await assert.rejects(
+    captureSettings({ ...options(api), fetchImpl: denied }),
+    (error) => {
+      assert.equal(
+        error.message,
+        'settings snapshot HTTP 403 for GET /zones/zone-1/workers/routes ' +
+          '(zone example.com) (10000: Authentication error)'
+      );
+      assert.ok(!error.message.includes('disposable-fixture'));
+      return true;
+    }
+  );
+});
+
+test('token diagnostics log the token id and status, never the token', async () => {
+  const lines = [];
+  const calls = [];
+  const respond = (byPath) => async (url, init) => {
+    assert.equal(init.method, 'GET');
+    calls.push(url.replace('https://api.cloudflare.com/client/v4', ''));
+    const result = byPath[calls.at(-1)];
+    return result
+      ? { ok: true, json: async () => ({ success: true, result }) }
+      : {
+          ok: false,
+          status: 401,
+          json: async () => ({ errors: [{ code: 1000, message: 'Invalid' }] }),
+        };
+  };
+  const base = {
+    accountId: 'fixture-account',
+    token: 'disposable-fixture',
+    log: (line) => lines.push(line),
+  };
+  assert.deepEqual(
+    await describeToken({
+      ...base,
+      fetchImpl: respond({
+        '/user/tokens/verify': { id: 'user-token', status: 'active' },
+      }),
+    }),
+    { owner: 'user', id: 'user-token', status: 'active' }
+  );
+  assert.deepEqual(
+    await describeToken({
+      ...base,
+      fetchImpl: respond({
+        '/accounts/fixture-account/tokens/verify': {
+          id: 'account-token',
+          status: 'active',
+        },
+      }),
+    }),
+    { owner: 'account', id: 'account-token', status: 'active' }
+  );
+  assert.equal(await describeToken({ ...base, fetchImpl: respond({}) }), null);
+  assert.deepEqual(lines, [
+    'Cloudflare API token id user-token status active (user token)',
+    'Cloudflare API token id account-token status active (account token)',
+    'Cloudflare API token could not be verified: user HTTP 401 (1000: Invalid); ' +
+      'account HTTP 401 (1000: Invalid)',
+  ]);
+  assert.equal(calls.length, 5);
+  assert.ok(!lines.join('\n').includes('disposable-fixture'));
 });

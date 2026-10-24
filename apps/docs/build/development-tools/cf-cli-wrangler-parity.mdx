@@ -239,6 +239,13 @@ to receipts. Actual token scope remains unverified until the bounded read-only
 preflight succeeds. Missing access, truncated lists and unsupported account size
 fail before publication; do not bypass that gate to deploy.
 
+Each snapshot phase first logs the token's id and status from
+`/user/tokens/verify` (or the account-owned token endpoint); the token value is
+never printed and this diagnostic cannot fail the job. A failed read names its
+request path, the zone name for route lists, and Cloudflare's error codes, so a
+`403` shows which token and zone lack access. Compare that id with the token
+listed in the Cloudflare dashboard before changing the GitHub secret.
+
 Cloudflare documents the accepted permissions for
 [Worker secrets](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/secrets/methods/list/),
 [deployments](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/),
