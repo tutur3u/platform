@@ -284,6 +284,18 @@ Cloudflare documents the accepted permissions for
 [zones](https://developers.cloudflare.com/api/resources/zones/methods/list/) and
 [routes](https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/).
 
+### Secret inventory from settings snapshots
+
+Coordination's existing before/after settings capture verifies the required
+`COORDINATION_TOKEN` name against its recorded identity. Each snapshot already
+performs one bounded secret-name GET on the pinned account and Worker. Reuse its
+`secrets` array for the workflow's explicit token gates instead of issuing a
+second CLI request. Require array shape and membership; keep both checks fatal,
+keep the after check after publication, and retain the private settings receipts.
+No secret values are captured. The original migration-tag publisher stays in place.
+`cf-worker-settings.test.mjs` exercises the actual Coordination profile, one read
+per phase, and missing-token rejection before and after publication.
+
 ## Deployment account variable
 
 Set the non-secret **Actions repository variable** `CLOUDFLARE_ACCOUNT_ID` in

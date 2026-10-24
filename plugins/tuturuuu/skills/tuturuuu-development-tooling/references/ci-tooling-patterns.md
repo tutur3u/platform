@@ -46,9 +46,9 @@ the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
 allocate one temporary persistence directory per run, retain it across restarts,
 and remove it on failure/close; never reuse the app developer state directory.
 
-Settings preflight tokens need Workers Scripts read coverage on the pinned account,
-plus Zone and Workers Routes read coverage on every target-account zone; narrower
-visibility can hide unexpected routes. Keep the bounded fail-closed checks and see
+Coordination's before/after token gates consume the verified snapshot's `secrets`
+array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
+pinned account and Zone/Workers Routes read on every zone; narrow visibility hides routes. Keep the bounded fail-closed checks and see
 the parity runbook's permission table. The usage inventory scans tracked executable
 files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
 
