@@ -48,7 +48,7 @@ for (const [testFile, helperFile] of [
     const deps = {
       root,
       env: { TUTURUUU_PRE_PUSH: '1' },
-      stdin: `refs/heads/test ${head} refs/heads/test ${'0'.repeat(40)}\n`,
+      stdin: `refs/heads/fix/test ${head} refs/heads/fix/test ${'0'.repeat(40)}\n`,
       execFile: (command, args, options) => {
         if (args[0] === 'ls-files') queries.push(args);
         return execFileSync(command, args, { ...options, cwd: root });
