@@ -15,6 +15,8 @@ import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.d
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'assistant_live_startup_test_helpers.dart';
+
 class _Repository extends Mock implements AssistantLiveRepository {}
 
 class _Player extends Mock implements AssistantLiveAudioPlayer {}
@@ -91,11 +93,14 @@ class _Fixture {
   int stops = 0;
   int microphoneStartCompletions = 0;
 
-  Future<void> toggleMicrophoneFromNavbar() async {
-    if (cubit.state.isMicrophoneActive) {
-      await cubit.toggleMicrophone();
-      return;
-    }
+  Future<void>? microphoneStartup;
+
+  Future<void> toggleMicrophoneFromNavbar() {
+    if (cubit.state.isMicrophoneActive) return cubit.toggleMicrophone();
+    return microphoneStartup = _startMicrophoneFromNavbar();
+  }
+
+  Future<void> _startMicrophoneFromNavbar() async {
     await enableAssistantLiveMicrophone(
       liveCubit: cubit,
       prepareSession:
@@ -125,6 +130,11 @@ class _Fixture {
     ),
   );
 
+  Future<void> disposeWidget(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await close();
+  }
+
   Future<void> close() async {
     await cubit.close();
     await events.close();
@@ -134,11 +144,11 @@ class _Fixture {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
+  startupTest(
     'navbar cancels delayed startup before permission can open media',
-    (tester) async {
+    (tester, cleanup) async {
       final fixture = _Fixture();
-      addTearDown(fixture.close);
+      cleanup(() => fixture.disposeWidget(tester));
       final token = Completer<AssistantLiveTokenEnvelope>();
       final permission = Completer<bool>();
       when(
@@ -196,11 +206,11 @@ void main() {
     },
   );
 
-  testWidgets(
+  startupTest(
     'navbar stops capture before connection completes without restarting it',
-    (tester) async {
+    (tester, cleanup) async {
       final fixture = _Fixture();
-      addTearDown(fixture.close);
+      cleanup(() => fixture.disposeWidget(tester));
       final permission = Completer<bool>();
       final connection = Completer<void>();
       final stopped = Completer<void>();
@@ -268,12 +278,17 @@ void main() {
 
       connection.complete();
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(fixture.microphoneStartCompletions, 1);
       expect(
         fixture.cubit.state.status,
         AssistantLiveConnectionStatus.connected,
+        reason: 'The ready event must reach the current session first.',
       );
+      await expectLiveStartupCompletion(
+        tester,
+        fixture.microphoneStartup!,
+        reason: 'The original navbar start must finish after ready and mute.',
+      );
+      expect(fixture.microphoneStartCompletions, 1);
       expect(fixture.cubit.state.isMicrophoneActive, isFalse);
       expect(fixture.captures, 1);
       expect(fixture.stops, 1);
@@ -286,11 +301,12 @@ void main() {
     },
   );
 
-  testWidgets('denied microphone waits for the next explicit navbar tap', (
+  startupTest('denied microphone waits for the next explicit navbar tap', (
     tester,
+    cleanup,
   ) async {
     final fixture = _Fixture();
-    addTearDown(fixture.close);
+    cleanup(() => fixture.disposeWidget(tester));
     final permission = Completer<bool>();
     final connection = Completer<void>();
     var permissionRequests = 0;
@@ -418,11 +434,12 @@ void main() {
     },
   );
 
-  testWidgets('cancelled ready wait cannot block replacement capture', (
+  startupTest('cancelled ready wait cannot block replacement capture', (
     tester,
+    cleanup,
   ) async {
     final fixture = _Fixture();
-    addTearDown(fixture.close);
+    cleanup(() => fixture.disposeWidget(tester));
     final oldToken = Completer<AssistantLiveTokenEnvelope>();
     final nextToken = Completer<AssistantLiveTokenEnvelope>();
     final nextPermission = Completer<bool>();

@@ -24,6 +24,7 @@ import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
+import 'assistant_live_startup_test_helpers.dart';
 import 'view/background_reply_harness.dart';
 
 const _actor = '33333333-3333-4333-8333-333333333333';
@@ -193,6 +194,23 @@ class _KeyboardHarness {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
+  Future<void> renderLiveStatus(
+    WidgetTester tester,
+    AssistantLiveConnectionStatus status,
+  ) async {
+    await tester.pump();
+    expect(live.state.status, status);
+    // The page publishes after its frame; the shell consumes the next frame.
+    await tester.pump();
+    final published = dock.slot!.content as AssistantLiveCallControls;
+    expect(published.state.status, status);
+    await tester.pump();
+    final rendered = tester.widget<AssistantLiveCallControls>(
+      find.byType(AssistantLiveCallControls),
+    );
+    expect(rendered.state, same(published.state));
+  }
+
   Future<void> dispose(WidgetTester tester) async {
     final disconnecting = live.disconnect();
     for (final permission in permissions) {
@@ -227,18 +245,17 @@ class _KeyboardHarness {
 
 void main() {
   for (final retry in [false, true]) {
-    testWidgets('page permission denial releases held token for explicit '
-        '${retry ? 'inline Retry' : 'microphone'}', (tester) async {
+    startupTest('page permission denial releases held token for explicit '
+        '${retry ? 'inline Retry' : 'microphone'}', (tester, cleanup) async {
       final h = _KeyboardHarness();
       await h.mount(tester, grantFirstPermission: false);
-      addTearDown(() => h.dispose(tester));
+      cleanup(() => h.dispose(tester));
       await h.tap(tester, 'microphone');
       expect(h.tokens.requests, hasLength(1));
       expect(h.permissions, hasLength(1));
       expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
       h.permissions.single.complete(false);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await h.renderLiveStatus(tester, AssistantLiveConnectionStatus.error);
       expect(h.live.state.status, AssistantLiveConnectionStatus.error);
       expect(
         h.live.state.microphonePermission,
@@ -292,20 +309,19 @@ void main() {
     });
   }
 
-  testWidgets(
+  startupTest(
     'failed startup keeps recovery visible while retiring preparation',
-    (tester) async {
+    (tester, cleanup) async {
       final h = _KeyboardHarness();
       await h.mount(tester, grantFirstPermission: false);
-      addTearDown(() => h.dispose(tester));
+      cleanup(() => h.dispose(tester));
       await h.tap(tester, 'microphone');
       expect(h.tokens.requests, hasLength(1));
       expect(h.permissions, hasLength(1));
       h.tokens.requests.single.completeError(
         Exception('startup token failure'),
       );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await h.renderLiveStatus(tester, AssistantLiveConnectionStatus.error);
       expect(h.live.state.status, AssistantLiveConnectionStatus.error);
       expect(h.live.state.error, contains('startup token failure'));
       expect(h.permissions.single.isCompleted, isFalse);
@@ -329,12 +345,12 @@ void main() {
     },
   );
 
-  testWidgets(
+  startupTest(
     'cancelled page observer cannot retire same-scope Retry failure',
-    (tester) async {
+    (tester, cleanup) async {
       final h = _KeyboardHarness();
       await h.mount(tester, grantFirstPermission: false);
-      addTearDown(() => h.dispose(tester));
+      cleanup(() => h.dispose(tester));
       await h.tap(tester, 'microphone');
       expect(h.tokens.requests, hasLength(1));
       expect(h.permissions, hasLength(1));
@@ -373,12 +389,13 @@ void main() {
     },
   );
 
-  testWidgets('page keyboard exit releases startup before old awaits settle', (
+  startupTest('page keyboard exit releases startup before old awaits settle', (
     tester,
+    cleanup,
   ) async {
     final h = _KeyboardHarness();
     await h.mount(tester);
-    addTearDown(() => h.dispose(tester));
+    cleanup(() => h.dispose(tester));
     await h.tap(tester, 'microphone');
     expect(h.tokens.requests, hasLength(1));
     expect(h.permissions, hasLength(1));
@@ -416,12 +433,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('opt-in keyboard exit retains the pending session and intent', (
+  startupTest('opt-in keyboard exit retains the pending session and intent', (
     tester,
+    cleanup,
   ) async {
     final h = _KeyboardHarness();
     await h.mount(tester, retain: true);
-    addTearDown(() => h.dispose(tester));
+    cleanup(() => h.dispose(tester));
     await h.tap(tester, 'microphone');
     expect(h.tokens.requests, hasLength(1));
     expect(h.permissions, hasLength(1));
