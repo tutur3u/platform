@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -45,3 +48,21 @@ extension PumpApp on WidgetTester {
     await pump(const Duration(milliseconds: 50));
   }
 }
+
+/// Real appearance/router boundary shared by shell regression fixtures.
+Widget shellTestApp({
+  required GoRouter router,
+  Brightness brightness = Brightness.light,
+}) => shad.ShadcnApp.router(
+  theme: AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
+  localizationsDelegates: const [
+    ...AppLocalizations.localizationsDelegates,
+    AppShadcnLocalizationsDelegate(),
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  routerConfig: router,
+  builder: (context, child) => AppearanceBackdrop(
+    settings: const AppearanceSettings(),
+    child: ShadcnMaterialBridge(child: child!),
+  ),
+);
