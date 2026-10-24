@@ -41,6 +41,7 @@ function fixture(t, policy) {
     'scripts/ci/wave1-native-artifact.mjs',
     'scripts/ci/mail-node-imports.mjs',
     'scripts/ci/calendar-native-inventory.mjs',
+    'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/resolve-production-vercel-targets.ts',

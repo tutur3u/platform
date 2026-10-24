@@ -192,6 +192,16 @@ change ranges before estimating skipped allocations; final PR file lists can
 differ from the run's head. Report projected savings separately from observed
 exact-head hosted improvement; never weaken a gate to improve a timing figure.
 
+Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
+switchboard after explicit disable handling. Android remains the portable smoke;
+other platforms retain native-directory checks and all builds on main pushes.
+Only known portable/other-native paths may omit a platform. Unknown/empty inputs,
+dependency manifests and tooling changes run all. Preserve PR triggers/check names
+and include the helper in the reusable switchboard sparse checkout. Verify
+`mobile-build-selection.test.js`, `check-workflow-config.test.js` and
+`runner-efficiency.test.js`; release/production/mobile publication is outside this
+selection policy. See the CI runbook's mobile PR build selection section.
+
 ## Packed SDK install diagnostics
 
 For installed dependency validation, inspect Node's package-relative module search
