@@ -66,28 +66,12 @@ for (const relative of ['.bun', '.bun/install']) {
     const target = path.join(f.root, 'relocated-install');
     fs.renameSync(base, target);
     fs.symlinkSync(target, base, 'dir');
-    const script = path.join(__dirname, 'trusted-ttr.js');
-    const resolve = () =>
-      execFileSync(
-        process.execPath,
-        [
-          '-p',
-          `require(${JSON.stringify(script)}).trustedTtr(${JSON.stringify(f.home)},${JSON.stringify(f.root)})`,
-        ],
-        { cwd: f.root, env: f.env, encoding: 'utf8', stdio: 'pipe' }
-      ).trim();
+    const resolve = () => trustedTtr(f.home, f.root);
     assert.equal(resolve(), f.cli);
     assert.equal(fs.existsSync(f.observed), false);
     fs.unlinkSync(f.cli);
     fs.symlinkSync(f.legacy, f.cli);
-    assert.throws(
-      resolve,
-      (error) =>
-        error &&
-        typeof error === 'object' &&
-        'stderr' in error &&
-        /outside the global installation/.test(String(error.stderr))
-    );
+    assert.throws(resolve, /outside the global installation/);
     assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
   });
 }
@@ -149,17 +133,30 @@ test('missing, legacy and redirected global installations refuse with recovery i
     /outside the global installation.*bun add -g tuturuuu/
   );
   fs.unlinkSync(f.cli);
-  assert.throws(
-    () => trustedTtr(f.home, f.root),
-    /Trusted global ttr unavailable at .*Run bun add -g tuturuuu to install/
-  );
+  assert.throws(() => trustedTtr(f.home, f.root), {
+    code: 'TTR_GLOBAL_NOT_INSTALLED',
+    message:
+      /Trusted global ttr unavailable at .*Run bun add -g tuturuuu to install/,
+  });
   assert.equal(fs.existsSync(f.observed), false);
 });
 
-for (const state of ['absent', 'dangling', 'missing-bin-target']) {
+for (const state of [
+  'absent',
+  'dangling',
+  'missing-bin-target',
+  'missing-install-base',
+]) {
   test(`global launcher presence distinguishes ${state} from not installed`, (t) => {
     const f = fixture(t);
-    if (state === 'missing-bin-target') {
+    if (state === 'missing-install-base') {
+      fs.renameSync(
+        path.join(f.home, '.bun/install'),
+        path.join(f.root, 'saved-install')
+      );
+      fs.unlinkSync(f.cli);
+      fs.symlinkSync(f.legacy, f.cli);
+    } else if (state === 'missing-bin-target') {
       const manifest = path.join(f.pkg, 'package.json');
       fs.writeFileSync(
         manifest,
