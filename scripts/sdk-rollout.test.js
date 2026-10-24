@@ -195,8 +195,19 @@ test('holds the existing admission mutex, qualifies all roots and preserves poli
     'add',
     '-g',
     '--ignore-scripts',
-    f.options.tarball,
+    path.join(result.backup, 'supplier.tgz'),
   ]);
+  fs.rmSync(f.options.tarball);
+  assert.equal(fs.existsSync(install.args.at(-1)), true);
+  assert.equal(
+    crypto
+      .createHash('sha256')
+      .update(fs.readFileSync(install.args.at(-1)))
+      .digest('hex'),
+    f.options.sha256
+  );
+  assert.equal(fs.statSync(install.args.at(-1)).mode & 0o777, 0o600);
+  assert.equal(result.supplierTarball, install.args.at(-1));
   const setup = f.calls.filter((call) => call.args.includes('setup'));
   assert.ok(setup[0].args.includes('--dry-run'));
   assert.equal(setup[1].args.includes('--dry-run'), false);

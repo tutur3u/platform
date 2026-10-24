@@ -404,6 +404,15 @@ async function worker(options, dependencies = {}) {
       JSON.stringify({ token: lock.token }),
       { mode: 0o600 }
     );
+    const supplierTarball = path.join(report.backup, 'supplier.tgz');
+    fs.copyFileSync(
+      options.tarball,
+      supplierTarball,
+      fs.constants.COPYFILE_EXCL
+    );
+    fs.chmodSync(supplierTarball, 0o600);
+    verifyBytes(fs.readFileSync(supplierTarball), options);
+    report.supplierTarball = supplierTarball;
     const releaseRecoveryPreflight = await recoveryLock(report.backup);
     await releaseRecoveryPreflight();
     const env = {
@@ -414,7 +423,7 @@ async function worker(options, dependencies = {}) {
     mutationStarted = true;
     await checkedInvoke(
       path.join(userHome, '.bun/bin/bun'),
-      ['add', '-g', '--ignore-scripts', options.tarball],
+      ['add', '-g', '--ignore-scripts', supplierTarball],
       { env, cwd: userHome }
     );
     const current = trustedGlobal(userHome);
