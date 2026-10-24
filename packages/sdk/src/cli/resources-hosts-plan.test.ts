@@ -173,6 +173,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
             executionMode: 'trusted',
             protocols: { commitRun: [] },
             disk: { freeGiB: 400 },
+            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
           },
         }),
       ]),

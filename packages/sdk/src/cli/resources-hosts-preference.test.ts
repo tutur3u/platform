@@ -124,6 +124,7 @@ describe('degraded runners (load per CPU)', () => {
           resource_limits: null,
           capabilities: {
             executionMode: 'trusted',
+            protocols: { commitRun: [1] },
             disk: { freeGiB: 400 },
             resources: { loadAverage: [load, load, load], cpu: { cores } },
             ...extra,
