@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -25,19 +26,19 @@ class AssistantCaptureSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (cameraSupported) ...[
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined),
+              AppListTile(
+                leading: const Icon(LucideIcons.camera),
                 title: Text(context.l10n.assistantCapturePhoto),
                 onTap: onPhoto,
               ),
-              ListTile(
-                leading: const Icon(Icons.videocam_outlined),
+              AppListTile(
+                leading: const Icon(LucideIcons.video),
                 title: Text(context.l10n.assistantCaptureVideo),
                 onTap: onVideo,
               ),
             ],
-            ListTile(
-              leading: const Icon(Icons.mic_none_rounded),
+            AppListTile(
+              leading: const Icon(LucideIcons.mic),
               title: Text(context.l10n.assistantCaptureAudio),
               onTap: onAudio,
             ),

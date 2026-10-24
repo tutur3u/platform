@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -108,21 +109,18 @@ class AssistantComposerDock extends StatelessWidget {
         Expanded(
           child: ListenableBuilder(
             listenable: focusNode,
-            builder: (context, _) => TextField(
+            builder: (context, _) => AppTextField(
+              style: const TextStyle(fontSize: 16, height: 1.25),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
               controller: controller,
               focusNode: focusNode,
-              style: const TextStyle(fontSize: 16, height: 1.25),
               minLines: 1,
               maxLines: 5,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
               onTapOutside: (_) => focusNode.unfocus(),
-              decoration: InputDecoration(
-                hintText: context.l10n.assistantAskPlaceholder,
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              placeholder: context.l10n.assistantAskPlaceholder,
+              borderless: true,
             ),
           ),
         ),
@@ -133,12 +131,10 @@ class AssistantComposerDock extends StatelessWidget {
                 value.text.trim().isNotEmpty ||
                 chatState.composerAttachments.isNotEmpty;
             if (hasPrompt || localGenerating) return const SizedBox.shrink();
-            return IconButton(
+            return AppIconButton(
               tooltip: localOnly
                   ? context.l10n.assistantLocalTextOnly
                   : context.l10n.voiceRecord,
-              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-              padding: EdgeInsets.zero,
               onPressed:
                   localBlocked ||
                       localOnly ||
@@ -148,7 +144,7 @@ class AssistantComposerDock extends StatelessWidget {
                       focusNode.unfocus();
                       unawaited(onMicrophoneTap());
                     },
-              icon: const Icon(Icons.mic_none_rounded),
+              icon: const Icon(LucideIcons.mic),
             );
           },
         ),

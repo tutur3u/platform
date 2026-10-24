@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 
@@ -12,6 +13,7 @@ Future<void> pushScopedSettingsPage(
   required Widget Function(BuildContext context, bool Function() isCurrent)
   builder,
   bool rootNavigator = false,
+  bool asSheet = false,
 }) async {
   final auth = context.read<AuthCubit?>();
   final workspace = context.read<WorkspaceCubit?>();
@@ -55,19 +57,34 @@ Future<void> pushScopedSettingsPage(
     );
   }
   try {
-    route = MaterialPageRoute<void>(
-      builder: (context) => rootNavigator && (auth != null || workspace != null)
-          ? MultiBlocProvider(
-              providers: [
-                if (auth != null) BlocProvider<AuthCubit>.value(value: auth),
-                if (workspace != null)
-                  BlocProvider<WorkspaceCubit>.value(value: workspace),
-              ],
-              child: Builder(builder: (context) => builder(context, isCurrent)),
-            )
-          : builder(context, isCurrent),
-    );
-    await Navigator.of(context, rootNavigator: rootNavigator).push<void>(route);
+    Widget content(BuildContext sheetContext) =>
+        (auth != null || workspace != null)
+        ? MultiBlocProvider(
+            providers: [
+              if (auth != null) BlocProvider<AuthCubit>.value(value: auth),
+              if (workspace != null)
+                BlocProvider<WorkspaceCubit>.value(value: workspace),
+            ],
+            child: Builder(builder: (context) => builder(context, isCurrent)),
+          )
+        : builder(sheetContext, isCurrent);
+    if (asSheet) {
+      await showAppSheet<void>(
+        context: context,
+        useRootNavigator: rootNavigator,
+        size: AppSheetSize.large,
+        builder: (sheetContext) {
+          route = ModalRoute.of<void>(sheetContext);
+          return content(sheetContext);
+        },
+      );
+    } else {
+      route = MaterialPageRoute<void>(builder: content);
+      await Navigator.of(
+        context,
+        rootNavigator: rootNavigator,
+      ).push<void>(route);
+    }
   } finally {
     for (final subscription in subscriptions) {
       await subscription.cancel();

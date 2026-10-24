@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -21,14 +22,9 @@ class AssistantInlineVoiceControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     Widget action(String id, String label, IconData icon, VoidCallback onTap) =>
-        IconButton(
+        AppIconButton(
           key: ValueKey(id),
           tooltip: label,
-          constraints: const BoxConstraints.tightFor(width: 40, height: 44),
-          style: const ButtonStyle(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          padding: EdgeInsets.zero,
           onPressed: state.busy ? null : onTap,
           icon: Icon(icon, size: 22),
         );
@@ -39,14 +35,14 @@ class AssistantInlineVoiceControls extends StatelessWidget {
           action(
             'voice-cancel',
             l10n.assistantCancelAction,
-            Icons.close_rounded,
+            LucideIcons.x,
             () => unawaited(capture.cancel()),
           ),
           if (state.paused)
             action(
               'voice-restart',
               l10n.voiceRetake,
-              Icons.restart_alt_rounded,
+              LucideIcons.rotateCcw,
               () => unawaited(capture.restart()),
             ),
           Expanded(
@@ -64,7 +60,7 @@ class AssistantInlineVoiceControls extends StatelessWidget {
                       child: const SizedBox(height: 32),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSpacing.xxs),
                   SizedBox(
                     width: 32,
                     child: FittedBox(
@@ -84,27 +80,20 @@ class AssistantInlineVoiceControls extends StatelessWidget {
             action(
               'voice-attach',
               l10n.voiceAttach,
-              Icons.attach_file_rounded,
+              LucideIcons.paperclip,
               () => unawaited(onAttach()),
             ),
           ],
           if (state.paused)
-            IconButton(
+            AppIconButton(
               key: const ValueKey('voice-resume'),
               tooltip: state.paused ? l10n.voiceResume : l10n.voicePause,
-              constraints: const BoxConstraints.tightFor(width: 40, height: 44),
-              style: const ButtonStyle(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              padding: EdgeInsets.zero,
               onPressed: state.busy || (state.paused && state.seconds >= 120)
                   ? null
                   : () => unawaited(
                       state.paused ? capture.resume() : capture.pause(),
                     ),
-              icon: Icon(
-                state.paused ? Icons.mic_none_rounded : Icons.pause_rounded,
-              ),
+              icon: Icon(state.paused ? LucideIcons.mic : LucideIcons.pause),
             ),
         ],
       ),

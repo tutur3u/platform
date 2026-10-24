@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_morphing_dock.dart';
 
 void main() {
@@ -25,7 +26,7 @@ void main() {
                     alignment: Alignment.bottomCenter,
                     child: AssistantMorphingDock(
                       isComposing: composing,
-                      navigation: const Icon(Icons.home_rounded),
+                      navigation: const Icon(LucideIcons.home),
                       composeLabel: 'Compose',
                       onCompose: () {
                         setState(() => composing = true);
@@ -36,13 +37,13 @@ void main() {
                       composer: Row(
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: AppTextField(
                               controller: controller,
                               focusNode: focus,
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.menu_rounded),
+                            icon: const Icon(LucideIcons.menu),
                             onPressed: () {
                               focus.unfocus();
                               setState(() => composing = false);
@@ -57,7 +58,7 @@ void main() {
             ),
           ),
         );
-        await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+        await tester.tap(find.byIcon(LucideIcons.messageCircle));
         await tester.pump();
         expect(
           find.byKey(const ValueKey('assistant-dock-navigation')),
@@ -70,7 +71,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(focus.hasFocus, isTrue);
         final selection = controller.selection;
-        await tester.tap(find.byIcon(Icons.menu_rounded));
+        await tester.tap(find.byIcon(LucideIcons.menu));
         await tester.pump();
         expect(find.byType(TextField), findsNothing);
         expect(
@@ -81,7 +82,7 @@ void main() {
         expect(controller.text, 'Keep this draft');
         expect(controller.selection, selection);
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+        await tester.tap(find.byIcon(LucideIcons.messageCircle));
         await tester.pumpAndSettle();
         expect(controller.text, 'Keep this draft');
         expect(controller.selection, selection);

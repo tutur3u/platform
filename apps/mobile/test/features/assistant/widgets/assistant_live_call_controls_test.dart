@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
@@ -64,8 +65,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.byType(ShellDockActionButton), findsNWidgets(4));
-      expect(find.byType(IconButton), findsNothing);
-      for (final button in find.byType(FilledButton).evaluate()) {
+      expect(find.byType(AppIconButton), findsNothing);
+      for (final button in find.byType(AppButton).evaluate()) {
         expect(
           tester.getSize(
             find.byElementPredicate((element) => element == button),
@@ -78,7 +79,7 @@ void main() {
       expect(semantics.flagsCollection.isToggled == Tristate.isTrue, isTrue);
       expect(
         tester
-                .getSemantics(find.byIcon(Icons.call_end_rounded))
+                .getSemantics(find.byIcon(LucideIcons.phoneOff))
                 .flagsCollection
                 .isToggled !=
             Tristate.none,
@@ -140,14 +141,14 @@ void main() {
         ),
       );
       if (status == AssistantLiveConnectionStatus.connected) {
-        await tester.tap(find.byIcon(Icons.mic_off_rounded));
-        await tester.tap(find.byIcon(Icons.videocam_off_rounded));
-        await tester.tap(find.byIcon(Icons.call_end_rounded));
+        await tester.tap(find.byIcon(LucideIcons.micOff));
+        await tester.tap(find.byIcon(LucideIcons.videoOff));
+        await tester.tap(find.byIcon(LucideIcons.phoneOff));
         expect(microphone, 1);
         expect(camera, 1);
         expect(end, 1);
       } else {
-        expect(find.byType(IconButton), findsNothing);
+        expect(find.byType(AppIconButton), findsNothing);
         expect(microphone + camera + end, 0);
       }
       expect(tester.takeException(), isNull);

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
@@ -53,7 +54,7 @@ Future<RepairHarness> fresh(WidgetTester tester, InitialApi api) async {
   addTearDown(() => h.dispose(tester));
   await h.mount(tester);
   await h.startNew(tester);
-  await tester.tap(find.widgetWithText(FilledButton, 'Start a new chat'));
+  await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
   await tester.pumpAndSettle();
   return h;
 }
@@ -87,7 +88,7 @@ void main() {
       addTearDown(() => h.dispose(tester));
       await h.mount(tester);
       await h.startNew(tester);
-      await tester.tap(find.widgetWithText(FilledButton, 'Start a new chat'));
+      await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
       await tester.pumpAndSettle();
       final shell = h.pageContext.read<AssistantShellCubit>();
       await tester.runAsync(() async {

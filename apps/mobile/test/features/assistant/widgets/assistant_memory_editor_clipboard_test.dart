@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
 import '../assistant_personal_settings_harness.dart';
 
 void main() {
@@ -77,7 +79,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Synthetic preference'));
         await tester.pumpAndSettle();
-        final field = find.byType(TextFormField);
+        final field = find.byType(AppTextFormField);
         await tester.ensureVisible(field);
         await tester.tap(field);
         await tester.pumpAndSettle();
@@ -87,7 +89,7 @@ void main() {
           tester.getTopLeft(find.byType(EditableText)) + const Offset(20, 12),
         );
         await tester.pumpAndSettle();
-        final controller = tester.widget<TextFormField>(field).controller!;
+        final controller = tester.widget<AppTextFormField>(field).controller!;
         controller.selection = TextSelection(
           baseOffset: 0,
           extentOffset: controller.text.length,
@@ -114,7 +116,7 @@ void main() {
         expect(controller.text, 'Inserted clipboard');
         expect(editable.widget.focusNode.hasFocus, isTrue);
         final save = find.widgetWithText(
-          FilledButton,
+          AppButton,
           locale == 'en' ? 'Save' : 'Lưu',
         );
         await tester.ensureVisible(save);

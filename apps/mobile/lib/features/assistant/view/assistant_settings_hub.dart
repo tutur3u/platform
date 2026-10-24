@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
@@ -23,8 +24,10 @@ class AssistantSettingsHub extends StatefulWidget {
     required this.isScopeCurrent,
     this.preferences,
     this.localModels,
+    this.hosted = false,
     super.key,
   });
+  final bool hosted;
   final String workspaceId;
   final Set<String> locations;
   final bool Function() isScopeCurrent;
@@ -53,85 +56,94 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
   }
 
   @override
-  Widget build(BuildContext context) => SettingsRouteFrame(
-    customNavigation: true,
-    title: context.l10n.assistantSettingsTitle,
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        BlocBuilder<AssistantSettingsCubit, AssistantSettingsState>(
-          bloc: _settings,
-          builder: (context, state) => state.loading
-              ? Semantics(
-                  label: context.l10n.commonLoading,
-                  child: const Center(child: NovaLoadingIndicator(size: 20)),
-                )
-              : ListView(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.paddingOf(context).bottom + 16,
-                  ),
-                  children: [
-                    if (state.loaded)
-                      AssistantSettingsSheetBody(
-                        keepLiveWhileBrowsing: state.keepLiveWhileBrowsing,
-                        onKeepLiveWhileBrowsingChanged: _settings.save,
-                        enabled: !state.saving,
-                        showTitle: false,
-                      ),
-                    if (state.failed)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: [
-                            Text(
-                              state.loaded
-                                  ? context.l10n.assistantLiveSettingSaveError
-                                  : context.l10n.commonSomethingWentWrong,
-                            ),
-                            TextButton(
-                              onPressed: () => unawaited(_settings.load()),
-                              child: Text(context.l10n.commonRetry),
-                            ),
-                          ],
-                        ),
-                      ),
-                    AssistantPersonalSettingsSection(
-                      key: ValueKey('personal-settings-${widget.workspaceId}'),
-                      workspaceId: widget.workspaceId,
-                      isScopeCurrent: widget.isScopeCurrent,
-                    ),
-                    AssistantLocalModelsSection(
-                      key: ValueKey(widget.workspaceId),
-                      cubit: widget.localModels,
-                      workspaceId: widget.workspaceId,
-                      isScopeCurrent: widget.isScopeCurrent,
-                    ),
-                  ],
+  Widget build(BuildContext context) => widget.hosted
+      ? AppSheetScaffold(
+          title: context.l10n.assistantSettingsTitle,
+          slivers: [SliverFillRemaining(child: _body(context))],
+        )
+      : SettingsRouteFrame(
+          customNavigation: true,
+          title: context.l10n.assistantSettingsTitle,
+          child: _body(context),
+        );
+  Widget _body(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      BlocBuilder<AssistantSettingsCubit, AssistantSettingsState>(
+        bloc: _settings,
+        builder: (context, state) => state.loading
+            ? Semantics(
+                label: context.l10n.commonLoading,
+                child: const Center(child: NovaLoadingIndicator(size: 20)),
+              )
+            : ListView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.paddingOf(context).bottom + 16,
                 ),
-        ),
+                children: [
+                  if (state.loaded)
+                    AssistantSettingsSheetBody(
+                      keepLiveWhileBrowsing: state.keepLiveWhileBrowsing,
+                      onKeepLiveWhileBrowsingChanged: _settings.save,
+                      enabled: !state.saving,
+                      showTitle: false,
+                    ),
+                  if (state.failed)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          Text(
+                            state.loaded
+                                ? context.l10n.assistantLiveSettingSaveError
+                                : context.l10n.commonSomethingWentWrong,
+                          ),
+                          AppButton.ghost(
+                            onPressed: () => unawaited(_settings.load()),
+                            child: Text(context.l10n.commonRetry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  AssistantPersonalSettingsSection(
+                    key: ValueKey('personal-settings-${widget.workspaceId}'),
+                    workspaceId: widget.workspaceId,
+                    isScopeCurrent: widget.isScopeCurrent,
+                  ),
+                  AssistantLocalModelsSection(
+                    key: ValueKey(widget.workspaceId),
+                    cubit: widget.localModels,
+                    workspaceId: widget.workspaceId,
+                    isScopeCurrent: widget.isScopeCurrent,
+                  ),
+                ],
+              ),
+      ),
+      if (!widget.hosted)
         ShellTitleOverride(
           ownerId: 'assistant-settings',
           locations: widget.locations,
           title: context.l10n.assistantSettingsTitle,
         ),
+      if (!widget.hosted)
         ShellMiniNav(
           ownerId: 'assistant-settings',
           locations: widget.locations,
           items: [
             ShellMiniNavItemSpec(
               id: 'back',
-              icon: Icons.chevron_left,
+              icon: LucideIcons.chevronLeft,
               label: context.l10n.navBack,
               onPressed: () => unawaited(Navigator.of(context).maybePop()),
             ),
           ],
         ),
+      if (!widget.hosted)
         ShellChromeActions(
           ownerId: 'assistant-settings',
           locations: widget.locations,
           actions: const [],
         ),
-      ],
-    ),
+    ],
   );
 }

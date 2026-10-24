@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/models/assistant_soul_snapshot.dart';
@@ -62,7 +63,7 @@ void main() {
       await tester.pumpAndSettle();
       final field = find.byKey(const ValueKey('assistant-name-input'));
       expect(field, findsOneWidget);
-      expect(tester.widget<TextField>(field).autofocus, isTrue);
+      expect(tester.widget<AppTextField>(field).autofocus, isTrue);
       expect(tester.testTextInput.isVisible, isTrue);
     });
   }
@@ -111,7 +112,7 @@ void main() {
       await tester.enterText(input, 'Nova');
       await tester.tap(find.byKey(const ValueKey('assistant-name-save')));
       await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(input).controller!.text, 'Nova');
+      expect(tester.widget<AppTextField>(input).controller!.text, 'Nova');
       expect(
         find.byKey(const ValueKey('assistant-name-error')),
         findsOneWidget,
@@ -142,10 +143,10 @@ void main() {
       await tester.enterText(input, 'Nova');
       await tester.tap(find.byKey(const ValueKey('assistant-name-save')));
       await tester.pump();
-      expect(tester.widget<TextField>(input).enabled, isFalse);
+      expect(tester.widget<AppTextField>(input).enabled, isFalse);
       expect(
         tester
-            .widget<TextButton>(
+            .widget<AppButton>(
               find.byKey(const ValueKey('assistant-name-save')),
             )
             .onPressed,
@@ -159,7 +160,7 @@ void main() {
       await tester.pump();
       expect(
         tester
-            .widget<TextButton>(
+            .widget<AppButton>(
               find.byKey(const ValueKey('assistant-name-save')),
             )
             .onPressed,
@@ -183,7 +184,7 @@ void main() {
           await openName(tester);
           await tester.enterText(input, 'Old');
           final retained = tester
-              .widget<TextButton>(
+              .widget<AppButton>(
                 find.byKey(const ValueKey('assistant-name-save')),
               )
               .onPressed!;
@@ -248,7 +249,7 @@ void main() {
       addTearDown(() => h.dispose(tester));
       await h.mount(tester);
       await openName(tester);
-      final field = tester.widget<TextField>(input);
+      final field = tester.widget<AppTextField>(input);
       final controller = field.controller!;
       controller.selection = TextSelection(
         baseOffset: 0,

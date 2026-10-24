@@ -112,7 +112,7 @@ extension _AssistantPageLocal on _AssistantPageState {
         scope == _localScope() &&
         selection == _localCubit.selectionVersion;
     if (!current()) return;
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) =>
           BlocBuilder<AssistantLocalChatCubit, AssistantLocalChatState>(

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 
@@ -41,10 +42,9 @@ class _AssistantComposerAttachmentMenuEntryState<T>
               child: AssistantAttachmentPreview(attachment: widget.attachment),
             ),
           ),
-          IconButton(
+          AppIconButton(
             tooltip: '$deleteLabel: ${widget.attachment.name}',
-            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(LucideIcons.x),
             onPressed: () {
               Navigator.of(context).pop();
               unawaited(widget.onRemove(widget.attachment.id));

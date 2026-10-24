@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -85,15 +86,13 @@ void main() {
         expect(find.text('Fast'), findsNothing);
         expect(find.text('Thinking'), findsNothing);
         expect(find.text('Add attachments'), findsOneWidget);
-        await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+        await tester.tap(find.byIcon(LucideIcons.sparkles));
         await tester.pumpAndSettle();
         expect(find.text('Locked'), findsNothing);
         expect(find.text('Disabled'), findsNothing);
         expect(
-          tester
-              .widget<ListTile>(find.widgetWithText(ListTile, 'Allowed'))
-              .enabled,
-          isTrue,
+          tester.widget<AppCard>(find.widgetWithText(AppCard, 'Allowed')).onTap,
+          isNotNull,
         );
         await tester.tap(find.text('Allowed'));
         await tester.pumpAndSettle();

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_document_link.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -37,8 +38,7 @@ class AssistantAttachmentPreview extends StatelessWidget {
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 180),
-      child: InputChip(
-        visualDensity: VisualDensity.compact,
+      child: AppChip(
         avatar: _thumbnail(context, localPath, url, isVideo),
         label: Text(
           failed
@@ -48,10 +48,11 @@ class AssistantAttachmentPreview extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         onPressed: canPreview
-            ? () => showDialog<void>(
+            ? () => showAppSheet<void>(
                 context: context,
                 builder: (_) =>
                     _MediaPreviewDialog(attachment: attachment, label: label),
+                size: AppSheetSize.large,
               )
             : documentUri != null &&
                   attachment.uploadState ==
@@ -59,7 +60,7 @@ class AssistantAttachmentPreview extends StatelessWidget {
             ? () => unawaited(openAssistantDocument(context, documentUri))
             : null,
         onDeleted: onRemove,
-        deleteButtonTooltipMessage:
+        deleteTooltip:
             '${MaterialLocalizations.of(context).deleteButtonTooltip}: $label',
         tooltip: failed
             ? '$label · ${context.l10n.assistantAttachmentUploadFailed}'
@@ -96,7 +97,7 @@ class AssistantAttachmentPreview extends StatelessWidget {
             width: 25,
             height: 25,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const Icon(Icons.image_outlined),
+            errorBuilder: (_, _, _) => const Icon(LucideIcons.image),
           ),
         );
       }
@@ -108,19 +109,19 @@ class AssistantAttachmentPreview extends StatelessWidget {
             width: 25,
             height: 25,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const Icon(Icons.image_outlined),
+            errorBuilder: (_, _, _) => const Icon(LucideIcons.image),
           ),
         );
       }
     }
     return Icon(
       attachment.uploadState == AssistantAttachmentUploadState.error
-          ? Icons.error_outline_rounded
+          ? LucideIcons.circleAlert
           : isVideo
-          ? Icons.videocam_outlined
+          ? LucideIcons.video
           : attachment.type.startsWith('audio/')
-          ? Icons.graphic_eq_rounded
-          : Icons.attach_file_rounded,
+          ? LucideIcons.audioLines
+          : LucideIcons.paperclip,
       size: 18,
       color: attachment.uploadState == AssistantAttachmentUploadState.error
           ? Theme.of(context).colorScheme.error
@@ -210,95 +211,84 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
     final path = widget.attachment.localPath;
     final url = widget.attachment.signedUrl ?? widget.attachment.previewUrl;
     final player = _player;
-    return Dialog.fullscreen(
-      child: SafeArea(
-        child: Column(
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            Expanded(
-              child: Center(
-                child: _failed
-                    ? Text(context.l10n.assistantMediaPreviewError)
-                    : player != null
-                    ? player.value.isInitialized
-                          ? widget.attachment.type.startsWith('audio/')
-                                ? ValueListenableBuilder<VideoPlayerValue>(
-                                    valueListenable: player,
-                                    builder: (context, value, _) => Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.graphic_eq_rounded,
-                                          size: 64,
-                                        ),
-                                        IconButton(
-                                          tooltip: value.isPlaying
-                                              ? context
-                                                    .l10n
-                                                    .assistantPreviewPause
-                                              : context
-                                                    .l10n
-                                                    .assistantPreviewPlay,
-                                          onPressed: () =>
-                                              unawaited(_toggleVideo(player)),
-                                          icon: Icon(
-                                            value.isPlaying
-                                                ? Icons.pause_rounded
-                                                : Icons.play_arrow_rounded,
+    return AppSheetScaffold(
+      title: widget.label,
+      slivers: [
+        SliverFillRemaining(
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: _failed
+                      ? Text(context.l10n.assistantMediaPreviewError)
+                      : player != null
+                      ? player.value.isInitialized
+                            ? widget.attachment.type.startsWith('audio/')
+                                  ? ValueListenableBuilder<VideoPlayerValue>(
+                                      valueListenable: player,
+                                      builder: (context, value, _) => Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            LucideIcons.audioLines,
+                                            size: 64,
                                           ),
-                                        ),
-                                        VideoProgressIndicator(
-                                          player,
-                                          allowScrubbing: true,
-                                          padding: const EdgeInsets.all(24),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : AspectRatio(
-                                    aspectRatio: player.value.aspectRatio,
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          unawaited(_toggleVideo(player)),
-                                      child: VideoPlayer(player),
-                                    ),
-                                  )
-                          : const CircularProgressIndicator()
-                    : path != null && path.isNotEmpty && File(path).existsSync()
-                    ? Image.file(
-                        File(path),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) =>
-                            Text(context.l10n.assistantMediaPreviewError),
-                      )
-                    : url != null && url.isNotEmpty
-                    ? Image.network(
-                        url,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) =>
-                            Text(context.l10n.assistantMediaPreviewError),
-                      )
-                    : Text(context.l10n.assistantMediaPreviewError),
+                                          AppIconButton(
+                                            tooltip: value.isPlaying
+                                                ? context
+                                                      .l10n
+                                                      .assistantPreviewPause
+                                                : context
+                                                      .l10n
+                                                      .assistantPreviewPlay,
+                                            onPressed: () =>
+                                                unawaited(_toggleVideo(player)),
+                                            icon: Icon(
+                                              value.isPlaying
+                                                  ? LucideIcons.pause
+                                                  : LucideIcons.play,
+                                            ),
+                                          ),
+                                          VideoProgressIndicator(
+                                            player,
+                                            allowScrubbing: true,
+                                            padding: const EdgeInsets.all(24),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : AspectRatio(
+                                      aspectRatio: player.value.aspectRatio,
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            unawaited(_toggleVideo(player)),
+                                        child: VideoPlayer(player),
+                                      ),
+                                    )
+                            : const CircularProgressIndicator()
+                      : path != null &&
+                            path.isNotEmpty &&
+                            File(path).existsSync()
+                      ? Image.file(
+                          File(path),
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) =>
+                              Text(context.l10n.assistantMediaPreviewError),
+                        )
+                      : url != null && url.isNotEmpty
+                      ? Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) =>
+                              Text(context.l10n.assistantMediaPreviewError),
+                        )
+                      : Text(context.l10n.assistantMediaPreviewError),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

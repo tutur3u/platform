@@ -170,12 +170,12 @@ void registerSettingsAssistantShellChecks() {
               // interactive switch itself must remain reachable and clear Back.
               final control = find.descendant(
                 of: hub,
-                matching: find.byType(Switch),
+                matching: find.byType(AppSwitch),
               );
               await tester.ensureVisible(control);
               await _settle(tester);
               expect(control.hitTestable(), findsOneWidget);
-              expect(tester.widget<Switch>(control).onChanged, isNotNull);
+              expect(tester.widget<AppSwitch>(control).onChanged, isNotNull);
               final controlRect = tester.getRect(control);
               final viewportRect = tester.getRect(scrollable);
               expect(controlRect.top, greaterThanOrEqualTo(viewportRect.top));

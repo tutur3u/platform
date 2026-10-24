@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AssistantComposerFab extends StatelessWidget {
   const AssistantComposerFab({
@@ -21,10 +21,9 @@ class AssistantComposerFab extends StatelessWidget {
       child: SizedBox(
         height: 52,
         width: 52,
-        child: FilledButton(
+        child: AppButton.primary(
           onPressed: onPressed,
-          style: FilledButton.styleFrom(padding: const EdgeInsets.all(12)),
-          child: const Icon(Icons.chat_bubble_outline_rounded, size: 22),
+          child: const Icon(LucideIcons.messageCircle, size: 22),
         ),
       ),
     );
@@ -49,11 +48,11 @@ class AssistantScrollToBottomFab extends StatelessWidget {
       child: SizedBox(
         width: 48,
         height: 48,
-        child: shad.PrimaryButton(
+        child: AppButton.primary(
           onPressed: onPressed,
-          shape: shad.ButtonShape.circle,
-          density: shad.ButtonDensity.icon,
-          child: const Icon(Icons.arrow_downward_rounded, size: 22),
+          shape: AppButtonShape.circle,
+          density: AppButtonDensity.icon,
+          child: const Icon(LucideIcons.arrowDown, size: 22),
         ),
       ),
     );
@@ -75,7 +74,7 @@ class AssistantNavigationToggle extends StatelessWidget {
     action: ShellActionSpec(
       id: 'assistant-navigation',
       tooltip: context.l10n.assistantExpandNavigation,
-      icon: Icons.menu_rounded,
+      icon: LucideIcons.menu,
       onPressed: () {
         focusNode.unfocus();
         onToggle();

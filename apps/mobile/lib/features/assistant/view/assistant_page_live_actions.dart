@@ -37,7 +37,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     required AssistantLiveUiState liveUiState,
     required AssistantLiveState liveState,
   }) async {
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantLiveInfoSheetBody(
         liveUiState: liveUiState,
@@ -165,8 +165,9 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     final location = GoRouterState.of(context).matchedLocation;
     await pushScopedSettingsPage(
       context,
-      rootNavigator: true,
+      asSheet: true,
       builder: (_, isCurrent) => AssistantSettingsHub(
+        hosted: true,
         workspaceId: wsId,
         locations: {location},
         isScopeCurrent: isCurrent,

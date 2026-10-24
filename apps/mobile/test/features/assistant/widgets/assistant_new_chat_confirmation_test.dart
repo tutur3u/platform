@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_new_chat_confirmation.dart';
 
 import '../../../helpers/helpers.dart';
@@ -13,7 +14,7 @@ void main() {
         var completed = false;
         await tester.pumpApp(
           Builder(
-            builder: (context) => TextButton(
+            builder: (context) => AppButton.ghost(
               onPressed: () async {
                 result = await showAssistantNewChatConfirmation(context);
                 completed = true;
@@ -36,9 +37,9 @@ void main() {
         );
         expect(completed, isFalse);
         await tester.tap(
-          find.widgetWithText(TextButton, action).evaluate().isEmpty
-              ? find.widgetWithText(FilledButton, action)
-              : find.widgetWithText(TextButton, action),
+          find.widgetWithText(AppButton, action).evaluate().isEmpty
+              ? find.widgetWithText(AppButton, action)
+              : find.widgetWithText(AppButton, action),
         );
         await tester.pumpAndSettle();
         expect(completed, isTrue);
@@ -58,7 +59,7 @@ void main() {
       bool? inspect;
       await tester.pumpApp(
         Builder(
-          builder: (context) => TextButton(
+          builder: (context) => AppButton.ghost(
             onPressed: () async {
               inspect = await showAssistantNewChatResetStatus(
                 context,
@@ -76,11 +77,17 @@ void main() {
         find.text('Synthetic uncertain reset. No automatic retry.'),
         findsOneWidget,
       );
-      expect(find.byType(FilledButton), findsNothing);
-      await tester.tap(find.widgetWithText(TextButton, action));
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AppButton && widget.variant == AppButtonVariant.primary,
+        ),
+        findsNothing,
+      );
+      await tester.tap(find.widgetWithText(AppButton, action));
       await tester.pumpAndSettle();
       expect(inspect, action == 'Check history');
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(AppDialog), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

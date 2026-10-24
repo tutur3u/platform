@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantToolNames extends StatefulWidget {
@@ -28,14 +29,8 @@ class _AssistantToolNamesState extends State<AssistantToolNames> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _AssistantToolNameChip(label: names.last),
-          TextButton(
+          AppButton.ghost(
             onPressed: () => setState(() => _expanded = true),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
             child: Text(l10n.assistantSeeMoreLabel),
           ),
         ],
@@ -52,14 +47,8 @@ class _AssistantToolNamesState extends State<AssistantToolNames> {
               .map((tool) => _AssistantToolNameChip(label: tool))
               .toList(growable: false),
         ),
-        TextButton(
+        AppButton.ghost(
           onPressed: () => setState(() => _expanded = false),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.only(top: 4),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
           child: Text(l10n.assistantSeeLessLabel),
         ),
       ],

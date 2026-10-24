@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -244,7 +245,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('assistant-expand-prompt')));
       await tester.pumpAndSettle();
       expect(find.byType(AssistantPromptEditor), findsOneWidget);
-      final field = tester.widget<TextField>(
+      final field = tester.widget<AppTextField>(
         find.byKey(const ValueKey('assistant-fullscreen-prompt')),
       );
       expect(field.controller, same(controller));
@@ -275,7 +276,7 @@ void main() {
             .uploadState,
         AssistantAttachmentUploadState.uploading,
       );
-      await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+      await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
@@ -304,14 +305,14 @@ void main() {
       expect(sends, 1);
       await tester.tap(find.byKey(const ValueKey('assistant-expand-prompt')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete: Synthetic recording'));
+      await tester.tap(find.byTooltip('Delete: Synthetic recording').last);
       await tester.pump();
       await tester.pump();
       expect(chat.value.composerAttachments, isEmpty);
       expect(find.byType(AssistantAttachmentPreview), findsNothing);
       expect(controller.selection, const TextSelection.collapsed(offset: 7));
       expect(sends, 1);
-      await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+      await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -340,9 +341,9 @@ void main() {
                         identity: visible ? 'generic' : null,
                         slotKey: const ValueKey('generic-slot'),
                         child: visible
-                            ? IconButton(
+                            ? AppIconButton(
                                 onPressed: () => taps++,
-                                icon: const Icon(Icons.add),
+                                icon: const Icon(LucideIcons.plus),
                                 tooltip: 'Synthetic generic',
                               )
                             : null,

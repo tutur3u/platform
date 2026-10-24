@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
@@ -59,7 +60,7 @@ void main() {
         expect(find.byType(MobileSectionAppBar), findsOneWidget);
         expect(find.text('Assistant Settings'), findsOneWidget);
         final header = tester.getRect(find.byType(MobileSectionAppBar));
-        final setting = tester.getRect(find.byType(SwitchListTile));
+        final setting = tester.getRect(find.byType(AppToggleRow));
         expect(header.top, 47);
         expect(setting.top - header.bottom, inInclusiveRange(0, 12));
         expect(setting.left, 16);
@@ -98,7 +99,7 @@ void main() {
         final l = tester.element(find.byType(AssistantSettingsHub)).l10n;
         // Remote is the last control in this unsupported-platform fixture.
         final finalControl = find.widgetWithText(
-          ListTile,
+          AppListTile,
           l.assistantLocalRemote,
         );
         expect(finalControl, findsOneWidget);
@@ -107,7 +108,7 @@ void main() {
           l.assistantSettingInfo(l.assistantLocalTitle),
         );
         final infoButton = find
-            .ancestor(of: info, matching: find.byType(IconButton))
+            .ancestor(of: info, matching: find.byType(AppIconButton))
             .first;
         await tester.ensureVisible(infoButton);
         await tester.pumpAndSettle();
@@ -124,7 +125,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.textContaining(l.assistantLocalModeSwitch), findsOneWidget);
-        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.byType(AppDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });

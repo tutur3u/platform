@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -49,7 +50,7 @@ void main() {
 
       await tester.tap(find.text('Photo'));
       await tester.pumpAndSettle();
-      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
       expect(find.byType(Image), findsWidgets);
       expect(removed, isFalse);
     },

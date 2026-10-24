@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
@@ -89,9 +90,9 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        await tester.tap(find.byIcon(Icons.mic_rounded).last);
+        await tester.tap(find.byIcon(LucideIcons.mic).last);
         expect(microphoneTaps, 1);
-        final control = tester.getRect(find.byIcon(Icons.keyboard_rounded));
+        final control = tester.getRect(find.byIcon(LucideIcons.keyboard));
         expect(control.bottom, lessThan(size.height));
       });
     }

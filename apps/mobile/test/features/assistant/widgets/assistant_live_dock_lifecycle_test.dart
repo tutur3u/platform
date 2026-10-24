@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
@@ -103,7 +104,7 @@ void main() {
         publish(status);
         await tester.pumpAndSettle();
         expect(find.text('Navigation'), findsOneWidget);
-        expect(find.byIcon(Icons.videocam_off_rounded), findsNothing);
+        expect(find.byIcon(LucideIcons.videoOff), findsNothing);
         await tester.tap(find.byTooltip('Cancel call'));
         expect(tester.getSize(material).width, originalWidth);
         expect(tester.element(material), same(element));
@@ -123,12 +124,12 @@ void main() {
         ),
         findsNWidgets(4),
       );
-      for (final button in tester.widgetList<IconButton>(
-        find.byType(IconButton),
+      for (final button in tester.widgetList<AppIconButton>(
+        find.byType(AppIconButton),
       )) {
         expect(button.onPressed, isNotNull);
       }
-      await tester.tap(find.byIcon(Icons.menu_rounded));
+      await tester.tap(find.byIcon(LucideIcons.menu));
       expect(navigation, 1);
       publish(AssistantLiveConnectionStatus.connected, expanded: true);
       await tester.pumpAndSettle();
@@ -139,7 +140,7 @@ void main() {
       expect(tester.element(material), same(element));
       expect(tester.state(find.byType(PersistentShellDock)), same(state));
       expect(find.byType(BackdropFilter), findsOneWidget);
-      expect(find.byType(IconButton), findsNothing);
+      expect(find.byType(AppIconButton), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

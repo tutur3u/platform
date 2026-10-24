@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_prompt_editor.dart';
@@ -94,7 +95,7 @@ class _PrimaryActionState extends State<AssistantComposerPrimaryAction> {
     try {
       await pushScopedSettingsPage(
         context,
-        rootNavigator: true,
+        asSheet: true,
         builder: (context, isCurrent) {
           _editorContext = context;
           return AssistantPromptEditor(
@@ -126,13 +127,11 @@ class _PrimaryActionState extends State<AssistantComposerPrimaryAction> {
       mainAxisSize: MainAxisSize.min,
       children: [
         TextFieldTapRegion(
-          child: IconButton(
+          child: AppIconButton(
             key: const ValueKey('assistant-expand-prompt'),
-            constraints: const BoxConstraints.tightFor(width: 52, height: 44),
-            padding: EdgeInsets.zero,
             tooltip: context.l10n.assistantExpandPrompt,
             onPressed: () => unawaited(_expand()),
-            icon: const Icon(Icons.open_in_full_rounded),
+            icon: const Icon(LucideIcons.maximize2),
           ),
         ),
         action,
@@ -161,12 +160,12 @@ class _PrimaryActionState extends State<AssistantComposerPrimaryAction> {
           final paused = voice?.paused ?? false;
           final sends = hasPrompt || paused;
           final icon = widget.localGenerating
-              ? Icons.stop_rounded
+              ? LucideIcons.square
               : recording
-              ? Icons.pause_rounded
+              ? LucideIcons.pause
               : sends
-              ? Icons.arrow_upward_rounded
-              : Icons.menu_rounded;
+              ? LucideIcons.arrowUp
+              : LucideIcons.menu;
           final label = widget.localGenerating
               ? l10n.assistantLocalStop
               : recording
