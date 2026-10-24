@@ -285,8 +285,9 @@ class OfflinePreparationCoordinator {
         _retryAt = retained.retryAt;
         _retryAttempts = retained.retryAttempts;
       }
-      if ((_retryAt != null && _clock().isBefore(_retryAt!)) ||
-          automatic && _retryAttempts >= 3) {
+      if (automatic &&
+          ((_retryAt != null && _clock().isBefore(_retryAt!)) ||
+              _retryAttempts >= 3)) {
         publish(running: false);
         return;
       }
@@ -359,7 +360,7 @@ class OfflinePreparationCoordinator {
             _retryAttempts++;
             final seconds = error.retryAfter ?? 30;
             _retryAt = _clock().toUtc().add(
-              Duration(seconds: seconds < 30 ? 30 : seconds),
+              Duration(seconds: seconds.clamp(30, 15 * 60)),
             );
             products[id] = OfflineProductPreparation(lastSuccess: lastSuccess);
             if (_intents != null) await _saveIntent(userId, workspaceId);

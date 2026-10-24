@@ -31,6 +31,38 @@ void main() {
     coordinator.cancel();
     coordinator.state.dispose();
   });
+  test('an explicit retry restarts a paused plan immediately', () async {
+    var calls = 0;
+    final coordinator = OfflinePreparationCoordinator.forTesting(
+      load: (_, _) async => {}, write: (_, _, _) async {},
+    )..register('tasks', (_) async {
+      calls++;
+      if (calls == 1) throw const ApiException(statusCode: 503,
+        message: 'Unavailable', retryAfter: 75);
+    });
+    await coordinator.run(userId: 'actor', workspaceId: 'workspace', productId: 'tasks');
+    expect(coordinator.state.value.retryAt, isNotNull);
+    await coordinator.run(userId: 'actor', workspaceId: 'workspace', productId: 'tasks');
+    expect(calls, 2);
+    expect(coordinator.state.value.retryAt, isNull);
+    expect(coordinator.state.value.products['tasks']!.status, OfflinePreparationStatus.ready);
+    coordinator.cancel();
+    coordinator.state.dispose();
+  });
+
+  test('service retry delays are bounded to fifteen minutes', () async {
+    final now = DateTime.utc(2026, 10, 25);
+    final coordinator = OfflinePreparationCoordinator.forTesting(
+      load: (_, _) async => {}, write: (_, _, _) async {}, clock: () => now,
+    )..register('tasks', (_) async {
+      throw const ApiException(statusCode: 429, message: 'Slow down', retryAfter: 86400);
+    });
+    await coordinator.run(userId: 'actor', workspaceId: 'workspace', productId: 'tasks');
+    expect(coordinator.state.value.retryAt, now.add(const Duration(minutes: 15)));
+    coordinator.cancel();
+    coordinator.state.dispose();
+  });
+
   testWidgets(
     'the one-shot timer resumes at the deadline without a challenge',
     (tester) async {

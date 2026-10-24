@@ -1101,7 +1101,9 @@ which service failed.
 Mobile presents one localized paused-download message after a 429 or 503 and
 stops the remaining modules instead of printing each server error. It preserves
 the selected modules, Wi-Fi consent and retry deadline. A service failure waits
-at least 30 seconds and never less than Retry-After. One explicit plan permits
+between 30 seconds and 15 minutes, using the bounded Retry-After delay.
+An explicit Download all or module retry tap starts a new plan immediately;
+automatic retries retain the cooldown. One explicit plan permits
 three service-failure attempts total, including the initial attempt; its retry
 budget and deadline survive restart. Reconnect, app resume and a scoped one-shot
 timer can resume that plan. After the limit, only an explicit retry starts a new
