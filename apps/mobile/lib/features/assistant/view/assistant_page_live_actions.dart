@@ -97,7 +97,8 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       return;
     }
     final guard = _remoteGuard(wsId);
-    final attempt = _liveStartGate.begin(_voiceActorScopeEpoch);
+    final epoch = _voiceActorScopeEpoch;
+    final attempt = _liveStartGate.begin(epoch);
     if (attempt == null) return;
     try {
       if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
@@ -123,8 +124,8 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         isCurrent: () =>
             guard.current &&
             mounted &&
+            identical(_liveStartGate.currentFor(epoch), attempt) &&
             context.read<AssistantChromeCubit>().state.isLiveMode &&
-            _liveCubit.state.status != AssistantLiveConnectionStatus.error &&
             _loadedWorkspaceId == wsId,
       );
     } finally {
@@ -186,15 +187,42 @@ Future<void> enableAssistantLiveMicrophone({
   required Future<void> Function()? prepareSession,
   required bool Function() isCurrent,
 }) async {
+  if (!isCurrent() || liveCubit.isClosed) return;
   if (prepareSession != null) {
-    final connecting = prepareSession();
-    await Future.wait([
-      connecting,
-      if (!liveCubit.state.isMicrophoneActive) liveCubit.toggleMicrophone(),
-    ]);
+    final failed = Completer<void>();
+    final subscription = liveCubit.stream.listen((state) {
+      if (isCurrent() &&
+          state.status == AssistantLiveConnectionStatus.error &&
+          !failed.isCompleted) {
+        failed.complete();
+      }
+    });
+    try {
+      final connecting = prepareSession();
+      // Future.any retains the wait's handlers after terminal failure wins.
+      // Retire this preparation before releasing page ownership to a retry.
+      await Future.any<void>([
+        Future.wait<void>([
+          connecting,
+          if (!liveCubit.state.isMicrophoneActive) liveCubit.toggleMicrophone(),
+        ]).then<void>((_) {}),
+        failed.future,
+      ]);
+      if (isCurrent() &&
+          !liveCubit.isClosed &&
+          liveCubit.state.status == AssistantLiveConnectionStatus.error) {
+        await liveCubit.disconnect(preserveFailure: true);
+      }
+    } finally {
+      await subscription.cancel();
+    }
   }
 
-  if (!isCurrent()) return;
+  if (!isCurrent() ||
+      liveCubit.isClosed ||
+      liveCubit.state.status == AssistantLiveConnectionStatus.error) {
+    return;
+  }
   if (prepareSession == null && !liveCubit.state.isMicrophoneActive) {
     await liveCubit.toggleMicrophone();
   }

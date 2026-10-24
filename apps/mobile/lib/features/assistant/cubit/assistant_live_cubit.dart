@@ -331,7 +331,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool clearSession = false,
     bool finishTurn = false,
     bool reportSessionCleanupFailure = false,
+    bool preserveFailure = false,
   }) async {
+    final retainFailure =
+        preserveFailure && state.status == AssistantLiveConnectionStatus.error;
     final endingVersion = _requestVersion;
     final preparationVersion = _preparationVersion;
     if (finishTurn && _isStale(endingVersion)) return;
@@ -367,13 +370,15 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _clearAssistantActivity();
     emit(
       state.copyWith(
-        status: AssistantLiveConnectionStatus.disconnected,
+        status: retainFailure
+            ? AssistantLiveConnectionStatus.error
+            : AssistantLiveConnectionStatus.disconnected,
         hasEnded: finishTurn,
         isInterrupted: false,
         audioLevel: 0,
         assistantAudioLevel: 0,
         isAssistantSpeaking: false,
-        clearError: !finishTurn,
+        clearError: !finishTurn && !retainFailure,
       ),
     );
     await finishing;

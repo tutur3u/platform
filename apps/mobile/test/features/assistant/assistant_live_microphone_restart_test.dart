@@ -102,8 +102,7 @@ class _Fixture {
           cubit.state.status == AssistantLiveConnectionStatus.connected
           ? null
           : () => cubit.prepareSession(wsId: 'ws'),
-      isCurrent: () =>
-          cubit.state.status != AssistantLiveConnectionStatus.error,
+      isCurrent: () => true,
     );
     microphoneStartCompletions++;
   }
@@ -323,11 +322,13 @@ void main() {
     expect(fixture.captures, 0);
     final stopsAfterDenial = fixture.stops;
     expect(stopsAfterDenial, greaterThan(0));
+    expect(fixture.microphoneStartCompletions, 1);
+    expect(connection.isCompleted, isFalse);
     connection.complete();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(fixture.microphoneStartCompletions, 1);
-    expect(fixture.cubit.state.status, AssistantLiveConnectionStatus.connected);
+    expect(fixture.cubit.state.status, AssistantLiveConnectionStatus.error);
     expect(fixture.cubit.state.isMicrophoneActive, isFalse);
     expect(
       fixture.cubit.state.microphonePermission,

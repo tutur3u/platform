@@ -14,11 +14,13 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,6 +40,7 @@ class _Repository extends ReplyRepository {
 
 class _RecordingPlatform extends RecordPlatform {
   final permissions = <Completer<bool>>[];
+  bool grantFirstPermission = true;
   bool recording = false;
   int captures = 0;
 
@@ -49,7 +52,9 @@ class _RecordingPlatform extends RecordPlatform {
   Future<bool> hasPermission(String recorderId, {bool request = true}) {
     final permission = Completer<bool>();
     permissions.add(permission);
-    if (permissions.length == 1) permission.complete(true);
+    if (grantFirstPermission && permissions.length == 1) {
+      permission.complete(true);
+    }
     return permission.future;
   }
 
@@ -120,7 +125,12 @@ class _KeyboardHarness {
   late RecordPlatform previousRecorder;
   late AssistantLiveCubit live;
 
-  Future<void> mount(WidgetTester tester, {bool retain = false}) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    bool retain = false,
+    bool grantFirstPermission = true,
+  }) async {
+    recorder.grantFirstPermission = grantFirstPermission;
     previousRecorder = RecordPlatform.instance;
     RecordPlatform.instance = recorder;
     SharedPreferences.setMockInitialValues({
@@ -217,6 +227,153 @@ class _KeyboardHarness {
 }
 
 void main() {
+  for (final retry in [false, true]) {
+    testWidgets('page permission denial releases held token for explicit '
+        '${retry ? 'inline Retry' : 'microphone'}', (tester) async {
+      final h = _KeyboardHarness();
+      await h.mount(tester, grantFirstPermission: false);
+      addTearDown(() => h.dispose(tester));
+      await h.tap(tester, 'microphone');
+      expect(h.tokens.requests, hasLength(1));
+      expect(h.permissions, hasLength(1));
+      expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+      h.permissions.single.complete(false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.live.state.status, AssistantLiveConnectionStatus.error);
+      expect(
+        h.live.state.microphonePermission,
+        AssistantLivePermissionState.denied,
+      );
+      expect(h.tokens.requests.single.isCompleted, isFalse);
+      expect(h.live.state.isMicrophoneActive, isFalse);
+      expect(h.recorder.captures, 0);
+      expect(h.permissions, hasLength(1));
+      expect(h.tokens.requests, hasLength(1));
+
+      if (retry) {
+        final l10n = tester.element(find.byType(AssistantPage)).l10n;
+        await tester.tap(find.text(l10n.assistantLiveRetryAction));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+      } else {
+        await h.tap(tester, 'microphone');
+      }
+      expect(h.tokens.requests, hasLength(2));
+      expect(h.permissions, hasLength(retry ? 1 : 2));
+      expect(h.tokens.requests.first.isCompleted, isFalse);
+      expect(h.tokens.requests.last.isCompleted, isFalse);
+      expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+
+      h.tokens.release(0);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+      expect(h.live.state.isMicrophoneActive, isFalse);
+      expect(h.recorder.captures, 0);
+      expect(h.tokens.requests.last.isCompleted, isFalse);
+      final controls = tester.widget<AssistantLiveCallControls>(
+        find.byType(AssistantLiveCallControls),
+      );
+      await controls.onMicrophone();
+      await tester.pump();
+      expect(h.tokens.requests, hasLength(2));
+      expect(h.permissions, hasLength(retry ? 1 : 2));
+      expect(h.recorder.captures, 0);
+
+      if (!retry) {
+        expect(h.permissions.last.isCompleted, isFalse);
+        h.permissions.last.complete(true);
+        await tester.pump();
+        expect(h.recorder.captures, 1);
+        expect(h.live.state.isMicrophoneActive, isTrue);
+        expect(h.tokens.requests.last.isCompleted, isFalse);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'failed startup keeps recovery visible while retiring preparation',
+    (tester) async {
+      final h = _KeyboardHarness();
+      await h.mount(tester, grantFirstPermission: false);
+      addTearDown(() => h.dispose(tester));
+      await h.tap(tester, 'microphone');
+      expect(h.tokens.requests, hasLength(1));
+      expect(h.permissions, hasLength(1));
+      h.tokens.requests.single.completeError(
+        Exception('startup token failure'),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.live.state.status, AssistantLiveConnectionStatus.error);
+      expect(h.live.state.error, contains('startup token failure'));
+      expect(h.permissions.single.isCompleted, isFalse);
+      expect(h.live.state.isMicrophoneActive, isFalse);
+      expect(h.recorder.captures, 0);
+      final l10n = tester.element(find.byType(AssistantPage)).l10n;
+      expect(find.text(l10n.assistantLiveDescriptionError), findsOneWidget);
+      await tester.tap(find.text(l10n.assistantLiveRetryAction));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.tokens.requests, hasLength(2));
+      expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+      h.permissions.single.complete(true);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.tokens.requests.last.isCompleted, isFalse);
+      expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+      expect(h.live.state.isMicrophoneActive, isFalse);
+      expect(h.recorder.captures, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'cancelled page observer cannot retire same-scope Retry failure',
+    (tester) async {
+      final h = _KeyboardHarness();
+      await h.mount(tester, grantFirstPermission: false);
+      addTearDown(() => h.dispose(tester));
+      await h.tap(tester, 'microphone');
+      expect(h.tokens.requests, hasLength(1));
+      expect(h.permissions, hasLength(1));
+      await h.tap(tester, 'keyboard');
+      expect(h.live.state.status, AssistantLiveConnectionStatus.disconnected);
+      expect(h.chrome.state.isLiveMode, isFalse);
+      await h.reopen(tester);
+      final view = tester.widget<AssistantLiveModeView>(
+        find.byType(AssistantLiveModeView),
+      );
+      final retry = view.onRetry();
+      await tester.pump();
+      expect(h.tokens.requests, hasLength(2));
+      expect(h.tokens.requests.first.isCompleted, isFalse);
+      expect(h.permissions.single.isCompleted, isFalse);
+      h.tokens.requests.last.completeError(Exception('replacement failure'));
+      await tester.pump();
+      await retry;
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.chrome.state.isLiveMode, isTrue);
+      expect(h.live.state.status, AssistantLiveConnectionStatus.error);
+      expect(h.live.state.error, contains('replacement failure'));
+      expect(h.recorder.captures, 0);
+
+      h.permissions.single.complete(true);
+      h.tokens.release(0);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(h.live.state.status, AssistantLiveConnectionStatus.error);
+      expect(h.live.state.error, contains('replacement failure'));
+      expect(h.live.state.isMicrophoneActive, isFalse);
+      expect(h.tokens.requests, hasLength(2));
+      expect(h.permissions, hasLength(1));
+      expect(h.recorder.captures, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('page keyboard exit releases startup before old awaits settle', (
     tester,
   ) async {
