@@ -24,6 +24,8 @@ export type ClaimResult =
 export interface ClaimInput {
   jobId: string;
   leaseMs: number;
+  /** Budget charged when an abandoned claim is reconciled. */
+  maxConsecutiveFailures: number;
   now: number;
   slot: string;
 }
@@ -73,14 +75,31 @@ export class LedgerCore {
     return this.store.read(jobId) ?? initialJobState();
   }
 
-  // Reads only, unless the claim is granted: idle, stopped and duplicate
-  // ticks write nothing.
-  claim({ jobId, leaseMs, now, slot }: ClaimInput): ClaimResult {
-    const state = this.#read(jobId);
+  // Reads only, unless the claim is granted or an abandoned claim is
+  // reconciled: idle, stopped and duplicate ticks write nothing.
+  claim({
+    jobId,
+    leaseMs,
+    maxConsecutiveFailures,
+    now,
+    slot,
+  }: ClaimInput): ClaimResult {
+    let state = this.#read(jobId);
     if (state.stopped) return { granted: false, reason: 'stopped' };
     if (state.lastSlot !== null && slot <= state.lastSlot)
       return { granted: false, reason: 'duplicate' };
     if (state.leaseUntil > now) return { granted: false, reason: 'busy' };
+    // Completion always clears the lease, so an expired one belongs to a run
+    // that was terminated before it reported. Charge that unknown outcome to
+    // the durable budget before admitting a replacement, so repeated
+    // terminations exhaust it like any other failure.
+    if (state.leaseUntil !== 0) {
+      state = this.#charge(state, 'unknown', maxConsecutiveFailures);
+      if (state.stopped) {
+        this.store.write(jobId, state);
+        return { granted: false, reason: 'stopped' };
+      }
+    }
     this.store.write(jobId, {
       ...state,
       lastSlot: slot,
@@ -108,6 +127,19 @@ export class LedgerCore {
     const state = this.#read(jobId);
     if (state.lastSlot !== slot || state.generation !== generation)
       return state;
+    const next: JobState = {
+      ...this.#charge(state, outcome, maxConsecutiveFailures),
+      lastCompletedAt: outcome === 'ok' ? now : state.lastCompletedAt,
+    };
+    this.store.write(jobId, next);
+    return next;
+  }
+
+  #charge(
+    state: JobState,
+    outcome: RunOutcome,
+    maxConsecutiveFailures: number
+  ): JobState {
     const failed = outcome === 'failed' || outcome === 'unknown';
     const consecutiveFailures = failed
       ? state.consecutiveFailures + 1
@@ -115,10 +147,9 @@ export class LedgerCore {
         ? 0
         : state.consecutiveFailures;
     const exhausted = consecutiveFailures >= maxConsecutiveFailures;
-    const next: JobState = {
+    return {
       ...state,
       consecutiveFailures,
-      lastCompletedAt: outcome === 'ok' ? now : state.lastCompletedAt,
       lastOutcome: outcome,
       leaseUntil: 0,
       stopReason:
@@ -127,8 +158,6 @@ export class LedgerCore {
           : state.stopReason,
       stopped: state.stopped || exhausted,
     };
-    this.store.write(jobId, next);
-    return next;
   }
 
   stop(jobId: string, reason: string): JobState {

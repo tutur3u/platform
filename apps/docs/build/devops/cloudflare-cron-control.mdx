@@ -82,9 +82,14 @@ state. It has no alarms, so only Cron Triggers start work.
   and idempotent jobs retry once, after two seconds, and only for a network error,
   502 or 503. Processor errors, redirects and deadlines are never retried; a
   deadline is recorded as an unknown outcome. Handover jobs never retry.
+- **Outcomes.** A 2xx is a success unless its bounded JSON summary (first
+  64 KiB) reports `ok: false`, which processors such as Calendar provider sync
+  use for partial failure; that slot counts as failed.
 - **Failure budget.** Five consecutive failed or unknown slots stop the job
-  (`failure-budget-exhausted`). The counter survives restarts and resets only on
-  success or operator resume.
+  (`failure-budget-exhausted`). A run terminated before it completes leaves an
+  expired lease; the next claim charges it as unknown before admitting a
+  replacement, so repeated terminations exhaust the budget too. The counter
+  survives restarts and resets only on success or operator resume.
 - **Operator stop.** `POST /control/jobs/<id>/stop` and `/resume`, plus
   `GET /control/jobs`, require `Authorization: Bearer <CRON_CONTROL_OPERATOR_TOKEN>`
   (32 characters or more); otherwise every control path returns the same 404 as an
@@ -93,7 +98,8 @@ state. It has no alarms, so only Cron Triggers start work.
   ignored. Resume never enables a job; removing the id from
   `CRON_CONTROL_ENABLED_JOBS` is the deploy-time stop.
 - **Fail closed.** If the ledger is unavailable, the job is skipped before its
-  processor is called. A lost completion leaves the lease to expire.
+  processor is called. A lost completion leaves the lease to expire and is then
+  charged as unknown.
 
 ### Cost envelope
 
