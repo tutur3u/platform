@@ -379,6 +379,11 @@ test('Coordination snapshots retain the required token with one bounded secret r
       phase
     );
     assert.equal(api.calls.length, 7, phase);
+    assert.equal(
+      api.calls.find((url) => url.endsWith('/secrets')),
+      `https://api.cloudflare.com/client/v4/accounts/${coordination.accountId}/workers/scripts/${coordination.name}/secrets`,
+      phase
+    );
     assert.ok(
       api.calls.every((url) => url.includes(coordination.accountId)),
       phase
