@@ -41,7 +41,7 @@ function fakeStorage() {
       calls.read.push(key);
       const body = objects.get(decodeKey(key));
       return body
-        ? { data: new Blob([body]), error: null }
+        ? { data: new Blob([body.slice()]), error: null }
         : { data: null, error: { status: 404, message: 'not found' } };
     }),
     createSignedUrl: vi.fn(async (key: string) => {
