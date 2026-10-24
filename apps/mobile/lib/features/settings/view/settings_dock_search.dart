@@ -41,7 +41,9 @@ class SettingsDockSearch extends StatelessWidget {
     return ShellChromeActions(
       ownerId: ownerId,
       locations: {location},
-      onBack: active || controller.text.isNotEmpty ? () async => _close() : null,
+      onBack: active || controller.text.isNotEmpty
+          ? () async => _close()
+          : null,
       actions: [
         ShellActionSpec(
           id: '$location/search',
