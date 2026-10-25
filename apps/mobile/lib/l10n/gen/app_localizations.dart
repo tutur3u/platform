@@ -1036,7 +1036,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionConnecting.
   ///
   /// In en, this message translates to:
-  /// **'Creating a direct Gemini Live session for text, audio, and camera input.'**
+  /// **'Connecting your live conversation.'**
   String get assistantLiveDescriptionConnecting;
 
   /// No description provided for @assistantLiveDescriptionError.
@@ -1048,7 +1048,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionIdle.
   ///
   /// In en, this message translates to:
-  /// **'Start a live session to talk, type, or stream camera context into the same assistant chat.'**
+  /// **'Tap the microphone to start talking. Your conversation stays here.'**
   String get assistantLiveDescriptionIdle;
 
   /// No description provided for @assistantLiveDescriptionListening.
@@ -1060,7 +1060,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionPreparing.
   ///
   /// In en, this message translates to:
-  /// **'Minting an ephemeral token and restoring the last resumable live session.'**
+  /// **'Getting your live conversation ready.'**
   String get assistantLiveDescriptionPreparing;
 
   /// No description provided for @assistantLiveDescriptionReady.
@@ -1072,7 +1072,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionReconnecting.
   ///
   /// In en, this message translates to:
-  /// **'The session is reconnecting with the latest resumable handle and restored history.'**
+  /// **'Reconnecting your conversation. Your transcript is still here.'**
   String get assistantLiveDescriptionReconnecting;
 
   /// No description provided for @assistantLiveDisconnect.
@@ -1102,7 +1102,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveIdleHeading.
   ///
   /// In en, this message translates to:
-  /// **'Talk with Mira'**
+  /// **'Ready to talk'**
   String get assistantLiveIdleHeading;
 
   /// No description provided for @assistantLiveInfoAccessHeading.

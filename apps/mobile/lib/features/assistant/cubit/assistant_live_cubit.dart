@@ -331,7 +331,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool clearSession = false,
     bool finishTurn = false,
     bool reportSessionCleanupFailure = false,
+    bool preserveFailure = false,
   }) async {
+    final retainFailure =
+        preserveFailure && state.status == AssistantLiveConnectionStatus.error;
     final endingVersion = _requestVersion;
     final preparationVersion = _preparationVersion;
     if (finishTurn && _isStale(endingVersion)) return;
@@ -367,13 +370,15 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _clearAssistantActivity();
     emit(
       state.copyWith(
-        status: AssistantLiveConnectionStatus.disconnected,
+        status: retainFailure
+            ? AssistantLiveConnectionStatus.error
+            : AssistantLiveConnectionStatus.disconnected,
         hasEnded: finishTurn,
         isInterrupted: false,
         audioLevel: 0,
         assistantAudioLevel: 0,
         isAssistantSpeaking: false,
-        clearError: !finishTurn,
+        clearError: !finishTurn && !retainFailure,
       ),
     );
     await finishing;
@@ -404,14 +409,16 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _clearDrafts();
     emit(
       state.copyWith(
-        status: AssistantLiveConnectionStatus.disconnected,
+        status: retainFailure
+            ? AssistantLiveConnectionStatus.error
+            : AssistantLiveConnectionStatus.disconnected,
         hasEnded: finishTurn,
         sessionHandle: clearSession ? null : state.sessionHandle,
         isInterrupted: false,
         audioLevel: 0,
         assistantAudioLevel: 0,
         isAssistantSpeaking: false,
-        clearError: !finishTurn,
+        clearError: !finishTurn && !retainFailure,
       ),
     );
     if (sessionCleanupFailure != null) throw sessionCleanupFailure;
@@ -622,6 +629,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     unawaited(stopScreenSharing());
     if (!preserveDrafts) {
       _microphoneVersion++;
+      _startingMicrophone = false;
       _startupAudio.clear();
       unawaited(_stopRecorderSafely());
       emit(state.copyWith(isMicrophoneActive: false, audioLevel: 0));

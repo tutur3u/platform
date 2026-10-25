@@ -17,12 +17,16 @@ installation, compatibility, preparation recovery, and the separate inference ga
 
 ## Experience
 
-On mobile, entering Live keeps the shell navbar available until an explicit
-**Call Mira** action starts the call. Preparing, connecting, and reconnecting
-show a calling screen with the real connection status and a cancel action;
-microphone/camera/text/end controls appear only after connection. The connected
-controls replace navigation inside the same shell material at the same adaptive
-navbar width. Expanding navigation or ending the call preserves that surface.
+On mobile, Live keeps mic, camera, keyboard and exit in four fixed slots in the shell's floating navbar.
+Chat and Live retain its bounds, material and navigation action. Idle mic starts; setup and reconnect keep visible media controls with truthful disabled states and Cancel.
+Active capture remains stoppable. Each start gets one microphone attempt; late permission, token or connection results cannot unmute or replace a newer attempt.
+Camera needs a connection. Keyboard returns to Chat and disconnects by default, with opt-in browsing retention; Exit cancels startup, hangs up or returns to Chat after ending.
+
+One scrollable blob, status and transcript stage stays mounted through reconnect and ending. Speaking uses admitted assistant audio and spectrum; reduced motion keeps it static.
+Recovery detail and retry remain inline. `assistant_live_dock_lifecycle_test.dart`, `assistant_live_state_presentation_test.dart` and `assistant_live_microphone_restart_test.dart` cover these rules.
+
+![Mira Live in the shared shell navbar](/images/mira-live-shell-light-390x844.png)
+
 Text chat grows to at most five lines in the dock, then scrolls inside the input.
 The Assistant has no fullscreen/expand draft action. Its single 52dp side action
 remains Send, recording control, or navigation as appropriate. Attachment previews,
@@ -41,20 +45,14 @@ enlarged text, keyboard insets, multiline growth and retained dock material.
 Compare empty drafts in [light](/images/assistant-composer-light-empty.png) and [dark](/images/assistant-composer-dark-empty.png) mode,
 and multiline drafts in [light](/images/assistant-composer-light-multiline.png) and [dark](/images/assistant-composer-dark-multiline.png) mode.
 
-Live capture requests PCM16 mono, gain control, echo cancellation, and noise
-suppression. Android uses the communication source/mode and speaker route. The
-pinned iOS recorder enables native voice processing, and playback preserves its
-existing category/options. Disconnect stops capture and releases the playback
-unit instead of immediately initializing it again; this does not claim global
-iOS audio-session deactivation. Delayed setup/frame work and cancelled call starts are generation fenced; old
-requests cannot connect or clear a restarted call's pending state. Cancelling
-capture clears its startup ownership immediately; obsolete permission or ready
-waits cannot block or clear the replacement microphone attempt.
-Device routes and echo reduction still require device verification, including
-speaker, headset, and Bluetooth calls. Regression coverage includes
-`assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`,
-`assistant_live_recorder_test.dart`, `assistant_live_disconnect_audio_test.dart`,
-and `assistant_live_microphone_restart_test.dart`.
+Live capture requests PCM16 mono, gain control, echo cancellation and noise suppression.
+Android uses the communication source/mode and speaker route; the pinned iOS recorder enables native voice processing, and playback preserves its category/options.
+Disconnect stops owned capture and releases playback without immediately initializing it again; this does not claim global iOS audio-session deactivation.
+Permission-only cancellation avoids native capture queries serialized behind an unanswered OS dialog. Generation fences discard late grants and obsolete setup/frame work.
+A pending native capture start still retains cleanup ownership. Old results cannot connect or clear a replacement attempt; microphone restart remains explicit.
+Device verification still covers speaker, headset and Bluetooth routes and echo reduction.
+Regression coverage includes `assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`, `assistant_live_recorder_test.dart`,
+`assistant_live_recorder_lifecycle_test.dart`, `assistant_live_disconnect_audio_test.dart` and `assistant_live_microphone_restart_test.dart`.
 
 Mobile chat uses the shell's existing dock for its composer and primary action.
 An empty draft keeps the navigation menu; a nonempty draft or attachment changes
@@ -592,17 +590,15 @@ Delayed file decoding and stale pre-timezone scope are covered by
 
 ### Mobile Live calling surface
 
-Mira Live uses the app background for its calling stage and transcript. Camera, microphone, text-entry and end-call actions are published as content of the existing shell-owned floating dock; the page creates no second control rail. The same dock material persists when switching between Chat input and Live controls. The stage reflects real connection and speaking state, respects reduced motion, and retains permission/recovery feedback. Camera is enabled only after connection, microphone toggling is disabled while connecting, and end-call remains available to cancel an in-progress connection. This presentation does not claim a provider-latency improvement or on-device model execution.
+Mira Live inherits the app background and follows the [shared calling behavior](#experience). It reflects connection and speaking state without a second control rail, provider-latency claims or on-device model execution.
 
 Regression coverage: `assistant_live_mode_view_test.dart` and `assistant_live_call_controls_test.dart` cover narrow/landscape and enlarged-text layouts, real connection-state action availability, and the absence of a body-owned control rail. `shared_navbar_large_text_test.dart` exercises the actual shell at enlarged text size and verifies the same dock Material element survives Chat, Live, global-navigation and full-screen transitions.
 
 ### Mobile draft editing and previews
 
-The mobile prompt's expansion control sits above Send. Full-screen editing uses
-that same draft controller and preserves its selection; returning restores the
-previous dock focus. Enter remains a newline. The editor has no Send action and
-keeps the existing upload/removal and guarded submission callbacks unchanged.
-Attachment previews sit above the prompt in both modes. Images and videos open
+The mobile prompt grows inline through five lines and preserves text selection.
+Enter inserts a newline; the side action sends through the guarded submission
+path. Attachment previews sit above the prompt. Images and videos open
 media previews; audio opens playback controls without automatic playback.
 Uploading and failed attachments remain identified and removable. Previews are
 bounded and scrollable on narrow screens and at enlarged text sizes.
