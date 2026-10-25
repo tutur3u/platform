@@ -4,13 +4,18 @@ import {
   publishBalancerRuns,
   publishRequestSchema,
 } from '@/lib/balancer/store';
-import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
+import {
+  authorizeDevboxRootMember,
+  authorizeDevboxRootViewer,
+} from '@/lib/devboxes/authorization';
 
 const MAX_BODY_BYTES = 512 * 1024;
 
+// Reading every recorded command, requester, host and lease needs the same
+// view_infrastructure permission as the Infrastructure dashboard.
 export async function GET(request: Request) {
   await connection();
-  const authorization = await authorizeDevboxRootMember(request);
+  const authorization = await authorizeDevboxRootViewer(request);
   if (!authorization.ok) return authorization.response;
   try {
     return NextResponse.json({ runs: await listBalancerRuns() });

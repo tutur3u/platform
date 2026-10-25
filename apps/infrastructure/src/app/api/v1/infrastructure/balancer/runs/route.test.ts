@@ -6,6 +6,7 @@ const publish = vi.fn();
 const list = vi.fn();
 vi.mock('@/lib/devboxes/authorization', () => ({
   authorizeDevboxRootMember: (request: Request) => authorize(request),
+  authorizeDevboxRootViewer: (request: Request) => authorize(request),
 }));
 vi.mock('@/lib/balancer/store', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/balancer/store')>();

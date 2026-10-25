@@ -169,5 +169,6 @@ Reboot device renumbering and live cross-device rejection are covered in
 Controllers publish each changed run (best effort) to
 `POST /api/v1/infrastructure/balancer/runs`. Infrastructure shows them at
 `/<wsId>/balancer`. The database keeps only a newer revision from the same
-publisher. Published records include the command argv, so never pass secrets
-as arguments.
+publisher. Any root member may publish, but reading runs (the page and
+`GET`) requires `view_infrastructure`. Published records include the command
+argv, so never pass secrets as arguments.
