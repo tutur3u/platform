@@ -247,7 +247,8 @@ export async function runBalancerCommand(args: string[]) {
         },
       });
     } catch (error) {
-      if (error instanceof BalancerRequestError) throw new Error(error.message);
+      if (error instanceof BalancerRequestError)
+        throw new Error((error as Error).message);
       throw error;
     }
     const submitted = await context.ledger.submit(request);

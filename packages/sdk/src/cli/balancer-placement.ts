@@ -1,5 +1,4 @@
 import {
-  type BalancerHostPolicy,
   type BalancerHostTelemetry,
   type BalancerHostVerdict,
   type BalancerRun,
@@ -16,7 +15,17 @@ import {
 
 // A registered balancer host: verified identity plus the same capacity
 // model as `hosts.json`, so placement reuses the existing planner.
-export interface BalancerHost extends BalancerHostPolicy {
+// Spelled out rather than extending BalancerHostPolicy, so the shape stays
+// checked even where the published @tuturuuu/devbox types are unavailable.
+export interface BalancerHost {
+  id: string;
+  hostname: string;
+  platform: string;
+  arch: string;
+  hold?: string;
+  maxLoadPerCpu?: number;
+  minDiskGiB: number;
+  minDiskFreePercent?: number;
   transport: { kind: 'local' } | { kind: 'ssh'; alias: string };
   capacity: HostSpec['capacity'];
   reserved: HostSpec['reserved'];
@@ -46,7 +55,7 @@ function hostSpec(
   telemetry: BalancerHostTelemetry,
   run: BalancerRun
 ): HostSpec {
-  const weight = host.weights[run.jobClass];
+  const weight = host.weights[run.jobClass as 'light' | 'heavy'];
   return {
     id: host.id,
     kind: 'runner',
