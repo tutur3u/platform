@@ -118,7 +118,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   if (!pathLocale) return null;
 
-  const url = new URL(request.url);
+  const url = request.nextUrl.clone();
   url.pathname = stripLocale(request.nextUrl.pathname);
 
   const response = NextResponse.redirect(url);
@@ -277,7 +277,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     );
 
     if (!hasSatelliteSession) {
-      const url = new URL('/login', request.url);
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.search = '';
       url.searchParams.set('next', getNextValue(request));
 
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));

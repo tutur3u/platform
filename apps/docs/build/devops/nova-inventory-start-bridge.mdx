@@ -6,61 +6,68 @@ description: "App-specific action boundaries, route registries and offline parit
 Nova and Inventory use the shared
 [Start bridge](/build/devops/start-bridge) for request context, Next adapters,
 function guards, route dispatch, cookies and base paths. App code must not copy
-those implementations. The app ports are preparatory source: Worker entries,
-registries and native functions do not by themselves establish working page SSR,
-an admitted Vite build, staging acceptance or production cutover. Retained Next
-clients keep their current imports until the page adapter and native build are
-qualified together.
+those implementations. The canonical codemod supplies the RSC page adapter, router and Worker entry.
+Source registration alone does not establish an accepted native build, staging
+behavior or production cutover. Retained action imports use the shared React
+server-action transport in the native build.
 
 ## Route registration
 
 Both apps declare `start-bridge.routes.json`. Regenerate and check from the root:
 
 ```sh
-bun packages/start-bridge/src/codegen/cli.ts generate apps/nova apps/inventory
+node scripts/start-bridge-codemod/cli.mjs nova --apply
+node scripts/start-bridge-codemod/cli.mjs inventory --apply
 bun packages/start-bridge/src/codegen/cli.ts check apps/nova apps/inventory
 ```
 
 Registries live under each app's `src/start-bridge/`. Nova includes both OG
-`route.tsx` handlers, not only its `route.ts` files. The native build must provide
-and accept their image renderer; do not remove them to satisfy the registry.
+`route.tsx` handlers, not only its `route.ts` files. Nova declares the existing portable
+`@cloudflare/pages-plugin-vercel-og` renderer. The generated preset resolves `next/og`
+to its API; do not remove routes to satisfy the registry.
 Changes to public assets must also refresh `public-assets.bridge.gen.ts` before
 sealing. Generated manifests prove source coverage, not page or API behavior.
 
-The Worker entries use app-owned handler configuration over `createBridgeHandler`.
-Inventory preserves its matcher that excludes `_next` and dotted asset paths.
+The generated Worker entries use the shared `createBridgeHandler` and read the
+matcher from each app's proxy configuration. Inventory excludes `_next` and
+dotted paths.
 Its existing proxy retains public storefront/webhook exceptions, workspace
 session requirements and inventory-specific rate limits. Each handler resolves
 the root or apex mount per request, and Inventory keeps Web-owned paths ahead of
-local endpoints. Server functions compile at `/_serverFn`; the shared fetch helper
+local endpoints using the existing Next configuration's reserved API paths. Server functions compile at `/_serverFn`; the shared fetch helper
 and Worker apply the resolved mount. Cookies remain unchanged and shared, as
-defined by the owning bridge/auth contract.
+defined by the owning bridge/auth contract. Login pages derive native callback
+URLs from the active request context and base, while retained Next requests use
+the configured app URL. Inventory builds local login and locale redirects from
+`request.nextUrl.clone()` so the Next base path and query survive. The login-mount
+and proxy regressions cover both root and apex callbacks; central Web login
+return-app classification must also recognize mounted callbacks before acceptance.
 
 ## Nova server actions
 
-`src/start-bridge/actions.ts` contains explicit native functions with Zod tuple
-validators. Server implementations load only through `actions.server.ts`, and
-original client call signatures remain available. Do not expose an arbitrary
-module/export dispatcher or move admin-client imports into a client entry.
+The generated page adapter sends existing React `use server` calls through the
+shared Start server-action transport. Keep the original action imports and
+server implementations; do not maintain a second app-specific transport or move
+admin-client imports into a client entry.
 
-| Native export | Method | Required supplier behavior |
+| Existing action | Transport method | Required supplier behavior |
 | --- | --- | --- |
 | `addWhitelistEmail` | POST | Enabled global role manager; permission is checked before insert. |
-| `fetchAdmins` | GET | Authenticated actor with an enabled management role. |
-| `fetchSessionDetails` | GET | Session belongs to the request actor and requested challenge. |
-| `fetchAllProblems` | GET | Own challenge session, or an enabled manager of that challenge for another user or a sessionless read. |
-| `getFullSubmission` | GET | Bound session owner or challenge manager; hidden cases require that manager. |
+| `fetchAdmins` | POST | Authenticated actor with an enabled management role. |
+| `fetchSessionDetails` | POST | Session belongs to the request actor and requested challenge. |
+| `fetchAllProblems` | POST | Own challenge session, or an enabled manager of that challenge for another user or a sessionless read. |
+| `getFullSubmission` | POST | Bound session owner or challenge manager; hidden cases require that manager. |
 | `sendOtpAction`, `verifyOtpAction` | POST | Existing central-auth-only rejection; no local OTP flow. |
 
 The shared function proxy refreshes/guards transport; it does not replace these
 domain checks. Layout authorization is also insufficient for a direct callable.
-The action-security tests cover the original suppliers, the contract tests cover
-malformed payloads, and the adapter tests preserve arguments/results and errors.
-Transport-builder mocks do not prove emitted RPC or browser execution.
+The action-security tests cover the original suppliers. Shared bridge tests cover
+reply encoding and dispatch; emitted RPC and browser execution require native
+acceptance.
 
 ## Inventory offline behavior
 
-The workspace function loads the existing satellite workspace supplier with the
+Existing workspace actions use the shared server-action transport with the
 current request's forwarded auth. The offline mutation route remains the existing
 thin adapter to `@tuturuuu/inventory-core/offline-create-route`.
 
@@ -98,7 +105,29 @@ refresh and logout, native RPC, central forwarding and private/public route
 boundaries. Inventory additionally verifies that no service-worker registration
 is attempted, checkout is blocked offline, and unresolved recovery retains the
 same operation identity after reload. Nova verifies both OG image responses and
-manager/participant/foreign-user action controls.
+manager/participant/foreign-user action controls. At the apex, assert the actual
+central-login destination and nested callback, not just a redirect status: Web
+and the mounted app share an origin, while their login paths remain distinct.
+A bare `/verify-token` request intentionally redirects when its token is missing;
+it is not an anonymous HTML or offline-provider probe.
+
+After the native build, use `scripts/ci/nova-inventory-native-artifact.py` with
+`nova` or `inventory` as its first argument. It reuses the reviewed Apps artifact
+contract with the selected app's staging Worker identity and every checked-out
+public asset. Set `START_BRIDGE_SOURCE_SHA` to the exact built commit. The
+remaining arguments are the shared helper's `seal`, `verify`, `pack` and
+`restore` commands; provide runner-owned receipt/archive paths. Restore requires
+a fresh output tree with the same checked-out public sources. Verify the seal
+again after runtime/browser checks. The helper performs no publication.
+
+`python3 scripts/ci/nova-inventory-native-artifact.test.py` checks sealing,
+restoration, identity refusal and tamper detection using synthetic output. Those
+fixtures do not qualify an emitted Worker or replace runtime/browser checks.
+When running the shared artifact source tests on macOS, use a canonical
+`TMPDIR` (for example `/private/tmp`): the race-injection fixture compares the
+move destination with its temporary path, while the implementation resolves that
+path. A `/var` to `/private/var` alias prevents the fixture from injecting its
+symlink; it is not evidence that the negative control ran.
 
 An M4 storage refusal moves `check:changed` to a verified Thanh bundle; it does
 not authorize a disk override. Independent security review and an explicit

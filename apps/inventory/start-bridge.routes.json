@@ -1,6 +1,17 @@
 {
   "appDir": "src/app",
-  "stripSegments": { "[locale]": { "locale": "en" } },
-  "api": { "out": "src/start-bridge/api-registry.bridge.gen.ts" },
-  "pages": { "out": "src/start-bridge/page-registry.bridge.gen.ts" }
+  "api": {
+    "out": "src/start-bridge/api-registry.bridge.gen.ts",
+    "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts"
+  },
+  "pages": {
+    "out": "src/start-bridge/page-registry.bridge.gen.ts"
+  },
+  "stripSegments": {
+    "[locale]": {
+      "locale": "en"
+    }
+  },
+  "owned": {},
+  "ignored": {}
 }
