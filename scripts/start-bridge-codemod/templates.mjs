@@ -246,7 +246,8 @@ export function apiEntryModule({ app, appBase }) {
 
 /**
  * Registers internal-api's default app base once per environment bundle
- * (browser, ssr and rsc each carry their own internal-api module).
+ * (browser, ssr and rsc each carry their own internal-api module), tagged with
+ * the app so cross-app helpers keep their owning app's origin.
  */
 export function appBaseModule({ app }) {
   return `${header(app)}import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
@@ -255,7 +256,8 @@ import { appApiPatterns } from '${moduleFrom('./', API_PATTERNS.slice('src/start
 import { centralFirst } from '${moduleFrom('./', CENTRAL_FIRST.slice('src/start-bridge/'.length))}';
 
 registerDefaultAppBaseResolver(
-  createAppBaseResolver(appApiPatterns, centralFirst)
+  createAppBaseResolver(appApiPatterns, centralFirst),
+  { app: ${quote(app)} }
 );
 `;
 }
