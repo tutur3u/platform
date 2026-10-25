@@ -4,6 +4,7 @@ import {
   type VolumeProbe,
 } from './storage-headroom';
 import { type Hold, holdOwners } from './storage-holds';
+import { volumeRecoveryThresholds } from './storage-hysteresis';
 import type { ReclaimResult } from './storage-reclaim';
 import type { StorageAction } from './storage-suggest';
 
@@ -36,7 +37,8 @@ const owned = (path: string, holds: Hold[] | null) => {
 
 export function blockerReport(input: BlockerInput) {
   const limit = input.limit ?? 5;
-  const { volume, recover } = input;
+  const { volume } = input;
+  const recover = volumeRecoveryThresholds(volume, input.recover);
   const needBytes = Math.max(0, recover.minFreeBytes - volume.freeBytes);
   const needPercentBytes = Math.max(
     0,

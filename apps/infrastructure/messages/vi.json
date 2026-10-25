@@ -7672,6 +7672,206 @@
     "front": "Mặt trước",
     "id": "Mã số"
   },
+  "fleet": {
+    "actions": {
+      "all_machines": "Tất cả máy",
+      "drain": "Rút việc",
+      "undrain": "Tiếp tục nhận việc"
+    },
+    "empty": {
+      "machines_detail": "Chạy ttr box connect --service trên một máy để đăng ký.",
+      "machines_title": "Chưa có máy nào được đăng ký",
+      "runs": "Không có lượt chạy nào trên máy này trong ảnh chụp gần nhất."
+    },
+    "errors": {
+      "machine_missing_detail": "Máy có thể đã bị xoá, hoặc nằm ngoài 50 máy được cập nhật gần nhất.",
+      "machine_missing_title": "Không tìm thấy máy",
+      "snapshot_detail": "Không có số liệu hiện hành. Hãy thử lại và kiểm tra migration lưu trữ devbox nếu lỗi vẫn còn.",
+      "snapshot_title": "Không tải được dữ liệu đội máy"
+    },
+    "facts": {
+      "cli": "Phiên bản ttr",
+      "commit_run": "Giao thức commit-run",
+      "cpu": "CPU",
+      "credential": "Thông tin xác thực",
+      "credential_value": "{active} còn hiệu lực trên {total}",
+      "execution_mode": "Chế độ thực thi",
+      "features": "Dịch vụ đã bật",
+      "heartbeat": "Nhịp tim cuối",
+      "hostname": "Tên máy",
+      "memory": "Bộ nhớ",
+      "never": "Chưa từng",
+      "none": "Không có",
+      "not_reported": "Chưa báo cáo",
+      "platform": "Nền tảng",
+      "registered": "Đăng ký lúc",
+      "reported": "Số liệu báo cáo lúc",
+      "runtimes": "Môi trường chạy",
+      "uptime": "Thời gian hoạt động"
+    },
+    "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Socket Docker riêng",
+        "dedicatedUser": "Người dùng dịch vụ riêng",
+        "gvisorDefault": "Mặc định dùng gVisor",
+        "noGeneralDockerGroup": "Không thuộc nhóm Docker chung",
+        "privateTokenDirectory": "Thư mục token riêng tư",
+        "protectedService": "Dịch vụ được bảo vệ"
+      },
+      "no": "Không",
+      "not_attested": "Máy này không báo cáo cách ly. Bật TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE trên runner để xác nhận.",
+      "yes": "Có"
+    },
+    "jobs": {
+      "columns": {
+        "created": "Yêu cầu lúc",
+        "duration": "Thời lượng",
+        "exit": "Mã thoát",
+        "machine": "Máy",
+        "source": "Nguồn",
+        "state": "Trạng thái"
+      },
+      "detail": {
+        "completed": "Kết thúc",
+        "duration": "Thời lượng",
+        "exit_code": "Mã thoát",
+        "load_failed": "Không tải được lượt chạy này. Hãy thử lại; không có thông tin hiện hành.",
+        "log_empty": "Lượt chạy này chưa ghi đầu ra nào.",
+        "log_label": "Nhật ký lượt chạy",
+        "log_truncated": "Đang hiển thị {count} sự kiện cuối. Đầu ra cũ hơn không hiển thị ở đây.",
+        "machine": "Máy",
+        "none": "Không có",
+        "not_found_detail": "Mã không hợp lệ hoặc lượt chạy không còn tồn tại.",
+        "not_found_title": "Không tìm thấy lượt chạy",
+        "not_yet": "Chưa có",
+        "requested": "Yêu cầu lúc",
+        "run_id": "Mã lượt chạy",
+        "sections": {
+          "execution": "Thực thi",
+          "log": "Nhật ký",
+          "source": "Nguồn"
+        },
+        "started": "Bắt đầu",
+        "stop": "Yêu cầu dừng",
+        "timeout": "Giới hạn thời gian"
+      },
+      "empty": "Không có lượt chạy nào khớp bộ lọc trong ảnh chụp gần nhất.",
+      "filters": {
+        "all": "Tất cả",
+        "failed": "Thất bại",
+        "label": "Lọc lượt chạy",
+        "queued": "Đang chờ",
+        "running": "Đang chạy",
+        "unknown": "Chưa rõ kết quả"
+      },
+      "recovery": {
+        "cancel_requested": "Đã yêu cầu dừng. Runner sẽ dừng ở lần kiểm tra kế tiếp; trước đó lượt chạy có thể vẫn đang chạy.",
+        "failed": "Thất bại với mã thoát {code}. Nhật ký bên dưới hiển thị đầu ra cuối.",
+        "outcome_unknown": "Máy đang chạy lượt này không liên lạc được nên chưa rõ kết quả. Lượt chạy không được tự động lên lịch lại. Hãy kiểm tra máy trước khi yêu cầu chạy lại; nó có thể vẫn đang chạy.",
+        "queued_unassigned": "Đang chờ một máy phù hợp nhận việc.",
+        "timed_out": "Đã dừng do vượt giới hạn thời gian.",
+        "unrecognized": "Bảng điều khiển không nhận ra trạng thái \"{status}\". Hãy xem kết quả là chưa rõ."
+      },
+      "source": {
+        "command": "Lệnh",
+        "commit": "Commit",
+        "directory": "Thư mục",
+        "invalid": "Không đọc được gói commit-run",
+        "maintenance": "Bảo trì: {name}",
+        "repository_root": "Thư mục gốc kho mã"
+      },
+      "title": "Lượt chạy",
+      "unassigned": "Chưa gán máy",
+      "window": "{count} lượt chạy devbox gần nhất"
+    },
+    "manage": "Quản trị runner",
+    "recovery": {
+      "awaiting_first_heartbeat": "Đã đăng ký nhưng chưa từng báo cáo. Có thể thiết lập đã lỗi; chạy lại ttr box connect --service trên máy và kiểm tra dịch vụ agent.",
+      "disconnected": "Nhịp tim cuối {age}. Các lượt chạy đang hoạt động ở đây chưa rõ kết quả và không được tự động lên lịch lại. Hãy kiểm tra dịch vụ agent trên máy.",
+      "draining": "Đã yêu cầu rút việc {age}. Công việc hiện tại sẽ hoàn tất; không nhận việc mới.",
+      "heartbeat_disabled": "Nhịp tim đang tắt nên máy không nhận việc. Bật lại trong quản trị runner.",
+      "revoked": "Đã thu hồi. Máy này không thể xác thực hay nhận việc.",
+      "telemetry_late": "Nhịp tim cuối {age}. Số liệu không còn hiện hành và máy không nhận việc mới.",
+      "untrusted": "Không có thông tin xác thực runner còn hiệu lực. Kết nối lại bằng ttr box connect để cấp mới, hoặc thu hồi máy này."
+    },
+    "refresh": "Làm mới",
+    "resources": {
+      "disk": "Ổ đĩa đã dùng",
+      "disk_free": "Còn trống {free} GiB",
+      "load": "Tải mỗi lõi (1 phút)",
+      "memory": "Bộ nhớ đang dùng",
+      "not_reported": "Chưa báo cáo",
+      "unknown": "Không rõ"
+    },
+    "run_state": {
+      "cancel_requested": "Đang huỷ",
+      "cancelled": "Đã huỷ",
+      "claimed": "Đã nhận",
+      "failed": "Thất bại",
+      "outcome_unknown": "Chưa rõ kết quả",
+      "queued": "Đang chờ",
+      "running": "Đang chạy",
+      "succeeded": "Thành công",
+      "timed_out": "Hết thời gian",
+      "unrecognized": "Trạng thái không xác định"
+    },
+    "runs": {
+      "command": "Lệnh",
+      "exit": "Mã thoát",
+      "started": "Bắt đầu",
+      "status": "Trạng thái"
+    },
+    "sections": {
+      "attention": "Cần xử lý",
+      "identity": "Danh tính và thiết lập",
+      "isolation": "Xác nhận cách ly",
+      "machines": "Máy",
+      "recent_runs": "Lượt chạy gần đây",
+      "resources": "Tài nguyên",
+      "work": "Công việc trên máy này"
+    },
+    "snapshot": "Ảnh chụp lúc {time}",
+    "state": {
+      "awaiting_first_heartbeat": "Chưa thiết lập xong",
+      "disconnected": "Mất kết nối",
+      "draining": "Đang rút việc",
+      "heartbeat_disabled": "Đã tắt nhịp tim",
+      "online": "Trực tuyến",
+      "revoked": "Đã thu hồi",
+      "telemetry_late": "Nhịp tim trễ",
+      "untrusted": "Không có thông tin xác thực"
+    },
+    "stats": {
+      "attention": "Cần xử lý",
+      "of_machines": "trên {count} máy",
+      "online": "Trực tuyến",
+      "outcome_unknown": "Chưa rõ kết quả",
+      "queued": "Đang chờ",
+      "run_window": "trong {count} lượt chạy gần nhất",
+      "running": "Đang chạy"
+    },
+    "telemetry": {
+      "fresh": "Số liệu trực tiếp",
+      "missing": "Chưa có số liệu",
+      "stale": "Số liệu cũ"
+    },
+    "title": "Đội máy",
+    "trust": {
+      "no_active_credential": "Không có xác thực hiệu lực",
+      "revoked": "Đã thu hồi",
+      "trusted": "Xác thực còn hiệu lực"
+    },
+    "work": {
+      "activity_unavailable": "Hoạt động theo từng máy chưa khả dụng cho đến khi áp dụng migration drain/activity.",
+      "kept_leases": "Lease được giữ",
+      "lane_ceiling": "Giới hạn làn",
+      "leases": "Lease đang hoạt động",
+      "queued": "Đang chờ ở đây",
+      "running": "Đang chạy",
+      "summary": "{running} đang chạy, {queued} đang chờ",
+      "summary_unknown": "{running} chưa rõ kết quả, {queued} đang chờ"
+    }
+  },
   "forms": {
     "access_mode": {
       "anonymous": "Cho phép ẩn danh",
@@ -8639,6 +8839,12 @@
         "description": "Kiểm tra email, mẫu, hàng đợi, danh sách chặn và gửi thông báo đẩy.",
         "title": "Liên lạc"
       },
+      "delivery": {
+        "title": "Phát hành"
+      },
+      "integrations": {
+        "title": "Tích hợp"
+      },
       "monitoring": {
         "description": "Telemetry runtime, triển khai, sức khỏe cron, nhật ký và tài nguyên."
       },
@@ -8662,6 +8868,11 @@
       "calendar_sync": "Đồng bộ lịch",
       "holidays": "Ngày lễ",
       "monitoring_deployments": "Giai đoạn triển khai"
+    },
+    "sections": {
+      "fleet": "Đội máy",
+      "govern": "Quản trị",
+      "operate": "Vận hành"
     }
   },
   "infrastructure-tabs": {
@@ -8688,6 +8899,8 @@
     "entity_creation_limits": "Giới hạn tạo thực thể",
     "external_apps": "Ứng dụng bên ngoài",
     "features": "Tính năng",
+    "fleet": "Đội máy",
+    "fleet_runs": "Lượt chạy",
     "github_bot": "Bot GitHub",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",
@@ -12711,6 +12924,34 @@
     "reset-password-desc": "Nhập mật khẩu mới cho tài khoản của bạn",
     "resetting": "Đang đặt lại",
     "success-message": "Mật khẩu của bạn đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới."
+  },
+  "satellite-account-settings": {
+    "accounts": "Các tài khoản",
+    "accounts_add": "Thêm tài khoản khác",
+    "accounts_description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng",
+    "accounts_remove": "Xóa một tài khoản khỏi trình duyệt này",
+    "accounts_switch": "Chuyển đổi giữa các tài khoản đã đăng nhập",
+    "appearance": "Giao diện",
+    "appearance_description": "Chủ đề và ngôn ngữ",
+    "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
+    "managed_centrally_description": "Để bảo vệ bạn, các thay đổi về {section} được thực hiện trong Tuturuuu, nơi có thể yêu cầu bạn xác minh danh tính. Thay đổi sẽ áp dụng cho mọi ứng dụng Tuturuuu.",
+    "managed_centrally_title": "Được quản lý trong tài khoản Tuturuuu của bạn",
+    "open_in_tuturuuu": "Mở trong Tuturuuu",
+    "preferences": "Tùy chọn",
+    "profile": "Hồ sơ",
+    "profile_description": "Quản lý tên, ảnh đại diện và email của bạn",
+    "security": "Bảo mật",
+    "security_description": "Mật khẩu, xác thực hai lớp, passkey và phương thức đăng nhập",
+    "security_linked_identities": "Phương thức đăng nhập đã liên kết",
+    "security_passkeys": "Passkey",
+    "security_password": "Đổi hoặc đặt lại mật khẩu",
+    "security_two_factor": "Xác thực hai lớp bằng ứng dụng xác thực",
+    "sessions": "Phiên & Thiết bị",
+    "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
+    "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
+    "sessions_revoke": "Đăng xuất khỏi các thiết bị khác",
+    "signed_in_as": "Đang đăng nhập với {email}",
+    "title": "Tài khoản"
   },
   "satellite-workspace-settings": {
     "avatar": "Ảnh đại diện không gian làm việc",
@@ -23634,33 +23875,5 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
-  },
-  "satellite-account-settings": {
-    "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
-    "title": "Tài khoản",
-    "preferences": "Tùy chọn",
-    "profile": "Hồ sơ",
-    "profile_description": "Quản lý tên, ảnh đại diện và email của bạn",
-    "accounts": "Các tài khoản",
-    "accounts_description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng",
-    "security": "Bảo mật",
-    "security_description": "Mật khẩu, xác thực hai lớp, passkey và phương thức đăng nhập",
-    "sessions": "Phiên & Thiết bị",
-    "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
-    "appearance": "Giao diện",
-    "appearance_description": "Chủ đề và ngôn ngữ",
-    "managed_centrally_title": "Được quản lý trong tài khoản Tuturuuu của bạn",
-    "managed_centrally_description": "Để bảo vệ bạn, các thay đổi về {section} được thực hiện trong Tuturuuu, nơi có thể yêu cầu bạn xác minh danh tính. Thay đổi sẽ áp dụng cho mọi ứng dụng Tuturuuu.",
-    "signed_in_as": "Đang đăng nhập với {email}",
-    "open_in_tuturuuu": "Mở trong Tuturuuu",
-    "accounts_switch": "Chuyển đổi giữa các tài khoản đã đăng nhập",
-    "accounts_add": "Thêm tài khoản khác",
-    "accounts_remove": "Xóa một tài khoản khỏi trình duyệt này",
-    "security_password": "Đổi hoặc đặt lại mật khẩu",
-    "security_two_factor": "Xác thực hai lớp bằng ứng dụng xác thực",
-    "security_passkeys": "Passkey",
-    "security_linked_identities": "Phương thức đăng nhập đã liên kết",
-    "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
-    "sessions_revoke": "Đăng xuất khỏi các thiết bị khác"
   }
 }

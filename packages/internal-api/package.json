@@ -143,6 +143,11 @@
       "import": "./dist/finance-reconciliation.js",
       "require": "./dist/finance-reconciliation.js"
     },
+    "./habit-trackers": {
+      "types": "./dist/habit-trackers.d.ts",
+      "import": "./dist/habit-trackers.js",
+      "require": "./dist/habit-trackers.js"
+    },
     "./hive": {
       "types": "./dist/hive.d.ts",
       "import": "./dist/hive.js",

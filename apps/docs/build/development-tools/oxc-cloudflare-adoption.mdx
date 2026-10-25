@@ -150,6 +150,9 @@ supported Node executor. CI compares exact binding keys/requiredness/types again
 the existing producer, verifies unchanged artifact bytes and retains a receipt.
 Its self-contained declaration does not require shipping a generated config.
 Other resource and framework profiles still require separate qualification.
+Calendar's build-output comparison copies sealed ESM/assets into the cf format
+and verifies the same bytes after restore. It retains the publisher because
+secondary upload-module names and asset/runtime semantics need separate proof.
 
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
