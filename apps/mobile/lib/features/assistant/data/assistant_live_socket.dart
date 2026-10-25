@@ -92,10 +92,13 @@ class AssistantLiveSocketClient {
     : _connectChannel = connectChannel ?? _defaultConnect;
 
   final WebSocketChannel Function(Uri) _connectChannel;
+  // Bound the handshake: an unanswered one would otherwise hold a disconnect
+  // (and the next connect, which waits for that close) until the OS gives up.
   static WebSocketChannel _defaultConnect(Uri uri) =>
       IOWebSocketChannel.connect(
         uri,
         pingInterval: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 10),
       );
   final _events =
       StreamController<
