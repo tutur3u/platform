@@ -100,6 +100,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     final epoch = _voiceActorScopeEpoch;
     final attempt = _liveStartGate.begin(epoch);
     if (attempt == null) return;
+    final startSettled = Completer<void>();
     try {
       if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
       _dismissKeyboard();
@@ -111,6 +112,16 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         _chatCubit.state,
         liveState,
       );
+      // Starting (not unmuting) a call opens the full-screen call surface.
+      if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
+        unawaited(_presentLiveCall(wsId, startAttempt: startSettled.future));
+      }
+      // The page syncs a workspace switch on its next build; read the live
+      // selection too, so a token answered in between cannot open a call for
+      // the previous workspace.
+      bool workspaceSelected() =>
+          mounted &&
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId;
       await enableAssistantLiveMicrophone(
         liveCubit: _liveCubit,
         prepareSession:
@@ -119,16 +130,18 @@ extension _AssistantPageLiveActions on _AssistantPageState {
                 wsId: wsId,
                 chatId: activeChatId,
                 model: assistantLiveModelId,
+                isCurrent: workspaceSelected,
               )
             : null,
         isCurrent: () =>
             guard.current &&
-            mounted &&
+            workspaceSelected() &&
             identical(_liveStartGate.currentFor(epoch), attempt) &&
             context.read<AssistantChromeCubit>().state.isLiveMode &&
             _loadedWorkspaceId == wsId,
       );
     } finally {
+      startSettled.complete();
       _liveStartGate.finish(attempt);
     }
   }

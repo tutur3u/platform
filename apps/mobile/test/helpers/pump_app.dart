@@ -113,3 +113,29 @@ Widget shellTestApp({
     child: ShadcnMaterialBridge(child: child!),
   ),
 );
+
+/// [home] inside a page scaffold with the real appearance themes and ambient
+/// backdrop, so gradient and blob styles render as they do in the app.
+Widget appearanceTestApp({
+  required Widget home,
+  AppearanceSettings appearance = const AppearanceSettings(),
+  Brightness brightness = Brightness.light,
+}) => shad.ShadcnApp(
+  debugShowCheckedModeBanner: false,
+  theme: AppearanceTheme.shadTheme(appearance, Brightness.light),
+  darkTheme: AppearanceTheme.shadTheme(appearance, Brightness.dark),
+  themeMode: brightness == Brightness.dark
+      ? shad.ThemeMode.dark
+      : shad.ThemeMode.light,
+  enableThemeAnimation: false,
+  localizationsDelegates: const [
+    ...AppLocalizations.localizationsDelegates,
+    AppShadcnLocalizationsDelegate(),
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  builder: (context, child) => AppearanceBackdrop(
+    settings: appearance,
+    child: ShadcnMaterialBridge.appBuilder(context, child),
+  ),
+  home: shad.Scaffold(child: home),
+);

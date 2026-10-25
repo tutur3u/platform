@@ -16,6 +16,7 @@ import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
+import 'package:mobile/features/assistant/models/assistant_live_call_phase.dart';
 import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
@@ -665,6 +666,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   Future<void> _cancelPlayback() async => await _playbackSubscription?.cancel();
   Future<void> _cancelScreenEvents() async =>
       await _screenSubscription?.cancel();
+
+  /// Every emission advances the call clock in one place, so connect,
+  /// reconnect and end paths cannot disagree about the elapsed call time.
+  @override
+  void emit(AssistantLiveState state) => super.emit(
+    applyAssistantLiveCallClock(this.state, state, DateTime.now()),
+  );
 
   @override
   Future<void> close() {

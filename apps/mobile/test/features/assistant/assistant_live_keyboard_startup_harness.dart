@@ -246,6 +246,7 @@ class _KeyboardHarness {
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
+    await minimizeLiveCallSurface(tester);
   }
 
   Future<void> retry(WidgetTester tester) async {

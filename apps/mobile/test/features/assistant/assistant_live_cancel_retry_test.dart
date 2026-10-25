@@ -257,6 +257,7 @@ class _CancelRetryHarness {
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
+    await minimizeLiveCallSurface(tester);
   }
 
   Future<void> dispose(WidgetTester tester) async {

@@ -486,6 +486,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Live camera';
 
   @override
+  String get assistantLiveCallCamera => 'Camera';
+
+  @override
+  String get assistantLiveCallCaptions => 'Captions';
+
+  @override
+  String get assistantLiveCallCaptionsEmpty => 'Captions appear here as you talk.';
+
+  @override
+  String get assistantLiveCallClose => 'Close';
+
+  @override
+  String get assistantLiveCallConnected => 'Connected';
+
+  @override
+  String get assistantLiveCallConnecting => 'Connecting…';
+
+  @override
+  String get assistantLiveCallDuration => 'Call duration';
+
+  @override
+  String get assistantLiveCallEnd => 'End';
+
+  @override
+  String assistantLiveCallEndedWithDuration(String duration) {
+    return 'Call ended · $duration';
+  }
+
+  @override
+  String get assistantLiveCallFailed => 'Couldn\'t connect';
+
+  @override
+  String get assistantLiveCallKeyboard => 'Keyboard';
+
+  @override
+  String get assistantLiveCallMinimize => 'Minimize';
+
+  @override
+  String get assistantLiveCallMute => 'Mute';
+
+  @override
+  String get assistantLiveCallMuted => 'Muted';
+
+  @override
+  String get assistantLiveCallReconnecting => 'Reconnecting…';
+
+  @override
+  String get assistantLiveCallRetry => 'Retry';
+
+  @override
+  String get assistantLiveCallReturn => 'Return to call';
+
+  @override
+  String get assistantLiveCallYou => 'You';
+
+  @override
   String get assistantLiveCancelCall => 'Cancel call';
 
   @override
