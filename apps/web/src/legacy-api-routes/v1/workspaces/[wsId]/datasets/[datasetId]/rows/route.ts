@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { datasetCellParentsMatch } from '../../dataset-access';
 
 interface Params {
   params: Promise<{
@@ -110,8 +111,15 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const { datasetId } = await params;
+  const { wsId, datasetId } = await params;
   const { rowId, row } = await req.json();
+
+  if (!(await datasetCellParentsMatch(supabase, { wsId, datasetId, rowId }))) {
+    return NextResponse.json(
+      { message: 'Dataset row not found' },
+      { status: 404 }
+    );
+  }
 
   const columnsResponse = await supabase
     .from('workspace_dataset_columns')
