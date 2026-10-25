@@ -111,11 +111,13 @@ CREATE TABLE private.nova_challenges (
 ```
 
 Challenge passwords use the shared scrypt KDF from `@tuturuuu/utils/crypto`;
-new hashes embed their salt, so `password_salt` is `null` for them. Legacy
-salted SHA-256 rows still verify and are upgraded to scrypt the next time the
-correct password is entered, with an update guarded by the previous hash. See
-the Meet [password hash migration](/platform/applications/meet#password-hash-migration)
-for the shared coexistence and removal plan.
+new hashes embed their salt, so `password_salt` is `null` for them. Any other
+non-empty stored hash, including legacy salted SHA-256, is a reset marker: it
+never verifies, `verify-password` returns HTTP 409 `PASSWORD_RESET_REQUIRED`
+without a grant, and a challenge manager must set a new password. Scrypt hashes
+with older parameters still verify and are rehashed with an update guarded by
+the previous hash. See
+[shared-secret password reset](/platform/features/shared-secret-password-reset).
 
 After the password verifies, `/api/auth/challenges/verify-password` sets an
 httpOnly `nova_challenge_access_<challengeId>` cookie holding a signed grant
