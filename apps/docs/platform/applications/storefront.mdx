@@ -114,7 +114,7 @@ fails.
 ## Native staging candidate
 
 Generate the TanStack Start adapters with
-`node scripts/start-bridge-codemod/cli.mjs storefront --apply --hold`. Regenerate
+`node scripts/start-bridge-codemod/cli.mjs storefront --apply`. Regenerate
 marked files instead of editing them. The same bridge candidate targets the
 Storefront subdomain and `/storefront` mount; it retains both `/store/<slug>`
 legacy redirects and the current `/<storeSlug>` pages. Login returns to the
@@ -128,5 +128,4 @@ root `/api`. The native adapter must retain the two-upstream fallback declared
 by `next.config.ts`, including order-token and payment callback admission. The
 emitted Worker must pass those checks as well as public browsing, bilingual
 routes, checkout return paths and staging canonical-host rejection. Provider
-payment and device acceptance are separate from fixture tests. Production
-publication is held in `tuturuuu.ci.ts` until an explicit cutover PR.
+payment and device acceptance are separate from fixture tests. The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.

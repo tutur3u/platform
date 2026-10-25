@@ -4,4 +4,5 @@ export const appApiPatterns = [
   "/api/auth/refresh-app-session",
   "/api/auth/verify-app-token",
   "/api/build-info",
+  "/api/v1/inventory/[...path]",
 ] as const;
