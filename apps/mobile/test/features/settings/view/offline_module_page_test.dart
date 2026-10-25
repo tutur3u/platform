@@ -237,7 +237,7 @@ void main() {
   ) async {
     final chrome = ShellChromeActionsCubit();
     await pump(tester, chrome: chrome);
-    tester.view.physicalSize = const Size(390, 600);
+    tester.view.physicalSize = const Size(390, 420);
     await tester.pumpAndSettle();
     // Expanded details make the list long enough to scroll.
     final details = find.text('Technical details');
