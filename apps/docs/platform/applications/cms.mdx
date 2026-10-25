@@ -144,8 +144,13 @@ The route registry compiles in the RSC environment so server-only imports
 retain their boundary. Server actions use the shared bridge action transport
 and existing CSRF checks. The router carries the request CSP nonce.
 
-The candidate supports the subdomain root and `/cms`; production remains on
-its existing publisher until an explicit cutover-preparation PR. That PR
+The candidate admits only the canonical CMS root and its explicit staging
+hosts from `start-bridge.config.ts`. Apex `/cms` and unknown hosts return 404
+before application dispatch or network access. Apex stays held until the
+shared-session decision and auth guard are admitted; the same artifact can
+support a mount after that separate review. This policy is covered by
+`apps/cms/src/runtime/root-host-policy.test.ts` and the emitted Worker gate.
+Production remains on its existing publisher until an explicit cutover-preparation PR. That PR
 requires an app-specific enforced CSP policy, exact-source sealed artifact,
 runtime and authenticated browser acceptance, and an immediate rollback.
 

@@ -3,4 +3,14 @@
 // apps/docs/build/devops/start-bridge-codemod.mdx.
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
-export default defineBridgeAppConfig({});
+export default defineBridgeAppConfig({
+  mounts: {
+    rootHosts: [
+      'cms.tuturuuu.com',
+      'cms-staging.tuturuuu.com',
+      'tuturuuu-cms-vite-staging.tuturuuu-e89.workers.dev',
+    ],
+    mountHosts: [],
+    unknownHost: 'reject',
+  },
+});
