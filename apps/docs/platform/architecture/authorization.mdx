@@ -211,7 +211,11 @@ other query, and keep `ws_id` on every later query. The dataset item routes
 (`/api/v1/workspaces/[wsId]/datasets/[datasetId]` and `.../full`) require `ai_lab`
 for API keys, return 404 for a dataset outside the key's workspace, and accept
 only `name`, `description` and `url` updates (`ws_id` and unknown fields are
-rejected). Session callers keep RLS access with the same workspace binding.
+rejected). Every request made with a verified key, allowed or denied (401, 403,
+404, 400), is recorded in `workspace_api_key_usage_logs` under the key's own
+workspace with endpoint, method, status, timing, IP and user agent, but no
+request body or key material. Session callers keep RLS access with the same
+workspace binding.
 Regression coverage:
 `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/datasets/[datasetId]/route.test.ts`.
 

@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveDatasetAccess } from './dataset-access';
+import { withDatasetAccess } from './dataset-access';
 
 interface Params {
   params: Promise<{
@@ -28,71 +28,69 @@ const datasetUpdateSchema = z
 export async function PUT(req: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
 
-  const body = await req.json().catch(() => null);
-  const parsed = datasetUpdateSchema.safeParse(body);
+  return withDatasetAccess(req, { wsId, datasetId }, async (supabase) => {
+    const body = await req.json().catch(() => null);
+    const parsed = datasetUpdateSchema.safeParse(body);
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { message: 'Invalid request body' },
-      { status: 400 }
-    );
-  }
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
 
-  const { id, ...data } = parsed.data;
+    const { id, ...data } = parsed.data;
 
-  if (id !== undefined && id !== datasetId) {
-    return NextResponse.json(
-      { message: 'Dataset id does not match the URL' },
-      { status: 400 }
-    );
-  }
+    if (id !== undefined && id !== datasetId) {
+      return NextResponse.json(
+        { message: 'Dataset id does not match the URL' },
+        { status: 400 }
+      );
+    }
 
-  if (Object.keys(data).length === 0) {
-    return NextResponse.json(
-      { message: 'No updatable fields provided' },
-      { status: 400 }
-    );
-  }
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
+        { message: 'No updatable fields provided' },
+        { status: 400 }
+      );
+    }
 
-  const access = await resolveDatasetAccess({ wsId, datasetId });
-  if (!access.ok) return access.response;
+    const { error } = await supabase
+      .from('workspace_datasets')
+      .update(data)
+      .eq('id', datasetId)
+      .eq('ws_id', wsId);
 
-  const { error } = await access.supabase
-    .from('workspace_datasets')
-    .update(data)
-    .eq('id', datasetId)
-    .eq('ws_id', wsId);
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error updating workspace dataset' },
+        { status: 500 }
+      );
+    }
 
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error updating workspace dataset' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+    return NextResponse.json({ message: 'success' });
+  });
 }
 
-export async function DELETE(_: NextRequest, { params }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
 
-  const access = await resolveDatasetAccess({ wsId, datasetId });
-  if (!access.ok) return access.response;
+  return withDatasetAccess(req, { wsId, datasetId }, async (supabase) => {
+    const { error } = await supabase
+      .from('workspace_datasets')
+      .delete()
+      .eq('id', datasetId)
+      .eq('ws_id', wsId);
 
-  const { error } = await access.supabase
-    .from('workspace_datasets')
-    .delete()
-    .eq('id', datasetId)
-    .eq('ws_id', wsId);
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error deleting workspace dataset' },
+        { status: 500 }
+      );
+    }
 
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error deleting workspace dataset' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+    return NextResponse.json({ message: 'success' });
+  });
 }

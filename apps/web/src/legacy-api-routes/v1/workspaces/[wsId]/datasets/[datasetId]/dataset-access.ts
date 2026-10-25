@@ -1,64 +1,109 @@
-import { validateApiKey, type WorkspaceContext } from '@tuturuuu/auth/api-keys';
+import {
+  logApiKeyUsage,
+  validateApiKey,
+  type WorkspaceContext,
+} from '@tuturuuu/auth/api-keys';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 /** Datasets live under AI Lab; API keys must carry the same permission. */
 export const DATASET_API_KEY_PERMISSION = 'ai_lab';
 
-export type DatasetAccess =
-  | {
-      ok: true;
-      supabase: TypedSupabaseClient;
-      apiKeyContext: WorkspaceContext | null;
-    }
-  | { ok: false; response: NextResponse };
+type DatasetRouteHandler = (
+  supabase: TypedSupabaseClient
+) => Promise<NextResponse>;
+
+type Denial = { response: NextResponse; reason: string | null };
 
 /**
- * Resolves the client for a dataset route and proves that `datasetId` belongs
- * to `wsId` before any other query runs.
+ * Runs a dataset route after proving that `datasetId` belongs to `wsId`.
  *
  * API-key callers get an admin client, so the key must belong to the URL
- * workspace, carry {@link DATASET_API_KEY_PERMISSION}, and every later query
- * must stay bound to the verified dataset and workspace.
+ * workspace and carry {@link DATASET_API_KEY_PERMISSION}; the handler must keep
+ * every query bound to the verified dataset and workspace. Every request made
+ * with a valid key, allowed or denied, is recorded in the key usage log.
  */
-export async function resolveDatasetAccess({
+export async function withDatasetAccess(
+  request: Request,
+  { wsId, datasetId }: { wsId: string; datasetId: string },
+  handler: DatasetRouteHandler
+): Promise<NextResponse> {
+  const startTime = Date.now();
+  const requestHeaders = await headers();
+  const apiKey = requestHeaders.get('API_KEY');
+  const apiKeyContext = apiKey ? await validateApiKey(apiKey) : null;
+
+  let statusCode = 500;
+  let errorMessage: string | null = null;
+
+  try {
+    const result = await authorizeAndRun({
+      apiKey,
+      apiKeyContext,
+      wsId,
+      datasetId,
+      handler,
+    });
+    if ('reason' in result) {
+      errorMessage = result.reason;
+      statusCode = result.response.status;
+      return result.response;
+    }
+    statusCode = result.status;
+    return result;
+  } catch (error) {
+    errorMessage = 'Unhandled dataset route error';
+    throw error;
+  } finally {
+    // Without a verified key there is no key id to attribute the request to.
+    if (apiKeyContext) {
+      void logApiKeyUsage({
+        apiKeyId: apiKeyContext.keyId,
+        wsId: apiKeyContext.wsId,
+        endpoint: new URL(request.url).pathname,
+        method: request.method,
+        statusCode,
+        ipAddress: extractIPFromHeaders(requestHeaders),
+        userAgent: requestHeaders.get('user-agent'),
+        responseTimeMs: Date.now() - startTime,
+        errorMessage,
+      });
+    }
+  }
+}
+
+async function authorizeAndRun({
+  apiKey,
+  apiKeyContext,
   wsId,
   datasetId,
+  handler,
 }: {
+  apiKey: string | null;
+  apiKeyContext: WorkspaceContext | null;
   wsId: string;
   datasetId: string;
-}): Promise<DatasetAccess> {
-  const apiKey = (await headers()).get('API_KEY');
-
+  handler: DatasetRouteHandler;
+}): Promise<NextResponse | Denial> {
   let supabase: TypedSupabaseClient;
-  let apiKeyContext: WorkspaceContext | null = null;
 
   if (apiKey) {
-    apiKeyContext = await validateApiKey(apiKey);
-
     if (!apiKeyContext || apiKeyContext.wsId !== wsId) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { message: 'Invalid API key' },
-          { status: 401 }
-        ),
-      };
+      return deny(401, 'Invalid API key', 'API key workspace mismatch');
     }
 
     if (!apiKeyContext.permissions.includes(DATASET_API_KEY_PERMISSION)) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { message: 'Insufficient permissions' },
-          { status: 403 }
-        ),
-      };
+      return deny(
+        403,
+        'Insufficient permissions',
+        `API key lacks ${DATASET_API_KEY_PERMISSION} permission`
+      );
     }
 
     supabase = await createAdminClient();
@@ -75,24 +120,20 @@ export async function resolveDatasetAccess({
 
   if (error) {
     console.error('Error verifying workspace dataset:', error);
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { message: 'Error verifying workspace dataset' },
-        { status: 500 }
-      ),
-    };
+    return deny(
+      500,
+      'Error verifying workspace dataset',
+      'Dataset verification failed'
+    );
   }
 
   if (!dataset) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { message: 'Dataset not found' },
-        { status: 404 }
-      ),
-    };
+    return deny(404, 'Dataset not found', 'Dataset not found in workspace');
   }
 
-  return { ok: true, supabase, apiKeyContext };
+  return handler(supabase);
+}
+
+function deny(status: number, message: string, reason: string): Denial {
+  return { response: NextResponse.json({ message }, { status }), reason };
 }

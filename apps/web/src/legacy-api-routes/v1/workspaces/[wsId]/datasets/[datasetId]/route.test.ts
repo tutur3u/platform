@@ -7,6 +7,7 @@ type Db = Record<string, Row[]>;
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
+  logApiKeyUsage: vi.fn(),
   requestHeaders: new Headers(),
 }));
 
@@ -36,6 +37,7 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('@tuturuuu/auth/api-keys', () => ({
+  logApiKeyUsage: mocks.logApiKeyUsage,
   validateApiKey: async (key: string) =>
     API_KEYS[key as keyof typeof API_KEYS] ?? null,
 }));
@@ -335,6 +337,127 @@ describe('dataset routes bind API-key access to the URL workspace', () => {
       expect(datasetB()).toBeDefined();
       expect(sameWorkspace.status).toBe(200);
       expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('API key usage logging', () => {
+    const usageLogs = () =>
+      mocks.logApiKeyUsage.mock.calls.map(([entry]) => entry);
+
+    beforeEach(() => {
+      mocks.requestHeaders = new Headers({
+        API_KEY: 'ttr_key_a',
+        'user-agent': 'probe-agent/1.0',
+      });
+    });
+
+    it('records an allowed same-workspace request', async () => {
+      const response = await getFull(
+        request(`${datasetUrl('ws-a', 'ds-a')}/full?limit=5`),
+        params('ws-a', 'ds-a')
+      );
+
+      expect(response.status).toBe(200);
+      expect(usageLogs()).toEqual([
+        {
+          apiKeyId: 'key-a',
+          wsId: 'ws-a',
+          endpoint: '/api/v1/workspaces/ws-a/datasets/ds-a/full',
+          method: 'GET',
+          statusCode: 200,
+          ipAddress: expect.any(String),
+          userAgent: 'probe-agent/1.0',
+          responseTimeMs: expect.any(Number),
+          errorMessage: null,
+        },
+      ]);
+    });
+
+    it('records a denied cross-workspace attempt without the request body', async () => {
+      const response = await PUT(
+        request(datasetUrl('ws-a', 'ds-b'), {
+          method: 'PUT',
+          body: { name: 'pwned-body-value' },
+        }),
+        params('ws-a', 'ds-b')
+      );
+
+      expect(response.status).toBe(404);
+      expect(usageLogs()).toEqual([
+        expect.objectContaining({
+          apiKeyId: 'key-a',
+          wsId: 'ws-a',
+          endpoint: '/api/v1/workspaces/ws-a/datasets/ds-b',
+          method: 'PUT',
+          statusCode: 404,
+          errorMessage: 'Dataset not found in workspace',
+        }),
+      ]);
+      expect(JSON.stringify(usageLogs())).not.toContain('pwned-body-value');
+      expect(JSON.stringify(usageLogs())).not.toContain('ttr_key_a');
+    });
+
+    it('records permission and workspace-mismatch denials under the key workspace', async () => {
+      const otherWorkspace = await DELETE(
+        request(datasetUrl('ws-b', 'ds-b'), { method: 'DELETE' }),
+        params('ws-b', 'ds-b')
+      );
+      mocks.requestHeaders = new Headers({ API_KEY: 'ttr_key_a_no_ai_lab' });
+      const noPermission = await DELETE(
+        request(datasetUrl('ws-a', 'ds-a'), { method: 'DELETE' }),
+        params('ws-a', 'ds-a')
+      );
+
+      expect(otherWorkspace.status).toBe(401);
+      expect(noPermission.status).toBe(403);
+      expect(usageLogs()).toEqual([
+        expect.objectContaining({
+          apiKeyId: 'key-a',
+          wsId: 'ws-a',
+          endpoint: '/api/v1/workspaces/ws-b/datasets/ds-b',
+          method: 'DELETE',
+          statusCode: 401,
+          errorMessage: 'API key workspace mismatch',
+        }),
+        expect.objectContaining({
+          apiKeyId: 'key-a2',
+          wsId: 'ws-a',
+          method: 'DELETE',
+          statusCode: 403,
+          errorMessage: 'API key lacks ai_lab permission',
+        }),
+      ]);
+    });
+
+    it('records rejected update payloads', async () => {
+      const response = await PUT(
+        request(datasetUrl('ws-a', 'ds-a'), {
+          method: 'PUT',
+          body: { name: 'Moved', ws_id: 'ws-b' },
+        }),
+        params('ws-a', 'ds-a')
+      );
+
+      expect(response.status).toBe(400);
+      expect(usageLogs()).toEqual([
+        expect.objectContaining({ method: 'PUT', statusCode: 400 }),
+      ]);
+    });
+
+    it('does not log session requests or unverifiable keys', async () => {
+      mocks.requestHeaders = new Headers();
+      await DELETE(
+        request(datasetUrl('ws-a', 'ds-a'), { method: 'DELETE' }),
+        params('ws-a', 'ds-a')
+      );
+      mocks.requestHeaders = new Headers({ API_KEY: 'ttr_unknown' });
+      const unknownKey = await DELETE(
+        request(datasetUrl('ws-a', 'ds-b'), { method: 'DELETE' }),
+        params('ws-a', 'ds-b')
+      );
+
+      expect(unknownKey.status).toBe(401);
+      expect(mocks.logApiKeyUsage).not.toHaveBeenCalled();
     });
   });
 });
