@@ -57,3 +57,21 @@ state; this does not expose another respondent's answers.
 [Search indexing](/platform/features/search-indexing), and
 [Forms feature details](/platform/features/forms-embedding-and-seo) provide the
 implementation and behavior contracts.
+
+## Native Start candidate
+
+Generate the native entrypoints with
+`node scripts/start-bridge-codemod/cli.mjs forms --apply`. Marked generated
+files are maintained by this codemod. The App Router pages, layouts and
+server actions use the shared RSC adapter; route handlers compile in its
+RSC environment so their server-only imports keep the same boundary.
+
+Run `bun run --cwd apps/forms type-check:cloudflare` for the native type
+check and `bun run --cwd apps/forms build:cloudflare` for the real Vite+
+build on an admitted build host. The retained `build` script continues to
+serve the current publisher until an explicit cutover-preparation PR.
+
+One artifact supports the Forms subdomain root and `/forms`. Before any
+apex admission, the app needs an enforced CSP policy using the router's
+request nonce, exact-source sealed artifact and runtime acceptance, public
+and authenticated form browser checks, and an immediate rollback.
