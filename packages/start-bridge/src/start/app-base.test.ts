@@ -50,7 +50,10 @@ describe('createAppBaseResolver', () => {
 describe('app base resolver ownership', () => {
   it('reports ownership explicitly, even where an owned path resolves to itself', () => {
     const resolver = createAppBaseResolver(
-      ['/api/v1/workspaces/[wsId]/mail/bootstrap', '/api/v1/workspaces/[wsId]/tasks'],
+      [
+        '/api/v1/workspaces/[wsId]/mail/bootstrap',
+        '/api/v1/workspaces/[wsId]/tasks',
+      ],
       ['/api/v1/workspaces/:wsId/tasks']
     );
     expect(resolver.owns('/api/v1/workspaces/ws-1/mail/bootstrap')).toBe(true);

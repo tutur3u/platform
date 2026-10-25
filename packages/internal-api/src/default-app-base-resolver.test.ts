@@ -46,8 +46,13 @@ function mockFetch() {
   return fetch;
 }
 
+// Owns every path it resolves (ownership is explicit, never inferred).
 function registerServerResolver() {
-  register((path) => appUrl(path, bridgeRequest().request.url));
+  register(
+    Object.assign((path: string) => appUrl(path, bridgeRequest().request.url), {
+      owns: () => true,
+    })
+  );
 }
 
 describe('default app base resolver', () => {
