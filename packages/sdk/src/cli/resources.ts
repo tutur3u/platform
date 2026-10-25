@@ -85,6 +85,10 @@ ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
 Run option: --hosts admits across hosts.json hosts (weighted light/heavy slots,
 per-host budgets); off unless an operator installs hosts.json. Jobs are heavy
 unless --class light is given.
+Run option: --requires ios|macos|flutter|web|rust|docker (repeatable) restricts
+placement to declared host capabilities. Direct Apple/Flutter/Rust/Docker tools
+add requirements automatically; wrappers must declare theirs. Runner dispatch
+requires hosts.json hubHostname to match this machine (the M4 hub).
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
 Burst admission requires normal memory pressure and low CPU load, and stays
@@ -132,6 +136,7 @@ export async function runResourcesCommand(argv: string[]) {
       '--timeout',
       '--hosts',
       '--class',
+      '--requires',
       '--tokens',
       '--memory-gib',
     ],
@@ -158,6 +163,7 @@ export async function runResourcesCommand(argv: string[]) {
           '--timeout',
           '--runner',
           '--class',
+          '--requires',
           '--tokens',
           '--memory-gib',
         ].includes(option)
@@ -256,12 +262,16 @@ export async function runResourcesCommand(argv: string[]) {
         './resources-hosts-cli.js'
       );
       const jobClass = hostsJobClass(optionValue(options, '--class'));
+      const { hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
       const timeout = optionValue(options, '--timeout');
       process.exitCode = await hostsRun({
         home,
         command: name,
         args: command,
         jobClass,
+        requires: hostsRequirements(name, command, options),
         deps: hostsDependencies({
           home,
           name,

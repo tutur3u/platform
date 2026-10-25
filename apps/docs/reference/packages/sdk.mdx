@@ -1836,6 +1836,88 @@ Regression coverage:
 - `resources-disk-gate.test.ts`;
 - `resources-hosts-sim.test.ts`.
 
+#### Capability placement and the M4 hub
+
+Multi-host admission is implemented but requires operator activation: a trusted
+registry, eligible registered devbox runners, a pushed clean commit and fresh
+telemetry. SSH reachability alone does not register a runner or admit work.
+The historical simulation above is an offline example, not live fleet capacity.
+
+Set `hubHostname` in `hosts.json` to the M4's exact OS hostname. Registries with
+runner entries refuse dispatch when that field is absent or differs from the
+current machine, before creating a ticket or contacting a runner. Submit fleet
+jobs on the M4; remote hosts use their own canonical `ttr resources run` queue.
+The transport remains the keyed devbox API; it does not SSH between hosts or
+copy local credentials/environment values.
+
+Each host can declare `platform: "darwin" | "linux"` and a `capabilities` array
+containing `ios`, `macos`, `flutter`, `web`, `rust` and/or `docker`. Declared
+platform must match local OS or fresh runner `capabilities.os.platform` telemetry;
+unknown/mismatched platform blocks placement and is rechecked before dispatch.
+Tool capabilities are operator attestations: verify installed tools, daemon
+access and runtime acceptance before advertising them. Missing capability tags
+cannot satisfy a job's requirements. Older untagged registries still admit
+generic jobs, but cannot admit jobs requiring a capability.
+
+```sh
+ttr resources run --hosts --requires ios -- flutter build ios --no-codesign
+ttr resources run --hosts --requires web -- bun run test
+ttr resources run --hosts --requires docker --requires rust -- sh verify.sh
+```
+
+`--requires` is repeatable and augments direct-tool inference. Xcode tools,
+CocoaPods and codesign require `macos`; Flutter requires `flutter` and adds `ios`
+for iOS/IPA targets or `macos` for macOS targets; Cargo/Rust tools require `rust`;
+Docker requires `docker`. Shell/package scripts and arbitrary executables must
+declare their requirements explicitly. Both Apple tags also require a declared
+Darwin host. Configure placement as follows, preserving measured weighted slots,
+worker caps and headroom:
+
+| Host | Declared capabilities | Placement policy |
+| --- | --- | --- |
+| M4 hub | Only verified light tooling, such as `web` | Coordination and focused build-free checks; no release builds. |
+| Linux runner | Verified `flutter`, `web`, `rust`, `docker` | Prefer for compatible work; no `ios` or `macos`. |
+| Studio runner | Verified `ios`, `macos`, `flutter`, `web`, `rust`, `docker` | Apple jobs, or compatible work when Linux has no capacity. |
+
+Set lower `preference` on Linux than Studio for portable work; capability checks
+still send Apple jobs only to Studio. Do not register held hosts. Studio has
+one pool A; the proposed pool B was not created. Do not add a second host entry to count the same machine twice. Mastermind must reconcile all
+resource homes and external CI consumers before declaring available slots.
+
+An incompatible starving waiter holds only hosts it could use, leaving Linux
+available behind an iOS waiter. Existing repository-share ordering, bounded
+bypass and local lane FIFO remain in force. Repeated enqueue preserves the
+original ticket owner, requirements, age and bypass count; a reserved token
+cannot be enqueued or admitted twice. Requeues retain age/bypass, and the ticket
+UUID is the remote create's idempotency key. An unacknowledged write never
+triggers another placement or a local retry; reconcile the original operation
+through `ttr box list` before deciding what happened.
+
+Regression coverage: `resources-hosts-requirements.test.ts`,
+`resources-hosts-dispatch.test.ts` and `resources-hosts-ledger.test.ts` cover
+capability/OS placement, hub refusal before writes, ordering, duplicate tickets,
+stable operation identity and unknown-outcome refusal.
+
+#### Studio operator lane update
+
+Mastermind applied the 2026-10-25 lane change: Studio now has one pool A at
+6 base/8 max lanes, and Linux has 3 lanes. Pool B was not created. The physical
+Studio ceiling remains 16. No further lane raise is proposed by this change;
+configuration and activation remain Mastermind's custody. The Studio source of
+operational detail is `/Users/thanh/Documents/STUDIO_LANES.md`; re-read current
+status before using declared worker totals as capacity evidence.
+
+Future changes require a full idle drain (zero owners, waiters, reservations
+and queued remote runs), saved config/registry/launcher bytes, the same roots
+and shell settings, a compatible pinned CLI and a reviewed `setup --dry-run`.
+Let existing work finish in order; never kill/reorder waiters or create another
+queue. Apply only as the operator, monitor CPU/memory/disk/I/O and effective
+worker caps, and roll back saved settings only after another idle drain.
+
+Operator-owned remaining evidence: reviewed registry installation, actual
+runner registration and runtime capability acceptance. Source tests and offline
+simulation do not activate multi-host admission or prove remote execution.
+
 ### Docker metadata lifecycle diagnostic
 
 The SDK metadata subprocess is silent by default. Disposable CI can opt in with

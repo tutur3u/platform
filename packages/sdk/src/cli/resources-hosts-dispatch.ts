@@ -30,6 +30,11 @@ import {
   updateHostReservation,
 } from './resources-hosts-ledger';
 import { canEverHold } from './resources-hosts-plan';
+import {
+  assertHostsHub,
+  type HostCapability,
+  hostsRequirements,
+} from './resources-hosts-requirements';
 import { commandSummary } from './resources-queue';
 
 // Fairness is per repository: linked worktrees of one repository (for
@@ -81,6 +86,7 @@ export interface HostDispatchDeps {
     jobClass: JobClass;
     sha: string;
     prefix: string;
+    operationId: string;
   }) => Promise<number | { rejected: true; reason: string }>;
   localDiskFreeGiB?: (cwd: string) => Promise<number | undefined>;
   // Dequeue-time gate for local light work (heavy work passes the lane gate).
@@ -106,6 +112,7 @@ export async function hostsRun({
   command,
   args,
   jobClass,
+  requires = hostsRequirements(command, args),
   cwd = commandCwd(args),
   env = process.env,
   registry,
@@ -115,6 +122,7 @@ export async function hostsRun({
   command: string;
   args: string[];
   jobClass: JobClass;
+  requires?: HostCapability[];
   cwd?: string;
   env?: NodeJS.ProcessEnv;
   registry?: HostRegistry;
@@ -128,6 +136,7 @@ export async function hostsRun({
     throw new Error(
       'No hosts.json in the resources home; multi-host admission is not configured.'
     );
+  assertHostsHub(hosts);
   // Nested inside an admitted hosts job: run under the ancestor's
   // reservation rather than queueing behind it.
   const parent = await nestedHostReservation(home, env, true);
@@ -156,11 +165,12 @@ export async function hostsRun({
     queuedAt: Date.now(),
     bypassed: 0,
     remoteOk: Boolean(plan),
+    requires,
     command: commandSummary(command, args),
   };
   if (!canEverHold(hosts, ticket))
     throw new Error(
-      `No registered host can ever run a ${jobClass} job${plan ? '' : ' from this tree (remote runs need a clean, pushed commit)'}; check hosts.json slots and weights.`
+      `No registered host can ever run a ${jobClass} job${plan ? '' : ' from this tree (remote runs need a clean, pushed commit)'}; check hosts.json capabilities, platforms, slots and weights.`
     );
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 } as const;
   let cancelled: keyof typeof signalCodes | undefined;
@@ -209,6 +219,7 @@ export async function hostsRun({
         const result = await admitHostTicket(home, ticket, hosts, telemetry);
         if (result.admitted) {
           reservation = result.reservation;
+          ticket.bypassed = result.ticket.bypassed;
           break;
         }
         if (Date.now() - announced > 30_000) {
@@ -257,7 +268,8 @@ export async function hostsRun({
       const blocker = remoteDispatchBlocker(
         hosts,
         host.id,
-        await deps.fleet().catch(() => undefined)
+        await deps.fleet().catch(() => undefined),
+        ticket.requires
       );
       if (blocker) {
         await requeue(
@@ -278,7 +290,13 @@ export async function hostsRun({
       log(`admitted ${jobClass} PID ${process.pid} on host ${host.id}`);
       remoteRunning = true;
       const outcome = await deps
-        .runRemote({ host, jobClass, sha: current.sha, prefix: current.prefix })
+        .runRemote({
+          host,
+          jobClass,
+          sha: current.sha,
+          prefix: current.prefix,
+          operationId: held.token,
+        })
         .finally(() => {
           remoteRunning = false;
         });
@@ -289,7 +307,6 @@ export async function hostsRun({
         `host ${host.id} refused the run (${outcome.reason}); requeueing for local hosts`,
         true
       );
-      ticket.bypassed = 0;
     }
   } finally {
     for (const [signal, handler] of handlers)

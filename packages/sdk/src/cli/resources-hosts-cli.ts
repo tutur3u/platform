@@ -101,7 +101,7 @@ export function hostsDependencies({
         onChild
       );
     },
-    runRemote: async ({ host, sha, prefix }) => {
+    runRemote: async ({ host, sha, prefix, operationId }) => {
       const { module, client } = await session();
       try {
         return await module.runBoxOffload({
@@ -109,6 +109,7 @@ export function hostsDependencies({
           runnerId: host.runnerId!,
           sha,
           prefix,
+          operationId,
           argv: [name, ...command],
           timeoutSeconds: timeoutSeconds || module.defaultOffloadTimeoutSeconds,
         });
