@@ -57,7 +57,7 @@ describe('inventory storefront staff payments', () => {
     });
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -92,7 +92,7 @@ describe('inventory storefront staff payments', () => {
     expect(body.checkoutMode).toBe('square_terminal');
     expect(body.checkout.squareTerminalCheckoutId).toBe('terminal-checkout-1');
     expect(body.nextUrl).toBe(
-      'http://storefront.test/shop/orders/public-token'
+      'http://storefront.tuturuuu.localhost/shop/orders/public-token'
     );
   });
 
@@ -109,7 +109,7 @@ describe('inventory storefront staff payments', () => {
     });
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -135,12 +135,13 @@ describe('inventory storefront staff payments', () => {
       callbackUrl:
         'https://inventory.tuturuuu.com/api/v1/inventory/square/pos/callback',
       checkoutId: 'checkout-1',
-      fallbackUrl: 'http://storefront.test/shop/orders/public-token',
+      fallbackUrl:
+        'http://storefront.tuturuuu.localhost/shop/orders/public-token',
       wsId: 'ws-1',
     });
     expect(body).toMatchObject({
       checkoutMode: 'square_pos',
-      nextUrl: 'http://storefront.test/shop/orders/public-token',
+      nextUrl: 'http://storefront.tuturuuu.localhost/shop/orders/public-token',
       squarePos: { androidUrl: 'intent:#Intent;end' },
     });
     expect(mocks.createInventorySquareTerminalCheckout).not.toHaveBeenCalled();
@@ -170,7 +171,7 @@ describe('inventory storefront staff payments', () => {
     });
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -213,7 +214,7 @@ describe('inventory storefront staff payments', () => {
     );
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -268,7 +269,7 @@ describe('inventory storefront staff payments', () => {
     });
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -303,7 +304,7 @@ describe('inventory storefront staff payments', () => {
     );
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -337,7 +338,7 @@ describe('inventory storefront staff payments', () => {
     });
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -374,7 +375,7 @@ describe('inventory storefront staff payments', () => {
     );
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           lines: [
             {
@@ -477,7 +478,7 @@ describe('inventory storefront staff payments', () => {
 
   it('completes a staff cash sale through the atomic RPC', async () => {
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           cash: {
             categoryId: '00000000-0000-4000-8000-000000000002',
@@ -500,7 +501,7 @@ describe('inventory storefront staff payments', () => {
     expect(response.status).toBe(201);
     expect(body.checkoutMode).toBe('cash');
     expect(body.nextUrl).toBe(
-      'http://storefront.test/shop/orders/public-token'
+      'http://storefront.tuturuuu.localhost/shop/orders/public-token'
     );
     expect(mocks.authorizeSquareCheckoutStaff).toHaveBeenCalled();
     expect(mocks.rpc).toHaveBeenCalledWith(
@@ -526,7 +527,7 @@ describe('inventory storefront staff payments', () => {
     });
 
     const response = await POST(
-      new Request('http://storefront.test/api', {
+      new Request('http://storefront.tuturuuu.localhost/api', {
         body: JSON.stringify({
           cash: {
             categoryId: '00000000-0000-4000-8000-000000000002',

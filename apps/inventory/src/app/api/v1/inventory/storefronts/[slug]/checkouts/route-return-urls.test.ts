@@ -25,8 +25,8 @@ const scenarios: Scenario[] = [
   },
   {
     name: 'existing development storefront host',
-    url: `http://storefront.test${api}`,
-    expected: 'http://storefront.test',
+    url: `http://storefront.tuturuuu.localhost${api}`,
+    expected: 'http://storefront.tuturuuu.localhost',
   },
   {
     name: 'apex storefront request',
@@ -72,10 +72,20 @@ const scenarios: Scenario[] = [
   },
   {
     name: 'an unrelated Origin cannot select a return host',
-    url: `http://storefront.test${api}`,
+    url: `http://storefront.tuturuuu.localhost${api}`,
     origin: 'https://tuturuuu.com.attacker.invalid',
-    expected: 'http://storefront.test',
+    expected: 'http://storefront.tuturuuu.localhost',
   },
+  ...[
+    'storefront.tuturuuu.com.attacker.invalid',
+    'untrusted-storefront.tuturuuu.com',
+    'storefront.attacker.invalid',
+    'storefront.tuturuuu.localhost.attacker.invalid',
+  ].map((host) => ({
+    name: `a spoofed Storefront hostname cannot select a return host: ${host}`,
+    url: `https://${host}${api}`,
+    expected: 'https://storefront.tuturuuu.com',
+  })),
 ];
 
 beforeEach(() => {

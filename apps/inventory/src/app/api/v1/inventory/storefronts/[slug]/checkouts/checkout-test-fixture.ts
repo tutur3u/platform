@@ -173,7 +173,8 @@ export function resetCheckoutMocks() {
       androidUrl: 'intent:#Intent;end',
       callbackUrl:
         'https://inventory.tuturuuu.com/api/v1/inventory/square/pos/callback',
-      fallbackUrl: 'http://storefront.test/shop/orders/public-token',
+      fallbackUrl:
+        'http://storefront.tuturuuu.localhost/shop/orders/public-token',
       iosUrl: 'square-commerce-v1://payment/create?data=test',
     },
   });

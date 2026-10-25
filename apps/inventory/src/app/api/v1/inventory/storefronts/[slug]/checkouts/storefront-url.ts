@@ -24,7 +24,12 @@ export function getStorefrontUrl(request: Request) {
   if (request.headers.get('origin') === 'https://tuturuuu.com') {
     return 'https://tuturuuu.com/storefront';
   }
-  if (url.hostname.includes('storefront.')) return url.origin;
+  if (
+    url.hostname === 'storefront.tuturuuu.com' ||
+    url.hostname === 'storefront.tuturuuu.localhost'
+  ) {
+    return url.origin;
+  }
 
   return process.env.NODE_ENV === 'production'
     ? 'https://storefront.tuturuuu.com'
