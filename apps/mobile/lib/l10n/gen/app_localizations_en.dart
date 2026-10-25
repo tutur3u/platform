@@ -1696,6 +1696,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmsTitleApp => 'CMS';
 
   @override
+  String get cmsPipelineEyebrow => 'Publishing pipeline';
+
+  @override
+  String cmsPublishedOfTotal(int published, int total) {
+    return '$published of $total published';
+  }
+
+  @override
+  String cmsPipelineSupporting(int drafts, int scheduled) {
+    return '$drafts in draft · $scheduled scheduled';
+  }
+
+  @override
+  String cmsEntryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entries',
+      one: '1 entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cmsCollectionDisabled => 'Disabled';
+
+  @override
+  String get cmsCollectionsProgress => 'Publishing by collection';
+
+  @override
+  String get cmsNoCollectionsMessage => 'Collections group one kind of content, such as articles or events. Create one to start writing entries.';
+
+  @override
+  String get cmsNoEntriesMatch => 'No entries match these filters.';
+
+  @override
+  String get cmsNoEntriesMatchMessage => 'Try another status or collection, or clear the search.';
+
+  @override
+  String get cmsFilterByCollection => 'Filter by collection';
+
+  @override
+  String get cmsDetailsSection => 'Details';
+
+  @override
+  String get cmsPublishingSection => 'Publishing';
+
+  @override
+  String get cmsLoadFailed => 'Could not load content';
+
+  @override
+  String get cmsRefreshFailed => 'Could not refresh. Showing the last loaded content.';
+
+  @override
   String get commonActive => 'Active';
 
   @override
@@ -2136,6 +2190,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardTodayTitle => 'Today at a glance';
+
+  @override
+  String get dashboardUntitledEvent => 'Untitled event';
 
   @override
   String get dashboardUpcomingEvents => 'Upcoming events';
@@ -3924,6 +3981,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeCustomize => 'Customize Home';
 
   @override
+  String get homeGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String homeGreetingAfternoonNamed(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String get homeGreetingEvening => 'Good evening';
+
+  @override
+  String homeGreetingEveningNamed(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String get homeGreetingMorning => 'Good morning';
+
+  @override
+  String homeGreetingMorningNamed(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
   String get homeHiddenWidgets => 'Hidden widgets';
 
   @override
@@ -3934,6 +4015,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override
   String get homeShowWidget => 'Show widget';
@@ -6037,6 +6121,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsDeclineInvite => 'Decline';
+
+  @override
+  String get notificationsGroupEarlier => 'Earlier';
+
+  @override
+  String get notificationsGroupLastWeek => 'Last 7 days';
+
+  @override
+  String get notificationsGroupToday => 'Today';
+
+  @override
+  String get notificationsGroupYesterday => 'Yesterday';
 
   @override
   String notificationsHoursAgo(int count) {
@@ -10853,9 +10949,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSettingsSelectionUnconfirmed => 'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.';
 
   @override
-  String get assistantExpandPrompt => 'Expand prompt';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'About $setting';
   }
@@ -11101,4 +11194,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantSubmitSuccess => 'Submitted successfully';
+
+  @override
+  String get offlineDownloadsPaused => 'Downloads paused. Saved data is still available. We will retry in the background.';
+
+  @override
+  String get offlineDownloadsRetryLimit => 'Downloads are still unavailable. Try again later; saved data is still available.';
+
+  @override
+  String get mailSettingsReadOnly => 'Saved settings are read-only until access can be verified.';
+
+  @override
+  String get calendarSettingsError => 'Could not load or save calendar preferences. Retry when online.';
 }

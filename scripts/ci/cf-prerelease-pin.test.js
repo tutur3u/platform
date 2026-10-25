@@ -19,7 +19,12 @@ test('Renovate holds cf prereleases for an explicitly qualified upgrade', () => 
   for (const version of ['1.0.0-beta.20', '1.0.0-beta.21', '2.0.0-alpha.1'])
     assert.ok(current.test(version), version);
   assert.equal(current.test('1.0.0'), false);
-  for (const app of ['cron-control', 'devbox-control', 'coordination']) {
+  for (const app of [
+    'cron-control',
+    'devbox-control',
+    'coordination',
+    'calendar',
+  ]) {
     const manifest = JSON.parse(
       readFileSync(resolve(root, `apps/${app}/package.json`), 'utf8')
     );

@@ -705,16 +705,38 @@ not reserve capacity or guarantee image retention.
 | Cache family | Observed pressure | Save policy |
 | --- | --- | --- |
 | Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
-| Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
-| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch, including desktop, release and employee jobs |
+| Android Gradle | Previous broad archive reached 4.29 GB | Only wrapper distributions and module downloads; skip saves above 512 MiB; one main-push producer |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch; SDK/pub identities use platform and release, without lockfile generations |
 | Bun downloads | About 1 GiB per observed Linux archive | Main push/dispatch only; one v2 archive per OS, architecture and pinned Bun version |
 | CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
 
-These are incident measurements, not fixed sizes or a guaranteed total. New
-Gradle keys use the `gradle-v1-` namespace; their first main push must populate
-them. PRs cannot warm missing heavyweight caches. The static budget gate is
-`node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
-`bun test:scripts`. It inventories every save-capable cache action and setup cache input in
+These are incident measurements, not fixed sizes or a guaranteed total. Gradle
+uses one `gradle-downloads-v2-<OS>-<arch>-java17` entry per platform, without
+build-file hashes or fallback to `gradle-v1-`. Only `mobile-build-android.yaml`
+saves it, after `scripts/ci/gradle-cache-budget.js` measures the selected paths
+with archive header/padding allowance. Empty or over-budget trees skip saving;
+builds retain their local downloads. Transforms, build caches, daemon and native
+state stay out of the archive. A restored immutable entry may lack newer modules;
+Gradle downloads those normally. Pub downloads similarly use `flutter-pub-v2-`
+platform/channel/release keys; `pub get` still resolves each checked-in lockfile.
+Changing a lockfile does not need a new archive of the entire download store.
+
+After this policy merges, an operator should remove the obsolete `gradle-v1-`
+entries, and obsolete lock-hashed Flutter pub entries once the v2 entries are
+available. Inspect live usage before reseeding: leave room for every selected
+Supabase profile, not just the first archive. Dispatch the main-only Supabase
+image seed described below, verify its saves, then verify a contract consumer
+reports a cache hit without registry pulls. Do not delete active SDK, Bun,
+Supabase or CodeQL entries as routine cleanup. Old mobile workflows already
+running at pre-policy commits may still save old keys; drain those before cleanup.
+No cache is deleted or seed dispatched by this policy change. The Gradle gate
+bounds its selected uncompressed bytes to 512 MiB; hosted archive sizes and the
+aggregate footprint still require the read-only storage report. Flutter releases
+and Supabase profiles can overlap, so this is not a reserved capacity guarantee.
+
+PRs cannot warm missing heavyweight caches. The static budget gates are
+`node --test scripts/ci/heavyweight-cache-budget.test.js scripts/ci/mobile-cache-budget.test.js`, also discovered by
+`bun test:scripts`. The inventory covers every save-capable cache action and setup cache input in
 workflows and composites, checking trusted and untrusted events/refs. Combined `actions/cache` still registers a post-job save when
 `lookup-only` is enabled, so it remains in the inventory. Unknown keys and paths
 have no implicit exemption. The explicit exceptions compare the complete input
@@ -1898,8 +1920,8 @@ SDK/pub downloads (Windows retains its deliberate cache-off setup). The wrapper
 resolves identity through the SHA-pinned upstream action before restoring the
 exact cache, then installs that resolved version. SDK keys bind upstream OS,
 channel, version, architecture and release hash; they exclude `pubspec.lock` so
-analysis, test and build jobs share main's SDK archive. Pub download keys still
-include the lock hash. Every ref can restore; only main push/manual runs attach
+analysis, test and build jobs share main's SDK archive. Pub download keys
+(`flutter-pub-v2-`) also exclude the lock hash. Every ref can restore; only main push/manual runs attach
 the cache save post-step, so mobile runs on PRs, feature branches and
 production do not upload duplicate archives. Desktop beta/store-draft and the
 employee schema contract still set up Flutter with upstream caching on their own

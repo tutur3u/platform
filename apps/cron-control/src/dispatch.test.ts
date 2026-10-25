@@ -1,6 +1,11 @@
 import { afterEach, expect, it, vi } from 'vite-plus/test';
 import { dispatchScheduledJobs, USER_AGENT } from './dispatch';
-import { CRON_JOBS, leaseMs, MAX_CONSECUTIVE_FAILURES } from './jobs';
+import {
+  CRON_JOBS,
+  leaseMs,
+  MAX_CONSECUTIVE_FAILURES,
+  parseEnabledJobs,
+} from './jobs';
 import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
 
 const SECRET = 'test-cron-secret-value';
@@ -18,6 +23,7 @@ const env = {
 };
 const DAILY = '17 3 * * *';
 const T0 = Date.parse('2026-10-23T03:17:00.000Z');
+const PAY_PRODUCTS_T0 = Date.parse('2026-10-23T12:00:00.000Z');
 const DAY = 86_400_000;
 
 function harness(
@@ -42,7 +48,7 @@ function harness(
     now: () => T0,
     sleep,
   };
-  return { calls, core, counts, deps, ledgerSpy, sleep };
+  return { calls, core, counts, deps, ledgerSpy, sleep, store };
 }
 
 afterEach(() => {
@@ -95,6 +101,86 @@ it('calls the existing processor once per slot over the current auth contract', 
   expect(call.headers.get('authorization')).toBe(`Bearer ${SECRET}`);
   expect(call.headers.get('user-agent')).toBe(USER_AGENT);
   expect(h.counts.writes).toBe(2);
+});
+
+it('keeps pay-products off by default and within one bounded retry per slot', async () => {
+  const payProducts = CRON_JOBS.find((job) => job.id === 'pay-products');
+  if (!payProducts)
+    throw new Error('pay-products is missing from Cron Control');
+  expect(payProducts).toMatchObject({
+    cron: '0 */12 * * *',
+    id: 'pay-products',
+    overlap: 'idempotent',
+    path: '/api/cron/payment/products',
+    target: 'pay',
+  });
+  expect(parseEnabledJobs(undefined).enabled.has('pay-products')).toBe(false);
+
+  let requests = 0;
+  const h = harness(() => {
+    requests++;
+    return Response.json({}, { status: requests === 1 ? 503 : 200 });
+  });
+  const enabled = { ...env, CRON_CONTROL_ENABLED_JOBS: 'pay-products' };
+  expect(
+    await dispatchScheduledJobs(
+      payProducts.cron,
+      PAY_PRODUCTS_T0,
+      enabled,
+      h.deps
+    )
+  ).toEqual([{ attempts: 2, id: 'pay-products', outcome: 'ok', status: 200 }]);
+  expect(h.calls).toHaveLength(2);
+  expect(h.counts.writes).toBe(2);
+
+  expect(
+    await dispatchScheduledJobs(
+      payProducts.cron,
+      PAY_PRODUCTS_T0 + 30_000,
+      enabled,
+      h.deps
+    )
+  ).toEqual([{ id: 'pay-products', outcome: 'skipped', reason: 'duplicate' }]);
+  expect(h.calls).toHaveLength(2);
+});
+
+it('durably stops pay-products after five failed slots across ledger restarts', async () => {
+  const h = harness(() =>
+    Response.json({ error: 'unavailable' }, { status: 503 })
+  );
+  const enabled = { ...env, CRON_CONTROL_ENABLED_JOBS: 'pay-products' };
+  // Recreate the ledger core for each claim/completion while preserving its
+  // durable store, matching a Durable Object restart between requests.
+  h.ledgerSpy.mockImplementation(() => localLedger(new LedgerCore(h.store)));
+
+  for (let slot = 0; slot < MAX_CONSECUTIVE_FAILURES; slot++) {
+    const [report] = await dispatchScheduledJobs(
+      '0 */12 * * *',
+      PAY_PRODUCTS_T0 + slot * 12 * 60 * 60_000,
+      enabled,
+      h.deps
+    );
+    expect(report).toMatchObject({
+      attempts: 2,
+      id: 'pay-products',
+      outcome: 'failed',
+    });
+  }
+
+  expect(h.calls).toHaveLength(MAX_CONSECUTIVE_FAILURES * 2);
+  expect(h.counts.writes).toBe(MAX_CONSECUTIVE_FAILURES * 2);
+  const [stopped] = await dispatchScheduledJobs(
+    '0 */12 * * *',
+    PAY_PRODUCTS_T0 + MAX_CONSECUTIVE_FAILURES * 12 * 60 * 60_000,
+    enabled,
+    h.deps
+  );
+  expect(stopped).toEqual({
+    id: 'pay-products',
+    outcome: 'skipped',
+    reason: 'stopped',
+  });
+  expect(h.calls).toHaveLength(MAX_CONSECUTIVE_FAILURES * 2);
 });
 
 it('posts an empty JSON body to POST processors', async () => {

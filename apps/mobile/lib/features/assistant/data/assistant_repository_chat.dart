@@ -307,6 +307,10 @@ mixin _AssistantChatRepository {
                 .where((message) => message.role == 'user')
                 .firstOrNull
                 ?.id;
+        final replyToMessageId = messages.reversed
+            .where((message) => message.role == 'user')
+            .firstOrNull
+            ?.replyToMessageId;
         AssistantJsonStreamEvent userReceipt(ChatMessage saved) =>
             _nativeUserReceiptEvent(
               saved,
@@ -315,6 +319,7 @@ mixin _AssistantChatRepository {
               requestId: requestId,
               text: _latestUserText(messages),
               attachments: attachments,
+              replyToMessageId: replyToMessageId,
               admission: admission,
             );
 
@@ -328,6 +333,7 @@ mixin _AssistantChatRepository {
           content: _latestUserText(messages),
           attachments: nativeAttachments,
           clientRequestId: requestId,
+          replyToMessageId: replyToMessageId,
           miraMode: true,
           admission: admission,
         )) {

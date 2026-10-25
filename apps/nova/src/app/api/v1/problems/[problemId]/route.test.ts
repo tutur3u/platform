@@ -22,6 +22,7 @@ function query(result: QueryResult) {
   const builder = {
     eq: vi.fn(() => builder),
     limit: vi.fn(() => builder),
+    order: vi.fn(() => builder),
     maybeSingle: vi.fn(async () => result),
     select: vi.fn(() => builder),
     single: vi.fn(async () => result),
@@ -102,12 +103,20 @@ describe('Nova problem detail eligibility', () => {
     };
     mocks.createAdminClient.mockResolvedValue(
       adminClient({
-        nova_challenges: [query({ data: challenge(), error: null })],
+        nova_challenges: [
+          query({ data: challenge(), error: null }),
+          query({ data: { close_at: null, duration: 3600 }, error: null }),
+        ],
         nova_problems: [
           query({ data: { challenge_id: 'challenge-1' }, error: null }),
           query({ data: problem, error: null }),
         ],
-        nova_sessions: [query({ data: { id: 'session-1' }, error: null })],
+        nova_sessions: [
+          query({
+            data: { start_time: new Date(Date.now() - 60_000).toISOString() },
+            error: null,
+          }),
+        ],
       })
     );
 

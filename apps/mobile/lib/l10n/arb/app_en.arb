@@ -366,6 +366,27 @@
       }
     }
   },
+  "@homeGreetingAfternoonNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingEveningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingMorningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryAuditChanges": {
     "placeholders": {
       "count": {
@@ -1717,6 +1738,47 @@
   "cmsSummary": "Summary",
   "cmsTitle": "Title",
   "cmsTitleApp": "CMS",
+  "cmsPipelineEyebrow": "Publishing pipeline",
+  "cmsPublishedOfTotal": "{published} of {total} published",
+  "@cmsPublishedOfTotal": {
+    "placeholders": {
+      "published": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cmsPipelineSupporting": "{drafts} in draft · {scheduled} scheduled",
+  "@cmsPipelineSupporting": {
+    "placeholders": {
+      "drafts": {
+        "type": "int"
+      },
+      "scheduled": {
+        "type": "int"
+      }
+    }
+  },
+  "cmsEntryCount": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@cmsEntryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cmsCollectionDisabled": "Disabled",
+  "cmsCollectionsProgress": "Publishing by collection",
+  "cmsNoCollectionsMessage": "Collections group one kind of content, such as articles or events. Create one to start writing entries.",
+  "cmsNoEntriesMatch": "No entries match these filters.",
+  "cmsNoEntriesMatchMessage": "Try another status or collection, or clear the search.",
+  "cmsFilterByCollection": "Filter by collection",
+  "cmsDetailsSection": "Details",
+  "cmsPublishingSection": "Publishing",
+  "cmsLoadFailed": "Could not load content",
+  "cmsRefreshFailed": "Could not refresh. Showing the last loaded content.",
   "commonActive": "Active",
   "commonAll": "All",
   "commonApply": "Apply",
@@ -1859,6 +1921,7 @@
   "dashboardTaskUpcoming": "Upcoming",
   "dashboardTasksMetric": "{count} active",
   "dashboardTodayTitle": "Today at a glance",
+  "dashboardUntitledEvent": "Untitled event",
   "dashboardUpcomingEvents": "Upcoming events",
   "dashboardUpcomingMeetings": "Upcoming meetings",
   "desktopUpdateCancel": "Cancel scheduled update",
@@ -2417,10 +2480,17 @@
   "habitsWorkoutTotalVolume": "Total volume",
   "habitsWorkoutWeight": "Weight",
   "homeCustomize": "Customize Home",
+  "homeGreetingAfternoon": "Good afternoon",
+  "homeGreetingAfternoonNamed": "Good afternoon, {name}",
+  "homeGreetingEvening": "Good evening",
+  "homeGreetingEveningNamed": "Good evening, {name}",
+  "homeGreetingMorning": "Good morning",
+  "homeGreetingMorningNamed": "Good morning, {name}",
   "homeHiddenWidgets": "Hidden widgets",
   "homeHideWidget": "Hide widget",
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+  "homeSectionLoadFailed": "Pull down to try again.",
   "homeShowWidget": "Show widget",
   "inventoryAddCategory": "Add category",
   "inventoryAddManufacturer": "Add manufacturer",
@@ -3090,6 +3160,10 @@
   "notificationsArchiveEmptyTitle": "No archived notifications",
   "notificationsDaysAgo": "{count}d ago",
   "notificationsDeclineInvite": "Decline",
+  "notificationsGroupEarlier": "Earlier",
+  "notificationsGroupLastWeek": "Last 7 days",
+  "notificationsGroupToday": "Today",
+  "notificationsGroupYesterday": "Yesterday",
   "notificationsHoursAgo": "{count}h ago",
   "notificationsInbox": "Inbox",
   "notificationsInboxEmptyMessage": "New activity, mentions, and invites will show up here.",
@@ -4602,7 +4676,6 @@
   "assistantNewChatResetCommittedStale": "The reset was saved for the earlier context, but this screen changed. Your draft is retained. Check your chat history; the app will not retry automatically.",
   "assistantSettingsSelectionDenied": "You cannot change these chat settings. Your previous settings and draft are retained.",
   "assistantSettingsSelectionUnconfirmed": "The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.",
-  "assistantExpandPrompt": "Expand prompt",
   "assistantSettingInfo": "About {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4740,5 +4813,9 @@
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
   "profileMediaSet": "Set",
-  "assistantSubmitSuccess": "Submitted successfully"
+  "assistantSubmitSuccess": "Submitted successfully",
+  "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
+  "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
+  "mailSettingsReadOnly": "Saved settings are read-only until access can be verified.",
+  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online."
 }

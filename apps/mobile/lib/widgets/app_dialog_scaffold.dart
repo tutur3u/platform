@@ -1,8 +1,8 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppDialogScaffold extends StatelessWidget {
@@ -162,12 +162,13 @@ class AppDialogScaffold extends StatelessWidget {
                 ],
               ),
               child: ClipRRect(
+                key: const ValueKey('app-dialog-glass'),
                 borderRadius: BorderRadius.circular(isCompact ? 28 : 24),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: GlassBlur(
+                  sigma: 20,
                   child: ColoredBox(
                     color: theme.colorScheme.background.withValues(
-                      alpha: mediaQuery.highContrast ? 1 : 0.88,
+                      alpha: GlassEffects.fillAlpha(context, 0.88),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
