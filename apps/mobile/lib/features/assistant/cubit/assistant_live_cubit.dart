@@ -28,6 +28,7 @@ import 'package:mobile/features/assistant/models/assistant_playback_spectrum.dar
 
 part 'assistant_live_camera.dart';
 part 'assistant_live_microphone.dart';
+part 'assistant_live_reconnect.dart';
 part 'assistant_live_recovery.dart';
 part 'assistant_live_screen.dart';
 part 'assistant_live_socket_events.dart';
@@ -59,7 +60,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     String? Function()? currentUserId,
     int Function()? currentScopeToken,
     AssistantLiveScreenService? screenService,
-  }) : _currentScopeToken = currentScopeToken ?? (() => 0),
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now,
+       _currentScopeToken = currentScopeToken ?? (() => 0),
        _currentUserId = currentUserId ?? currentCacheUserId,
        _repository = repository,
        _socket = socket,
@@ -120,6 +123,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   bool _isClosing = false;
   Future<void>? _closeFuture;
   bool _reconnectScheduled = false;
+  int _reconnectAttempts = 0;
+  bool _automaticReconnect = false;
+  DateTime? _readyAt;
+  final DateTime Function() _now;
   StreamSubscription<AssistantPlaybackSpectrum>? _playbackSubscription;
   final _startupAudio = AssistantAudioBuffer();
   int _microphoneVersion = 0;
@@ -148,6 +155,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool Function()? isCurrent,
     Future<void> Function(String wsId, String chatId)? onChatBound,
   }) async {
+    // A start the user asked for gets a fresh automatic-reconnect budget.
+    if (!_automaticReconnect) _reconnectAttempts = 0;
     final preparationVersion = ++_preparationVersion;
     final admissionVersion = _requestVersion;
     final requestedActor = _currentUserId();
@@ -479,34 +488,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
 
   void _emitSessionHandle(String? handle) {
     if (!isClosed) emit(state.copyWith(sessionHandle: handle));
-  }
-
-  void _scheduleReconnect() {
-    if (_manualDisconnect || _reconnectScheduled || state.workspaceId == null) {
-      return;
-    }
-
-    _reconnectScheduled = true;
-    final requestVersion = _requestVersion;
-    final wsId = state.workspaceId!;
-    final chatId = state.chatId;
-    final model = state.model;
-
-    unawaited(
-      Future<void>.delayed(const Duration(milliseconds: 800), () async {
-        try {
-          if (_manualDisconnect || _isStale(requestVersion)) return;
-          await prepareSession(
-            wsId: wsId,
-            chatId: chatId,
-            model: model,
-            reconnect: true,
-          );
-        } finally {
-          _reconnectScheduled = false;
-        }
-      }),
-    );
   }
 
   Future<void> _waitForReady() async {

@@ -11,6 +11,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
           ),
         );
       case AssistantLiveSocketReady():
+        _readyAt = _now();
         if (!(_readyCompleter?.isCompleted ?? true)) {
           _readyCompleter?.complete();
         }
