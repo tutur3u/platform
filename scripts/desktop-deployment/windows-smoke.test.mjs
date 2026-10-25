@@ -53,6 +53,24 @@ test('Windows runner exposes its window only after a Flutter frame', async () =>
 const fixture = `
 $ErrorActionPreference = 'Stop'
 $global:SmokeChildEnvironmentClean = $true
+$global:SmokeWaits = @()
+$global:SmokeKills = 0
+function New-FixtureInstaller($ExitCode, $TimesOut) {
+    $child = [pscustomobject]@{ ExitCode = $ExitCode; HasExited = !$TimesOut; TimesOut = $TimesOut; WasKilled = $false }
+    $child | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value {
+        param($Milliseconds)
+        $global:SmokeWaits += $Milliseconds
+        return (!$this.TimesOut -or $this.WasKilled)
+    }
+    $child | Add-Member -MemberType ScriptMethod -Name Kill -Value {
+        param($EntireProcessTree)
+        if (!$EntireProcessTree) { throw 'Timeout must stop the owned process tree' }
+        $global:SmokeKills++
+        $this.WasKilled = $true
+        $this.HasExited = $true
+    }
+    return $child
+}
 function Start-Sleep { param($Seconds) }
 function Stop-Process { param($Id, [switch]$Force) }
 function Start-Process {
@@ -67,20 +85,26 @@ function Start-Process {
             Set-Content (Join-Path $root $name) 'fixture'
         }
         if ($env:SMOKE_SCENARIO -eq 'unexpected-file') { Set-Content (Join-Path $root 'private.pdb.bak') 'fixture' }
-        return [pscustomobject]@{ ExitCode = 0 }
+        if ($env:SMOKE_SCENARIO -eq 'hidden-file') {
+            $hidden = Join-Path $root 'secret.bak'
+            Set-Content -LiteralPath $hidden 'fixture'
+            [IO.File]::SetAttributes($hidden, [IO.FileAttributes]::Hidden)
+        }
+        if ($env:SMOKE_SCENARIO -eq 'bad-data-file') { Set-Content (Join-Path $root 'data/flutter_assets/tool.exe') 'fixture' }
+        return New-FixtureInstaller 0 ($env:SMOKE_SCENARIO -eq 'installer-timeout')
     }
     if ($FilePath.EndsWith('unins000.exe')) {
-        return [pscustomobject]@{ ExitCode = $(if ($env:SMOKE_SCENARIO -eq 'hidden-cleanup-failure') { 9 } else { 0 }) }
+        return New-FixtureInstaller $(if ($env:SMOKE_SCENARIO -eq 'hidden-cleanup-failure') { 9 } else { 0 }) ($env:SMOKE_SCENARIO -eq 'uninstaller-timeout')
     }
-    $visible = !$env:SMOKE_SCENARIO.StartsWith('hidden')
-    $process = [pscustomobject]@{ Id = 123; HasExited = $false; MainWindowHandle = $(if ($visible) { 42 } else { 0 }); ExitCode = 0 }
+    $visible = $env:SMOKE_SCENARIO -ne 'hidden' -and $env:SMOKE_SCENARIO -ne 'hidden-cleanup-failure'
+    $process = [pscustomobject]@{ Id = 123; HasExited = $false; MainWindowHandle = $(if ($visible) { 42 } else { 0 }); MainWindowTitle = $(if ($env:SMOKE_SCENARIO -eq 'wrong-title') { 'Plugin dialog' } else { 'Tuturuuu' }); ExitCode = 0 }
     $process | Add-Member -MemberType ScriptMethod -Name Refresh -Value {}
     $process | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param($Milliseconds) $true }
     return $process
 }
 $message = $null
 try { & $env:TUTURUUU_SMOKE_SCRIPT; $status = 'passed' } catch { $status = 'failed'; $message = $_.Exception.Message }
-[ordered]@{ status = $status; message = $message; childEnvironmentClean = $global:SmokeChildEnvironmentClean } | ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'result.json')
+[ordered]@{ status = $status; message = $message; childEnvironmentClean = $global:SmokeChildEnvironmentClean; waits = @($global:SmokeWaits); kills = $global:SmokeKills } | ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'result.json')
 `;
 
 for (const scenario of [
@@ -89,6 +113,11 @@ for (const scenario of [
   'hidden-cleanup-failure',
   'unexpected-file',
   'tampered-receipt',
+  'hidden-file',
+  'bad-data-file',
+  'wrong-title',
+  'installer-timeout',
+  'uninstaller-timeout',
 ]) {
   test(`Windows smoke fixture: ${scenario}`, {
     skip: process.platform !== 'win32',
@@ -148,19 +177,30 @@ for (const scenario of [
         );
         assert.equal(inventory.installerSha256, sha256);
         assert.equal(inventory.attempt, '2');
+        assert.equal(inventory.windowTitle, 'Tuturuuu');
+        assert.deepEqual(observed.waits, [120000, 120000]);
         assert.ok(
           inventory.files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))
         );
       } else {
         assert.equal(observed.status, 'failed');
-        assert.match(
-          observed.message,
-          scenario === 'unexpected-file'
-            ? /Unexpected installed file/
-            : scenario === 'tampered-receipt'
-              ? /Installer does not match/
-              : /did not render its first frame/
-        );
+        const expected = {
+          hidden: /did not render its first frame/,
+          'hidden-cleanup-failure': /did not render its first frame/,
+          'unexpected-file': /Unexpected installed file/,
+          'tampered-receipt': /Installer does not match/,
+          'hidden-file': /Unexpected installed file/,
+          'bad-data-file': /Unexpected installed file type/,
+          'wrong-title': /main window title is not Tuturuuu/,
+          'installer-timeout': /Installer timed out after 120 seconds/,
+          'uninstaller-timeout': /Uninstaller timed out after 120 seconds/,
+        };
+        assert.match(observed.message, expected[scenario]);
+        if (scenario.endsWith('-timeout')) {
+          assert.equal(observed.kills, 1);
+          assert.ok(observed.waits.includes(120000));
+          assert.ok(observed.waits.includes(10000));
+        }
         if (scenario === 'hidden-cleanup-failure')
           assert.match(
             result.stdout,

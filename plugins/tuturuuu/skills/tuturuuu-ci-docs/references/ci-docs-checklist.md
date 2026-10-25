@@ -176,7 +176,11 @@ only on GitHub-hosted Windows, uploads the installer and checksum receipt, and
 never publishes. `smoke-windows.ps1` silently installs that installer, checks
 required Flutter files, requires a visible window after Flutter's first frame (never show the runner
 before that callback), records installed file sizes/hashes and installer identity,
-and uninstalls. Strip OIDC request/runtime credentials before launching the app,
+and uninstalls. Include hidden/system files, require the exact `Tuturuuu` title,
+and bound each Inno phase to 120 seconds with a 10-second process-tree stop attempt.
+Restrict data paths to ICU, AOT and Flutter assets, denying executable/debug/credential types.
+First frames do not establish service health; credential stripping is not same-user
+process isolation, and slow bootstrap can leave the normal window hidden. Strip OIDC request/runtime credentials before launching the app,
 and preserve the startup error if cleanup also fails. Run the Windows parse and
 smoke fixtures on a Windows runner. Keep placeholder-config smoke results
 separate from production authentication and update acceptance. Public distribution
