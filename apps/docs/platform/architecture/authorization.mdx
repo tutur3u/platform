@@ -207,17 +207,26 @@ That keeps permission IDs consistent across browser/session routes and external 
 
 Legacy routes that validate an `API_KEY` header and then switch to an admin
 client must also prove that every path resource belongs to `[wsId]` before any
-other query, and keep `ws_id` on every later query. The dataset item routes
-(`/api/v1/workspaces/[wsId]/datasets/[datasetId]` and `.../full`) require `ai_lab`
-for API keys, return 404 for a dataset outside the key's workspace, and accept
-only `name`, `description` and `url` updates (`ws_id` and unknown fields are
-rejected). Every request made with a verified key, allowed or denied (401, 403,
-404, 400), is recorded in `workspace_api_key_usage_logs` under the key's own
-workspace with endpoint, method, status, timing, IP and user agent, but no
-request body or key material. Session callers keep RLS access with the same
-workspace binding.
-Regression coverage:
-`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/datasets/[datasetId]/route.test.ts`.
+other query, and keep `ws_id` on every later query. The dataset routes
+(`/api/v1/workspaces/[wsId]/datasets`, `.../[datasetId]` and `.../[datasetId]/full`)
+require `ai_lab` for API keys and return 404 for a dataset outside the key's
+workspace. Dataset updates accept only `name`, `description` and `url` (`ws_id`
+and unknown fields are rejected). Every request made with a verified key,
+allowed or denied (401, 403, 404, 400), is recorded in
+`workspace_api_key_usage_logs` under the key's own workspace with endpoint,
+method, status, timing, IP and user agent, but no request body or key material.
+Session callers keep RLS access with the same workspace binding.
+
+A dataset cell's row and column must belong to the cell's dataset. The cell and
+row write routes check this before writing, a database trigger rejects
+mismatched cells and dataset moves for rows and columns, and the
+`workspace_dataset_row_cells` view only aggregates cells and columns of the
+row's own dataset.
+
+Regression coverage: `route.test.ts` and `[datasetId]/route.test.ts` and
+`[datasetId]/cell-parent-binding.test.ts` under
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/datasets/`, and
+`apps/database/supabase/tests/workspace-dataset-cell-parent.sql`.
 
 ## Current Design Rules
 

@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withDatasetAccess } from './dataset-access';
+import { withDatasetAccess } from '../dataset-access';
 
 interface Params {
   params: Promise<{

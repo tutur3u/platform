@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { withDatasetAccess } from '../dataset-access';
+import { withDatasetAccess } from '../../dataset-access';
 
 interface Params {
   params: Promise<{
