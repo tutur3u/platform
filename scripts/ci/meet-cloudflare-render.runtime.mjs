@@ -88,10 +88,13 @@ function session(target) {
 const signedCookie = () =>
   `tuturuuu_app_session=${session('meet')}; tuturuuu_web_app_session=${session('web')}`;
 const fetchWorker = async (path, options = {}) => {
-  const response = await runtime.fetchApp(`https://meet.tuturuuu.com${path}`, {
-    ...options,
-    redirect: 'manual',
-  });
+  const response = await runtime.fetchApp(
+    new URL(path, 'https://meet.tuturuuu.com').href,
+    {
+      ...options,
+      redirect: 'manual',
+    }
+  );
   if (response.status === 500) {
     await rejectMeetServerFailure(response, path, {
       signal: caseBudget.getStore(),
@@ -180,6 +183,8 @@ test('native Start renders bilingual callback HTML and serves its emitted client
   for (const [path, locale] of [
     ['/verify-token', 'en'],
     ['/vi/verify-token', 'vi'],
+    ['https://tuturuuu.com/meet/verify-token', 'en'],
+    ['https://tuturuuu.com/meet/vi/verify-token', 'vi'],
   ]) {
     const response = await fetchWorker(path);
     assert.equal(response.status, 200, path);
@@ -193,11 +198,17 @@ test('native Start renders bilingual callback HTML and serves its emitted client
     );
     const module = /<script\b[^>]*src="([^"]+)"[^>]*>/g;
     const sources = [...html.matchAll(module)].map((match) => match[1]);
+    const target = new URL(path, 'https://meet.tuturuuu.com');
+    const assetBase =
+      target.hostname === 'tuturuuu.com' ? '/meet/assets/' : '/assets/';
     const asset = sources.find(
-      (src) => src.startsWith('/assets/') && /\.js(?:\?|$)/.test(src)
+      (src) => src.startsWith(assetBase) && /\.js(?:\?|$)/.test(src)
     );
+    if (target.hostname === 'tuturuuu.com') {
+      assert.match(html, /globalThis\.__tuturuuuAppBase="\/meet"/);
+    }
     assert.ok(asset, 'SSR must reference an emitted hydration module');
-    const script = await fetchWorker(asset);
+    const script = await fetchWorker(new URL(asset, target).href);
     assert.equal(script.status, 200);
     assert.match(script.headers.get('content-type') ?? '', /javascript/);
     assert.ok((await script.text()).length > 0);
@@ -369,6 +380,24 @@ test('emitted Worker serves exact source identity and retains Live admission gua
     assert.equal(denied.status, status);
     await denied.text();
   }
+  const mountedInfo = await fetchWorker(
+    'https://tuturuuu.com/meet/api/build-info'
+  );
+  assert.equal(mountedInfo.status, 200);
+  assert.equal((await mountedInfo.json()).commitHash, process.env.GITHUB_SHA);
+  for (const path of ['/api/build-info', '/meeting', '/meet-together']) {
+    const outside = await fetchWorker(`https://tuturuuu.com${path}`);
+    assert.equal(outside.status, 404);
+    await outside.text();
+  }
+  const mountedLive = await fetchWorker(
+    'https://tuturuuu.com/meet/live-connect',
+    {
+      headers: { Origin: 'https://meet.tuturuuu.com', Upgrade: 'websocket' },
+    }
+  );
+  assert.equal(mountedLive.status, 403);
+  await mountedLive.text();
   assert.deepEqual(unexpected, []);
 });
 

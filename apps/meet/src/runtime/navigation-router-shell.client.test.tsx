@@ -61,10 +61,11 @@ const urlSearchCodec = {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   for (const history of histories.splice(0)) history.destroy();
 });
 
-async function mountNavigation() {
+async function mountNavigation(basepath = '/') {
   let revision = 1;
   const loader = vi.fn(() => ({ revision }));
   const preload = vi.fn(() => ({ ready: true }));
@@ -81,10 +82,15 @@ async function mountNavigation() {
     loader: preload,
     component: () => <p>Prefetched destination</p>,
   });
-  const history = createMemoryHistory({ initialEntries: [initialHref] });
+  const history = createMemoryHistory({
+    initialEntries: [
+      basepath === '/' ? initialHref : `${basepath}${initialHref}`,
+    ],
+  });
   histories.push(history);
   const router = createRouter({
     routeTree: root.addChildren([page, prefetchPage]),
+    basepath,
     history,
     ...urlSearchCodec,
     defaultPendingMinMs: 0,
@@ -315,4 +321,11 @@ describe('Meet pending shell', () => {
       expect(screen.queryByText(other.hint)).toBeNull();
     }
   );
+});
+
+it('reports an app-relative Next pathname under the mounted router base', async () => {
+  vi.stubGlobal('__tuturuuuAppBase', '/meet');
+  const { history } = await mountNavigation('/meet');
+  expectPath('/en/native-space/first');
+  expect(history.location.pathname).toBe('/meet/en/native-space/first');
 });
