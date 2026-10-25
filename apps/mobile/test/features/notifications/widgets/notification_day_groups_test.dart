@@ -69,4 +69,64 @@ void main() {
     );
     expect(groupNotificationsByDay(const [], now), isEmpty);
   });
+
+  // Local midnights are 23 or 25 hours apart across a DST change, so elapsed
+  // time between them miscounts days. These cases only differ from UTC when
+  // the suite runs under a DST zone, e.g. `TZ=America/New_York flutter test`.
+  test('spring-forward day still counts as one calendar day', () {
+    final now = DateTime(2026, 3, 9, 9);
+    expect(
+      notificationDayBucket(DateTime(2026, 3, 9, 0, 30), now),
+      NotificationDayBucket.today,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 3, 8, 10), now),
+      NotificationDayBucket.yesterday,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 3, 7, 10), now),
+      NotificationDayBucket.lastWeek,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 3, 3, 10), now),
+      NotificationDayBucket.lastWeek,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 3, 2, 10), now),
+      NotificationDayBucket.earlier,
+    );
+  });
+
+  test('fall-back day still counts as one calendar day', () {
+    final now = DateTime(2026, 11, 2, 9);
+    expect(
+      notificationDayBucket(DateTime(2026, 11, 2, 0, 30), now),
+      NotificationDayBucket.today,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 11, 1, 23, 30), now),
+      NotificationDayBucket.yesterday,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 10, 31, 10), now),
+      NotificationDayBucket.lastWeek,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 10, 27, 10), now),
+      NotificationDayBucket.lastWeek,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 10, 26, 10), now),
+      NotificationDayBucket.earlier,
+    );
+  });
+
+  test('UTC timestamps bucket by the local calendar day', () {
+    final now = DateTime(2026, 3, 9, 9);
+    final localYesterday = DateTime(2026, 3, 8, 12);
+    expect(
+      notificationDayBucket(localYesterday.toUtc(), now),
+      NotificationDayBucket.yesterday,
+    );
+  });
 }

@@ -173,4 +173,76 @@ void _homeRenderCases() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('Home controls are activatable by screen readers', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final tasks = _Tasks();
+    final calendar = _Calendar();
+    whenListen(
+      tasks,
+      const Stream<TaskListState>.empty(),
+      initialState: const TaskListState(
+        status: TaskListStatus.loaded,
+        hasLoadedOnce: true,
+      ),
+    );
+    whenListen(
+      calendar,
+      const Stream<CalendarState>.empty(),
+      initialState: const CalendarState(
+        status: CalendarStatus.loaded,
+        hasLoadedOnce: true,
+      ),
+    );
+    addTearDown(() async {
+      await tasks.close();
+      await calendar.close();
+    });
+    final appearance = renderAppearances['classic-light']!;
+    final router = await pumpShellRender(
+      tester,
+      location: Routes.home,
+      size: renderSizes['phone']!,
+      appearance: appearance.$1,
+      themeMode: appearance.$2,
+      preferences: const {
+        'home-widgets-hidden': ['finance'],
+      },
+      extraLocations: const [Routes.tasks],
+      homePageBuilder: (token) => HomePage(
+        replayToken: token,
+        taskListCubit: tasks,
+        calendarCubit: calendar,
+      ),
+    );
+
+    for (final label in [
+      'Current workspace: Northwind Studio',
+      'Open My tasks',
+    ]) {
+      final data = tester
+          .getSemantics(find.bySemanticsLabel(label))
+          .getSemanticsData();
+      expect(data.hasAction(SemanticsAction.tap), isTrue, reason: label);
+      expect(data.flagsCollection.isButton, isTrue, reason: label);
+    }
+
+    // Screen-reader activation (not a pointer tap) opens the picker...
+    tester.semantics.tap(
+      find.semantics.byLabel('Current workspace: Northwind Studio'),
+    );
+    await settleShell(tester);
+    expect(find.byType(Dialog), findsOneWidget);
+    Navigator.of(tester.element(find.byType(Dialog))).pop();
+    await settleShell(tester);
+
+    // ...and the section link navigates.
+    tester.semantics.tap(find.semantics.byLabel('Open My tasks'));
+    await settleShell(tester);
+    expect(router.routerDelegate.currentConfiguration.uri.path, Routes.tasks);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
 }

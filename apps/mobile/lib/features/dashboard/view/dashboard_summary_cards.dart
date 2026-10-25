@@ -107,9 +107,12 @@ class _WorkspaceSwitcher extends StatelessWidget {
         final workspace = state.currentWorkspace;
         final name = displayWorkspaceNameOrFallback(context, workspace);
         final radius = BorderRadius.circular(AppRadius.pill);
+        void open() => showWorkspacePickerSheet(context);
         return Semantics(
+          container: true,
           button: true,
           label: '${context.l10n.settingsCurrentWorkspace}: $name',
+          onTap: open,
           excludeSemantics: true,
           child: Material(
             color: AppearanceScope.surfaceColor(context, c.card),
@@ -120,7 +123,7 @@ class _WorkspaceSwitcher extends StatelessWidget {
             child: InkWell(
               key: const ValueKey('home-workspace-switcher'),
               borderRadius: radius,
-              onTap: () => showWorkspacePickerSheet(context),
+              onTap: open,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 48),
                 child: Padding(

@@ -50,6 +50,7 @@ Future<GoRouter> pumpShellRender(
   WidgetBuilder? notificationsPageBuilder,
   Locale locale = const Locale('en'),
   Map<String, Object> preferences = const {},
+  List<String> extraLocations = const [],
 }) async {
   SharedPreferences.setMockInitialValues(preferences);
   final settings = SettingsRepository();
@@ -73,6 +74,9 @@ Future<GoRouter> pumpShellRender(
       workspaces: [renderWorkspace],
     ),
   );
+  // The workspace picker reads these when it opens.
+  when(workspaces.refreshHiddenWorkspaces).thenAnswer((_) async {});
+  when(() => workspaces.hasAuthenticatedActor).thenReturn(false);
   whenListen(
     profile,
     const Stream<ShellProfileState>.empty(),
@@ -91,7 +95,10 @@ Future<GoRouter> pumpShellRender(
           notificationsPageBuilder: notificationsPageBuilder,
           child: child,
         ),
-        routes: [GoRoute(path: location, builder: (_, _) => const SizedBox())],
+        routes: [
+          for (final path in {location, ...extraLocations})
+            GoRoute(path: path, builder: (_, _) => const SizedBox()),
+        ],
       ),
     ],
   );

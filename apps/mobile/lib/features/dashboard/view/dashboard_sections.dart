@@ -50,9 +50,13 @@ class _HomeOpenLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final color = tokens.colorScheme.primary;
+    // Its own node (not merged into the caption header). The merged label
+    // replaces the child's semantics, so the tap action is declared here.
     return Semantics(
+      container: true,
       button: true,
       label: semanticLabel,
+      onTap: onTap,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,

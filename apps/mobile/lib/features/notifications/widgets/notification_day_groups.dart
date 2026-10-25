@@ -26,8 +26,10 @@ class NotificationDayGroup {
 
 NotificationDayBucket notificationDayBucket(DateTime createdAt, DateTime now) {
   final local = createdAt.toLocal();
-  final today = DateTime(now.year, now.month, now.day);
-  final day = DateTime(local.year, local.month, local.day);
+  // Compare calendar dates, not elapsed time: local midnights are 23 or 25
+  // hours apart across a DST change, which `inDays` would miscount.
+  final today = DateTime.utc(now.year, now.month, now.day);
+  final day = DateTime.utc(local.year, local.month, local.day);
   final days = today.difference(day).inDays;
   if (days <= 0) return NotificationDayBucket.today;
   if (days == 1) return NotificationDayBucket.yesterday;
