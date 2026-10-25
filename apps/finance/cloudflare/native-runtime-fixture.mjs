@@ -34,6 +34,7 @@ export async function financeRuntime(t, options = {}) {
     INTERNAL_WEB_API_ORIGIN: 'https://staging.tuturuuu.com',
     NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tuturuuu.com',
     NEXT_PUBLIC_APP_URL: 'https://finance-staging.tuturuuu.com',
+    FINANCE_APP_URL: 'https://finance-staging.tuturuuu.com',
     NEXT_PUBLIC_SUPABASE_URL: 'https://fxefojytwimjiqxseqag.supabase.co',
   });
   const scratch = await realpath(
@@ -69,6 +70,7 @@ export async function financeRuntime(t, options = {}) {
     sendMetrics: false,
     bindings: {
       INTERNAL_WEB_API_ORIGIN: plain(fixtureOrigin),
+      FINANCE_APP_URL: plain(options.financeOrigin),
       NEXT_PUBLIC_SUPABASE_URL: plain(fixtureOrigin),
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: plain('fixture-public-key'),
       SUPABASE_SECRET_KEY: { type: 'secret_text', value: secret },
@@ -77,6 +79,7 @@ export async function financeRuntime(t, options = {}) {
     build: { bundle: false, processEntrypoint: false },
     dev: {
       remote: false,
+      origin: { secure: true },
       watch: false,
       persist: false,
       inspector: false,

@@ -50,6 +50,7 @@ class FinanceArtifactTest(unittest.TestCase):
         self.assertEqual(artifact.NORMALIZED_DEFAULTS["topLevelName"], WORKER)
         self.assertEqual(artifact.IDENTITY["vars"]["INTERNAL_WEB_API_ORIGIN"], "https://staging.tuturuuu.com")
         self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_WEB_APP_URL"], "https://staging.tuturuuu.com")
+        self.assertEqual(artifact.IDENTITY["vars"]["FINANCE_APP_URL"], "https://finance-staging.tuturuuu.com")
         self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_SUPABASE_URL"], "https://fxefojytwimjiqxseqag.supabase.co")
         self.assertEqual(artifact.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
         self.assertEqual(base.IDENTITY["compatibility_flags"], ["nodejs_compat"])

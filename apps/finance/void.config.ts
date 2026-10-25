@@ -17,6 +17,7 @@ export default defineConfig({
       INTERNAL_WEB_API_ORIGIN: 'https://staging.tuturuuu.com',
       NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tuturuuu.com',
       NEXT_PUBLIC_APP_URL: 'https://finance-staging.tuturuuu.com',
+      FINANCE_APP_URL: 'https://finance-staging.tuturuuu.com',
       NEXT_PUBLIC_SUPABASE_URL: 'https://fxefojytwimjiqxseqag.supabase.co',
     },
     assets: {

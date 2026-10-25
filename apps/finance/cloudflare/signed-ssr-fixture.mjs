@@ -55,7 +55,7 @@ export function signedSsrFixtureResponse(request, calls) {
     ['finance.tuturuuu.com', 'finance-staging.tuturuuu.com'].includes(
       url.hostname
     ) &&
-    ['http:', 'https:'].includes(url.protocol) &&
+    url.protocol === 'https:' &&
     request.method === 'GET' &&
     url.pathname === transactions &&
     url.searchParams.size === 2 &&
@@ -65,6 +65,46 @@ export function signedSsrFixtureResponse(request, calls) {
   ) {
     calls.push(url.pathname);
     return Response.json([]);
+  }
+  if (
+    ['finance.tuturuuu.com', 'finance-staging.tuturuuu.com'].includes(
+      url.hostname
+    ) &&
+    url.protocol === 'https:' &&
+    request.method === 'GET' &&
+    url.pathname === `/api/workspaces/${fixtureWorkspaceId}/finance/overview` &&
+    url.searchParams.size === 2 &&
+    url.searchParams.get('includeConfidential') === 'true' &&
+    url.searchParams.get('view') === 'date' &&
+    request.headers.has('authorization')
+  ) {
+    calls.push(url.pathname);
+    return Response.json({
+      categoryCount: 0,
+      invoiceCount: 0,
+      inventoryPending: [],
+      inventoryReconciliation: {
+        grossSales: [],
+        chargebackReleases: [],
+        pending: [],
+        providers: [],
+        refunds: [],
+        chargebackHolds: [],
+        netSales: [],
+      },
+      latestTransactionAt: null,
+      netTotal: 0,
+      recentExpenseCount: 0,
+      recentIncomeCount: 0,
+      recentNetTotal: 0,
+      recentTotalExpense: 0,
+      recentTotalIncome: 0,
+      recentTransactionCount: 0,
+      totalExpense: 0,
+      totalIncome: 0,
+      transactionCount: 0,
+      walletCount: 0,
+    });
   }
   if (
     ![

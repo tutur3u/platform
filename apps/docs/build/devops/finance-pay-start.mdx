@@ -130,7 +130,8 @@ workspaces to detect request-context leakage.
 
 Before any hosted staging publish, declare and admit its exact account, Worker,
 hostname, bindings and rollback mapping. Finance's declared staging profile uses
-`https://finance-staging.tuturuuu.com`, with `INTERNAL_WEB_API_ORIGIN` and
+`https://finance-staging.tuturuuu.com`, with `FINANCE_APP_URL` set to that
+Finance origin, `INTERNAL_WEB_API_ORIGIN` and
 `NEXT_PUBLIC_WEB_APP_URL` both set to `https://staging.tuturuuu.com`, and
 `NEXT_PUBLIC_SUPABASE_URL` set from the repository's `STAGING_SUPABASE_URL`.
 Never forward staging tokens to production Web. This staging-data artifact
@@ -232,7 +233,7 @@ assets and browser navigation. Browser redirects use the existing CDP fence beca
 page routing does not intercept every redirect hop. Every Worker and browser request is bounded and fixture-fenced; the
 suite never authenticates to Cloudflare or a real provider. Production token
 verification runs on the server, so a missing token redirects and does not
-render a public React shell. Signed-in SSR uses synthetic auth, database, profile and transaction-list
+render a public React shell. Signed-in SSR uses synthetic auth, database, profile, overview and transaction-list
 responses; it exercises the emitted page adapter without live identities. The
 suite does not qualify authenticated UI hydration, Finance operations or hosted
 shared-session behavior. Those remain
