@@ -144,6 +144,8 @@ the owning Calendar workspace. Test that layout without a root-hoisted cf packag
 
 ### Calendar Build Output qualification
 
+Paired `.js.map`/`.mjs.map` files remain hashed in the source seal and listed in `excludedServerMetadata`; they are not executable modules or copied upload files. Orphan maps and other non-ESM server files remain rejected. Source-map upload semantics remain unqualified.
+
 `calendar-cf-output.mjs` copies the sealed Calendar ESM bundle and client assets
 into an isolated cf Build Output tree, retaining relative paths and exact bytes.
 It validates the output with the config and reader suppliers resolved from the

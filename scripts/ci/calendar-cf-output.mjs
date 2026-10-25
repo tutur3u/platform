@@ -12,6 +12,7 @@ import {
 import { createRequire, findPackageJSON } from 'node:module';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readCalendarFile } from './calendar-cf-files.mjs';
 import { validateOutput, verify } from './calendar-native-artifact.mjs';
 
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -33,7 +34,7 @@ function inventory(root) {
         visit(path);
       } else {
         assert.ok(stat.isFile(), 'only regular output files supported');
-        entries.push([key, hash(readFileSync(path))]);
+        entries.push([key, hash(readCalendarFile(path).bytes)]);
       }
     }
   }
@@ -73,16 +74,7 @@ function source(appDirectory, sourceSha, receiptPath) {
   const receiptFile = resolve(
     receiptPath ?? join(app, 'calendar-artifact.json')
   );
-  assert.ok(
-    lstatSync(receiptFile).isFile() && !lstatSync(receiptFile).isSymbolicLink(),
-    'regular source receipt required'
-  );
-  assert.equal(
-    realpathSync(receiptFile),
-    receiptFile,
-    'source receipt must be canonical'
-  );
-  const receiptBytes = readFileSync(receiptFile);
+  const receiptBytes = readCalendarFile(receiptFile).bytes;
   const receipt = JSON.parse(receiptBytes);
   verify(app, receipt, sourceSha);
   const qualified = validateOutput(app, sourceSha);
@@ -99,6 +91,14 @@ function source(appDirectory, sourceSha, receiptPath) {
   for (const [name, digest] of Object.entries(serverFiles)) {
     if (digest === null) continue;
     if (name === configName || name === '.vite/manifest.json') {
+      excluded.push(name);
+      continue;
+    }
+    if (/\.(?:js|mjs)\.map$/.test(name)) {
+      assert.ok(
+        typeof serverFiles[name.slice(0, -4)] === 'string',
+        'unqualified server file; source map has no ESM module'
+      );
       excluded.push(name);
       continue;
     }
@@ -149,13 +149,15 @@ function expectedFiles(input) {
   for (const name of Object.keys(input.workerConfig.manifest.modules))
     files.set(
       `${prefix}workers/default/bundle/${name}`,
-      readFileSync(join(input.server, name))
+      readCalendarFile(join(input.server, name)).bytes
     );
   for (const [name, digest] of Object.entries(input.assets)) {
     const target = `${prefix}workers/default/assets/${name}`;
     files.set(
       target,
-      digest === null ? null : readFileSync(join(input.qualified.assets, name))
+      digest === null
+        ? null
+        : readCalendarFile(join(input.qualified.assets, name)).bytes
     );
   }
   return files;
@@ -226,7 +228,7 @@ async function inspect(destination, input, supplied, files, sourceSha) {
   assert.deepEqual(parsed.containers, [], 'unexpected containers');
   verify(input.app, input.receipt, sourceSha);
   assert.ok(
-    readFileSync(resolve(input.app, 'calendar-artifact.json')).equals(
+    readCalendarFile(resolve(input.app, 'calendar-artifact.json')).bytes.equals(
       input.receiptBytes
     ),
     'source receipt changed'

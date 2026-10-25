@@ -198,8 +198,8 @@ test('missing or changed source seal fails before creating an output', async (t)
   assert.equal(existsSync(f.destination), false);
 });
 
-test('server maps and data modules require explicit qualification', async (t) => {
-  for (const name of ['worker.js.map', 'data.json', 'runtime.wasm']) {
+test('orphan source maps and data modules require explicit qualification', async (t) => {
+  for (const name of ['orphan.js.map', 'data.json', 'runtime.wasm']) {
     const f = fixture(t);
     f.put(`dist/server/${name}`, '{}');
     f.seal();
@@ -209,6 +209,37 @@ test('server maps and data modules require explicit qualification', async (t) =>
     );
     assert.equal(existsSync(f.destination), false);
   }
+});
+
+test('paired ESM source maps remain sealed metadata outside the upload manifest', async (t) => {
+  const f = fixture(t);
+  const name = 'nested/chunk.js.map';
+  f.put(
+    `dist/server/${name}`,
+    '{"version":3,"sources":["source.ts"],"mappings":""}'
+  );
+  f.seal();
+  const receipt = await emitCalendarOutput(options(f));
+  assert.ok(receipt.excludedServerMetadata.includes(name));
+  assert.equal(typeof receipt.sourceFiles[`dist/server/${name}`], 'string');
+  const config = JSON.parse(
+    readFileSync(
+      join(f.destination, outputPrefix, 'workers/default/worker.config.json')
+    )
+  );
+  assert.equal(Object.hasOwn(config.manifest.modules, name), false);
+  assert.equal(
+    existsSync(
+      join(f.destination, outputPrefix, 'workers/default/bundle', name)
+    ),
+    false
+  );
+  await verifyCalendarOutput(options(f));
+  f.put(`dist/server/${name}`, '{"version":3,"mappings":"changed"}');
+  await assert.rejects(
+    verifyCalendarOutput(options(f)),
+    /identity or bytes changed/
+  );
 });
 
 test('an existing output remains owned and untouched', async (t) => {
