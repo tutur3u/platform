@@ -4,12 +4,29 @@ description: 'Proposed design for serving satellite apps at tuturuuu.com/<app> i
 ---
 
 <Note>
-**Status: proposed, phase 1 (design only).** Nothing on this page is implemented
-or authorized for production. Every DNS, proxy, route or cutover step on the live
-`tuturuuu.com` zone needs explicit user approval. The companion
-[same-origin security model](/platform/architecture/one-origin-security) is part
-of this design and gates each app's admission.
+**Status: approved design, implementation in progress.** The user approved every
+recommendation on 2026-10-25 (see [recorded decisions](#recorded-decisions)).
+Every DNS, proxy, route, provider-console or cutover write on the live
+`tuturuuu.com` zone still needs its own explicit user approval. The companion
+[same-origin security model](/platform/architecture/one-origin-security) gates each
+app's admission.
 </Note>
+
+## Recorded decisions
+
+User decisions of 2026-10-25 (GMT+7). They supersede the matching proposals and open
+questions below.
+
+| Topic | Decision |
+| --- | --- |
+| Routing | Option (a): per-app zone Worker routes. The `tuturuuu.com` apex goes behind Cloudflare, proxying to Vercel, following the staged operations plan. |
+| Order and window | Meet first, then Mail after Mail's own native cutover. Both cut over by 2026-10-28 23:00 (GMT+7). |
+| Redirect status | 307 during observation, then 301. Observation: **3 days** for Meet, **7 days** for Mail. |
+| App-switch metrics | Stored in Workers Analytics Engine. |
+| Browser preferences | A one-time reset of per-app `localStorage` preferences at cutover is accepted. Important preferences move server-side. |
+| Sign-in at cutover | A one-time re-login on the apex is accepted. There is **no** cross-host token handoff from the subdomain to the apex. |
+| Web `/meet` marketing | Moves to `/products/<app>`, so `/meet` belongs to the Meet app. |
+| Session cookies | `tuturuuu_app_session_<app>` with `Path=/<app>`, owned by the Start bridge lane (see [session cookies](/platform/architecture/one-origin-security#session-cookies)). |
 
 ## Goal
 
@@ -210,9 +227,9 @@ The app Worker keeps its subdomain Custom Domain and decides per request:
 - **Use 307 during the observation window, then 301.** A cached 301 cannot be
   revoked. If a route rollback sends `/meet` back to Web, which then redirects to the
   subdomain, browsers holding a cached 301 would loop. Switch to 301 after the
-  stability window (≥ 14 days Meet, ≥ 30 days Mail, matching the wave-1 observation
-  periods). Keep the subdomain redirects **indefinitely**, because room links live in
-  calendar invites, ICS files and emails.
+  recorded observation window (3 days Meet, 7 days Mail). Keep the subdomain
+  redirects **indefinitely**, because room links live in calendar invites, ICS files
+  and emails.
 - **Never redirect machine traffic.** POST/PUT/DELETE, WebSocket upgrades, webhooks
   (`/api/v1/webhooks/mail/*`, SNS, Email Routing ingest), OAuth callbacks,
   `/api/build-info` and `/.well-known/*` keep being served on the subdomain until
@@ -239,7 +256,9 @@ authorization.
 
 Web's central sign-in (`returnUrl`) must accept same-origin `/meet/...` and `/mail/...`
 return paths. On one origin, the Supabase cookie is already present after sign-in,
-so the `verify-token` round trip disappears for signed-in users.
+so the `verify-token` round trip disappears for signed-in users. Per the recorded
+decision, no session is carried from the subdomain to the apex: users sign in once
+on the apex at cutover.
 
 ### Mobile and links
 
@@ -301,9 +320,8 @@ from `activationStart`.
   `prerendered`, `handoff` (whether `verify-token` ran), `nextHopProtocol`,
   connect/TLS duration and the effective connection type.
 - Transport is a sampled (10%), size-bounded `sendBeacon`, and it follows the
-  existing telemetry consent. Storage options are a Workers Analytics Engine dataset
-  or the existing Vercel analytics events (open question). Report p50/p75/p95 by
-  topology.
+  existing telemetry consent. Storage is a Workers Analytics Engine dataset (recorded
+  decision). Report p50/p75/p95 by topology.
 
 ### Lab
 
@@ -330,16 +348,23 @@ Worker var with three values:
   redirects.
 - `on`: apex is canonical; subdomain navigations get 307, later 301.
 
+Lane ownership follows the recorded decisions. "Bridge" is the TanStack Start
+bridge lane; "L2" is the Web marketing lane; "Ops" is the staged Cloudflare
+DNS/proxy lane.
+
 | # | Change | Owner | Depends on | Migration |
 | --- | --- | --- | --- | --- |
-| P1 | Base-path-aware app registry and URL builders in `@tuturuuu/utils` (`{origin, basePath}`, longest-prefix match). No behavior change. | Platform | — | None |
-| P2 | Path-scoped, per-app session cookies (see [security](/platform/architecture/one-origin-security#session-cookies)). Read old and new names; `createClient` detection updated. | Platform/auth | P1 | None (cookies re-issue on refresh) |
-| P3 | Web: service-worker bypass for mounted prefixes, `robots.ts` disallow, `/vi/meet` → `/meet/vi`, rollback 307s, `returnUrl` acceptance. | Web | P1 | None |
-| P4 | Meet base-path build serving both hosts, `appApi`/`centralApi` split, origin/base split, flag plumbing. Staging profile only. | Meet + Start/Void lane | P1, P2, lane | None |
-| P5 | Meet CSP, Trusted Types and Permissions-Policy, report-only then enforced. Programming preview moved off the origin or fenced. | Meet | P4 | None |
-| P6 | RUM helper, `ttr:app-ready` marks and lab script. | Platform | P1 | None |
-| P7 | Mail equivalents of P4/P5, OAuth redirect-URI selection, email-frame guard. | Mail + lane | Mail wave-1 native cutover | None |
-| P8 | Speculation Rules and cross-document View Transitions in the launcher and satellite shell, behind the flag. | Platform UI | P4 | None |
+| P1 | Base-path-aware app registry and URL builders in `@tuturuuu/utils` (`{origin, basePath}`, longest-prefix match). No behavior change. | Bridge | — | None |
+| P2 | Per-app session cookies `tuturuuu_app_session_<app>` with `Path=/<app>`; `createClient` detection updated. | Bridge | P1 | None (one re-login) |
+| P3a | Web service-worker bypass for `/meet` and `/mail`. | One-origin lane | — | None |
+| P3b | Web marketing to `/products/<app>`, `robots.ts` disallow, `/vi/meet` → `/meet/vi`, rollback 307s, `returnUrl` acceptance. | L2 | P1 | None |
+| P4 | Meet base-path build serving both hosts, `appApi`/`centralApi` split, origin/base split. | Bridge | P1, P2 | None |
+| P5 | Portable security-header builder; strict CSP and Trusted Types report-only in Meet and Mail. Enforcement and the programming-preview fence follow. | One-origin lane | — | None |
+| P6 | Web client-IP trust behind a Cloudflare origin-auth header, switched together with O3. | One-origin lane | — | None |
+| P7 | App-switch RUM helper, Workers Analytics Engine ingest, `ttr:app-ready` marks and the Thanh lab script. | One-origin lane | — | None |
+| P8 | Subdomain 307/301 redirect plumbing behind `TTR_ONE_ORIGIN_<APP>`. | One-origin lane | P4 to serve the apex | None |
+| P9 | Mail OAuth `redirect_uri` chosen by request host from an allowlist. | One-origin lane | — | None |
+| P10 | Speculation Rules and cross-document View Transitions, behind the flag. | Platform UI | P4 | None |
 
 **Operations, each needing user approval through the orchestrator:**
 
@@ -365,15 +390,5 @@ Worker var with three values:
 
 ## Open questions
 
-1. Is proxying the `tuturuuu.com` apex through Cloudflare acceptable (O3)? If not, is
-   the `app.tuturuuu.com` fallback wanted?
-2. Who owns `/meet` for anonymous visitors: a Meet-app public landing page, or Web's
-   Meet-Together marketing page moved to `/products/meet`?
-3. Should the pilot sequence be Meet first, with Mail after its wave-1 native
-   cutover? Mail production is still the Vercel deployment.
-4. Where should RUM be stored: Workers Analytics Engine or Vercel analytics?
-5. Should 307 → 301 follow the default observation windows (14 days Meet, 30 days
-   Mail)?
-6. Is it acceptable that per-app `localStorage` preferences (for example Mail's pane
-   layout and Meet's ended-room cache) reset once at cutover? Storage does not move
-   across origins.
+Resolved by the [recorded decisions](#recorded-decisions). The `app.tuturuuu.com`
+fallback is not pursued unless gate W1 fails.

@@ -90,20 +90,19 @@ host. Mounted apps would overwrite each other's audience-bound tokens. Web's
 `createClient(request)` also treats the cookie's presence as "this is a satellite
 request" and returns an unauthenticated client.
 
-Proposal (implementation PR P2):
+Decision (implemented by the Start bridge lane, PR P2):
 
 | Cookie | Name | Attributes |
 | --- | --- | --- |
-| App session (per mounted app) | `__Secure-ttr_as_<app>` | Host-only, `Path=/<app>`, `HttpOnly`, `Secure`, `SameSite=Lax` |
-| App refresh (per mounted app) | `__Secure-ttr_asr_<app>` | Same, `Path=/<app>` |
+| App session (per mounted app) | `tuturuuu_app_session_<app>` | Host-only, `Path=/<app>`, `HttpOnly`, `Secure`, `SameSite=Lax` |
+| App refresh (per mounted app) | the bridge lane's matching per-app refresh name | Same, `Path=/<app>` |
 | Supabase session | unchanged for now | `Domain=.tuturuuu.com` while any app remains on a subdomain. Once all apps are on the apex, plan `__Host-` host-only. |
 
 - `Path=/<app>` keeps the token off Web's requests and off other apps' requests, so
   it cannot trigger Web's satellite detection. `/meet` matches `/meet` and `/meet/*`,
-  but not `/meeting`. The `__Host-` prefix requires `Path=/`, so the path-scoped
-  cookie uses `__Secure-`.
-- During migration, readers accept the old names on the subdomain. Writers on the
-  apex only issue the new names. Logout clears both.
+  but not `/meeting`.
+- There is no cross-host session handoff. Users sign in once on the apex at cutover
+  (recorded decision). The subdomain keeps its old cookie until it only redirects.
 - On one origin, a signed-in user already carries the Supabase cookie. Treat the app
   session as the fallback it already is (`supabase-first`). Removing it for mounted
   apps is a follow-up and needs its own MFA (aal2) review.
