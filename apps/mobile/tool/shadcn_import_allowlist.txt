@@ -32,7 +32,6 @@ lib/features/chat/widgets/chat_composer.dart
 lib/features/chat/widgets/chat_conversation_list.dart
 lib/features/chat/widgets/chat_sheets.dart
 lib/features/chat/widgets/chat_thread_view.dart
-lib/features/cms/view/cms_page.dart
 lib/features/crm/view/crm_page.dart
 lib/features/dashboard/view/dashboard_page.dart
 lib/features/desktop_update/desktop_update_gate.dart
@@ -81,7 +80,6 @@ lib/features/inventory/widgets/inventory_ui.dart
 lib/features/mail/view/mail_html_body.dart
 lib/features/mail/view/mail_page.dart
 lib/features/mail/view/mail_reader.dart
-lib/features/mail/view/mail_settings_chrome.dart
 lib/features/meet/view/meet_page.dart
 lib/features/mobile_versions/view/mobile_version_settings_page.dart
 lib/features/notes/notes_page.dart
@@ -94,18 +92,12 @@ lib/features/onboarding/widgets/onboarding_backdrop.dart
 lib/features/onboarding/widgets/onboarding_choice_slide.dart
 lib/features/onboarding/widgets/onboarding_slide.dart
 lib/features/profile/view/profile_account_actions.dart
-lib/features/profile/view/profile_activity_section.dart
 lib/features/profile/view/profile_avatar_picker.dart
 lib/features/profile/view/profile_avatar_removal.dart
 lib/features/profile/view/profile_banner.dart
 lib/features/profile/view/profile_banner_picker.dart
 lib/features/profile/view/profile_media_recovery.dart
-lib/features/profile/view/profile_overview_page.dart
 lib/features/profile/view/profile_page.dart
-lib/features/profile/view/profile_timeline_browser.dart
-lib/features/profile/view/profile_timeline_date_strip.dart
-lib/features/profile/view/profile_timeline_days.dart
-lib/features/profile/view/profile_timeline_section.dart
 lib/features/profile/view/workspace_activity_section.dart
 lib/features/security/account/account_security_page.dart
 lib/features/security/device_mfa/device_mfa_panel.dart

@@ -1,53 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
-import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// One action in the existing shell slot throughout the call lifecycle.
-class AssistantLivePrimaryAction extends StatelessWidget {
-  const AssistantLivePrimaryAction({
-    required this.state,
-    required this.assistantName,
-    required this.onCall,
-    required this.onCancel,
-    required this.onNavigation,
-    super.key,
-  });
-  final AssistantLiveState state;
-  final String assistantName;
-  final Future<void> Function() onCall;
-  final Future<void> Function() onCancel;
+/// The same navigation footprint as chat; call actions belong inside the bar.
+class AssistantLivePrimaryAction extends StatelessWidget
+    implements PreferredSizeWidget {
+  const AssistantLivePrimaryAction({required this.onNavigation, super.key});
   final VoidCallback onNavigation;
+
   @override
-  Widget build(BuildContext context) {
-    final connected = state.status == AssistantLiveConnectionStatus.connected;
-    final calling = state.isBusy;
-    return ShellDockActionButton(
-      action: ShellActionSpec(
-        id: connected
-            ? 'assistant-navigation'
-            : calling
-            ? 'assistant-cancel-call'
-            : 'assistant-call',
-        icon: connected
-            ? LucideIcons.menu
-            : calling
-            ? LucideIcons.phoneOff
-            : LucideIcons.phone,
-        tooltip: connected
-            ? context.l10n.assistantExpandNavigation
-            : calling
-            ? context.l10n.assistantLiveCancelCall
-            : context.l10n.assistantLiveCallAssistant(assistantName),
-        onPressed: connected
-            ? onNavigation
-            : calling
-            ? onCancel
-            : onCall,
-      ),
-    );
-  }
+  Size get preferredSize => const Size(52, 52);
+
+  @override
+  Widget build(BuildContext context) => ShellDockActionButton(
+    action: ShellActionSpec(
+      id: 'assistant-navigation',
+      icon: LucideIcons.menu,
+      tooltip: context.l10n.assistantExpandNavigation,
+      onPressed: onNavigation,
+    ),
+  );
 }

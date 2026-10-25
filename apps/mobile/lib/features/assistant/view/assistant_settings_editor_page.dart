@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
 
 class AssistantSettingsEditorPage extends StatelessWidget {
   const AssistantSettingsEditorPage({
@@ -10,8 +10,6 @@ class AssistantSettingsEditorPage extends StatelessWidget {
   final String title;
   final Widget child;
   @override
-  Widget build(BuildContext context) => AppSheetScaffold(
-    title: title,
-    slivers: [SliverFillRemaining(child: child)],
-  );
+  Widget build(BuildContext context) =>
+      AssistantSettingsRouteFrame(title: title, child: child);
 }

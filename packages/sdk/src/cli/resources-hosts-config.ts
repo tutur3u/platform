@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { z } from 'zod';
+import { hostCapabilitySchema } from './resources-hosts-requirements';
 import {
   type RegistryTrustOptions,
   readTrustedRegistryText,
@@ -20,6 +21,8 @@ const hostSchema = z
     // `local` runs on this machine through the lane FIFO; `runner` dispatches
     // through the trusted devbox transport (`ttr box`) to `runnerId`.
     kind: z.enum(['local', 'runner']),
+    platform: z.enum(['darwin', 'linux']).optional(),
+    capabilities: z.array(hostCapabilitySchema).max(6).optional(),
     runnerId: z.string().min(1).optional(),
     // Measured capacity, and headroom reserved for co-tenants (production
     // containers, CI runners, Judge workers, the interactive desktop).
@@ -63,6 +66,7 @@ const hostSchema = z
   });
 export const hostRegistrySchema = z.object({
   version: z.literal(1),
+  hubHostname: z.string().min(1).max(253).optional(),
   hosts: z
     .array(hostSchema)
     .min(1)

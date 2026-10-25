@@ -7,6 +7,7 @@ extension _AssistantPageWorkspace on _AssistantPageState {
     }
 
     ++_voiceActorScopeEpoch;
+    _dismissLiveCall();
     unawaited(_voiceCapture.cancel());
     _loadedWorkspaceId = workspace.id;
     final actor = _currentActor();

@@ -760,6 +760,19 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   storage discounts as an unlimited entitlement. Aim below 9 GB steady-state
   inside the currently configured 10 GB cache limit, and never automatically
   delete default-branch CodeQL caches.
+- Bound Gradle Actions caching to wrapper distributions and
+  `caches/modules-2/files-2.1` downloads. Only the main-push Android build may
+  save, after `gradle-cache-budget.js` admits at most 512 MiB including tar
+  overhead allowance; oversize skips the save without pruning build state.
+  Use stable `gradle-downloads-v2-` platform/Java keys, with no build-file hash
+  generations or broad v1 restore fallback. Flutter SDK/pub keys use only
+  platform/channel/release identities; never add pubspec-lock generations to
+  download archives. Run `node --test scripts/ci/heavyweight-cache-budget.test.js
+  scripts/ci/mobile-cache-budget.test.js scripts/ci/flutter-cache.test.js` when
+  changing these policies. Follow the [cache budget runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#repository-cache-budget)
+  for operator-only old-key cleanup and Supabase reseeding; static checks do
+  not establish hosted retention. Preserve runner routing until a pool and its
+  trusted-job admission are verified.
 - Package release workflows must use npm trusted publishing. Keep
   `id-token: write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce

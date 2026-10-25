@@ -1,7 +1,18 @@
+import 'dart:async';
+
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
+import 'package:mobile/features/assistant/data/assistant_soul_receipts.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+
+bool isAssistantSettingsDenial(Object error) =>
+    error is ApiException &&
+    !error.isVerificationRequired &&
+    error.code != 'MFA_REQUIRED' &&
+    const [401, 403, 404].contains(error.statusCode);
 
 class AssistantMemoryItem {
   const AssistantMemoryItem({required this.id, required this.text});
@@ -40,20 +51,119 @@ class AssistantPersonalSettingsRepository {
     required this.ownerId,
     ApiClient? api,
     Future<void> Function(String)? invalidateSoul,
+    CacheStore? store,
+    String? Function()? currentUserId,
   }) : _api = api ?? ApiClient(expectedUserId: ownerId),
+       _store = store ?? CacheStore.instance,
+       _currentUserId = currentUserId ?? currentCacheUserId,
        _invalidateSoul =
            invalidateSoul ??
-           ((owner) => CacheStore.instance.invalidateTags([
+           ((owner) => (store ?? CacheStore.instance).invalidateTags([
              'assistant:metadata',
            ], userId: owner));
   final String ownerId;
   final ApiClient _api;
+  final CacheStore _store;
+  final String? Function() _currentUserId;
   final Future<void> Function(String) _invalidateSoul;
+  int _soulGeneration = 0;
+  bool _soulDenied = false;
   String _memoryPath(String workspaceId) =>
       '/api/v1/workspaces/${Uri.encodeComponent(workspaceId)}/ai/memory';
 
+  /// Only confirmed personality is restored; memory and consent stay remote.
+  Future<AssistantSoul?> readCachedSoul() async {
+    if (_soulDenied || _currentUserId() != ownerId) return null;
+    final key = verifiedSoulKey(ownerId);
+    final epoch = _store.scopeRevisionFor(key);
+    final revision = _store.resourceRevisionFor(key);
+    final generation = _soulGeneration;
+    final cached = await _store.read<AssistantSoul>(
+      key: key,
+      decode: (json) => decodeVerifiedSoul(json, ownerId),
+    );
+    if (_soulDenied ||
+        _currentUserId() != ownerId ||
+        _store.scopeRevisionFor(key) != epoch ||
+        _store.resourceRevisionFor(key) != revision ||
+        generation != _soulGeneration) {
+      return null;
+    }
+    return cached.data;
+  }
+
+  Future<void> _bestEffortCache(Future<void> Function() operation) async {
+    try {
+      await operation();
+    } on Object {
+      // Persistence must not hide a network receipt or its authorization error.
+    }
+  }
+
+  Future<AssistantSoul> _requestSoul(
+    Future<Map<String, dynamic>> Function() request, {
+    bool invalidate = false,
+  }) async {
+    final generation = ++_soulGeneration;
+    final key = verifiedSoulKey(ownerId);
+    final epoch = _store.scopeRevisionFor(key);
+    final revision = _store.resourceRevisionFor(key);
+    final actor = _currentUserId();
+    if (actor != null && actor != ownerId) {
+      throw StateError('Personal settings owner changed');
+    }
+    final cacheAdmitted = actor == ownerId;
+    void checkScope() {
+      if (generation != _soulGeneration ||
+          (cacheAdmitted &&
+              (_currentUserId() != ownerId ||
+                  _store.scopeRevisionFor(key) != epoch))) {
+        throw StateError('Personal settings soul scope changed');
+      }
+    }
+
+    try {
+      final response = await ApiClient.runForUser(ownerId, request);
+      checkScope();
+      if (_store.resourceRevisionFor(key) != revision) {
+        throw StateError('Personal settings soul changed');
+      }
+      final soul = decodeSoulReceipt(response['soul'], ownerId);
+      if (invalidate) await _invalidateSoul(ownerId);
+      checkScope();
+      _soulDenied = false;
+      if (cacheAdmitted) {
+        final publicationRevision = _store.resourceRevisionFor(key);
+        unawaited(
+          _bestEffortCache(
+            () => _store.write(
+              key: key,
+              policy: CachePolicies.metadata,
+              payload: verifiedSoulPayload(soul, ownerId),
+              tags: const ['assistant:metadata', 'module:assistant'],
+              expectedRevision: publicationRevision,
+              checkScope: checkScope,
+            ),
+          ),
+        );
+      }
+      return soul;
+    } on ApiException catch (error) {
+      checkScope();
+      if (isAssistantSettingsDenial(error) &&
+          cacheAdmitted &&
+          _store.resourceRevisionFor(key) == revision) {
+        _soulDenied = true;
+        unawaited(
+          _bestEffortCache(() => _store.remove(key, checkScope: checkScope)),
+        );
+      }
+      rethrow;
+    }
+  }
+
   Future<AssistantPersonalSettingsSnapshot> load(String workspaceId) async {
-    final soulRequest = _api.getJson('/api/v1/mira/soul');
+    final soulRequest = _requestSoul(() => _api.getJson(assistantSoulPath));
     final memoryRequest =
         Future.wait([
           _api.getJson('${_memoryPath(workspaceId)}/settings?product=mira'),
@@ -62,11 +172,8 @@ class AssistantPersonalSettingsRepository {
           (value) => value,
           onError: (Object _) => null,
         );
-    final soulResponse = await soulRequest;
+    final soul = await soulRequest;
     final memory = await memoryRequest;
-    final soul = AssistantSoul.fromJson(
-      soulResponse['soul'] as Map<String, dynamic>?,
-    );
     if (memory == null || memory[0]['enabled'] is! bool) {
       return AssistantPersonalSettingsSnapshot(
         soul: soul,
@@ -89,7 +196,7 @@ class AssistantPersonalSettingsRepository {
     );
   }
 
-  Future<AssistantSoul> saveSoul(AssistantSoul soul) async {
+  Future<AssistantSoul> saveSoul(AssistantSoul soul) => _requestSoul(() async {
     final response = await _api.patchJson(
       '/api/v1/mira/soul',
       {
@@ -103,12 +210,8 @@ class AssistantPersonalSettingsRepository {
     if (response['soul'] is! Map<String, dynamic>) {
       throw StateError('Personality update not confirmed');
     }
-    final saved = AssistantSoul.fromJson(
-      response['soul'] as Map<String, dynamic>,
-    );
-    await _invalidateSoul(ownerId);
-    return saved;
-  }
+    return response;
+  }, invalidate: true);
 
   Future<bool> setMemoryEnabled(
     String workspaceId, {

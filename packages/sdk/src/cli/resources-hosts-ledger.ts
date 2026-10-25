@@ -1,4 +1,5 @@
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
+import { platform } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 import {
@@ -13,6 +14,11 @@ import {
   type Reservation,
   type Waiter,
 } from './resources-hosts-plan';
+import {
+  capabilityBlocker,
+  type HostCapability,
+  hostCapabilitySchema,
+} from './resources-hosts-requirements';
 import {
   errno,
   occupancy,
@@ -35,6 +41,7 @@ const ticketSchema = z.object({
   queuedAt: z.number().int().nonnegative(),
   bypassed: z.number().int().nonnegative(),
   remoteOk: z.boolean(),
+  requires: z.array(hostCapabilitySchema).max(6).optional(),
   command: z.string().optional(),
 });
 const reservationSchema = z.object({
@@ -189,6 +196,7 @@ export function hostStates(
       // a lane) occupy local heavy capacity; a handoff reservation covers a
       // hosts job until its lane owner appears, so never count both.
       states[host.id] = {
+        platform: platform(),
         healthy: true,
         diskFreeGiB: telemetry.localDiskFreeGiB,
         external: {
@@ -249,6 +257,7 @@ export function hostStates(
     const busy = runner.activity.running_runs + runner.activity.queued_runs;
     const ours = owned(host.id, 'light') + owned(host.id, 'heavy');
     states[host.id] = {
+      platform: runner.capabilities?.os?.platform,
       healthy: verdict.eligible && fresh,
       reason: verdict.eligible
         ? fresh
@@ -270,7 +279,8 @@ export function hostStates(
 export function remoteDispatchBlocker(
   registry: HostRegistry,
   hostId: string,
-  snapshot: DevboxFleetSnapshot | undefined
+  snapshot: DevboxFleetSnapshot | undefined,
+  requires: HostCapability[] = []
 ) {
   const host = registry.hosts.find((entry) => entry.id === hostId);
   if (host?.kind !== 'runner') return 'host is not a runner';
@@ -287,6 +297,10 @@ export function remoteDispatchBlocker(
     []
   )[hostId]!;
   if (!state.healthy) return state.reason ?? 'runner is not eligible';
+  const capability = capabilityBlocker(host, requires);
+  if (capability) return capability;
+  if (host.platform && state.platform !== host.platform)
+    return 'runner platform telemetry is unknown or differs from its registration';
   if (state.diskFreeGiB === undefined) return 'runner free disk is unknown';
   if (state.diskFreeGiB < host.reserved.diskGiB)
     return 'runner free disk is below its floor';
@@ -321,16 +335,43 @@ export async function nestedHostReservation(
 
 export async function enqueueHostTicket(home: string, ticket: HostTicket) {
   await withAdmission(home, async () => {
+    const ledger = await hostLedger(home);
+    if (ledger.reservations.some((entry) => entry.token === ticket.token))
+      throw new Error(
+        'Host ticket already has a reservation; reconcile it before retrying.'
+      );
+    const existing = ledger.tickets.find(
+      (entry) => entry.token === ticket.token
+    );
+    if (existing) {
+      if (ticketIdentity(existing) !== ticketIdentity(ticket))
+        throw new Error(
+          'Host ticket identity changed; refusing to overwrite its owner or requirements.'
+        );
+      return;
+    }
     await mkdir(queueDir(home), { recursive: true, mode: 0o700 });
     await atomicJson(ticketPath(home, ticket), ticket);
   });
+}
+function ticketIdentity(entry: HostTicket) {
+  return JSON.stringify([
+    entry.token,
+    entry.pid,
+    entry.project,
+    entry.jobClass,
+    entry.queuedAt,
+    entry.remoteOk,
+    entry.command,
+    [...(entry.requires ?? [])].sort(),
+  ]);
 }
 export async function removeHostTicket(home: string, ticket: HostTicket) {
   await rm(ticketPath(home, ticket), { force: true });
 }
 
 export type AdmitResult =
-  | { admitted: true; reservation: HostReservation }
+  | { admitted: true; reservation: HostReservation; ticket: HostTicket }
   | { admitted: false; reason: string };
 // One admission attempt for `ticket`. The plan is recomputed from canonical
 // state inside the mutex; only the planned owner acts on its own assignment.
@@ -342,8 +383,13 @@ export async function admitHostTicket(
 ): Promise<AdmitResult> {
   const result = await withAdmission(home, async (): Promise<AdmitResult> => {
     const ledger = await hostLedger(home, true);
-    if (!ledger.tickets.some((entry) => entry.token === ticket.token))
+    const canonical = ledger.tickets.find(
+      (entry) => entry.token === ticket.token
+    );
+    if (!canonical)
       return { admitted: false, reason: 'ticket is no longer queued' };
+    if (ticketIdentity(canonical) !== ticketIdentity(ticket))
+      throw new Error('Host ticket identity changed; refusing admission.');
     const lanes = await occupancy(home, false);
     const laneWaiters = (await tickets(home)).length;
     const states = hostStates(
@@ -359,6 +405,7 @@ export async function admitHostTicket(
       queuedAt: entry.queuedAt,
       bypassed: entry.bypassed,
       remoteOk: entry.remoteOk,
+      requires: entry.requires,
     }));
     const plan = planAdmissions(registry, states, ledger.reservations, waiters);
     const mine = plan.assignments.find((entry) => entry.token === ticket.token);
@@ -396,7 +443,7 @@ export async function admitHostTicket(
           bypassed: entry.bypassed + 1,
         });
     await removeHostTicket(home, ticket);
-    return { admitted: true, reservation };
+    return { admitted: true, reservation, ticket: canonical };
   });
   return result ?? { admitted: false, reason: 'admission was cancelled' };
 }

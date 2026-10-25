@@ -64,8 +64,8 @@ Usage: ttr resources <setup|status|monitor|run|hosts|enable|disable|uninstall> [
 
 Setup options:
   --shell zsh|bash|none   shell hooks; defaults to the current shell
-  --lanes <1..8>          base lanes; default 1, change only when idle
-  --max-lanes <1..8>      burst ceiling; default base, change only when idle
+  --lanes <1..${maxResourceLanes}>         base lanes; default 1, change only when idle
+  --max-lanes <1..${maxResourceLanes}>     burst ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
   --force                permit cross-install replacement only after draining
   --dry-run              inspect the setup plan without writing files
@@ -85,10 +85,14 @@ ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
 Run option: --hosts admits across hosts.json hosts (weighted light/heavy slots,
 per-host budgets); off unless an operator installs hosts.json. Jobs are heavy
 unless --class light is given.
+Run option: --requires ios|macos|flutter|web|rust|docker (repeatable) restricts
+placement to declared host capabilities. Direct Apple/Flutter/Rust/Docker tools
+add requirements automatically; wrappers must declare theirs. Runner dispatch
+requires hosts.json hubHostname to match this machine (the M4 hub).
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
 Burst admission requires normal memory pressure and low CPU load, and stays
-under a host lane ceiling (RAM/4 GiB, CPUs-2, at most 8). Each lane gets at
+under a host lane ceiling (RAM/4 GiB, CPUs-2, at most ${maxResourceLanes}). Each lane gets at
 least one worker and at most its share of the configured worker totals.
 All lanes share one per-user FIFO queue. Out-of-range config values are clamped
 with a warning; an unreadable config makes shims run commands unmanaged.
@@ -132,6 +136,7 @@ export async function runResourcesCommand(argv: string[]) {
       '--timeout',
       '--hosts',
       '--class',
+      '--requires',
       '--tokens',
       '--memory-gib',
     ],
@@ -158,6 +163,7 @@ export async function runResourcesCommand(argv: string[]) {
           '--timeout',
           '--runner',
           '--class',
+          '--requires',
           '--tokens',
           '--memory-gib',
         ].includes(option)
@@ -207,6 +213,18 @@ export async function runResourcesCommand(argv: string[]) {
     const trivial = enabled && !shim ? trivialExecutable(name, env) : undefined;
     const queued =
       enabled && (shim ? isHeavyCommand(name, command) : trivial === undefined);
+    if (enabled && !shim && options.includes('--hosts')) {
+      const { assertNestedHostRequirements, hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
+      const requires = hostsRequirements(name, command, options);
+      if (parent || !queued) {
+        const { readHostRegistry } = await import(
+          './resources-hosts-config.js'
+        );
+        assertNestedHostRequirements(await readHostRegistry(home), requires);
+      }
+    }
     const offload = optionValue(options, '--offload');
     // Disk headroom gate for heavy work; nested jobs were admitted already,
     // and --hosts dispatch applies its own local disk gate per placement.
@@ -256,12 +274,16 @@ export async function runResourcesCommand(argv: string[]) {
         './resources-hosts-cli.js'
       );
       const jobClass = hostsJobClass(optionValue(options, '--class'));
+      const { hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
       const timeout = optionValue(options, '--timeout');
       process.exitCode = await hostsRun({
         home,
         command: name,
         args: command,
         jobClass,
+        requires: hostsRequirements(name, command, options),
         deps: hostsDependencies({
           home,
           name,
@@ -379,7 +401,8 @@ export async function runResourcesCommand(argv: string[]) {
         if (arg === '--workers') workers = Number(value);
         if (arg === '--max-lanes') maxLanes = Number(value);
         if (arg === '--lanes') {
-          if (!/^[1-8]$/.test(value))
+          // The same bound setup enforces: maxResourceLanes, not a literal.
+          if (!/^[1-9]\d*$/u.test(value) || Number(value) > maxResourceLanes)
             throw new Error(
               `--lanes must be an integer from 1 to ${maxResourceLanes}.`
             );

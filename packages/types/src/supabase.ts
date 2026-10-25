@@ -2602,6 +2602,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_oauth_state_nonces: {
+        Row: {
+          consumed_at: string;
+          expires_at: string;
+          nonce: string;
+          provider: string;
+          user_id: string;
+        };
+        Insert: {
+          consumed_at?: string;
+          expires_at: string;
+          nonce: string;
+          provider: string;
+          user_id: string;
+        };
+        Update: {
+          consumed_at?: string;
+          expires_at?: string;
+          nonce?: string;
+          provider?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       calendar_provider_readonly_series: {
         Row: {
           calendar_id: string;
@@ -3370,6 +3394,98 @@ export type Database = {
           {
             foreignKeyName: 'chat_messages_sender_id_fkey';
             columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      chat_reaction_operations: {
+        Row: {
+          actor_user_id: string;
+          conversation_id: string;
+          created_at: string;
+          emoji: string;
+          message_id: string;
+          op_id: string;
+          present: boolean;
+          ws_id: string;
+        };
+        Insert: {
+          actor_user_id: string;
+          conversation_id: string;
+          created_at?: string;
+          emoji: string;
+          message_id: string;
+          op_id: string;
+          present: boolean;
+          ws_id: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          conversation_id?: string;
+          created_at?: string;
+          emoji?: string;
+          message_id?: string;
+          op_id?: string;
+          present?: boolean;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_reaction_operations_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'chat_reaction_operations_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_retired_reaction_operations: {
+        Row: {
+          actor_user_id: string;
+          op_id: string;
+        };
+        Insert: {
+          actor_user_id: string;
+          op_id: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          op_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_retired_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_retired_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -20381,6 +20497,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_get_reaction_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_is_actor_personal_workspace: {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: boolean;
@@ -20482,6 +20607,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_retire_reaction_operations: {
+        Args: { p_actor_user_id: string; p_op_ids: string[] };
+        Returns: Json;
+      };
       chat_revoke_friend_request: {
         Args: {
           p_actor_user_id: string;
@@ -20528,6 +20657,18 @@ export type Database = {
           p_conversation_id: string;
           p_reply_to_message_id?: string;
           p_request_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_set_reaction: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_emoji: string;
+          p_message_id: string;
+          p_op_id: string;
+          p_present: boolean;
           p_ws_id: string;
         };
         Returns: Json;
@@ -20828,6 +20969,15 @@ export type Database = {
           override_id: string;
           token_id: string;
         }[];
+      };
+      consume_calendar_oauth_state_nonce: {
+        Args: {
+          p_expires_at: string;
+          p_nonce: string;
+          p_provider: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
       consume_inventory_checkout_stock: {
         Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
@@ -21144,10 +21294,7 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
-      devbox_run_idempotency_ready: {
-        Args: never;
-        Returns: boolean;
-      };
+      devbox_run_idempotency_ready: { Args: never; Returns: boolean };
       devbox_runner_activity: {
         Args: never;
         Returns: {

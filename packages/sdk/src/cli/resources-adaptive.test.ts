@@ -63,29 +63,37 @@ async function home(base: 1 | 2 = 1, max = 3, workers = 3) {
 async function run(
   path: string,
   name: string,
-  options: { ignorePressure?: boolean; mutate?: string } = {}
+  options: {
+    ignorePressure?: boolean;
+    mutate?: string;
+    telemetry?: BurstTelemetry;
+    actualProbe?: boolean;
+    env?: NodeJS.ProcessEnv;
+  } = {}
 ) {
   await fixtures.held(path, name);
   const runner = join(path, `${name}.ts`);
   await writeFile(
     runner,
     `
-    import {mock} from 'bun:test';import * as timers from 'node:timers/promises';
+    import {mock} from 'bun:test';import * as timers from 'node:timers/promises';import * as os from 'node:os';import * as cp from 'node:child_process';import {promisify} from 'node:util';
     import {readFileSync,writeFileSync,appendFileSync} from 'node:fs';
     const path=${JSON.stringify(path)},name=${JSON.stringify(name)};
     const sleep=timers.setTimeout;
     mock.module('node:timers/promises',()=>({...timers,setTimeout:(ms,...args)=>sleep(ms===5000?50:ms,...args)}));
+    mock.module('node:os',()=>({...os,availableParallelism:()=>10,totalmem:()=>24*1024**3,loadavg:()=>[1,1,1]}));
+    ${options.actualProbe ? `const original=cp.execFile,execute=promisify(original);const execFile=(...args)=>original(...args);execFile[promisify.custom]=async(...args)=>{const result=await execute(...args);return /(^|\\/)sysctl$/.test(args[0])?{...result,stdout:'1\\n'}:result};mock.module('node:child_process',()=>({...cp,execFile}));` : ''}
     const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});
-    const {evaluateBurst}=await import(${JSON.stringify(adaptiveModule)});
+    const {evaluateBurst,burstEligibility}=await import(${JSON.stringify(adaptiveModule)});
     process.exitCode=await queuedResourceCommand(path,${JSON.stringify(realNode)},[path+'/'+name+'.cjs'],process.env,${Boolean(options.ignorePressure)},JSON.parse(readFileSync(path+'/config.json')).validationLanes,
       async()=>({blocked:false,reason:null}),async()=>{
         appendFileSync(path+'/'+name+'.checked','probe\\n');
         ${options.mutate || ''}
-        return evaluateBurst(JSON.parse(readFileSync(path+'/telemetry.json')),8*1024**3);
+        return ${options.actualProbe ? "burstEligibility(JSON.parse(readFileSync(path+'/config.json')))" : `evaluateBurst(${options.telemetry ? JSON.stringify(options.telemetry) : "JSON.parse(readFileSync(path+'/telemetry.json'))"},8*1024**3)`};
       });
   `
   );
-  const job = fixtures.laneLaunch(path, [name], runner);
+  const job = fixtures.laneLaunch(path, [name], runner, options.env);
   jobs.set(join(path, name), job);
   return job;
 }
@@ -388,6 +396,43 @@ describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
     await ready(path, 'c');
     await finish(path, 'a', a);
     await finish(path, 'c', c);
+  });
+  it('leaves an unreadable burst head queued for base capacity while a healthy waiter uses burst', async () => {
+    const path = await home(1, 2, 2);
+    const a = await run(path, 'a');
+    await ready(path, 'a');
+    const b = await run(path, 'b', {
+      telemetry: { ...normal, pressureLevel: undefined },
+    });
+    await checked(path, 'b');
+    const c = await run(path, 'c');
+    const end = Date.now() + 2000;
+    while (!(await exists(join(path, 'c.ready'))) && Date.now() < end)
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await exists(join(path, 'c.ready'))).toBe(true);
+    expect(await exists(join(path, 'b.ready'))).toBe(false);
+    await finish(path, 'a', a);
+    await finish(path, 'c', c);
+    await ready(path, 'b');
+    await finish(path, 'b', b);
+  });
+  it
+    .skipIf(process.platform !== 'darwin')
+    .each([
+      `${resolve(bun, '..')}:/usr/bin:/bin`,
+      `${resolve(bun, '..')}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    ])('admits a real macOS burst probe with PATH=%s', async (PATH) => {
+    const path = await home(1, 2, 2);
+    const a = await run(path, 'a');
+    await ready(path, 'a');
+    const b = await run(path, 'b', { actualProbe: true, env: { PATH } });
+    await checked(path, 'b');
+    const end = Date.now() + 2000;
+    while (!(await exists(join(path, 'b.ready'))) && Date.now() < end)
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await exists(join(path, 'b.ready'))).toBe(true);
+    await finish(path, 'a', a);
+    await finish(path, 'b', b);
   });
   it('inherits adaptive owner caps in nested commands and ignores inflated env caps', async () => {
     const path = await home();

@@ -3,15 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/widgets/profile_media_image.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_activity_section.dart';
-import 'package:mobile/features/profile/view/profile_banner.dart';
+import 'package:mobile/features/profile/view/profile_identity_card.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -20,18 +19,28 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Account home. Opening personal activity never implies consent to share it.
 class ProfileOverviewPage extends StatefulWidget {
   const ProfileOverviewPage({
     this.replayToken = 0,
     this.cacheUserId,
+    this.statsLoader,
+    this.timezoneLoader,
+    this.timelineRepository,
     super.key,
   });
 
   final int replayToken;
   final String? Function()? cacheUserId;
+
+  /// Data sources for render tests; production uses the defaults.
+  @visibleForTesting
+  final ProfileStatsLoader? statsLoader;
+  @visibleForTesting
+  final Future<String> Function()? timezoneLoader;
+  @visibleForTesting
+  final ProfileTimelineRepository? timelineRepository;
 
   @override
   State<ProfileOverviewPage> createState() => _ProfileOverviewPageState();
@@ -44,7 +53,6 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
     final userId = context.watch<AuthCubit>().state.user?.id;
     return BlocBuilder<ShellProfileCubit, ShellProfileState>(
       builder: (context, state) {
@@ -52,8 +60,6 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
             ? state.profile
             : null;
         final avatarUrl = profile == null ? null : state.avatarUrl;
-        final name =
-            profile?.displayName ?? profile?.fullName ?? l10n.profileTitle;
         return Stack(
           children: [
             ShellTitleOverride(
@@ -76,7 +82,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                 if (!_timeline)
                   ShellActionSpec(
                     id: 'profile-switch-account',
-                    icon: Icons.switch_account_outlined,
+                    icon: LucideIcons.users,
                     tooltip: l10n.authSwitchAccount,
                     onPressed: () =>
                         unawaited(showProfileAccountSwitcher(context)),
@@ -85,8 +91,8 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                   ShellActionSpec(
                     id: 'profile-day-trail',
                     icon: _dates
-                        ? Icons.view_agenda_outlined
-                        : Icons.date_range,
+                        ? LucideIcons.rows3
+                        : LucideIcons.calendarRange,
                     tooltip: _dates
                         ? l10n.profileTimelineHideDates
                         : l10n.profileTimelineShowDates,
@@ -97,7 +103,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                 ShellActionSpec(
                   id: 'profile-view-overview',
                   segmentGroup: 'profile-views',
-                  icon: Icons.person_outline_rounded,
+                  icon: LucideIcons.user,
                   tooltip: l10n.profileOverviewTab,
                   highlighted: !_timeline,
                   callbackToken: _timeline,
@@ -106,7 +112,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                 ShellActionSpec(
                   id: 'profile-view-timeline',
                   segmentGroup: 'profile-views',
-                  icon: Icons.history_rounded,
+                  icon: LucideIcons.history,
                   tooltip: l10n.profileTimelineTitle,
                   highlighted: _timeline,
                   callbackToken: _timeline,
@@ -115,140 +121,94 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                 ShellActionSpec(
                   id: 'profile-settings',
                   inDock: true,
-                  icon: Icons.settings_outlined,
+                  icon: LucideIcons.settings,
                   tooltip: l10n.navSettings,
                   onPressed: () => context.go(Routes.settings),
                 ),
               ],
             ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final maxWidth =
-                    ResponsivePadding.rootContentWidth(context.deviceClass) ??
-                    constraints.maxWidth;
-                final horizontal =
-                    ((constraints.maxWidth - maxWidth) / 2).clamp(
-                      0.0,
-                      double.infinity,
-                    ) +
-                    ResponsivePadding.horizontal(context.deviceClass);
-                if (_timeline) {
-                  return Padding(
-                    padding: EdgeInsets.fromLTRB(horizontal, 0, horizontal, 0),
-                    child: ProfileTimelineSection(
-                      replayToken: widget.replayToken,
-                      cacheUserId: widget.cacheUserId,
-                      fullSurface: true,
-                      contentTopPadding: floatingShellHeaderInset(context) + 10,
-                      datesOpen: _dates,
-                      onDatesChanged: (open) => setState(() => _dates = open),
-                    ),
-                  );
-                }
-                return ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontal,
-                    floatingShellHeaderInset(context) + 10,
-                    horizontal,
-                    24 + MediaQuery.paddingOf(context).bottom,
+            if (_timeline)
+              LayoutBuilder(
+                builder: (context, constraints) => ProfileTimelineSection(
+                  replayToken: widget.replayToken,
+                  cacheUserId: widget.cacheUserId,
+                  repository: widget.timelineRepository,
+                  fullSurface: true,
+                  contentTopPadding:
+                      floatingShellHeaderInset(context) + AppLayout.pageTop,
+                  horizontalPadding: AppPageInsets.resolve(
+                    width: constraints.maxWidth,
+                    safeArea: MediaQuery.paddingOf(context),
                   ),
-                  key: ValueKey(_timeline),
-                  children: [
-                    if (profile != null) ProfileBanner(profile: profile),
-                    Container(
-                      key: const ValueKey('profile-overview-content'),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final scale =
-                              MediaQuery.textScalerOf(context).scale(14) / 14;
-                          final stacked = constraints.maxWidth < 360 * scale;
-                          return Wrap(
-                            spacing: 14,
-                            runSpacing: 12,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(24),
-                                child: SizedBox.square(
-                                  dimension: 68,
-                                  child: profile == null && state.error == null
-                                      ? const FinanceSkeletonBlock(
-                                          height: 68,
-                                          radius: 24,
-                                        )
-                                      : avatarUrl == null
-                                      ? const Icon(
-                                          Icons.person_outline,
-                                          size: 48,
-                                        )
-                                      : Image(
-                                          image: profileMediaImage(
-                                            avatarUrl,
-                                            userId ?? '',
-                                          ),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, error, stack) =>
-                                              const Icon(
-                                                Icons.person_outline,
-                                                size: 48,
-                                              ),
-                                        ),
-                                ),
-                              ),
-                              SizedBox(
-                                width: stacked
-                                    ? constraints.maxWidth
-                                    : constraints.maxWidth - 82,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (profile == null && state.error == null)
-                                      const FinanceSkeletonBlock(
-                                        height: 24,
-                                        width: 150,
-                                      )
-                                    else
-                                      Text(
-                                        name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.typography.large.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    if (profile?.email != null)
-                                      Text(
-                                        profile!.email!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                  datesOpen: _dates,
+                  onDatesChanged: (open) => setState(() => _dates = open),
+                ),
+              )
+            else
+              AppPageListView(
+                key: ValueKey(_timeline),
+                kind: AppPageKind.root,
+                topInset: floatingShellHeaderInset(context),
+                children: [
+                  _OverviewLayout(
+                    identity: ProfileIdentityCard(
+                      profile: profile,
+                      avatarUrl: avatarUrl,
+                      userId: userId,
+                      loading: profile == null && state.error == null,
                     ),
-                    if (profile?.bio?.trim().isNotEmpty == true) ...[
-                      const SizedBox(height: 8),
-                      Text(profile!.bio!, style: theme.typography.textSmall),
-                    ],
-                    if (userId != null) ...[
-                      const SizedBox(height: 14),
-                      ProfileActivitySection(
-                        replayToken: widget.replayToken,
-                        cacheUserId: widget.cacheUserId,
-                      ),
-                    ],
-                  ],
-                );
-              },
-            ),
+                    activity: userId == null
+                        ? null
+                        : ProfileActivitySection(
+                            replayToken: widget.replayToken,
+                            cacheUserId: widget.cacheUserId,
+                            statsLoader: widget.statsLoader,
+                            timezoneLoader: widget.timezoneLoader,
+                          ),
+                  ),
+                ],
+              ),
           ],
         );
       },
     );
   }
+}
+
+/// Identity above activity; side by side once the body is wide enough for a
+/// readable activity column next to the identity card.
+class _OverviewLayout extends StatelessWidget {
+  const _OverviewLayout({required this.identity, required this.activity});
+
+  static const double _twoColumnMinWidth = 840;
+  static const double _identityWidth = 360;
+
+  final Widget identity;
+  final Widget? activity;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final activity = this.activity;
+      if (activity == null) return identity;
+      if (constraints.maxWidth < _twoColumnMinWidth) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            identity,
+            const SizedBox(height: AppLayout.sectionGap),
+            activity,
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: _identityWidth, child: identity),
+          const SizedBox(width: AppLayout.sectionGap),
+          Expanded(child: activity),
+        ],
+      );
+    },
+  );
 }

@@ -21,9 +21,10 @@ import 'package:mobile/features/settings/view/offline_search_chrome.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+import '../../../helpers/pump_app.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -162,8 +163,13 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(
-      MultiBlocProvider(
+    await tester.pumpThemedHome(
+      OfflineModulePage(
+        moduleId: 'inventory',
+        store: store,
+        coordinator: coordinator,
+      ),
+      wrap: (app) => MultiBlocProvider(
         providers: [
           if (chrome != null)
             BlocProvider<ShellChromeActionsCubit>.value(value: chrome),
@@ -171,15 +177,7 @@ void main() {
           BlocProvider<WorkspaceCubit>.value(value: workspace),
           BlocProvider<InventoryAccessCubit>.value(value: access),
         ],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: OfflineModulePage(
-            moduleId: 'inventory',
-            store: store,
-            coordinator: coordinator,
-          ),
-        ),
+        child: app,
       ),
     );
     // Hive setup futures were created outside the fake widget clock. Await a

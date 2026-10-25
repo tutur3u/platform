@@ -8,6 +8,7 @@ import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
+import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -23,10 +24,14 @@ class MailHtmlBody extends StatefulWidget {
     this.imagesVisible,
     this.onImagesChanged,
     this.showControls = true,
+    this.renderedDocuments,
     super.key,
   });
 
   final String html;
+
+  /// The owning Mail view's memo of rendered documents, if any.
+  final MailRenderedDocuments? renderedDocuments;
   final bool? imagesVisible;
   final ValueChanged<bool>? onImagesChanged;
   final bool showControls;
@@ -116,23 +121,29 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     _controller = null;
     _failed = false;
     try {
-      final document = await compute(
-        renderMailDocument,
-        MailDocumentRequest(
-          html: widget.html,
-          loadImages: _images,
-          inlineImages: widget.inlineImages,
-          appearance: _appearance ?? MailMessageAppearance.original,
-          backgroundArgb:
-              (_appearance == MailMessageAppearance.dark) ==
-                  (Theme.of(context).brightness == Brightness.dark)
-              ? shad.Theme.of(context).colorScheme.background.toARGB32()
-              : null,
-        ),
+      final request = MailDocumentRequest(
+        html: widget.html,
+        loadImages: _images,
+        inlineImages: widget.inlineImages,
+        appearance: _appearance ?? MailMessageAppearance.original,
+        backgroundArgb:
+            (_appearance == MailMessageAppearance.dark) ==
+                (Theme.of(context).brightness == Brightness.dark)
+            ? shad.Theme.of(context).colorScheme.background.toARGB32()
+            : null,
       );
-      if (mounted && generation == _generation) {
-        setState(() => _document = document);
-      }
+      final documents = widget.renderedDocuments;
+      final memo = documents?.lookup(request);
+      final document =
+          memo ??
+          await compute<MailDocumentRequest, String>(
+            renderMailDocument,
+            request,
+          );
+      // A render that outlived this body (or its Mail view) is discarded.
+      if (!mounted || generation != _generation) return;
+      if (memo == null) documents?.store(request, document);
+      setState(() => _document = document);
     } on Object {
       if (mounted && generation == _generation) setState(() => _failed = true);
     }

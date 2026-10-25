@@ -1,14 +1,6 @@
 part of 'cms_page.dart';
 
 extension _CmsCollectionEditor on _CmsPageState {
-  String _slugify(String value) {
-    return value
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp('[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-+|-+$'), '');
-  }
-
   Future<void> _showCollectionEditor([CmsCollection? collection]) async {
     final wsId = _wsId;
     if (!mounted || _denied) return;
@@ -25,7 +17,7 @@ extension _CmsCollectionEditor on _CmsPageState {
 
     var busy = false;
     String? failure;
-    final saved = await _showCmsSheet<bool>(
+    final result = await _showCmsSheet<_CmsEditorResult>(
       context: context,
       onDispose: () {
         titleController.dispose();
@@ -34,137 +26,117 @@ extension _CmsCollectionEditor on _CmsPageState {
         descriptionController.dispose();
       },
       builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            20 + MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  collection == null
-                      ? context.l10n.cmsNewCollection
-                      : context.l10n.cmsEditCollection,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: titleController,
-                  autofocus: true,
-                  decoration: InputDecoration(labelText: context.l10n.cmsTitle),
-                  onChanged: (value) {
-                    if (collection == null) {
-                      slugController.text = _slugify(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: slugController,
-                  decoration: InputDecoration(labelText: context.l10n.cmsSlug),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: typeController,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.cmsCollectionType,
+        builder: (context, setSheetState) {
+          final l10n = context.l10n;
+          Future<void> save() async {
+            final title = titleController.text.trim();
+            final slug = slugController.text.trim();
+            final type = typeController.text.trim();
+            final description = descriptionController.text.trim();
+            if (title.isEmpty || slug.isEmpty || type.isEmpty) {
+              setSheetState(() => failure = l10n.commonRequired);
+              return;
+            }
+            if (!mounted || !context.mounted) return;
+            setSheetState(() {
+              busy = true;
+              failure = null;
+            });
+            try {
+              if (collection == null) {
+                await _repository.createCollection(
+                  wsId,
+                  title: title,
+                  slug: slug,
+                  collectionType: type,
+                  description: description.isEmpty ? null : description,
+                );
+              } else {
+                await _repository.updateCollection(
+                  wsId,
+                  collection.id,
+                  title: title,
+                  slug: slug,
+                  collectionType: type,
+                  description: description.isEmpty ? null : description,
+                  isEnabled: enabled,
+                );
+              }
+              if (mounted && context.mounted) {
+                Navigator.of(context).pop(_CmsEditorResult.saved);
+              }
+            } on Object catch (error) {
+              if (!mounted || !context.mounted) return;
+              setSheetState(() {
+                busy = false;
+                failure = error is ApiException
+                    ? error.message
+                    : l10n.commonSomethingWentWrong;
+              });
+            }
+          }
+
+          return _CmsEditorForm(
+            title: collection == null
+                ? l10n.cmsNewCollection
+                : l10n.cmsEditCollection,
+            icon: LucideIcons.libraryBig,
+            busy: busy,
+            failure: failure,
+            onSave: () => unawaited(save()),
+            onDelete: collection == null
+                ? null
+                : () => Navigator.of(context).pop(_CmsEditorResult.delete),
+            sections: [
+              (
+                l10n.cmsDetailsSection,
+                [
+                  AppTextField(
+                    controller: titleController,
+                    autofocus: true,
+                    label: l10n.cmsTitle,
+                    onChanged: (value) {
+                      if (collection == null) {
+                        slugController.text = _slugify(value);
+                      }
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.cmsDescription,
+                  AppTextField(controller: slugController, label: l10n.cmsSlug),
+                  AppTextField(
+                    controller: typeController,
+                    label: l10n.cmsCollectionType,
                   ),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.l10n.cmsCollectionEnabled),
-                  value: enabled,
-                  onChanged: (value) => setSheetState(() => enabled = value),
-                ),
-                if (failure != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      failure!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+                  AppTextField(
+                    controller: descriptionController,
+                    label: l10n.cmsDescription,
+                    minLines: 2,
+                    maxLines: 4,
+                  ),
+                ],
+              ),
+              if (collection != null)
+                (
+                  l10n.cmsPublishingSection,
+                  [
+                    AppToggleRow(
+                      title: Text(l10n.cmsCollectionEnabled),
+                      value: enabled,
+                      onChanged: (value) =>
+                          setSheetState(() => enabled = value),
                     ),
-                  ),
-                FilledButton(
-                  onPressed: busy
-                      ? null
-                      : () async {
-                          final title = titleController.text.trim();
-                          final slug = slugController.text.trim();
-                          final type = typeController.text.trim();
-                          final description = descriptionController.text.trim();
-                          if (title.isEmpty || slug.isEmpty || type.isEmpty) {
-                            setSheetState(
-                              () => failure = context.l10n.commonRequired,
-                            );
-                            return;
-                          }
-                          if (!mounted || !context.mounted) return;
-                          setSheetState(() {
-                            busy = true;
-                            failure = null;
-                          });
-                          try {
-                            if (collection == null) {
-                              await _repository.createCollection(
-                                wsId,
-                                title: title,
-                                slug: slug,
-                                collectionType: type,
-                                description: description.isEmpty
-                                    ? null
-                                    : description,
-                              );
-                            } else {
-                              await _repository.updateCollection(
-                                wsId,
-                                collection.id,
-                                title: title,
-                                slug: slug,
-                                collectionType: type,
-                                description: description.isEmpty
-                                    ? null
-                                    : description,
-                                isEnabled: enabled,
-                              );
-                            }
-                            if (mounted && context.mounted) {
-                              Navigator.of(context).pop(true);
-                            }
-                          } on Object catch (error) {
-                            if (!mounted || !context.mounted) return;
-                            setSheetState(() {
-                              busy = false;
-                              failure = error is ApiException
-                                  ? error.message
-                                  : context.l10n.commonSomethingWentWrong;
-                            });
-                          }
-                        },
-                  child: Text(context.l10n.commonSave),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
+            ],
+          );
+        },
       ),
     );
 
-    if (!mounted || saved != true) return;
+    if (!mounted || result == null) return;
+    if (result == _CmsEditorResult.delete && collection != null) {
+      await _deleteCollection(collection);
+      return;
+    }
     await _reload();
   }
 }
