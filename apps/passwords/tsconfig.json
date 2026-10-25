@@ -18,6 +18,7 @@
   },
   "include": [
     "src",
+    "scripts",
     "cloudflare/worker.ts",
     "vite.config.ts",
     "void.config.ts",
