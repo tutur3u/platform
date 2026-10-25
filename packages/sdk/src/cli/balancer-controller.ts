@@ -55,6 +55,7 @@ export function telemetryFromProbe(
         ? pressure
         : undefined,
     diskFreeGiB: num(value.diskFreeGiB),
+    diskFreePercent: num(value.diskFreePercent),
     ttrVersion:
       typeof value.ttrVersion === 'string' ? value.ttrVersion : undefined,
     // A partial queue report is no report: UNKNOWN, not idle.
@@ -332,7 +333,9 @@ export async function balancerTick(
   }
   for (const [runId, reason] of Object.entries(plan.blocked)) {
     const run = await deps.ledger.readRun(runId);
-    if (run?.state === 'queued' && run.blockedBy !== reason)
+    // Load figures change every round; record a blocker only when its shape does.
+    const shape = (text?: string) => text?.replace(/[0-9.]+/gu, '#');
+    if (run?.state === 'queued' && shape(run.blockedBy) !== shape(reason))
       await deps.ledger.update(run.runId, run.revision, (current) => ({
         ...current,
         blockedBy: reason,

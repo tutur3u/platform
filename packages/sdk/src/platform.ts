@@ -922,6 +922,11 @@ export class TuturuuuUserClient {
     return nextSession;
   }
 
+  /** Authenticated options for the Infrastructure app's API origin. */
+  getInfrastructureClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(getInfrastructureOrigin(this.baseUrl));
+  }
+
   private createClientOptions(baseUrl: string): InternalApiClientOptions {
     return {
       baseUrl,

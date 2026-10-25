@@ -36,6 +36,7 @@ export const fixtureTelemetry = (
   load1: 1,
   memoryPressure: 'normal',
   diskFreeGiB: 200,
+  diskFreePercent: 40,
   ttrVersion: '0.29.0',
   queue: { enabled: true, lanes: 2, occupied: 0, waiting: 0 },
   activeRuns: [],

@@ -1,0 +1,100 @@
+---
+title: 'Fleet run balancer'
+description: 'Request a test, lint, build or review run and let ttr balancer place it on an eligible machine.'
+---
+
+`ttr balancer` places a requested run on one or more registered machines. Each
+run uses a fresh checkout of an exact commit and executes inside that machine's
+own `ttr resources run` queue. The result goes back to the request that asked
+for it. The balancer adds no second queue: each host's canonical resource
+queue stays the final admission for every project and consumer on that machine.
+
+## Request a run
+
+```sh
+ttr balancer run --sha main --cwd packages/sdk --class light --replicas 2 \
+  --thread "$T3_THREAD_ID" -- bun x vitest run src/cli/resources-hosts-plan.test.ts
+```
+
+- `--sha` takes a full commit SHA or `main`, which resolves origin `main`. The
+  commit must be on an origin branch. Dirty-source sync is not enabled yet.
+- `--replicas N` runs the same request on `N` distinct hosts.
+- `--priority 0-9` places higher priority first when capacity is scarce.
+- `--host`/`--exclude-host` constrain placement. `--request-id` is the
+  idempotency key: repeating it resumes the same request, and reusing it with
+  different parameters is refused.
+- `--detach` places once and returns. `ttr balancer reconcile` (no argument)
+  places queued runs and settles active ones later.
+
+Other commands: `status [requestId] [--json]`, `probe`, `cancel <run|request>`,
+`log <runId>`, `consume <runId> --thread <id>` (records one consumption per
+thread and result) and `publish [requestId]`.
+
+## Register hosts
+
+Hosts live in `~/.tuturuuu/balancer/hosts.json` on the requesting machine. It
+must be a regular `0600` file owned by you. Each entry names a transport
+(`local`, or `ssh` with an SSH config alias), the verified `hostname`,
+`platform` and `arch`, disk floors (`minDiskGiB`, `minDiskFreePercent`,
+default 10), an optional `maxLoadPerCpu` (default 1), capacity, reserved
+headroom, per-class weights and an optional `preference` (lower first). An
+optional `hold` keeps a host out of placement.
+
+## Placement rules
+
+- A host is eligible only with fresh (under 60 s), complete telemetry from a
+  probe of that host: identity, load, memory pressure, free disk (GiB and
+  percent) and its `ttr resources` queue. Missing or stale telemetry is
+  UNKNOWN and never receives work.
+- Lanes are the slot count. Every owner and waiter in the host queue occupies
+  them, whatever project or tool started it. Dispatched runs that the host has
+  not reported yet stay reserved.
+- Placement reuses the `--hosts` planner (`planAdmissions`): preference first,
+  then remaining CPU. Account or provider capacity is never a host slot.
+- When no host qualifies, the run stays queued with its closest blockers.
+
+## Execution and identities
+
+| Identity | Meaning |
+| --- | --- |
+| `requestId` | The caller's idempotency key. |
+| `runId` | `<requestId>-r<replica>`: one logical run. |
+| `sourceId` | SHA-256 of the source spec (repository and commit). |
+| `deviceId` | The registered host the run was placed on. |
+| `leaseId` + `fence` | The placement, written before dispatch. |
+| `resultId` | Equals `leaseId`: one result per lease. |
+
+The controller ships a content-addressed agent bundle (Node built-ins only)
+to the host and runs it with the host's own bun. The host creates
+`~/.tuturuuu/balancer/runs/<runId>` exclusively, so a second admission of the
+same run is refused. A supervisor (a `systemd-run --user` unit on Linux, a
+detached process elsewhere) runs the whole job inside one
+`ttr resources run` admission:
+
+1. Fetch the commit into a per-host partial mirror and add a detached
+   worktree.
+2. Resolve Node.js: the `.nvmrc` pin, else the newest installed version that
+   meets `engines.node`. The choice is recorded in `toolchain.json`. Toolchain
+   installation is not automated yet.
+3. Run `bun install --frozen-lockfile` and then the command.
+
+The host writes `result.json` with the lease, exit code, phase and log digest,
+then removes the checkout. Host admission refusals (for example, low disk)
+record `rejected`, setup errors record `setup_failed`, and timeouts record
+`failed`.
+
+## Unknown outcomes and cancellation
+
+An uncertain dispatch or three failed status reads mark a run `unknown`. An
+UNKNOWN run is never rescheduled. `reconcile` settles it from the host record
+once the host answers, and only a result carrying the run's lease and fence is
+accepted. `cancel` stops a queued run locally and signals a placed run's host
+supervisor, which stops the queue admission and its command.
+
+## Infrastructure view
+
+Controllers publish each changed run (best effort) to
+`POST /api/v1/infrastructure/balancer/runs`. Infrastructure shows them at
+`/<wsId>/balancer`. The database keeps only a newer revision from the same
+publisher. Published records include the command argv, so never pass secrets
+as arguments.

@@ -24,6 +24,7 @@ const hostSchema = z
     hold: z.string().min(1).max(200).optional(),
     maxLoadPerCpu: z.number().positive().max(16).optional(),
     minDiskGiB: z.number().min(0).max(100_000),
+    minDiskFreePercent: z.number().min(0).max(100).optional(),
     capacity: z.object({
       cpus: z.number().int().min(1).max(512),
       memoryGiB: z.number().positive().max(4096),

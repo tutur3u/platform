@@ -37,16 +37,19 @@ const HELP = `Usage: ttr balancer <command>
       --request-id <id>        Idempotency key (16-128 of A-Z a-z 0-9 _ -)
       --no-install             Skip the frozen dependency install
       --detach                 Submit and return without following
+      --no-publish             Do not publish runs to Infrastructure
   status [requestId] [--json]  Show recorded runs
   probe [--json]               Probe hosts and show placement eligibility
   reconcile [runId]            Settle active or UNKNOWN runs from host records
   cancel <runId|requestId>     Cancel queued runs or stop placed runs
   consume <runId> --thread <id>  Record that a thread consumed a result
   log <runId>                  Show the tail of a run's host log
+  publish [requestId]          Publish recorded runs to Infrastructure
 
 Hosts come from ~/.tuturuuu/balancer/hosts.json (0600). Runs execute in a
 fresh checkout inside each host's own \`ttr resources run\` queue. A run whose
-host stops answering becomes UNKNOWN and is never rescheduled.`;
+host stops answering becomes UNKNOWN and is never rescheduled. Published
+runs include the command argv, so never pass secrets as arguments.`;
 
 function originMain(repo: string) {
   return new Promise<string>((done, reject) =>
@@ -73,7 +76,12 @@ function parseRunArgs(args: string[]) {
   const flags = new Set<string>();
   for (let i = 0; i < options.length; i++) {
     const name = options[i]!.replace(/^--/u, '');
-    if (name === 'no-install' || name === 'detach' || name === 'json') {
+    if (
+      name === 'no-install' ||
+      name === 'detach' ||
+      name === 'json' ||
+      name === 'no-publish'
+    ) {
       flags.add(name);
       continue;
     }
@@ -114,9 +122,38 @@ async function deps(): Promise<ControllerDeps> {
   };
 }
 
-async function follow(context: ControllerDeps, requestId: string) {
+type Publish = (runs: BalancerRun[]) => Promise<unknown>;
+
+// Write-through to the Infrastructure read model. Best effort: a missing
+// session or failed publication never changes a run; republishing later is
+// safe because only newer revisions apply.
+async function createPublisher(): Promise<Publish | undefined> {
+  try {
+    const [{ createSessionClient }, { publishBalancerRuns }] =
+      await Promise.all([
+        import('./resources-box-offload.js'),
+        import('../platform-balancer.js'),
+      ]);
+    const options = (
+      await createSessionClient()
+    ).getInfrastructureClientOptions();
+    return (runs) => publishBalancerRuns(options, runs);
+  } catch (error) {
+    process.stderr.write(
+      `[ttr balancer] not publishing to Infrastructure: ${error instanceof Error ? error.message : 'no session'}\n`
+    );
+    return undefined;
+  }
+}
+
+async function follow(
+  context: ControllerDeps,
+  requestId: string,
+  publish?: Publish
+) {
   const failures = new Map<string, number>();
   const seen = new Map<string, number>();
+  let publishWarned = false;
   let interrupted = 0;
   let deadline = Number.POSITIVE_INFINITY;
   const onSignal = () => {
@@ -140,13 +177,23 @@ async function follow(context: ControllerDeps, requestId: string) {
     for (;;) {
       const { blocked } = await balancerTick(context, failures);
       const runs = await context.ledger.listRuns(requestId);
-      for (const run of runs)
-        if (seen.get(run.runId) !== run.revision) {
-          seen.set(run.runId, run.revision);
-          process.stderr.write(
-            `[ttr balancer] ${line(run)}${blocked[run.runId] ? ` (waiting: ${blocked[run.runId]})` : ''}\n`
-          );
-        }
+      const changed = runs.filter(
+        (run) => seen.get(run.runId) !== run.revision
+      );
+      if (publish && changed.length)
+        await publish(changed).catch((error) => {
+          if (!publishWarned)
+            process.stderr.write(
+              `[ttr balancer] publication failed; runs continue: ${error instanceof Error ? error.message : 'unknown error'}\n`
+            );
+          publishWarned = true;
+        });
+      for (const run of changed) {
+        seen.set(run.runId, run.revision);
+        process.stderr.write(
+          `[ttr balancer] ${line(run)}${blocked[run.runId] ? ` (waiting: ${blocked[run.runId]})` : ''}\n`
+        );
+      }
       if (
         runs.every(
           (run) => isBalancerTerminal(run.state) || run.state === 'unknown'
@@ -213,9 +260,17 @@ export async function runBalancerCommand(args: string[]) {
     process.stderr.write(
       `[ttr balancer] ${submitted.created ? 'requested' : 'resumed'} ${request.requestId} at ${sha.slice(0, 12)}\n`
     );
+    const publish = flags.has('no-publish')
+      ? undefined
+      : await createPublisher();
+    if (publish && flags.has('detach'))
+      await publish(submitted.runs).catch(() => undefined);
+    // Detached requests are placed once now; a later `reconcile` or `run`
+    // keeps driving any replica that is still queued.
+    if (flags.has('detach')) await balancerTick(context, new Map());
     const runs = flags.has('detach')
-      ? submitted.runs
-      : await follow(context, request.requestId);
+      ? await context.ledger.listRuns(request.requestId)
+      : await follow(context, request.requestId, publish);
     process.stdout.write(
       `${JSON.stringify({ requestId: request.requestId, runs: runs.map(summary) }, null, 2)}\n`
     );
@@ -257,13 +312,35 @@ export async function runBalancerCommand(args: string[]) {
     );
     return;
   }
+  if (action === 'publish') {
+    const requestId = rest.find((arg) => !arg.startsWith('--'));
+    const publish = await createPublisher();
+    if (!publish)
+      throw new Error('Publishing needs a session. Run `ttr login`.');
+    const runs = await context.ledger.listRuns(requestId);
+    process.stdout.write(`${JSON.stringify(await publish(runs))}\n`);
+    return;
+  }
   if (action === 'reconcile') {
     const target = rest.find((arg) => !arg.startsWith('--'));
+    const failures = new Map<string, number>();
+    if (!target) await balancerTick(context, failures);
     const runs = (await context.ledger.listRuns()).filter(
       (run) => !target || run.runId === target
     );
-    for (const run of runs)
-      process.stdout.write(`${line(await reconcileRun(context, run))}\n`);
+    for (const run of runs) {
+      // One invocation retries a silent host before declaring it UNKNOWN.
+      let current = await reconcileRun(context, run, failures);
+      while (
+        failures.has(current.runId) &&
+        current.state !== 'unknown' &&
+        !isBalancerTerminal(current.state)
+      ) {
+        await sleep(2_000);
+        current = await reconcileRun(context, current, failures);
+      }
+      process.stdout.write(`${line(current)}\n`);
+    }
     return;
   }
   if (action === 'cancel') {

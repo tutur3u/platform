@@ -104,12 +104,17 @@ function queueStatus() {
 function probe() {
   const { version, queue } = queueStatus();
   let diskFreeGiB: number | undefined;
+  let diskFreePercent: number | undefined;
   try {
     ensureDir(home());
     const stats = statfsSync(home());
     diskFreeGiB = (stats.bavail * stats.bsize) / 1024 ** 3;
+    diskFreePercent = stats.blocks
+      ? (100 * stats.bavail) / stats.blocks
+      : undefined;
   } catch {
     diskFreeGiB = undefined;
+    diskFreePercent = undefined;
   }
   const activeRuns: string[] = [];
   try {
@@ -128,6 +133,7 @@ function probe() {
     load1: loadavg()[0],
     memoryPressure: memoryPressure(),
     diskFreeGiB,
+    diskFreePercent,
     ttrVersion: version,
     queue,
     activeRuns,

@@ -1,8 +1,17 @@
 // Source preparation for one admitted run: exact-commit checkout from a
 // per-host mirror, then the frozen install and the command. Node built-ins only.
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import {
   ensureDir,
   home,
@@ -158,11 +167,30 @@ export async function job(runId: string) {
   }
   if (git(['rev-parse', 'HEAD'], checkout).trim() !== spec.baseSha)
     setupFailed('checkout is not at the requested commit');
-  if (spec.install && existsSync(join(checkout, 'package.json'))) {
+  const javascript = existsSync(join(checkout, 'package.json'));
+  const node = javascript ? resolveNode(checkout) : undefined;
+  if (node && !node.path)
+    setupFailed(
+      `no installed Node.js satisfies ${node.wanted} (toolchain install is not automated yet)`
+    );
+  writeJson(join(dir, 'toolchain.json'), {
+    node: node
+      ? { path: node.path, version: node.version, pinned: node.pinned }
+      : null,
+    bun: process.versions.bun ?? null,
+    at: now(),
+  });
+  const env = node?.path
+    ? {
+        ...process.env,
+        PATH: withToolDir(process.env.PATH, dirname(node.path)),
+      }
+    : process.env;
+  if (spec.install && javascript) {
     const install = spawnSync(
       process.execPath,
       ['install', '--frozen-lockfile'],
-      { cwd: checkout, stdio: 'inherit', env: process.env }
+      { cwd: checkout, stdio: 'inherit', env }
     );
     if (install.status !== 0)
       setupFailed(`dependency install exited ${install.status ?? 'by signal'}`);
@@ -174,7 +202,7 @@ export async function job(runId: string) {
   const command = spawn(spec.command[0]!, spec.command.slice(1), {
     cwd,
     stdio: 'inherit',
-    env: process.env,
+    env,
   });
   const forward = (signal: NodeJS.Signals) => command.kill(signal);
   process.on('SIGTERM', forward);
@@ -189,4 +217,95 @@ export async function job(runId: string) {
     at: now(),
   });
   process.exit(code);
+}
+
+type Version = [number, number, number];
+const parseVersion = (text: string): Version | undefined => {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)/u.exec(text.trim());
+  return match
+    ? [Number(match[1]), Number(match[2]), Number(match[3])]
+    : undefined;
+};
+const compare = (a: Version, b: Version) =>
+  a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+
+// The checkout's `.nvmrc` pin first, then the newest installed Node.js that
+// meets `engines.node` (only `>=x.y.z` is understood; anything else needs the
+// pin). Real binaries only: the queue's own shims are never candidates.
+export function resolveNode(checkout: string, home = homedir()) {
+  const pinned = (() => {
+    try {
+      return readFileSync(join(checkout, '.nvmrc'), 'utf8')
+        .trim()
+        .replace(/^v/u, '');
+    } catch {
+      return undefined;
+    }
+  })();
+  const engines = String(
+    (
+      readJson(join(checkout, 'package.json'))?.engines as
+        | { node?: unknown }
+        | undefined
+    )?.node ?? ''
+  );
+  const minimum = /^>=\s*(\S+)$/u.exec(engines)?.[1];
+  const floor = minimum ? parseVersion(minimum) : undefined;
+  const wanted = minimum
+    ? `>=${minimum}`
+    : pinned
+      ? `v${pinned}`
+      : 'any version';
+  const nvm = join(home, '.nvm', 'versions', 'node');
+  const managed = (() => {
+    try {
+      return readdirSync(nvm)
+        .filter((name) => parseVersion(name))
+        .sort((a, b) => compare(parseVersion(b)!, parseVersion(a)!))
+        .map((name) => join(nvm, name, 'bin', 'node'));
+    } catch {
+      return [];
+    }
+  })();
+  const candidates = [
+    ...(pinned ? [join(nvm, `v${pinned}`, 'bin', 'node')] : []),
+    ...managed,
+    '/opt/homebrew/bin/node',
+    '/usr/local/bin/node',
+    '/usr/bin/node',
+  ];
+  for (const path of candidates) {
+    if (!existsSync(path)) continue;
+    const out = spawnSync(path, ['--version'], {
+      encoding: 'utf8',
+      env: {},
+      timeout: 10_000,
+    });
+    const version = parseVersion(out.stdout ?? '');
+    if (out.status !== 0 || !version) continue;
+    const exact =
+      pinned !== undefined &&
+      compare(version, parseVersion(pinned) ?? [0, 0, 0]) === 0;
+    if (!exact && floor && compare(version, floor) < 0) continue;
+    if (!exact && !floor && pinned) continue;
+    return { path, version: `v${version.join('.')}`, pinned: exact, wanted };
+  }
+  return { path: undefined, version: undefined, pinned: false, wanted };
+}
+
+// The queue puts its shims first on PATH; the real tool directory goes right
+// after them so a shimmed `node` resolves to it.
+export function withToolDir(path: string | undefined, dir: string) {
+  const entries = (path ?? '').split(':').filter(Boolean);
+  let index = 0;
+  while (
+    index < entries.length &&
+    entries[index]!.includes('/.tuturuuu/resources')
+  )
+    index++;
+  return [
+    ...entries.slice(0, index),
+    dir,
+    ...entries.slice(index).filter((entry) => entry !== dir),
+  ].join(':');
 }
