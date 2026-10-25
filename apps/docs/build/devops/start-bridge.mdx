@@ -326,7 +326,9 @@ gate, then calls the template with:
 The template validates the inputs and runs, on the exact source SHA: frozen
 install, dependency build, build identity, the registry check, unit tests,
 Biome, the Void build, route-tree drift, type-check, emitted-config validation,
-emitted binding-type compatibility, Wrangler `deploy --dry-run`, then seal →
+emitted binding-type compatibility (a scoped harness: the generated bindings
+become a module importing only the Workers types they name, checked under the
+app's own tsconfig, so global runtime types never retype app code), Wrangler `deploy --dry-run`, then seal →
 emitted runtime → verify → pack. A second job restores the archive into clean
 output and repeats the dry-run, runtime acceptance and byte verification. It
 has no publish job or provider credential; production stays held in

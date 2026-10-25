@@ -105,6 +105,8 @@ jobs:
             echo "$line" >> "$GITHUB_ENV"
           done <<< "$PUBLIC_ENV"
       - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Binding-type harness regressions
+        run: python3 scripts/ci/native-binding-type-harness.test.py
       - name: Helper source regressions
         if: inputs.helper-tests != ''
         run: bash -c "$HELPER_TESTS"
@@ -168,18 +170,17 @@ jobs:
           EMITTED_CONFIG: ${{ steps.output.outputs.config }}
         run: bun x --no-install wrangler types --config "$EMITTED_CONFIG" --env-interface "$ENV_INTERFACE" --include-runtime=false "$RUNNER_TEMP/native-env.d.ts"
       - name: Check generated binding compatibility with the owning Worker
+        # Scoped harness: the generated bindings become a module importing only
+        # the Workers types they name, checked under the app's own tsconfig, so
+        # global runtime types never retype the app (see the helper's header).
         run: |
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          root, temporary = Path.cwd(), Path(os.environ['RUNNER_TEMP'])
-          app = root / os.environ['APP_DIR']
-          harness = temporary / 'native-env-check.ts'
-          harness.write_text('/// <reference path=' + json.dumps(str(app / 'node_modules/@cloudflare/workers-types/index.d.ts')) + ' />\nimport type { ' + os.environ['WORKER_ENVIRONMENT_TYPE'] + ' } from ' + json.dumps(str(app / 'cloudflare/worker')) + ';\ndeclare const generated: ' + os.environ['ENV_INTERFACE'] + ';\nconst owned: ' + os.environ['WORKER_ENVIRONMENT_TYPE'] + ' = generated;\nvoid owned;\n')
-          config = {'extends': str(app / 'tsconfig.json'), 'compilerOptions': {'types': ['node'], 'typeRoots': [str(root / 'node_modules/@types')], 'noEmit': True}, 'include': [str(harness), str(temporary / 'native-env.d.ts')]}
-          (temporary / 'native-env-tsconfig.json').write_text(json.dumps(config))
-          PY
-          bun x --no-install tsc --project "$RUNNER_TEMP/native-env-tsconfig.json"
+          python3 scripts/ci/native-binding-type-harness.py \
+            --app-dir "$APP_DIR" \
+            --generated "$RUNNER_TEMP/native-env.d.ts" \
+            --env-interface "$ENV_INTERFACE" \
+            --worker-type "$WORKER_ENVIRONMENT_TYPE" \
+            --out "$RUNNER_TEMP/native-env-check"
+          bun x --no-install tsc --project "$RUNNER_TEMP/native-env-check/native-env-tsconfig.json"
       - name: Qualify the emitted exact-artifact Wrangler adapter without publication
         working-directory: apps/${{ inputs.app }}
         env:
