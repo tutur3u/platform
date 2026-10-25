@@ -15,6 +15,7 @@ export default function PlanLiveView({
         <MeetPlanLiveRoot
           platformUser={model.profile}
           baseUrl={currentMeetBaseUrl()}
+          planBaseUrl={`${currentMeetBaseUrl()}/plans`}
           initialSnapshot={model.snapshot}
         />
       </div>

@@ -20,6 +20,7 @@ async function PlanPageContent({ params }: PlanPageProps) {
       actorUserId={user?.id ?? null}
       params={params}
       baseUrl={currentMeetBaseUrl()}
+      planBaseUrl={`${currentMeetBaseUrl()}/plans`}
     />
   );
 }

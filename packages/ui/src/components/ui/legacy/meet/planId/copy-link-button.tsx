@@ -6,8 +6,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-export function generateCanonicalMeetUrl(planId: string) {
-  return `https://tuturuuu.com/meet/plans/${planId}`;
+export function generateCanonicalMeetUrl(
+  planId: string,
+  planBaseUrl = 'https://tuturuuu.com/meet/plans'
+) {
+  return `${planBaseUrl.replace(/\/$/u, '')}/${encodeURIComponent(planId)}`;
 }
 
 export default function CopyLinkButton({
