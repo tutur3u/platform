@@ -13,9 +13,16 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import { z } from 'zod';
+import { extractCliArchive } from './cli-versions-archive';
+import {
+  filesManifest,
+  materializePackage,
+  requireDirectory,
+} from './cli-versions-manifest';
 import { acquireUpgradeLock } from './devbox-upgrade-lock';
+import { resourceHome } from './resources-config';
 
 // Versioned side-by-side CLI installs. Every release lives in its own
 // immutable directory under ~/.tuturuuu/cli/versions/<version>, installed
@@ -104,44 +111,21 @@ export async function resolveRelease(
   return { version, tarball, integrity };
 }
 
-async function filesManifest(dir: string) {
-  const lines: string[] = [];
-  const walk = async (path: string) => {
-    for (const entry of (await readdir(path, { withFileTypes: true })).sort(
-      (a, b) => a.name.localeCompare(b.name)
-    )) {
-      const full = join(path, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name !== 'node_modules') await walk(full);
-      } else if (
-        entry.isFile() &&
-        !(path === dir && entry.name === '.bun-tag')
-      ) {
-        const hash = createHash('sha256').update(await readFile(full));
-        lines.push(`${hash.digest('hex')}  ${relative(dir, full)}`);
-      }
-    }
-  };
-  await walk(dir);
-  return {
-    files: lines.length,
-    sha256: createHash('sha256').update(lines.join('\n')).digest('hex'),
-  };
-}
-
 const packageDir = (dir: string) => join(dir, 'node_modules', 'tuturuuu');
 export const releaseEntry = (dir: string) =>
   join(packageDir(dir), 'dist', 'cli', 'index.js');
 
 /** Re-check an installed release against its recorded provenance. */
 export async function verifyInstalled(dir: string) {
+  await requireDirectory(dir);
+  await requireDirectory(join(dir, 'node_modules'));
+  const manifest = await filesManifest(packageDir(dir));
   const release = releaseSchema.parse(
     JSON.parse(await readFile(join(dir, 'release.json'), 'utf8'))
   );
   const pkg = JSON.parse(
     await readFile(join(packageDir(dir), 'package.json'), 'utf8')
   ) as { version?: string };
-  const manifest = await filesManifest(packageDir(dir));
   if (
     pkg.version !== release.version ||
     manifest.sha256 !== release.filesSha256 ||
@@ -169,7 +153,7 @@ async function withInstallLock<T>(store: string, action: () => Promise<T>) {
 
 /**
  * Install a release side by side: verify the registry tarball's sha512, let
- * bun install exactly those bytes (dependencies from the registry), verify
+ * bun install the validated extracted files (dependencies from the registry), verify
  * the installed package files equal the tarball, then publish the directory
  * with one rename. An already verified install is reused.
  */
@@ -218,18 +202,11 @@ export async function installRelease({
       await mkdir(join(staging, 'verify'), { recursive: true, mode: 0o700 });
       const tgz = `tuturuuu-${resolved.version}.tgz`;
       await writeFile(join(staging, tgz), bytes, { mode: 0o600 });
-      const extract = await run(
-        'tar',
-        ['-xzf', join(staging, tgz), '-C', join(staging, 'verify')],
-        staging
-      );
-      if (extract.code !== 0)
-        throw new Error(
-          `Cannot unpack the verified tarball: ${extract.output}`
-        );
+      await extractCliArchive(bytes, join(staging, 'verify'));
+      const expected = await filesManifest(join(staging, 'verify', 'package'));
       await writeFile(
         join(staging, 'package.json'),
-        `${JSON.stringify({ private: true, dependencies: { tuturuuu: `file:./${tgz}` } }, null, 2)}\n`
+        `${JSON.stringify({ private: true, dependencies: { tuturuuu: 'file:./verify/package' } }, null, 2)}\n`
       );
       const installed = await run(
         bun,
@@ -238,22 +215,7 @@ export async function installRelease({
       );
       if (installed.code !== 0)
         throw new Error(`bun install failed: ${installed.output}`);
-      // Bun records the integrity of a `file:` tarball in .bun-tag; it is
-      // install metadata, not package content, and must name these bytes.
-      const tag = await readFile(
-        join(packageDir(staging), '.bun-tag'),
-        'utf8'
-      ).catch(() => undefined);
-      if (tag !== undefined && tag.trim() !== resolved.integrity)
-        throw new Error(
-          'bun installed a different tarball than the verified one; nothing was published.'
-        );
-      const expected = await filesManifest(join(staging, 'verify', 'package'));
-      const actual = await filesManifest(packageDir(staging));
-      if (expected.sha256 !== actual.sha256 || expected.files !== actual.files)
-        throw new Error(
-          `Installed files differ from the verified tarball (${actual.files} vs ${expected.files} files); nothing was published.`
-        );
+      const actual = await materializePackage(staging, expected);
       await rm(join(staging, 'verify'), { recursive: true, force: true });
       const release: InstalledRelease = {
         version: resolved.version,
@@ -303,7 +265,7 @@ const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 export async function activateRelease({
   version,
   store = cliStore(),
-  resourcesHome = join(homedir(), '.tuturuuu', 'resources'),
+  resourcesHome = resourceHome(),
   run = runCommand,
   bun = process.execPath,
 }: {

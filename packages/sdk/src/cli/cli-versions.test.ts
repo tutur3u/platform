@@ -66,13 +66,19 @@ if (args[0] === 'resources' && args[1] === 'setup') {
 console.log(${JSON.stringify(version)});
 `
   );
-  execFileSync('tar', [
-    '-czf',
-    join(root, 'release.tgz'),
-    '-C',
-    root,
-    'package',
-  ]);
+  execFileSync(
+    'tar',
+    [
+      ...(process.platform === 'darwin' ? ['--no-mac-metadata'] : []),
+      '--format=ustar',
+      '-czf',
+      join(root, 'release.tgz'),
+      '-C',
+      root,
+      'package',
+    ],
+    { env: { ...process.env, COPYFILE_DISABLE: '1' } }
+  );
   const bytes = await readFile(join(root, 'release.tgz'));
   return {
     version,
