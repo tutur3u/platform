@@ -12,7 +12,8 @@
         "create": "Đã tạo kho",
         "rename": "Đã đổi tên kho",
         "list": "Đã xem danh sách kho",
-        "rotate": "Đã đổi khóa"
+        "rotate": "Đã đổi khóa",
+        "workspace_erased": "Đã ngừng kho của không gian làm việc"
       },
       "item": {
         "read": "Đã đọc mục",
@@ -26,7 +27,8 @@
       "member": {
         "set": "Đã thay đổi quyền thành viên",
         "list": "Đã xem danh sách thành viên",
-        "workspace_revoke": "Đã thu hồi quyền không gian làm việc"
+        "workspace_revoke": "Đã thu hồi quyền không gian làm việc",
+        "account_erased": "Đã xóa quyền của tài khoản"
       },
       "rotation": {
         "snapshot": "Đã chuẩn bị đổi khóa"

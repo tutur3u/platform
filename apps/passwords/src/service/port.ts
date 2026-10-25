@@ -106,6 +106,8 @@ export const AUDIT_EVENT_TYPES = [
   'member.set',
   'member.list',
   'member.workspace_revoke',
+  'member.account_erased',
+  'vault.workspace_erased',
   'rotation.snapshot',
   'vault.rotate',
   'grant.create',

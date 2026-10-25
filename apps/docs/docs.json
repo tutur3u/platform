@@ -411,7 +411,10 @@
               "build/development-tools/seo-strategy",
               {
                 "group": "Skills",
-                "pages": ["build/skills/overview", "build/skills/installation"]
+                "pages": [
+                  "build/skills/overview",
+                  "build/skills/installation"
+                ]
               }
             ]
           },
@@ -421,7 +424,9 @@
               "learn/overview",
               {
                 "group": "Examples",
-                "pages": ["learn/examples/overview"]
+                "pages": [
+                  "learn/examples/overview"
+                ]
               },
               {
                 "group": "Workshops",
@@ -559,6 +564,7 @@
                       "reference/repository/routes/mobile",
                       "reference/repository/routes/nova",
                       "reference/repository/routes/parley",
+                      "reference/repository/routes/passwords",
                       "reference/repository/routes/pay",
                       "reference/repository/routes/playground",
                       "reference/repository/routes/redis",

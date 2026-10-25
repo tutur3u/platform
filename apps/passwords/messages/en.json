@@ -12,7 +12,8 @@
         "create": "Vault created",
         "rename": "Vault renamed",
         "list": "Vaults listed",
-        "rotate": "Key rotated"
+        "rotate": "Key rotated",
+        "workspace_erased": "Workspace vault retired"
       },
       "item": {
         "read": "Item read",
@@ -26,7 +27,8 @@
       "member": {
         "set": "Member access changed",
         "list": "Members listed",
-        "workspace_revoke": "Workspace access revoked"
+        "workspace_revoke": "Workspace access revoked",
+        "account_erased": "Account access erased"
       },
       "rotation": {
         "snapshot": "Rotation prepared"
