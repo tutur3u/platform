@@ -7,6 +7,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Localization Generation**: Run `flutter gen-l10n` after ARB changes.
 - **Clean Pass**: `bun check:mobile` is mandatory for mobile changes. It runs format, analyze, and test.
 - **Analyze Info = CI Failure**: Treat `flutter analyze` info-level lints as blocking in this workspace; fix them in touched files before finishing.
+- **Widget Fixture Cleanup**: Dispose `tester.ensureSemantics()` handles and restore debug platform overrides in `try/finally` before the test body returns; Flutter checks these invariants before `addTearDown`. When a transport contract changes, migrate widget fixtures as well as repository tests, preserving held-response and duplicate-write assertions. See [fixture lifecycle guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-widget-fixtures-current).
 - **Flutter L10n Asset Formatting**: Do not send `.arb` files through `dart format`; format only Dart sources and regenerate `flutter gen-l10n` after ARB edits.
 - **Flutter Analyze Ignore Hygiene**: Avoid speculative `ignore_for_file` directives. `flutter analyze` reports `unnecessary_ignore` as a failing issue during `bun check:mobile`.
 - **Import Order Lints Can Still Block Delivery**: For new large mobile screens, expect `flutter analyze` style infos such as `directives_ordering`, deprecated form-field APIs, and constructor parameter-order lints to fail `bun check:mobile`. Do not stop at “no errors”; keep touched files info-clean.
@@ -154,6 +155,7 @@ when the local checkout lacks package configuration.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Assistant Send Recovery**: Distinguish an untouched actor/workspace scope from uncertain creation. Bootstrap a clear envelope under the scope lock only when the envelope, legacy selection/context, creation marker and process authority are all absent; require host acknowledgement before creation. Preserve informed recovery for legacy/pending/held state and retain drafts until a real USER receipt. Exercise first Send, rapid Sends, held ACKs and the first navbar frame (`assistant_send_recovery_test.dart`, `assistant_fresh_scope_test.dart`).
 - **Assistant Reaction Operations**: Use idempotent desired-state PUT with a stable persisted operation ID; never fall back to the legacy POST toggle. Clean exact unsent/acknowledged markers independently of page scope. Logout clears journal metadata but retains operation IDs until server retirement prevents delayed writes; scope admission captures the retirement epoch. Exact-message refresh safely replays the retained intent, then reads its target. See [native reaction decisions](../../../../../apps/docs/platform/features/assistant-live.mdx#native-mobile-reaction-operations) and lifecycle/transport regression suites.
+- **Assistant Message Actions**: Private Chat reactions/replies require a native conversation and an authoritative saved-message receipt; a UUID-shaped optimistic row is insufficient. Use the native reaction operation contract for uncertainty recovery and preserve message content when applying receipts. Reply jumps suspend bottom-follow and retain bubble keys through acknowledgment ID relocation. See [mobile message actions and appearance](../../../../../apps/docs/platform/features/assistant-live.mdx#mobile-message-actions-and-appearance) for supported scopes and regression targets.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
 ### Offline downloads
@@ -202,6 +204,11 @@ For the source-linked diagnosis guide, read
   Default settle-all `Future.wait` handles a sibling failure while another task
   remains pending; connect only after all prerequisites succeed and scope is
   still current. Test pending and failing tasks with controlled completers.
+- Keep shell provider mocks faithful to consumed getters, including an explicit
+  `AuthCubit.isClosed` value. Preserve page-build, navigation and geometry
+  assertions. Auth transition fixtures assert immediate revocation and await the
+  source notification before expecting restored actor identity; see the
+  [async fixture guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
 
 - Separate foreground interaction admission from the lease of an already admitted
   remote operation. A transient local runtime invalidation on pause must not drop

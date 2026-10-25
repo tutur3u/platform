@@ -181,6 +181,13 @@ before retiring the actor/epoch. Complete an explicit handshake inside the exist
 creation alone does not prove subscription. Keep the original request tuple,
 receipt/body assertions, zero forbidden effects and cleanup after retirement.
 
+Shell fixtures must provide the getters used by their real page consumers.
+`MockCubit` does not supply a valid `isClosed` value automatically: stub an open
+AuthCubit explicitly when mounting Assistant. Preserve navigation and geometry
+assertions instead of ignoring the resulting page-build exception. For auth
+transitions, assert immediate revocation and await the actual source notification
+before requiring restored session identity.
+
 ## Measure the Mira composer after layout
 
 Mira text entry grows from one to five lines. Enter inserts a newline; the side
@@ -264,6 +271,21 @@ the owned path manifest; still require analysis and tests in the resolved projec
 context before accepting the change.
 After separately reviewed application, require clean exact-head format and
 analysis CI; retain independent compiler, behavior, SQL and delivery gates.
+
+## Keep widget fixtures current
+
+Flutter verifies semantics handles and debug platform overrides before registered
+`addTearDown` callbacks run. Dispose handles and restore overrides in a
+`try/finally` inside the test body, including when an assertion fails. Keep the
+accessibility and platform-specific assertions intact.
+
+Transport changes also affect widget fixtures. Exercise the current operation
+receipt and read shape rather than stubbing a retired method: a mock that never
+receives the request can leave a held-response test waiting indefinitely.
+Assert that the expected request entered before awaiting its completion, and
+retain stable operation identity, uncertainty and duplicate-write checks.
+The Assistant message-action and transcript review regressions cover these
+boundaries.
 
 ## Prepare chat qualification declarations
 

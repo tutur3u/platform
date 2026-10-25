@@ -43,6 +43,10 @@ import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart'
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
@@ -80,6 +84,8 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 part 'assistant_page_new_chat.dart';
 part 'assistant_page_settings.dart';
+part 'assistant_page_theme.dart';
+part 'assistant_page_message_actions.dart';
 part 'assistant_page_live_actions.dart';
 part 'assistant_page_layout.dart';
 part 'assistant_page_workspace.dart';
@@ -127,6 +133,11 @@ class _AssistantPageState extends State<AssistantPage>
   Object? _chromeActionsKey;
   List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
+  late final _chatThemeActor = AssistantThemeSessionSource(
+    auth: context.read<AuthCubit>(),
+    actorId: _currentActor(),
+  );
+  late final _chatTheme = AssistantThemeController(actor: _chatThemeActor);
   double? _composerHeight;
   bool _settingsWritePending = false;
   bool _newConversationPending = false;
@@ -262,6 +273,7 @@ class _AssistantPageState extends State<AssistantPage>
   bool _appIsForeground = true;
 
   void _resetLocalActor() {
+    _syncThemeActor(force: true);
     ++_voiceActorScopeEpoch;
     unawaited(_localCubit.invalidate());
     setState(() => _loadedWorkspaceId = null);
@@ -314,6 +326,7 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncThemeActor();
     if (TickerMode.valuesOf(context).enabled) {
       _resumeLocal();
     } else {
@@ -336,6 +349,7 @@ class _AssistantPageState extends State<AssistantPage>
 
   @override
   void dispose() {
+    _disposeChatTheme();
     WidgetsBinding.instance.removeObserver(this);
     _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);
@@ -366,7 +380,7 @@ class _AssistantPageState extends State<AssistantPage>
       }
       return true;
     },
-    child: _buildPage(context),
+    child: _themedPage(context),
   );
 
   Future<void> _loadLiveBrowsingPreference(String wsId) async {

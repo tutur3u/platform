@@ -18,6 +18,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_primary_act
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_inline_voice_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_reply_preview.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -54,6 +55,7 @@ class AssistantComposerDock extends StatelessWidget {
     this.localModelLabel,
     this.onOpenLocalModels,
     this.onStopLocal,
+    this.onCancelReply,
     super.key,
   });
 
@@ -74,6 +76,7 @@ class AssistantComposerDock extends StatelessWidget {
   final String? localModelLabel;
   final Future<void> Function()? onOpenLocalModels;
   final Future<void> Function()? onStopLocal;
+  final VoidCallback? onCancelReply;
   final bool navigationExpanded;
   final double bottomInset;
   final bool isPersonalWorkspace;
@@ -189,6 +192,17 @@ class AssistantComposerDock extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (chatState.replyTarget case final reply? when !localOnly)
+            AssistantReplyPreview(
+              label: reply.role == 'user'
+                  ? context.l10n.assistantYouLabel
+                  : shellState.soul.name,
+              text: reply.parts
+                  .where((part) => part.type == 'text')
+                  .map((part) => part.text ?? '')
+                  .join('\n'),
+              onCancel: onCancelReply,
+            ),
           if (!localOnly && chatState.composerAttachments.isNotEmpty)
             AssistantComposerAttachments(
               attachments: chatState.composerAttachments,

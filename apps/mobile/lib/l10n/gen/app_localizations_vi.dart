@@ -11079,4 +11079,97 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarSettingsError => 'Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng.';
+
+  @override
+  String get assistantReactionCelebrate => 'Chúc mừng';
+
+  @override
+  String get assistantReactionInsightful => 'Hữu ích';
+
+  @override
+  String get assistantReactionLabel => 'Cảm xúc';
+
+  @override
+  String get assistantReactionLike => 'Thích';
+
+  @override
+  String get assistantReactionLove => 'Yêu thích';
+
+  @override
+  String get assistantReactionUnconfirmed => 'Chưa thể xác nhận cảm xúc. Hãy làm mới cảm xúc để đối soát an toàn.';
+
+  @override
+  String get assistantReactionUnavailable => 'Hiện chưa thể cập nhật cảm xúc. Vui lòng thử lại.';
+
+  @override
+  String get assistantRefreshReactions => 'Làm mới cảm xúc';
+
+  @override
+  String get assistantReplyMessageAction => 'Trả lời';
+
+  @override
+  String get assistantReplyUnavailable => 'Không tìm thấy tin nhắn gốc';
+
+  @override
+  String get assistantThemeAdvanced => 'Nâng cao';
+
+  @override
+  String get assistantThemeBackground => 'Màu nền';
+
+  @override
+  String get assistantThemeBackgroundStyle => 'Kiểu nền';
+
+  @override
+  String get assistantThemeCustom => 'Tùy chỉnh';
+
+  @override
+  String get assistantThemeDeviceScope => 'Áp dụng cho các cuộc trò chuyện Trợ lý của bạn trên thiết bị này, trong mọi không gian làm việc.';
+
+  @override
+  String get assistantThemeIntensity => 'Cường độ màu nền';
+
+  @override
+  String get assistantThemeLoading => 'Đang tải giao diện…';
+
+  @override
+  String get assistantThemeMessages => 'Màu tin nhắn';
+
+  @override
+  String get assistantThemeOmbre => 'Chuyển màu mềm';
+
+  @override
+  String get assistantThemePreset => 'Mẫu giao diện';
+
+  @override
+  String get assistantThemePreview => 'Xem trước giao diện trò chuyện';
+
+  @override
+  String get assistantThemePreviewAssistant => 'Hãy dành thời gian cho những điều quan trọng.';
+
+  @override
+  String get assistantThemePreviewUser => 'Giúp tôi lên kế hoạch cho một ngày tập trung.';
+
+  @override
+  String get assistantThemeReset => 'Đặt lại giao diện';
+
+  @override
+  String get assistantThemeRetry => 'Thử lại';
+
+  @override
+  String get assistantThemeSaving => 'Đang lưu giao diện…';
+
+  @override
+  String get assistantThemeStorageError => 'Không thể lưu hoặc tải giao diện trên thiết bị này.';
+
+  @override
+  String get assistantThemeText => 'Màu chữ';
+
+  @override
+  String get assistantThemeTitle => 'Giao diện trò chuyện';
+
+  @override
+  String get assistantReplyPending => 'Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi.';
 }

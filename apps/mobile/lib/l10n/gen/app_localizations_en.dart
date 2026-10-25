@@ -11215,4 +11215,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarSettingsError => 'Could not load or save calendar preferences. Retry when online.';
+
+  @override
+  String get assistantReactionCelebrate => 'Celebrate';
+
+  @override
+  String get assistantReactionInsightful => 'Insightful';
+
+  @override
+  String get assistantReactionLabel => 'Reaction';
+
+  @override
+  String get assistantReactionLike => 'Like';
+
+  @override
+  String get assistantReactionLove => 'Love';
+
+  @override
+  String get assistantReactionUnconfirmed => 'The reaction could not be confirmed. Refresh reactions to reconcile it safely.';
+
+  @override
+  String get assistantReactionUnavailable => 'Reactions are unavailable right now. Try again.';
+
+  @override
+  String get assistantRefreshReactions => 'Refresh reactions';
+
+  @override
+  String get assistantReplyMessageAction => 'Reply';
+
+  @override
+  String get assistantReplyUnavailable => 'Original message unavailable';
+
+  @override
+  String get assistantThemeAdvanced => 'Advanced';
+
+  @override
+  String get assistantThemeBackground => 'Background colors';
+
+  @override
+  String get assistantThemeBackgroundStyle => 'Background style';
+
+  @override
+  String get assistantThemeCustom => 'Custom';
+
+  @override
+  String get assistantThemeDeviceScope => 'For your Assistant chats on this device, across workspaces.';
+
+  @override
+  String get assistantThemeIntensity => 'Background intensity';
+
+  @override
+  String get assistantThemeLoading => 'Loading appearance…';
+
+  @override
+  String get assistantThemeMessages => 'Message colors';
+
+  @override
+  String get assistantThemeOmbre => 'Ombre';
+
+  @override
+  String get assistantThemePreset => 'Preset';
+
+  @override
+  String get assistantThemePreview => 'Chat appearance preview';
+
+  @override
+  String get assistantThemePreviewAssistant => 'Let’s make room for what matters.';
+
+  @override
+  String get assistantThemePreviewUser => 'Help me plan a focused day.';
+
+  @override
+  String get assistantThemeReset => 'Reset appearance';
+
+  @override
+  String get assistantThemeRetry => 'Retry';
+
+  @override
+  String get assistantThemeSaving => 'Saving appearance…';
+
+  @override
+  String get assistantThemeStorageError => 'Appearance could not be saved or loaded on this device.';
+
+  @override
+  String get assistantThemeText => 'Text colors';
+
+  @override
+  String get assistantThemeTitle => 'Chat appearance';
+
+  @override
+  String get assistantReplyPending => 'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.';
 }

@@ -217,6 +217,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                         final isPersonalWorkspace = currentWorkspace.personal;
                         const scrollDismissBehavior =
                             ScrollViewKeyboardDismissBehavior.onDrag;
+                        final messageActionsCurrent = _messageActionScope(
+                          chatState,
+                        );
                         Future<void> removeComposerAttachment(
                           String attachmentId,
                         ) {
@@ -357,6 +360,11 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                 : const SizedBox.shrink()
                                           : AssistantComposerDock(
                                               embedded: true,
+                                              onCancelReply: () {
+                                                if (messageActionsCurrent()) {
+                                                  _chatCubit.clearReplyTarget();
+                                                }
+                                              },
                                               onHeightChanged:
                                                   _setComposerHeight,
                                               localOnly: localLane,
@@ -424,9 +432,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   ),
                                               onSend: () => _handleSend(
                                                 currentWorkspace.id,
-                                                shellState,
-                                                chatState,
-                                                liveState,
                                               ),
                                               onRemoveAttachment:
                                                   removeComposerAttachment,
@@ -445,9 +450,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   _toggleComposerNavigation,
                                               onSend: () => _handleSend(
                                                 currentWorkspace.id,
-                                                shellState,
-                                                chatState,
-                                                liveState,
                                               ),
                                               voiceCapture: localLane
                                                   ? null
@@ -547,10 +549,23 @@ extension _AssistantPageLayout on _AssistantPageState {
     AssistantLiveState liveState,
     AssistantShellState shellState,
   ) {
+    final current = _messageActionScope(chatState);
+    final remote = !_localCubit.state.local && !_localCubit.state.blocked;
     return AssistantTranscriptSection(
       chatState: chatState,
       liveState: liveState,
       assistantName: shellState.soul.name,
+      actorId: _currentActor(),
+      canPersistMessage: remote ? _chatCubit.canPersistMessage : null,
+      needsReactionRefresh: remote ? _chatCubit.needsReactionRefresh : null,
+      isActionCurrent: current,
+      onJumpToReply: _transcriptFollower.suspend,
+      onReply: _shouldSendThroughLive(chatState, liveState)
+          ? null
+          : (id) => _replyToMessage(id, current),
+      onReact: (id, reaction) =>
+          unawaited(_reactToMessage(id, reaction, current)),
+      onRefreshReactions: (id) => unawaited(_reactToMessage(id, null, current)),
       onRetry: () => _localCubit.state.local || _localCubit.state.blocked
           ? _localCubit.state.selectedModelId == null
                 ? _showLiveSettings()
