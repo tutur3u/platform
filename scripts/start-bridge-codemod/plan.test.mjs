@@ -301,6 +301,42 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   assert.match(runtime, /const WORKER = "tuturuuu-demo-vite-staging";/);
   assert.match(runtime, /build identity is the exact compiled source/);
   assert.match(runtime, /statusFor\('\/demo', 'tuturuuu\.com'\)/);
+  // A public root must answer 200, not merely "no 5xx" (a login redirect).
+  assert.match(runtime, /^const EXPECTED = \{"\/":200\};$/m);
+  assert.match(runtime, /assert\.equal\(response\.status, expected, outcome\)/);
+  assert.match(runtime, /assert\.equal\(mounted, root,/);
+  assert.doesNotMatch(runtime, /root < 500|mounted < 500/);
+  assert.deepEqual(
+    JSON.parse(content('apps/demo/start-bridge.routes.json')).runtime,
+    { '/': 200 }
+  );
+
+  // App-owned expectations: an explicit redirect is declared, never implied.
+  const routesPath = path.join(root, 'apps/demo/start-bridge.routes.json');
+  fs.writeFileSync(
+    routesPath,
+    `${JSON.stringify({
+      runtime: { '/': { redirect: '/login' }, '/about': 200 },
+    })}\n`
+  );
+  const declared = plan(root).writes.find((write) =>
+    write.path.endsWith('native-built-worker.runtime.mjs')
+  ).content;
+  assert.match(
+    declared,
+    /^const EXPECTED = \{"\/":\{"redirect":"\/login"\},"\/about":200\};$/m
+  );
+  for (const invalid of [503, { redirect: '' }, 'ok', { status: 200 }]) {
+    fs.writeFileSync(
+      routesPath,
+      `${JSON.stringify({ runtime: { '/': invalid } })}\n`
+    );
+    assert.match(
+      plan(root).problems.join('\n'),
+      /runtime\["\/"\] must be a non-5xx status or \{ "redirect"/,
+      JSON.stringify(invalid)
+    );
+  }
   assert.match(content('tuturuuu.ci.ts'), /'demo-cloudflare\.yaml': true,/);
   assert.equal(
     JSON.parse(content('apps/demo/package.json')).scripts['test:runtime'],

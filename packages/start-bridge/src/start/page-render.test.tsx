@@ -222,6 +222,55 @@ describe('resolveBridgePage', () => {
     });
   });
 
+  it('prefers the stripped locale page over a dynamic segment capturing the locale', async () => {
+    // Forms: the proxy rewrites `/` to `/en`, which `/[wsId]` also matches.
+    const localized = [
+      { pattern: '/', file: 'landing', defaults: { locale: 'en' } },
+      { pattern: '/[wsId]', file: 'workspace', defaults: { locale: 'en' } },
+      { pattern: '/verify-token', file: 'verify', defaults: { locale: 'en' } },
+      { pattern: '/en/legacy', file: 'legacy' },
+    ] as const;
+    const view = (name: string) => ({
+      page: async () => ({ default: () => <main>{name}</main> }),
+      layouts: [],
+    });
+    const localizedModules = {
+      landing: view('landing'),
+      workspace: view('workspace'),
+      verify: view('verify'),
+      legacy: view('legacy'),
+    };
+    const resolve = (href: string) =>
+      withBridgeRequest(request(href), async () => {
+        const page = await resolveBridgePage({
+          href,
+          pages: localized,
+          modules: localizedModules,
+        });
+        return { pattern: page?.pattern, params: currentPageParams() };
+      });
+    expect(await resolve('/en')).toEqual({
+      pattern: '/',
+      params: { locale: 'en' },
+    });
+    expect(await resolve('/vi')).toEqual({
+      pattern: '/',
+      params: { locale: 'vi' },
+    });
+    expect(await resolve('/en/ws-1')).toEqual({
+      pattern: '/[wsId]',
+      params: { locale: 'en', wsId: 'ws-1' },
+    });
+    expect(await resolve('/ws-1')).toEqual({
+      pattern: '/[wsId]',
+      params: { locale: 'en', wsId: 'ws-1' },
+    });
+    expect((await resolve('/verify-token')).pattern).toBe('/verify-token');
+    expect((await resolve('/vi/verify-token')).params.locale).toBe('vi');
+    // A page whose first segment is literally the prefix still wins.
+    expect((await resolve('/en/legacy')).pattern).toBe('/en/legacy');
+  });
+
   it('treats a // path as a path, never as another host', async () => {
     await withBridgeRequest(request('/'), async () => {
       // As a URL reference this would be host `notes`, path `/5`.
