@@ -122,6 +122,9 @@ header the route already set.
   Violations stay in the browser console unless the Worker variable
   `TTR_CSP_REPORT_URI` names a report endpoint.
 
+Report-only is burn-in on the subdomain, not admission. Every app shares one
+session on `tuturuuu.com`, so the CSP and Trusted Types must be **enforced** before
+an app is routed onto the shared origin in any mode, `shadow` included.
 Enforcement needs a per-request script nonce passed to the Start router
 (`ssr.nonce`) through the Start bridge request context, and zero remaining
 violations for each app. Inline scripts are expected to report until then.
