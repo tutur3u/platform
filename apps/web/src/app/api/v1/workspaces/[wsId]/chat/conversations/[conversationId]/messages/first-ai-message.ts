@@ -60,7 +60,7 @@ export async function sendFirstAiChatMessage({
   miraMode: boolean;
   timezone?: string;
   clientCapabilities?: string[];
-}): Promise<Response> {
+}): Promise<NextResponse> {
   try {
     const admission = await admitInitialAiSettings({
       actorUserId: auth.user.id,

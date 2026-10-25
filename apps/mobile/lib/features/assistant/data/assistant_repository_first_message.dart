@@ -28,9 +28,11 @@ extension AssistantFirstMessageOperations on AssistantRepository {
     final store = _creationStore(wsId, current);
     final AssistantResetEnvelope attempt;
     var creationAcknowledged = false;
+    var creationStarted = false;
     try {
       admission.check();
       attempt = await store.beginCreation(requestId);
+      creationStarted = true;
       admission.check();
       if (!current()) {
         throw const AssistantCreationUncertainException(
@@ -55,12 +57,10 @@ extension AssistantFirstMessageOperations on AssistantRepository {
         accept: 'application/x-ndjson',
         admission: admission,
       );
-      admission.check();
       if (!current()) {
         await response.stream.listen((_) {}).cancel();
-        throw const AssistantCreationUncertainException(
-          'First message origin changed',
-        );
+        store.hold();
+        return;
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
         await response.stream.drain<void>();
@@ -110,7 +110,7 @@ extension AssistantFirstMessageOperations on AssistantRepository {
       yield AssistantChatCreatedStreamEvent(
         AssistantCreatedChat(
           id: chatId,
-          title: acknowledged.conversation.title,
+          title: _titleFromPrompt(_latestUserText(messages)),
           model: creation.settings.modelId,
           createdAt: acknowledged.conversation.createdAt,
         ),
@@ -129,6 +129,7 @@ extension AssistantFirstMessageOperations on AssistantRepository {
       rethrow;
     } on Object catch (error, stack) {
       if (!creationAcknowledged) store.hold();
+      if (creationStarted && !current()) return;
       Error.throwWithStackTrace(admission.preparationFailure(error), stack);
     }
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/data/sources/api_client.dart';
@@ -9,6 +10,7 @@ import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'assistant_creation_marker_test.dart' show informedReset;
 
 const actor = 'a6742000-0000-4000-8000-000000000001';
@@ -73,40 +75,52 @@ class FirstApi extends ApiClient {
       ),
     );
     if (!headers.isCompleted) headers.complete();
-    Stream<List<int>> bytes() async* {
-      await releaseBody.future;
-      final user = {
-        'id': 'a6742000-0000-4000-8000-000000000041',
-        'conversationId': chat,
-        'kind': 'user',
-        'senderId': actor,
-        'content': 'hello',
-        'createdAt': '2026-10-25T14:00:00Z',
-        'metadata': {'clientRequestId': malformed == 'user' ? chat : key},
-        'attachments': <Object>[],
-      };
-      final assistant = {
-        ...user,
-        'id': 'a6742000-0000-4000-8000-000000000042',
-        'kind': 'assistant',
-        'senderId': null,
-        'content': 'Hi',
-        'metadata': <String, dynamic>{},
-      };
-      for (final event in [
-        {'type': 'message', 'message': user},
-        {
-          'type': 'messages',
-          'messages': [assistant],
-        },
-        {'type': 'done'},
-      ]) {
-        yield utf8.encode('${jsonEncode(event)}\n');
-      }
-    }
-
+    var cancelled = false;
+    late final StreamController<List<int>> controller;
+    controller = StreamController<List<int>>(
+      onListen: () {
+        unawaited(
+          releaseBody.future.then((_) {
+            if (cancelled) return;
+            final user = {
+              'id': 'a6742000-0000-4000-8000-000000000041',
+              'conversationId': chat,
+              'kind': 'user',
+              'senderId': actor,
+              'content': 'hello',
+              'createdAt': '2026-10-25T14:00:00Z',
+              'metadata': {'clientRequestId': malformed == 'user' ? chat : key},
+              'attachments': <Object>[],
+            };
+            final assistant = {
+              ...user,
+              'id': 'a6742000-0000-4000-8000-000000000042',
+              'kind': 'assistant',
+              'senderId': null,
+              'content': 'Hi',
+              'metadata': <String, dynamic>{},
+            };
+            for (final event in [
+              {'type': 'message', 'message': user},
+              {
+                'type': 'messages',
+                'messages': [assistant],
+              },
+              {'type': 'done'},
+            ]) {
+              controller.add(utf8.encode('${jsonEncode(event)}\n'));
+            }
+            unawaited(controller.close());
+          }),
+        );
+      },
+      onCancel: () {
+        cancelled = true;
+        if (!releaseBody.isCompleted) releaseBody.complete();
+      },
+    );
     return http.StreamedResponse(
-      bytes(),
+      controller.stream,
       200,
       headers: {
         'content-type': 'application/x-ndjson',
@@ -193,23 +207,24 @@ void main() {
       },
     );
   }
+  test('lost response preserves the original attempt '
+      'and never blindly dispatches again', () async {
+    api.transportFailure = true;
+    await expectLater(send().toList(), throwsA(isA<Object>()));
+    expect(await repository.hasUnknownChatCreation(ws), isTrue);
+    await expectLater(send().toList(), throwsA(isA<Object>()));
+    expect(api.requests, 1);
+  });
   test(
-    'lost response preserves the original attempt '
-    'and never blindly dispatches again',
+    'invalid user receipt after creation ACK does not re-hold known creation',
     () async {
-      api.transportFailure = true;
+      api.malformed = 'user';
+      api.releaseBody.complete();
       await expectLater(send().toList(), throwsA(isA<Object>()));
-      expect(await repository.hasUnknownChatCreation(ws), isTrue);
-      await expectLater(send().toList(), throwsA(isA<Object>()));
+      expect(await repository.hasUnknownChatCreation(ws), isFalse);
       expect(api.requests, 1);
     },
   );
-  test('invalid user receipt after creation ACK does not re-hold known creation', () async {
-    api.malformed = 'user'; api.releaseBody.complete();
-    await expectLater(send().toList(),throwsA(isA<Object>()));
-    expect(await repository.hasUnknownChatCreation(ws),isFalse);
-    expect(api.requests,1);
-  });
   test('retired admission performs no HTTP', () async {
     current = false;
     await expectLater(send().toList(), throwsA(isA<Object>()));

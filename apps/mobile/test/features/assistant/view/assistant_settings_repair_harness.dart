@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -223,32 +224,51 @@ class SettingsApi extends ApiClient {
       'initialAiSettings': body['initialConversation'],
     });
     final receipt = {...creation, 'creationRequestId': body['clientRequestId']};
-    Stream<List<int>> bytes() async* {
-      final events = firstChats!.sendMessageStream(
-        repairWorkspace,
-        chatId,
-        content: body['content'] as String,
-        clientRequestId: body['clientRequestId'] as String,
-        admission: admission,
-      );
-      await for (final event in events) {
-        final Map<String, dynamic> raw;
-        if (event is ChatStreamMessageEvent) {
-          raw = {'type': 'message', 'message': wireMessage(event.message)};
-        } else if (event is ChatStreamMessagesEvent) {
-          raw = {
-            'type': 'messages',
-            'messages': event.messages.map(wireMessage).toList(),
-          };
-        } else {
-          raw = {'type': 'done'};
-        }
-        yield utf8.encode('${jsonEncode(raw)}\n');
-      }
-    }
-
+    var cancelled = false;
+    StreamSubscription<ChatMessageStreamEvent>? subscription;
+    late final StreamController<List<int>> controller;
+    controller = StreamController<List<int>>(
+      onListen: () {
+        scheduleMicrotask(() {
+          if (cancelled) return;
+          subscription = firstChats!
+              .sendMessageStream(
+                repairWorkspace,
+                chatId,
+                content: body['content'] as String,
+                clientRequestId: body['clientRequestId'] as String,
+                admission: admission,
+              )
+              .listen(
+                (event) {
+                  final Map<String, dynamic> raw;
+                  if (event is ChatStreamMessageEvent) {
+                    raw = {
+                      'type': 'message',
+                      'message': wireMessage(event.message),
+                    };
+                  } else if (event is ChatStreamMessagesEvent) {
+                    raw = {
+                      'type': 'messages',
+                      'messages': event.messages.map(wireMessage).toList(),
+                    };
+                  } else {
+                    raw = {'type': 'done'};
+                  }
+                  controller.add(utf8.encode('${jsonEncode(raw)}\n'));
+                },
+                onError: controller.addError,
+                onDone: controller.close,
+              );
+        });
+      },
+      onCancel: () {
+        cancelled = true;
+        return subscription?.cancel();
+      },
+    );
     return http.StreamedResponse(
-      bytes(),
+      controller.stream,
       200,
       headers: {
         'content-type': 'application/x-ndjson',
