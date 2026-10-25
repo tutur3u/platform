@@ -71,12 +71,24 @@ check and `bun run --cwd apps/forms build:cloudflare` for the real Vite+
 build on an admitted build host. The retained `build` script continues to
 serve the current publisher until an explicit cutover-preparation PR.
 
-One artifact supports the Forms subdomain root and `/forms`. Before any
-apex admission, the app needs an enforced CSP policy using the router's
-request nonce, exact-source sealed artifact and runtime acceptance, public
-and authenticated form browser checks, and an immediate rollback.
+The native publication admits only `forms.tuturuuu.com` and the custom staging
+host `forms-staging.tuturuuu.com`. Apex `/forms`, workers.dev and unknown hosts
+are rejected before app dispatch. Apex admission remains a separate cutover.
+The app-owned `start-bridge.config.ts` supplies the nonce CSP and response
+headers. Non-assets force private, no-store caching, including removal of CDN
+cache overrides. Static files retain their cache policy only for successful
+GET/HEAD responses without HTML or cookies.
 
-At `/forms`, middleware uses Web's shared Supabase session without refreshing,
+Normal pages deny framing. The existing `/embed/{shareCode}` exception, including
+localized paths, stays framable by third-party sites and noindex; its CSP keeps
+the same script nonce and changes only frame ancestors. This preserves the
+retained Next publisher's `framablePathPatterns` behavior. The host, caching and
+framing contracts are covered by
+`apps/forms/src/runtime/response-security.test.ts`. Final acceptance requires
+the exact sealed artifact, public and authenticated browser checks, and an
+immediate rollback before canonical publication.
+
+For a future `/forms` admission, middleware uses Web's shared Supabase session without refreshing,
 exchanging or clearing satellite sessions. Legacy session-writing endpoints
 return 409 on that mount; host-root authentication keeps its existing behavior.
 Anonymous share/embed pages and shared-form reads and submissions remain public;
