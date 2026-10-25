@@ -1,6 +1,6 @@
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { forwardToCentralApi } from '@tuturuuu/start-bridge/api-forward';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 
 /** The legacy `/api/:path*` proxy guard, applied before every API owner. */
 export async function guardShortenerApi(request: Request) {

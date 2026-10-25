@@ -1,7 +1,7 @@
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { createBuildInfoHandler } from '@tuturuuu/utils/build-info-route';
 import { forwardToCentralApi } from '@tuturuuu/start-bridge/api-forward';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { createBuildInfoHandler } from '@tuturuuu/utils/build-info-route';
 
 export async function apiRequest(
   request: Request,

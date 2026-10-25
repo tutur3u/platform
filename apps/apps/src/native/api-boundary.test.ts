@@ -8,8 +8,8 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: guard,
 }));
 
-import { apiRequest } from './api.server';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
+import { apiRequest } from './api.server';
 
 afterEach(() => {
   vi.unstubAllGlobals();
