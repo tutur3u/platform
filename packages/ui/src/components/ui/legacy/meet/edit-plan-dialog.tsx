@@ -57,6 +57,7 @@ import TimezoneSelector from './timezone-selector';
 interface Props {
   plan: MeetTogetherPlan;
   onSuccess?: () => void;
+  returnPath?: string;
   onEditingChange?: (isEditing: boolean) => void;
 }
 
@@ -118,6 +119,7 @@ export default function EditPlanDialog({
   plan,
   onEditingChange,
   onSuccess,
+  returnPath,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -311,7 +313,9 @@ export default function EditPlanDialog({
     try {
       try {
         await deleteMutation.mutateAsync();
-        router.push(pathname.includes('/meet/plans/') ? '/meet' : '/');
+        router.push(
+          returnPath ?? (pathname.includes('/meet/plans/') ? '/meet' : '/')
+        );
       } catch (error) {
         toast({
           title: t('meet-together-plan-details.something_went_wrong'),

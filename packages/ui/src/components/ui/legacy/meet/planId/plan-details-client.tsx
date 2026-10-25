@@ -43,6 +43,7 @@ interface PlanDetailsClientProps {
   isRefreshing: boolean;
   baseUrl: string;
   planBaseUrl?: string;
+  planReturnPath?: string;
 }
 
 export default function PlanDetailsClient({
@@ -55,6 +56,7 @@ export default function PlanDetailsClient({
   isRefreshing,
   baseUrl,
   planBaseUrl,
+  planReturnPath,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const t = useTranslations('meet-together-plan-details');
@@ -119,6 +121,7 @@ export default function PlanDetailsClient({
                     <EditPlanDialog
                       plan={plan}
                       onSuccess={resetLocalTimeblocks}
+                      returnPath={planReturnPath}
                     />
                   ) : null}
                 </div>

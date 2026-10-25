@@ -10,6 +10,7 @@ import {
 import createNextIntlPlugin from 'next-intl/plugin';
 import { generate as generatePublicSeoRoutes } from '../../scripts/generate-public-seo-routes';
 import { nativeIntegrityFramablePaths } from './src/lib/native-integrity/frame-policy';
+import { createProductMarketingRedirects } from './src/lib/product-marketing-redirects';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 // Discover current indexable pages before configuring HTTP indexing boundaries.
@@ -137,6 +138,9 @@ const nextConfig = createTuturuuuNextConfig({
         hostname: 'models.dev',
       },
     ],
+  },
+  async redirects() {
+    return createProductMarketingRedirects();
   },
   async headers() {
     return [
