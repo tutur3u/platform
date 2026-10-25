@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
@@ -175,6 +176,46 @@ void main() {
         tester,
         'large-text-${size.width.toInt()}x${size.height.toInt()}-connected',
       );
+    }
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('large text never splits a control label mid-word', (
+    tester,
+  ) async {
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    setLiveCallViewport(tester, _sizes['phone']!);
+    final connected = liveCallStates(DateTime.now())['connected']!;
+    for (final scale in const [2.0, 3.0]) {
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      await tester.pumpWidget(
+        liveCallApp(
+          state: connected,
+          actions: LiveCallActionLog().actions,
+          viewKey: ValueKey('label-scale-$scale'),
+        ),
+      );
+      await tester.pump();
+      for (final label in const [
+        'Mute',
+        'Camera',
+        'Keyboard',
+        'Captions',
+        'End',
+        'Minimize',
+      ]) {
+        final paragraph = tester.renderObject<RenderParagraph>(
+          find.text(label),
+        );
+        final lineTops = paragraph
+            .getBoxesForSelection(
+              TextSelection(baseOffset: 0, extentOffset: label.length),
+            )
+            .map((box) => box.top.round())
+            .toSet();
+        expect(lineTops, hasLength(1), reason: '$label at ${scale}x');
+        expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+      }
     }
     await tester.pumpWidget(const SizedBox());
   });

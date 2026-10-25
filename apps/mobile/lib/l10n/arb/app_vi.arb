@@ -1419,6 +1419,7 @@
   "assistantLiveOpenMode": "Mở chế độ trực tiếp",
   "assistantLivePermissionDenied": "Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.",
   "assistantLiveReconnectBanner": "Phát hiện phiên đang xoay vòng. Đang kết nối lại với khoảng {timeLeft} còn lại.",
+  "assistantLiveReconnectExhausted": "Kết nối liên tục bị gián đoạn. Hãy kiểm tra mạng rồi thử lại phiên trực tiếp.",
   "assistantLiveRetryAction": "Thử lại phiên trực tiếp",
   "assistantLiveReturnToChat": "Quay lại chat",
   "assistantLiveScreenActive": "Bạn đang chia sẻ màn hình với Live",

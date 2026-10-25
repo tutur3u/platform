@@ -138,3 +138,10 @@ Windows in-app updates retain their publisher-signature checks, so unsigned
 betas use manual verified-installer updates. Packaging and receipt regressions
 are covered by `scripts/desktop-deployment/windows-signing.test.mjs` and
 `verify-publication.test.mjs`; native Windows acceptance remains a release gate.
+
+Windows x64 uses a per-user `.exe` installer from the official download page or
+GitHub desktop release. Unsigned builds may show SmartScreen **Windows protected
+your PC** or **Unknown publisher**. Verify the release SHA-256 checksum before
+using **More info → Run anyway**, if Windows offers it. Use the web app when
+organization policy blocks unsigned installers. See the
+[desktop installation and signing plan](/build/devops/desktop-beta-distribution).
