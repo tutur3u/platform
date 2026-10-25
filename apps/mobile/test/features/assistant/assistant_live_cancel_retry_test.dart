@@ -22,6 +22,7 @@ import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
+import 'assistant_live_startup_test_helpers.dart';
 import 'view/background_reply_harness.dart';
 
 const _actor = '33333333-3333-4333-8333-333333333333';
@@ -39,6 +40,8 @@ class _RecordingPlatform extends RecordPlatform {
   _RecordingPlatform({required this.holdFirstPermission});
   final bool holdFirstPermission;
   final permissions = <Completer<bool>>[];
+  final secondPermissionEntered = Completer<void>();
+  bool _retiring = false;
   bool recording = false;
   int captures = 0;
 
@@ -50,10 +53,20 @@ class _RecordingPlatform extends RecordPlatform {
   Future<bool> hasPermission(String recorderId, {bool request = true}) {
     final permission = Completer<bool>();
     permissions.add(permission);
-    if (permissions.length == 1 && !holdFirstPermission) {
+    if (permissions.length == 2) secondPermissionEntered.complete();
+    if (_retiring) {
+      permission.complete(false);
+    } else if (permissions.length == 1 && !holdFirstPermission) {
       permission.complete(true);
     }
     return permission.future;
+  }
+
+  void retirePermissions() {
+    _retiring = true;
+    for (final permission in permissions) {
+      if (!permission.isCompleted) permission.complete(false);
+    }
   }
 
   @override
@@ -110,6 +123,41 @@ class _HeldTokens extends AssistantLiveRepository {
   );
 }
 
+class _CancelRetryDock extends ShellDockSlotController {
+  final exits = <Future<void>>[];
+
+  @override
+  void publish(Object owner, ShellDockSlot slot) {
+    final content = slot.content;
+    if (content is! AssistantLiveCallControls) {
+      super.publish(owner, slot);
+      return;
+    }
+    super.publish(
+      owner,
+      ShellDockSlot(
+        location: slot.location,
+        workspaceId: slot.workspaceId,
+        composing: slot.composing,
+        expandContent: slot.expandContent,
+        primary: slot.primary,
+        content: AssistantLiveCallControls(
+          key: content.key,
+          state: content.state,
+          onMicrophone: content.onMicrophone,
+          onCamera: content.onCamera,
+          onText: content.onText,
+          onDisconnect: () {
+            final operation = content.onDisconnect();
+            exits.add(operation);
+            return operation;
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class _CancelRetryHarness {
   _CancelRetryHarness({required bool holdFirstPermission})
     : recorder = _RecordingPlatform(holdFirstPermission: holdFirstPermission);
@@ -119,7 +167,7 @@ class _CancelRetryHarness {
   final tokens = _HeldTokens();
   final chrome = AssistantChromeCubit();
   final actions = ShellChromeActionsCubit();
-  final dock = ShellDockSlotController();
+  final dock = _CancelRetryDock();
   final _RecordingPlatform recorder;
   List<Completer<bool>> get permissions => recorder.permissions;
   late RecordPlatform previousRecorder;
@@ -183,7 +231,29 @@ class _CancelRetryHarness {
   }
 
   Future<void> tap(WidgetTester tester, String control) async {
+    final previousExits = dock.exits.length;
+    if (control == 'exit') {
+      final published = dock.slot!.content as AssistantLiveCallControls;
+      final rendered = tester.widget<AssistantLiveCallControls>(
+        find.byType(AssistantLiveCallControls),
+      );
+      expect(published.state.status, live.state.status);
+      expect(rendered.state, same(published.state));
+    }
     await tester.tap(find.byKey(ValueKey('live-control-$control')));
+    if (control == 'exit') {
+      expect(
+        dock.exits,
+        hasLength(previousExits + 1),
+        reason: 'The rendered Exit must invoke its original page callback.',
+      );
+      await driveLiveStartupFuture(
+        tester,
+        dock.exits.last,
+        reason:
+            'The rendered cancel must finish before checking disconnection.',
+      );
+    }
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -191,19 +261,17 @@ class _CancelRetryHarness {
 
   Future<void> dispose(WidgetTester tester) async {
     final disconnecting = live.disconnect();
-    for (final permission in permissions) {
-      if (!permission.isCompleted) permission.complete(false);
-    }
+    recorder.retirePermissions();
     await tester.pump();
-    await disconnecting;
+    await drainLiveFixtureCleanup(tester, disconnecting);
     for (var i = 0; i < tokens.requests.length; i++) {
       if (!tokens.requests[i].isCompleted) tokens.release(i);
     }
     await tester.pump(const Duration(seconds: 20));
     await tester.pump();
+    await drainLiveFixtureCleanup(tester, live.close());
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
-    await live.close();
     unawaited(repository.stream.close());
     unawaited(repository.replacement.close());
     for (final channel in ['flutter_timezone', 'flutter_pcm_sound/methods']) {
@@ -212,10 +280,12 @@ class _CancelRetryHarness {
         null,
       );
     }
-    await auth.close();
-    await workspace.close();
-    await chrome.close();
-    await actions.close();
+    await drainLiveFixtureCleanup(tester, () async {
+      await auth.close();
+      await workspace.close();
+      await chrome.close();
+      await actions.close();
+    }());
     dock.dispose();
     RecordPlatform.instance = previousRecorder;
   }
@@ -223,13 +293,14 @@ class _CancelRetryHarness {
 
 void main() {
   for (final holdFirstPermission in [false, true]) {
-    testWidgets('rendered cancel retries before old '
+    startupTest('rendered cancel retries before old '
         '${holdFirstPermission ? "permission" : "token"} settles', (
       tester,
+      cleanup,
     ) async {
       final h = _CancelRetryHarness(holdFirstPermission: holdFirstPermission);
       await h.mount(tester);
-      addTearDown(() => h.dispose(tester));
+      cleanup(() => h.dispose(tester));
       expect(find.byType(AssistantLiveCallControls), findsOneWidget);
       final mic = find.byKey(const ValueKey('live-control-microphone'));
       final identity = tester.element(mic);
@@ -254,12 +325,21 @@ void main() {
 
       await h.tap(tester, 'microphone');
       expect(h.tokens.requests, hasLength(2));
-      expect(h.permissions, hasLength(2));
+      expect(h.permissions, hasLength(holdFirstPermission ? 1 : 2));
       expect(h.permissions.last.isCompleted, isFalse);
       expect(h.tokens.requests.last.isCompleted, isFalse);
       expect(tester.element(mic), same(identity));
 
-      if (holdFirstPermission) h.permissions.first.complete(true);
+      if (holdFirstPermission) {
+        h.permissions.first.complete(true);
+        await driveLiveStartupFuture(
+          tester,
+          h.recorder.secondPermissionEntered.future,
+          reason: 'Queued permission must enter after the old dialog settles.',
+        );
+      }
+      expect(h.permissions, hasLength(2));
+      expect(h.permissions.last.isCompleted, isFalse);
       h.tokens.release(0);
       // The token-only case also owns the old microphone ready timeout.
       await tester.pump(const Duration(seconds: 20));

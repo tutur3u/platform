@@ -20,7 +20,6 @@ void main() {
     tester,
   ) async {
     final handle = tester.ensureSemantics();
-    addTearDown(handle.dispose);
     final enabled = AppHaptics.enabled;
     AppHaptics.enabled = false;
     final platformCalls = <MethodCall>[];
@@ -30,88 +29,93 @@ void main() {
             platformCalls.add(call);
             return null;
           });
-    addTearDown(() {
-      AppHaptics.enabled = enabled;
-      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
-    });
-    final pending = Completer<void>();
-    var calls = 0;
-    var active = true;
-    late StateSetter update;
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: StatefulBuilder(
-            builder: (context, setState) {
-              update = setState;
-              return Center(
-                child: SizedBox(
-                  width: 236,
-                  child: AssistantLiveCallControls(
-                    state: AssistantLiveState(
-                      status: AssistantLiveConnectionStatus.connected,
-                      isMicrophoneActive: active,
+    try {
+      final pending = Completer<void>();
+      var calls = 0;
+      var active = true;
+      late StateSetter update;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return Center(
+                  child: SizedBox(
+                    width: 236,
+                    child: AssistantLiveCallControls(
+                      state: AssistantLiveState(
+                        status: AssistantLiveConnectionStatus.connected,
+                        isMicrophoneActive: active,
+                      ),
+                      onMicrophone: () async {
+                        calls++;
+                        await pending.future;
+                      },
+                      onCamera: () async {},
+                      onText: () async {},
+                      onDisconnect: () async {},
                     ),
-                    onMicrophone: () async {
-                      calls++;
-                      await pending.future;
-                    },
-                    onCamera: () async {},
-                    onText: () async {},
-                    onDisconnect: () async {},
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
-      ),
-    );
-    final mic = find.byKey(const ValueKey('live-control-microphone'));
-    final identity = tester.element(mic);
-    final center = tester.getCenter(mic);
-    expect(find.byType(ShellDockControlItem), findsNWidgets(4));
-    expect(find.byType(AppIconButton), findsNWidgets(4));
-    expect(find.byType(ShellDockActionButton), findsNothing);
-    for (final id in liveControlIds) {
-      final rect = tester.getRect(find.byKey(ValueKey('live-control-$id')));
-      expect(rect.width, greaterThanOrEqualTo(48));
-      expect(rect.height, greaterThanOrEqualTo(48));
+      );
+      final mic = find.byKey(const ValueKey('live-control-microphone'));
+      final identity = tester.element(mic);
+      final center = tester.getCenter(mic);
+      expect(find.byType(ShellDockControlItem), findsNWidgets(4));
+      expect(find.byType(AppIconButton), findsNWidgets(4));
+      expect(find.byType(ShellDockActionButton), findsNothing);
+      for (final id in liveControlIds) {
+        final rect = tester.getRect(find.byKey(ValueKey('live-control-$id')));
+        expect(rect.width, greaterThanOrEqualTo(48));
+        expect(rect.height, greaterThanOrEqualTo(48));
+      }
+      expect(
+        tester.getSemantics(mic).flagsCollection.isToggled,
+        Tristate.isTrue,
+      );
+      expect(
+        tester
+            .getSemantics(find.byKey(const ValueKey('live-control-exit')))
+            .flagsCollection
+            .isToggled,
+        Tristate.none,
+      );
+      await tester.tap(mic);
+      await tester.pump();
+      await tester.tap(mic);
+      expect(calls, 1);
+      final button = tester.widget<AppIconButton>(
+        find.descendant(of: mic, matching: find.byType(AppIconButton)),
+      );
+      expect(button.onPressed, isNull);
+      pending.complete();
+      await tester.pump();
+      update(() => active = false);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.element(mic), same(identity));
+      expect(tester.getCenter(mic), center);
+      expect(find.byTooltip('Open mic'), findsOneWidget);
+      expect(
+        tester.getSemantics(mic).flagsCollection.isToggled,
+        Tristate.isFalse,
+      );
+      expect(
+        platformCalls.where((call) => call.method == 'HapticFeedback.vibrate'),
+        isEmpty,
+      );
+      expect(tester.takeException(), isNull);
+    } finally {
+      handle.dispose();
+      AppHaptics.enabled = enabled;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     }
-    expect(tester.getSemantics(mic).flagsCollection.isToggled, Tristate.isTrue);
-    expect(
-      tester
-          .getSemantics(find.byKey(const ValueKey('live-control-exit')))
-          .flagsCollection
-          .isToggled,
-      Tristate.none,
-    );
-    await tester.tap(mic);
-    await tester.pump();
-    await tester.tap(mic);
-    expect(calls, 1);
-    final button = tester.widget<AppIconButton>(
-      find.descendant(of: mic, matching: find.byType(AppIconButton)),
-    );
-    expect(button.onPressed, isNull);
-    pending.complete();
-    await tester.pump();
-    update(() => active = false);
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(tester.element(mic), same(identity));
-    expect(tester.getCenter(mic), center);
-    expect(find.byTooltip('Open mic'), findsOneWidget);
-    expect(
-      tester.getSemantics(mic).flagsCollection.isToggled,
-      Tristate.isFalse,
-    );
-    expect(
-      platformCalls.where((call) => call.method == 'HapticFeedback.vibrate'),
-      isEmpty,
-    );
-    expect(tester.takeException(), isNull);
   });
 
   for (final status in AssistantLiveConnectionStatus.values) {

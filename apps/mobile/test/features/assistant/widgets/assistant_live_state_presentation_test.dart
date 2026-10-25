@@ -51,7 +51,15 @@ void main() {
           );
           expect(find.text(l10n.assistantLiveStageYouListening), findsNothing);
           expect(find.text(l10n.assistantLiveRetryAction), findsOneWidget);
-          await tester.ensureVisible(find.text(l10n.assistantLiveRetryAction));
+          await Scrollable.ensureVisible(
+            tester.element(find.text(l10n.assistantLiveRetryAction)),
+            alignment: 0.5,
+          );
+          await tester.pump();
+          expect(
+            find.text(l10n.assistantLiveRetryAction).hitTestable(),
+            findsOneWidget,
+          );
           await tester.tap(find.text(l10n.assistantLiveRetryAction));
           await tester.pump();
           expect(controller.retries, 1);
