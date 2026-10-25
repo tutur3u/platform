@@ -366,6 +366,27 @@
       }
     }
   },
+  "@homeGreetingAfternoonNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingEveningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingMorningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryAuditChanges": {
     "placeholders": {
       "count": {
@@ -1900,6 +1921,7 @@
   "dashboardTaskUpcoming": "Upcoming",
   "dashboardTasksMetric": "{count} active",
   "dashboardTodayTitle": "Today at a glance",
+  "dashboardUntitledEvent": "Untitled event",
   "dashboardUpcomingEvents": "Upcoming events",
   "dashboardUpcomingMeetings": "Upcoming meetings",
   "desktopUpdateCancel": "Cancel scheduled update",
@@ -2458,10 +2480,17 @@
   "habitsWorkoutTotalVolume": "Total volume",
   "habitsWorkoutWeight": "Weight",
   "homeCustomize": "Customize Home",
+  "homeGreetingAfternoon": "Good afternoon",
+  "homeGreetingAfternoonNamed": "Good afternoon, {name}",
+  "homeGreetingEvening": "Good evening",
+  "homeGreetingEveningNamed": "Good evening, {name}",
+  "homeGreetingMorning": "Good morning",
+  "homeGreetingMorningNamed": "Good morning, {name}",
   "homeHiddenWidgets": "Hidden widgets",
   "homeHideWidget": "Hide widget",
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+  "homeSectionLoadFailed": "Pull down to try again.",
   "homeShowWidget": "Show widget",
   "inventoryAddCategory": "Add category",
   "inventoryAddManufacturer": "Add manufacturer",
@@ -3129,6 +3158,10 @@
   "notificationsArchiveEmptyTitle": "No archived notifications",
   "notificationsDaysAgo": "{count}d ago",
   "notificationsDeclineInvite": "Decline",
+  "notificationsGroupEarlier": "Earlier",
+  "notificationsGroupLastWeek": "Last 7 days",
+  "notificationsGroupToday": "Today",
+  "notificationsGroupYesterday": "Yesterday",
   "notificationsHoursAgo": "{count}h ago",
   "notificationsInbox": "Inbox",
   "notificationsInboxEmptyMessage": "New activity, mentions, and invites will show up here.",

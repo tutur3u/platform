@@ -69,6 +69,7 @@
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
                   "platform/features/mobile-settings-shell",
+                  "platform/features/mobile-home-notifications",
                   "platform/features/hidden-workspaces",
                   "platform/features/settings-dialog",
                   "platform/features/notification-access",

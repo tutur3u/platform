@@ -2192,6 +2192,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardTodayTitle => 'Today at a glance';
 
   @override
+  String get dashboardUntitledEvent => 'Untitled event';
+
+  @override
   String get dashboardUpcomingEvents => 'Upcoming events';
 
   @override
@@ -3978,6 +3981,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeCustomize => 'Customize Home';
 
   @override
+  String get homeGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String homeGreetingAfternoonNamed(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String get homeGreetingEvening => 'Good evening';
+
+  @override
+  String homeGreetingEveningNamed(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String get homeGreetingMorning => 'Good morning';
+
+  @override
+  String homeGreetingMorningNamed(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
   String get homeHiddenWidgets => 'Hidden widgets';
 
   @override
@@ -3988,6 +4015,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override
   String get homeShowWidget => 'Show widget';
@@ -6085,6 +6115,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsDeclineInvite => 'Decline';
+
+  @override
+  String get notificationsGroupEarlier => 'Earlier';
+
+  @override
+  String get notificationsGroupLastWeek => 'Last 7 days';
+
+  @override
+  String get notificationsGroupToday => 'Today';
+
+  @override
+  String get notificationsGroupYesterday => 'Yesterday';
 
   @override
   String notificationsHoursAgo(int count) {

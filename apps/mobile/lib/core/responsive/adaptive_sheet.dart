@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';

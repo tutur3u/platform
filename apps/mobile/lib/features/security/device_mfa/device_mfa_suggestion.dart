@@ -14,7 +14,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// An account-scoped invitation. Never prompts on network failure,
 /// a locked registry, a registered device, or an unsupported device.
 class DeviceMfaSuggestion extends StatefulWidget {
-  const DeviceMfaSuggestion({super.key});
+  const DeviceMfaSuggestion({
+    this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    super.key,
+  });
+
+  /// Space around the card while it is visible; nothing is reserved while
+  /// it is hidden. Pages that already apply the page gutter pass their own.
+  final EdgeInsetsGeometry padding;
   @override
   State<DeviceMfaSuggestion> createState() => _DeviceMfaSuggestionState();
 }
@@ -105,7 +112,7 @@ class _DeviceMfaSuggestionState extends State<DeviceMfaSuggestion>
       child: !_visible
           ? const SizedBox.shrink()
           : Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: widget.padding,
               child: shad.Card(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
