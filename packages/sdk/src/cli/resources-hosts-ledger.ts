@@ -28,6 +28,7 @@ import {
   tickets,
   withAdmission,
 } from './resources-slots';
+import { parseDiskCapability } from './storage-headroom';
 
 // Canonical per-host reservations live in the shared resources home and are
 // only created inside the host-wide admission mutex, so concurrent requesters
@@ -143,11 +144,13 @@ export interface HostTelemetry {
   snapshot?: DevboxFleetSnapshot;
   now?: number;
 }
+// Agents publish bucketed disk headroom under `capabilities.resources.disk`
+// (devbox-agent-capabilities reportedDisk, validated by the heartbeat route),
+// the same field offload selection reads. Parse it with the shared decoder;
+// anything else, including a top-level `disk`, is unknown and fails closed.
 const runnerDisk = (capabilities: Record<string, unknown> | null) => {
-  const disk = capabilities?.disk as { freeGiB?: unknown } | undefined;
-  return typeof disk?.freeGiB === 'number' && Number.isFinite(disk.freeGiB)
-    ? disk.freeGiB
-    : undefined;
+  const resources = capabilities?.resources as { disk?: unknown } | undefined;
+  return parseDiskCapability(resources?.disk)?.freeGiB;
 };
 // 1-minute load per CPU from the runner agent's `resources` telemetry.
 export function runnerLoadPerCpu(capabilities: Record<string, unknown> | null) {

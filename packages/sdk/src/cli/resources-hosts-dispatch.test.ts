@@ -79,8 +79,11 @@ const fleet = async () =>
         capabilities: {
           executionMode: 'trusted',
           protocols: { commitRun: [1] },
-          disk: { freeGiB: 400 },
-          resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+          resources: {
+            loadAverage: [4, 4, 4],
+            cpu: { cores: 20 },
+            disk: { freeGiB: 400, freePct: 85 },
+          },
         },
         drain_requested_at: null,
         activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
@@ -443,7 +446,7 @@ describe('remote dispatch safeguards', { timeout: 30_000 }, () => {
     await writeFile(
       script,
       `import {hostsRun} from ${JSON.stringify(dispatchModule)};import {writeFileSync} from 'node:fs';
-      const fleet=async()=>({runners:[{id:'runner-linux',name:'l',status:'online',last_heartbeat_at:new Date().toISOString(),heartbeat_enabled:true,enabled_features:{run:true},resource_limits:null,capabilities:{executionMode:'trusted',protocols:{commitRun:[1]},disk:{freeGiB:400},resources:{loadAverage:[4,4,4],cpu:{cores:20}}},drain_requested_at:null,activity:{queued_runs:0,running_runs:0,active_leases:0}}],runs:[],leases:[],server_time:new Date().toISOString()});
+      const fleet=async()=>({runners:[{id:'runner-linux',name:'l',status:'online',last_heartbeat_at:new Date().toISOString(),heartbeat_enabled:true,enabled_features:{run:true},resource_limits:null,capabilities:{executionMode:'trusted',protocols:{commitRun:[1]},resources:{loadAverage:[4,4,4],cpu:{cores:20},disk:{freeGiB:400,freePct:85}}},drain_requested_at:null,activity:{queued_runs:0,running_runs:0,active_leases:0}}],runs:[],leases:[],server_time:new Date().toISOString()});
       process.exitCode=await hostsRun({home:${JSON.stringify(path)},command:'vitest',args:[],jobClass:'heavy',registry:${JSON.stringify(remoteOnly)},deps:{
         fleet,commitPlan:async()=>({sha:'${'c'.repeat(40)}',prefix:''}),localDiskFreeGiB:async()=>100,pollMs:10,log:()=>{},runLocal:async()=>1,
         // Like runBoxOffload: stops the remote run on SIGTERM/SIGINT only.
