@@ -3,7 +3,7 @@ import { retarget } from '@tuturuuu/start-bridge/base-path';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
-import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/web-app-url';
+import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
 import { endpoints } from './api-registry.bridge.gen';
