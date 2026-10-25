@@ -1,4 +1,4 @@
-import NotificationPopoverView from '@tuturuuu/satellite/components/notification-popover-view';
+import NotificationPopoverView from '@tuturuuu/satellite/notification-popover-view';
 
 /** The central Tuturuuu web app URL, resolved from env or defaults */
 function getTtrUrl(): string {

@@ -6,7 +6,6 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { loadTaskBoardPageModel } from '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-page-model';
-import type { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { boardsTransportState } from './boards-transport';
 
 export function createTaskPageModel({
@@ -43,10 +42,10 @@ export function createTaskPageModel({
       };
     if (segments[1] !== 'boards' && segments.length === 2)
       return { kind: 'task-detail' as const, wsId, taskId: segments[1] ?? '' };
-    if (segments[1] !== 'boards') notFound();
+    if (segments[1] !== 'boards') return notFound();
     if (segments.length === 3) {
       const boardId = segments[2];
-      if (!boardId) notFound();
+      if (!boardId) return notFound();
       const snapshot = await loadTaskBoardPageModel({
         boardId,
         user,
@@ -67,12 +66,12 @@ export function createTaskPageModel({
         getWorkspace: (id, actor) =>
           getWorkspace(id, { useAdmin: true, user: actor }),
       });
-      if (!snapshot) notFound();
+      if (!snapshot) return notFound();
       return { kind: 'board' as const, ...snapshot, userId: user.id };
     }
-    if (segments.length !== 2) notFound();
+    if (segments.length !== 2) return notFound();
     const permissions = await getPermissions({ wsId, user });
-    if (!permissions) notFound();
+    if (!permissions) return notFound();
     if (permissions.withoutPermission('manage_projects')) redirect(`/${wsId}`);
     const q = search.get('q') || '';
     const page = search.get('page') || '1';
