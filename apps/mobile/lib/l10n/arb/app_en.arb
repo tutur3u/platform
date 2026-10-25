@@ -770,9 +770,6 @@
       },
       "occurrence": {
         "type": "String"
-      },
-      "timezone": {
-        "type": "String"
       }
     }
   },
@@ -3374,7 +3371,7 @@
   "remindersLastChecked": "Last checked: {time}",
   "remindersNeverChecked": "Waiting for the first refresh",
   "remindersNext": "Next reminder: {time}",
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence}",
   "remindersPermissionOff": "Device notifications disabled",
   "remindersPermissionOn": "Device notifications enabled",
   "remindersRefresh": "Refresh now",
