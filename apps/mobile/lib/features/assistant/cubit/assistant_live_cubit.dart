@@ -245,19 +245,24 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         ),
       );
 
-      // Both operations are independent, but chat ownership and native media
-      // must be ready before exposing the provider connection. Settle both even
-      // if one fails so no background startup error escapes the owned attempt.
-      await Future.wait<void>([
-        timings.measure(
-          AssistantLiveStartupPhase.history,
-          () => (onChatBound ?? _onChatBound)(wsId, envelope.chatId),
+      // The envelope already carries seed history and the server owns the
+      // chat, so binding the visible conversation overlaps the provider
+      // handshake instead of gating it. Binding failures stay in the chat view
+      // and never fail the call; a late binding publishes its phase timing.
+      final binding = timings.measure(
+        AssistantLiveStartupPhase.history,
+        () => (onChatBound ?? _onChatBound)(wsId, envelope.chatId),
+      );
+      unawaited(
+        binding.then<void>(
+          (_) => _publishLateTimings(timings, currentRequest),
+          onError: (Object _) => _publishLateTimings(timings, currentRequest),
         ),
-        timings.measure(
-          AssistantLiveStartupPhase.audio,
-          _audioPlayer.initialize,
-        ),
-      ]);
+      );
+      await timings.measure(
+        AssistantLiveStartupPhase.audio,
+        _audioPlayer.initialize,
+      );
       if (!currentRequest()) return null;
       await timings.measure(
         AssistantLiveStartupPhase.socket,
@@ -287,6 +292,11 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
           isAssistantSpeaking: false,
         ),
       );
+      // The call is live: record time-to-connected, then hold the caller until
+      // the visible conversation is bound, so a typed send captured from it can
+      // still be retired by a namespace switch before it dispatches.
+      timings.finish();
+      await binding.then<void>((_) {}, onError: (Object _) {});
     } on ApiException catch (error) {
       if (!currentRequest()) return null;
       _emitError(error.message);
@@ -298,9 +308,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       _emitError(error.toString());
     } finally {
       timings.finish();
+      // A retired attempt that still owns the latest request may have opened
+      // the provider during binding; close it even if the actor/scope moved.
       if (preparationVersion == _preparationVersion &&
-          !_isStale(requestVersion) &&
-          !(isCurrent?.call() ?? true)) {
+          requestVersion == _requestVersion &&
+          !_isClosing &&
+          !isClosed &&
+          !currentRequest()) {
         await disconnect();
       } else if (currentRequest()) {
         emit(state.copyWith(startupTimings: timings.snapshot));
@@ -310,6 +324,15 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
             state.status == AssistantLiveConnectionStatus.connected
         ? requestVersion
         : null;
+  }
+
+  void _publishLateTimings(
+    AssistantLiveStartupTimings timings,
+    bool Function() currentRequest,
+  ) {
+    if (currentRequest() && state.startupTimings.isNotEmpty) {
+      emit(state.copyWith(startupTimings: timings.snapshot));
+    }
   }
 
   Future<AssistantLiveDispatch> sendTypedMessage({

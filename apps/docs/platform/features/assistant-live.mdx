@@ -648,11 +648,19 @@ provider latency and live device connectivity require separate runtime evidence.
 
 ## Mobile startup measurements
 
-After the authenticated token arrives, mobile binds the owned conversation and
-initializes its native audio player concurrently. Both must finish before the
-provider socket is opened. A failure settles both operations; cancellation or an
-actor/workspace epoch change prevents later connection and timing publication.
-Native playback initialization and disposal retain their existing serial queue.
+After the authenticated token arrives, mobile starts binding the visible
+conversation and, in parallel, initializes its native audio player and then
+opens the provider socket. The token envelope already carries seed history and
+the server owns the chat, so binding never gates the provider handshake: the
+call connects (and buffered startup speech drains) while the transcript is still
+restoring. A binding failure stays in the chat view and never fails the call; an
+audio failure still prevents connection. `prepareSession` still returns only
+after binding settles, so a typed send captured from the visible conversation
+dispatches only once that conversation is bound: a namespace switch can still
+retire it. A retired preparation may already have opened a provider connection;
+it is closed without sending user content. Cancellation or an actor/workspace
+epoch change prevents later connection and timing publication. Native playback
+initialization and disposal retain their existing serial queue.
 
 Live state records monotonic millisecond durations for token minting, history
 binding, audio initialization, socket connection, provider readiness, and the
@@ -661,14 +669,17 @@ content, or error payloads and are not uploaded automatically. Concurrent stage
 durations must not be added to estimate total latency. Failed attempts retain
 only completed phase timings; obsolete attempts publish none.
 
-`assistant_live_startup_phases_test.dart` verifies independent overlap, the
-settle-all failure barrier, cancelled scope fencing, and immutable measurements.
+`assistant_live_startup_phases_test.dart` verifies that binding overlaps the
+handshake, that binding failures keep the call, that audio failures do not
+connect, cancelled scope fencing, and immutable measurements. The total phase is
+the time to a connected call; a slower binding publishes its duration after it
+settles.
 The Live information action in the shared shell opens the existing info sheet.
 It shows the most recent attempt’s recorded phase durations in milliseconds,
 including partial failed attempts, in a fixed phase order. Missing phases are
 omitted. Measurements stay in memory on the current device: no account IDs,
 request IDs, credentials, message content, persistence, or automatic uploads.
-History and audio run concurrently, so phase durations do not sum to total time.
+History overlaps the other phases, so phase durations do not sum to total time.
 The sheet scrolls on small screens and with enlarged text. Widget regression
 coverage is in `assistant_live_startup_diagnostics_test.dart`.
 
