@@ -48,6 +48,10 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: FinanceEnvironment, ctx: WorkerContext) {
-    return (await handler)(request, env, ctx);
+    const response = await (await handler)(request, env, ctx);
+    if (env.TUTURUUU_NOINDEX !== '1') return response;
+    const staging = new Response(response.body, response);
+    staging.headers.set('X-Robots-Tag', 'noindex, nofollow, nosnippet');
+    return staging;
   },
 };

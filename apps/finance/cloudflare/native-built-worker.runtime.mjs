@@ -12,8 +12,19 @@ test('emitted Finance Worker: public shell, API ownership and action admission',
     await t.test(
       `exact build and anonymous API admission at ${origin}${base}`,
       async () => {
-        const info = await runtime.fetch(`${origin}${base}/api/build-info`);
+        const anonymous = await runtime.fetch(
+          `${origin}${base}/api/build-info`
+        );
+        assert.equal(anonymous.status, 401);
+        await anonymous.text();
+        const info = await runtime.fetch(`${origin}${base}/api/build-info`, {
+          headers: { authorization: 'Bearer fixture' },
+        });
         assert.equal(info.status, 200);
+        assert.equal(
+          info.headers.get('x-robots-tag'),
+          'noindex, nofollow, nosnippet'
+        );
         const identity = await info.json();
         assert.equal(identity.appName, 'finance');
         assert.equal(identity.commitHash, runtime.source);
