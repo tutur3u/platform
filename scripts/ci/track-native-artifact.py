@@ -40,7 +40,7 @@ def load():
         **module.IDENTITY,
         "name": WORKER,
         "compatibility_date": "2026-10-12",
-        "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+        "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "track-native-artifact.json"
