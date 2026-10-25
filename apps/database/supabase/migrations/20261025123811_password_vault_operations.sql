@@ -104,7 +104,7 @@ BEGIN
   END IF;
   IF p_token IS NOT NULL THEN
     IF p_actor IS NOT NULL OR p_token_digest IS NULL
-      OR p_action NOT IN ('item.read', 'item.write', 'key.read', 'request.status') THEN
+      OR p_action NOT IN ('item.read', 'item.write', 'key.read', 'item.list', 'request.status') THEN
       RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
     END IF;
     SELECT * INTO t FROM private.password_vault_machine_tokens WHERE ws_id = p_ws AND vault_id = p_vault
@@ -113,17 +113,20 @@ BEGIN
     SELECT * INTO g FROM private.password_vault_machine_grants WHERE ws_id = p_ws AND vault_id = p_vault
       AND id = t.grant_id AND revoked_at IS NULL AND expires_at > clock_timestamp()
       AND authorization_epoch = v.authorization_epoch;
-    IF NOT FOUND OR ((p_input->>'item_id')::uuid = ANY(g.item_ids)) IS NOT TRUE THEN
-      RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
-    END IF;
-    IF p_action = 'request.status' AND observed_request.request_id IS NULL THEN
-      -- Absent is UNKNOWN, including a transaction still in flight; never authorize a replay.
+    IF NOT FOUND THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
+    IF p_action = 'item.list' OR (p_action = 'request.status' AND observed_request.request_id IS NULL) THEN
+      -- A missing receipt remains UNKNOWN. No item existence is disclosed.
       IF NOT g.scopes && ARRAY['item.read', 'item.write']::text[] THEN
         RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
       END IF;
-    ELSIF ((CASE WHEN authorization_action = 'key.read' THEN 'item.write' ELSE authorization_action END) = ANY(g.scopes)) IS NOT TRUE
-      OR (p_action = 'request.status' AND (observed_request.input->>'item_id')::uuid IS DISTINCT FROM (p_input->>'item_id')::uuid) THEN
-      RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
+    ELSE
+      target := CASE WHEN p_action = 'request.status' THEN (observed_request.input->>'item_id')::uuid
+        ELSE (p_input->>'item_id')::uuid END;
+      IF (target = ANY(g.item_ids)) IS NOT TRUE
+        OR ((CASE WHEN authorization_action = 'key.read' THEN 'item.write' ELSE authorization_action END) = ANY(g.scopes)) IS NOT TRUE
+        OR (p_action = 'request.status' AND p_input ? 'item_id' AND (p_input->>'item_id')::uuid IS DISTINCT FROM target) THEN
+        RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
+      END IF;
     END IF;
     actor := g.issuer_user_id;
   ELSIF p_token_digest IS NOT NULL THEN
@@ -133,6 +136,8 @@ BEGIN
   SELECT * INTO m FROM private.password_vault_members
     WHERE ws_id = p_ws AND vault_id = p_vault AND user_id = actor AND revoked_at IS NULL;
   IF NOT FOUND THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
+  IF p_token IS NOT NULL AND m.role <> 'owner' THEN
+    RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
   IF p_action = 'request.status' AND observed_request.request_id IS NOT NULL AND
     (observed_request.actor_user_id IS DISTINCT FROM actor OR observed_request.token_id IS DISTINCT FROM p_token) THEN
     RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
@@ -202,9 +207,16 @@ BEGIN
     SELECT jsonb_build_object('items', COALESCE(jsonb_agg(x), '[]'::jsonb)) INTO result FROM (
       SELECT id, name, version, revision, (encrypted_file_id IS NOT NULL) AS is_file FROM private.password_vault_items
       WHERE ws_id = p_ws AND vault_id = p_vault AND deleted_at IS NULL
+        AND (p_token IS NULL OR id = ANY(g.item_ids))
         AND ((p_input->>'after_id') IS NULL OR id > (p_input->>'after_id')::uuid)
       ORDER BY id LIMIT lim
     ) x;
+    IF p_token IS NOT NULL THEN
+      result := result || jsonb_build_object('vault', jsonb_build_object(
+        'id', v.id, 'ws_id', v.ws_id, 'revision', v.revision, 'active_version', v.active_version,
+        'rotation_required', v.rotation_required,
+        'role', CASE WHEN 'item.write' = ANY(g.scopes) THEN 'editor' ELSE 'viewer' END));
+    END IF;
   WHEN 'member.list' THEN
     lim := COALESCE((p_input->>'limit')::integer, 50);
     IF lim NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'Invalid page limit' USING ERRCODE = '22023'; END IF;
@@ -370,7 +382,8 @@ BEGIN
     SELECT * INTO g FROM private.password_vault_machine_grants WHERE ws_id = p_ws AND vault_id = p_vault
       AND id = (p_input->>'grant_id')::uuid AND revoked_at IS NULL AND authorization_epoch = v.authorization_epoch
       AND expires_at > clock_timestamp();
-    IF NOT FOUND OR (p_input->>'expires_at')::timestamptz > g.expires_at THEN
+    IF NOT FOUND OR g.issuer_user_id IS DISTINCT FROM actor
+      OR (p_input->>'expires_at')::timestamptz > g.expires_at THEN
       RAISE EXCEPTION 'Grant unavailable' USING ERRCODE = '42501';
     END IF;
     IF (SELECT count(*) FROM private.password_vault_machine_tokens WHERE ws_id = p_ws AND vault_id = p_vault

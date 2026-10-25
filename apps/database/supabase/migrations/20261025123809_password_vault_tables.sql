@@ -102,7 +102,7 @@ CREATE TABLE private.password_vault_machine_tokens (
   vault_id uuid NOT NULL,
   id uuid NOT NULL,
   grant_id uuid NOT NULL,
-  -- HMAC-SHA256 of a random 256-bit bearer credential, not a secret-content hash.
+  -- SHA-256 of the decoded random 256-bit bearer credential, not a secret-content hash.
   token_digest text NOT NULL CHECK (token_digest ~ '^[0-9a-f]{64}$'),
   created_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
