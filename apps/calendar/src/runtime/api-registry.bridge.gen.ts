@@ -60,7 +60,6 @@ import * as route53 from '../app/api/v1/workspaces/[wsId]/calendar/sync/route';
 import * as route54 from '../app/api/v1/workspaces/[wsId]/calendars/reset/route';
 import * as route55 from '../app/api/v1/workspaces/[wsId]/calendars/route';
 import * as route56 from '../app/api/workspaces/[wsId]/route';
-import * as route57 from '../app/serwist/[path]/route';
 
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/[wsId]/calendar/auto-schedule", module: route0 },
@@ -120,5 +119,4 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/calendars/reset", module: route54 },
   { pattern: "/api/v1/workspaces/[wsId]/calendars", module: route55 },
   { pattern: "/api/workspaces/[wsId]", module: route56 },
-  { pattern: "/serwist/[path]", module: route57 },
 ]);

@@ -10,5 +10,8 @@
   },
   "pages": {
     "out": "src/runtime/page-registry.bridge.gen.ts"
+  },
+  "owned": {
+    "serwist/[path]/route.ts": "src/runtime/handler.ts"
   }
 }
