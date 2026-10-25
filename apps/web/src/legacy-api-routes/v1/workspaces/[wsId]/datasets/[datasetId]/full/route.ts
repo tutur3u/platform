@@ -1,10 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
+import { resolveDatasetAccess } from '../dataset-access';
 
 interface Params {
   params: Promise<{
@@ -15,16 +10,13 @@ interface Params {
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
-  const apiKey = (await headers()).get('API_KEY');
 
-  if (apiKey) {
-    const isValid = await validateWorkspaceApiKey(wsId, apiKey);
-    if (!isValid) {
-      return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
-    }
-  }
+  // The row-cells view has no ws_id column, so the dataset id is only queried
+  // after resolveDatasetAccess proves it belongs to wsId.
+  const access = await resolveDatasetAccess({ wsId, datasetId });
+  if (!access.ok) return access.response;
 
-  const supabase = apiKey ? await createAdminClient() : await createClient();
+  const { supabase } = access;
   const searchParams = req.nextUrl.searchParams;
 
   const from = searchParams.get('from');

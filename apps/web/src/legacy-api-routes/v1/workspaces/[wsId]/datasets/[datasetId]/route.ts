@@ -1,10 +1,11 @@
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { headers } from 'next/headers';
+  MAX_LONG_TEXT_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_URL_LENGTH,
+} from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
+import { z } from 'zod';
+import { resolveDatasetAccess } from './dataset-access';
 
 interface Params {
   params: Promise<{
@@ -13,24 +14,54 @@ interface Params {
   }>;
 }
 
+// Strict allowlist: unknown fields (including `ws_id`) are rejected so a
+// caller can never reparent a dataset or write server-owned columns.
+const datasetUpdateSchema = z
+  .object({
+    id: z.string().max(MAX_NAME_LENGTH).optional(),
+    name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
+    description: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),
+    url: z.string().max(MAX_URL_LENGTH).nullable().optional(),
+  })
+  .strict();
+
 export async function PUT(req: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
-  const apiKey = (await headers()).get('API_KEY');
 
-  if (apiKey) {
-    const isValid = await validateWorkspaceApiKey(wsId, apiKey);
-    if (!isValid) {
-      return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
-    }
+  const body = await req.json().catch(() => null);
+  const parsed = datasetUpdateSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body' },
+      { status: 400 }
+    );
   }
 
-  const supabase = apiKey ? await createAdminClient() : await createClient();
-  const data = await req.json();
+  const { id, ...data } = parsed.data;
 
-  const { error } = await supabase
+  if (id !== undefined && id !== datasetId) {
+    return NextResponse.json(
+      { message: 'Dataset id does not match the URL' },
+      { status: 400 }
+    );
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json(
+      { message: 'No updatable fields provided' },
+      { status: 400 }
+    );
+  }
+
+  const access = await resolveDatasetAccess({ wsId, datasetId });
+  if (!access.ok) return access.response;
+
+  const { error } = await access.supabase
     .from('workspace_datasets')
     .update(data)
-    .eq('id', datasetId);
+    .eq('id', datasetId)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
@@ -45,21 +76,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
-  const apiKey = (await headers()).get('API_KEY');
 
-  if (apiKey) {
-    const isValid = await validateWorkspaceApiKey(wsId, apiKey);
-    if (!isValid) {
-      return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
-    }
-  }
+  const access = await resolveDatasetAccess({ wsId, datasetId });
+  if (!access.ok) return access.response;
 
-  const supabase = apiKey ? await createAdminClient() : await createClient();
-
-  const { error } = await supabase
+  const { error } = await access.supabase
     .from('workspace_datasets')
     .delete()
-    .eq('id', datasetId);
+    .eq('id', datasetId)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
