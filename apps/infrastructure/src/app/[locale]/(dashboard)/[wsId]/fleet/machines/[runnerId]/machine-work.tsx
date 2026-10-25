@@ -17,7 +17,7 @@ export function MachineWork({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatTile
           label={unreachable ? t('stats.outcome_unknown') : t('work.running')}
           tone={
@@ -47,7 +47,7 @@ export function MachineWork({
           value={activity?.keptLeases ?? null}
         />
         <StatTile
-          className="col-span-2 md:col-span-1"
+          className="col-span-2 sm:col-span-1"
           label={t('work.lane_ceiling')}
           unknownLabel={t('resources.not_reported')}
           value={null}
