@@ -35,6 +35,7 @@ class _ResetRepository extends ReplyRepository {
     required String wsId,
     required AssistantFilePickerResult file,
     String? chatId,
+    void Function(double progress)? onProgress,
   }) async => throw const FormatException('Synthetic upload error retained');
 }
 

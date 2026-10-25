@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { verifyAiChatOwner } from '../_lib/chat-resource-access';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const FileUrlsRequestSchema = z.object({
@@ -59,6 +60,21 @@ export const POST = withSessionAuth(
           { message: "You don't have access to this workspace" },
           { status: 403 }
         );
+      }
+
+      const access = await verifyAiChatOwner({
+        chatId,
+
+        userId: user.id,
+      });
+      if (access === 'lookup_failed') {
+        return NextResponse.json(
+          { message: 'Failed to verify chat access' },
+          { status: 500 }
+        );
+      }
+      if (access !== 'allowed') {
+        return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
       }
 
       const sbAdmin = await createDynamicAdminClient();
@@ -175,6 +191,15 @@ function extensionToMime(ext: string): string {
     jpeg: 'image/jpeg',
     webp: 'image/webp',
     gif: 'image/gif',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    aac: 'audio/aac',
+    flac: 'audio/flac',
+    m4a: 'audio/m4a',
+    mp3: 'audio/mpeg',
+    ogg: 'audio/ogg',
+    opus: 'audio/ogg',
+    wav: 'audio/wav',
     pdf: 'application/pdf',
     mp4: 'video/mp4',
     webm: 'video/webm',

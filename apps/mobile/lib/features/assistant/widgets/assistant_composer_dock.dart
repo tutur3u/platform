@@ -42,6 +42,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onMicrophoneTap,
     required this.onSend,
     required this.onRemoveAttachment,
+    this.onRetryAttachment,
     this.repository,
     this.chatCubit,
     this.voiceCapture,
@@ -91,6 +92,7 @@ class AssistantComposerDock extends StatelessWidget {
   final Future<void> Function() onMicrophoneTap;
   final Future<void> Function() onSend;
   final Future<void> Function(String attachmentId) onRemoveAttachment;
+  final Future<void> Function(String attachmentId)? onRetryAttachment;
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +219,7 @@ class AssistantComposerDock extends StatelessWidget {
             AssistantComposerAttachments(
               attachments: chatState.composerAttachments,
               onRemove: onRemoveAttachment,
+              onRetry: onRetryAttachment,
             ),
           composer,
         ],

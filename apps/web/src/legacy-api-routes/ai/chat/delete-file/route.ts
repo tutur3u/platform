@@ -5,6 +5,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import {
+  parseAiChatResourcePath,
+  verifyAiChatResourceScopes,
+} from '../_lib/chat-resource-access';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const DeleteFileRequestSchema = z.object({
@@ -66,6 +70,28 @@ export const POST = withSessionAuth(
           { message: "You don't have access to this workspace" },
           { status: 403 }
         );
+      }
+
+      const scope = parseAiChatResourcePath(path);
+      if (!scope || scope.wsId !== wsId) {
+        return NextResponse.json(
+          { message: 'Invalid storage path' },
+          { status: 400 }
+        );
+      }
+      const access = await verifyAiChatResourceScopes({
+        scopes: [scope],
+
+        userId: user.id,
+      });
+      if (access === 'lookup_failed') {
+        return NextResponse.json(
+          { message: 'Failed to verify chat access' },
+          { status: 500 }
+        );
+      }
+      if (access !== 'allowed') {
+        return NextResponse.json({ message: 'File not found' }, { status: 404 });
       }
 
       const sbAdmin = await createDynamicAdminClient();

@@ -53,11 +53,27 @@ extension _AssistantPageSubmission on _AssistantPageState {
       _showInlineNotice(context.l10n.assistantAttachmentUploadPending);
       return;
     }
-    if (chatState.composerAttachments.any(
-      (attachment) =>
-          attachment.uploadState == AssistantAttachmentUploadState.error,
-    )) {
-      _showInlineNotice(context.l10n.assistantAttachmentUploadFailed);
+    final failedAttachments = chatState.composerAttachments
+        .where(
+          (attachment) =>
+              attachment.uploadState == AssistantAttachmentUploadState.error,
+        )
+        .toList(growable: false);
+    if (failedAttachments.isNotEmpty) {
+      // Name the reason: "retry" only helps connection and server failures.
+      _showInlineNotice(
+        failedAttachments.length == 1
+            ? context.l10n.assistantAttachmentNotSentOne(
+                failedAttachments.single.name,
+                assistantAttachmentFailureMessage(
+                  context,
+                  failedAttachments.single.failure,
+                ),
+              )
+            : context.l10n.assistantAttachmentNotSentMany(
+                failedAttachments.length,
+              ),
+      );
       return;
     }
 

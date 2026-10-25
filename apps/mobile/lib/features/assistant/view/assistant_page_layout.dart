@@ -227,6 +227,19 @@ extension _AssistantPageLayout on _AssistantPageState {
                           );
                         }
 
+                        Future<void> retryComposerAttachment(
+                          String attachmentId,
+                        ) async {
+                          final timezone = await getCurrentTimezoneIdentifier();
+                          if (!mounted) return;
+                          await _chatCubit.retryComposerAttachment(
+                            wsId: currentWorkspace.id,
+                            attachmentId: attachmentId,
+                            modelId: _shellCubit.state.selectedModel.value,
+                            timezone: timezone,
+                          );
+                        }
+
                         final liveUiState = deriveAssistantLiveUiState(
                           shellState: shellState,
                           liveState: liveState,
@@ -429,6 +442,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               ),
                                               onRemoveAttachment:
                                                   removeComposerAttachment,
+                                              onRetryAttachment:
+                                                  retryComposerAttachment,
                                             ),
                                       primary: isLiveMode
                                           ? _livePrimaryAction()

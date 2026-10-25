@@ -4,7 +4,18 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { verifyAiChatOwner } from '../_lib/chat-resource-access';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
+
+const AUDIO_EXTENSIONS = new Set([
+  'aac',
+  'flac',
+  'm4a',
+  'mp3',
+  'ogg',
+  'opus',
+  'wav',
+]);
 
 const ALLOWED_EXTENSIONS = new Set([
   'png',
@@ -12,7 +23,10 @@ const ALLOWED_EXTENSIONS = new Set([
   'jpeg',
   'webp',
   'gif',
+  'heic',
+  'heif',
   'pdf',
+  ...AUDIO_EXTENSIONS,
   'mp4',
   'webm',
   'mov',
@@ -29,11 +43,15 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 
 const MAX_FILENAME_LENGTH = 255;
+// Every model request injects the chat's attachments within a 32 MiB budget,
+// so a larger single file could upload yet never reach the model.
+const MAX_AI_CHAT_UPLOAD_BYTES = 32 * 1024 * 1024;
 
 const UploadUrlRequestSchema = z.object({
   filename: z.string().min(1).max(MAX_FILENAME_LENGTH),
   wsId: z.string().min(1),
   chatId: z.guid().optional(),
+  sizeBytes: z.number().int().min(0).optional(),
 });
 
 /**
@@ -52,6 +70,7 @@ export const POST = withSessionAuth(
         filename,
         wsId: wsIdRaw,
         chatId,
+        sizeBytes,
       } = UploadUrlRequestSchema.parse(body);
       const wsId = await normalizeWorkspaceId(wsIdRaw, supabase, req);
 
@@ -93,9 +112,40 @@ export const POST = withSessionAuth(
 
       if (!fileExt || !ALLOWED_EXTENSIONS.has(fileExt)) {
         return NextResponse.json(
-          { message: 'Unsupported file type' },
+          { code: 'unsupported_file_type', message: 'Unsupported file type' },
           { status: 400 }
         );
+      }
+
+      if (sizeBytes !== undefined && sizeBytes > MAX_AI_CHAT_UPLOAD_BYTES) {
+        return NextResponse.json(
+          {
+            code: 'file_too_large',
+            maxSizeBytes: MAX_AI_CHAT_UPLOAD_BYTES,
+            message: 'File is too large',
+          },
+          { status: 413 }
+        );
+      }
+
+      if (chatId) {
+        const access = await verifyAiChatOwner({
+          chatId,
+
+          userId: user.id,
+        });
+        if (access === 'lookup_failed') {
+          return NextResponse.json(
+            { message: 'Failed to verify chat access' },
+            { status: 500 }
+          );
+        }
+        if (access !== 'allowed') {
+          return NextResponse.json(
+            { message: 'Chat not found' },
+            { status: 404 }
+          );
+        }
       }
 
       // Sanitize filename: keep alphanumeric, dots, hyphens, underscores
@@ -138,6 +188,7 @@ export const POST = withSessionAuth(
         signedUrl: data.signedUrl,
         token: data.token,
         path: storagePath,
+        maxSizeBytes: MAX_AI_CHAT_UPLOAD_BYTES,
       });
     } catch (err) {
       if (err instanceof z.ZodError) {

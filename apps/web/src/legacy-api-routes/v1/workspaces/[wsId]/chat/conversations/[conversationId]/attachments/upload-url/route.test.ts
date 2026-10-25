@@ -93,4 +93,24 @@ describe('chat attachment upload URL route', () => {
     expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
+
+  it('returns 404 without issuing an upload URL for an unknown conversation', async () => {
+    mocks.resolveChatRouteContext.mockResolvedValue({
+      ok: true,
+      context: { normalizedWsId: 'workspace-1' },
+    });
+    // Mira chat ids are not messaging conversations; the RPC answers NULL.
+    mocks.callPrivateChatRpc.mockResolvedValue(null);
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
 });

@@ -61,7 +61,7 @@ export const POST = withSessionAuth<RouteParams>(
     }
 
     try {
-      const prepared = await callPrivateChatRpc<ChatPreparedAttachment>(
+      const prepared = await callPrivateChatRpc<ChatPreparedAttachment | null>(
         'chat_prepare_attachment',
         {
           p_actor_user_id: auth.user.id,
@@ -71,6 +71,14 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      // The RPC returns NULL for an unknown or inaccessible conversation.
+      if (!prepared) {
+        return NextResponse.json(
+          { message: 'Conversation not found' },
+          { status: 404 }
+        );
+      }
 
       const filenameWithSuffix = `${generateRandomUUID()}-${sanitizedFilename}`;
       const uploadPayload = await createWorkspaceStorageUploadPayload(

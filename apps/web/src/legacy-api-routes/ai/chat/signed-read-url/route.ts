@@ -3,6 +3,11 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  type AiChatResourceScope,
+  parseAiChatResourcePath,
+  verifyAiChatResourceScopes,
+} from '../_lib/chat-resource-access';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const SignedReadUrlRequestSchema = z.object({
@@ -28,17 +33,19 @@ export const POST = withSessionAuth(
       const body = await req.json();
       const { paths } = SignedReadUrlRequestSchema.parse(body);
       const workspaceIds = new Set<string>();
+      const scopes: AiChatResourceScope[] = [];
 
       for (const path of paths) {
-        const workspaceId = getAiChatStorageWorkspaceId(path);
-        if (!workspaceId) {
+        const scope = parseAiChatResourcePath(path);
+        if (!scope) {
           return NextResponse.json(
             { message: 'Invalid storage path' },
             { status: 400 }
           );
         }
 
-        workspaceIds.add(workspaceId);
+        scopes.push(scope);
+        workspaceIds.add(scope.wsId);
       }
 
       for (const wsId of workspaceIds) {
@@ -65,6 +72,21 @@ export const POST = withSessionAuth(
             { status: 403 }
           );
         }
+      }
+
+      const access = await verifyAiChatResourceScopes({
+        scopes,
+
+        userId: user.id,
+      });
+      if (access === 'lookup_failed') {
+        return NextResponse.json(
+          { message: 'Failed to verify chat access' },
+          { status: 500 }
+        );
+      }
+      if (access !== 'allowed') {
+        return NextResponse.json({ message: 'File not found' }, { status: 404 });
       }
 
       const storageAdmin = await createDynamicAdminClient();
@@ -111,19 +133,3 @@ export const POST = withSessionAuth(
     rateLimitKind: 'read',
   }
 );
-
-function getAiChatStorageWorkspaceId(path: string) {
-  if (path.includes('..')) return null;
-
-  const [wsId, chatsSegment, aiSegment, resourcesSegment] = path.split('/');
-  if (
-    !wsId ||
-    chatsSegment !== 'chats' ||
-    aiSegment !== 'ai' ||
-    resourcesSegment !== 'resources'
-  ) {
-    return null;
-  }
-
-  return wsId;
-}

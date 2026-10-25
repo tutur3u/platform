@@ -485,19 +485,13 @@ mixin _AssistantChatRepository {
   }
 
   AssistantAttachment _assistantAttachmentFromChatAttachment(
-    ChatAttachment attachment, {
-    String? fallbackId,
-    String? fallbackPath,
-    String? fallbackType,
-    int? fallbackSize,
-  }) {
+    ChatAttachment attachment,
+  ) {
     return AssistantAttachment(
-      id: fallbackId ?? attachment.id,
+      id: attachment.id,
       name: attachment.filename,
-      size: attachment.sizeBytes ?? fallbackSize ?? 0,
-      type:
-          attachment.contentType ?? fallbackType ?? 'application/octet-stream',
-      localPath: fallbackPath,
+      size: attachment.sizeBytes ?? 0,
+      type: attachment.contentType ?? 'application/octet-stream',
       storagePath: attachment.storagePath,
       uploadState: AssistantAttachmentUploadState.uploaded,
     );
@@ -507,11 +501,18 @@ mixin _AssistantChatRepository {
     String conversationId,
     List<AssistantAttachment> attachments,
   ) {
+    // A file stored outside this conversation would be dropped server-side;
+    // refuse before transport so the draft and attachment stay recoverable.
+    if (attachments.any(
+      (attachment) =>
+          !(attachment.storagePath?.startsWith('chats/$conversationId/') ??
+              false),
+    )) {
+      throw const AssistantAttachmentUploadException(
+        AssistantAttachmentFailure.forbidden,
+      );
+    }
     return attachments
-        .where((attachment) {
-          final path = attachment.storagePath;
-          return path != null && path.startsWith('chats/$conversationId/');
-        })
         .map(
           (attachment) => ChatAttachmentDraft(
             filename: attachment.name,
