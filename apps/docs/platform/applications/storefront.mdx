@@ -129,7 +129,7 @@ root-only profile; apex cutover waits for the shared-session decision and
 auth-boundary guard. The native adapter must retain the two-upstream fallback declared
 by `next.config.ts`, including order-token and payment callback admission. The
 emitted Worker must pass those checks as well as public browsing, bilingual
-routes, checkout return paths and staging canonical-host rejection. Provider
+routes, checkout return paths and apex/unknown-host rejection. Provider
 payment and device acceptance are separate from fixture tests. The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.
 
 The generated `storefront-cloudflare.yaml` workflow uses the shared native
@@ -165,3 +165,8 @@ Staging profile verification is an explicit cutover-prep gate. Supply and verify
 upstreams. Inventory forwarding fails closed when its origin is absent. No conversion PR publishes production or qualifies
 hosted auth, provider behavior or checkout. Keep credentials out of artifacts
 and receipts; record only variable names and verification outcomes.
+
+The anonymous root outcome is a redirect to `/demo`, matching the existing
+Storefront index page. The app-owned `runtime` declaration requires that
+redirect to stay on the requested root host, rather than accepting a generic
+non-error response. 
