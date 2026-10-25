@@ -28,8 +28,9 @@ extension AssistantFirstMessageOperations on AssistantRepository {
               admission: admission,
             ).listen(
               (event) {
-                if (event is AssistantChatCreatedStreamEvent)
+                if (event is AssistantChatCreatedStreamEvent) {
                   acknowledged = true;
+                }
                 if (!cancelled) controller.add(event);
               },
               onError: (Object error, StackTrace stack) {
