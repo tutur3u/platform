@@ -69,7 +69,7 @@ SELECT is((SELECT result->'vault'->>'role' FROM metadata),'editor','machine meta
 SELECT ok((SELECT result::text NOT LIKE '%OUTSIDE_GRANT%' FROM metadata),'ungranted label not disclosed');
 SELECT ok((SELECT (result->'items'->0) - ARRAY['id','name','revision','version','is_file']::text[] = '{}'::jsonb FROM metadata),
  'metadata excludes ciphertext, key, file path and value');
-SELECT ok((SELECT result->'vault' - ARRAY['id','ws_id','revision','active_version','rotation_required','role']::text[] = '{}'::jsonb FROM metadata),
+SELECT ok((SELECT (result->'vault') - ARRAY['id','ws_id','revision','active_version','rotation_required','role']::text[] = '{}'::jsonb FROM metadata),
  'vault metadata has no membership or label enumeration');
 SELECT is(pg_temp.pw_machine('item.read','{"item_id":"f7300000-0000-0000-0000-000000000001"}')->>'error','42501','write-only cannot reveal old value');
 SELECT is(pg_temp.pw_machine('key.read',jsonb_build_object('item_id','f7300000-0000-0000-0000-000000000001',
