@@ -3,6 +3,7 @@ import {
   type AppMountConfig,
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
+import type { AssetsBinding } from '@tuturuuu/start-bridge/start/handler';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { withoutPageRewrite } from '../lib/page-rewrite';
 
@@ -15,7 +16,7 @@ export const TASKS_MOUNTS: AppMountConfig = {
 };
 
 export interface TasksWorkerEnv {
-  ASSETS?: { fetch(request: Request): Promise<Response> };
+  ASSETS?: AssetsBinding;
   /** Central Web API origin for unowned `/api/*` (default tuturuuu.com). */
   INTERNAL_WEB_API_ORIGIN?: string;
   /** `1` on staging: every response carries `X-Robots-Tag: noindex`. */

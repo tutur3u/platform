@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AssetsBinding } from '../core/assets';
 import { cookies } from '../server/request-context';
 import { routerBasepath } from './base-path';
 import { createBridgeHandler } from './handler';
 
 const ctx = { waitUntil: vi.fn() };
-type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
+type Env = { ASSETS: AssetsBinding };
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
 // One handler instance stands in for one compiled artifact.
-const assets = vi.fn(async (request: Request) => new Response(request.url));
+const assets = vi.fn(async (input: string) => new Response(input));
 const start = vi.fn(async (request: Request) => {
   (await cookies()).set('tuturuuu_app_session', 'fresh', { path: '/' });
   const mount = request.headers.get('x-tuturuuu-app-base') ?? '-';

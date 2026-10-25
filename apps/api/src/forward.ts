@@ -1,3 +1,5 @@
+import { CLOUDFLARE_ORIGIN_AUTH_HEADER } from '@tuturuuu/utils/abuse-protection/client-ip';
+import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import type { ApiEnv } from './contracts';
 import { ApiError } from './errors';
 
@@ -46,6 +48,16 @@ export async function forwardToRetainedOrigin(
     );
   }
   const target = new URL(incoming.pathname + incoming.search, origin);
+  const proof = createOriginClientIpProof({
+    ip: request.headers.get('cf-connecting-ip') ?? '',
+    secret: env.TRUSTED_PROXY_ORIGIN_SECRET?.trim() ?? '',
+  });
+  if (!proof)
+    throw new ApiError(
+      'unavailable',
+      503,
+      'Trusted client IP forwarding is not configured'
+    );
   const headers = new Headers(request.headers);
   for (const header of (headers.get('connection') ?? '').split(',')) {
     if (header.trim()) headers.delete(header.trim());
@@ -73,6 +85,8 @@ export async function forwardToRetainedOrigin(
     )
       headers.delete(name);
   }
+  headers.delete(CLOUDFLARE_ORIGIN_AUTH_HEADER);
+  headers.set(CLOUDFLARE_ORIGIN_AUTH_HEADER, proof);
   headers.set(FORWARD_HOP, '1');
   // Manual redirects preserve the legacy Location and never replay a write.
   const init: RequestInit & { duplex: 'half' } = {

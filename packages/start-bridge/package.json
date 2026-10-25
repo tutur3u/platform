@@ -13,6 +13,7 @@
     "./request-context/core": "./src/core/request-context.ts",
     "./endpoints": "./src/core/endpoints.ts",
     "./api-forward": "./src/core/api-forward.ts",
+    "./assets": "./src/core/assets.ts",
     "./canary": "./src/core/canary.ts",
     "./csp": "./src/core/csp.ts",
     "./next/headers": "./src/next/headers.ts",
