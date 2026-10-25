@@ -134,6 +134,33 @@ Conversion PRs therefore run without `--hold`; the app's cutover-prep PR adds
 the hold and merges just before the flip.
 </Warning>
 
+### Worker options
+
+`start-bridge.config.ts` at the app root is app-owned: the codemod creates
+it once (`defineBridgeAppConfig({})`) and never updates or replaces it. The
+generated `cloudflare/worker.ts` passes its options on, so an app changes
+Worker behaviour without editing generated files:
+
+| Option | Effect |
+| --- | --- |
+| `csp(nonce)` | `createBridgeHandler({ csp })`: the response's Content-Security-Policy; the generated router already stamps the nonce |
+| `mounts` | Overrides the generated hosts, `basePath` or `unknownHost` (`'reject'` answers 404 for unlisted hosts) |
+| `apiOrigin(request, { env, path })` | Origin for one unowned `/api/*` request (e.g. Storefront's `/api/v1/inventory/**` to Inventory); `undefined` keeps the central Web API. Forwarding keeps the central forward's base stripping, loop guard and header removal |
+| `wrapResponse(response, { request, env })` | Decorates every response, e.g. a staging noindex header |
+
+### Route handlers load lazily
+
+The generated API registry (`api.lazy`) imports each route on its first
+request (`lazyRouteModule`), with the route's HTTP methods read statically
+from its source so `OPTIONS` and `405` need no import. One route's
+dependencies (for example a Node-only SDK chain) therefore cannot fail the
+Worker at startup; a route that re-exports with `export *` stays eager. In
+the rsc build, CommonJS `require()` of Node built-ins becomes an ESM import
+served by `nodejs_compat`, and `.wasm`/`.bin` imports become Wrangler
+CompiledWasm/Data modules (as `next/og`'s Workers port needs). A route that
+needs a Node API workerd does not provide still fails when it is hit; serve it
+from Web (`centralFirst`) or port it.
+
 ### Native CI
 
 When the repository has the reusable `.github/workflows/native-start-app.yaml`

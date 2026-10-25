@@ -19,6 +19,7 @@ import {
   API_PATTERNS,
   API_REGISTRY,
   APP_BASE,
+  APP_CONFIG,
   CENTRAL_FIRST,
   DEPENDENCIES,
   GENERATED_MARKER,
@@ -104,7 +105,8 @@ function defaultLocale(repoRoot, app) {
 export function routesConfig(existing, inventory, locale) {
   const defaults = {
     appDir: inventory.appDir,
-    api: { out: API_REGISTRY, patternsOut: API_PATTERNS },
+    // Lazy: a route's dependencies load on its first request, not at startup.
+    api: { out: API_REGISTRY, patternsOut: API_PATTERNS, lazy: true },
     pages: { out: PAGE_MANIFEST },
     stripSegments: inventory.hasLocaleSegment ? { '[locale]': { locale } } : {},
     owned: {},
@@ -200,6 +202,13 @@ export function planConversion(repoRoot, app, options = {}) {
   owned(PUBLIC_ASSETS, templates.publicAssetsModule(resolved));
   owned('src/start-bridge/page-route.tsx', templates.pageRouteModule(resolved));
   owned(CENTRAL_FIRST, templates.centralFirstModule(resolved));
+  // App-owned: created once so generated files never need hand edits.
+  if (read(repoRoot, `${appPath}/${APP_CONFIG}`) === null)
+    writes.push({
+      path: `${appPath}/${APP_CONFIG}`,
+      content: templates.appConfigModule(resolved),
+      owner: 'app-owned',
+    });
   owned(API_ENTRY, templates.apiEntryModule(resolved));
   if (resolved.appBase) owned(APP_BASE, templates.appBaseModule(resolved));
   owned(
@@ -403,6 +412,7 @@ function formatWrites(writes, format, appPath) {
   // Owned files, plus the app's own JSON edits (package.json, tsconfig.json).
   const formattable = (write) =>
     write.owner === 'generated' ||
+    write.owner === 'app-owned' ||
     (write.owner === 'edit' &&
       write.path.startsWith(`${appPath}/`) &&
       write.path.endsWith('.json'));

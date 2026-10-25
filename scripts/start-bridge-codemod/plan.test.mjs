@@ -134,6 +134,7 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
     'src/routes',
     'src/start-bridge',
     'src/start.ts',
+    'start-bridge.config.ts',
     'vite.config.mts',
     'void.config.ts',
   ]);
@@ -177,6 +178,7 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
   assert.deepEqual(plain.config.api, {
     out: 'src/start-bridge/api-registry.bridge.gen.ts',
     patternsOut: 'src/start-bridge/api-patterns.bridge.gen.ts',
+    lazy: true,
   });
 
   // The app's own proxy matcher, next.config Web rewrites, and #6764.
@@ -277,6 +279,45 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   assert.equal(
     JSON.parse(content('apps/demo/package.json')).scripts['test:runtime'],
     'node --test cloudflare/native-built-worker.test.mjs'
+  );
+});
+
+test('the app-owned Worker config is created once and never overwritten', (t) => {
+  const root = createFixtureRepo(t);
+  const first = plan(root);
+  const config = first.writes.find(
+    (write) => write.path === 'apps/demo/start-bridge.config.ts'
+  );
+  assert.equal(config?.owner, 'app-owned');
+  assert.match(
+    config?.content ?? '',
+    /export default defineBridgeAppConfig\(\{\}\);/
+  );
+  const worker = first.writes.find(
+    (write) => write.path === 'apps/demo/cloudflare/worker.ts'
+  )?.content;
+  assert.match(worker, /import appConfig from '\.\.\/start-bridge\.config';/);
+  assert.match(
+    worker,
+    /\.\.\.appConfig\.mounts,\n {4}\},\n {4}csp: appConfig\.csp,/
+  );
+  assert.match(
+    worker,
+    /appConfig\.wrapResponse\(response, \{ request, env \}\)/
+  );
+  assert.match(worker, /\n {4}apiOrigin: appConfig\.apiOrigin,\n/);
+  applyPlan(root, first, { spawn: noCommands });
+  // The app's own options survive every re-run.
+  const owned =
+    "import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';\nexport default defineBridgeAppConfig({ mounts: { unknownHost: 'reject' } });\n";
+  fs.writeFileSync(path.join(root, 'apps/demo/start-bridge.config.ts'), owned);
+  assert.deepEqual(pendingWrites(plan(root)), []);
+  assert.equal(
+    fs.readFileSync(
+      path.join(root, 'apps/demo/start-bridge.config.ts'),
+      'utf8'
+    ),
+    owned
   );
 });
 

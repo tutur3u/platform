@@ -41,6 +41,7 @@
     "./start/page-params": "./src/start/page-params.ts",
     "./start/page-location": "./src/start/page-location.ts",
     "./start/app-base": "./src/start/app-base.ts",
+    "./start/app-config": "./src/start/app-config.ts",
     "./proxy-matcher": "./src/next/proxy-matcher.ts",
     "./start/metadata": "./src/start/metadata.ts",
     "./start/server-actions": "./src/start/server-actions.ts"

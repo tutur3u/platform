@@ -153,6 +153,7 @@ export const START_ONLY_SOURCES = [
   'src/routes',
   'src/start-bridge',
   'src/start.ts',
+  'start-bridge.config.ts',
   'vite.config.mts',
   'void.config.ts',
 ];

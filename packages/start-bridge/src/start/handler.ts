@@ -47,6 +47,16 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * bracket patterns; matched against the app-relative path.
    */
   centralFirst?: readonly string[];
+  /**
+   * Picks the origin for one unowned `/api/*` request (e.g. Storefront sends
+   * `/api/v1/inventory/**` to Inventory); `undefined` keeps
+   * `centralApiOrigin`. The request still goes through the central forward:
+   * base stripping, the loop guard and hop-by-hop header removal.
+   */
+  apiOrigin?: (
+    request: NextRequest,
+    context: { env: Env; path: string }
+  ) => string | undefined;
   /** Overrides the unowned `/api/*` forwarder. */
   forwardApi?: (request: NextRequest, origin: string) => Promise<Response>;
   matches?: (pathname: string) => boolean;
@@ -129,7 +139,9 @@ export function createBridgeHandler<
             : null;
         if (endpoint) return endpoint;
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
-          const origin = options.centralApiOrigin(env);
+          const origin =
+            options.apiOrigin?.(forwarded, { env, path: pathname }) ??
+            options.centralApiOrigin(env);
           if (options.forwardApi) return options.forwardApi(forwarded, origin);
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(

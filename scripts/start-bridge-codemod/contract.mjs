@@ -16,6 +16,7 @@ export const BRIDGE = {
   proxyBridge: `${BRIDGE_PACKAGE}/proxy-bridge`,
   proxyMatcher: `${BRIDGE_PACKAGE}/proxy-matcher`,
   appBase: `${BRIDGE_PACKAGE}/start/app-base`,
+  appConfig: `${BRIDGE_PACKAGE}/start/app-config`,
   pages: `${BRIDGE_PACKAGE}/pages`,
   pageRoute: `${BRIDGE_PACKAGE}/start/page-route`,
   pageRender: `${BRIDGE_PACKAGE}/start/page-render`,
@@ -36,6 +37,8 @@ export const API_PATTERNS = `${GENERATED_DIR}/api-patterns.bridge.gen.ts`;
 /** The rsc API entry: registers the app base, then exports the registry. */
 export const API_ENTRY = `${GENERATED_DIR}/api-entry.ts`;
 export const CENTRAL_FIRST = `${GENERATED_DIR}/central-first.ts`;
+/** App-owned Worker options; created once, never overwritten. */
+export const APP_CONFIG = 'start-bridge.config.ts';
 export const APP_BASE = `${GENERATED_DIR}/app-base.ts`;
 /** `next/og` on Workers, as Meet runs it. */
 export const OG_PACKAGE = '@cloudflare/pages-plugin-vercel-og';

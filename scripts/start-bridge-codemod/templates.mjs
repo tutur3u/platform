@@ -6,6 +6,7 @@ import {
   API_PATTERNS,
   API_REGISTRY,
   API_RSC_ENTRY,
+  APP_CONFIG,
   BRIDGE,
   CENTRAL_FIRST,
   FUNCTION_BASE,
@@ -130,6 +131,7 @@ import { createFunctionProxy } from '${BRIDGE.functionProxy}';
 ${matcherImports}import { createBridgeHandler } from '${BRIDGE.handler}';
 import { createBridgeStartHandler } from '${BRIDGE.serverEntry}';
 ${proxyImport}
+import appConfig from '${moduleFrom('../', APP_CONFIG)}';
 import { centralFirst } from '${moduleFrom('../', CENTRAL_FIRST)}';
 import { publicAssets } from '${moduleFrom('../', PUBLIC_ASSETS)}';
 
@@ -157,7 +159,10 @@ const handler = (
       rootHosts: [${quote(rootHost)}],
       mountHosts: ['tuturuuu.com'],
       basePath: ${quote(`/${app}`)},
+      ...appConfig.mounts,
     },
+    csp: appConfig.csp,
+    apiOrigin: appConfig.apiOrigin,
     start: createBridgeStartHandler(),
     serverFnBase: ${quote(FUNCTION_BASE)},
     proxy,${matcherOption}
@@ -174,9 +179,23 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
-    return (await handler)(request, env, ctx);
+    const response = await (await handler)(request, env, ctx);
+    return appConfig.wrapResponse
+      ? appConfig.wrapResponse(response, { request, env })
+      : response;
   },
 };
+`;
+}
+
+/** App-owned Worker options: written once when absent, never updated. */
+export function appConfigModule({ app }) {
+  return `// App-owned start-bridge Worker options for ${app}: the codemod created this
+// file and never overwrites it. See "Worker options" in
+// apps/docs/build/devops/start-bridge-codemod.mdx.
+import { defineBridgeAppConfig } from '${BRIDGE.appConfig}';
+
+export default defineBridgeAppConfig({});
 `;
 }
 
@@ -464,6 +483,7 @@ export function cloudflareTsconfig({ app }) {
         'cloudflare',
         'global.d.ts',
         'messages',
+        'start-bridge.config.ts',
         'void.config.ts',
       ],
       exclude: [
