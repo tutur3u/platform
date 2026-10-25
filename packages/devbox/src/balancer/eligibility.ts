@@ -14,6 +14,7 @@ export interface BalancerHostTelemetry {
   load1?: number;
   memoryPressure?: 'normal' | 'warn' | 'critical';
   diskFreeGiB?: number;
+  diskFreePercent?: number;
   ttrVersion?: string;
   // The host's one canonical `ttr resources` queue, across every project and
   // consumer on that machine.
@@ -37,6 +38,9 @@ export interface BalancerHostPolicy {
   hold?: string;
   maxLoadPerCpu?: number;
   minDiskGiB: number;
+  // Host admission refuses heavy work below 5% free and reopens only at 10%
+  // (`ttr resources` disk hysteresis), so place only above this.
+  minDiskFreePercent?: number;
 }
 
 export type BalancerHostVerdict =
@@ -75,14 +79,15 @@ export function balancerHostVerdict(
       status: 'blocked',
       reason: `identity ${telemetry.hostname ?? '?'}/${telemetry.platform ?? '?'}/${telemetry.arch ?? '?'} does not match the registered device`,
     };
-  const { queue, load1, cpus, diskFreeGiB, memoryPressure } = telemetry;
+  const { queue, load1, cpus, diskFreeGiB, diskFreePercent, memoryPressure } =
+    telemetry;
   if (!queue)
     return { status: 'unknown', reason: 'resource queue status is unknown' };
   if (!queue.enabled)
     return { status: 'blocked', reason: 'resource admission is disabled' };
   if (load1 === undefined || !cpus)
     return { status: 'unknown', reason: 'load telemetry is missing' };
-  if (diskFreeGiB === undefined)
+  if (diskFreeGiB === undefined || diskFreePercent === undefined)
     return { status: 'unknown', reason: 'free disk is unknown' };
   if (!memoryPressure)
     return { status: 'unknown', reason: 'memory pressure is unknown' };
@@ -98,6 +103,12 @@ export function balancerHostVerdict(
     return {
       status: 'blocked',
       reason: `${diskFreeGiB.toFixed(1)} GiB free is below the ${policy.minDiskGiB} GiB floor`,
+    };
+  const percentFloor = policy.minDiskFreePercent ?? 10;
+  if (diskFreePercent < percentFloor)
+    return {
+      status: 'blocked',
+      reason: `${diskFreePercent.toFixed(1)}% free is below the ${percentFloor}% floor`,
     };
   return { status: 'eligible' };
 }

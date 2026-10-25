@@ -188,6 +188,7 @@ describe('balancer host eligibility', () => {
     load1: 2,
     memoryPressure: 'normal',
     diskFreeGiB: 275,
+    diskFreePercent: 30,
     queue: { enabled: true, lanes: 2, occupied: 0, waiting: 0 },
     ...patch,
   });
@@ -210,6 +211,7 @@ describe('balancer host eligibility', () => {
     ],
     ['missing queue', fresh({ queue: undefined })],
     ['missing disk', fresh({ diskFreeGiB: undefined })],
+    ['missing disk percent', fresh({ diskFreePercent: undefined })],
     ['missing load', fresh({ load1: undefined })],
     ['missing pressure', fresh({ memoryPressure: undefined })],
   ])('treats %s as UNKNOWN, not idle', (_label, telemetry) => {
@@ -219,6 +221,8 @@ describe('balancer host eligibility', () => {
   it.each([
     ['identity mismatch', fresh({ hostname: 'other' })],
     ['low disk', fresh({ diskFreeGiB: 10 })],
+    // Sonha on 2026-10-25: 322 GiB free was only 4.3% of the volume.
+    ['low disk percent', fresh({ diskFreeGiB: 322, diskFreePercent: 4.3 })],
     ['high load', fresh({ load1: 25 })],
     ['critical memory', fresh({ memoryPressure: 'critical' })],
     [
