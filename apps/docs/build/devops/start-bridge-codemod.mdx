@@ -194,12 +194,16 @@ Shortener:
   never pick it up): a generic
   emitted-Worker smoke run on the sealed artifact, with all egress denied:
   Worker identity, public-file parity, build identity when the app has
-  `/api/build-info`, the page outcomes the app declares, the
-  `tuturuuu.com/<app>` mount answering like the root, and no server error on
-  an unknown path. Page outcomes come from `runtime` in
-  `start-bridge.routes.json` (default `{ "/": 200 }`): an exact status, or
-  `{ "redirect": "<path or URL prefix>" }` for a page that must redirect, so
-  a login redirect never passes for a public page. App-specific acceptance goes in further
+  `/api/build-info`, the page outcomes the app declares on both the root and
+  the `tuturuuu.com/<app>` mount, and no server error on an unknown path. Page
+  outcomes come from `runtime` in `start-bridge.routes.json` (default
+  `{ "/": 200 }`): a record that must declare `/`, mapping app-relative paths
+  to an exact status or `{ "redirect": "<path or absolute URL>" }`. A path
+  redirect must stay on the requested origin and, on the apex, keep the
+  `/<app>` mount, so a login redirect, a cross-origin hop or a jump to
+  another app never passes. The codemod rejects empty, array or root-less
+  maps, and `scripts/start-bridge-codemod/runtime-outcome.mjs` holds the
+  shared checks. App-specific acceptance goes in further
   `cloudflare/*.runtime.mjs` files, which `test:runtime`
   (`node --test cloudflare/*.runtime.mjs`) runs with it.
 

@@ -45,6 +45,7 @@ import {
   addVercelProductionPolicyGate,
   dependencyCommands,
 } from './repo-edits.mjs';
+import { runtimeExpectationProblems } from './runtime-outcome.mjs';
 import * as templates from './templates.mjs';
 
 export const DEFAULT_SERVER_ONLY = [
@@ -58,20 +59,6 @@ const APP_ID = /^[a-z][a-z0-9-]*$/u;
 function read(repoRoot, relative) {
   const full = path.join(repoRoot, relative);
   return fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null;
-}
-
-/** A runtime expectation: a non-5xx status or a redirect target prefix. */
-export function validRuntimeExpectation(route, expected) {
-  if (typeof route !== 'string' || !route.startsWith('/')) return false;
-  if (typeof expected === 'number')
-    return Number.isInteger(expected) && expected >= 200 && expected < 500;
-  return (
-    typeof expected === 'object' &&
-    expected !== null &&
-    Object.keys(expected).length === 1 &&
-    typeof expected.redirect === 'string' &&
-    expected.redirect.length > 0
-  );
 }
 
 /** JSON with sorted object keys: equal values compare equal in any layout. */
@@ -218,11 +205,8 @@ export function planConversion(repoRoot, app, options = {}) {
     inventory,
     defaultLocale(repoRoot, app)
   );
-  for (const [route, expected] of Object.entries(config.runtime ?? {}))
-    if (!validRuntimeExpectation(route, expected))
-      problems.push(
-        `${appPath}/${ROUTES_CONFIG_FILE}: runtime[${JSON.stringify(route)}] must be a non-5xx status or { "redirect": "<path or URL prefix>" }`
-      );
+  for (const problem of runtimeExpectationProblems(config.runtime))
+    problems.push(`${appPath}/${ROUTES_CONFIG_FILE}: ${problem}`);
   // An unchanged config keeps its bytes (however Biome laid it out); a
   // changed one is formatted with the owned output.
   const unchanged =
