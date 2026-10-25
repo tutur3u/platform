@@ -148,6 +148,14 @@ Worker behaviour without editing generated files:
 | `apiOrigin(request, { env, path })` | Origin for one unowned `/api/*` request (e.g. Storefront's `/api/v1/inventory/**` to Inventory); `undefined` keeps the central Web API. Forwarding keeps the central forward's base stripping, loop guard and header removal |
 | `wrapResponse(response, { request, env })` | Decorates every response, e.g. a staging noindex header |
 
+API paths the app owns but forwards (Storefront's Inventory APIs) are listed
+client-safely in `start-bridge.routes.json` as
+`"api": { "forwarded": ["/api/v1/inventory/[...path]"] }`. The codegen merges
+them into `appApiPatterns`, so the shared app-base resolver mounts them like
+local routes, and the Worker, finding no local handler, forwards them through
+`apiOrigin`. `start-bridge.config.ts` holds server code and is never imported
+by the browser.
+
 ### Route handlers load lazily
 
 The generated API registry (`api.lazy`) imports each route on its first

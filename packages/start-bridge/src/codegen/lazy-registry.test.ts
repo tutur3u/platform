@@ -89,3 +89,31 @@ describe('lazyRouteModule', () => {
     );
   });
 });
+
+describe('forwarded API patterns', () => {
+  it('join the client-safe app patterns and must be /api patterns', () => {
+    const plan = planRegistries(
+      {
+        api: {
+          out: 'src/start-bridge/api.gen.ts',
+          patternsOut: 'src/start-bridge/api-patterns.gen.ts',
+          forwarded: ['/api/v1/inventory/[...path]'],
+        },
+      },
+      ['api/local/route.ts'],
+      () => true,
+      () => 'export function GET() {}'
+    );
+    expect(plan.errors).toEqual([]);
+    const patterns = plan.generated[1]?.content ?? '';
+    expect(patterns).toContain('  "/api/local",');
+    expect(patterns).toContain('  "/api/v1/inventory/[...path]",');
+    expect(
+      planRegistries(
+        { api: { out: 'a.ts', forwarded: ['/inventory/x'] } },
+        [],
+        () => true
+      ).errors
+    ).toEqual(['api.forwarded: /inventory/x is not an /api pattern']);
+  });
+});

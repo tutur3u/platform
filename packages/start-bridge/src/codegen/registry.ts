@@ -30,6 +30,13 @@ export interface RegistryConfig {
      * whose methods cannot be read statically (`export *`) stays eager.
      */
     lazy?: boolean;
+    /**
+     * App-owned API patterns the app forwards rather than handles (e.g.
+     * Storefront's `/api/v1/inventory/[...path]`, which its Worker sends to
+     * Inventory through `apiOrigin`). Merged into `appApiPatterns`, so the
+     * shared app-base resolver mounts them like local routes.
+     */
+    forwarded?: readonly string[];
   } | null;
   /** Generated page manifest; `null` means no page may be unowned. */
   pages?: { out: string } | null;
@@ -193,8 +200,13 @@ function lazyRouteMethods(
   return methods;
 }
 
-export function renderApiPatterns(routes: RouteFile[]) {
-  const patterns = [...new Set(routes.map((route) => route.pattern))].sort();
+export function renderApiPatterns(
+  routes: RouteFile[],
+  forwarded: readonly string[] = []
+) {
+  const patterns = [
+    ...new Set([...routes.map((route) => route.pattern), ...forwarded]),
+  ].sort();
   return `${HEADER}export const appApiPatterns = [
 ${patterns.map((pattern) => `  ${JSON.stringify(pattern)},`).join('\n')}
 ] as const;
@@ -262,6 +274,9 @@ export function planRegistries(
     }
     routes.push(classified);
   }
+  for (const pattern of config.api?.forwarded ?? [])
+    if (!/^\/api(?:\/|$)/u.test(pattern))
+      errors.push(`api.forwarded: ${pattern} is not an /api pattern`);
   for (const file of [...Object.keys(owned), ...Object.keys(ignored)])
     if (!seen.has(file))
       errors.push(`${file}: declared in owned/ignored but no such route file`);
@@ -294,7 +309,8 @@ export function planRegistries(
     generated.push({
       path: config.api.patternsOut,
       content: renderApiPatterns(
-        routes.filter((route) => route.kind === 'route')
+        routes.filter((route) => route.kind === 'route'),
+        config.api.forwarded
       ),
     });
   if (config.pages)
