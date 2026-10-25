@@ -23662,5 +23662,22 @@
     "security_linked_identities": "Linked sign-in methods",
     "sessions_devices": "See every device signed in to your account",
     "sessions_revoke": "Sign out other devices"
+  },
+  "balancer": {
+    "title": "Balancer runs",
+    "description": "Runs requested through ttr balancer, with the host, exact source, lease and result each one used.",
+    "columns": {
+      "run": "Run",
+      "state": "State",
+      "host": "Host",
+      "source": "Source",
+      "lease": "Lease",
+      "result": "Result",
+      "requester": "Requested by",
+      "updated": "Updated"
+    },
+    "empty": "No balancer runs have been published yet.",
+    "unknown_hint": "Outcome unknown: the host stopped answering. It is never rescheduled automatically; reconcile it with ttr balancer reconcile.",
+    "exit_code": "Exit"
   }
 }

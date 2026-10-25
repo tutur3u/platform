@@ -23662,5 +23662,22 @@
     "security_linked_identities": "Phương thức đăng nhập đã liên kết",
     "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
     "sessions_revoke": "Đăng xuất khỏi các thiết bị khác"
+  },
+  "balancer": {
+    "title": "Lượt chạy của bộ cân bằng",
+    "description": "Các lượt chạy được yêu cầu qua ttr balancer, kèm máy, mã nguồn chính xác, hợp đồng thuê và kết quả của từng lượt.",
+    "columns": {
+      "run": "Lượt chạy",
+      "state": "Trạng thái",
+      "host": "Máy",
+      "source": "Mã nguồn",
+      "lease": "Hợp đồng thuê",
+      "result": "Kết quả",
+      "requester": "Người yêu cầu",
+      "updated": "Cập nhật"
+    },
+    "empty": "Chưa có lượt chạy nào của bộ cân bằng được công bố.",
+    "unknown_hint": "Chưa rõ kết quả: máy đã ngừng phản hồi. Lượt chạy không bao giờ được tự động lên lịch lại; hãy đối soát bằng ttr balancer reconcile.",
+    "exit_code": "Mã thoát"
   }
 }

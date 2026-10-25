@@ -762,6 +762,7 @@
         "@tiptap/react": "3.32.0",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/devbox": "workspace:*",
         "@tuturuuu/email-service": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
