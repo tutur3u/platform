@@ -50,6 +50,9 @@ export async function passwordsRequest(
   if (!isPasswordsEnabled(env)) return stoppedResponse();
 
   const runtime = deps.createRuntime(env);
+  const secrets = await runtime.secrets.handle(request);
+  if (secrets) return withSecurityHeaders(secrets);
+
   const edge = await runtime.edge.handle(request);
   if (edge) return withSecurityHeaders(edge);
 

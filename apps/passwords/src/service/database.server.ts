@@ -15,6 +15,7 @@ import {
   uuid,
 } from '@tuturuuu/storage-core/vault/passwords-contract';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { cliScope } from './cli-scope';
 import type { PasswordsEnvironment } from './environment';
 import { evaluateStepUp } from './step-up';
 import { isPasswordsEnabled } from './stop-fence';
@@ -59,6 +60,7 @@ export function createPasswordsDatabase(
     });
     if (!claims) throw new PasswordsError('UNAUTHENTICATED');
     uuid(claims.sub);
+    cliScope(claims);
     if (fresh && !evaluateStepUp(claims.mfa).fresh)
       throw new PasswordsError('STEP_UP_REQUIRED');
     return claims;
@@ -75,6 +77,7 @@ export function createPasswordsDatabase(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.SUPABASE_SECRET_KEY,
       {
+        db: { retry: false },
         auth: {
           persistSession: false,
           autoRefreshToken: false,
@@ -99,7 +102,10 @@ export function createPasswordsDatabase(
   }
 
   async function proveWorkspace(wsId: string) {
-    const actor = principal().sub;
+    const claims = principal();
+    const actor = claims.sub;
+    const scoped = cliScope(claims);
+    if (scoped && scoped.wsId !== wsId) throw new PasswordsError('FORBIDDEN');
     uuid(wsId);
     const sb = db();
     const workspace = await sb
@@ -193,11 +199,23 @@ export function createPasswordsDatabase(
       });
       if (result.error) sqlFailure(result.error, false);
       principal();
-      return record(result.data);
+      const data = record(result.data);
+      const scoped = cliScope(principal());
+      return scoped
+        ? {
+            ...data,
+            vaults: rows(data.vaults, 32).filter(
+              (vault) => vault.id === scoped.vaultId
+            ),
+          }
+        : data;
     },
     async execute(scope, requestId, action, input) {
       const { actor } = await proveWorkspace(scope.wsId);
       uuid(scope.vaultId);
+      const scoped = cliScope(principal());
+      if (scoped && scoped.vaultId !== scope.vaultId)
+        throw new PasswordsError('FORBIDDEN');
       uuid(requestId);
       const result = await db()
         .schema('private')
@@ -231,6 +249,9 @@ export function createPasswordsDatabase(
       throw new PasswordsError('INVALID_INPUT');
     for (const index of [0, 1, 3, 4]) uuid(segments[index]);
     await proveWorkspace(uuid(segments[0]));
+    const scoped = cliScope(principal());
+    if (scoped && scoped.vaultId !== segments[1])
+      throw new PasswordsError('FORBIDDEN');
     return db().storage.from(PASSWORDS_BUCKET);
   }
 

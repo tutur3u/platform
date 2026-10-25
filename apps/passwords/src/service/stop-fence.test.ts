@@ -6,6 +6,7 @@ function countingPort() {
   const call = vi.fn(async () => ({ ok: true, value: {} }));
   const port = {
     state: call,
+    downloadCredentials: call,
     observeOperation: call,
     createVault: call,
     putItem: call,
@@ -54,6 +55,7 @@ describe('fenceService', () => {
     for (const op of [
       'state',
       'observeOperation',
+      'downloadCredentials',
       'createVault',
       'putItem',
       'revealItem',

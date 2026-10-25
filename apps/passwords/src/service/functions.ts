@@ -4,6 +4,7 @@ import {
   auditInput,
   createVaultInput,
   observeOperationInput,
+  ownerCredentialInput,
   putItemInput,
   revealItemInput,
   rotateVaultInput,
@@ -92,4 +93,12 @@ export const observeOperation = createServerFn({ method: 'POST' })
   .validator(sanitizedValidator(observeOperationInput))
   .handler(({ data }) =>
     guarded('UNAVAILABLE', async () => (await service()).observeOperation(data))
+  );
+
+export const downloadCredentials = createServerFn({ method: 'POST' })
+  .validator(sanitizedValidator(ownerCredentialInput))
+  .handler(({ data }) =>
+    guarded('OPERATION_UNCERTAIN', async () =>
+      (await service()).downloadCredentials(data)
+    )
   );

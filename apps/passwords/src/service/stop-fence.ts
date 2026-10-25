@@ -22,6 +22,8 @@ export function fenceService(
   enabled: () => boolean
 ): PasswordsServicePort {
   return {
+    downloadCredentials: (input) =>
+      enabled() ? port.downloadCredentials(input) : stopped(),
     observeOperation: (input) =>
       enabled() ? port.observeOperation(input) : stopped(),
     state: (input) => (enabled() ? port.state(input) : stopped()),

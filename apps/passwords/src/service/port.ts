@@ -149,7 +149,22 @@ export interface OperationObservation {
   receipt?: { vaultId?: string; revision?: number; itemId?: string };
 }
 
+export type CredentialInput =
+  | { kind: 'owner'; wsId: string; vaultId: string }
+  | {
+      kind: 'agent';
+      wsId: string;
+      vaultId: string;
+      grantRequestId: string;
+      tokenRequestId: string;
+      itemIds: string[];
+      scopes: ('item.read' | 'item.write')[];
+    };
+
 export interface PasswordsServicePort {
+  downloadCredentials(
+    input: CredentialInput
+  ): Promise<PasswordsResult<{ base64: string }>>;
   observeOperation(
     input: VaultScope & { targetRequestId: string }
   ): Promise<PasswordsResult<OperationObservation>>;
@@ -180,6 +195,7 @@ export interface PasswordsServicePort {
  * `edge` serves session endpoints before Start; `service` is bound to one request.
  */
 export interface PasswordsRuntime {
+  secrets: { handle(request: Request): Promise<Response | null> };
   edge: { handle(request: Request): Promise<Response | null> };
   service(request: Request): PasswordsServicePort;
 }
