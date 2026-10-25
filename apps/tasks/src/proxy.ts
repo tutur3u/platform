@@ -14,11 +14,7 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import {
-  getCurrentUserDefaultWorkspace,
-  getUserConfig,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
 import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import {
   guardApiProxyRequest,
@@ -33,7 +29,10 @@ import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
 import { proxyAppUrl } from './lib/proxy-app-url';
-import { resolveTaskBoardEntrypoint } from './lib/tasks/task-board-entrypoint';
+import {
+  isRootRedirectExcluded,
+  resolveTasksRootEntry,
+} from './lib/tasks/root-entry';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -382,82 +381,30 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     pathSegments.length === 1 &&
     supportedLocales.includes(pathSegments[0] as Locale);
 
-  const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
-  const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
-  const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
-
   if (
     (isRootPath || isLocaleRootPath) &&
-    !skipWorkspaceRedirect &&
-    !isHashNavigation &&
-    !isMultiAccountFlow
+    !isRootRedirectExcluded(req.nextUrl.searchParams)
   ) {
-    const { locale } = getLocale(req);
-    const internalApiAuth = withForwardedInternalApiAuth(authRequestHeaders);
-    let target = 'personal';
+    const entry = await resolveTasksRootEntry({
+      auth: withForwardedInternalApiAuth(authRequestHeaders),
+      locale: getLocale(req).locale,
+      localePrefixed: isLocaleRootPath,
+      search: req.nextUrl.search,
+    });
+    const entryUrl = proxyAppUrl(req, entry.path);
 
-    try {
-      const config = await getUserConfig(
-        'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
-        internalApiAuth
+    if (entry.kind === 'board') {
+      const boardRedirect = NextResponse.redirect(entryUrl, 307);
+      boardRedirect.headers.set(
+        'Cache-Control',
+        'private, no-store, max-age=0'
       );
-
-      if (config?.value === 'true') {
-        const defaultWorkspace =
-          await getCurrentUserDefaultWorkspace(internalApiAuth);
-
-        if (defaultWorkspace) {
-          target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-        }
-      }
-    } catch (error) {
-      console.warn(
-        'Could not resolve the preferred Tasks workspace; using personal:',
-        error
-      );
+      propagateAuthCookies(authRes, boardRedirect);
+      return boardRedirect;
     }
 
-    try {
-      const boardId = await resolveTaskBoardEntrypoint(
-        target,
-        internalApiAuth,
-        { locale }
-      );
-
-      if (boardId) {
-        const localePrefix = isLocaleRootPath ? `/${locale}` : '';
-        const boardUrl = proxyAppUrl(
-          req,
-          `${localePrefix}/${target}/boards/${boardId}${req.nextUrl.search}`
-        );
-
-        const boardRedirect = NextResponse.redirect(boardUrl, 307);
-        boardRedirect.headers.set(
-          'Cache-Control',
-          'private, no-store, max-age=0'
-        );
-        propagateAuthCookies(authRes, boardRedirect);
-        return boardRedirect;
-      }
-    } catch (error) {
-      console.warn(
-        'Could not resolve the Tasks board at the app root; using the task entrypoint:',
-        error
-      );
-    }
-
-    // This branch returns before next-intl adds its internal locale segment, so
-    // the retry rewrite must target the actual localized App Router pathname.
-    const entrypointUrl = proxyAppUrl(
-      req,
-      `/${locale}/${target}/tasks${req.nextUrl.search}`
-    );
-    const fallbackRewrite = NextResponse.rewrite(entrypointUrl, {
-      request: { headers: withPageRewrite(req, entrypointUrl) },
+    const fallbackRewrite = NextResponse.rewrite(entryUrl, {
+      request: { headers: withPageRewrite(req, entryUrl) },
     });
     propagateAuthCookies(authRes, fallbackRewrite);
     return fallbackRewrite;
