@@ -14,6 +14,9 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Schema And Typegen
 
+- Remote `db reset --linked` retains managed storage tables. Bucket creation
+  defaults must tolerate existing IDs; preserve intentional configuration upserts.
+  See [storage replay verification](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#replaying-migrations-with-existing-storage-buckets).
 - Prepare migrations; do not push production Supabase changes from Codex.
 - Prefer additive migrations and runtime fallbacks when rollout order can vary.
 - Separate short existing-table DDL, `VALIDATE CONSTRAINT`, and concurrent index
