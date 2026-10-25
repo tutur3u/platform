@@ -144,6 +144,96 @@ for (const native of [
   });
 }
 
+test('SDK portable-build fixture imports do not override its actual node:test runner', () => {
+  const output = plan(['packages/sdk/scripts/portable-build.test.cjs']);
+  assert.match(output, /script-tests: node --test .*portable-build\.test\.cjs/);
+  assert.doesNotMatch(output, /vitest:packages\/sdk/);
+});
+
+const inertImports = (module) => ({
+  quoted: `const fixture = "import { test } from '${module}';";`,
+  template: `const fixture = \`require('${module}')\`;`,
+  comment: `/* import('${module}') */`,
+  regex: `const fixture = /from '${module}'/;`,
+});
+for (const kind of Object.keys(inertImports('vitest'))) {
+  test(`${kind} fixture imports cannot route a Node test to Vitest`, (t) => {
+    const root = fixture(
+      t,
+      'vitest run',
+      `import test from 'node:test';\n${inertImports('vitest')[kind]}`
+    );
+    const output = plan(['apps/example/native.test.mjs'], { root });
+    assert.match(output, /script-tests: node --test .*native\.test\.mjs/);
+    assert.doesNotMatch(output, /vitest:apps\/example/);
+  });
+  test(`${kind} fixture imports cannot route a Vitest test to Node`, (t) => {
+    const root = fixture(
+      t,
+      'node --test native.test.mjs',
+      `import { test } from 'vitest';\n${inertImports('node:test')[kind]}`
+    );
+    const output = plan(['apps/example/native.test.mjs'], { root });
+    assert.match(output, /vitest:apps\/example:.*native\.test\.mjs/);
+    assert.doesNotMatch(output, /script-tests:/);
+  });
+}
+
+for (const [script, module, runner] of [
+  ['node --test native.test.mjs', 'vitest', 'node'],
+  ['vitest run', 'node:test', 'vitest'],
+]) {
+  test(`fixture-only mentions preserve the package ${runner} runner`, (t) => {
+    const root = fixture(t, script, inertImports(module).template);
+    const output = plan(['apps/example/native.test.mjs'], { root });
+    if (runner === 'node') {
+      assert.match(output, /script-tests: node --test .*native\.test\.mjs/);
+      assert.doesNotMatch(output, /vitest:apps\/example/);
+    } else {
+      assert.match(output, /vitest:apps\/example:.*native\.test\.mjs/);
+      assert.doesNotMatch(output, /script-tests:/);
+    }
+  });
+}
+
+for (const typeOnly of [
+  "import type { TestContext } from 'vitest';",
+  "import { type TestContext } from 'vitest';",
+]) {
+  test(`type-only imports do not override the runtime Node runner: ${typeOnly}`, (t) => {
+    const root = fixture(
+      t,
+      'vitest run',
+      `import test from 'node:test';\n${typeOnly}`
+    );
+    const output = plan(['apps/example/native.test.mjs'], { root });
+    assert.match(output, /script-tests: node --test .*native\.test\.mjs/);
+    assert.doesNotMatch(output, /vitest:apps\/example/);
+  });
+}
+
+test('dynamic imports inside template expressions still select the real runner', (t) => {
+  const root = fixture(
+    t,
+    'vitest run',
+    `const runner = \`\${await import('node:test')}\`;\n${inertImports('vitest').template}`
+  );
+  const output = plan(['apps/example/native.test.mjs'], { root });
+  assert.match(output, /script-tests: node --test .*native\.test\.mjs/);
+  assert.doesNotMatch(output, /vitest:apps\/example/);
+});
+
+test('Bun runtime imports also ignore embedded Vitest fixtures', (t) => {
+  const root = fixture(
+    t,
+    'vitest run',
+    `import { test } from 'bun:test';\n${inertImports('vitest').template}`
+  );
+  const output = plan(['apps/example/native.test.mjs'], { root });
+  assert.match(output, /bun-test:apps\/example: bun test .*native\.test\.mjs/);
+  assert.doesNotMatch(output, /script-tests:|vitest:apps\/example/);
+});
+
 for (const { branch, upstream, expected } of [
   { branch: 'tmp/agent', upstream: 'refs/heads/fix/routing', expected: 0 },
   { branch: 'tmp/agent', upstream: '', expected: 1 },
