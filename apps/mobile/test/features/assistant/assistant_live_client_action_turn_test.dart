@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
@@ -10,6 +13,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _Repository extends Mock implements AssistantLiveRepository {}
@@ -21,6 +25,18 @@ class _Camera extends Mock implements AssistantLiveCameraService {}
 class _Recorder extends Mock implements AssistantLiveRecorder {}
 
 class _Socket extends Mock implements AssistantLiveSocketClient {}
+
+class _File extends Mock implements File {}
+
+const _image = AssistantAttachment(
+  id: 'image',
+  name: 'image.png',
+  size: 1,
+  type: 'image/png',
+  localPath: 'synthetic/image.png',
+  storagePath: 'uploaded/image.png',
+  uploadState: AssistantAttachmentUploadState.uploaded,
+);
 
 /// Records only effects whose guard still holds when the effect would run.
 class _Bridge implements AssistantClientActionBridge {
@@ -47,6 +63,7 @@ Future<void> _tick() => Future<void>.delayed(const Duration(milliseconds: 20));
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  registerFallbackValue(Uint8List(0));
 
   late _Repository repository;
   late _Socket socket;
@@ -54,6 +71,7 @@ void main() {
   late AssistantLiveCubit cubit;
   late _Bridge bridge;
   late Completer<Map<String, dynamic>> toolResult;
+  late AssistantLiveSinkAdmission admission;
 
   setUp(() async {
     repository = _Repository();
@@ -63,12 +81,14 @@ void main() {
     final recorder = _Recorder();
     events = StreamController<AssistantLiveSocketEvent>();
     toolResult = Completer<Map<String, dynamic>>();
+    admission = AssistantLiveSinkAdmission.admitted;
     bridge = _Bridge();
     final unregister = AssistantClientActions.register(bridge);
     addTearDown(unregister);
     when(() => socket.events).thenAnswer((_) => events.stream);
+    when(() => socket.sendText(any())).thenAnswer((_) => admission);
     when(
-      () => socket.sendText(any()),
+      () => socket.sendVideoFrame(any()),
     ).thenReturn(AssistantLiveSinkAdmission.admitted);
     when(recorder.stop).thenAnswer((_) async {});
     when(recorder.dispose).thenAnswer((_) async {});
@@ -182,5 +202,41 @@ void main() {
     toolResult.complete(marker);
     await _tick();
     expect(bridge.effects, isEmpty);
+  });
+
+  test('a refused send still cancels the previous turn UI action', () async {
+    admission = AssistantLiveSinkAdmission.refused;
+    final dispatch = await cubit.sendTypedMessage(
+      wsId: 'ws',
+      text: 'Never mind',
+      attachments: [],
+    );
+    expect(dispatch, AssistantLiveDispatch.refused);
+    toolResult.complete(marker);
+    await _tick();
+    expect(bridge.effects, isEmpty);
+  });
+
+  test('a held attachment read cancels the previous turn UI action', () async {
+    final file = _File();
+    final entered = Completer<void>();
+    final bytes = Completer<Uint8List>();
+    when(file.readAsBytes).thenAnswer((_) {
+      entered.complete();
+      return bytes.future;
+    });
+    await IOOverrides.runZoned(() async {
+      final sending = cubit.sendTypedMessage(
+        wsId: 'ws',
+        text: 'Look at this',
+        attachments: const [_image],
+      );
+      await entered.future;
+      toolResult.complete(marker);
+      await _tick();
+      expect(bridge.effects, isEmpty);
+      bytes.complete(img.encodePng(img.Image(width: 1, height: 1)));
+      expect(await sending, AssistantLiveDispatch.dispatched);
+    }, createFile: (_) => file);
   });
 }

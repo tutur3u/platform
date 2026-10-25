@@ -112,8 +112,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   int _transportFailureVersion = 0;
   int _disconnectVersion = 0;
   int _conversationVersion = 0;
-  // Bumped when a turn is interrupted or a new typed turn starts; pending
-  // client UI actions from an earlier turn must not apply after it.
+  // Bumped when a turn is interrupted or a new typed submission begins;
+  // pending client UI actions from an earlier turn must not apply after it.
   int _turnGeneration = 0;
   Future<void> _pendingPersistence = Future<void>.value();
   final _sealedParts = <AssistantLiveTurnParts>{};

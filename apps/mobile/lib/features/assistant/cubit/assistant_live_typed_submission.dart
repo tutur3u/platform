@@ -39,6 +39,10 @@ extension _AssistantLiveTypedSubmission on AssistantLiveCubit {
     if (trimmed.isEmpty && uploaded.isEmpty) {
       return AssistantLiveDispatch.refused;
     }
+    // A valid new submission supersedes the previous turn's pending client
+    // UI actions now, before preparation, file reads or admission, and even
+    // if the send is later refused. The visible turn resets only on dispatch.
+    _turnGeneration++;
 
     var dispatchPossible = false;
     AssistantLiveDispatch stopped() => dispatchPossible
@@ -123,7 +127,6 @@ extension _AssistantLiveTypedSubmission on AssistantLiveCubit {
       _currentAssistantTranscript = '';
       _currentTurnAttachments = uploaded;
       _turnParts = AssistantLiveTurnParts();
-      _turnGeneration++;
       publish(
         state.copyWith(
           userDraft: trimmed,
