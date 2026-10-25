@@ -4716,5 +4716,8 @@
   "assistantThemeText": "Màu chữ",
   "assistantThemeTitle": "Giao diện trò chuyện",
   "assistantReplyPending": "Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước.",
-  "assistantReplyLiveUnavailable": "Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi."
+  "assistantReplyLiveUnavailable": "Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi.",
+  "assistantReplyChangedBeforeSend": "Trích dẫn đã thay đổi trước khi gửi. Bản nháp vẫn được giữ lại. Hãy kiểm tra rồi gửi lại.",
+  "assistantLiveSendRefused": "Live chưa tiếp nhận tin nhắn này. Bản nháp vẫn được giữ lại. Hãy kiểm tra kết nối trước khi thử lại.",
+  "assistantLiveSendUnknown": "Chưa rõ tin nhắn Live đã được gửi hay chưa. Bản nháp vẫn được giữ lại. Hãy kiểm tra cuộc trò chuyện trước khi gửi lại để tránh trùng lặp."
 }

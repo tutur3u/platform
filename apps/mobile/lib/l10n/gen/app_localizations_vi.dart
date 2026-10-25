@@ -11115,4 +11115,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantReplyLiveUnavailable => 'Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi.';
+
+  @override
+  String get assistantReplyChangedBeforeSend => 'Trích dẫn đã thay đổi trước khi gửi. Bản nháp vẫn được giữ lại. Hãy kiểm tra rồi gửi lại.';
+
+  @override
+  String get assistantLiveSendRefused => 'Live chưa tiếp nhận tin nhắn này. Bản nháp vẫn được giữ lại. Hãy kiểm tra kết nối trước khi thử lại.';
+
+  @override
+  String get assistantLiveSendUnknown => 'Chưa rõ tin nhắn Live đã được gửi hay chưa. Bản nháp vẫn được giữ lại. Hãy kiểm tra cuộc trò chuyện trước khi gửi lại để tránh trùng lặp.';
 }

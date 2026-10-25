@@ -38,7 +38,6 @@ Text still grows to five lines, with attachment and side-action controls anchore
 at the bottom as it grows. Matching keyboard/safe-area geometry does not change
 these empty/typed bounds. `assistant_composer_stability_test.dart` covers narrow
 phones, enlarged text, keyboard insets, multiline growth and retained dock material.
-
 ![Stable mobile Assistant composer while typing](/images/assistant-composer-light-typed.png)
 
 Live capture requests PCM16 mono, gain control, echo cancellation, and noise
@@ -107,32 +106,31 @@ Legacy `ai-chat-*` and `legacy-ai-*` conversations keep Copy, but cannot use pri
 Chat message IDs. Legacy dashboard Mira reaction/reply parity requires its own
 adapter work; IDs must never be stripped or guessed to enable it.
 
-Reply is unavailable when text sends use a retained Live connection. A reply
-selected before that transition blocks sending and keeps its draft and target;
-end the call or cancel the reply before sending. Live text does not silently
-discard the reply reference.
+Retained Live text cannot carry replies. A selected reply blocks sending and keeps its draft and
+target; end the call or cancel the reply first. The reply reference is never silently discarded.
 
-Reactions use the native idempotent operation contract described below. Unknown
-outcomes expose **Refresh reactions**, which safely reconciles the original
-intent before updating the exact message's summaries. Reply previews jump to
-loaded originals without resuming automatic bottom-following; acknowledgment ID
-relocation retains the same expanded message state.
+Changing or cancelling a reply during timezone resolution leaves the message unsent and shows
+a notice in the same composer scope. The draft and current target remain available for review. An admitted
+native turn consumes its acknowledgement even if a later draft selects another reply.
 
-Open the Assistant's More menu and choose **Chat appearance**. Presets adapt to
-the app's light/dark mode and offer solid, gradient and ombre backgrounds. The
-Advanced editor starts collapsed and separates message palette, text accent,
-background palette/style and intensity. Classic is the default. Appearance is
-device-local and scoped to the signed-in actor across all of that actor's
-Assistant conversations and workspaces; it does not change the shell, web UI or
-another actor's preferences. It does not synchronize across devices. Both remote
-and on-device conversations use the selected appearance. The theme controller
-previews successive edits immediately, debounces storage and flushes slider changes
-on release. Closing the controller flushes the last authorized pending edit;
-delayed edits retire on logout or session replacement. Preset contrast, storage
-round trips, actor/session fences and the collapsed editor are covered under
-`apps/mobile/test/features/assistant/theme/`.
+![Reply change keeps the unsent draft](/images/assistant-reply-feedback-light.png)
 
+Live completion removes only its captured, unchanged draft and attachments, retaining a new reply and later edits. Cleanup
+requires local socket admission, which proves neither provider acknowledgement nor durable saving. Refused or uncertain dispatch keeps the draft with recovery
+feedback and is not automatically replayed. Mobile reply-guard and Live dispatch tests cover these races.
 
+Reactions follow the native idempotent contract below. **Refresh reactions** reconciles an unknown
+intent before updating its exact message. Reply previews jump to loaded originals without resuming
+bottom-following; acknowledgement ID relocation preserves expanded message state.
+
+Choose **Chat appearance** in Assistant More. Classic is the default; light/dark-aware presets offer
+solid, gradient and ombre backgrounds. Advanced starts collapsed and separates message palette,
+text accent, background palette/style and intensity. Preferences are device-local and actor-scoped
+across Assistant conversations and workspaces, for both remote and on-device conversations.
+They do not change the shell, web UI or another actor's preferences, or synchronize across devices.
+Preview updates immediately; storage debounces and slider release flushes the latest change.
+Closing flushes the last authorized edit; logout or session replacement retires delayed edits.
+Contrast, round trips, actor/session fences and collapsed-editor tests: `apps/mobile/test/features/assistant/theme/`.
 
 ### Native mobile reaction operations
 
@@ -165,10 +163,8 @@ Coverage: `chat-reaction-operations.sql`, the reactions/retire route tests,
 `assistant_reaction_lifecycle_review_test.dart`,
 `api_client_operation_review_test.dart`, and the journal/flush regression suites.
 
-Age-based cleanup is not enabled. The [retention proposal](/platform/features/assistant-reaction-retention)
-requires server-enforced expiry before bounded Cloudflare cleanup can safely
-remove operation or retirement records.
-
+Age-based cleanup is disabled. The [retention proposal](/platform/features/assistant-reaction-retention)
+requires server-enforced expiry before bounded Cloudflare cleanup can remove operation or retirement records.
 
 ### Web dashboard Live
 

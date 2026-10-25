@@ -4813,5 +4813,8 @@
   "assistantThemeText": "Text colors",
   "assistantThemeTitle": "Chat appearance",
   "assistantReplyPending": "The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.",
-  "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending."
+  "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending.",
+  "assistantReplyChangedBeforeSend": "The reply changed before sending. Your draft was kept. Review it and send again.",
+  "assistantLiveSendRefused": "Live did not accept this message. Your draft was kept. Check the connection before trying again.",
+  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates."
 }

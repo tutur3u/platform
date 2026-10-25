@@ -139,9 +139,14 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
   Future<void> refreshHistory() => _refreshHistory();
 
-  List<AssistantAttachment> takeUploadedComposerAttachments() {
+  List<AssistantAttachment> takeUploadedComposerAttachments({
+    required List<AssistantAttachment> matching,
+  }) {
     final uploaded = state.composerAttachments
-        .where((attachment) => attachment.isUploaded)
+        .where(
+          (attachment) =>
+              attachment.isUploaded && matching.contains(attachment),
+        )
         .toList(growable: false);
     if (uploaded.isEmpty) {
       return const [];
@@ -149,7 +154,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     emit(
       state.copyWith(
         composerAttachments: state.composerAttachments
-            .where((attachment) => !attachment.isUploaded)
+            .where((attachment) => !uploaded.contains(attachment))
             .toList(growable: false),
       ),
     );

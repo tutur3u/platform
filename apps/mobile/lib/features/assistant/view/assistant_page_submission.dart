@@ -61,7 +61,8 @@ extension _AssistantPageSubmission on _AssistantPageState {
       return;
     }
 
-    final text = _inputController.text;
+    final draft = _inputController.value;
+    final text = draft.text;
     final attachments = chatState.composerAttachments
         .where((attachment) => attachment.isUploaded)
         .toList(growable: false);
@@ -70,39 +71,88 @@ extension _AssistantPageSubmission on _AssistantPageState {
     }
 
     if (_shouldSendThroughLive(chatState, liveState)) {
-      await _liveCubit.sendTypedMessage(
+      var liveWorkspaceVersion = workspaceVersion;
+      bool current() =>
+          guard.current &&
+          operation.current &&
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId &&
+          _chatCubit.attachmentScopeVersion == liveWorkspaceVersion;
+      final dispatch = await _liveCubit.sendTypedMessage(
         wsId: wsId,
         text: text,
         attachments: attachments,
+        isCurrent: current,
+        onChatBound: (boundWorkspace, liveChatId) async {
+          if (!current()) return;
+          final canonicalId = assistantLiveConversationId(liveChatId);
+          final selected = _chatCubit.state;
+          final sameCanonicalSelection =
+              boundWorkspace == wsId &&
+              selected.workspaceId == wsId &&
+              selected.chat?.id == canonicalId &&
+              selected.storedChatId == canonicalId;
+          final binding = _chatCubit.openChatById(boundWorkspace, canonicalId);
+          // Only this invocation's exact canonical rebind may renew its lease.
+          // Native IDs sharing the UUID still require a different-store bind.
+          if (sameCanonicalSelection &&
+              _chatCubit.attachmentScopeVersion == liveWorkspaceVersion + 1) {
+            liveWorkspaceVersion++;
+          }
+          await binding;
+        },
       );
-      if (!guard.current ||
-          !mounted ||
-          _chatCubit.attachmentScopeVersion != workspaceVersion ||
-          _liveCubit.state.status == AssistantLiveConnectionStatus.error) {
-        return;
+      if (!mounted || !current()) return;
+      switch (dispatch) {
+        case AssistantLiveDispatch.dispatched:
+          _chatCubit.takeUploadedComposerAttachments(matching: attachments);
+          if (_inputController.value == draft) _inputController.clear();
+          _scheduleScrollToBottom();
+        case AssistantLiveDispatch.refused:
+          _showInlineNotice(context.l10n.assistantLiveSendRefused);
+        case AssistantLiveDispatch.unknown:
+          _showInlineNotice(context.l10n.assistantLiveSendUnknown);
+        case AssistantLiveDispatch.stale:
+          break;
       }
-      _chatCubit.takeUploadedComposerAttachments();
+      return;
     } else {
       if (_chatCubit.replyBlockedByPendingSubmission) {
         _showInlineNotice(context.l10n.assistantReplyPending);
         return;
       }
+      var replyChangedBeforeSubmission = false;
       if (!await submitAssistantRemoteChat(
         _chatCubit,
         shellState,
         wsId: wsId,
         message: text,
-        isCurrent: () =>
-            guard.current &&
-            _chatCubit.attachmentScopeVersion == workspaceVersion &&
-            _chatCubit.state.replyTarget?.id == submittedReplyId &&
-            !_shouldSendThroughLive(_chatCubit.state, _liveCubit.state),
+        isCurrent: () {
+          if (!guard.current ||
+              context.read<WorkspaceCubit>().state.currentWorkspace?.id !=
+                  wsId ||
+              _chatCubit.attachmentScopeVersion != workspaceVersion) {
+            return false;
+          }
+          if (_chatCubit.state.replyTarget?.id != submittedReplyId) {
+            replyChangedBeforeSubmission = true;
+            return false;
+          }
+          return !_shouldSendThroughLive(_chatCubit.state, _liveCubit.state);
+        },
         isOperationCurrent: () =>
             operation.current &&
             _chatCubit.attachmentScopeVersion == workspaceVersion,
       )) {
-        if (mounted && guard.current && liveReplyBlocked()) {
-          _showInlineNotice(context.l10n.assistantReplyLiveUnavailable);
+        if (mounted &&
+            guard.current &&
+            operation.current &&
+            context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId &&
+            _chatCubit.attachmentScopeVersion == workspaceVersion) {
+          if (liveReplyBlocked()) {
+            _showInlineNotice(context.l10n.assistantReplyLiveUnavailable);
+          } else if (replyChangedBeforeSubmission) {
+            _showInlineNotice(context.l10n.assistantReplyChangedBeforeSend);
+          }
         }
         return;
       }

@@ -21282,6 +21282,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.'**
   String get assistantReplyLiveUnavailable;
+
+  /// No description provided for @assistantReplyChangedBeforeSend.
+  ///
+  /// In en, this message translates to:
+  /// **'The reply changed before sending. Your draft was kept. Review it and send again.'**
+  String get assistantReplyChangedBeforeSend;
+
+  /// No description provided for @assistantLiveSendRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Live did not accept this message. Your draft was kept. Check the connection before trying again.'**
+  String get assistantLiveSendRefused;
+
+  /// No description provided for @assistantLiveSendUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.'**
+  String get assistantLiveSendUnknown;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
