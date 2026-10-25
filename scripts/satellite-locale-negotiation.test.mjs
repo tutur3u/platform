@@ -39,13 +39,14 @@ test('migrated satellites use the shared guarded helper', () => {
   }
 });
 
-test('no satellite proxy passes unguarded Negotiator languages to match', () => {
+test('no satellite proxy passes uncanonicalized Negotiator languages to match', () => {
   for (const [app, path] of proxies) {
     const source = readFileSync(path, 'utf8');
     if (!/new Negotiator\(/u.test(source)) continue;
     assert.ok(
-      source.includes("'*'") && source.includes('getCanonicalLocales'),
-      `${app}/src/proxy.ts negotiates Accept-Language without skipping '*' and malformed tags; use @tuturuuu/satellite/accept-language`
+      // Canonicalizing each range (inside try/catch) drops `*` and malformed tags.
+      source.includes('getCanonicalLocales'),
+      `${app}/src/proxy.ts negotiates Accept-Language without dropping '*' and malformed tags; use @tuturuuu/satellite/accept-language`
     );
   }
 });
