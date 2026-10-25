@@ -4,6 +4,8 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 
+/// Opens the composer from the dock's primary slot, sharing the circular
+/// primary-action pill that the composer's send action uses in that slot.
 class AssistantComposerFab extends StatelessWidget {
   const AssistantComposerFab({
     required this.label,
@@ -15,19 +17,14 @@ class AssistantComposerFab extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      child: SizedBox(
-        height: 52,
-        width: 52,
-        child: AppButton.primary(
-          onPressed: onPressed,
-          child: const Icon(LucideIcons.messageCircle, size: 22),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ShellDockActionButton(
+    action: ShellActionSpec(
+      id: 'assistant-composer-open',
+      icon: LucideIcons.messageCircle,
+      tooltip: label,
+      onPressed: onPressed,
+    ),
+  );
 }
 
 class AssistantScrollToBottomFab extends StatelessWidget {
