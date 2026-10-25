@@ -32,7 +32,7 @@ import {
 } from './contract.mjs';
 import { inventoryApp, walk } from './inventory.mjs';
 import {
-  addBiomeRouteTreeIgnore,
+  addBiomeRouteTreeOverride,
   addCiWorkflow,
   addHeldRecord,
   addPackageScripts,
@@ -291,10 +291,7 @@ export function planConversion(repoRoot, app, options = {}) {
     else
       edited(vercelWorkflow, addVercelProductionPolicyGate(vercelSource, app));
   }
-  edited(
-    'biome.json',
-    addBiomeRouteTreeIgnore(read(repoRoot, 'biome.json'), app)
-  );
+  edited('biome.json', addBiomeRouteTreeOverride(read(repoRoot, 'biome.json')));
   if (nativeCi) {
     owned(
       RUNTIME_TEST,

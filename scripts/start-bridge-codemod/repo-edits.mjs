@@ -68,16 +68,31 @@ export function addPolicyTestApp(source, app) {
   return source.replace(match[0], replacement);
 }
 
-/** Excludes the generated route tree from Biome like the other Start apps. */
-export function addBiomeRouteTreeIgnore(source, app) {
-  const entry = `"!apps/${app}/src/routeTree.gen.ts"`;
-  if (source.includes(entry)) return source;
-  const anchor = /\n(\s*)"!apps\/shortener\/src\/routeTree\.gen\.ts"/u.exec(
-    source
-  );
-  if (!anchor) throw new Error('biome.json: route tree ignore anchor missing');
-  const at = anchor.index + anchor[0].length;
-  return `${source.slice(0, at)},\n${anchor[1]}${entry}${source.slice(at)}`;
+/** The override that keeps generated route trees out of Biome. */
+export const ROUTE_TREE_OVERRIDE = `  "overrides": [
+    {
+      "includes": ["**/routeTree.gen.ts"],
+      "formatter": { "enabled": false },
+      "linter": { "enabled": false },
+      "assist": { "enabled": false }
+    }
+  ]`;
+
+/**
+ * Keeps every generated \`routeTree.gen.ts\` out of Biome. TanStack's router
+ * generator rewrites the file in its own format on each build, and
+ * check:changed passes changed files to Biome explicitly, so the repository
+ * carries one override for the generated file name rather than a per-app
+ * \`files.includes\` exclusion each app must remember.
+ */
+export function addBiomeRouteTreeOverride(source) {
+  if (source.includes('"**/routeTree.gen.ts"')) return source;
+  if (/"overrides"\s*:/u.test(source))
+    throw new Error('biome.json: add the route tree override to "overrides"');
+  const end = source.lastIndexOf('}');
+  if (end === -1) throw new Error('biome.json: missing root object');
+  const body = source.slice(0, end).replace(/\s*$/u, '');
+  return `${body},\n${ROUTE_TREE_OVERRIDE}\n}\n`;
 }
 
 /**

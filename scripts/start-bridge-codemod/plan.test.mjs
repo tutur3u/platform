@@ -33,9 +33,10 @@ test('dry run reads only and plans the full owned file set', (t) => {
     'apps/demo/src/routeTree.gen.ts',
     'apps/demo/src/start-bridge/api-registry.bridge.gen.ts',
     'apps/demo/src/start-bridge/page-registry.bridge.gen.ts',
-    'biome.json',
   ])
     assert.ok(created.includes(file), file);
+  // The repository's biome.json already keeps generated route trees out.
+  assert.equal(created.includes('biome.json'), false);
   // Production stays untouched without --hold.
   for (const file of HOLD_FILES) assert.ok(!created.includes(file), file);
   assert.equal(

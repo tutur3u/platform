@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { unifiedDiff } from './diff.mjs';
 import { VERCEL_WORKFLOW } from './fixture-repo.mjs';
 import {
-  addBiomeRouteTreeIgnore,
+  addBiomeRouteTreeOverride,
   addCiWorkflow,
   addHeldRecord,
   addPackageScripts,
@@ -47,7 +49,6 @@ const EDITS = [
     'scripts/ci/production-publication-policy.test.js',
     (source) => addPolicyTestApp(source, PROBE),
   ],
-  ['biome.json', (source) => addBiomeRouteTreeIgnore(source, PROBE)],
   [
     `.github/workflows/${UNGATED_PUBLISHER}`,
     (source) =>
@@ -80,10 +81,6 @@ test('held record and protected surface land inside their objects', () => {
     surfaces,
     /\n {2}'codemod-probe': \['frontend'\],\n\} as const;/
   );
-  const biome = JSON.parse(addBiomeRouteTreeIgnore(real('biome.json'), PROBE));
-  assert.ok(
-    biome.files.includes.includes('!apps/codemod-probe/src/routeTree.gen.ts')
-  );
 });
 
 test('anchors that disappear fail loudly', () => {
@@ -93,7 +90,10 @@ test('anchors that disappear fail loudly', () => {
   );
   assert.throws(() => addProtectedSurface('', 'tools'), /protectedSurfaces/);
   assert.throws(() => addPolicyTestApp('', 'tools'), /held app list/);
-  assert.throws(() => addBiomeRouteTreeIgnore('{}', 'tools'), /anchor missing/);
+  assert.throws(
+    () => addBiomeRouteTreeOverride('{\n  "overrides": []\n}\n'),
+    /add the route tree override/
+  );
 });
 
 test('a long held-app list wraps to one entry per line', () => {
@@ -178,4 +178,44 @@ test('the Vercel publisher gains the shared policy gate before deploying', () =>
       ),
     /production-only if/
   );
+});
+
+test('biome.json carries the route tree override, written as Biome formats it', () => {
+  const source = real('biome.json');
+  assert.equal(addBiomeRouteTreeOverride(source), source);
+  const stripped = source.replace(
+    /,\n {2}"overrides": \[[\s\S]*\n {2}\]\n\}\n$/u,
+    '\n}\n'
+  );
+  assert.notEqual(stripped, source);
+  assert.equal(addBiomeRouteTreeOverride(stripped), source);
+});
+
+test('check:changed Biome skips an explicit routeTree.gen.ts but checks other files', (t) => {
+  const biome = path.join(ROOT, 'node_modules/.bin/biome');
+  if (!fs.existsSync(biome)) return t.skip('Biome is not installed');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'start-bridge-biome-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const config = JSON.parse(real('biome.json'));
+  config.vcs.enabled = false;
+  fs.writeFileSync(path.join(root, 'biome.json'), JSON.stringify(config));
+  const unformatted = 'const   tree = {a:1}\nexport   default tree\n';
+  fs.mkdirSync(path.join(root, 'apps/probe/src'), { recursive: true });
+  for (const name of ['routeTree.gen.ts', 'other.ts'])
+    fs.writeFileSync(path.join(root, 'apps/probe/src', name), unformatted);
+  // The exact flags check:changed passes, with the file named explicitly.
+  const check = (file) =>
+    spawnSync(
+      biome,
+      [
+        'check',
+        '--error-on-warnings',
+        '--no-errors-on-unmatched',
+        '--files-ignore-unknown=true',
+        file,
+      ],
+      { cwd: root, encoding: 'utf8' }
+    ).status;
+  assert.equal(check('apps/probe/src/routeTree.gen.ts'), 0);
+  assert.notEqual(check('apps/probe/src/other.ts'), 0);
 });

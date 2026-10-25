@@ -106,7 +106,10 @@ The codemod writes or edits:
   (`--configLoader runner`), `routes:check` and `type-check:cloudflare`. `build` stays `next build`, so
   the current Vercel deployment is unchanged.
 - `.env.example` moves to `env.example`: Void accepts only `.env`.
-- The Biome route-tree ignore.
+- The `biome.json` override that keeps every generated `routeTree.gen.ts`
+  out of Biome (formatter, linter and assist off), once for the repository.
+  TanStack's generator rewrites the file in its own format on each build, and
+  `bun check:changed` passes changed files to Biome explicitly.
 - With `--hold` only, the held record: `tuturuuu.ci.ts`
   `productionPublicationPolicy`, the protected surface in
   `scripts/ci/production-publication-policy.ts` and its regression's app list,
