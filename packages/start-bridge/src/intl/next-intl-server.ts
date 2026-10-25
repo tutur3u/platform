@@ -67,6 +67,11 @@ async function resolveConfig(locale?: string): Promise<BridgeRequestConfig> {
   return pending;
 }
 
+/** The request's resolved config, memoized per locale (RSC `next-intl`). */
+export function loadIntlConfig(locale?: string) {
+  return resolveConfig(locale);
+}
+
 type LocaleInput = { locale?: string } | undefined;
 
 export async function getLocale(): Promise<string> {
