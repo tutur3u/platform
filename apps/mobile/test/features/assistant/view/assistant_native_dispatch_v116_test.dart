@@ -375,7 +375,9 @@ void main() {
       h.port.credentialsEntered.isCompleted,
       isTrue,
       reason:
-          'create=${h.port.creates.length} settings=${h.port.settingsReads.length} state=${h.chat.state.status} error=${h.chat.state.error}',
+          'create=${h.port.creates.length} '
+          'settings=${h.port.settingsReads.length} '
+          'state=${h.chat.state.status} error=${h.chat.state.error}',
     );
     await tester.runAsync(() => h.port.credentialsEntered.future);
     stage('credentials-entered-after');
