@@ -10,25 +10,22 @@ updatedAt: '2026-10-25'
 customer-owned sending domains and sender identities, independent workspace
 newsletter tiers, and a complete newsletter workspace at `mail.tuturuuu.com`. Infrastructure
 owns platform approval and operations. Supabase remains authoritative; Cloudflare
-owns new schedules, queues and sending compute. Polar owns subscription payments.
+owns new schedules, queues and dispatch compute. **Amazon SES is the chosen
+newsletter/bulk delivery provider**; Polar owns subscription payments.
 
-Default access is denied. A workspace request, its sending domain, and each sender
+**Unapproved workspaces have zero newsletter sends, including on Free.** Free
+provides 10/day only after workspace newsletter approval. Default access is denied. A workspace request, its sending domain, and each sender
 address require separate platform-admin approval. Buying a subscription never
 bypasses approval, consent, suppression, abuse controls or provider limits.
 Existing personal/connected mail and transactional notifications retain their rules.
 
-Two launch gates need resolution before implementation can promise delivery:
-
-1. [Cloudflare Email Sending](https://developers.cloudflare.com/email-service/)
-   is a real beta product, but its [FAQ](https://developers.cloudflare.com/email-service/reference/faq/)
-   explicitly excludes marketing email. Obtain written Cloudflare confirmation that permission-based marketing
-   newsletters and this multi-tenant resale model are supported. Do not relabel a
-   newsletter as transactional or silently switch to SES to bypass this gate.
-2. [Domain onboarding](https://developers.cloudflare.com/email-service/get-started/send-emails/)
-   requires Cloudflare DNS and selection of a domain in the sending account.
-   Arbitrary external DNS with copied TXT records is not established by these docs.
-   Prove the supported customer-zone/account delegation model before promising
-   universal self-service. Start with explicitly eligible domains only.
+The user approved SES for newsletters on 2026-10-25. Cloudflare Email Service
+remains available for existing transactional mail only; its marketing restriction
+is no longer a newsletter launch dependency. Cloudflare still owns all new
+scheduling and fan-out compute. Live SES account/region production access, verified
+customer-domain authority, quotas and feedback configuration remain acceptance
+gates; provider choice is not proof they are provisioned. No sends or production
+writes are authorized by this draft.
 
 Sources below were checked on 2026-10-25. Repository inventory is a source snapshot
 at `45fdcb32ca`, not a claim about live provider configuration or deployed health.
@@ -40,9 +37,9 @@ No credentials, live catalog, production database or sandbox organization was re
 | --- | --- | --- |
 | Mail app | `apps/mail/src/lib/mail`, protected workspace/mailbox APIs, composer, folders, attachments, search, groups, AI drafts and app sessions; [Mail overview](/platform/applications/mail) | Add a Newsletter destination alongside inbox; do not turn a mailbox/group into an audience or assume inbox admission admits customer newsletter users. |
 | Private mail models | `20260527115441_create_private_mail_platform.sql`: mailboxes, members, raw messages, threads, messages, recipients, attachments, labels, user state, events, inbound/outbound jobs. `20260710024654_agentic_mail_foundation.sql`: domains, stored objects, folders, AI and MCP models | Preserve mailbox ownership and inbound routing. Campaign data has separate lifecycle and consent. |
-| Domains | `private.mail_domains` has globally unique normalized domain, status, inbound/outbound provider, Cloudflare account/zone/routing IDs, verification JSON and timestamps; mailbox links enforced by later migrations | Reuse canonical domain identity through a separate workspace sending claim. Existing active domain is not newsletter approval. Do not make global inbound domain rows writable by customers. |
+| Domains | `private.mail_domains` has globally unique normalized domain, status, inbound/outbound provider, provider identity plus existing Cloudflare account/zone/routing IDs, verification JSON and timestamps; mailbox links enforced by later migrations | Reuse canonical domain identity through a separate workspace sending claim. Existing active domain is not newsletter approval. Do not make global inbound domain rows writable by customers. |
 | Connected mail | `20261011002106_connected_mail_accounts.sql`; Google/Microsoft OAuth accounts, OAuth requests and send claims; `connected/send.ts` retains uncertain sends | OAuth mail remains separate. Preserve the existing unknown-outcome principle for campaigns. Never use customer Gmail/Graph credentials as bulk transport. |
-| Sending | `packages/email-service/src/providers/cloudflare.ts` and `ses.ts`, shared security, audit and workspace rate limits; Mail domain default and mailbox override | Extend portable first-party contracts; Cloudflare newsletter transport is explicitly selected and cannot inherit a mailbox SES override. |
+| Sending | `packages/email-service/src/providers/cloudflare.ts` and `ses.ts`, shared security, audit and workspace rate limits; Mail domain default and mailbox override | Extend portable first-party contracts; SES newsletter transport is explicitly selected; preserve separate Cloudflare/SES transactional policies and mailbox overrides. |
 | Incoming mail Worker | `apps/mail/src/email-worker/index.ts`, `wrangler.email-routing.jsonc`: MIME ingestion, private R2 and authenticated Mail webhook | This is inbound Email Routing, not a newsletter queue or proof of outbound eligibility. Preserve replies and mailbox routing. |
 | Billing | `apps/pay/src/app/api/payment/webhooks/route.ts`, subscription checkout/change/preview/customer portal routes; `packages/payment`, `packages/payment-core` | Keep Pay as billing adapter; share domain logic rather than duplicate webhook processing in Mail. |
 | Products | Private `workspace_subscription_products`, `workspace_subscriptions` evolution; metadata supports FREE/PLUS/PRO/ENTERPRISE and AI credit packs, seat helpers and order classification | Newsletter is an independent newsletter product kind, never a base workspace tier or an AI credit pack. Live product IDs/prices were not inspected. |
@@ -107,14 +104,17 @@ transfer requires revoke, ownership re-verification and a new approval. No autom
 inheritance from parent-domain approval or a wildcard sender.
 
 The setup screen presents provider-returned records with host/type/value and
-observed status. Cloudflare documents SPF, DKIM, DMARC and MX records for the
-`cf-bounce` return-path subdomain in its
-[domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/).
+observed status. Use SES [verified domain identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html),
+DKIM DNS records and a [custom MAIL FROM](https://docs.aws.amazon.com/ses/latest/dg/mail-from.html)
+subdomain with SES-issued SPF/MX; verify customer DMARC alignment. Customer DNS
+need not move to Cloudflare. Prove ownership in the platform SES account/region,
+or use explicit [SES sending authorization](https://docs.aws.amazon.com/ses/latest/dg/sending-authorization.html)
+for a customer-owned SES identity; pin account, region and identity ARN.
 Use provider-issued DKIM selectors; verify aligned visible From, DKIM signing domain
 and envelope sender. Preserve existing root MX and DMARC policy; never create two
 SPF records or weaken an existing DMARC policy. Prefer a dedicated sending subdomain.
 The customer confirms DNS changes; do not request their account-wide API token.
-The approved zone-delegation model must provide narrowly scoped server credentials.
+The selected SES identity model must use narrowly scoped server credentials.
 
 Cron Control owns verification, default off. Proposed bounds: 25 due domains/tick,
 one provider-status lookup/domain/attempt, 12 total attempts over 48 hours, capped
@@ -142,15 +142,13 @@ provider action by itself when another gate remains closed.
 
 ## Sending, idempotency and bounded cost
 
-Candidate transport: Cloudflare Email Service Email Sending REST
-`POST /accounts/{account_id}/email/sending/send`, or its native Workers binding.
-The [REST API](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/)
-exists and supports custom content; retain the repository provider adapter while
-qualifying a Worker-safe binding adapter. Neither implies newsletter eligibility.
-Cloudflare's [limits](https://developers.cloudflare.com/email-service/platform/limits/)
-include 50 total recipients, 5 MiB messages and 16 KB custom headers. Daily sending
-capacity is account/reputation-dependent; there is no documented universal numeric
-daily allowance to promise. Budget aggregate capacity across workspaces before sale.
+Chosen transport: Amazon SES, using the existing provider adapter and qualifying
+its Worker-safe authenticated boundary. [SES v2 SendEmail](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_SendEmail.html)
+supports simple/raw/templated email. Preserve custom unsubscribe headers and
+explicit configuration-set/identity binding. [SES quotas](https://docs.aws.amazon.com/ses/latest/dg/manage-sending-quotas.html)
+are regional, including a rolling 24-hour sending quota and per-second rate.
+Sandbox accounts allow 200 messages/24 hours and one/second, with verified
+recipients; live account capacity and production access remain unverified.
 Use exactly **one recipient per send**, no CC/BCC; proposed newsletter content cap
 is 256 KiB with hosted images and no attachments for the initial release.
 
@@ -164,7 +162,7 @@ at send time, even when the audience snapshot contains the address.
 
 States: `pending → reserved → submitting → accepted | rejected | unknown`, followed
 by monotonic delivery outcomes. A provider message ID is not inbox delivery proof.
-The inspected REST guide does not establish a provider idempotency key. Therefore
+No SES idempotency guarantee is established for the selected send contract. Therefore
 **exactly-once external delivery is not promised**: timeout, process crash after
 submission, or receipt-write failure becomes `unknown`, retains quota/spend, and
 never auto-resubmits. Reconcile against provider message/event evidence; absent
@@ -216,19 +214,13 @@ and that residual envelope are accepted; do not claim an absolute invoice cap
 against arbitrary hostile ingress. Reject unknown external ingress before expensive
 work and use provider/edge controls as additional defenses.
 
-[Email pricing](https://developers.cloudflare.com/email-service/platform/pricing/)
-currently includes 3,000 outbound messages/account/month on Workers Paid, then
-$0.35/1,000; accepted hard-bounces still count. Marginal reservation is therefore
-$0.00035/message, before compute, storage, queues, database and payment costs.
-For a 31-day month, 500/day is 15,500 emails, costing $5.425 at the
-marginal rate and leaving $4.575 of the $10 price before other costs. The $2
-tier is a **2,000-email monthly pool**, capped at 200/day: full pool consumption
-costs $0.70 and leaves $1.30 before other costs. These are calculated email-only
-contributions, not measured net margins; payment fees, compute, queues, storage,
-database and support still apply. Free-tier email costs and shared included
-allowances are separate. Tiers are mutually exclusive: the $2 tier includes no additional free daily
-allowance and never grants more than 2,000 emails per billing period.
-No $2-for-2,000/day offer is proposed.
+[SES pricing](https://aws.amazon.com/ses/pricing/) lists à la carte outbound at
+$0.10/1,000 and Essentials at $0.16/1,000 in its first volume band. The chosen AWS
+account plan remains unverified. Email-only cost for Tier 1 is $0.20/$0.32 and
+Tier 2 full 31-day use is $1.55/$2.48 respectively. These exclude data, optional
+features, Cloudflare, storage, database, payments and support. Reserve against the
+verified plan's complete cost envelope; do not use the superseded Cloudflare
+$0.35/1,000 calculation for SES or claim net margins. Paid tiers remain exclusive.
 
 [Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/) bills
 operations, with payload billing in 64 KiB chunks and retries adding reads. Pin
@@ -239,10 +231,11 @@ caps, aggregate provider capacity and warm-up limits require owner approval.
 
 ## Delivery feedback, consent and compliance
 
-[Cloudflare event subscriptions](https://developers.cloudflare.com/email-service/reference/event-subscriptions/)
-publish sending-domain lifecycle events to Queues, including delivered, deferred,
-bounced, rejected and complained. Configure a separate trusted event queue; validate
-account, zone, domain, subscription, schema and provider message-to-workspace binding.
+[SES configuration-set event publishing](https://docs.aws.amazon.com/ses/latest/dg/monitor-sending-activity-using-notifications.html)
+provides delivery/bounce/complaint feedback, for example through SNS to a bounded
+Cloudflare ingestion Worker and trusted Queue. Verify SNS signatures/certificate
+source, allowlisted topic ARN, account/region, subscription and provider-message
+binding before admission; never blindly follow arbitrary confirmation URLs.
 Deduplicate event IDs; tolerate replay, out-of-order and late events. Do not accept
 an unauthenticated HTTP JSON event as provider evidence. Store compact normalized
 facts, not subject/body copies. A delivered event means remote server acceptance.
@@ -250,7 +243,7 @@ facts, not subject/body copies. A delivered event means remote server acceptance
 Hard bounces and complaints suppress immediately before further sends. Temporary
 failures stay provider-owned; a proposed three soft failures in seven days triggers
 review/suppression, subject to provider semantics. Reconcile provider-managed
-[suppressions](https://developers.cloudflare.com/email-service/configuration/suppressions/)
+[SES suppressions](https://docs.aws.amazon.com/ses/latest/dg/sending-email-suppression-list.html)
 with local decisions using bounded cursors. Provider account-wide policy suppression
 always wins. Workspace unsubscribe is tenant-scoped; platform abuse suppression
 is global and cannot reveal another tenant's address history. Operators cannot
@@ -300,14 +293,14 @@ messages, or at least 0.1% complaints / 2% hard bounces over a defined 1,000-mes
 window. These are conservative draft controls, not provider guarantees. Sparse
 samples need review; stale feedback or event ingestion failures pause expansion.
 
-### Retention — recommended, pending user confirmation
+### Retention — user-approved 2026-10-25
 
-These defaults cover GDPR and Vietnam PDPD Decree 13/2023 requirements for legal
+This approved newsletter retention standard covers GDPR and Vietnam PDPD Decree 13/2023 requirements for legal
 review; they do not establish compliance by themselves. The legal owner must also
 check Vietnam's currently effective successor legislation and shorter statutory
 response deadlines; a product 30-day SLA cannot override a shorter legal duty.
 
-| Data / action | Recommended default |
+| Data / action | Approved policy |
 | --- | --- |
 | Consent proof | Keep timestamp, source, double-opt-in confirmation, IP, user agent and list for the subscriber relationship's life plus three years after unsubscribe; clarify that this is the audience subscription, not the Polar billing subscription. |
 | Suppression | Keep unsubscribes, hard bounces and complaints indefinitely as a workspace-scoped keyed email HMAC, without plaintext email. |
@@ -391,6 +384,13 @@ production promotion and the gated `supabase-production.yaml` result. No manual
 
 ### Recorded product decisions (2026-10-25)
 
+The user approved SES for newsletter/bulk delivery and approved the retention and
+billing policies below as written. Free is 10/day **only after** workspace
+newsletter approval; every unapproved workspace receives **0 newsletter sends**,
+regardless of payment. Domain and sender approvals remain independent prerequisites.
+Platform-wide GDPR/PDPD implementation is a separate lane; this document defines
+the newsletter retention standard that lane may cite, without expanding its scope.
+
 Scope: customer newsletter sending in Mail and platform administration in
 Infrastructure. Transactional email, connected accounts, workspace base tiers and
 AI credits retain their current policies. These decisions govern live and future
@@ -429,7 +429,7 @@ constrained by global/provider/domain/abuse/spending ceilings. Workspace secrets
 may lower abuse limits but cannot create grants or bypass approval. Tier 1 permits
 at most 200/day while its 2,000-period pool remains; exhaustion permits zero sends
 until renewal, not a fallback extra 10/day. Tier 2 permits 500/day. Free permits
-10/day. Tier changes preserve prior usage and cannot reset the day's consumed or
+10/day only after newsletter approval; without approval every tier permits zero. Tier changes preserve prior usage and cannot reset the day's consumed or
 reserved capacity to zero.
 
 Daily quota uses database time converted through the workspace's persisted IANA
@@ -438,7 +438,7 @@ UTC instants and local date, not a bare date alone. DST days may be 23/25 hours.
 New timezone settings take effect at a scheduled boundary without opening an extra
 bucket; retain prior usage and enforce a transition interval that cannot grant
 two allowances. The UI shows the actual next reset in the workspace timezone.
-This product quota is separate from Cloudflare's account-level daily limit.
+This product quota is separate from SES's regional rolling 24-hour quota.
 
 Monthly pool periods use authoritative subscription billing-period start/end
 instants, anchored to the billing anniversary, not calendar months, quota-day
@@ -500,7 +500,7 @@ subscription readback instead of reverting newer state. A durable inbox permits
 fast acknowledgement after persistence and bounded Cloudflare processing; failures
 before persistence return retryable errors. Do not log signatures or whole payloads.
 
-### Billing behavior — recommended, pending user confirmation
+### Billing behavior — user-approved 2026-10-25
 
 Upgrades apply immediately after the verified Polar transition and are prorated
 through Polar. Downgrades/cancellations take effect at period end, then select the
@@ -607,7 +607,7 @@ admission so customers can use newsletters without access to staff mailboxes.
   recovery. Accepted and delivered are separate. Do not promise inbox placement.
 - **Domain and sender setup:** step-by-step DNS rows, copy controls, last checked,
   next check/expiry, independent verification and approval badges, denial reason
-  and bounded retry. Explain Cloudflare DNS eligibility before collecting payment.
+  and bounded retry. Explain SES identity verification and account readiness before collecting payment.
 - **Plan and usage:** daily accepted/unknown/reserved and remaining quota sources and monthly pool balance, workspace-local reset
   and subscription-period end, current price/discount duration/next price, payment
   state, upgrade/coupon entry and manage/cancel link. Show both plan and safety
@@ -627,7 +627,7 @@ M4/other eligible hosts, never sonha for this task.
 | Domain/sender spoofing | Exact verified domain/address, proof expiry, independent review, aligned authentication, header injection rejection; test subdomain/lookalike/Unicode and domain-transfer cases. |
 | Open relay / stolen workspace | No public send API; fresh actor/permission/approval, recipient consent, immutable campaign, test-send limits, MFA/step-up for high-risk operations; test direct API bypass. |
 | Quota bypass / double spend | Atomic claim + quota + spend, stable IDs, environment binding, no resets on upgrade/restart, per-workspace aggregate concurrency; test parallel requests and midnight. |
-| Webhook forgery / replay | Polar raw-body verification and trusted Cloudflare event queue; receipt dedupe, merchant/resource binding, stale-event reconciliation; test mixed environments and replay. |
+| Webhook forgery / replay | Polar raw-body verification and authenticated SES/SNS feedback into a trusted Cloudflare queue; receipt dedupe, merchant/resource binding, stale-event reconciliation; test mixed environments and replay. |
 | Tenant leakage | Composite tenant FKs, explicit API membership, narrow RPCs/RLS, storage authorization and cross-workspace negative tests for every resource/export. |
 | PII and content exposure | Private R2/DB, encryption/key rotation, minimal logs, redacted audit, bounded retention, expiring authorized downloads, delete/export workflows and queue deletion fences. |
 | Template/import attacks | HTML sanitization, isolated previews, no template code execution, import size/row limits, CSV formula protection, malware/URL policy without unbounded fetches. |
@@ -650,7 +650,7 @@ merge/promotion. This draft PR is never merged by the design child.
 | Phase / PR | Dependencies and deliverable | Risk / decisions | Required tests and acceptance |
 | --- | --- | --- | --- |
 | 0. Design (this PR) | Inventory, decisions, architecture and docs navigation only | Low; resolve open questions below | Docs links/frontmatter/navigation and changed-file gate; no runtime claim. |
-| 1. Provider feasibility | After design: documented marketing permission, customer-zone delegation, account capacity and API/SDK compatibility spike, default off | High; Cloudflare confirmation, account ownership, margins/caps | Disposable hosted domain proof, DNS alignment, header/DKIM capture, trusted feedback and provider unknown-outcome contract. No customer rollout. |
+| 1. Provider feasibility | After design: SES identity authorization, regional production access, account capacity and API/SDK compatibility spike, default off | High; SES account/region, identity authority, pricing/caps | Disposable hosted domain proof, DNS alignment, header/DKIM capture, trusted feedback and provider unknown-outcome contract. No customer rollout. |
 | 3a. Add-on schema | After decisions: catalog/subscriptions/promotions/receipts, pure entitlement resolver | High; coupon lifetime and cancellation policy | Applied isolated migration, pgTAP RLS/grants/search-path, duplicate subscription, pure resolution boundaries. |
 | 3b. Newsletter approval schema | Can parallel 3a after 1: workspace/domain/sender approval, audit and control generations | High; approver permission and retention | Lock rehearsal, cross-tenant/actor/revision negatives, state transition and suspension tests. |
 | 4a. Polar checkout | Stack on 3a: product classification, bound intents and sandbox-only setup adapter | High; prices, subsidy, proration | Checkout intent duplication, wrong merchant/env, unknown create; hosted sandbox checkout receipt. |
@@ -672,11 +672,11 @@ lint/type/test and real app/Worker builds on the exact commit. Do not run
 run only in an admitted isolated environment. Production cutover, Polar live
 catalog writes and customer sending need separate release authorization and proof.
 
-## Open questions for the user
+## Remaining implementation gates
 
-1. Cloudflare currently documents transactional-only sending. Can Cloudflare approve
-   newsletter/resale use and a customer-domain/account delegation path?
-2. Confirm or amend the recommended consent/PII retention policy after GDPR and
-   current Vietnam legal review.
-3. Confirm or amend the recommended downgrade, cancellation, grace and full-campaign
-   reservation behavior, including refund/chargeback treatment.
+SES account/region, identity ownership/delegation, configuration set, verified
+feedback and actual pricing/quotas need read-only acceptance. Numerical spending
+caps need owner configuration. Refund/chargeback disposition remains explicit;
+no quota resets or silent content deletion. Retention and billing policies above
+are approved, not pending decisions. No live checks, sends or production writes
+are included in this documentation update; credentials must use `request_secret`.
