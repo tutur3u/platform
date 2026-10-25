@@ -275,12 +275,16 @@ export function createPasswordsService(
         );
         const uncertain = input.kind === 'agent';
         if (!response || (uncertain && response.status >= 500))
-          throw new PasswordsError(uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE');
+          throw new PasswordsError(
+            uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE'
+          );
         let data: PasswordsRecord;
         try {
           data = record(await response.json());
         } catch {
-          throw new PasswordsError(uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE');
+          throw new PasswordsError(
+            uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE'
+          );
         }
         if (!response.ok) {
           const code = PASSWORDS_ERROR_CODES.find(

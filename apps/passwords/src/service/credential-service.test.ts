@@ -25,23 +25,47 @@ function fixture() {
   };
   const actor = randomUUID();
   const wsId = randomUUID();
-  const token = createAppSessionToken({ targetApp: 'passwords', userId: actor,
-    mfa: { sessionId: 'synthetic', verifiedAt: Math.floor(Date.now() / 1000) },
-  }, { secret: env.TUTURUUU_APP_COORDINATION_SECRET });
-  const request = new Request(`${env.NEXT_PUBLIC_APP_URL}/_passwords/functions/credential`, {
-    method: 'POST', headers: { origin: env.NEXT_PUBLIC_APP_URL,
-      cookie: `tuturuuu_app_session=${token.token}` },
-  });
+  const token = createAppSessionToken(
+    {
+      targetApp: 'passwords',
+      userId: actor,
+      mfa: {
+        sessionId: 'synthetic',
+        verifiedAt: Math.floor(Date.now() / 1000),
+      },
+    },
+    { secret: env.TUTURUUU_APP_COORDINATION_SECRET }
+  );
+  const request = new Request(
+    `${env.NEXT_PUBLIC_APP_URL}/_passwords/functions/credential`,
+    {
+      method: 'POST',
+      headers: {
+        origin: env.NEXT_PUBLIC_APP_URL,
+        cookie: `tuturuuu_app_session=${token.token}`,
+      },
+    }
+  );
   let enabled = true;
-  const database = { ...createPasswordsDatabase(env, request),
+  const database = {
+    ...createPasswordsDatabase(env, request),
     enabled: () => enabled,
     resolveWorkspace: async () => ({ wsId, actor, name: 'Workspace' }),
   };
-  return { port: createPasswordsService(request, env, database),
-    stop: () => { enabled = false; },
-    input: { kind: 'agent' as const, wsId, vaultId: randomUUID(),
-      grantRequestId: randomUUID(), tokenRequestId: randomUUID(),
-      itemIds: [randomUUID()], scopes: ['item.read'] as ['item.read'] },
+  return {
+    port: createPasswordsService(request, env, database),
+    stop: () => {
+      enabled = false;
+    },
+    input: {
+      kind: 'agent' as const,
+      wsId,
+      vaultId: randomUUID(),
+      grantRequestId: randomUUID(),
+      tokenRequestId: randomUUID(),
+      itemIds: [randomUUID()],
+      scopes: ['item.read'] as ['item.read'],
+    },
   };
 }
 
@@ -52,14 +76,23 @@ describe('credential service outcome fences', () => {
       f.stop();
       return Response.json({ version: 1 });
     });
-    expect(await f.port.downloadCredentials(f.input)).toEqual({ ok: false, code: 'OPERATION_UNCERTAIN' });
+    expect(await f.port.downloadCredentials(f.input)).toEqual({
+      ok: false,
+      code: 'OPERATION_UNCERTAIN',
+    });
   });
   it.each([
     () => new Response('{', { status: 200 }),
     () => Response.json({ code: 'unavailable' }, { status: 503 }),
-  ])('keeps malformed or server-error issuance responses UNKNOWN', async (response) => {
-    const f = fixture();
-    handle.mockResolvedValueOnce(response());
-    expect(await f.port.downloadCredentials(f.input)).toEqual({ ok: false, code: 'OPERATION_UNCERTAIN' });
-  });
+  ])(
+    'keeps malformed or server-error issuance responses UNKNOWN',
+    async (response) => {
+      const f = fixture();
+      handle.mockResolvedValueOnce(response());
+      expect(await f.port.downloadCredentials(f.input)).toEqual({
+        ok: false,
+        code: 'OPERATION_UNCERTAIN',
+      });
+    }
+  );
 });

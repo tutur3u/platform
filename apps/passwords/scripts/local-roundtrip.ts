@@ -367,7 +367,9 @@ async function main() {
     passed = false;
     if (error instanceof FixtureCheckError) failure = error.code;
     if (error instanceof Error)
-      failureLocation = error.stack?.match(/local-roundtrip[-a-z]*\.ts:\d+:\d+/)?.[0] ?? 'unknown';
+      failureLocation =
+        error.stack?.match(/local-roundtrip[-a-z]*\.ts:\d+:\d+/)?.[0] ??
+        'unknown';
   } finally {
     controller.abort();
     try {
