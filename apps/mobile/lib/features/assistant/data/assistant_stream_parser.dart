@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
+import 'package:mobile/features/assistant/data/assistant_created_chat.dart';
 
 sealed class AssistantStreamEvent extends Equatable {
   const AssistantStreamEvent();
@@ -14,6 +15,14 @@ sealed class AssistantStreamEvent extends Equatable {
 
 class AssistantDoneStreamEvent extends AssistantStreamEvent {
   const AssistantDoneStreamEvent();
+}
+
+final class AssistantChatCreatedStreamEvent extends AssistantStreamEvent {
+  const AssistantChatCreatedStreamEvent(this.chat, this.requestId);
+  final AssistantCreatedChat chat;
+  final String requestId;
+  @override
+  List<Object?> get props => [chat, requestId];
 }
 
 class AssistantJsonStreamEvent extends AssistantStreamEvent {

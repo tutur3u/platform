@@ -88,7 +88,7 @@ void main() {
       }
       expect(h.repository.api.creates, 1);
       expect(h.repository.chats.sends, 1);
-      expect(h.chat.state.storedChatId, repairChat);
+      expect(h.chat.state.storedChatId, h.chat.state.fallbackChatId);
       expect(draft.text, isEmpty);
     },
   );

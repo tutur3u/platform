@@ -391,55 +391,23 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         ),
       );
 
+      AssistantFirstMessageCreation? firstCreation;
       if (chat == null || state.storedChatId == null) {
-        final settingsPlan = _prepareCreationSettings?.call(
-          wsId,
-          modelId,
-          current,
+        final prepared = await _prepareChatSubmission(
+          chatId: chatId, wsId: wsId, modelId: modelId, message: combined,
+          timezone: timezone, hasAttachments: attachments.isNotEmpty,
+          current: current,
+          onPersisting: () => phase = OperationalPhase.assistantPreferencePersist,
         );
-        if (_prepareCreationSettings != null && settingsPlan == null) {
-          _unknownSubmission(clientRequestId, denied: true);
-          _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
-          return;
+        if (!current()) { _staleSubmission(clientRequestId); return; }
+        if (prepared == null) return;
+        switch (prepared) {
+          case _SeparateCreatedChat(:final record):
+            chat = record;
+            chatId = record.id;
+          case _FirstMessagePreparedChat(:final creation):
+            firstCreation = creation;
         }
-        _emitIfOpen(state.copyWith(creationOutcomeUnknown: true));
-        final created = await _repository.createChat(
-          id: chatId,
-          wsId: wsId,
-          modelId: modelId,
-          message: combined,
-          timezone: timezone,
-          initialSettings: settingsPlan?.take(),
-          isCurrent: settingsPlan?.isCurrent,
-        );
-        if (!current()) {
-          _staleSubmission(clientRequestId);
-          return;
-        }
-        chat = created;
-        chatId = created.id;
-        if (created is! AssistantCreatedChat) {
-          phase = OperationalPhase.assistantPreferencePersist;
-          await _preferences.saveChatId(wsId, chatId, shouldWrite: current);
-        }
-        if (!current()) {
-          _staleSubmission(clientRequestId);
-          return;
-        }
-        _emitIfOpen(
-          state.copyWith(
-            chat: created,
-            storedChatId: chatId,
-            creationOutcomeUnknown: false,
-          ),
-        );
-        if (!current()) {
-          _staleSubmission(clientRequestId);
-          return;
-        }
-        // History is secondary to the first response. Refresh it without
-        // delaying the stream after a conversation is created.
-        unawaited(refreshHistory());
       }
 
       final shouldAppendUserMessage =
@@ -535,8 +503,8 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       phase = OperationalPhase.assistantReply;
       _streamAdmission = admission;
       _streamSubscription = _AssistantReplySubscription(
-        _repository
-            .streamChat(
+        _replyForSubmission(
+              firstCreation: firstCreation,
               chatId: chatId,
               wsId: wsId,
               workspaceContextId: workspaceContextId,

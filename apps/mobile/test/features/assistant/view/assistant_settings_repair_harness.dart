@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +62,19 @@ class RepairRepository extends ReplyRepository {
       creditWsId: creditWsId,
       admission: admission,
     );
+  }
+
+  @override
+  Stream<AssistantStreamEvent> streamFirstChat({
+    required AssistantFirstMessageCreation creation,
+    required String chatId, required String wsId,
+    required List<AssistantMessage> messages, required String timezone,
+    required ApiMutationAdmission admission,
+  }) {
+    starts++;
+    api.firstChats = chats;
+    return native.streamFirstChat(creation: creation, chatId: chatId, wsId: wsId,
+      messages: messages, timezone: timezone, admission: admission);
   }
 
   @override
@@ -160,11 +176,12 @@ class SettingsApi extends ApiClient {
   }) async {
     creates++;
     final input = body! as Map<String, dynamic>;
+    final createdId = input['id'] as String? ?? repairChat;
     final initial = input['initialAiSettings'] as Map<String, dynamic>?;
-    settings = {'conversationId': repairChat, ...?initial};
+    settings = {'conversationId': createdId, ...?initial};
     return {
       'conversation': {
-        'id': repairChat,
+        'id': createdId,
         'wsId': repairWorkspace,
         'type': 'ai',
         'title': 'Fixture',
@@ -172,13 +189,45 @@ class SettingsApi extends ApiClient {
         if (initial != null)
           'initialAiSettings': {
             ...initial,
-            'conversationId': repairChat,
+            'conversationId': createdId,
             'wsId': repairWorkspace,
             'actorUserId': repairActor,
           },
         'createdAt': '2026-10-12T00:00:00Z',
       },
     };
+  }
+
+  RepairChats? firstChats;
+  @override
+  Future<http.StreamedResponse> sendJsonStreamAcknowledged(
+    String method, String path, Map<String, dynamic> body, {
+    required ApiMutationAdmission admission, String accept = 'text/event-stream',
+  }) async {
+    admission.recordDispatchPossible();
+    final chatId = path.split('/')[7];
+    final creation = await postJson('/synthetic-first-message', {
+      'id': chatId, 'initialAiSettings': body['initialConversation'],
+    });
+    final receipt = {...creation, 'creationRequestId': body['clientRequestId']};
+    Stream<List<int>> bytes() async* {
+      final events = firstChats!.sendMessageStream(repairWorkspace, chatId,
+        content: body['content'] as String, clientRequestId: body['clientRequestId'] as String,
+        admission: admission);
+      await for (final event in events) {
+        final Map<String, dynamic> raw;
+        if (event is ChatStreamMessageEvent) {
+          raw = {'type':'message','message':event.message.toJson()};
+        } else if (event is ChatStreamMessagesEvent) {
+          raw = {'type':'messages','messages':event.messages.map((m)=>m.toJson()).toList()};
+        } else { raw = {'type':'done'}; }
+        yield utf8.encode('${jsonEncode(raw)}\n');
+      }
+    }
+    return http.StreamedResponse(bytes(), 200, headers: {
+      'content-type':'application/x-ndjson',
+      'x-mira-chat-creation':base64Url.encode(utf8.encode(jsonEncode(receipt))),
+    });
   }
 
   Map<String, dynamic> settings = {};

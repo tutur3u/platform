@@ -63,6 +63,7 @@ export function streamNativeAiConversationResponse({
   timezone,
   clientCapabilities,
   userMessage,
+  initialSettings,
 }: {
   auth: SessionAuthContext;
   context: ChatRouteContext;
@@ -72,6 +73,7 @@ export function streamNativeAiConversationResponse({
   timezone?: string;
   clientCapabilities?: string[];
   userMessage: ChatMessage;
+  initialSettings?: NativeChatAiSettings;
 }) {
   const encoder = new TextEncoder();
 
@@ -97,6 +99,7 @@ export function streamNativeAiConversationResponse({
           timezone,
           clientCapabilities,
           userMessage,
+          initialSettings,
         });
 
         try {
@@ -156,6 +159,7 @@ export async function sendNativeAiConversationMessages({
   timezone,
   clientCapabilities,
   userMessage,
+  initialSettings,
 }: {
   auth: SessionAuthContext;
   context: ChatRouteContext;
@@ -167,9 +171,10 @@ export async function sendNativeAiConversationMessages({
   timezone?: string;
   clientCapabilities?: string[];
   userMessage: ChatMessage;
+  initialSettings?: NativeChatAiSettings;
 }): Promise<NativeAiMessagePersistence> {
   const [settings, privateMessages] = await Promise.all([
-    getNativeAiSettings(conversation.id),
+    initialSettings ?? getNativeAiSettings(conversation.id),
     callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
       p_actor_user_id: auth.user.id,
       p_before: null,
