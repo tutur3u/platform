@@ -213,6 +213,18 @@ export async function runResourcesCommand(argv: string[]) {
     const trivial = enabled && !shim ? trivialExecutable(name, env) : undefined;
     const queued =
       enabled && (shim ? isHeavyCommand(name, command) : trivial === undefined);
+    if (enabled && !shim && options.includes('--hosts')) {
+      const { assertNestedHostRequirements, hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
+      const requires = hostsRequirements(name, command, options);
+      if (parent || !queued) {
+        const { readHostRegistry } = await import(
+          './resources-hosts-config.js'
+        );
+        assertNestedHostRequirements(await readHostRegistry(home), requires);
+      }
+    }
     const offload = optionValue(options, '--offload');
     // Disk headroom gate for heavy work; nested jobs were admitted already,
     // and --hosts dispatch applies its own local disk gate per placement.
@@ -254,16 +266,6 @@ export async function runResourcesCommand(argv: string[]) {
     if (enabled && !shim) {
       const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
-    }
-    if (!shim && queued && parent && options.includes('--hosts')) {
-      const { assertNestedHostRequirements, hostsRequirements } = await import(
-        './resources-hosts-requirements.js'
-      );
-      const { readHostRegistry } = await import('./resources-hosts-config.js');
-      assertNestedHostRequirements(
-        await readHostRegistry(home),
-        hostsRequirements(name, command, options)
-      );
     }
     if (!shim && queued && !parent && options.includes('--hosts')) {
       if (offload) throw new Error('Use --hosts or --offload, not both.');

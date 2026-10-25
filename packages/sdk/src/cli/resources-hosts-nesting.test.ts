@@ -17,6 +17,27 @@ const setupModule = resolve('src/cli/resources-setup.ts');
 
 describe('nested capability validation', { timeout: 30_000 }, () => {
   it.each(['heavy lane', 'light reservation'] as const)(
+    'rejects an unknown requirement on a trusted trivial command under a %s',
+    async (kind) => {
+      await nested(kind, 'typo', false, true);
+    }
+  );
+  it.each(['heavy lane', 'light reservation'] as const)(
+    'rejects an incompatible requirement on a trusted trivial command under a %s',
+    async (kind) => {
+      await nested(kind, 'ios', false, true);
+    }
+  );
+  it.each(['heavy lane', 'light reservation'] as const)(
+    'keeps a compatible trusted trivial command available under a %s',
+    async (kind) => {
+      await nested(kind, 'web', true, true);
+    }
+  );
+  it('preserves the explicit resource bypass', async () => {
+    await nested('heavy lane', 'typo', true, true, true);
+  });
+  it.each(['heavy lane', 'light reservation'] as const)(
     'rejects iOS under a web-only %s before starting the nested workload',
     async (kind) => {
       await nested(kind, 'ios', false);
@@ -32,8 +53,10 @@ describe('nested capability validation', { timeout: 30_000 }, () => {
 
 async function nested(
   kind: 'heavy lane' | 'light reservation',
-  requirement: 'ios' | 'web',
-  compatible: boolean
+  requirement: 'ios' | 'web' | 'typo',
+  compatible: boolean,
+  trivial = false,
+  bypass = false
 ) {
   const home = await fixtures.home(1);
   const base = proposedHostRegistry();
@@ -51,8 +74,9 @@ async function nested(
   const result = join(home, 'nested.result');
   const script = join(home, 'nested.ts');
   const command = `require('node:fs').writeFileSync(${JSON.stringify(marker)}, process.env.TTR_RESOURCES_ADMITTED || 'ran')`;
+  const argv = trivial ? ['/usr/bin/true'] : [bun, '-e', command];
   const run =
-    kind === 'heavy lane'
+    kind === 'heavy lane' || trivial
       ? `
       const {mock}=await import('bun:test');
       const setup=await import(${JSON.stringify(setupModule)}),validate=setup.installedResourceShims;
@@ -60,7 +84,8 @@ async function nested(
       const config=await import(${JSON.stringify(registryModule)});
       mock.module(${JSON.stringify(registryModule)},()=>({...config,readHostRegistry:async()=>(${JSON.stringify(registry)})}));
       const {runResourcesCommand}=await import(${JSON.stringify(cliModule)});
-      await runResourcesCommand(['run','--hosts','--requires',${JSON.stringify(requirement)},'--',${JSON.stringify(bun)},'-e',${JSON.stringify(command)}]);
+      ${bypass ? "process.env.TTR_RESOURCES_BYPASS='1';" : ''}
+      await runResourcesCommand(['run','--hosts','--requires',${JSON.stringify(requirement)},'--',...${JSON.stringify(argv)}]);
     `
       : `
       const {hostsRun}=await import(${JSON.stringify(dispatchModule)});
@@ -103,14 +128,18 @@ async function nested(
         log: () => {},
         runRemote: async () => 1,
         runLocal: ({ marker: reservation }) =>
-          new Promise<number>((done) => {
-            const child = spawn(bun, [script], {
-              env: { ...process.env, ...reservation },
-              stdio: 'ignore',
-            });
-            fixtures.children.push(child);
-            child.once('close', (code) => done(code ?? 1));
-          }),
+          trivial
+            ? fixtures
+                .laneLaunch(home, ['run'], script, reservation)
+                .done.then((result) => result.code ?? 1)
+            : new Promise<number>((done) => {
+                const child = spawn(bun, [script], {
+                  env: { ...process.env, ...reservation },
+                  stdio: 'ignore',
+                });
+                fixtures.children.push(child);
+                child.once('close', (code) => done(code ?? 1));
+              }),
       },
     });
     expect(outcome).toBe(0);
@@ -118,9 +147,11 @@ async function nested(
   const outcome = await readFile(result, 'utf8');
   if (compatible) {
     expect(outcome).toBe('ok');
-    expect(await readFile(marker, 'utf8')).not.toBe('');
+    if (!trivial) expect(await readFile(marker, 'utf8')).not.toBe('');
   } else {
-    expect(outcome).toMatch(/Nested --hosts.*ios/u);
+    expect(outcome).toMatch(
+      requirement === 'typo' ? /--requires must be/u : /Nested --hosts.*ios/u
+    );
     await expect(readFile(marker, 'utf8')).rejects.toThrow(/ENOENT/u);
   }
   expect((await resourceQueueStatus(home)).occupied).toBe(0);

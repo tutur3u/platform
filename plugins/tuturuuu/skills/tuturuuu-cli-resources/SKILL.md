@@ -224,8 +224,11 @@ the M4 before dispatch. Remote hosts use local admission, never another fleet
 dispatch. This fence controls dispatch origin; it does not prohibit local heavy
 work or builds. Follow the M4 no-build policy separately. Nested `--hosts` must
 validate capabilities and actual OS before reusing a heavy lane or light host
-reservation; incompatible nesting fails before spawning. Preserve ticket identity, age and bypass on retries; an unknown remote
-write must be reconciled rather than replayed. See the owning
+reservation; incompatible nesting fails before spawning.
+Requirement parsing and local compatibility checks precede the trusted trivial
+command shortcut too; explicit resource bypass retains raw local execution.
+Preserve ticket identity, age and bypass on retries; an unknown remote write
+must be reconciled rather than replayed. See the owning
 [capability and drain-window procedure](../../../../apps/docs/reference/packages/sdk.mdx#capability-placement-and-the-m4-hub).
 Mastermind owns Studio pool A (6 base/8 max; no pool B) and idle-only lane changes. Do not count the
 same physical Studio twice or activate a registry/config from an agent session.

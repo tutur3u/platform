@@ -1885,6 +1885,10 @@ actual local host before reusing either a heavy-lane ancestor or a light host
 reservation. Incompatible nesting errors before spawning or adding another
 ticket; compatible nesting keeps the existing reservation and limits. A nested
 call cannot migrate its already-running wrapper to a different host.
+Requirement parsing and applicable local compatibility checks also run before
+the trusted trivial-command shortcut. Unknown requirements fail closed even
+for `/usr/bin/true`; compatible trivial tools remain admission-free. Explicit
+`TTR_RESOURCES_BYPASS=1` retains its deliberate raw local-execution behavior.
 
 | Host | Declared capabilities | Placement policy |
 | --- | --- | --- |
