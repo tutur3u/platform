@@ -1,8 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -80,13 +79,12 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
     return AppearanceScope.opaqueScaffolds(child);
   }
   return ClipRRect(
+    key: const ValueKey('adaptive-sheet-glass'),
     borderRadius: BorderRadius.circular(24),
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+    child: GlassBlur(
+      sigma: 20,
       child: Material(
-        color: surface.withValues(
-          alpha: MediaQuery.highContrastOf(context) ? 1 : 0.88,
-        ),
+        color: surface.withValues(alpha: GlassEffects.fillAlpha(context, 0.88)),
         child: AppearanceScope.opaqueScaffolds(child),
       ),
     ),

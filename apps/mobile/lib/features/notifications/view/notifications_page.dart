@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
@@ -22,22 +20,28 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
     this.initialTab = NotificationsTab.inbox,
+    this.repository,
     super.key,
   });
 
   const NotificationsPage.archive({super.key})
-    : initialTab = NotificationsTab.archive;
+    : initialTab = NotificationsTab.archive,
+      repository = null;
 
   final NotificationsTab initialTab;
+
+  /// Caller-owned repository for render tests; the page disposes only the
+  /// repository it creates.
+  @visibleForTesting
+  final NotificationsRepository? repository;
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  late final NotificationsRepository _repository = NotificationsRepository(
-    ownsApiClient: true,
-  );
+  late final NotificationsRepository _repository =
+      widget.repository ?? NotificationsRepository(ownsApiClient: true);
   late final NotificationsCubit _cubit;
   late NotificationsTab _selectedTab = widget.initialTab;
 
@@ -65,7 +69,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   void dispose() {
     unawaited(_cubit.close());
-    _repository.dispose();
+    if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
 
@@ -97,72 +101,63 @@ class _NotificationsPageState extends State<NotificationsPage> {
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => _syncWorkspace(state.currentWorkspace),
         child: shad.Scaffold(
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: ResponsiveWrapper(
-              maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
-              child: Stack(
-                children: [
-                  NotificationsView(
-                    parentContext: context,
-                    pageMode: true,
-                    initialTab: _selectedTab,
-                  ),
-                  BlocBuilder<NotificationsCubit, NotificationsState>(
-                    bloc: _cubit,
-                    buildWhen: (previous, current) =>
-                        previous.unreadCount != current.unreadCount ||
-                        previous.isArchivingAll != current.isArchivingAll,
-                    builder: (context, state) {
-                      return ShellChromeActions(
-                        ownerId: 'notifications-root',
-                        onResetSection: () => setState(
-                          () => _selectedTab = NotificationsTab.inbox,
-                        ),
-                        locations: const {
-                          Routes.notifications,
-                          Routes.notificationsArchive,
-                        },
-                        actions: [
-                          ShellActionSpec(
-                            id: 'notifications-archive-all',
-                            inDock: true,
-                            icon: Icons.archive_outlined,
-                            callbackToken:
-                                'notifications-archive-all:'
-                                '${state.unreadCount}:'
-                                '${state.isArchivingAll}',
-                            tooltip: context.l10n.notificationsArchiveAll,
-                            isLoading: state.isArchivingAll,
-                            enabled:
-                                _selectedTab == NotificationsTab.inbox &&
-                                state.unreadCount > 0 &&
-                                !state.isArchivingAll,
-                            onPressed: () => unawaited(_archiveAll(context)),
-                          ),
-                          for (final tab in NotificationsTab.values)
-                            ShellActionSpec(
-                              id: 'notifications-tab-${tab.name}',
-                              segmentGroup: 'notifications-tabs',
-                              icon: tab == NotificationsTab.inbox
-                                  ? Icons.inbox_outlined
-                                  : Icons.archive_outlined,
-                              tooltip: tab == NotificationsTab.inbox
-                                  ? context.l10n.notificationsInbox
-                                  : context.l10n.notificationsArchive,
-                              highlighted: _selectedTab == tab,
-                              callbackToken: _selectedTab,
-                              onPressed: () =>
-                                  setState(() => _selectedTab = tab),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+          child: Stack(
+            children: [
+              NotificationsView(
+                parentContext: context,
+                pageMode: true,
+                initialTab: _selectedTab,
               ),
-            ),
+              BlocBuilder<NotificationsCubit, NotificationsState>(
+                bloc: _cubit,
+                buildWhen: (previous, current) =>
+                    previous.unreadCount != current.unreadCount ||
+                    previous.isArchivingAll != current.isArchivingAll,
+                builder: (context, state) {
+                  return ShellChromeActions(
+                    ownerId: 'notifications-root',
+                    onResetSection: () =>
+                        setState(() => _selectedTab = NotificationsTab.inbox),
+                    locations: const {
+                      Routes.notifications,
+                      Routes.notificationsArchive,
+                    },
+                    actions: [
+                      ShellActionSpec(
+                        id: 'notifications-archive-all',
+                        inDock: true,
+                        icon: LucideIcons.archive,
+                        callbackToken:
+                            'notifications-archive-all:'
+                            '${state.unreadCount}:'
+                            '${state.isArchivingAll}',
+                        tooltip: context.l10n.notificationsArchiveAll,
+                        isLoading: state.isArchivingAll,
+                        enabled:
+                            _selectedTab == NotificationsTab.inbox &&
+                            state.unreadCount > 0 &&
+                            !state.isArchivingAll,
+                        onPressed: () => unawaited(_archiveAll(context)),
+                      ),
+                      for (final tab in NotificationsTab.values)
+                        ShellActionSpec(
+                          id: 'notifications-tab-${tab.name}',
+                          segmentGroup: 'notifications-tabs',
+                          icon: tab == NotificationsTab.inbox
+                              ? LucideIcons.inbox
+                              : LucideIcons.archive,
+                          tooltip: tab == NotificationsTab.inbox
+                              ? context.l10n.notificationsInbox
+                              : context.l10n.notificationsArchive,
+                          highlighted: _selectedTab == tab,
+                          callbackToken: _selectedTab,
+                          onPressed: () => setState(() => _selectedTab = tab),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

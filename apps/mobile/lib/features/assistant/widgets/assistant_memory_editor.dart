@@ -6,6 +6,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_memory_editor_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
+import 'package:mobile/features/assistant/widgets/assistant_settings_action.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -13,13 +14,11 @@ class AssistantMemoryEditor extends StatefulWidget {
   const AssistantMemoryEditor({
     required this.settings,
     required this.memoryId,
-    this.showTitle = true,
     this.isScopeCurrent,
     super.key,
   });
   final AssistantPersonalSettingsCubit settings;
   final String memoryId;
-  final bool showTitle;
   final bool Function()? isScopeCurrent;
   @override
   State<AssistantMemoryEditor> createState() => _AssistantMemoryEditorState();
@@ -75,100 +74,86 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
           Navigator.of(context).pop();
         }
       },
-      builder: (context, state) => SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          // A full-screen routed form above the shell (no dock clearance).
-          padding: AppPageInsets.of(
-            context,
-            width: MediaQuery.sizeOf(context).width,
-            kind: AppPageKind.form,
-            endGap:
-                AppLayout.scrollEndGap +
-                MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.showTitle) ...[
-                Text(
-                  l.assistantMemoryEditTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (state.loading && state.memory == null)
-                Semantics(
-                  label: l.commonLoading,
-                  child: const Center(child: NovaLoadingIndicator(size: 20)),
-                ),
-              if (state.memory != null)
-                AppTextFormField(
-                  key: const ValueKey('assistant-memory-edit-field'),
-                  controller: _text,
-                  minLines: 3,
-                  maxLines: 8,
-                  maxLength: 20000,
-                  onChanged: _cubit.changeDraft,
-                  label: l.assistantMemoryEditText,
-                ),
-              if (state.latestContent != null) ...[
-                Text(
-                  l.assistantMemoryLatest,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                SelectableText(state.latestContent!),
-              ],
-              if (state.failure != null)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    switch (state.failure!) {
-                      MemoryEditFailure.conflict =>
-                        l.assistantMemoryEditConflict,
-                      MemoryEditFailure.denied => l.assistantMemoryEditDenied,
-                      MemoryEditFailure.missing => l.assistantMemoryEditMissing,
-                      MemoryEditFailure.failed =>
-                        l.assistantPersonalSettingsError,
-                    },
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-              if (state.auditWarning)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(l.assistantMemoryEditAuditWarning),
-                ),
-              if (state.failure != null && !state.saving)
-                AppButton.ghost(
-                  onPressed: state.loading
-                      ? null
-                      : () => _cubit.load(reviewLatest: state.memory != null),
-                  child: Text(
-                    state.memory == null
-                        ? l.commonRetry
-                        : l.assistantMemoryReviewLatest,
-                  ),
-                ),
-              const SizedBox(height: 12),
-              AppButton.primary(
-                onPressed: state.canSave ? _cubit.save : null,
+      builder: (context, state) => SingleChildScrollView(
+        padding: AppPageInsets.of(
+          context,
+          width: MediaQuery.sizeOf(context).width,
+          kind: AppPageKind.form,
+          endGap:
+              AppLayout.scrollEndGap + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (state.loading && state.memory == null)
+              Semantics(
+                label: l.commonLoading,
+                child: const Center(child: NovaLoadingIndicator(size: 20)),
+              ),
+            if (state.memory != null)
+              AppTextFormField(
+                key: const ValueKey('assistant-memory-edit-field'),
+                controller: _text,
+                minLines: 3,
+                maxLines: 8,
+                maxLength: 20000,
+                onChanged: _cubit.changeDraft,
+                label: l.assistantMemoryEditText,
+              ),
+            if (state.latestContent != null) ...[
+              Text(
+                l.assistantMemoryLatest,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              SelectableText(state.latestContent!),
+            ],
+            if (state.failure != null)
+              Semantics(
+                liveRegion: true,
                 child: Text(
-                  state.saving
-                      ? l.commonLoading
-                      : state.latestContent != null
-                      ? l.assistantMemorySaveChanges
-                      : l.commonSave,
+                  switch (state.failure!) {
+                    MemoryEditFailure.conflict => l.assistantMemoryEditConflict,
+                    MemoryEditFailure.denied => l.assistantMemoryEditDenied,
+                    MemoryEditFailure.missing => l.assistantMemoryEditMissing,
+                    MemoryEditFailure.failed =>
+                      l.assistantPersonalSettingsError,
+                  },
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
+            if (state.auditWarning)
+              Semantics(
+                liveRegion: true,
+                child: Text(l.assistantMemoryEditAuditWarning),
+              ),
+            if (state.failure != null && !state.saving)
+              AppButton.ghost(
+                onPressed: state.loading
+                    ? null
+                    : () => _cubit.load(reviewLatest: state.memory != null),
+                child: Text(
+                  state.memory == null
+                      ? l.commonRetry
+                      : l.assistantMemoryReviewLatest,
+                ),
+              ),
+            const SizedBox(height: 12),
+            AssistantSettingsAction(
+              isScopeCurrent: () => _cubit.admitted,
+              loading: state.saving,
+              onPressed: state.canSave ? _cubit.save : null,
+              label: state.saving
+                  ? l.commonLoading
+                  : state.latestContent != null
+                  ? l.assistantMemorySaveChanges
+                  : l.commonSave,
+            ),
+            if (!assistantSettingsUsesDock(context))
               AppButton.ghost(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(state.saved ? l.commonDone : l.commonCancel),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );

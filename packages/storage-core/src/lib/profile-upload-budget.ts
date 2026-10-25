@@ -1,6 +1,10 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { ProfileUploadError } from './profile-upload-error';
+import {
+  PROFILE_MEDIA_MAX_BYTES,
+  type ProfileMediaKind,
+} from './profile-upload-limits';
 
 import {
   reserveSecurityBudget,
@@ -8,12 +12,10 @@ import {
 } from './security-budget';
 
 export { ProfileUploadError } from './profile-upload-error';
-
-export type ProfileMediaKind = 'avatar' | 'banner';
-export const PROFILE_MEDIA_MAX_BYTES = {
-  avatar: 2 * 1024 ** 2,
-  banner: 5 * 1024 ** 2,
-} as const;
+export {
+  PROFILE_MEDIA_MAX_BYTES,
+  type ProfileMediaKind,
+} from './profile-upload-limits';
 
 /** Charge the source upload ceiling, never an untrusted client byte count. Tickets count even if unused. */
 export async function reserveProfileUploadBudget(

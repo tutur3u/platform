@@ -94,3 +94,18 @@ it('activates native SDK search results and ignores malformed entries', () => {
     ])
   ).toEqual(['create_event']);
 });
+
+it('discovers mail read and draft tools from English and Vietnamese intents', () => {
+  const english = searchMiraTools({ query: 'reply to my unread email' });
+  expect(english.selectedTools).toEqual(
+    expect.arrayContaining(['list_recent_emails', 'draft_email_reply'])
+  );
+  expect(
+    english.guidance.find(({ domain }) => domain === 'mail')?.guidance
+  ).toMatch(/untrusted/);
+  const vietnamese = searchMiraTools({ query: 'trả lời thư trong hộp thư' });
+  expect(vietnamese.guidance.some(({ domain }) => domain === 'mail')).toBe(
+    true
+  );
+  expect(vietnamese.selectedTools).toContain('draft_email_reply');
+});

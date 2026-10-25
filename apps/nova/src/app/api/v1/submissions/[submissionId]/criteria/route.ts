@@ -1,6 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { getNovaCriterionChallengeId } from '@/lib/challenge-management-auth';
+import { requireNovaSubmissionManager } from '@/lib/submission-access';
 
 interface Params {
   params: Promise<{
@@ -87,30 +89,46 @@ export async function PUT(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
+    // Grades feed scores and leaderboards, so only challenge managers write them.
+    const { response, submission } = await requireNovaSubmissionManager(
+      user,
+      submissionId,
+      sbAdmin
+    );
+
+    if (response) return response;
+
     const body = await request.json();
     const { criteriaId, score, feedback } = body;
 
-    if (!criteriaId || typeof score !== 'number' || !feedback) {
+    if (
+      typeof criteriaId !== 'string' ||
+      !criteriaId ||
+      typeof score !== 'number' ||
+      typeof feedback !== 'string' ||
+      !feedback
+    ) {
       return NextResponse.json(
         { message: 'Invalid request body' },
         { status: 400 }
       );
     }
 
-    // Check if submission belongs to user
-    const { error: submissionError } = await sbAdmin
-      .schema('private')
-      .from('nova_submissions')
-      .select('*')
-      .eq('id', submissionId)
-      .eq('user_id', user.id)
-      .single();
+    const { challengeId: criterionChallengeId, error: criterionError } =
+      await getNovaCriterionChallengeId(criteriaId, sbAdmin);
 
-    if (submissionError) {
-      console.error('Database Error:', submissionError);
+    if (criterionError) {
+      console.error('Database Error:', criterionError);
       return NextResponse.json(
-        { message: 'Error fetching submission' },
+        { message: 'Error fetching criterion' },
         { status: 500 }
+      );
+    }
+
+    if (criterionChallengeId !== submission.challengeId) {
+      return NextResponse.json(
+        { message: 'Criterion does not belong to the submission challenge' },
+        { status: 400 }
       );
     }
 
@@ -118,7 +136,7 @@ export async function PUT(request: Request, { params }: Params) {
       .schema('private')
       .from('nova_submission_criteria')
       .upsert({
-        submission_id: submissionId,
+        submission_id: submission.id,
         criteria_id: criteriaId,
         score: score,
         feedback: feedback,
@@ -149,19 +167,28 @@ export async function DELETE(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const criteriaId = searchParams.get('criteriaId');
 
-  const supabase = await createAdminClient({ noCookie: true });
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   try {
-    let query = supabase
+    const { response, submission } = await requireNovaSubmissionManager(
+      user,
+      submissionId,
+      sbAdmin
+    );
+
+    if (response) return response;
+
+    let query = sbAdmin
       .schema('private')
       .from('nova_submission_criteria')
       .delete()
-      .eq('submission_id', submissionId);
+      .eq('submission_id', submission.id);
 
     if (criteriaId) {
       query = query.eq('criteria_id', criteriaId);

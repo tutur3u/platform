@@ -10,15 +10,14 @@ Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and
 format writes are intentional. Existing Biome CI/editor/generator ownership remains
 until a workspace records rule coverage, formatting deltas and compensating
 validators. Do not run global formatters or the root-wide Vite+ migrator for a
-single workspace. Run `node --test scripts/oxc.test.js` to exercise file scope,
-symlink rejection, dialog linting and read-only formatting behavior.
+single workspace. `scripts/oxc.test.js` covers file scope, symlinks and read-only formatting.
+Colab's local Worker preview uses `vite.worker.config.ts`; keep its existing
+configuration/persistence, disable remote bindings and require the CI preview runtime check.
+Publication remains separate.
 
-Gradual Cloudflare adoption preserves request/session, API, storage, consent and
-localization contracts. Domain modules and portable React components use injected
-adapters rather than framework/runtime globals. Keep framework imports in explicit
-adapter entrypoints and protect portability with import-boundary regressions.
-Vite+ tooling does not convert Next.js routes/actions; paused TanStack Start remains
-paused. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
+Preserve session, API, storage, consent and localization contracts. Portable domain/UI
+modules use injected adapters; keep framework imports in explicit entrypoints
+Enforce import boundaries; Vite+ does not convert routes/actions or resume paused runtimes. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
 for parity and Worker acceptance gates; builds stay in exact-commit CI.
 
 ## cf CLI migration boundaries
@@ -47,9 +46,9 @@ the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
 allocate one temporary persistence directory per run, retain it across restarts,
 and remove it on failure/close; never reuse the app developer state directory.
 
-Settings preflight tokens need Workers Scripts read coverage on the pinned account,
-plus Zone and Workers Routes read coverage on every target-account zone; narrower
-visibility can hide unexpected routes. Keep the bounded fail-closed checks and see
+Coordination's before/after token gates consume the verified snapshot's `secrets`
+array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
+pinned account and Zone/Workers Routes read on every zone; narrow visibility hides routes. Keep the bounded fail-closed checks and see
 the parity runbook's permission table. The usage inventory scans tracked executable
 files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
 
@@ -67,10 +66,10 @@ planning. Follow the phased plan in the adoption guidance above and recheck
 
 Execute the pinned cf CLI with a Node version satisfying its package engines
 (`cf@1.0.0-beta.20`: `^22.23 || ^24.22 || ^26.12`); Bun cannot run typed-config commands.
-The older discovery minimum does not suffice. Native service `dev` and `type-check`
-scripts select typed config and `.cloudflare/types/index.d.ts`; legacy
-`types --config <emitted-config>` consumers need declaration/config parity first. Discover exact-version help/schema from private scratch outside app config/.env ancestry.
-Use anonymous operation-only queries. Require `cf auth whoami` JSON
+The older discovery minimum does not suffice. Native scripts use typed config and `.cloudflare/types/index.d.ts`.
+Calendar's `calendar-cf-types.mjs` emits ASSETS-only template declarations after cf/artifact checks; keep fixtures/restores under Calendar for isolated dependency lookup and read verified descriptors rather than checked paths.
+Retain the CI oracle until pinned-executor qualification passes.
+Use anonymous operation-only queries outside config/env ancestry. Discover help/schema; require `cf auth whoami` JSON
 `authenticated === true`; unauthenticated results can exit zero. cf credentials
 are separate: stop when access is absent; never copy tokens or login files.
 Account selection may write project cache; verify identity and resulting files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).

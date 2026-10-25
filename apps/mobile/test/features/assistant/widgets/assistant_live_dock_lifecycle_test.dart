@@ -9,6 +9,7 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
 void main() {
@@ -139,7 +140,7 @@ void main() {
       expect(tester.getSize(material).width, originalWidth);
       expect(tester.element(material), same(element));
       expect(tester.state(find.byType(PersistentShellDock)), same(state));
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(ShellDockSurface), findsOneWidget);
       expect(find.byType(AppIconButton), findsNothing);
       expect(tester.takeException(), isNull);
     });

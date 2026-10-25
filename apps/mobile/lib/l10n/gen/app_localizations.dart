@@ -3385,6 +3385,90 @@ abstract class AppLocalizations {
   /// **'CMS'**
   String get cmsTitleApp;
 
+  /// No description provided for @cmsPipelineEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing pipeline'**
+  String get cmsPipelineEyebrow;
+
+  /// No description provided for @cmsPublishedOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{published} of {total} published'**
+  String cmsPublishedOfTotal(int published, int total);
+
+  /// No description provided for @cmsPipelineSupporting.
+  ///
+  /// In en, this message translates to:
+  /// **'{drafts} in draft · {scheduled} scheduled'**
+  String cmsPipelineSupporting(int drafts, int scheduled);
+
+  /// No description provided for @cmsEntryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 entry} other{{count} entries}}'**
+  String cmsEntryCount(int count);
+
+  /// No description provided for @cmsCollectionDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get cmsCollectionDisabled;
+
+  /// No description provided for @cmsCollectionsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing by collection'**
+  String get cmsCollectionsProgress;
+
+  /// No description provided for @cmsNoCollectionsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections group one kind of content, such as articles or events. Create one to start writing entries.'**
+  String get cmsNoCollectionsMessage;
+
+  /// No description provided for @cmsNoEntriesMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries match these filters.'**
+  String get cmsNoEntriesMatch;
+
+  /// No description provided for @cmsNoEntriesMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another status or collection, or clear the search.'**
+  String get cmsNoEntriesMatchMessage;
+
+  /// No description provided for @cmsFilterByCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by collection'**
+  String get cmsFilterByCollection;
+
+  /// No description provided for @cmsDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get cmsDetailsSection;
+
+  /// No description provided for @cmsPublishingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing'**
+  String get cmsPublishingSection;
+
+  /// No description provided for @cmsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load content'**
+  String get cmsLoadFailed;
+
+  /// No description provided for @cmsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh. Showing the last loaded content.'**
+  String get cmsRefreshFailed;
+
   /// No description provided for @commonActive.
   ///
   /// In en, this message translates to:
@@ -4236,6 +4320,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today at a glance'**
   String get dashboardTodayTitle;
+
+  /// No description provided for @dashboardUntitledEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled event'**
+  String get dashboardUntitledEvent;
 
   /// No description provided for @dashboardUpcomingEvents.
   ///
@@ -7585,6 +7675,42 @@ abstract class AppLocalizations {
   /// **'Customize Home'**
   String get homeCustomize;
 
+  /// No description provided for @homeGreetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGreetingAfternoon;
+
+  /// No description provided for @homeGreetingAfternoonNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String homeGreetingAfternoonNamed(String name);
+
+  /// No description provided for @homeGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGreetingEvening;
+
+  /// No description provided for @homeGreetingEveningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String homeGreetingEveningNamed(String name);
+
+  /// No description provided for @homeGreetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGreetingMorning;
+
+  /// No description provided for @homeGreetingMorningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String homeGreetingMorningNamed(String name);
+
   /// No description provided for @homeHiddenWidgets.
   ///
   /// In en, this message translates to:
@@ -7608,6 +7734,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Personal calendar is unavailable.'**
   String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @homeSectionLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to try again.'**
+  String get homeSectionLoadFailed;
 
   /// No description provided for @homeShowWidget.
   ///
@@ -11610,6 +11742,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Decline'**
   String get notificationsDeclineInvite;
+
+  /// No description provided for @notificationsGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get notificationsGroupEarlier;
+
+  /// No description provided for @notificationsGroupLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get notificationsGroupLastWeek;
+
+  /// No description provided for @notificationsGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsGroupToday;
+
+  /// No description provided for @notificationsGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsGroupYesterday;
 
   /// No description provided for @notificationsHoursAgo.
   ///
@@ -20557,12 +20713,6 @@ abstract class AppLocalizations {
   /// **'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.'**
   String get assistantSettingsSelectionUnconfirmed;
 
-  /// No description provided for @assistantExpandPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Expand prompt'**
-  String get assistantExpandPrompt;
-
   /// No description provided for @assistantSettingInfo.
   ///
   /// In en, this message translates to:
@@ -20994,6 +21144,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submitted successfully'**
   String get assistantSubmitSuccess;
+
+  /// No description provided for @offlineDownloadsPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads paused. Saved data is still available. We will retry in the background.'**
+  String get offlineDownloadsPaused;
+
+  /// No description provided for @offlineDownloadsRetryLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads are still unavailable. Try again later; saved data is still available.'**
+  String get offlineDownloadsRetryLimit;
+
+  /// No description provided for @mailSettingsReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved settings are read-only until access can be verified.'**
+  String get mailSettingsReadOnly;
+
+  /// No description provided for @calendarSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save calendar preferences. Retry when online.'**
+  String get calendarSettingsError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -162,12 +162,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     await _liveCubit.disconnect();
     await _localCubit.invalidate();
     if (!mounted || scope != _localScope()) return;
-    await pushScopedSettingsPage(
-      context,
-      asSheet: true,
-      builder: (_, isCurrent) =>
-          AssistantSettingsHub(workspaceId: wsId, isScopeCurrent: isCurrent),
-    );
+    await context.push(Routes.settingsAppPath('assistant'));
     if (!mounted || scope != _localScope()) return;
     await refreshAssistantSettings(
       refreshSoul: _shellCubit.refreshSoul,
