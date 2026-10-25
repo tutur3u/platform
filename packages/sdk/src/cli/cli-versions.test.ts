@@ -1,12 +1,14 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  cp,
   mkdir,
   mkdtemp,
   readdir,
   readFile,
   readlink,
   realpath,
+  rename,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -169,10 +171,22 @@ describe('side-by-side CLI releases', { timeout: 60_000 }, () => {
     const store = await temporary();
     const v1 = await release('9.9.1');
     const { path } = await install(store, [v1], '9.9.1');
-    await writeFile(
-      join(path, 'node_modules', 'tuturuuu', 'dist', 'cli', 'index.js'),
-      'evil()'
+    const entry = join(
+      path,
+      'node_modules',
+      'tuturuuu',
+      'dist',
+      'cli',
+      'index.js'
     );
+    // Bun may link the package directory to its shared tarball cache.
+    // Materialize a private copy before deliberately corrupting this install.
+    const pkg = join(path, 'node_modules', 'tuturuuu');
+    const replacement = join(path, 'tampered-package');
+    await cp(await realpath(pkg), replacement, { recursive: true });
+    await rm(pkg, { recursive: true, force: true });
+    await rename(replacement, pkg);
+    await writeFile(entry, 'evil()');
     await expect(verifyInstalled(path)).rejects.toThrow(/no longer matches/u);
     expect((await listReleases(store))[0]).toMatchObject({
       version: '9.9.1',
@@ -181,6 +195,10 @@ describe('side-by-side CLI releases', { timeout: 60_000 }, () => {
     await expect(install(store, [v1], '9.9.1')).rejects.toThrow(
       /exists but does not verify/u
     );
+    const fresh = await install(await temporary(), [v1], '9.9.1');
+    expect(await verifyInstalled(fresh.path)).toMatchObject({
+      version: '9.9.1',
+    });
   });
 
   it('activates through the target release setup, swaps current and launchers, and rolls back', async () => {
