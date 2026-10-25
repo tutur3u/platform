@@ -1,0 +1,106 @@
+---
+title: "Nova and Inventory Start bridge qualification"
+description: "App-specific action boundaries, route registries and offline parity required before native cutover."
+---
+
+Nova and Inventory use the shared
+[Start bridge](/build/devops/start-bridge) for request context, Next adapters,
+function guards, route dispatch, cookies and base paths. App code must not copy
+those implementations. The app ports are preparatory source: Worker entries,
+registries and native functions do not by themselves establish working page SSR,
+an admitted Vite build, staging acceptance or production cutover. Retained Next
+clients keep their current imports until the page adapter and native build are
+qualified together.
+
+## Route registration
+
+Both apps declare `start-bridge.routes.json`. Regenerate and check from the root:
+
+```sh
+bun packages/start-bridge/src/codegen/cli.ts generate apps/nova apps/inventory
+bun packages/start-bridge/src/codegen/cli.ts check apps/nova apps/inventory
+```
+
+Registries live under each app's `src/start-bridge/`. Nova includes both OG
+`route.tsx` handlers, not only its `route.ts` files. The native build must provide
+and accept their image renderer; do not remove them to satisfy the registry.
+Changes to public assets must also refresh `public-assets.bridge.gen.ts` before
+sealing. Generated manifests prove source coverage, not page or API behavior.
+
+The Worker entries use app-owned handler configuration over `createBridgeHandler`.
+Inventory preserves its matcher that excludes `_next` and dotted asset paths.
+Its existing proxy retains public storefront/webhook exceptions, workspace
+session requirements and inventory-specific rate limits. Each handler resolves
+the root or apex mount per request, and Inventory keeps Web-owned paths ahead of
+local endpoints. Server functions compile at `/_serverFn`; the shared fetch helper
+and Worker apply the resolved mount. Cookies remain unchanged and shared, as
+defined by the owning bridge/auth contract.
+
+## Nova server actions
+
+`src/start-bridge/actions.ts` contains explicit native functions with Zod tuple
+validators. Server implementations load only through `actions.server.ts`, and
+original client call signatures remain available. Do not expose an arbitrary
+module/export dispatcher or move admin-client imports into a client entry.
+
+| Native export | Method | Required supplier behavior |
+| --- | --- | --- |
+| `addWhitelistEmail` | POST | Enabled global role manager; permission is checked before insert. |
+| `fetchAdmins` | GET | Authenticated actor with an enabled management role. |
+| `fetchSessionDetails` | GET | Session belongs to the request actor and requested challenge. |
+| `fetchAllProblems` | GET | Own challenge session, or an enabled manager of that challenge for another user or a sessionless read. |
+| `getFullSubmission` | GET | Bound session owner or challenge manager; hidden cases require that manager. |
+| `sendOtpAction`, `verifyOtpAction` | POST | Existing central-auth-only rejection; no local OTP flow. |
+
+The shared function proxy refreshes/guards transport; it does not replace these
+domain checks. Layout authorization is also insufficient for a direct callable.
+The action-security tests cover the original suppliers, the contract tests cover
+malformed payloads, and the adapter tests preserve arguments/results and errors.
+Transport-builder mocks do not prove emitted RPC or browser execution.
+
+## Inventory offline behavior
+
+The workspace function loads the existing satellite workspace supplier with the
+current request's forwarded auth. The offline mutation route remains the existing
+thin adapter to `@tuturuuu/inventory-core/offline-create-route`.
+
+Inventory deliberately has no browser service worker. Preserve its
+`OfflineProvider register={false}` and missing-worker regression. The shared
+offline package's default root-scoped registration must not become active as a
+side effect of moving layouts. Do not invent a worker route, register a root
+worker on the apex, or clear another app's registrations to pass acceptance.
+
+`offline-handler.test.ts` exercises the real route adapter through the shared
+Worker handler at root and `/inventory`: original operation/workspace forwarding,
+201/200 receipt status, contract header, terminal 503, missing worker and method
+denial. Proxy and domain boundaries use fixtures. Retain the inventory-core
+permission/replay tests, offline/stale checkout denial and actor/workspace-scoped
+season-merge recovery tests. See
+[Inventory browser offline behavior](/platform/applications/inventory#browser-offline-behavior).
+
+## Qualification and cutover
+
+Run unit/types on Sonha and heavy build/runtime/browser work on Thanh through
+the shared resource queue. Frozen installs can make workspace bin files
+executable; require a clean source check and reconcile such a mode change with
+the owning package rather than silently accepting a different source tree.
+
+When transferring built workspace dependencies between runners, bind them to
+the exact source and lockfile, verify the archive hash and allowlist its paths
+before extraction. On macOS, create these archives with `COPYFILE_DISABLE=1`
+so AppleDouble metadata does not add siblings outside the declared `dist`
+directories. Regenerate a rejected archive; keep the extraction whitelist intact.
+
+For each exact candidate head require applicable lint/types/unit checks, real
+`vp build`, source-bound sealed output, emitted Worker acceptance and browser
+acceptance at root and the app mount. Exercise anonymous/signed/wrong-app sessions,
+refresh and logout, native RPC, central forwarding and private/public route
+boundaries. Inventory additionally verifies that no service-worker registration
+is attempted, checkout is blocked offline, and unresolved recovery retains the
+same operation identity after reload. Nova verifies both OG image responses and
+manager/participant/foreign-user action controls.
+
+An M4 storage refusal moves `check:changed` to a verified Thanh bundle; it does
+not authorize a disk override. Independent security review and an explicit
+cutover PR remain required. No migrations or production publication are part of
+the preparatory ports.

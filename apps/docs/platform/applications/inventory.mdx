@@ -45,6 +45,26 @@ also works when IntersectionObserver is unavailable. Regression evidence lives
 in `sale-picker-pagination.test.tsx` and `season-sale-integration.test.tsx`;
 these mounted tests do not establish live browser/provider success.
 
+## Browser offline behavior
+
+Inventory web keeps service-worker registration disabled. Its layout explicitly
+uses `OfflineProvider register={false}` because Inventory has no worker source or
+`/serwist/sw.js` route. Moving its routes onto the shared Start bridge does not
+enable a worker or add precaching. Mobile offline storage is a separate surface.
+
+The existing `inventory-offline-create-v1` mutation endpoint retains its contract
+header, stable operation identity, current actor/workspace permissions on every
+retry, HTTP 201 for a first commit and HTTP 200 for a receipt replay. Missing
+contract support returns its existing error; the bridge must not retry with a
+legacy create request. Offline or stale checkout stays blocked, and season-merge
+recovery retains its actor/workspace-scoped original request across reloads.
+
+The bridge route-port regression is `src/start-bridge/offline-handler.test.ts`;
+its domain and proxy boundaries use fixtures. The shared inventory-core offline
+tests, `season-sale-prices.test.tsx`, `use-season-merge-recovery.test.tsx` and the
+missing-worker registration regression remain required. These tests do not
+substitute for an emitted Worker and browser offline acceptance.
+
 ## Native Inventory presentation
 
 The Flutter mini-app keeps Overview, Products, Sales, Manage and Storefront

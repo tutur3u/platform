@@ -1,6 +1,12 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
+import {
+  canManageNovaChallenge,
+  getNovaProblemChallengeId,
+} from '@/lib/challenge-management-auth';
+import { canViewNovaSubmission } from '@/lib/submission-access';
 
 export const getFullSubmission = async (
   submissionId: string,
@@ -8,7 +14,29 @@ export const getFullSubmission = async (
 ) => {
   if (!submissionId) return;
 
-  const sbAdmin = await createAdminClient();
+  const user = await requireNovaAppSessionUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: submission, error: submissionError } = await sbAdmin
+    .schema('private')
+    .from('nova_submissions')
+    .select('problem_id, session_id, user_id')
+    .eq('id', submissionId)
+    .maybeSingle();
+  if (submissionError || !submission?.problem_id || !submission.user_id) {
+    throw new Error('Submission not found');
+  }
+  const { challengeId, error: challengeError } =
+    await getNovaProblemChallengeId(submission.problem_id, sbAdmin);
+  if (challengeError || !challengeId) throw new Error('Submission not found');
+  const allowed = includeHiddenTestCases
+    ? await canManageNovaChallenge(user, challengeId, sbAdmin)
+    : await canViewNovaSubmission(
+        user,
+        { sessionId: submission.session_id, userId: submission.user_id },
+        challengeId,
+        sbAdmin
+      );
+  if (!allowed) throw new Error('Forbidden');
 
   let query = sbAdmin
     .schema('private')

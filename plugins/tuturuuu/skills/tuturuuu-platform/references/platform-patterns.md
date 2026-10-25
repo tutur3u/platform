@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Native satellite candidates consume `@tuturuuu/start-bridge`; keep shared
+  request/Next adapters there and app-specific action authorization in suppliers.
+  A function proxy or protected layout does not authorize a direct callable.
+  Preserve explicitly disabled service-worker registration during layout moves.
+  Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
+  for route/action mapping, offline parity and separate emitted-runtime gates.
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.

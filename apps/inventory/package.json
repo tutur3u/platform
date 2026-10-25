@@ -33,6 +33,8 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.102",
     "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-router": "1.170.45",
+    "@tanstack/react-start": "1.169.3",
     "@tanstack/react-table": "^9.3.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
@@ -44,6 +46,7 @@
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",
@@ -77,6 +80,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.31",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
   }
 }
