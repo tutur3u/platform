@@ -26,10 +26,12 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
   }
 
   /// End Call, any disconnect, and close: a new intent that retires pending
-  /// and in-flight reconnects and refuses new ones until a user start.
+  /// and in-flight reconnects, including a socket connect still waiting on
+  /// the previous channel's close, and refuses new ones until a user start.
   int _endIntent() {
     _reconnectClosed = true;
     _cancelReconnect();
+    _socket.retirePendingConnect();
     return ++_intentEpoch;
   }
 
@@ -37,6 +39,7 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
   /// can supersede it, even before it takes a request version.
   int _startIntent() {
     _cancelReconnect();
+    _socket.retirePendingConnect();
     _reconnectClosed = false;
     _reconnectAttempts = 0;
     return ++_intentEpoch;
