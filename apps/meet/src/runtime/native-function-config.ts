@@ -1,1 +1,1 @@
-export const MEET_FUNCTION_BASE = '/_meet/functions';
+export const MEET_FUNCTION_BASE = '/_fn';

@@ -64,6 +64,8 @@ export function meetStagingConfig() {
         ],
       },
       vars: {
+        APP_ORIGIN: 'https://staging.tuturuuu.com',
+        APP_BASE_PATH: '/meet',
         NEXT_PUBLIC_APP_URL: `https://tuturuuu-meet-wave1-staging.${subdomain}.workers.dev`,
         NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tuturuuu.com',
         MEET_REALTIME_URL: `wss://tuturuuu-meet-realtime-wave1-staging.${subdomain}.workers.dev/realtime`,

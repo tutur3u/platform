@@ -2,7 +2,7 @@ import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/meet/planId/page';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { BASE_URL } from '@/constants/common';
+import { currentMeetBaseUrl } from '@/runtime/bridge-runtime';
 
 interface PlanPageProps {
   params: Promise<{
@@ -19,7 +19,7 @@ async function PlanPageContent({ params }: PlanPageProps) {
     <MeetTogetherPlanDetailsPage
       actorUserId={user?.id ?? null}
       params={params}
-      baseUrl={BASE_URL}
+      baseUrl={currentMeetBaseUrl()}
     />
   );
 }

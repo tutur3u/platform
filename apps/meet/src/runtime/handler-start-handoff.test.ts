@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const ports = vi.hoisted(() => ({
   start: vi.fn<(request: Request) => Promise<Response>>(),
   proxy: vi.fn(),
-  endpoint: vi.fn(async () => undefined),
+  endpoint: vi.fn(async (_request: Request) => undefined),
   native: vi.fn(() => {
     throw Error('Unexpected native proxy');
   }),
@@ -13,11 +13,15 @@ const ports = vi.hoisted(() => ({
     throw Error('Unexpected external API destination');
   }),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: ports.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: ports.start }),
 }));
 vi.mock('../proxy', () => ({ proxy: ports.proxy }));
-vi.mock('./api-registry', () => ({ dispatchMeetEndpoint: ports.endpoint }));
+vi.mock('./api-registry', () => ({ meetEndpoints: [] }));
+vi.mock('@tuturuuu/start-bridge/endpoints', () => ({
+  dispatchEndpoint: (_endpoints: unknown, request: Request) =>
+    ports.endpoint(request),
+}));
 vi.mock('./native-function-proxy', () => ({
   nativeFunctionProxy: ports.native,
 }));
@@ -291,4 +295,31 @@ it('R21 late asynchronous navigation keeps inherited ALS wiring after terminal r
   expect(records(sink.mock.calls).at(-1)?.loginRedirect?.navigationCalls).toBe(
     'one'
   );
+});
+
+it('uses the resolved mounted base without claiming adjacent or root Web API paths', async () => {
+  const { runtimeAppBase } = await import('@tuturuuu/start-bridge/app-url');
+  ports.start.mockImplementation(async (request) =>
+    Response.json({ url: request.url, appBase: runtimeAppBase() })
+  );
+  const env = { APP_ORIGIN: 'https://tuturuuu.com', APP_BASE_PATH: '/meet' };
+  const result = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/vi/r/code?tag=one&tag=two'),
+    env,
+    ctx
+  );
+  expect(await result.json()).toEqual({
+    url: 'https://tuturuuu.com/meet/vi/r/code?tag=one&tag=two',
+    appBase: '/meet',
+  });
+  const count = ports.start.mock.calls.length;
+  for (const path of ['/api/meet-call/one', '/meet-together', '/meeting']) {
+    const denied = await handleMeetRequest(
+      new Request(`https://tuturuuu.com${path}`),
+      env,
+      ctx
+    );
+    expect(denied.status).toBe(404);
+  }
+  expect(ports.start).toHaveBeenCalledTimes(count);
 });

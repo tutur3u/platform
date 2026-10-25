@@ -21,6 +21,7 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
+  experimental: bridge.experimental,
   plugins: [
     voidPlugin(),
     tanstackStart({

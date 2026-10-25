@@ -1,9 +1,11 @@
 'use client';
+
 import {
   controlMeetLive,
   type MeetLiveVoice,
   reviewMeetLiveTool,
 } from '@tuturuuu/internal-api';
+import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MIRA_VOLUME_ID,
@@ -128,7 +130,10 @@ export function useLiveAssistant(
   const connect = async (token: string) => {
     const current = active.current;
     if (!current || current.stopped) return;
-    const url = new URL('/live-connect', window.location.origin);
+    const url = new URL(
+      meetingAppPath('/live-connect'),
+      window.location.origin
+    );
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(url, ['meet-live', `auth.${token}`]);
     current.socket = socket;

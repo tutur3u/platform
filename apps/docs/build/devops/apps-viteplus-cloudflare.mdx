@@ -212,6 +212,21 @@ Public room previews keep both localized and unlocalized routes.
 
 This adoption preserves the subdomain baseline. A root-mode bridge build is not
 acceptance of one artifact serving both the subdomain and the `/meet` mount.
-Cookie names/paths, assets, function transports, API ownership, bilingual browser
+Shared-session security, assets, function transports, API ownership, bilingual browser
 hydration and hosted SFU/TURN still require their own exact-artifact checks.
 Keep the production publication hold and use the dedicated cutover procedure.
+
+
+Meet's mounting candidate resolves its host/base per request and hands that base
+to the client before hydration. Its own API, function, asset and Vietnamese paths
+are under `/meet`; Web's central `/api` stays at the apex. Shared Meet libraries
+receive URL functions from the app adapter, and the public `internal-api` client
+keeps an identity default rather than importing the private bridge package.
+Explicit API destinations remain authoritative.
+
+The staging candidate rejects canonical hosts and returns noindex headers.
+Cookies pass through unchanged under the user's shared-session decision. The
+bridge doc's mounted-auth and shared logout proposal must be implemented by the
+auth owner and independently reviewed before any cutover. The temporary
+`vp build --configLoader runner` command does not waive real build or artifact
+acceptance.

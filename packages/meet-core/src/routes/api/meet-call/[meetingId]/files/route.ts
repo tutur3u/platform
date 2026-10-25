@@ -5,6 +5,7 @@ import {
   personalWorkspace,
   roomRoute,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
+import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
 import {
   createWorkspaceStorageSignedReadUrl,
   deleteWorkspaceStorageObjectByPath,
@@ -101,7 +102,9 @@ export async function GET(request: Request, { params }: Params) {
       storageWsId: undefined,
       // Authorize again and mint a fresh signed URL when opened, including after
       // a long call. No polling or changing a playing video's source is needed.
-      url: `/api/meet-call/${encodeURIComponent(meetingId)}/files?id=${encodeURIComponent(id!)}&download=1`,
+      url: meetingAppPath(
+        `/api/meet-call/${encodeURIComponent(meetingId)}/files?id=${encodeURIComponent(id!)}&download=1`
+      ),
     };
   });
 }

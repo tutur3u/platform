@@ -27,7 +27,8 @@ snapshot before rendering. Page models contain only the fields needed by the
 browser. Existing React call, chat, media, recording, calendar, and plan controls
 continue using their owning shared implementations.
 
-The exact `/_meet/functions` prefix handles native functions. Requests retain
+Native functions compile at `/_fn` and the shared transport serves them at
+`/meet/_fn` on the mounted host. Requests retain
 session refresh and API abuse guards. Start enforces CSRF checks, and POST
 requires JSON. Nine legacy plan mutations use native POST transports with strict
 argument tuples and server-only canonical suppliers. Guest login and credential
@@ -55,7 +56,7 @@ The generated page pattern union requires an explicit model dispatch kind in
 `src/runtime/page-routing.ts`. Public room previews retain both localized and
 unlocalized aliases. CI rejects stale registries before the frontend build.
 Root/subdomain operation is the bridge-adoption baseline. Dual-host mounting,
-per-app cookie acceptance and hosted staging remain separate qualification gates;
+shared-session acceptance and hosted staging remain separate qualification gates;
 production publication stays held until the explicit cutover PR. Real transitional Next imports remain:
 `next/dist/server/web/spec-extension/{request,response}`, the compiled edge cookie
 classes, and `next/dist/shared/lib/router/utils/format-url`. Next types remain in
@@ -133,3 +134,29 @@ exact candidate, deploys it to the existing Worker, and verifies bilingual
 authentication, tenant denial, plans, rooms, and multi-participant media. A failed
 acceptance gate requires restoring the captured existing Worker version; retained
 source files alone are not a deployable rollback artifact.
+
+
+## Dual-host mounting candidate
+
+The same artifact selects `/` on the configured Meet host and `/meet` on
+`APP_ORIGIN` (default `https://tuturuuu.com`). `APP_BASE_PATH` is separate from
+that origin. Mounted documents use `/meet/vi`, `/meet/assets`, `/meet/_fn` and
+`/meet/api`; the apex root `/api` remains Web-owned. The bridge carries the
+resolved base through request-local SSR, the document head and function fetches.
+Live checks compare the `Origin` header with the document origin, never a URL
+containing `/meet`.
+
+Shared Meet frontend and API suppliers receive URL functions from the app
+adapter. `internal-api` keeps central paths unchanged and resolves only Meet's
+local API families through the adapter; explicit caller destinations win.
+Portable libraries do not depend on the private bridge or a framework runtime.
+
+The staging profile sets `TUTURUUU_NOINDEX=1`: documents receive a noindex header
+and canonical hosts are rejected. It declares no routes and does not publish a
+Worker. Per the user's shared-session decision, the bridge never renames or
+path-scopes cookies. Mounted auth and global logout still require the auth
+owner's implementation and independent security review before cutover.
+
+The temporary build command uses `vp build --configLoader runner`, as the shared
+bridge owner directs for the TypeScript config preset. Exact-artifact validation
+still uses the same seal, emitted-runtime and restore procedures.

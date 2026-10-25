@@ -4,6 +4,7 @@ import {
   personalWorkspace,
   roomRoute,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
+import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
 import {
   createWorkspaceStorageSignedReadUrl,
   createWorkspaceStorageUploadPayload,
@@ -126,7 +127,9 @@ export async function GET(request: Request, { params }: Params) {
     if (new URL(request.url).searchParams.get('download') === '1')
       return new Response(null, { status: 307, headers: { Location: url } });
     return {
-      url: `/api/meet-call/${encodeURIComponent(meetingId)}/recording?sessionId=${encodeURIComponent(sessionId)}&download=1`,
+      url: meetingAppPath(
+        `/api/meet-call/${encodeURIComponent(meetingId)}/recording?sessionId=${encodeURIComponent(sessionId)}&download=1`
+      ),
     };
   });
 }

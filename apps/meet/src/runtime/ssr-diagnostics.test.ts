@@ -25,15 +25,21 @@ const ports = vi.hoisted(() => ({
     return undefined;
   }),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: ports.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: ports.start }),
 }));
-vi.mock('./proxy-bridge', () => ({ dispatchThroughMeetProxy: ports.proxy }));
+vi.mock('@tuturuuu/start-bridge/proxy-bridge', () => ({
+  dispatchThroughProxy: ports.proxy,
+}));
 vi.mock('../proxy', () => ({ proxy: ports.unusedProxy }));
 vi.mock('./native-function-proxy', () => ({
   nativeFunctionProxy: ports.unusedNative,
 }));
-vi.mock('./api-registry', () => ({ dispatchMeetEndpoint: ports.endpoint }));
+vi.mock('./api-registry', () => ({ meetEndpoints: [] }));
+vi.mock('@tuturuuu/start-bridge/endpoints', () => ({
+  dispatchEndpoint: (_endpoints: unknown, request: Request) =>
+    ports.endpoint(request),
+}));
 vi.mock('@tuturuuu/utils/next-config', () => ({
   resolveTuturuuuWebAppUrl: ports.webOrigin,
 }));

@@ -26,6 +26,7 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
+import { appUrl } from '@tuturuuu/start-bridge/app-url';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getMeetTogetherPlansData } from '@tuturuuu/ui/legacy/meet/page';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -51,7 +52,10 @@ async function roomModel(code: string, locale: string, url: URL) {
   const t = await getTranslations('meet.call');
   const publicCopy = await getTranslations('meet.public');
   const info = await getMeetingPublicInfo(code);
-  const canonical = `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`;
+  const canonical = appUrl(
+    `${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`,
+    url.origin
+  );
   const meta: MeetPageMeta = {
     title: info?.title || publicCopy('meta_title'),
     description: info
@@ -259,7 +263,10 @@ async function loadResolvedPageModel(url: URL) {
           ? 'Họp với âm thanh rõ ràng, chép lời trực tiếp và ghi chú kết nối với Tuturuuu Tasks và Calendar.'
           : 'Meet with clear audio, live transcription, and meeting notes connected to Tuturuuu Tasks and Calendar.',
       indexable: false,
-      canonical: `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : ''}`,
+      canonical: appUrl(
+        `${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : '/'}`,
+        url.origin
+      ),
     } satisfies MeetPageMeta,
   };
   if (kind === 'login') {

@@ -1,5 +1,5 @@
 import { MeetPlanLiveRoot } from '@tuturuuu/ui/legacy/meet/planId/meet-plan-live-root';
-import { BASE_URL } from '../constants/common';
+import { currentMeetBaseUrl } from './bridge-runtime';
 import type { MeetPageModel } from './page-model.server';
 import { PublicLayout } from './public-layout';
 
@@ -14,7 +14,7 @@ export default function PlanLiveView({
       <div className="flex min-h-screen w-full flex-col items-center">
         <MeetPlanLiveRoot
           platformUser={model.profile}
-          baseUrl={BASE_URL}
+          baseUrl={currentMeetBaseUrl()}
           initialSnapshot={model.snapshot}
         />
       </div>
