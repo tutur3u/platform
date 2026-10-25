@@ -79,7 +79,7 @@ Future<void> send(WidgetTester tester, RepairHarness h, String text) async {
 }
 
 // A held first-message response can keep progress animations active. Observe
-// the actual scope transition and cancellation instead of global animation idle.
+// scope readiness directly while the HTTP response is deliberately held.
 Future<void> scopeReady(WidgetTester tester, RepairHarness h, String ws) async {
   for (var i = 0; i < 10; i++) {
     await tester.pump(const Duration(milliseconds: 100));

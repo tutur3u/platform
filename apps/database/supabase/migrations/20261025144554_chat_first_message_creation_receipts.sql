@@ -11,6 +11,8 @@ create table private.chat_creation_requests (
   created_at timestamptz not null default now(),
   unique (actor_user_id, ws_id, request_id)
 );
+-- Workspace erasure must not scan creation receipts from every workspace.
+create index chat_creation_requests_ws_id_idx on private.chat_creation_requests(ws_id);
 alter table private.chat_creation_requests enable row level security;
 alter table private.chat_creation_requests force row level security;
 revoke all on table private.chat_creation_requests from public, anon, authenticated, service_role;
