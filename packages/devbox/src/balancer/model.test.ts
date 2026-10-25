@@ -169,7 +169,7 @@ describe('balancer run state', () => {
 describe('balancer host eligibility', () => {
   const policy: BalancerHostPolicy = {
     id: 'linux',
-    hostname: 'sokora-ubuntu',
+    hostname: 'linux-builder',
     platform: 'linux',
     arch: 'x64',
     minDiskGiB: 50,
@@ -180,7 +180,7 @@ describe('balancer host eligibility', () => {
   ): BalancerHostTelemetry => ({
     deviceId: 'linux',
     receivedAt: new Date(now - 5_000).toISOString(),
-    hostname: 'sokora-ubuntu',
+    hostname: 'linux-builder',
     platform: 'linux',
     arch: 'x64',
     cpus: 20,
@@ -221,7 +221,7 @@ describe('balancer host eligibility', () => {
   it.each([
     ['identity mismatch', fresh({ hostname: 'other' })],
     ['low disk', fresh({ diskFreeGiB: 10 })],
-    // Sonha on 2026-10-25: 322 GiB free was only 4.3% of the volume.
+    // Observed on a studio host: 322 GiB free was only 4.3% of the volume.
     ['low disk percent', fresh({ diskFreeGiB: 322, diskFreePercent: 4.3 })],
     ['high load', fresh({ load1: 25 })],
     ['critical memory', fresh({ memoryPressure: 'critical' })],
