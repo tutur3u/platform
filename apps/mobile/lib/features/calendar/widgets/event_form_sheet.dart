@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
+import 'package:mobile/features/assistant/bridge/assistant_screen_context.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/widgets/google_calendar_color_picker.dart';
@@ -289,8 +291,58 @@ class _EventFormContentState extends State<_EventFormContent> {
     });
   }
 
+  // Lets Mira Live read this form when the user enabled Live while browsing.
+  AssistantScreenContextEntry _assistantContext(AppLocalizations l10n) {
+    String when(DateTime date, TimeOfDay time) => _isAllDay
+        ? DateFormat('yyyy-MM-dd').format(date)
+        : _combineDateAndTime(date, time).toIso8601String();
+    return AssistantScreenContextEntry(
+      entities: [
+        if (widget.event case final event?)
+          AssistantScreenEntity(type: 'calendar_event', id: event.id),
+      ],
+      formTitle: _isEditing ? 'edit_calendar_event' : 'new_calendar_event',
+      fields: [
+        AssistantFormFieldContext.text(
+          key: 'title',
+          label: l10n.calendarEventTitle,
+          controller: _titleController,
+        ),
+        AssistantFormFieldContext.text(
+          key: 'description',
+          label: l10n.calendarEventDescription,
+          controller: _descriptionController,
+        ),
+        AssistantFormFieldContext(
+          key: 'all_day',
+          label: l10n.calendarEventAllDay,
+          type: 'boolean',
+          value: () => '$_isAllDay',
+        ),
+        AssistantFormFieldContext(
+          key: 'start',
+          label: l10n.calendarEventStartDate,
+          type: 'datetime',
+          value: () => when(_startDate, _startTime),
+        ),
+        AssistantFormFieldContext(
+          key: 'end',
+          label: l10n.calendarEventEndDate,
+          type: 'datetime',
+          value: () => when(_endDate, _endTime),
+        ),
+      ],
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AssistantScreenContextScope(
+    entry: _assistantContext(context.l10n),
+    isCurrentScope: widget.isCurrentScope,
+    child: _buildSheet(context),
+  );
+
+  Widget _buildSheet(BuildContext context) {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat.yMMMd();
