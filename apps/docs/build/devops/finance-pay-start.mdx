@@ -1,12 +1,11 @@
 ---
 title: "Finance and Pay Start migration"
-description: "Inventory the Finance canary and Pay integration before adopting the shared Start bridge."
+description: "Inventory Finance and Pay before adopting the shared Start bridge and qualifying direct cutover."
 ---
 
 Finance and Pay retain their Next.js entrypoints during preparation. Their Start
-conversion consumes `@tuturuuu/start-bridge`; neither app owns a copy of its
-Next adapters, request context, proxy, server-function transport, or cohort
-selector. This page records the conversion requirements, not runtime acceptance.
+conversion consumes the [frozen Start bridge](/build/devops/start-bridge); neither app owns a copy of its
+Next adapters, request context, proxy, server-function transport. This page records the conversion requirements, not runtime acceptance.
 
 ## Refresh the source inventory
 
@@ -75,11 +74,17 @@ The bridge owns base-path normalization and cookie serialization. Preserve the
 external prefix on redirects, ordinary links, assets, action requests, and API
 calls while matching the internal route once.
 
-Use `tuturuuu_app_session_finance` and the corresponding app-specific refresh
-cookie. Cookies use `Path=/finance` under the prefix and `Path=/` on the
-subdomain. The shared bridge owns the 14-day legacy-cookie read window on
-subdomains. Do not accept the legacy cookie on the shared origin. Cookie paths
-prevent name collisions but do not establish an authorization boundary.
+Use the shared bridge's cookie translation and app-specific session/refresh
+names. The frozen v0 bridge derives `tuturuuu_app_session__finance` and
+`tuturuuu_app_session_refresh__finance` under a base. Verify the exact naming
+contract with the bridge owner before cutover; the original lane brief requested
+a single underscore before `finance`.
+
+Cookies use `Path=/finance` under the prefix. Root-mode behavior and legacy
+fallback follow the shared bridge contract and require separate subdomain
+acceptance. Subdomain-to-path cutover permits a one-time re-login, with no
+cross-host token handoff. Cookie paths prevent name collisions but do not
+establish an authorization boundary.
 
 Acceptance covers English and Vietnamese URLs, anonymous login, cross-app token
 verification, refresh and logout, MFA recovery, personal/internal workspace
@@ -93,30 +98,20 @@ does not prove that a hosted staging environment exists. Follow the
 [Apps artifact and runtime contract](/build/devops/apps-viteplus-cloudflare)
 for sealed original/restored artifact and browser acceptance.
 
-## Consume the shared canary decision
+## Prepare direct cutover and instant rollback
 
-The canary operator owns the ladder `staff -> 5% -> 25% -> 100%`. The build
-consumes the shared bridge's sticky cohort decision. Tag server observations
-and client error/TTFB measurements with the same cohort and source identity.
-The decision must come from the Worker; a caller-supplied cohort header must
-not select staff admission or override the configured percentage. Do not expose
-session tokens, user identities, or payment data in telemetry.
+Finance and Pay cut over directly after their gates pass. There is no cohort
+selector, staged percentage, minimum session count, or canary operator.
 
-Each step requires at least 200 sessions **and** at least four hours, with every
-gate green against the Vercel control. The operator automatically returns to
-0% if any threshold is breached:
+Before the flip, capture the current Vercel deployment, source identity, and
+routing configuration. Prepare and verify a single-step command that restores
+that deployment and routing. Record who owns that command and the regression
+signal that invokes it. Do not flip traffic without a ready rollback.
 
-| Gate | Breach |
-| --- | --- |
-| 5xx rate | Greater than control plus 0.5 percentage points |
-| Authentication | Any rise in loops or failures |
-| p95 TTFB | Greater than 1.3 times control |
-| Client errors | Greater than 1.5 times control |
-
-Thin traffic cannot qualify a step. A stage stays pending until both duration
-and session evidence are sufficient. The build must support the bridge's 0%
-rollback without creating a second cohort selector or router Worker. No canary
-traffic is admitted by this preparation.
+After cutover, run smoke checks and watch 5xx rates, authentication failures,
+and p95 latency for 30 to 60 minutes. Roll back immediately on regression and
+report the observed outcome. Keep telemetry free of session tokens, user
+identities, and payment data.
 
 ## Require Pay sandbox acceptance
 
