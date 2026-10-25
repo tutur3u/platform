@@ -1,7 +1,4 @@
-import {
-  type AssetsBinding,
-  fetchAsset,
-} from '@tuturuuu/start-bridge/assets';
+import { type AssetsBinding, fetchAsset } from '@tuturuuu/start-bridge/assets';
 import type { ClickGeolocation } from '../link/analytics';
 import { clickRecord, trackClick } from '../link/analytics';
 import { rawSearch } from '../link/destination';

@@ -2,8 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { type AssetsBinding, fetchAsset } from './assets';
 
 function binding(reply: (input: string, init: RequestInit) => Response) {
-  const fetch = vi.fn(async (input: string, init: { method: string; headers: Record<string, string> }) =>
-    reply(input, init)
+  const fetch = vi.fn(
+    async (
+      input: string,
+      init: { method: string; headers: Record<string, string> }
+    ) => reply(input, init)
   );
   const assets: AssetsBinding = { fetch };
   return { assets, fetch };

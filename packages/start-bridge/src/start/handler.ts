@@ -115,7 +115,10 @@ export function createBridgeHandler<
     ) {
       const assets = options.assets(env);
       if (!assets) throw new Error('Assets binding is unavailable');
-      response = await fetchAsset(assets, base.stripRequest(request) ?? request);
+      response = await fetchAsset(
+        assets,
+        base.stripRequest(request) ?? request
+      );
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
