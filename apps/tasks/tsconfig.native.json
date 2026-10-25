@@ -9,13 +9,6 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": [
-    "src",
-    "vite.config.mts",
-    "void.config.ts",
-    "cloudflare",
-    "global.d.ts",
-    "messages"
-  ],
+  "include": ["src", "cloudflare", "global.d.ts", "messages"],
   "exclude": ["node_modules", "dist", ".turbo", "src/app/sw.ts"]
 }
