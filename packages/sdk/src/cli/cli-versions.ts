@@ -13,17 +13,24 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { extractCliArchive } from './cli-versions-archive';
-import { downloadVerifiedArchive } from './cli-versions-download';
+import {
+  CLI_DOWNLOAD_TIMEOUT_MS,
+  downloadVerifiedArchive,
+  withAbortSignal,
+  withCliDownloadDeadline,
+} from './cli-versions-download';
 import {
   filesManifest,
   materializePackage,
   readVerifiedFile,
   requireDirectory,
 } from './cli-versions-manifest';
+import { readCliState, writeCliState } from './cli-versions-state';
 import { acquireUpgradeLock } from './devbox-upgrade-lock';
+import { realExecutable } from './resources-command';
 import { resourceHome } from './resources-config';
 
 // Versioned side-by-side CLI installs. Every release lives in its own
@@ -78,40 +85,62 @@ export const runCommand: Runner = (command, args, cwd) =>
     });
   });
 
+function resolveBunRuntime(explicit?: string) {
+  if (explicit) return explicit;
+  if (process.versions.bun) return process.execPath;
+  try {
+    return realExecutable('bun', join(resourceHome(), 'bin'));
+  } catch (error) {
+    throw new Error(
+      'Cannot find Bun. Bun is required for versioned CLI releases; install it or add it to PATH.',
+      { cause: error }
+    );
+  }
+}
+
 /** Resolve an exact version or dist-tag from the npm registry. */
 export async function resolveRelease(
   spec: string,
-  { fetchImpl = globalThis.fetch, registry = REGISTRY } = {}
+  {
+    fetchImpl = globalThis.fetch,
+    registry = REGISTRY,
+    timeoutMs = CLI_DOWNLOAD_TIMEOUT_MS,
+  } = {}
 ) {
   if (!VERSION.test(spec) && !/^[a-z][a-z0-9-]{0,30}$/u.test(spec))
     throw new Error(
       'Use an exact version (for example 0.29.0) or a dist-tag such as latest.'
     );
-  const response = await fetchImpl(
-    `${registry}/tuturuuu/${encodeURIComponent(spec)}`,
-    { redirect: 'error' }
-  );
-  if (!response.ok)
-    throw new Error(
-      `Registry lookup for tuturuuu@${spec} failed (${response.status}).`
+  return withCliDownloadDeadline(timeoutMs, async (signal) => {
+    const response = await withAbortSignal(
+      fetchImpl(`${registry}/tuturuuu/${encodeURIComponent(spec)}`, {
+        redirect: 'error',
+        signal,
+      }),
+      signal
     );
-  const body = (await response.json()) as {
-    version?: unknown;
-    dist?: { tarball?: unknown; integrity?: unknown };
-  };
-  const version = String(body.version ?? '');
-  const tarball = String(body.dist?.tarball ?? '');
-  const integrity = String(body.dist?.integrity ?? '');
-  // The supplier stays the registry that answered: no redirect to a mirror.
-  if (
-    !VERSION.test(version) ||
-    !tarball.startsWith(`${registry}/tuturuuu/-/tuturuuu-${version}.tgz`) ||
-    !integrity.startsWith('sha512-')
-  )
-    throw new Error(
-      `Registry metadata for tuturuuu@${spec} is not a usable release.`
-    );
-  return { version, tarball, integrity };
+    if (!response.ok)
+      throw new Error(
+        `Registry lookup for tuturuuu@${spec} failed (${response.status}).`
+      );
+    const body = (await withAbortSignal(response.json(), signal)) as {
+      version?: unknown;
+      dist?: { tarball?: unknown; integrity?: unknown };
+    };
+    const version = String(body.version ?? '');
+    const tarball = String(body.dist?.tarball ?? '');
+    const integrity = String(body.dist?.integrity ?? '');
+    // The supplier stays the registry that answered: no redirect to a mirror.
+    if (
+      !VERSION.test(version) ||
+      !tarball.startsWith(`${registry}/tuturuuu/-/tuturuuu-${version}.tgz`) ||
+      !integrity.startsWith('sha512-')
+    )
+      throw new Error(
+        `Registry metadata for tuturuuu@${spec} is not a usable release.`
+      );
+    return { version, tarball, integrity };
+  });
 }
 
 const packageDir = (dir: string) => join(dir, 'node_modules', 'tuturuuu');
@@ -122,12 +151,16 @@ export const releaseEntry = (dir: string) =>
 export async function verifyInstalled(dir: string) {
   await requireDirectory(dir);
   await requireDirectory(join(dir, 'node_modules'));
-  const manifest = await filesManifest(packageDir(dir));
   const release = releaseSchema.parse(
     JSON.parse(
       (await readVerifiedFile(join(dir, 'release.json'))).toString('utf8')
     )
   );
+  if (release.version !== basename(resolve(dir)))
+    throw new Error(
+      'CLI release version does not match its directory; reinstall it.'
+    );
+  const manifest = await filesManifest(packageDir(dir));
   if (!manifest.packageJson)
     throw new Error('CLI release package.json is missing.');
   const pkg = JSON.parse(manifest.packageJson.toString('utf8')) as {
@@ -170,7 +203,8 @@ export async function installRelease({
   fetchImpl = globalThis.fetch,
   registry = REGISTRY,
   run = runCommand,
-  bun = process.execPath,
+  bun,
+  downloadTimeoutMs = CLI_DOWNLOAD_TIMEOUT_MS,
 }: {
   spec: string;
   store?: string;
@@ -178,12 +212,23 @@ export async function installRelease({
   registry?: string;
   run?: Runner;
   bun?: string;
+  downloadTimeoutMs?: number;
 }) {
-  const resolved = await resolveRelease(spec, { fetchImpl, registry });
+  const runtime = resolveBunRuntime(bun);
+  const resolved = await resolveRelease(spec, {
+    fetchImpl,
+    registry,
+    timeoutMs: downloadTimeoutMs,
+  });
   return withInstallLock(store, async () => {
     const target = join(store, 'versions', resolved.version);
     const existing = await verifyInstalled(target).catch(() => undefined);
-    if (existing) return { release: existing, path: target, reused: true };
+    if (existing) {
+      await rm(join(target, `tuturuuu-${resolved.version}.tgz`), {
+        force: true,
+      });
+      return { release: existing, path: target, reused: true };
+    }
     if (
       await lstat(target).then(
         () => true,
@@ -193,21 +238,16 @@ export async function installRelease({
       throw new Error(
         `${target} exists but does not verify; inspect it and remove it explicitly before reinstalling.`
       );
+    const bytes = await withCliDownloadDeadline(downloadTimeoutMs, (signal) =>
+      downloadVerifiedArchive(resolved.tarball, resolved.integrity, {
+        fetchImpl,
+        signal,
+      })
+    );
     const staging = join(store, 'versions', `.staging-${randomUUID()}`);
     await mkdir(join(store, 'versions'), { recursive: true, mode: 0o700 });
     await mkdir(staging, { mode: 0o700 });
     try {
-      const response = await fetchImpl(resolved.tarball, { redirect: 'error' });
-      if (!response.ok)
-        throw new Error(
-          `Downloading tuturuuu@${resolved.version} failed (${response.status}).`
-        );
-      const tgz = `tuturuuu-${resolved.version}.tgz`;
-      const bytes = await downloadVerifiedArchive(
-        response,
-        join(staging, tgz),
-        resolved.integrity
-      );
       await mkdir(join(staging, 'verify'), { mode: 0o700 });
       await extractCliArchive(bytes, join(staging, 'verify'));
       const expected = await filesManifest(join(staging, 'verify', 'package'));
@@ -216,7 +256,7 @@ export async function installRelease({
         `${JSON.stringify({ private: true, dependencies: { tuturuuu: 'file:./verify/package' } }, null, 2)}\n`
       );
       const installed = await run(
-        bun,
+        runtime,
         ['install', '--production', '--ignore-scripts'],
         staging
       );
@@ -246,12 +286,6 @@ export async function installRelease({
   });
 }
 
-const statePath = (store: string) => join(store, 'state.json');
-async function readState(store: string) {
-  return (JSON.parse(
-    await readFile(statePath(store), 'utf8').catch(() => '{}')
-  ) ?? {}) as { current?: string; previous?: string; activatedAt?: string };
-}
 export async function currentVersion(store = cliStore()) {
   try {
     const link = await readlink(join(store, 'current'));
@@ -274,7 +308,7 @@ export async function activateRelease({
   store = cliStore(),
   resourcesHome = resourceHome(),
   run = runCommand,
-  bun = process.execPath,
+  bun,
 }: {
   version: string;
   store?: string;
@@ -284,9 +318,11 @@ export async function activateRelease({
 }) {
   if (!VERSION.test(version))
     throw new Error('Activate an exact installed version.');
+  const runtime = resolveBunRuntime(bun);
   return withInstallLock(store, async () => {
     const target = join(store, 'versions', version);
     const release = await verifyInstalled(target);
+    const priorState = await readCliState(store, VERSION);
     const config = JSON.parse(
       await readFile(join(resourcesHome, 'config.json'), 'utf8').catch(
         () => 'null'
@@ -294,7 +330,7 @@ export async function activateRelease({
     ) as { roots?: string[] } | null;
     if (config?.roots?.[0]) {
       const setup = await run(
-        bun,
+        runtime,
         [
           releaseEntry(target),
           'resources',
@@ -323,7 +359,7 @@ export async function activateRelease({
       const staged = `${path}.${randomUUID()}.tmp`;
       await writeFile(
         staged,
-        `#!/bin/sh\n# Managed by ttr upgrade\nexec ${shellQuote(bun)} ${shellQuote(releaseEntry(join(store, 'current')))} "$@"\n`,
+        `#!/bin/sh\n# Managed by ttr upgrade\nexec ${shellQuote(runtime)} ${shellQuote(releaseEntry(join(store, 'current')))} "$@"\n`,
         { mode: 0o700 }
       );
       await chmod(staged, 0o700);
@@ -332,14 +368,10 @@ export async function activateRelease({
     const state = {
       current: version,
       previous:
-        previous && previous !== version
-          ? previous
-          : (await readState(store)).previous,
+        previous && previous !== version ? previous : priorState.previous,
       activatedAt: new Date().toISOString(),
     };
-    await writeFile(statePath(store), `${JSON.stringify(state, null, 2)}\n`, {
-      mode: 0o600,
-    });
+    await writeCliState(store, state);
     return {
       release,
       previous: state.previous,
@@ -350,7 +382,7 @@ export async function activateRelease({
 
 export async function listReleases(store = cliStore()) {
   const current = await currentVersion(store);
-  const { previous } = await readState(store);
+  const { previous } = await readCliState(store, VERSION);
   const names = await readdir(join(store, 'versions')).catch(
     () => [] as string[]
   );

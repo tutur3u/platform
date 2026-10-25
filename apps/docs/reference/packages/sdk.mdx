@@ -239,13 +239,15 @@ errors, and non-JSON notices. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` on a single command, or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`,
 to disable the check.
 
-`ttr upgrade install [version]` instead keeps releases side by side in
-`~/.tuturuuu/cli/versions/<version>`. It accepts only the npm registry tarball
-for `tuturuuu`, verifies its sha512 `dist.integrity` before extracting, installs
-with `bun install --production --ignore-scripts`, and records a per-file sha256
-manifest in `release.json`; a mismatch publishes nothing, and an existing
-release that no longer verifies is reported, never overwritten. Running
-processes keep their own release files.
+`ttr upgrade install [version]` keeps releases side by side in
+`~/.tuturuuu/cli/versions/<version>`. It requires Bun even when the CLI runs under
+Node. Registry requests have a two-minute deadline; archive bodies stay in memory
+under a 64 MiB cap and must match sha512 `dist.integrity` before extraction.
+Installation uses `bun install --production --ignore-scripts`. `release.json`
+stores `filesSha256`, one SHA-256 hash over the ordered per-file path/hash lines,
+and `files`, their count. It does not store the individual per-file hashes.
+A mismatch publishes nothing; an invalid existing release is reported, never
+overwritten. Running processes keep their own release files.
 `ttr upgrade activate <version>` first runs the target release's own
 `resources setup --root <first-root> --shell none --force --json`, which refuses
 while any resource owner or ticket is live, and only then atomically switches
@@ -253,6 +255,10 @@ while any resource owner or ticket is live, and only then atomically switches
 `~/.tuturuuu/cli/bin` and records the previous release. Roll back by activating
 the previous version. `ttr upgrade list` shows verification state and
 `ttr upgrade prune --keep <n>` never removes the current or previous release.
+
+Verification is not an atomic directory snapshot against concurrent changes by
+the same OS user. Windows filesystem behavior is not qualified; unsupported
+secure-filesystem operations fail closed.
 Unknown `ttr upgrade` subcommands fail rather than running the global install.
 Regression coverage: `cli-versions.test.ts` and `cli-versions-command.test.ts`.
 

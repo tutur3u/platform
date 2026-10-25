@@ -1,34 +1,20 @@
 import { createHash } from 'node:crypto';
-import {
-  lstat,
-  mkdtemp,
-  readFile,
-  rm,
-  symlink,
-  writeFile,
-} from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { downloadVerifiedArchive } from './cli-versions-download';
 
-const dirs: string[] = [];
-afterEach(async () => {
-  await Promise.all(
-    dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
-  );
-});
-async function temporary() {
-  const root = await mkdtemp(join(tmpdir(), 'cli-download-'));
-  dirs.push(root);
-  return { root, path: join(root, 'release.tgz') };
-}
+const url = 'https://registry.test/archive.tgz';
 const integrity = (bytes: string) =>
   `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
+function options(response: Response, maxBytes = 8) {
+  return {
+    fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(response),
+    signal: new AbortController().signal,
+    maxBytes,
+  };
+}
 
-describe('bounded verified CLI downloads', () => {
-  it('streams to an exclusive 0600 file inside the private directory', async () => {
-    const { root, path } = await temporary();
+describe('bounded in-memory CLI downloads', () => {
+  it('uses identity encoding and one signal while streaming authenticated bytes', async () => {
     const response = new Response(
       new ReadableStream({
         start(controller) {
@@ -39,33 +25,30 @@ describe('bounded verified CLI downloads', () => {
       })
     );
     const wholeBody = vi.spyOn(response, 'arrayBuffer');
+    const config = options(response);
     expect(
-      await downloadVerifiedArchive(response, path, integrity('verified'), {
-        maxBytes: 8,
-      })
+      await downloadVerifiedArchive(url, integrity('verified'), config)
     ).toEqual(Buffer.from('verified'));
+    expect(config.fetchImpl).toHaveBeenCalledWith(url, {
+      redirect: 'error',
+      signal: config.signal,
+      headers: { 'accept-encoding': 'identity' },
+    });
     expect(wholeBody).not.toHaveBeenCalled();
-    expect(await readFile(path, 'utf8')).toBe('verified');
-    expect((await lstat(root)).mode & 0o777).toBe(0o700);
-    expect((await lstat(path)).mode & 0o777).toBe(0o600);
     expect(response.body?.locked).toBe(false);
   });
 
-  it('rejects an oversized Content-Length before creating the file', async () => {
-    const { path } = await temporary();
+  it('rejects an oversized Content-Length before reading the body', async () => {
     const response = new Response('body', {
       headers: { 'content-length': '9' },
     });
     await expect(
-      downloadVerifiedArchive(response, path, integrity('body'), {
-        maxBytes: 8,
-      })
+      downloadVerifiedArchive(url, integrity('body'), options(response))
     ).rejects.toThrow(/size limit/u);
-    await expect(lstat(path)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(response.body?.locked).toBe(false);
   });
 
-  it('enforces the streamed byte cap without writing the over-limit chunk', async () => {
-    const { path } = await temporary();
+  it('enforces the decoded-byte memory cap with chunked input and no Content-Length', async () => {
     let pulls = 0;
     let cancelled = false;
     const response = new Response(
@@ -81,42 +64,19 @@ describe('bounded verified CLI downloads', () => {
         { highWaterMark: 0 }
       )
     );
+    expect(response.headers.has('content-length')).toBe(false);
     await expect(
-      downloadVerifiedArchive(response, path, integrity('abcdef'), {
-        maxBytes: 5,
-      })
+      downloadVerifiedArchive(url, integrity('abcdef'), options(response, 5))
     ).rejects.toThrow(/size limit/u);
-    expect(await readFile(path, 'utf8')).toBe('abcd');
     expect(cancelled).toBe(true);
     expect(response.body?.locked).toBe(false);
   });
 
   it('does not return bytes until registry integrity matches', async () => {
-    const { path } = await temporary();
     const response = new Response('tampered');
     await expect(
-      downloadVerifiedArchive(response, path, integrity('original'))
+      downloadVerifiedArchive(url, integrity('original'), options(response))
     ).rejects.toThrow(/registry integrity check/u);
     expect(response.body?.locked).toBe(false);
   });
-
-  it.each(['file', 'symlink'])(
-    'refuses an existing %s without modifying its contents',
-    async (kind) => {
-      const { root, path } = await temporary();
-      const target = join(root, 'existing');
-      await writeFile(target, 'sentinel');
-      if (kind === 'symlink') await symlink(target, path);
-      else await writeFile(path, 'sentinel');
-      await expect(
-        downloadVerifiedArchive(
-          new Response('verified'),
-          path,
-          integrity('verified')
-        )
-      ).rejects.toMatchObject({ code: 'EEXIST' });
-      expect(await readFile(path, 'utf8')).toBe('sentinel');
-      expect(await readFile(target, 'utf8')).toBe('sentinel');
-    }
-  );
 });
