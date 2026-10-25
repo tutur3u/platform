@@ -351,6 +351,7 @@ SELECT is(pg_temp.pw_op('item.write',(SELECT input FROM file_write) || jsonb_bui
 SELECT is(pg_temp.pw_op('item.write',(SELECT input FROM file_write) || jsonb_build_object('expected_revision',pg_temp.pw_revision(),
  'item_id','f7300000-0000-0000-0000-000000000003','name','OTHER_FILE','storage_path','../../user-path'))->>'error',
  '22023','caller-provided file paths are rejected');
+SELECT set_config('storage.allow_delete_query', 'true', true);
 SELECT throws_ok($$DELETE FROM storage.objects WHERE id='f7800000-0000-0000-0000-000000000001'$$,
  '23503',NULL,'file-reference FK prevents deleting a committed storage object');
 SELECT ok((SELECT public IS FALSE AND file_size_limit=10485760 FROM storage.buckets WHERE id='password-vault-files'),
