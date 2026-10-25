@@ -71,7 +71,7 @@ export function createMoreToolsNavigation({
           `/${personalOrWsId}/passwords`,
           `/${personalOrWsId}/passwords/*`,
         ],
-        icon: createDashboardNavigationIcon('Lock', 'h-5 w-5'),
+        icon: createDashboardNavigationIcon('UserLock', 'h-5 w-5'),
         external: true,
         disabled: !canAccessPasswords || !process.env.PASSWORDS_APP_URL,
         preferenceSectionLabel: sidebarSections.workTools,

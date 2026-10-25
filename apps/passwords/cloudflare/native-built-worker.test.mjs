@@ -96,6 +96,7 @@ function guarded(response) {
 
 test('emitted Passwords Worker stops vault and auth work across restart', {
   timeout: 90000,
+  skip: !process.env.CI_SOURCE_SHA,
 }, async (t) => {
   assert.equal(
     process.env.CI,
