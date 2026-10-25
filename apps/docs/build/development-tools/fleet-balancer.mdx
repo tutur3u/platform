@@ -94,6 +94,16 @@ once the host answers, and only a result carrying the run's lease and fence is
 accepted. `cancel` stops a queued run locally and signals a placed run's host
 supervisor, which stops the queue admission and its command.
 
+Host registry and log readers open with `O_NOFOLLOW`, validate the opened
+descriptor, and read through that same descriptor. Log appends also validate
+and retain their descriptor. A pathname replacement cannot redirect an open
+operation; symlinked or non-private log files are refused.
+Host JSON records use an exclusive, private temporary file in the destination
+directory, sync its complete contents, and rename it into place. Cancellation
+notices publish the complete temporary file with an exclusive link instead,
+retaining the first notice without a check-then-write race. Regression coverage:
+`packages/sdk/src/cli/balancer-host-files.test.ts`.
+
 ## Controller ledger locking
 
 The published `ttr balancer` launcher selects Node.js for controller execution.

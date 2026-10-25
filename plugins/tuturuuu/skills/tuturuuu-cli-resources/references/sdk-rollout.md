@@ -57,5 +57,9 @@ The published balancer launcher selects Node.js; direct Bun mutations fail
 closed before native binding use. The SDK includes the pinned native lock
 supplier's prebuilt binaries; do not compile replacements or activate an
 unreviewed supplier during validation.
+Registry and host-log operations validate and use one opened descriptor with
+`O_NOFOLLOW`; preserve descriptor ownership when replacing their pathname checks.
+Host JSON publication uses an exclusive temporary file, sync and atomic rename;
+create-only cancellation notices retain the first complete publication.
 The [fleet balancer runbook](../../../../../apps/docs/build/development-tools/fleet-balancer.mdx#controller-ledger-locking)
 owns filesystem admission, cutover, runtime requirements and regression coverage.

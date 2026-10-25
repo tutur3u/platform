@@ -1,5 +1,5 @@
 import { constants } from 'node:fs';
-import { lstat, open } from 'node:fs/promises';
+import { open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import type { BalancerHost } from './balancer-placement';
@@ -75,21 +75,25 @@ export async function readBalancerRegistry(
   uid = process.getuid?.() ?? -1
 ): Promise<BalancerRegistry> {
   const path = join(home, 'hosts.json');
-  const info = await lstat(path).catch(() => undefined);
-  if (!info)
-    throw new Error(
-      `No balancer hosts registered. Create ${path} (mode 0600); see the SDK reference.`
-    );
   const ok = (entry: { isFile(): boolean; uid: number; mode: number }) =>
     entry.isFile() && entry.uid === uid && (entry.mode & 0o077) === 0;
-  if (info.isSymbolicLink() || !ok(info))
-    throw new Error(`${path} must be a regular 0600 file owned by you.`);
-  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const handle = await open(
+    path,
+    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+  ).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT')
+      throw new Error(
+        `No balancer hosts registered. Create ${path} (mode 0600); see the SDK reference.`
+      );
+    if (error.code === 'ELOOP')
+      throw new Error(`${path} must be a regular 0600 file owned by you.`);
+    throw error;
+  });
   let text: string;
   try {
     const opened = await handle.stat();
-    if (!ok(opened) || opened.ino !== info.ino)
-      throw new Error(`${path} changed while it was checked.`);
+    if (!ok(opened))
+      throw new Error(`${path} must be a regular 0600 file owned by you.`);
     text = await handle.readFile('utf8');
   } finally {
     await handle.close();

@@ -1,14 +1,20 @@
 // Shared by the shipped balancer host files; Node built-ins only.
 import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import {
   closeSync,
+  constants,
   existsSync,
+  fstatSync,
   fsyncSync,
+  linkSync,
   mkdirSync,
   openSync,
   readFileSync,
+  readSync,
   renameSync,
-  writeSync,
+  unlinkSync,
+  writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -62,16 +68,104 @@ export function readJson(path: string): Record<string, unknown> | undefined {
   }
 }
 // Durable replace: write, fsync, rename. Readers see the old or new file.
-export function writeJson(path: string, value: unknown) {
-  const temporary = `${path}.${process.pid}.tmp`;
-  const fd = openSync(temporary, 'w', 0o600);
+export function writeJson(
+  path: string,
+  value: unknown,
+  options: { exclusive?: boolean } = {}
+) {
+  const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
+  const fd = openSync(
+    temporary,
+    constants.O_WRONLY |
+      constants.O_CREAT |
+      constants.O_EXCL |
+      constants.O_NOFOLLOW,
+    0o600
+  );
+  let failure: { error: unknown } | undefined;
   try {
-    writeSync(fd, `${JSON.stringify(value)}\n`);
-    fsyncSync(fd);
+    try {
+      writeFileSync(fd, `${JSON.stringify(value)}\n`);
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
+    if (options.exclusive) {
+      // A create-only notice retains the first complete publication.
+      try {
+        linkSync(temporary, path);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      }
+    } else renameSync(temporary, path);
+  } catch (error) {
+    failure = { error };
+  }
+  try {
+    unlinkSync(temporary);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+      failure ??= { error };
+  }
+  if (failure) throw failure.error;
+}
+
+function checkPrivateFile(fd: number) {
+  const info = fstatSync(fd);
+  if (
+    !info.isFile() ||
+    info.uid !== (process.getuid?.() ?? -1) ||
+    (info.mode & 0o077) !== 0
+  )
+    throw new Error(
+      'Balancer log must be a regular private file owned by you.'
+    );
+  return info;
+}
+
+export function openLog(path: string) {
+  const fd = openSync(
+    path,
+    constants.O_WRONLY |
+      constants.O_APPEND |
+      constants.O_CREAT |
+      constants.O_NOFOLLOW |
+      constants.O_NONBLOCK,
+    0o600
+  );
+  try {
+    checkPrivateFile(fd);
+    return fd;
+  } catch (error) {
+    closeSync(fd);
+    throw error;
+  }
+}
+
+export function readLogTail(path: string) {
+  let fd: number;
+  try {
+    fd = openSync(
+      path,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
+  }
+  try {
+    const size = checkPrivateFile(fd).size;
+    const length = Math.min(size, 64 * 1024);
+    const buffer = Buffer.alloc(length);
+    const count = readSync(fd, buffer, 0, length, size - length);
+    return {
+      exists: true,
+      bytes: size,
+      tail: buffer.subarray(0, count).toString('utf8'),
+    };
   } finally {
     closeSync(fd);
   }
-  renameSync(temporary, path);
 }
 export const ensureDir = (path: string) =>
   mkdirSync(path, { recursive: true, mode: 0o700 });
