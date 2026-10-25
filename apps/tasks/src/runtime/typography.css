@@ -1,0 +1,5 @@
+@import "@fontsource-variable/noto-sans/wght.css";
+
+.tasks-font {
+  font-family: "Noto Sans Variable", sans-serif;
+}
