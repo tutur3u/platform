@@ -39,7 +39,7 @@ signature needs a new subpath and a coordinated migration.
 | `next/navigation-document` | Document-mode `useRouter`/`NativeLink` | Full page loads (Apps gateway) |
 | `next/image`, `next/dynamic`, `next/cloudflare-context` | Optimizer-free image, lazy component, `getCloudflareContext` | |
 | `proxy-bridge` | `dispatchThroughProxy`, `defaultProxyMatches`, `toNextRequest`, `forwardedRequestInit` | Runs `proxy.ts` with Next's middleware protocol |
-| `function-proxy` | `createFunctionProxy({ targetApp, prefixBase?, continueWith? })` | Guards the server-function base |
+| `function-proxy` | `createFunctionProxy({ targetApp, prefixBase?, continueWith? })` | Guards the server-function base; refreshes the satellite session only at a host root, never for a mounted request (shared apex session, no app-cookie writes) |
 | `intl`, `intl/localized-navigation`, `intl/server` | `next-intl` on `use-intl`; en/vi localized links; `createIntlServer(messages)` | English unprefixed, Vietnamese under `/vi` |
 | `start/handler` | `createBridgeHandler(options)` | The Worker `fetch` skeleton; `mounts` resolves the base per request |
 | `start/server-entry` | `createBridgeStartHandler()` | Start handler that prefixes SSR asset URLs with the request's base |
