@@ -56,11 +56,14 @@ shared auth-boundary guard.
 Every response carries `x-tuturuuu-runtime: native` and the Next build's
 production headers: `X-Robots-Tag` from the Tasks SEO policy
 (`PRIVATE_ROBOTS_HEADER`), `Content-Security-Policy: frame-ancestors 'none'`,
-`X-Frame-Options: DENY` and HSTS. It also sends `X-Content-Type-Options:
+`X-Frame-Options: DENY` and HSTS. A response's own CSP is kept, but
+`frame-ancestors 'none'` replaces any ancestor directive in each of its
+policies. It also sends `X-Content-Type-Options:
 nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. Every
 dynamic response is `Cache-Control: private, no-store, max-age=0`, replacing
 any policy the handler set (a `private, max-age` would keep personalized data
-in the browser cache); hashed assets and public files keep their own caching. `GET`/`HEAD /api/build-info` is public on both
+in the browser cache); only `GET`/`HEAD` of hashed assets and public files keep
+their own caching. `GET`/`HEAD /api/build-info` is public on both
 builds: the Worker answers it first, and the Next proxy admits it without
 session work or ambient credentials. The Worker uses
 `global_fetch_strictly_public`.

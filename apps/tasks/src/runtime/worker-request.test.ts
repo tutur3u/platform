@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PAGE_REWRITE_HEADER } from '../lib/page-rewrite';
 import {
   createTasksRequestHandler,
+  denyFraming,
   type TasksBridgeHandler,
   tasksMounts,
 } from './worker-request';
@@ -144,6 +145,83 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
     expect(response.headers.get('cache-control')).toBe(
       'private, no-store, max-age=0'
     );
+  });
+
+  it.each([
+    ['POST', '/assets/index-abc.js'],
+    ['PUT', '/assets/index-abc.js'],
+    ['POST', '/favicon.ico'],
+    ['DELETE', '/robots.txt'],
+  ])('stores no %s response on an asset path: %s', async (method, path) => {
+    const { handle } = setup(
+      () =>
+        new Response('x', {
+          headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+        })
+    );
+
+    const response = await handle(
+      new Request(`https://tasks.tuturuuu.com${path}`, { method }),
+      {},
+      ctx
+    );
+
+    expect(response.headers.get('cache-control')).toBe(
+      'private, no-store, max-age=0'
+    );
+  });
+
+  it('keeps asset caching for HEAD', async () => {
+    const { handle } = setup(
+      () =>
+        new Response(null, {
+          headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+        })
+    );
+
+    const response = await handle(
+      new Request('https://tasks.tuturuuu.com/favicon.ico', { method: 'HEAD' }),
+      {},
+      ctx
+    );
+
+    expect(response.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable'
+    );
+  });
+
+  it.each([
+    ["default-src 'self'", "default-src 'self'; frame-ancestors 'none'"],
+    [
+      "default-src 'self'; frame-ancestors https://evil.example; img-src *",
+      "default-src 'self'; img-src *; frame-ancestors 'none'",
+    ],
+    ['FRAME-ANCESTORS *', "frame-ancestors 'none'"],
+    [
+      "script-src 'nonce-a', frame-ancestors *; style-src 'self'",
+      "script-src 'nonce-a'; frame-ancestors 'none', style-src 'self'; frame-ancestors 'none'",
+    ],
+  ])(
+    'keeps an existing CSP but enforces frame-ancestors none: %s',
+    async (csp, expected) => {
+      const { handle } = setup(
+        () => new Response('x', { headers: { 'content-security-policy': csp } })
+      );
+
+      const response = await handle(
+        new Request('https://tasks.tuturuuu.com/personal/tasks'),
+        {},
+        ctx
+      );
+
+      expect(response.headers.get('content-security-policy')).toBe(expected);
+      expect(response.headers.get('x-frame-options')).toBe('DENY');
+    }
+  );
+
+  it('denies framing when there is no CSP', () => {
+    expect(denyFraming(null)).toBe("frame-ancestors 'none'");
+    expect(denyFraming(' ; , ')).toBe("frame-ancestors 'none'");
   });
 
   it('admits only valid staging hostnames from the Worker var', async () => {

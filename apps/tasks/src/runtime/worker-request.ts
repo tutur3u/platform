@@ -58,28 +58,57 @@ export function tasksMounts(env: TasksWorkerEnv): AppMountConfig {
  */
 const NATIVE = decideCohort({ percent: undefined, force: 'native' });
 
-function isStaticAsset(appPath: string) {
-  return appPath.startsWith('/assets/') || PUBLIC_ASSETS.has(appPath);
+/** Only a read of a hashed asset or a public file keeps its own caching. */
+function isStaticAssetRead(method: string, appPath: string) {
+  return (
+    (method === 'GET' || method === 'HEAD') &&
+    (appPath.startsWith('/assets/') || PUBLIC_ASSETS.has(appPath))
+  );
+}
+
+const FRAME_ANCESTORS = /^frame-ancestors(?:\s|$)/iu;
+
+/**
+ * Keeps the response's own CSP but enforces `frame-ancestors 'none'` in every
+ * policy it carries (a comma separates policies), replacing any ancestor
+ * directive already there.
+ */
+export function denyFraming(csp: string | null) {
+  const policies = (csp ?? '')
+    .split(',')
+    .map((policy) =>
+      policy
+        .split(';')
+        .map((directive) => directive.trim())
+        .filter((directive) => directive && !FRAME_ANCESTORS.test(directive))
+    )
+    .filter((directives) => directives.length > 0);
+  if (policies.length === 0) return "frame-ancestors 'none'";
+  return policies
+    .map((directives) => [...directives, "frame-ancestors 'none'"].join('; '))
+    .join(', ');
 }
 
 /**
  * Production parity with the Next build (robots per the Tasks SEO policy,
  * anti-framing, HSTS) plus `nosniff` and a referrer policy. Dynamic responses
  * are personalized, so none is stored by any cache, whatever the handler set
- * (a handler's `private, max-age` would keep it in the browser); hashed assets
- * and public files keep theirs.
+ * (a handler's `private, max-age` would keep it in the browser); only reads of
+ * hashed assets and public files keep theirs.
  */
-function decorate(response: Response, appPath: string | null) {
+function decorate(response: Response, appPath: string | null, method: string) {
   const tagged = tagResponse(response, NATIVE);
   const { headers } = tagged;
   headers.set('X-Robots-Tag', PRIVATE_ROBOTS_HEADER);
-  if (!headers.has('Content-Security-Policy'))
-    headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+  headers.set(
+    'Content-Security-Policy',
+    denyFraming(headers.get('Content-Security-Policy'))
+  );
   headers.set('X-Frame-Options', 'DENY');
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Strict-Transport-Security', 'max-age=63072000');
-  if (appPath === null || !isStaticAsset(appPath))
+  if (appPath === null || !isStaticAssetRead(method, appPath))
     headers.set('Cache-Control', 'private, no-store, max-age=0');
   return tagged;
 }
@@ -106,7 +135,11 @@ export function createTasksRequestHandler(
     const mounts = tasksMounts(env);
     const mount = resolveAppBase(url, mounts);
     if (!mount)
-      return decorate(new Response('Not Found', { status: 404 }), null);
+      return decorate(
+        new Response('Not Found', { status: 404 }),
+        null,
+        request.method
+      );
     const appPath = url.pathname.slice(mount.basePath.length) || '/';
     const buildInfo =
       appPath === '/api/build-info'
@@ -115,13 +148,13 @@ export function createTasksRequestHandler(
             'tasks'
           )
         : null;
-    if (buildInfo) return decorate(buildInfo, appPath);
+    if (buildInfo) return decorate(buildInfo, appPath, request.method);
     const key = mounts.rootHosts.join(',');
     let bridge = bridges.get(key);
     if (!bridge) {
       bridge = createBridge(mounts);
       bridges.set(key, bridge);
     }
-    return decorate(await bridge(request, env, ctx), appPath);
+    return decorate(await bridge(request, env, ctx), appPath, request.method);
   };
 }
