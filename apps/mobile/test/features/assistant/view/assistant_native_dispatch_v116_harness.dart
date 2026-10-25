@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -15,6 +16,7 @@ import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
@@ -553,7 +555,11 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
       files: [
         AssistantMemoryFile(name: name, bytes: Uint8List.fromList([1, 2, 3])),
       ],
-      modelId: 'synthetic/model-a',
+      modelId: pageContext
+          .read<AssistantShellCubit>()
+          .state
+          .selectedModel
+          .value,
       timezone: 'UTC',
     ),
   );
