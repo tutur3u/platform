@@ -1,5 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
-import type { ReactNode } from 'react';
+import { type ReactNode, useId } from 'react';
 import { getPressureTone, type OpsTone, opsToneClasses } from './status-tone';
 
 export interface ResourceMeterProps {
@@ -14,7 +14,7 @@ export interface ResourceMeterProps {
   percent: number | null;
   stale?: boolean;
   tone?: OpsTone;
-  unknownLabel?: ReactNode;
+  unknownLabel: ReactNode;
 }
 
 function clampPercent(value: number) {
@@ -30,8 +30,9 @@ export function ResourceMeter({
   percent,
   stale = false,
   tone,
-  unknownLabel = 'Unknown',
+  unknownLabel,
 }: ResourceMeterProps) {
+  const labelId = useId();
   const isUnknown = stale || percent === null || !Number.isFinite(percent);
   const resolvedTone: OpsTone = isUnknown
     ? 'unknown'
@@ -46,7 +47,9 @@ export function ResourceMeter({
       data-tone={resolvedTone}
     >
       <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="truncate text-muted-foreground">{label}</span>
+        <span className="truncate text-muted-foreground" id={labelId}>
+          {label}
+        </span>
         <span
           className={cn(
             'shrink-0 tabular-nums',
@@ -58,11 +61,11 @@ export function ResourceMeter({
       </div>
       {isUnknown ? null : (
         <meter
-          aria-label={typeof label === 'string' ? label : undefined}
+          aria-labelledby={labelId}
           className="sr-only"
           max={100}
           min={0}
-          value={Math.round(percent)}
+          value={Math.round(width)}
         />
       )}
       <div

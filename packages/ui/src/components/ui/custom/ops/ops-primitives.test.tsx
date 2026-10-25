@@ -16,10 +16,10 @@ describe('ops primitives', () => {
     expect(getPressureTone(60, { warning: 50 })).toBe('warning');
   });
 
-  it('renders a null stat as unknown rather than zero', () => {
-    render(<StatTile label="Queued" unknownLabel="Unknown" value={null} />);
+  it('renders a null stat with the supplied localized label rather than zero', () => {
+    render(<StatTile label="Queued" unknownLabel="Chưa rõ" value={null} />);
 
-    expect(screen.getByText('Unknown')).toBeTruthy();
+    expect(screen.getByText('Chưa rõ')).toBeTruthy();
     expect(screen.queryByText('0')).toBeNull();
     expect(
       screen
@@ -35,6 +35,7 @@ describe('ops primitives', () => {
         href="/fleet?state=late"
         label="Late"
         tone="warning"
+        unknownLabel="Unknown"
         value={2}
       />
     );
@@ -67,15 +68,73 @@ describe('ops primitives', () => {
         limitLabel="Budget 80%"
         limitPercent={80}
         percent={92}
+        unknownLabel="Unknown"
       />
     );
 
-    expect(document.querySelector('meter')?.getAttribute('value')).toBe('92');
+    const meter = screen.getByRole('meter', { name: 'Memory' });
+    expect(meter.getAttribute('value')).toBe('92');
+    expect(meter.getAttribute('min')).toBe('0');
+    expect(meter.getAttribute('max')).toBe('100');
     expect(screen.getByText('92%')).toBeTruthy();
     expect(
       container.querySelector('[data-tone]')?.getAttribute('data-tone')
     ).toBe('critical');
     expect(screen.getByTitle('Budget 80%')).toBeTruthy();
+  });
+
+  it('names each meter from its visible JSX label', () => {
+    render(
+      <>
+        <ResourceMeter
+          label={<strong>Bộ nhớ</strong>}
+          percent={42}
+          unknownLabel="Chưa rõ"
+        />
+        <ResourceMeter
+          label={<span>CPU</span>}
+          percent={0}
+          unknownLabel="Chưa rõ"
+        />
+      </>
+    );
+
+    const memory = screen.getByRole('meter', { name: 'Bộ nhớ' });
+    const cpu = screen.getByRole('meter', { name: 'CPU' });
+    expect(memory.getAttribute('aria-labelledby')).not.toBe(
+      cpu.getAttribute('aria-labelledby')
+    );
+    expect(cpu.getAttribute('value')).toBe('0');
+  });
+
+  it.each([null, Number.NaN, Number.POSITIVE_INFINITY])(
+    'renders the localized unknown label for missing or invalid reading %s',
+    (percent) => {
+      render(
+        <ResourceMeter
+          label="Bộ nhớ"
+          percent={percent}
+          unknownLabel="Chưa rõ"
+        />
+      );
+
+      expect(screen.queryByRole('meter')).toBeNull();
+      expect(screen.getByText('Chưa rõ')).toBeTruthy();
+      expect(screen.queryByText('Unknown')).toBeNull();
+    }
+  );
+
+  it.each([
+    [-5, '0'],
+    [105, '100'],
+  ])('keeps reading %s within the accessible meter range', (percent, value) => {
+    render(
+      <ResourceMeter label="Memory" percent={percent} unknownLabel="Unknown" />
+    );
+
+    expect(
+      screen.getByRole('meter', { name: 'Memory' }).getAttribute('value')
+    ).toBe(value);
   });
 
   it('announces critical state panels as alerts with a recovery action', () => {

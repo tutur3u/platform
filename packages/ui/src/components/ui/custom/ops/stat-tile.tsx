@@ -14,7 +14,7 @@ export interface StatTileProps {
   tone?: OpsTone;
   /** Null renders `unknownLabel` with the unknown tone; it is never 0. */
   value: ReactNode | null;
-  unknownLabel?: ReactNode;
+  unknownLabel: ReactNode;
 }
 
 export function StatTile({
@@ -24,7 +24,7 @@ export function StatTile({
   icon,
   label,
   tone = 'neutral',
-  unknownLabel = 'Unknown',
+  unknownLabel,
   value,
 }: StatTileProps) {
   const isUnknown = value === null || value === undefined;
