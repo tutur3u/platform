@@ -61,6 +61,7 @@ headers set by the proxy the deployment is configured to sit behind:
 | --------------- | ------------------------------------------------------------------------------------------------ |
 | `vercel`        | `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for` (Vercel overwrites all three) |
 | `cloudflare`    | `cf-connecting-ip` only; use only when every request reaches the app through Cloudflare          |
+| `cloudflare-origin` | Cloudflare in front of Vercel: `cf-connecting-ip` only when the request carries `x-tuturuuu-origin-auth` equal to `TRUSTED_PROXY_ORIGIN_SECRET`; otherwise the `vercel` headers |
 | `forwarded`     | `x-forwarded-for` entry `TRUSTED_PROXY_HOPS` positions from the right (default `1`)              |
 | `none`          | No header; every request uses the shared `unknown` bucket                                        |
 
@@ -81,6 +82,28 @@ example `cloudflare` behind Cloudflare Tunnel, or `forwarded` behind the bundled
 nginx proxy); otherwise all traffic shares the `unknown` bucket. Local E2E
 specs that isolate budgets with per-test client IP headers need
 `TRUSTED_PROXY=cloudflare` in the web runtime env.
+
+### Cloudflare in front of Web
+
+When the `tuturuuu.com` apex is proxied through Cloudflare to Vercel for the
+one-origin super-app, Vercel sees
+Cloudflare egress addresses, so plain `vercel` mode collapses users into a few
+buckets. Plain `cloudflare` mode is spoofable, because the Vercel origin stays
+reachable directly. Use `cloudflare-origin`:
+
+1. Generate a random secret of at least 32 characters. Store it as the Web
+   runtime secret `TRUSTED_PROXY_ORIGIN_SECRET` and in a Cloudflare request
+   Transform Rule that sets `x-tuturuuu-origin-auth` on proxied requests.
+2. Set `TRUSTED_PROXY=cloudflare-origin` on Web in the same change that proxies
+   the apex. Before the proxy is on, every request falls back to `vercel`
+   headers, so setting it early is harmless.
+3. A missing, short or mismatched secret never trusts `cf-connecting-ip`; the
+   request resolves through the `vercel` headers instead. To rotate, update
+   the Transform Rule and the Web secret together. Between the two writes,
+   requests fall back to `vercel` headers: bucketing degrades, but the client
+   IP is never spoofable.
+
+Never forward the `x-tuturuuu-origin-auth` header to another service.
 
 ## API Abuse IP Blocks
 
