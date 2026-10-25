@@ -3,6 +3,7 @@ import {
   RequestCookies,
   ResponseCookies,
 } from 'next/dist/compiled/@edge-runtime/cookies';
+import { installAppBaseResolver } from './app-url';
 
 /**
  * One request's server context. A single store backs every `next/headers`,
@@ -19,6 +20,8 @@ export interface BridgeRequestContext {
   cloudflare?: { env: unknown; ctx: unknown };
   /** Observes `redirect()` calls (diagnostics only; never replaces them). */
   observeNavigation?: (href: string, result: unknown) => void;
+  /** This request's resolved app base (`''` at a host root, `/meet`). */
+  appBase?: string;
   /** App-owned per-request values; see `createRequestLocal`. */
   locals: Map<symbol, unknown>;
 }
@@ -35,10 +38,14 @@ export interface BridgeRequestInit {
   waitUntil?: (work: Promise<unknown>) => void;
   cloudflare?: { env: unknown; ctx: unknown };
   observeNavigation?: (href: string, result: unknown) => void;
+  appBase?: string;
   locals?: Map<symbol, unknown>;
 }
 
 const storage = new AsyncLocalStorage<BridgeRequestContext>();
+
+// Server-side `runtimeAppBase()` reads the current request's base.
+installAppBaseResolver(() => storage.getStore()?.appBase);
 
 export function withBridgeRequest<T>(
   init: Request | BridgeRequestInit,
@@ -55,6 +62,7 @@ export function withBridgeRequest<T>(
       waitUntil: options.waitUntil,
       cloudflare: options.cloudflare,
       observeNavigation: options.observeNavigation,
+      appBase: options.appBase,
       locals: options.locals ?? new Map(),
     },
     run

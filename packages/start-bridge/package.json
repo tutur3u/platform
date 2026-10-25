@@ -7,7 +7,8 @@
   "exports": {
     "./route-match": "./src/core/route-match.ts",
     "./base-path": "./src/core/base-path.ts",
-    "./cookie-scope": "./src/core/cookie-scope.ts",
+    "./mounts": "./src/core/mounts.ts",
+    "./app-url": "./src/core/app-url.ts",
     "./request-context": "./src/core/request-context.ts",
     "./endpoints": "./src/core/endpoints.ts",
     "./api-forward": "./src/core/api-forward.ts",
@@ -28,6 +29,7 @@
     "./intl/server": "./src/intl/server.ts",
     "./start/handler": "./src/start/handler.ts",
     "./start/base-path": "./src/start/base-path.ts",
+    "./start/server-entry": "./src/start/server-entry.ts",
     "./vite": "./src/vite/preset.ts",
     "./codegen": "./src/codegen/registry.ts",
     "./pages": "./src/core/pages.ts"

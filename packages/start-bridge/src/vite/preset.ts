@@ -16,6 +16,7 @@ export const NEXT_SHIMS = {
   'next/dynamic': 'next/dynamic.tsx',
   'next-intl': 'intl/use-intl.tsx',
   '@opennextjs/cloudflare': 'next/cloudflare-context.ts',
+  '@tuturuuu/satellite/i18n': 'intl/localized-navigation.tsx',
 } as const;
 export type NextShim = keyof typeof NEXT_SHIMS;
 
@@ -38,6 +39,12 @@ export interface StartBridgePresetOptions {
   serverFnBase?: string;
   /** Specifiers that must never reach the client bundle. */
   serverOnlySpecifiers?: readonly string[];
+  /** App module implementing `next-intl/server` (see `createIntlServer`). */
+  intlServer?: string;
+  /** Resolved `next/og` replacement, e.g. `@cloudflare/pages-plugin-vercel-og/api`. */
+  og?: string;
+  /** Alias `server-only` to Start's server-only marker (default `true`). */
+  serverOnly?: boolean;
 }
 
 export interface StartBridgeAlias {
@@ -55,7 +62,14 @@ function escapeSpecifier(specifier: string) {
 export function startBridgeAliases(
   options: Pick<
     StartBridgePresetOptions,
-    'appRoot' | 'navigation' | 'shims' | 'aliases' | 'srcAlias'
+    | 'appRoot'
+    | 'navigation'
+    | 'shims'
+    | 'aliases'
+    | 'srcAlias'
+    | 'intlServer'
+    | 'og'
+    | 'serverOnly'
   >
 ): StartBridgeAlias[] {
   const shims = options.shims ?? (Object.keys(NEXT_SHIMS) as NextShim[]);
@@ -71,11 +85,26 @@ export function startBridgeAliases(
       document && (shim === 'next/navigation' || shim === 'next/link')
         ? 'next/navigation-document.tsx'
         : NEXT_SHIMS[shim];
+    // `next/*` is also reached as `next/<module>.js` from compiled packages.
+    const suffix = shim.startsWith('next/') ? '(?:\\.js)?' : '';
     alias.push({
-      find: new RegExp(`^${escapeSpecifier(shim)}$`, 'u'),
+      find: new RegExp(`^${escapeSpecifier(shim)}${suffix}$`, 'u'),
       replacement: own(target),
     });
   }
+  const exact = (find: string, replacement: string) =>
+    alias.push({
+      find: new RegExp(`^${escapeSpecifier(find)}$`, 'u'),
+      replacement,
+    });
+  if (options.intlServer)
+    exact(
+      'next-intl/server',
+      fileURLToPath(new URL(options.intlServer, options.appRoot))
+    );
+  if (options.og) exact('next/og', options.og);
+  if (options.serverOnly ?? !options.shims)
+    exact('server-only', '@tanstack/react-start/server-only');
   if (options.srcAlias !== false)
     alias.push({
       find: '@/',
@@ -123,6 +152,18 @@ export interface StartBridgePreset {
   alias: StartBridgeAlias[];
   /** Shared `define` (both environments). */
   define: Record<string, string>;
+  /**
+   * Vite `experimental`: JS-referenced asset URLs read the runtime app base
+   * (request context on the server, the document head script in the browser);
+   * CSS-referenced URLs stay relative to their stylesheet. One artifact then
+   * serves both the subdomain root and the apex mount.
+   */
+  experimental: {
+    renderBuiltUrl: (
+      filename: string,
+      context: { hostType: 'js' | 'css' | 'html' }
+    ) => { runtime: string } | { relative: true } | undefined;
+  };
   /** Client `define`: `process.env` limited to `NEXT_PUBLIC_*` + NODE_ENV. */
   clientDefine: (command: 'build' | 'serve') => Record<string, string>;
   /** Options for `tanstackStart(...)`. */
@@ -155,6 +196,16 @@ export function startBridgePreset(
     basePath,
     base: basePath.assetBase,
     alias: startBridgeAliases(options),
+    experimental: {
+      renderBuiltUrl: (filename, { hostType }) => {
+        if (hostType === 'css') return { relative: true };
+        if (hostType !== 'js') return undefined;
+        const global = 'globalThis.__tuturuuuAppBase';
+        return {
+          runtime: `((typeof ${global}==='function'?${global}():${global})??${JSON.stringify(basePath.basePath)})+${JSON.stringify(`/${filename}`)}`,
+        };
+      },
+    },
     define: {
       'import.meta.env.VITE_TUTURUUU_BASE_PATH': JSON.stringify(
         basePath.basePath

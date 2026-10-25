@@ -2,6 +2,11 @@ import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type BasePath, createBasePath } from '../core/base-path';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
+import {
+  APP_BASE_HEADER,
+  type AppMountConfig,
+  resolveAppBase,
+} from '../core/mounts';
 import type { BridgeRequestContext } from '../core/request-context';
 import {
   type BridgeDispatch,
@@ -14,7 +19,9 @@ export interface AssetsBinding {
 }
 
 export interface BridgeHandlerOptions<Env, Ctx> {
-  /** Defaults to the origin root. */
+  /** Where this artifact is served; the base is resolved per request. */
+  mounts?: AppMountConfig;
+  /** A fixed base (tests, single-mount apps); ignored when `mounts` is set. */
   basePath?: BasePath;
   /** The TanStack Start server entry (`@tanstack/react-start/server-entry`). */
   start: { fetch(request: Request): Promise<Response> | Response };
@@ -24,6 +31,8 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   endpoints?: readonly BridgeEndpoint[];
   /** App-relative server-function base guarded by `functionProxy`. */
   functionBase?: string;
+  /** Compiled Start `serverFns.base` (e.g. `/_serverFn`); served base-stripped. */
+  serverFnBase?: string;
   functionProxy?: NextProxy;
   /** App-relative static paths served from ASSETS (besides `/assets/`). */
   publicAssets?: ReadonlySet<string>;
@@ -47,21 +56,35 @@ export function createBridgeHandler<
   Env,
   Ctx extends { waitUntil(work: Promise<unknown>): void },
 >(options: BridgeHandlerOptions<Env, Ctx>) {
-  const base = options.basePath ?? createBasePath({ app: 'root' });
+  const fixed = options.basePath ?? createBasePath({ app: 'root' });
   const publicAssets = options.publicAssets ?? new Set<string>();
+  const inBase = (path: string, prefix: string) =>
+    path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
-    !!options.functionBase &&
-    (path === options.functionBase ||
-      path.startsWith(`${options.functionBase}/`));
+    !!options.functionBase && inBase(path, options.functionBase);
 
   return async function handle(
     incoming: Request,
     env: Env,
     ctx: Ctx
   ): Promise<Response> {
-    const appPath = base.strip(new URL(incoming.url).pathname);
+    const url = new URL(incoming.url);
+    let base = fixed;
+    if (options.mounts) {
+      const mount = resolveAppBase(url, options.mounts);
+      if (!mount) return new Response('Not Found', { status: 404 });
+      base = createBasePath({
+        app: options.mounts.app,
+        basePath: mount.basePath,
+      });
+    }
+    const appPath = base.strip(url.pathname);
     if (appPath === null) return new Response('Not Found', { status: 404 });
-    const { request, adopted } = base.presentRequest(incoming);
+    // The mount header is bridge-owned: never trust a client-sent copy.
+    const headers = new Headers(incoming.headers);
+    headers.delete(APP_BASE_HEADER);
+    if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
+    const request = new Request(incoming, { headers });
     let response: Response;
     if (
       (request.method === 'GET' || request.method === 'HEAD') &&
@@ -86,7 +109,10 @@ export function createBridgeHandler<
             origin
           );
         }
-        // Start hydrates the browser-visible URL, not a middleware rewrite.
+        // Server functions are compiled against the root base; pages hydrate
+        // the browser-visible URL (router basepath), not a middleware rewrite.
+        if (options.serverFnBase && inBase(pathname, options.serverFnBase))
+          return options.start.fetch(base.stripRequest(forwarded) ?? forwarded);
         return options.start.fetch(new Request(request.url, forwarded));
       };
       response = await dispatchThroughProxy({
@@ -106,6 +132,6 @@ export function createBridgeHandler<
         requestInit: options.requestInit,
       });
     }
-    return base.finalizeResponse(response, request, adopted);
+    return base.finalizeResponse(response);
   };
 }

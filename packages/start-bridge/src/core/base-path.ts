@@ -1,46 +1,32 @@
-import {
-  adoptLegacyCookie,
-  type CookieScope,
-  DEFAULT_SCOPED_COOKIES,
-  presentScopedCookies,
-  scopeSetCookie,
-} from './cookie-scope';
-
 /**
- * The basePath contract for serving one app at the origin root (`''`) or
- * under `tuturuuu.com/<app>`. Root mode is the identity everywhere, so an app
- * adopting the bridge on its own host keeps its current behaviour.
+ * The basePath contract for one app served at a host root (`''`) or mounted
+ * under `tuturuuu.com/<app>`. Root mode is the identity everywhere. A Worker
+ * resolves the base per request (see `mounts`), so one compiled artifact
+ * serves both; this object holds the rules for one resolved base.
  *
- * Build time (Vite preset): asset base `${basePath}/`, server functions at
- * `${basePath}/_serverFn`, router `basepath`.
- * Runtime (Worker edge): requests outside the base are not this app's; asset
- * requests are fetched base-stripped; path-relative `Location` headers gain
- * the base; canonical session cookies are renamed and path-scoped.
- * App code (shims): links, `router.push`, and `redirect()` prefix
- * path-absolute hrefs with `withBase`. Absolute URLs are never rewritten.
+ * Under a base: requests outside it are not this app's; asset and
+ * server-function requests are handled base-stripped; path-relative
+ * `Location` headers gain the base; links, `router.push` and `redirect()`
+ * prefix path-absolute hrefs. Absolute URLs are never rewritten. Cookies are
+ * never renamed or path-scoped: the Tuturuuu session is shared across apps.
  */
 export interface BasePathOptions {
   /** `''` (root) or `/<segment>`; `/meet/` is normalized to `/meet`. */
   basePath?: string;
-  /** Stable app id used for cookie names (`meet`, `calendar`). */
+  /** Stable app id (`meet`, `calendar`). */
   app: string;
-  /** Canonical cookie names to scope under a base. */
-  scopedCookies?: readonly string[];
-  /** Adopt unscoped same-origin session cookies (default `true`). */
-  legacyCookieFallback?: boolean;
 }
 
 export interface BasePath {
   readonly basePath: string;
   readonly app: string;
   readonly isRoot: boolean;
-  /** Vite `base`: `/` or `/meet/`. */
+  /** Asset URL prefix: `/` or `/meet/`. */
   readonly assetBase: string;
-  /** TanStack Start `serverFns.base`. */
+  /** Default mounted server-function base: `/_serverFn` or `/meet/_serverFn`. */
   readonly serverFnBase: string;
   /** TanStack Router `basepath`: `/` or `/meet`. */
   readonly routerBasepath: string;
-  readonly cookieScope: CookieScope | null;
   /** Whether `pathname` belongs to this app. */
   owns(pathname: string): boolean;
   /** App-relative pathname, or `null` when outside the base. */
@@ -51,33 +37,30 @@ export interface BasePath {
   absoluteUrl(appPath: string, origin: string | URL): string;
   /** Rewrites a path-relative `Location` that is not yet under the base. */
   rewriteLocation(location: string): string;
-  /** Request with the base removed from its URL, e.g. for `ASSETS.fetch`. */
+  /** Request with the base removed from its URL. */
   stripRequest(request: Request): Request | null;
-  /** Request whose `Cookie` header presents scoped cookies canonically. */
-  presentRequest(request: Request): {
-    request: Request;
-    adopted: { name: string; value: string }[];
-  };
-  /** Rewrites Location and scopes Set-Cookie on an outgoing response. */
-  finalizeResponse(
-    response: Response,
-    request: Request,
-    adopted?: { name: string; value: string }[]
-  ): Response;
+  /** Rewrites a path-relative `Location` on an outgoing response. */
+  finalizeResponse(response: Response): Response;
 }
+
+const BASE_PATTERN = /^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u;
 
 export function normalizeBasePath(input: string | undefined): string {
   const trimmed = (input ?? '').trim().replace(/\/+$/u, '');
   if (!trimmed) return '';
-  if (!/^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u.test(trimmed))
+  if (!BASE_PATTERN.test(trimmed))
     throw new Error(`Invalid basePath: ${input}`);
   return trimmed;
 }
 
-function isPathAbsolute(href: string) {
-  return (
-    href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/\\')
-  );
+/** Prefixes a path-absolute href with `basePath` once; others pass through. */
+export function prefixBase(href: string, basePath: string): string {
+  if (!basePath || !href.startsWith('/') || href.startsWith('//')) return href;
+  if (href.startsWith('/\\')) return href;
+  const end = href.search(/[?#]/u);
+  const path = end === -1 ? href : href.slice(0, end);
+  if (path === basePath || path.startsWith(`${basePath}/`)) return href;
+  return `${basePath}${path === '/' ? '' : path}${end === -1 ? '' : href.slice(end)}`;
 }
 
 /** A same-method copy of `request` addressed to `url`, body streamed once. */
@@ -98,15 +81,6 @@ export function createBasePath(options: BasePathOptions): BasePath {
   if (!/^[a-z0-9][a-z0-9-]*$/u.test(options.app))
     throw new Error(`Invalid app id: ${options.app}`);
   const isRoot = basePath === '';
-  const cookieScope: CookieScope | null = isRoot
-    ? null
-    : {
-        app: options.app,
-        path: basePath,
-        names: options.scopedCookies ?? DEFAULT_SCOPED_COOKIES,
-        legacyFallback: options.legacyCookieFallback ?? true,
-      };
-
   const owns = (pathname: string) =>
     isRoot || pathname === basePath || pathname.startsWith(`${basePath}/`);
   const strip = (pathname: string) => {
@@ -114,13 +88,7 @@ export function createBasePath(options: BasePathOptions): BasePath {
     if (!owns(pathname)) return null;
     return pathname.slice(basePath.length) || '/';
   };
-  const withBase = (href: string) => {
-    if (isRoot || !isPathAbsolute(href)) return href;
-    const end = href.search(/[?#]/u);
-    const path = end === -1 ? href : href.slice(0, end);
-    if (owns(path)) return href;
-    return `${basePath}${path === '/' ? '' : path}${end === -1 ? '' : href.slice(end)}`;
-  };
+  const withBase = (href: string) => prefixBase(href, basePath);
 
   return {
     basePath,
@@ -129,7 +97,6 @@ export function createBasePath(options: BasePathOptions): BasePath {
     assetBase: `${basePath}/`,
     serverFnBase: `${basePath}/_serverFn`,
     routerBasepath: basePath || '/',
-    cookieScope,
     owns,
     strip,
     withBase,
@@ -145,43 +112,14 @@ export function createBasePath(options: BasePathOptions): BasePath {
       url.pathname = pathname;
       return retarget(request, url);
     },
-    presentRequest(request) {
-      if (!cookieScope) return { request, adopted: [] };
-      const presented = presentScopedCookies(
-        request.headers.get('cookie'),
-        cookieScope
-      );
-      const headers = new Headers(request.headers);
-      if (presented.header === null) headers.delete('cookie');
-      else headers.set('cookie', presented.header);
-      return {
-        request: new Request(request, { headers }),
-        adopted: presented.adopted,
-      };
-    },
-    finalizeResponse(response, request, adopted = []) {
+    finalizeResponse(response) {
       if (isRoot) return response;
       const location = response.headers.get('location');
-      const cookies = response.headers.getSetCookie();
-      if (!location && cookies.length === 0 && adopted.length === 0)
-        return response;
+      if (!location) return response;
+      const rewritten = withBase(location);
+      if (rewritten === location) return response;
       const result = new Response(response.body, response);
-      if (location) result.headers.set('location', withBase(location));
-      result.headers.delete('set-cookie');
-      const scope = cookieScope as CookieScope;
-      const written = new Set<string>();
-      for (const cookie of cookies) {
-        const scoped = scopeSetCookie(cookie, scope);
-        written.add(scoped.split('=')[0] ?? '');
-        result.headers.append('set-cookie', scoped);
-      }
-      const secure = new URL(request.url).protocol === 'https:';
-      for (const legacy of adopted) {
-        const scoped = adoptLegacyCookie(legacy, scope, secure);
-        // A fresh write from the app (refresh, logout) supersedes adoption.
-        if (!written.has(scoped.split('=')[0] ?? ''))
-          result.headers.append('set-cookie', scoped);
-      }
+      result.headers.set('location', rewritten);
       return result;
     },
   };

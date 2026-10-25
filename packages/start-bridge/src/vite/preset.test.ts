@@ -29,10 +29,10 @@ describe('Vite preset', () => {
       '@tuturuuu/satellite/auth',
     ]);
     expect(preset.alias.map((alias) => String(alias.find))).toEqual([
-      '/^next\\/headers$/u',
-      '/^next\\/server$/u',
-      '/^next\\/navigation$/u',
-      '/^next\\/link$/u',
+      '/^next\\/headers(?:\\.js)?$/u',
+      '/^next\\/server(?:\\.js)?$/u',
+      '/^next\\/navigation(?:\\.js)?$/u',
+      '/^next\\/link(?:\\.js)?$/u',
       '/^next-intl$/u',
       '@/',
     ]);
@@ -57,7 +57,48 @@ describe('Vite preset', () => {
       '"/meet"'
     );
     expect(preset.alias.at(-1)?.find).toBe('@/');
-    expect(preset.alias).toHaveLength(10);
+    expect(preset.alias).toHaveLength(12);
+  });
+
+  it('adds the remaining shims and runtime asset URLs', () => {
+    const preset = startBridgePreset(
+      {
+        appRoot,
+        app: 'meet',
+        intlServer: './src/runtime/intl-server.ts',
+        og: '/og.js',
+      },
+      {}
+    );
+    const finds = preset.alias.map((alias) => String(alias.find));
+    expect(finds).toContain('/^@tuturuuu\\/satellite\\/i18n$/u');
+    expect(finds).toContain('/^server-only$/u');
+    const byFind = (find: string) =>
+      preset.alias.find((alias) => String(alias.find) === find)?.replacement;
+    expect(byFind('/^next-intl\\/server$/u')).toBe(
+      '/repo/apps/apps/src/runtime/intl-server.ts'
+    );
+    expect(byFind('/^next\\/og$/u')).toBe('/og.js');
+    expect(
+      new RegExp(String(finds[0]).slice(1, -2), 'u').test('next/headers.js')
+    ).toBe(true);
+    const render = preset.experimental.renderBuiltUrl;
+    expect(render('assets/a.png', { hostType: 'css' })).toEqual({
+      relative: true,
+    });
+    expect(render('index.html', { hostType: 'html' })).toBeUndefined();
+    const runtime = render('assets/a.png', { hostType: 'js' });
+    const evaluate = (base: unknown) => {
+      (globalThis as Record<string, unknown>).__tuturuuuAppBase = base;
+      return new Function(
+        `return ${(runtime as { runtime: string }).runtime}`
+      )();
+    };
+    const saved = (globalThis as Record<string, unknown>).__tuturuuuAppBase;
+    expect(evaluate('/meet')).toBe('/meet/assets/a.png');
+    expect(evaluate(() => '')).toBe('/assets/a.png');
+    expect(evaluate(undefined)).toBe('/assets/a.png');
+    (globalThis as Record<string, unknown>).__tuturuuuAppBase = saved;
   });
 
   it('matches createBasePath for every accepted and rejected input', () => {

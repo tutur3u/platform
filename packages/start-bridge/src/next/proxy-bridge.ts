@@ -61,7 +61,8 @@ export interface ProxyBridgeOptions {
   locals?: BridgeRequestContext['locals'];
   /** Middleware matcher over the app-relative pathname. */
   matches?: (pathname: string) => boolean;
-  /** Next `basePath`; `nextUrl.pathname` is then app-relative. */
+  /** Next `basePath`; `nextUrl.pathname` is then app-relative. Also the
+   * request context's `appBase`. */
   basePath?: string;
   /** Builds the forwarded request init (headers already merged). */
   requestInit?: (initial: Request, headers: Headers) => RequestInit;
@@ -95,6 +96,7 @@ export async function dispatchThroughProxy({
     cloudflare,
     observeNavigation,
     locals,
+    appBase: basePath,
   };
   return withBridgeRequest(
     { ...context, request: initial, cookieSource: initial.headers },

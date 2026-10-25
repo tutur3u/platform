@@ -1,24 +1,39 @@
-/**
- * Build-time basePath for app code running in the browser or SSR. The Vite
- * preset defines `import.meta.env.VITE_TUTURUUU_BASE_PATH`; it is empty at
- * the origin root, so every helper is the identity there.
- */
-export function appBasePath(): string {
-  const value = import.meta.env?.VITE_TUTURUUU_BASE_PATH;
-  return typeof value === 'string' ? value.replace(/\/+$/u, '') : '';
-}
+import { APP_BASE_GLOBAL, runtimeAppBase, withAppBase } from '../core/app-url';
 
-/** TanStack Router `basepath` option. */
+export {
+  appPath,
+  appUrl,
+  runtimeAppBase,
+  withAppBase,
+} from '../core/app-url';
+
+/** @deprecated Use `runtimeAppBase`; kept for the v0 export surface. */
+export const appBasePath = runtimeAppBase;
+
+/** TanStack Router `basepath` for the current request or document. */
 export function routerBasepath(): string {
-  return appBasePath() || '/';
+  return runtimeAppBase() || '/';
 }
 
-/** Prefixes a path-absolute href with the app base (see `createBasePath`). */
-export function withAppBase(href: string, basePath = appBasePath()): string {
-  if (!basePath || !href.startsWith('/') || href.startsWith('//')) return href;
-  if (href.startsWith('/\\')) return href;
-  const end = href.search(/[?#]/u);
-  const path = end === -1 ? href : href.slice(0, end);
-  if (path === basePath || path.startsWith(`${basePath}/`)) return href;
-  return `${basePath}${path === '/' ? '' : path}${end === -1 ? '' : href.slice(end)}`;
+/**
+ * Head script that hands the request's base to the browser before
+ * hydration. Add it first in the root route `head().scripts`.
+ */
+export function appBaseHeadScript(basePath = runtimeAppBase()) {
+  const value = JSON.stringify(basePath).replace(/</gu, '\\u003c');
+  return { children: `globalThis.${APP_BASE_GLOBAL}=${value};` };
 }
+
+/**
+ * `createStart({ serverFns: { fetch } })`: sends compiled server-function
+ * URLs (`/_serverFn/...`) through the mounted base in the browser.
+ */
+export const bridgeServerFnFetch: typeof fetch = (input, init) => {
+  if (typeof input === 'string') return fetch(withAppBase(input), init);
+  if (input instanceof URL) {
+    const url = new URL(input);
+    url.pathname = withAppBase(url.pathname);
+    return fetch(url, init);
+  }
+  return fetch(input, init);
+};
