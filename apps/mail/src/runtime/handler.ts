@@ -56,7 +56,11 @@ export async function handleMailRequest(
     );
   if (
     new URL(request.url).pathname.startsWith('/mail/') &&
-    path === '/api/auth/refresh-app-session'
+    [
+      '/api/auth/refresh-app-session',
+      '/api/auth/verify-app-token',
+      '/api/auth/logout',
+    ].includes(path)
   )
     return applyMailResponsePolicy(
       request,
