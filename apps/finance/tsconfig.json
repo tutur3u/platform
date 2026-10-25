@@ -28,6 +28,7 @@
     "src/start-bridge",
     "src/start.ts",
     "vite.config.mts",
-    "void.config.ts"
+    "void.config.ts",
+    "start-bridge.config.ts"
   ]
 }

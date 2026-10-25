@@ -62,9 +62,11 @@ the incoming request on each call; explicit caller base URLs retain precedence.
 request isolation. App code does not maintain a competing registrar or RSC
 entry wrapper.
 
-The Worker currently adds Finance's staging noindex response header after shared
-dispatch. Preserve that app behavior when regenerating; the router, Vite config,
-API entry and registration remain generated. Refresh the route registries with:
+`start-bridge.config.ts` owns Finance's staging noindex response wrapper.
+The codemod creates that config once and preserves its contents on regeneration.
+The Worker, router, Vite config, lazy API registry and registration remain
+fully generated. API dependencies load on the matching route's first request.
+Refresh the route registries with:
 
 ```bash
 bun packages/start-bridge/src/codegen/cli.ts generate apps/finance
