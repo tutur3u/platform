@@ -16,6 +16,13 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 - Prepare migrations; do not push production Supabase changes from Codex.
 - Prefer additive migrations and runtime fallbacks when rollout order can vary.
+- Separate short existing-table DDL, `VALIDATE CONSTRAINT`, and concurrent index
+  creation into distinct migration transactions. Earlier `ALTER TABLE` locks
+  otherwise survive through later scans; `lock_timeout` bounds acquisition, not
+  lock lifetime. With pinned CLI 2.117.0, keep `CREATE INDEX CONCURRENTLY` as the
+  only statement in its file so it executes outside the transaction batch. See
+  the [habit migration sequence](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#idempotent-writes)
+  for the schema-preserving split and regression coverage.
 - Apply local migrations before `bun sb:typegen` when possible. Typegen reads
   the live local schema, not unapplied SQL.
 - Never hand-edit generated type files. Prefer shared DB row aliases from

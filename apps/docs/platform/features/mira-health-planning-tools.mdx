@@ -60,9 +60,8 @@ so trackers created from mobile are named in English.
 ## Idempotent writes
 
 Retries and concurrent requests must not duplicate habit data, and a retried
-older operation must not undo a newer one. Migration
-`20261025125500_add_habit_tracker_idempotency_keys` enforces this in the
-database:
+older operation must not undo a newer one. Migrations
+`20261025125500` through `20261025125800` enforce this in the database:
 
 - **Tracker `creation_key`.** A partial unique index allows one active,
   unarchived tracker per (workspace, creator, key). Mira creates its Body Weight
@@ -101,9 +100,26 @@ The tracker column is new and nullable, so existing rows, including duplicate
 trackers already in the data, keep `NULL` keys and cannot violate the index.
 UI writes send no keys and behave as before. The Tasks API ignores keys while
 the column or function is missing, so app and migration rollout order does not
-matter. The migration takes no index on the entries table, validates its check
-constraint separately, and sets a 5-second `lock_timeout` so it fails fast
-rather than queueing writers.
+matter. The migration sequence keeps existing-table scans outside the short DDL
+transaction:
+
+1. `20261025125500` adds the nullable column without a default or table rewrite
+   and adds its check as `NOT VALID`, then commits its exclusive table lock.
+2. `20261025125600` validates the check with `SHARE UPDATE EXCLUSIVE`, which
+   permits ordinary reads and writes.
+3. `20261025125700` contains only `CREATE UNIQUE INDEX CONCURRENTLY`. The pinned
+   Supabase CLI 2.117.0 executes this lone statement outside a transaction batch.
+   Keep it alone; adding transaction-scoped setup statements breaks that path.
+4. `20261025125800` creates the empty receipt table, its indexes and the RPC.
+   Foreign-key setup briefly locks referenced tables; it does not scan existing
+   tracker or entry rows.
+
+The DDL and validation migrations use a 5-second `lock_timeout` to bound lock
+acquisition waits. That setting does not limit how long an acquired lock is
+held. No index is built on the entries table. The schema and idempotency
+contracts remain identical to the original combined migration. Regression
+coverage is in `supabase/tests/habit-tracker-idempotency.sql` and the Tasks
+habit writer and Mira habit executor tests.
 
 ## Units, bounds and dates
 
