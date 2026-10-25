@@ -47,6 +47,9 @@ export async function forwardToRetainedOrigin(
   }
   const target = new URL(incoming.pathname + incoming.search, origin);
   const headers = new Headers(request.headers);
+  for (const header of (headers.get('connection') ?? '').split(',')) {
+    if (header.trim()) headers.delete(header.trim());
+  }
   for (const name of [
     ...hopHeaders,
     'host',

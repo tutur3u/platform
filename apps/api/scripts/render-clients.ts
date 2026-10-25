@@ -59,6 +59,38 @@ function tsType(value: unknown): string {
   throw new Error(`Unsupported client schema: ${JSON.stringify(parsed)}`);
 }
 
+function dartType(value: unknown): string {
+  const parsed = schema.parse(value);
+  if (Array.isArray(parsed.type)) {
+    const nonNull = parsed.type.filter((item) => item !== 'null');
+    if (nonNull.length === 1 && parsed.type.includes('null'))
+      return `${dartType({ ...parsed, type: nonNull[0] })}?`;
+  }
+  if (parsed.type === 'string') return 'String';
+  if (parsed.type === 'integer') return 'int';
+  if (parsed.type === 'number') return 'num';
+  if (parsed.type === 'boolean') return 'bool';
+  throw new Error(`Unsupported Dart field schema: ${JSON.stringify(parsed)}`);
+}
+
+function dartModel(name: string, value: unknown): string[] {
+  const parsed = schema.parse(value);
+  if (parsed.type !== 'object')
+    throw new Error('Dart response must be an object');
+  const properties = Object.entries(parsed.properties ?? {});
+  return [
+    `class ${name} {`,
+    ...properties.map(([key, field]) => `  final ${dartType(field)} ${key};`),
+    `  const ${name}({${properties.map(([key]) => `required this.${key}`).join(', ')}});`,
+    `  factory ${name}.fromJson(Map<String, dynamic> json) => ${name}(`,
+    ...properties.map(
+      ([key, field]) => `    ${key}: json['${key}'] as ${dartType(field)},`
+    ),
+    '  );',
+    '}',
+  ];
+}
+
 export function clients(input: unknown) {
   const spec = specSchema.parse(input);
   const ts = [
@@ -81,10 +113,16 @@ export function clients(input: unknown) {
     '  final ApiTransport transport;',
     '  const ApiClient(this.origin, this.transport);',
   ];
+  const dartModels: string[] = [];
   for (const [path, methods] of Object.entries(spec.paths)) {
     for (const [method, operation] of Object.entries(methods)) {
       const response =
         operation.responses['200']?.content?.['application/json']?.schema;
+      const modelName =
+        operation.operationId[0]?.toUpperCase() +
+        operation.operationId.slice(1) +
+        'Response';
+      dartModels.push(...dartModel(modelName, response));
       const queryType = operation.parameters.length
         ? `{ ${operation.parameters.map((parameter) => `${parameter.name}: ${tsType(parameter.schema)}`).join('; ')} }`
         : 'Record<string, never>';
@@ -101,16 +139,16 @@ export function clients(input: unknown) {
         .map((parameter) => `required String ${parameter.name}`)
         .join(', ');
       dart.push(
-        `  Future<Map<String, dynamic>> ${operation.operationId}(${params ? `{${params}}` : ''}) async {`,
+        `  Future<${modelName}> ${operation.operationId}(${params ? `{${params}}` : ''}) async {`,
         `    final uri = origin.resolve('${path}').replace(queryParameters: {${operation.parameters.map((parameter) => `'${parameter.name}': ${parameter.name}`).join(', ')}});`,
         `    final response = await transport(uri, '${method.toUpperCase()}');`,
         "    if (response.status < 200 || response.status >= 300) throw StateError('API request failed: ' + response.status.toString() + '');",
-        '    return jsonDecode(response.body) as Map<String, dynamic>;',
+        `    return ${modelName}.fromJson(jsonDecode(response.body) as Map<String, dynamic>);`,
         '  }'
       );
     }
   }
   ts.push('}', '');
-  dart.push('}', '');
+  dart.push('}', ...dartModels, '');
   return { typescript: ts.join('\n'), dart: dart.join('\n') };
 }

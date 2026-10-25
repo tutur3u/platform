@@ -34,12 +34,31 @@ export function validateRegistry(endpoints: readonly Endpoint[]): void {
       throw new Error('Missing or duplicate operationId');
     }
     operationIds.add(endpoint.operationId);
+    if (
+      endpoint.runtime !== 'worker' ||
+      !['metadata', 'web-api'].includes(endpoint.guard) ||
+      !['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(endpoint.method)
+    ) {
+      throw new Error('Unknown route runtime, guard or method');
+    }
+    if (
+      !['none', 'json'].includes(endpoint.body) ||
+      !Number.isInteger(endpoint.status) ||
+      endpoint.status < 200 ||
+      endpoint.status > 299 ||
+      [204, 205].includes(endpoint.status)
+    ) {
+      throw new Error('Unsupported JSON transport or success status');
+    }
     if (!endpoint.policy || endpoint.policy.kind === 'deny')
       throw new Error('Missing serving policy');
     if (!endpoint.input || !endpoint.output)
       throw new Error('Missing route schema');
     if (
+      !Number.isSafeInteger(endpoint.limits.bodyBytes) ||
+      endpoint.limits.bodyBytes > 16_777_216 ||
       endpoint.limits.bodyBytes < 0 ||
+      !Number.isSafeInteger(endpoint.limits.deadlineMs) ||
       endpoint.limits.deadlineMs <= 0 ||
       endpoint.limits.deadlineMs > 30_000 ||
       !endpoint.limits.ratePolicy

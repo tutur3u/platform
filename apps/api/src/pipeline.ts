@@ -254,7 +254,11 @@ export function createApi(options: PipelineOptions) {
                 throw new ApiError('forbidden', 403, 'Invalid metadata policy');
               const body =
                 endpoint.body === 'json'
-                  ? await readJsonBody(request, endpoint.limits.bodyBytes)
+                  ? await readJsonBody(
+                      request,
+                      endpoint.limits.bodyBytes,
+                      signal
+                    )
                   : null;
               return endpoint.execute(
                 { params, query: queryValues(request), body },

@@ -2,7 +2,8 @@ import { ApiError } from './errors';
 
 export async function readJsonBody(
   request: Request,
-  limit: number
+  limit: number,
+  signal: AbortSignal = request.signal
 ): Promise<unknown> {
   if (!request.body) return null;
   if (
@@ -13,11 +14,21 @@ export async function readJsonBody(
   )
     throw new ApiError('bad_request', 400, 'Expected application/json');
   const reader = request.body.getReader();
+  const cancel = () => {
+    void reader.cancel().catch(() => {});
+  };
+  signal.addEventListener('abort', cancel, { once: true });
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
     while (true) {
       const { done, value } = await reader.read();
+      if (signal.aborted)
+        throw new ApiError(
+          'deadline_exceeded',
+          504,
+          'Request deadline exceeded'
+        );
       if (done) break;
       size += value.byteLength;
       if (size > limit)
@@ -32,6 +43,7 @@ export async function readJsonBody(
     await reader.cancel().catch(() => {});
     throw error;
   } finally {
+    signal.removeEventListener('abort', cancel);
     reader.releaseLock();
   }
   const bytes = new Uint8Array(size);
