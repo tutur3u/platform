@@ -25,8 +25,8 @@ test('Firebase input never follows an existing or dangling symlink', (t) => {
   const link = path.join(dir, 'google-services.json');
   fs.symlinkSync(target, link);
   ensureFirebaseConfig(link, 'dummy');
-  assert.equal(fs.existsSync(target), false);
-  fs.writeFileSync(target, 'private config');
+  // Exclusive create proves the dangling target was not followed.
+  fs.writeFileSync(target, 'private config', { flag: 'wx' });
   ensureFirebaseConfig(link, 'dummy');
   assert.equal(fs.readFileSync(target, 'utf8'), 'private config');
   assert.equal(fs.lstatSync(link).isSymbolicLink(), true);
