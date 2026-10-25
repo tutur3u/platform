@@ -2,7 +2,7 @@ import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { matchPage } from '@tuturuuu/start-bridge/pages';
 import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
-import { appBasePath } from '@tuturuuu/start-bridge/start/base-path';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { PAGE_REWRITE_HEADER } from '../lib/page-rewrite';
 import { resolvePathLocale } from './locale';
 import { type PagePattern, pages } from './page-registry.bridge.gen';
@@ -96,7 +96,7 @@ export type TasksPage = Awaited<
 
 /** Splits a router path into the app-relative pathname and its locale. */
 function appPathname(path: string) {
-  const base = appBasePath();
+  const base = runtimeAppBase();
   let pathname = new URL(path, 'http://app.invalid').pathname;
   if (base && (pathname === base || pathname.startsWith(`${base}/`)))
     pathname = pathname.slice(base.length) || '/';

@@ -83,12 +83,6 @@ const workerCjsBrowserEntries: Plugin = {
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'tasks',
-  aliases: {
-    'next-intl/server': local('./src/runtime/intl-server.ts'),
-    '@tuturuuu/satellite/i18n':
-      '@tuturuuu/start-bridge/intl/localized-navigation',
-    'server-only': '@tanstack/react-start/server-only',
-  },
   serverOnlySpecifiers: [
     'server-only',
     'next/headers',
@@ -100,6 +94,7 @@ const bridge = startBridgePreset({
 export default defineConfig(
   ({ command }): UserConfig => ({
     base: bridge.base,
+    experimental: bridge.experimental,
     define: bridge.define,
     plugins: [
       actionPorts,
