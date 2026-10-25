@@ -19,7 +19,9 @@ class _Preferences extends AssistantPreferences {
   @override
   Future<String?> loadChatId(String wsId) async => null;
   @override
-  Future<void> saveChatId(String wsId, String chatId, {
+  Future<void> saveChatId(
+    String wsId,
+    String chatId, {
     bool Function()? shouldWrite,
   }) async {
     writes++;
@@ -29,7 +31,7 @@ class _Preferences extends AssistantPreferences {
 
 class _Repository extends AssistantRepository {
   final creation = Completer<AssistantChatRecord>();
-  final events = StreamController<AssistantStreamEvent>();
+  final events = StreamController<AssistantStreamEvent>.broadcast();
   bool creating = false;
   ApiMutationAdmission? admitted;
   int sends = 0;
@@ -40,25 +42,36 @@ class _Repository extends AssistantRepository {
   Future<bool> hasUnknownChatCreation(String wsId) async => false;
   @override
   Future<List<AssistantChatRecord>> fetchRecentChats({
-    String? wsId, int? limit, bool forceRefresh = false,
+    String? wsId,
+    int? limit,
+    bool forceRefresh = false,
   }) async => [];
   @override
   Future<AssistantChatRecord> createChat({
-    required String id, required String wsId, required String modelId,
-    required String message, required String timezone,
-    ChatInitialAiSettings? initialSettings, bool Function()? isCurrent,
+    required String id,
+    required String wsId,
+    required String modelId,
+    required String message,
+    required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
   }) {
     creating = true;
     return creation.future;
   }
+
   @override
   Stream<AssistantStreamEvent> streamChat({
-    required String chatId, required String wsId,
-    required String? workspaceContextId, required String modelId,
+    required String chatId,
+    required String wsId,
+    required String? workspaceContextId,
+    required String modelId,
     required List<AssistantMessage> messages,
     required AssistantThinkingMode thinkingMode,
-    required AssistantCreditSource creditSource, required String timezone,
-    List<AssistantAttachment> attachments = const [], String? creditWsId,
+    required AssistantCreditSource creditSource,
+    required String timezone,
+    List<AssistantAttachment> attachments = const [],
+    String? creditWsId,
     ApiMutationAdmission? admission,
   }) {
     admission?.check();
@@ -77,9 +90,11 @@ void main() {
     repository = _Repository();
     preferences = _Preferences();
     chat = AssistantChatCubit(
-      repository: repository, preferences: preferences,
+      repository: repository,
+      preferences: preferences,
       onWorkspaceContextChanged: (_) async {},
-      onSoulRefreshRequested: () async {}, onImmersiveModeChanged: (_) {},
+      onSoulRefreshRequested: () async {},
+      onImmersiveModeChanged: (_) {},
       onChatRestored: (_) async {},
     );
     await chat.loadWorkspace(_ws);
@@ -89,25 +104,32 @@ void main() {
     await repository.events.close();
   });
   Future<void> send({bool Function()? isCurrent}) => chat.submit(
-    wsId: _ws, message: "Today's focus", modelId: 'google/model',
+    wsId: _ws,
+    message: "Today's focus",
+    modelId: 'google/model',
     thinkingMode: AssistantThinkingMode.fast,
-    creditSource: AssistantCreditSource.workspace, workspaceContextId: _ws,
-    timezone: 'Asia/Ho_Chi_Minh', isCurrent: isCurrent,
+    creditSource: AssistantCreditSource.workspace,
+    workspaceContextId: _ws,
+    timezone: 'Asia/Ho_Chi_Minh',
+    isCurrent: isCurrent,
   );
 
-  test('starts empty-state creation without advancing the debounce clock', () async {
-    await send();
-    expect(repository.creating, isTrue);
-    expect(repository.sends, 0);
-    repository.creation.complete(const AssistantCreatedChat(id: _chat));
-    await Future<void>.delayed(Duration.zero);
-    expect(repository.sends, 1);
-    expect(repository.dispatchedChat, _chat);
-    expect(preferences.writes, 0);
-    expect(chat.state.storedChatId, _chat);
-    expect(chat.state.creationOutcomeUnknown, isFalse);
-    expect(repository.admitted, isNotNull);
-  });
+  test(
+    'starts empty-state creation without advancing the debounce clock',
+    () async {
+      await send();
+      expect(repository.creating, isTrue);
+      expect(repository.sends, 0);
+      repository.creation.complete(const AssistantCreatedChat(id: _chat));
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.sends, 1);
+      expect(repository.dispatchedChat, _chat);
+      expect(preferences.writes, 0);
+      expect(chat.state.storedChatId, _chat);
+      expect(chat.state.creationOutcomeUnknown, isFalse);
+      expect(repository.admitted, isNotNull);
+    },
+  );
 
   test('a superseded create receipt cannot dispatch a message', () async {
     var current = true;

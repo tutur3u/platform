@@ -322,6 +322,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         ),
       );
     }
+
     if (shouldPrimeUi) {
       flush();
     } else {
