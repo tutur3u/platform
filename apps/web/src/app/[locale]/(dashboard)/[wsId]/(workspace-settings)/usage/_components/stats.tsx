@@ -13,7 +13,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import StatisticCard from '@/components/cards/StatisticCard';
-import { requireDatasetWorkspaceAccess } from '@/lib/datasets/page-access';
+import * as datasetAccess from '@/lib/datasets/page-access';
 
 // ============================================================================
 // Workspace Overview Stats
@@ -524,18 +524,18 @@ export async function AIPromptsStats({ wsId }: { wsId: string }) {
 }
 
 export async function AIDatasetsStats({ wsId }: { wsId: string }) {
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) notFound();
-  if (permissions.withoutPermission('ai_lab'))
+  const access = await datasetAccess.resolveDatasetWorkspaceAccess(wsId);
+  if (!access.ok) {
+    if (access.response.status !== 403)
+      datasetAccess.denyDatasetPageAccess(access.response);
     return (
       <StatisticCard title="AI Datasets" value="***" className="opacity-50" />
     );
-  const { supabase, wsId: verifiedWsId } =
-    await requireDatasetWorkspaceAccess(wsId);
-  const { count } = await supabase
+  }
+  const { count } = await access.supabase
     .from('workspace_datasets')
     .select('*', { count: 'exact', head: true })
-    .eq('ws_id', verifiedWsId);
+    .eq('ws_id', access.wsId);
   return <StatisticCard title="AI Datasets" value={count || 0} />;
 }
 
