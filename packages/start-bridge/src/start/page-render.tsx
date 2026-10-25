@@ -168,6 +168,19 @@ export function attributes(props: Record<string, unknown>): DocumentAttributes {
   return result;
 }
 
+/**
+ * Splits an app href into path and query on a fixed origin. The path is
+ * assigned, never parsed as a URL reference, so `//host/x` stays a path.
+ */
+function appLocation(href: string) {
+  const url = new URL('http://bridge.invalid');
+  const end = href.search(/[?#]/u);
+  url.pathname = end === -1 ? href : href.slice(0, end);
+  if (end !== -1 && href[end] === '?')
+    url.search = href.slice(end).split('#', 1)[0] ?? '';
+  return url;
+}
+
 export interface ResolveBridgePageOptions<Page extends BridgePage> {
   /** App-relative pathname plus search, e.g. `/qr?x=1`. */
   href: string;
@@ -181,7 +194,7 @@ export interface ResolveBridgePageOptions<Page extends BridgePage> {
 export async function resolveBridgePage<Page extends BridgePage>(
   options: ResolveBridgePageOptions<Page>
 ): Promise<ResolvedBridgePage | null> {
-  const url = new URL(options.href, 'http://bridge.invalid');
+  const url = appLocation(options.href);
   // Router locations may carry the mount (`/tools/qr`); match app-relative.
   const base = runtimeAppBase();
   const pathname =

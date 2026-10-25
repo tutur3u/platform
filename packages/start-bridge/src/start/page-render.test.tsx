@@ -221,4 +221,17 @@ describe('resolveBridgePage', () => {
       expect(currentPageParams()).toEqual({ locale: 'vi', id: '9' });
     });
   });
+
+  it('treats a // path as a path, never as another host', async () => {
+    await withBridgeRequest(request('/'), async () => {
+      // As a URL reference this would be host `notes`, path `/5`.
+      const page = await resolveBridgePage({
+        href: '//notes/5?x=1',
+        pages,
+        modules,
+      });
+      expect(page?.pattern).toBe('/notes/[id]');
+      expect(currentPageParams().id).toBe('5');
+    });
+  });
 });

@@ -77,12 +77,18 @@ describe('resolvePageLocation', () => {
     expect(response.status).toBe(200);
   });
 
-  const navigation = (proxy: NextProxy, href: string, cookie = '') => {
+  const navigation = (
+    proxy: NextProxy,
+    href: string,
+    cookie = '',
+    mount?: { origin: string; base: string }
+  ) => {
+    const origin = mount?.origin ?? 'https://tasks.tuturuuu.com';
     const request = new Request(
-      'https://tasks.tuturuuu.com/_serverFn/abc?payload=1',
+      `${origin}${mount?.base ?? ''}/_serverFn/abc?payload=1`,
       { headers: { cookie, 'x-tss-serialized': 'true' } }
     );
-    return withBridgeRequest({ request }, async () => {
+    return withBridgeRequest({ request, appBase: mount?.base }, async () => {
       try {
         return { href: await resolvePageLocation(href, { proxy }) };
       } catch (error) {
@@ -152,5 +158,83 @@ describe('resolvePageLocation', () => {
 
   it('returns the href unchanged outside a bridge request', async () => {
     expect(await resolvePageLocation('/x?y=1')).toBe('/x?y=1');
+  });
+
+  const redirectHref = (result: { error?: unknown }) =>
+    (result.error as { options: { href: string } }).options.href;
+  const MOUNT = { origin: 'https://tuturuuu.com', base: '/tasks' };
+  // Forms that a URL parser could read as another origin.
+  const HOSTILE = [
+    'https://ignored.invalid//attacker.test/private',
+    'http://attacker.test/private',
+    '//attacker.test/private',
+    '/\\attacker.test/private',
+    '\\\\attacker.test/private',
+    '/\t/attacker.test/private',
+    '/\n/attacker.test/private',
+    '/a/..//attacker.test/private',
+    'attacker.test/private',
+  ];
+
+  it.each([
+    ['root', undefined],
+    ['mount', MOUNT],
+  ])('rejects hrefs that could name another origin (%s)', async (_, mount) => {
+    for (const href of HOSTILE) {
+      let proxied = false;
+      const result = await navigation(
+        async () => {
+          proxied = true;
+          return NextResponse.json({}, { status: 403 });
+        },
+        href,
+        '',
+        mount
+      );
+      expect(isNotFound(result.error), href).toBe(true);
+      expect(proxied, href).toBe(false);
+    }
+    await expect(resolvePageLocation('//attacker.test/x')).rejects.toSatisfy(
+      isNotFound
+    );
+  });
+
+  it.each([
+    ['root', undefined, 'https://tasks.tuturuuu.com/b?q=1'],
+    ['mount', MOUNT, 'https://tuturuuu.com/tasks/b?q=1'],
+  ])(
+    'keeps the 403 and failure fallbacks on the request origin (%s)',
+    async (_, mount, expected) => {
+      const forbidden = await navigation(
+        async () => NextResponse.json({}, { status: 403 }),
+        '/a/../b?q=1',
+        '',
+        mount
+      );
+      expect(redirectHref(forbidden)).toBe(expected);
+      const failed = await navigation(
+        async () => {
+          throw new Error('proxy failure');
+        },
+        '/a/../b?q=1',
+        '',
+        mount
+      );
+      expect(redirectHref(failed)).toBe(expected);
+      expect(new URL(redirectHref(failed)).origin).toBe(
+        mount?.origin ?? 'https://tasks.tuturuuu.com'
+      );
+    }
+  );
+
+  it('keeps a configured external redirect from the app proxy', async () => {
+    const result = await navigation(
+      async () =>
+        NextResponse.redirect('https://tuturuuu.com/login?returnUrl=%2Ftasks'),
+      '/tasks'
+    );
+    expect(redirectHref(result)).toBe(
+      'https://tuturuuu.com/login?returnUrl=%2Ftasks'
+    );
   });
 });

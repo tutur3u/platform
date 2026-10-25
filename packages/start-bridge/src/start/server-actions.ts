@@ -26,8 +26,43 @@ export interface ServerActionResult {
   value: unknown;
 }
 
-/** Most action bodies; larger replies are rejected before decoding. */
-export const MAX_ACTION_FORM_BYTES = 10 * 1024 * 1024;
+/** Bounds applied to the whole call before anything is decoded. */
+export const MAX_ACTION_BYTES = 10 * 1024 * 1024;
+export const MAX_ACTION_ENTRIES = 1000;
+
+const SERVER_REFERENCE = Symbol.for('react.server.reference');
+// `<module key>#<export name>`; the export name is a JS identifier.
+const ACTION_ID = /^[^#\s]{1,256}#[A-Za-z_$][\w$]{0,255}$/u;
+
+class ActionTooLargeError extends Error {
+  constructor() {
+    super('Server action arguments are too large');
+  }
+}
+
+/** UTF-8 bytes of `value`, counting up to the remaining budget. */
+function utf8Bytes(value: string) {
+  let bytes = 0;
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code < 0xdc00 && index + 1 < value.length) {
+      bytes += 4;
+      index++;
+    } else bytes += 3;
+    if (bytes > MAX_ACTION_BYTES) break;
+  }
+  return bytes;
+}
+
+function createBudget() {
+  let bytes = 0;
+  return (value: string) => {
+    bytes += utf8Bytes(value);
+    if (bytes > MAX_ACTION_BYTES) throw new ActionTooLargeError();
+  };
+}
 
 function toBase64(bytes: Uint8Array) {
   let binary = '';
@@ -65,39 +100,72 @@ export async function encodeActionCall(
   return { id, form };
 }
 
-/** Server: the reply React's `decodeReply` expects. */
+function isEncodedFile(value: unknown): value is EncodedFile {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as EncodedFile).name === 'string' &&
+    typeof (value as EncodedFile).type === 'string' &&
+    typeof (value as EncodedFile).base64 === 'string'
+  );
+}
+
+/**
+ * Server: the reply React's `decodeReply` expects. The whole call (id,
+ * reply or every entry name, value, file name, type and decoded bytes) is
+ * measured in UTF-8 bytes against one budget, and the entry count is capped,
+ * before any value is decoded.
+ */
 export function decodeActionCall(call: ServerActionCall) {
-  if (typeof call?.id !== 'string')
+  const spend = createBudget();
+  if (typeof call?.id !== 'string' || !ACTION_ID.test(call.id))
     throw new Error('Invalid server action call');
-  if ('reply' in call && typeof call.reply === 'string') return call.reply;
+  spend(call.id);
+  if ('reply' in call && typeof call.reply === 'string') {
+    spend(call.reply);
+    return call.reply;
+  }
   if (!('form' in call) || !Array.isArray(call.form))
     throw new Error('Invalid server action call');
-  const form = new FormData();
-  let bytes = 0;
+  if (call.form.length > MAX_ACTION_ENTRIES) throw new ActionTooLargeError();
   for (const entry of call.form) {
     const [name, value] = Array.isArray(entry) ? entry : [];
     if (typeof name !== 'string') throw new Error('Invalid server action call');
-    if (typeof value === 'string') {
-      bytes += value.length;
-      form.append(name, value);
-    } else if (
-      value &&
-      typeof value.base64 === 'string' &&
-      typeof value.name === 'string' &&
-      typeof value.type === 'string'
-    ) {
-      bytes += value.base64.length;
-      if (bytes > MAX_ACTION_FORM_BYTES)
-        throw new Error('Server action arguments are too large');
-      form.append(
-        name,
-        new File([fromBase64(value.base64)], value.name, { type: value.type })
-      );
+    spend(name);
+    if (typeof value === 'string') spend(value);
+    else if (isEncodedFile(value)) {
+      spend(value.name);
+      spend(value.type);
+      spend(value.base64);
     } else throw new Error('Invalid server action call');
-    if (bytes > MAX_ACTION_FORM_BYTES)
-      throw new Error('Server action arguments are too large');
   }
+  const form = new FormData();
+  for (const [name, value] of call.form as [string, string | EncodedFile][])
+    if (typeof value === 'string') form.append(name, value);
+    else {
+      const bytes = fromBase64(value.base64);
+      // Decoded bytes are already within the base64 text's budget.
+      form.append(name, new File([bytes], value.name, { type: value.type }));
+    }
   return form;
+}
+
+/**
+ * Only a function React registered as a server reference under exactly this
+ * id may run: `loadServerAction` reads `module[name]`, so a prototype member
+ * (`#constructor`, `#toString`) or another export's alias is rejected. Bound
+ * references keep the `$$id` of the reference they were bound from.
+ */
+function isRegisteredAction(
+  value: unknown,
+  id: string
+): value is (...args: unknown[]) => unknown {
+  return (
+    typeof value === 'function' &&
+    Object.hasOwn(value, '$$id') &&
+    (value as { $$typeof?: unknown }).$$typeof === SERVER_REFERENCE &&
+    (value as { $$id?: unknown }).$$id === id
+  );
 }
 
 /** Client: route every server reference call through `call`. */
@@ -123,8 +191,9 @@ export async function runServerAction(
   const { decodeReply, loadServerAction } = await import(
     '@vitejs/plugin-rsc/rsc'
   );
-  const action = await loadServerAction(input.id);
-  if (typeof action !== 'function') throw new Error('Unknown server action');
+  const action: unknown = await loadServerAction(input.id);
+  if (!isRegisteredAction(action, input.id))
+    throw new Error('Unknown server action');
   const args = await decodeReply(reply);
   if (!Array.isArray(args)) throw new Error('Invalid server action call');
   return { value: await action(...args) };
