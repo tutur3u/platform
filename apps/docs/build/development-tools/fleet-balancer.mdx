@@ -94,6 +94,34 @@ once the host answers, and only a result carrying the run's lease and fence is
 accepted. `cancel` stops a queued run locally and signals a placed run's host
 supervisor, which stops the queue admission and its command.
 
+## Controller ledger locking
+
+All controllers sharing one local ledger serialize submit and revision updates
+with a SQLite `BEGIN IMMEDIATE` transaction on
+`ledger/mutation-lock.sqlite`. The ledger data remains in atomic JSON files;
+SQLite provides only the interprocess lock. A contender retries a busy lock
+with asynchronous waits for at most 30 seconds, then fails closed. Closing the
+connection releases the lock on success or error; the OS also releases it when
+the process dies. Recovery never reads a PID or deletes a lock pathname, so it
+cannot remove a successor controller's live lock. Keep the persistent SQLite
+file in place, on a local filesystem with working OS file locks.
+
+Before upgrading from the PID-directory protocol, stop and drain every old
+controller sharing that ledger. Upgrade all of them before restarting; mixed
+protocol versions do not share a lock. A leftover legacy `ledger/.lock`
+directory is ignored and is never removed by the new controller. Do not unlink,
+replace or restore the SQLite lock file while any controller is running.
+The controller requires a runtime supporting `node:sqlite`, as the SDK's
+operational store already does.
+
+An exclusive request-intent link that loses reads and validates the winning
+marker. Conflicting parameters fail without creating runs; a matching intent
+retains its original source identity and creation time, and a committed marker
+returns the existing runs. Regression coverage lives in
+`packages/sdk/src/cli/balancer-stale-lock.test.ts` (the concurrent stale-recovery
+dispatch race and process-death recovery) and `balancer-ledger.test.ts` (intent
+link conflicts and partial-submit recovery).
+
 ## Infrastructure view
 
 Controllers publish each changed run (best effort) to

@@ -9,14 +9,17 @@ import {
 } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
   type BalancerRun,
   type BalancerRunRequest,
   type BalancerSource,
+  parseRunRequest,
   RUN_ID_PATTERN,
   runsForRequest,
 } from '@tuturuuu/devbox';
+import { z } from 'zod';
 import { writeFileAtomically } from './atomic-file';
 
 // Controller-side durable ledger. Every mutation is a compare-and-swap on
@@ -43,12 +46,15 @@ const canonical = (value: unknown): string =>
 export const sourceIdentity = (source: BalancerSource) =>
   createHash('sha256').update(canonical(source)).digest('hex');
 
-type RequestMarker = {
-  request: BalancerRunRequest;
-  sourceId: string;
-  createdAt: string;
-  state?: 'intent' | 'committed';
-};
+const requestMarkerSchema = z.object({
+  request: z.unknown().transform(parseRunRequest),
+  sourceId: z.string().regex(/^[0-9a-f]{64}$/u),
+  createdAt: z.iso.datetime(),
+  state: z.enum(['intent', 'committed']).optional(),
+});
+type RequestMarker = z.infer<typeof requestMarkerSchema>;
+const parseMarker = (contents: string) =>
+  requestMarkerSchema.parse(JSON.parse(contents));
 
 // Publishes a complete file only if `path` does not exist yet; an existing
 // file is left untouched. link(2) is atomic and fails with EEXIST.
@@ -73,15 +79,6 @@ export class BalancerConflictError extends Error {
   }
 }
 
-function processAlive(pid: number) {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code !== 'ESRCH';
-  }
-}
-
 export class BalancerLedger {
   readonly root: string;
   constructor(home = balancerHome()) {
@@ -95,32 +92,37 @@ export class BalancerLedger {
     return join(this.root, 'requests', `${requestId}.json`);
   }
 
-  // Short mutual exclusion; a lock left by a dead process is taken over.
+  // SQLite holds an OS file lock on a persistent inode. Never unlink this
+  // database: process death releases the lock without deleting a successor.
   async withLock<T>(action: () => Promise<T>): Promise<T> {
-    const lock = join(this.root, '.lock');
     await mkdir(join(this.root, 'runs'), { recursive: true, mode: 0o700 });
     await mkdir(join(this.root, 'requests'), { recursive: true, mode: 0o700 });
-    for (let attempt = 0; ; attempt++) {
-      try {
-        await mkdir(lock, { mode: 0o700 });
-        await writeFile(join(lock, 'pid'), String(process.pid));
-        break;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-        const pid = Number(
-          await readFile(join(lock, 'pid'), 'utf8').catch(() => '')
-        );
-        if (Number.isInteger(pid) && pid > 1 && !processAlive(pid))
-          await rm(lock, { recursive: true, force: true });
-        else if (attempt > 600)
-          throw new Error('Balancer ledger lock is held.');
-        else await sleep(50);
-      }
-    }
+    const db = new DatabaseSync(join(this.root, 'mutation-lock.sqlite'));
     try {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          db.exec('BEGIN IMMEDIATE');
+          break;
+        } catch (error) {
+          if (
+            typeof error !== 'object' ||
+            error === null ||
+            !(
+              ('errcode' in error && error.errcode === 5) ||
+              ('code' in error && error.code === 'SQLITE_BUSY')
+            )
+          )
+            throw error;
+          if (attempt >= 600) throw new Error('Balancer ledger lock is held.');
+          // Yield so another connection in this process can finish its I/O.
+          await sleep(50);
+        }
+      }
       return await action();
     } finally {
-      await rm(lock, { recursive: true, force: true });
+      // Closing rolls back this lock-only transaction, including on action
+      // failure. No ledger data is stored in SQLite.
+      db.close();
     }
   }
 
@@ -156,20 +158,15 @@ export class BalancerLedger {
   async submit(request: BalancerRunRequest, at = new Date().toISOString()) {
     return this.withLock(async () => {
       const path = this.requestPath(request.requestId);
-      const existing = await readFile(path, 'utf8').catch(() => undefined);
+      const existing = await readFile(path, 'utf8').catch((error) => {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+          return undefined;
+        throw error;
+      });
       let marker: RequestMarker;
+      let created = false;
       if (existing !== undefined) {
-        marker = JSON.parse(existing);
-        if (canonical(marker.request) !== canonical(request))
-          throw new BalancerConflictError(
-            `Request ${request.requestId} already exists with different parameters.`
-          );
-        // Markers without a state predate intents and were written last.
-        if (marker.state !== 'intent')
-          return {
-            created: false,
-            runs: await this.listRuns(request.requestId),
-          };
+        marker = parseMarker(existing);
       } else {
         marker = {
           request,
@@ -177,8 +174,22 @@ export class BalancerLedger {
           createdAt: at,
           state: 'intent',
         };
-        await createExclusively(path, JSON.stringify(marker));
+        created = await createExclusively(path, JSON.stringify(marker));
+        if (!created) marker = parseMarker(await readFile(path, 'utf8'));
       }
+      if (
+        canonical(marker.request) !== canonical(request) ||
+        marker.sourceId !== sourceIdentity(request.source)
+      )
+        throw new BalancerConflictError(
+          `Request ${request.requestId} already exists with different parameters.`
+        );
+      // Markers without a state predate intents and were written last.
+      if (marker.state !== 'intent')
+        return {
+          created: false,
+          runs: await this.listRuns(request.requestId),
+        };
       for (const run of runsForRequest(
         request,
         marker.sourceId,
@@ -191,7 +202,7 @@ export class BalancerLedger {
         { mode: 0o600 }
       );
       return {
-        created: existing === undefined,
+        created,
         runs: await this.listRuns(request.requestId),
       };
     });

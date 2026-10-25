@@ -5,7 +5,11 @@ import { basename, dirname, join } from 'node:path';
 import { parseRunRequest } from '@tuturuuu/devbox';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { balancerTick, type ControllerDeps } from './balancer-controller';
-import { BalancerLedger } from './balancer-ledger';
+import {
+  BalancerConflictError,
+  BalancerLedger,
+  sourceIdentity,
+} from './balancer-ledger';
 import { fixtureHost, fixtureTelemetry } from './balancer-test-fixtures';
 import type { AgentAction, AgentReply } from './balancer-transport';
 
@@ -38,9 +42,31 @@ vi.mock('./atomic-file', async (importOriginal) => {
   };
 });
 
+const intentFault = vi.hoisted((): { winner: string | undefined } => ({
+  winner: undefined,
+}));
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...real,
+    link: async (...args: Parameters<typeof real.link>) => {
+      if (
+        intentFault.winner &&
+        basename(dirname(String(args[1]))) === 'requests'
+      ) {
+        const contents = intentFault.winner;
+        intentFault.winner = undefined;
+        await real.writeFile(args[1], contents, { flag: 'wx', mode: 0o600 });
+      }
+      return real.link(...args);
+    },
+  };
+});
+
 const dirs: string[] = [];
 afterEach(async () => {
   fault.armed = false;
+  intentFault.winner = undefined;
   await Promise.all(
     dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
   );
@@ -140,5 +166,48 @@ describe('balancer ledger submit', () => {
     expect([after?.state, after?.deviceId]).toEqual(['running', 'linux']);
     expect(retry.created).toBe(false);
     expect(retry.runs[0]).toEqual(placed);
+  });
+});
+
+describe('exclusive request intent winner', () => {
+  async function setup(state: 'intent' | 'committed', conflicting = false) {
+    const home = await mkdtemp(join(tmpdir(), 'balancer-intent-'));
+    dirs.push(home);
+    const wanted = request('proof-exclusive-intent');
+    const winner = conflicting ? { ...wanted, command: ['different'] } : wanted;
+    const createdAt = '2026-10-23T01:02:03.000Z';
+    intentFault.winner = JSON.stringify({
+      request: winner,
+      sourceId: sourceIdentity(winner.source),
+      createdAt,
+      state,
+    });
+    return { ledger: new BalancerLedger(home), wanted, createdAt };
+  }
+
+  it('rejects conflicting parameters without creating runs or overwriting the winning marker', async () => {
+    const { ledger, wanted } = await setup('intent', true);
+    await expect(ledger.submit(wanted)).rejects.toBeInstanceOf(
+      BalancerConflictError
+    );
+    expect(await ledger.listRuns()).toEqual([]);
+    // A retry must still conflict; the losing submit must not replace intent.
+    await expect(ledger.submit(wanted)).rejects.toBeInstanceOf(
+      BalancerConflictError
+    );
+  });
+
+  it('resumes the winning intent with its original source and timestamp', async () => {
+    const { ledger, wanted, createdAt } = await setup('intent');
+    const result = await ledger.submit(wanted, '2026-10-25T00:00:00.000Z');
+    expect(result.created).toBe(false);
+    expect(result.runs).toHaveLength(1);
+    expect(result.runs[0]?.queuedAt).toBe(createdAt);
+    expect(result.runs[0]?.sourceId).toBe(sourceIdentity(wanted.source));
+  });
+
+  it('treats a committed winner as an existing request', async () => {
+    const { ledger, wanted } = await setup('committed');
+    expect(await ledger.submit(wanted)).toEqual({ created: false, runs: [] });
   });
 });

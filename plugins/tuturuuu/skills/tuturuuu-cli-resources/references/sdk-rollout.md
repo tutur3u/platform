@@ -42,3 +42,11 @@ swap/assertion failures rather than loader errors. Directory identity checks
 cover enumeration and recursive hashing. Cache manifests deliberately follow
 symlinks and classify/read one descriptor. Run FIFO controls in children with
 an explicit kill deadline so a blocking-open defect cannot hang the test runner.
+
+## Balancer controller lock protocol
+
+Drain every controller sharing a ledger before upgrading from PID-directory
+locking to SQLite transaction locking. Keep `ledger/mutation-lock.sqlite` in
+place while any controller runs; unlinking it would create a second lock inode.
+The [fleet balancer runbook](../../../../../apps/docs/build/development-tools/fleet-balancer.mdx#controller-ledger-locking)
+owns runtime requirements, legacy-lock recovery and regression coverage.
