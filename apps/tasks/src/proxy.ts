@@ -32,6 +32,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
 import { resolveTaskBoardEntrypoint } from './lib/tasks/task-board-entrypoint';
 
 const AUTH_PUBLIC_PATHS = [
@@ -102,10 +103,25 @@ function getTaskLinkPreviewRewrite(req: NextRequest) {
   const { locale } = getLocale(req);
   const previewUrl = new URL(`/${locale}/task-link-preview`, req.url);
   previewUrl.search = '';
-  const response = NextResponse.rewrite(previewUrl);
+  const response = NextResponse.rewrite(previewUrl, {
+    request: { headers: withPageRewrite(req, previewUrl) },
+  });
   response.headers.set('Cache-Control', 'private, no-store, max-age=0');
   response.headers.append('Vary', 'User-Agent');
   return response;
+}
+
+/** Names a page rewrite for the native Start loader (see `page-rewrite`). */
+function withPageRewrite(req: NextRequest, destination: URL) {
+  const base = req.nextUrl.basePath;
+  const { pathname, search } = destination;
+  const appPath =
+    base && (pathname === base || pathname.startsWith(`${base}/`))
+      ? pathname.slice(base.length) || '/'
+      : pathname;
+  const headers = new Headers(req.headers);
+  headers.set(PAGE_REWRITE_HEADER, `${appPath}${search}`);
+  return headers;
 }
 
 function getNonTasksWorkspaceRedirect(req: NextRequest) {
@@ -439,7 +455,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     // the retry rewrite must target the actual localized App Router pathname.
     const entrypointUrl = new URL(`/${locale}/${target}/tasks`, req.nextUrl);
     entrypointUrl.search = req.nextUrl.search;
-    const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
+    const fallbackRewrite = NextResponse.rewrite(entrypointUrl, {
+      request: { headers: withPageRewrite(req, entrypointUrl) },
+    });
     propagateAuthCookies(authRes, fallbackRewrite);
     return fallbackRewrite;
   }

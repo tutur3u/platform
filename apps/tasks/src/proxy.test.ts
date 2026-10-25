@@ -287,6 +287,9 @@ describe('Tasks proxy auth mode', () => {
       expect(response.headers.get('x-middleware-rewrite')).toBe(
         `https://tasks.tuturuuu.com/${locale}/task-link-preview`
       );
+      expect(
+        response.headers.get('x-middleware-request-x-tuturuuu-page-rewrite')
+      ).toBe(`/${locale}/task-link-preview`);
       expect(response.headers.get('cache-control')).toBe(
         'private, no-store, max-age=0'
       );
@@ -444,6 +447,9 @@ describe('Tasks proxy auth mode', () => {
     expect(response.headers.get('x-middleware-rewrite')).toBe(
       'https://tasks.tuturuuu.com/vi/personal/tasks?retry=1'
     );
+    expect(
+      response.headers.get('x-middleware-request-x-tuturuuu-page-rewrite')
+    ).toBe('/vi/personal/tasks?retry=1');
   });
 
   it('rewrites to the task entrypoint when board resolution throws', async () => {
