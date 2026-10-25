@@ -239,3 +239,10 @@ Client currency pickers import only the values and normalization helpers from
 `display-currency.server.ts` and is imported only by server pages. Keep this
 boundary: the native build rejects a client import of the Supabase server
 adapter; do not relax that import protection to bundle a mixed utility module.
+
+Exact GET and HEAD `/api/build-info` requests expose only public build identity.
+The proxy strips ambient cookies and authorization before the existing API guard
+and local handler, without refreshing a session or writing cookies. Other methods,
+siblings and nested paths keep normal authentication. `proxy-build-info.test.ts`
+covers admission, guard denials and negative method/path controls; the emitted
+runtime suite still requires the exact compiled app name and source commit.
