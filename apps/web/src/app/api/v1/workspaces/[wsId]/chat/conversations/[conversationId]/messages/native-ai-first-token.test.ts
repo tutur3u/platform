@@ -1,6 +1,7 @@
 // @vitest-environment node
-import { beforeEach, expect, it } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 import {
+  assistantMessage,
   conversation,
   createAdminClientMock,
   createRequest,
@@ -53,5 +54,57 @@ it('starts the authorized history read while settings are still pending', async 
   } finally {
     releaseSettings();
     await response;
+  }
+});
+
+it('streams first text while initial realtime publication is still pending', async () => {
+  let release!: () => void;
+  const publication = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let started = false;
+  mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+    if (name === 'chat_list_messages') return [userMessage];
+    if (name === 'chat_persist_ai_message_batch_idempotent')
+      return { messages: [assistantMessage], replayed: false };
+    throw new Error(`Unexpected RPC ${name}`);
+  });
+  const { streamNativeAiConversationResponse } = await import(
+    './native-ai-message'
+  );
+  const response = streamNativeAiConversationResponse({
+    auth: mocks.auth as never,
+    context: { normalizedWsId: 'workspace-1' } as never,
+    conversation,
+    userMessage,
+    request: createRequest() as never,
+    miraMode: false,
+    publishInitialMessages: async () => {
+      started = true;
+      await publication;
+    },
+  });
+  const reader = response.body!.getReader();
+  let firstText = false;
+  const reading = (async () => {
+    const decoder = new TextDecoder();
+    for (;;) {
+      const part = await reader.read();
+      if (part.done) return;
+      if (decoder.decode(part.value).includes('assistant_delta'))
+        firstText = true;
+    }
+  })();
+  try {
+    await vi.waitFor(
+      () => {
+        expect(started).toBe(true);
+        expect(firstText).toBe(true);
+      },
+      { interval: 1, timeout: 1000 }
+    );
+  } finally {
+    release();
+    await reading;
   }
 });

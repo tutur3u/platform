@@ -92,6 +92,7 @@ beforeEach(() => {
       })
   );
   mocks.callPrivateChatRpc.mockResolvedValue(result());
+  mocks.publishChatRealtimeEvent.mockResolvedValue(undefined);
 });
 describe('atomic native first-message route', () => {
   it('creates and persists once, bound to server actor/workspace, before streaming', async () => {
@@ -222,6 +223,54 @@ describe('atomic native first-message route', () => {
     expect((await post({}, 'application/json')).status).toBe(400);
     expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
   });
+  it('publishes creation and USER receipts with normal recipient notification', async () => {
+    await post();
+    const publish = first.stream.mock.calls[0]?.[0].publishInitialMessages;
+    expect(publish).toBeTypeOf('function');
+    await publish();
+    expect(
+      mocks.publishChatRealtimeEvent.mock.calls.map(([event]) => event.type)
+    ).toEqual(['conversation.created', 'message.created']);
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: actor,
+        wsId: ws,
+        conversationId: id,
+        message: result().message,
+        type: 'message.created',
+      })
+    );
+    expect(mocks.notifyChatMessageRecipients).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        actorUserId: actor,
+        wsId: ws,
+        message: result().message,
+      })
+    );
+  });
+  it('a replay does not duplicate creation announcements or notifications', async () => {
+    mocks.callPrivateChatRpc.mockResolvedValue({ ...result(), replayed: true });
+    await post();
+    const publish = first.stream.mock.calls[0]?.[0].publishInitialMessages;
+    expect(publish).toBeTypeOf('function');
+    await publish();
+    expect(
+      mocks.publishChatRealtimeEvent.mock.calls.map(([event]) => event.type)
+    ).toEqual(['message.created']);
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
+  });
+  it('supplemental publication failure cannot invalidate a committed creation ACK', async () => {
+    mocks.publishChatRealtimeEvent.mockRejectedValue(
+      new Error('Synthetic realtime failure')
+    );
+    const response = await post();
+    const publish = first.stream.mock.calls[0]?.[0].publishInitialMessages;
+    expect(publish).toBeTypeOf('function');
+    await expect(publish()).resolves.toBeUndefined();
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-mira-chat-creation')).not.toBeNull();
+  });
+
   it('fails closed when migration is unavailable', async () => {
     mocks.callPrivateChatRpc.mockRejectedValue({ code: 'PGRST202' });
     expect((await post()).status).toBe(500);

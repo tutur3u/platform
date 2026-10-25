@@ -8,6 +8,7 @@ import {
   initialAiSettingsSchema,
   validateInitialAiSettingsReceipt,
 } from '@/lib/chat/initial-ai-settings';
+import { notifyChatMessageRecipients } from '@/lib/chat/notifications';
 import {
   type ChatConversation,
   type ChatMessage,
@@ -15,6 +16,10 @@ import {
   callPrivateChatRpc,
   chatRpcErrorResponse,
 } from '@/lib/chat/private-rpc';
+import {
+  getChatRealtimeAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
 import { streamNativeAiConversationResponse } from './native-ai-message';
 
 const creationReceiptSchema = z.object({
@@ -115,7 +120,8 @@ export async function sendFirstAiChatMessage({
       message.senderId !== auth.user.id ||
       message.kind !== 'user' ||
       message.content !== content ||
-      message.metadata.clientRequestId !== clientRequestId
+      message.metadata.clientRequestId !== clientRequestId ||
+      typeof result.replayed !== 'boolean'
     ) {
       throw new Error('Invalid first-message receipt');
     }
@@ -128,6 +134,44 @@ export async function sendFirstAiChatMessage({
       timezone,
       clientCapabilities,
       userMessage: message,
+      publishInitialMessages: async () => {
+        const currentConversation = { ...conversation, latestMessage: message };
+        const audience = getChatRealtimeAudience(currentConversation);
+        const publications = await Promise.allSettled([
+          ...(!result.replayed
+            ? [
+                publishChatRealtimeEvent({
+                  actorUserId: auth.user.id,
+                  audience,
+                  conversation: currentConversation,
+                  conversationId,
+                  type: 'conversation.created',
+                  wsId: context.normalizedWsId,
+                }),
+                notifyChatMessageRecipients({
+                  actorUserId: auth.user.id,
+                  conversation: currentConversation,
+                  message,
+                  wsId: context.normalizedWsId,
+                }),
+              ]
+            : []),
+          publishChatRealtimeEvent({
+            actorUserId: auth.user.id,
+            audience,
+            conversationId,
+            message,
+            type: 'message.created',
+            wsId: context.normalizedWsId,
+          }),
+        ]);
+        if (publications.some((result) => result.status === 'rejected')) {
+          console.warn(
+            'Created first chat message but supplemental publication failed',
+            { conversationId }
+          );
+        }
+      },
       initialSettings: {
         model_id: admission.settings.modelId,
         credit_source: admission.settings.creditSource,

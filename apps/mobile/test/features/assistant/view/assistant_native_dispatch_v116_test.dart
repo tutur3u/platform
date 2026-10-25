@@ -336,6 +336,7 @@ void main() {
     final user = h.chat.state.messages.where((m) => m.role == 'user').single;
     expect(user.clientRequestId, h.port.posts.single['clientRequestId']);
     expect(user.id, h.port.saved.values.single['id']);
+    await h.openComposer(tester);
     expect(h.draft(tester).text, isEmpty);
   });
 

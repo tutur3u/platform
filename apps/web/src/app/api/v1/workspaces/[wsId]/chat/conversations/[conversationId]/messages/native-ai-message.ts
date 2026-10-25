@@ -64,6 +64,7 @@ export function streamNativeAiConversationResponse({
   clientCapabilities,
   userMessage,
   initialSettings,
+  publishInitialMessages,
 }: {
   auth: SessionAuthContext;
   context: ChatRouteContext;
@@ -74,6 +75,7 @@ export function streamNativeAiConversationResponse({
   clientCapabilities?: string[];
   userMessage: ChatMessage;
   initialSettings?: NativeChatAiSettings;
+  publishInitialMessages?: () => Promise<void>;
 }) {
   const encoder = new TextEncoder();
 
@@ -88,19 +90,30 @@ export function streamNativeAiConversationResponse({
 
       write({ message: userMessage, type: 'message' });
       try {
-        const persistence = await sendNativeAiConversationMessages({
-          auth,
-          context,
-          conversation,
-          miraMode,
-          onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
-          onPart: (part) => write({ part, type: 'assistant_part' }),
-          request,
-          timezone,
-          clientCapabilities,
-          userMessage,
-          initialSettings,
-        });
+        const [generation, publication] = await Promise.allSettled([
+          sendNativeAiConversationMessages({
+            auth,
+            context,
+            conversation,
+            miraMode,
+            onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
+            onPart: (part) => write({ part, type: 'assistant_part' }),
+            request,
+            timezone,
+            clientCapabilities,
+            userMessage,
+            initialSettings,
+          }),
+          publishInitialMessages?.(),
+        ]);
+
+        if (publication.status === 'rejected') {
+          console.warn('Initial chat publication failed', {
+            conversationId: conversation.id,
+          });
+        }
+        if (generation.status === 'rejected') throw generation.reason;
+        const persistence = generation.value;
 
         try {
           await publishChatRealtimeMessages({
