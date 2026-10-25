@@ -65,8 +65,10 @@ localization changes.
   window width, and drop widget-level 16dp side margins once the page pads.
   Sheets and dialogs keep their own padding. For `ListView.separated` or grids,
   pass `AppPageInsets.of(context, width: constraints.maxWidth)` as padding.
-- Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
-  the owning feature. Expanded tablet/desktop windows use the leading
+- Group rows with `AppGroupedSection`/`AppGroupedCard`. Build rows from
+  `AppGroupedRow` + `AppIconTile` with an `AppTone`, loading from
+  `AppSkeletonRows`, and empty/error states from `AppStateMessage` (`.inline`
+  inside a card); feature-specific row widgets compose these. Expanded tablet/desktop windows use the leading
   `ShellNavigationRail`, which must keep the mini-app Back item. Switching
   dock and rail must not change the shell body's tree shape; regressions
   assert a visited root tab is not remounted, because routed pages survive
