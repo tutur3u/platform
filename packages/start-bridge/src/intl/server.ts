@@ -1,6 +1,6 @@
 import type { AbstractIntlMessages } from 'use-intl';
 import { createTranslator } from 'use-intl/core';
-import { bridgeRequest } from '../core/request-context';
+import { bridgeRequest } from '../server/request-context';
 
 export type BridgeLocale = 'en' | 'vi';
 

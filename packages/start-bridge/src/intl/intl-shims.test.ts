@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withBridgeRequest } from '../core/request-context';
+import { withBridgeRequest } from '../server/request-context';
 import { getRootParam, locale } from '../next/root-params';
 import { createNavigation } from './navigation';
 import {

@@ -8,7 +8,7 @@ import {
   type AppMountConfig,
   resolveAppBase,
 } from '../core/mounts';
-import type { BridgeRequestContext } from '../core/request-context';
+import type { BridgeRequestContext } from '../server/request-context';
 import { fromNextSourcePattern, matchRoute } from '../core/route-match';
 import {
   type BridgeDispatch,

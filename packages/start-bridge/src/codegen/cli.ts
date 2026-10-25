@@ -30,11 +30,12 @@ export function runRegistries(appRoot: string, mode: 'generate' | 'check') {
   let files: string[] = [];
   if (config.appDir !== null) {
     const appDir = join(appRoot, config.appDir ?? 'src/app');
+    // Fail in both modes, before anything is written.
     if (!existsSync(appDir) || !statSync(appDir).isDirectory())
-      errors.push(
-        `${config.appDir ?? 'src/app'}: App Router directory is missing or not a directory; set "appDir": null for an app without one`
-      );
-    else files = walk(appDir);
+      return [
+        `${config.appDir ?? 'src/app'}: App Router directory is missing or not a directory; set "appDir": null for an app without one`,
+      ];
+    files = walk(appDir);
   }
   const plan = planRegistries(
     { ...config, appDir: config.appDir ?? 'src/app' },

@@ -4,7 +4,7 @@ import { createFormatter, createTranslator } from 'use-intl/core';
 import {
   createRequestLocal,
   maybeBridgeRequest,
-} from '../core/request-context';
+} from '../server/request-context';
 import { getRootParam } from '../next/root-params';
 
 /**

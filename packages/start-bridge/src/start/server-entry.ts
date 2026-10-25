@@ -3,6 +3,7 @@ import {
   defaultStreamHandler,
 } from '@tanstack/react-start/server';
 import { runtimeAppBase } from '../core/app-url';
+import { prefixBase } from '../core/base-path';
 
 /**
  * The Start request handler for a bridged app. Script and stylesheet URLs in
@@ -17,10 +18,9 @@ export function createBridgeStartHandler() {
       cache: false,
       createTransform: (context) => {
         const base = context.warmup ? '' : runtimeAppBase();
-        return ({ url }) =>
-          base && url.startsWith('/') && !url.startsWith('//')
-            ? `${base}${url}`
-            : url;
+        // Segment-aware and idempotent: a URL already under the base (a
+        // build-time `base`) is left alone; external URLs pass through.
+        return ({ url }) => prefixBase(url, base);
       },
     },
   });

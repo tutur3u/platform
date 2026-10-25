@@ -3,7 +3,7 @@ import type { NextResponse } from 'next/dist/server/web/spec-extension/response'
 import {
   type BridgeRequestContext,
   withBridgeRequest,
-} from '../core/request-context';
+} from '../server/request-context';
 
 export type NextProxy = (request: NextRequest) => Promise<NextResponse>;
 export type BridgeDispatch = (request: NextRequest) => Promise<Response>;
