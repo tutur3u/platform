@@ -82,6 +82,7 @@ export const ci = {
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
   'vercel-production-drive.yaml': true,
+  'finance-cloudflare.yaml': true,
   'vercel-production-finance.yaml': true,
   'vercel-production-inventory.yaml': true,
   'vercel-production-infrastructure.yaml': true,

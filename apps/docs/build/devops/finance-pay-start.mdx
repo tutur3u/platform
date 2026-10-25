@@ -154,6 +154,21 @@ payments or enable live provider bindings to obtain acceptance.
 
 ## Close the migration gates
 
+`finance-cloudflare.yaml` calls the reviewed reusable native Start workflow.
+It supplies the Finance artifact wrapper, the native type check, and a bounded
+workerd/Chromium acceptance command. The wrapper reuses the Apps seal/restore
+implementation with Finance's Worker identity, public files and
+`FINANCE_SOURCE_SHA`; its source tests reject drift and a generic SHA fallback.
+The workflow repeats runtime acceptance after restoring the sealed bytes.
+
+The emitted suite covers exact build identity, anonymous API denial, function
+method/content-type admission, reserved Web routing and separate response
+cookies, bilingual redirects, token-page SSR, mounted assets and client
+hydration. Every Worker and browser request is bounded and fixture-fenced; the
+suite never authenticates to Cloudflare or a real provider. It does not qualify
+logged-in Finance operations or hosted shared-session behavior. Those remain
+required staging acceptance, including workspace and mutation flows.
+
 Run exact-head unit, type, and lint checks on Sonha and the real `vp build`,
 sealed-artifact verification, emitted-runtime tests, and browser acceptance on
 Thanh through `ttr resources run`. Install frozen dependencies. Keep the M4 for
