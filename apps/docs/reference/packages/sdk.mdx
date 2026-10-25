@@ -1702,13 +1702,13 @@ Explicit `run` skips the queue only for a few read-only coreutils (`echo`, `pwd`
 
 Node shim classification consumes known runtime option values, including `--diagnostic-dir /tmp`, before identifying a tool entrypoint. Unknown or incomplete Node options queue conservatively, even when later arguments include `--help`. Recognized Vitest entrypoints retain their worker cap after runtime options and the Node `--` separator. Arguments after an ordinary script path remain that script's arguments. The Node 26.4 bare forms of `--experimental-config-file` and `--experimental-specifier-resolution` do not consume the next argv; only their `=` forms are accepted as value options. Any separate option value that itself identifies a tool, ttr launcher, or heavy script makes classification ambiguous and queues conservatively.
 
-The adaptive design requires a CLI release before activation. Optional `maxValidationLanes` accepts an integer from the base count through `8` and defaults to the base count. After release and a full idle drain, `ttr resources setup --max-lanes N` explicitly opts into a higher ceiling. Host capacity never changes the default automatically. Changing base lanes, maximum lanes, or aggregate worker budgets requires idle owners and zero waiters. Use `--workers` only for a justified aggregate budget. A maximum is a ceiling, not a promise of concurrent jobs.
+The adaptive design requires a CLI release before activation. Optional `maxValidationLanes` accepts an integer from the base count through `16` and defaults to the base count. After release and a full idle drain, `ttr resources setup --max-lanes N` explicitly opts into a higher ceiling. Host capacity never changes the default automatically. Changing base lanes, maximum lanes, or aggregate worker budgets requires idle owners and zero waiters. Use `--workers` only for a justified aggregate budget. A maximum is a ceiling, not a promise of concurrent jobs.
 
-Burst admission above the base requires a load-to-CPU ratio below `0.7` and sufficient memory. macOS requires normal memory pressure, reported as `1`. Linux requires at least 25% available memory and enough available memory for the estimated per-lane need. Missing telemetry refuses burst admission while preserving base admission behavior. Burst memory checks still apply with `--ignore-pressure`. FIFO order remains unchanged, and running jobs are never interrupted to shrink occupancy.
+Burst admission above the base requires a load-to-CPU ratio below `0.7` and sufficient memory. macOS requires normal memory pressure, reported as `1`. Linux requires at least 25% available memory and enough available memory for the estimated per-lane need. Missing telemetry refuses burst admission while preserving base admission behavior. Burst memory checks still apply with `--ignore-pressure`. Waiters with readable telemetry keep FIFO order; unreadable burst telemetry leaves that waiter base-only as described below. Running jobs are never interrupted to shrink occupancy.
 
 Shims classify only the program for `node`, `bun`, `bunx` and `npx`: the first positional argument after the runtime's own flags. Its later arguments belong to that program, so `bun /path/ttr resources run -- bunx vitest` is `ttr`, not vitest. The `ttr` CLI is a `#!/usr/bin/env bun` launcher and starts through the bun shim whenever the shims are on PATH (for example from a `~/.zshenv` that adds them for every zsh, including `ssh host 'cmd'` and `zsh -c`). Shims never admit it: `ttr` performs its own admission, and a shim admitting it first would hold the only lane while `ttr run` queued behind its own parent. Inside an admitted job, nested shims (`bunx` → a `#!/usr/bin/env node` vitest entry → the node shim) pass through under the owner once ancestry is verified. `resources-shim-chain.test.ts` reproduces that chain with one lane.
 
-The effective lane count is `max(1, min(maxValidationLanes, host lane ceiling))`, so base lanes above the host ceiling (for example a config copied from a larger machine) are capped as well, where the host lane ceiling is `max(1, min(8, floor(memory GiB / 4), CPUs - 2))` (6 on a 24 GiB / 10 CPU host). Worker totals no longer cap the lane count. Admission subtracts recorded running allocations from each budget. Once the aggregate budget is spent, each further pressure-gated burst lane receives exactly one worker, so the overcommit is bounded to one worker per burst lane. For multi-lane or adaptive configurations, the aggregate worker total is clamped with a warning to the host worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))` when that exceeds the legacy budget. Configured totals are never raised automatically.
+The effective lane count is `max(1, min(maxValidationLanes, host lane ceiling))`, so base lanes above the host ceiling (for example a config copied from a larger machine) are capped as well, where the host lane ceiling is `max(1, min(16, floor(memory GiB / 4), CPUs - 2))` (6 on a 24 GiB / 10 CPU host). Worker totals no longer cap the lane count. Admission subtracts recorded running allocations from each budget. Once the aggregate budget is spent, each further pressure-gated burst lane receives exactly one worker, so the overcommit is bounded to one worker per burst lane. For multi-lane or adaptive configurations, the aggregate worker total is clamped with a warning to the host worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))` when that exceeds the legacy budget. Configured totals are never raised automatically.
 
 Before replacing the installed scheduler, fully drain old brokers, shim processes, and FIFO waiters. An old scheduler encountering `slots/2` fails closed. Never rewrite tickets, remove live locks, or run mixed versions. Source tests/review do not authorize installation or activation, and this design does not change any installed scheduler. Reconcile every legacy `status.owner` consumer first. Status retains `owner`, `owners`, `laneCount`, `waiting`, and `limits`, and adds `baseLanes`, `maxLanes`, `effectiveLanes`, `occupied`, `burst: { eligible, reason }`, `ownerDetails` (PID, child PID, command, cwd, elapsed seconds, current CPU percent, cumulative CPU seconds, idle seconds), `waitingDetails` (command and wait time), and `warnings`. Brokers sample their owned process tree's cumulative CPU every 30 seconds into the slot's `activity.json`. Status warns when an owner has been idle at 0% CPU for more than 10 minutes. It never signals or kills owners. The compatibility `owner` stays populated whenever any owner exists; initializing occupancy is reported separately.
 
@@ -1795,6 +1795,38 @@ After upgrading every client and launcher, write the proposed config atomically 
 Confirm each project's identity from a worktree with a trivial `~/.bun/bin/ttr resources run --tokens 1 -- true`, then inspect `resources status --json`. Decide how runner work is counted: explicit admission or the shim directory on its service PATH. Direct SSH work and other unmanaged fan-out are invisible to the budget; inspect them separately. Preserve the saved shell policy: `.zshenv` also runs in noninteractive zsh, so it must be neutralised during rollback before the fence is removed.
 
 Ramp the base 2 → 4 → 6 → 8 → 10 → 12 only through idle, atomic config updates; `setup --lanes` and `--max-lanes` accept 1 to 16 (`maxResourceLanes`). Bursts above the base still require pressure and load eligibility. Before each step, measure at least 15 minutes of normal load: normal memory pressure, one-minute load below 0.7 × CPU count, at least 30% idle CPU, budget use below its ceiling, and no regression in a fixed probe suite. Count unmanaged runner/SSH fan-out as well. More lanes are a ceiling, not a reason to start heavy work. For any downgrade, follow the canonical rollback below rather than removing the marker first.
+
+### Burst telemetry and minimal PATH
+
+Resource admission and status probes use trusted absolute system executables:
+`/usr/sbin/sysctl` with `/sbin/sysctl` fallback, and `/bin/ps` with `/usr/bin/ps`
+fallback. Probes have bounded time/output and a clean locale-only environment;
+they do not resolve caller PATH binaries or inherit loader variables. Linux
+pressure remains an absolute `/proc/meminfo` read. A minimal PATH can therefore
+use macOS burst admission without adding `/usr/sbin`.
+
+Unreadable load or pressure telemetry makes that ticket base-only for its
+remaining wait. It retains its original owner, queue age and place for base
+capacity. When only burst capacity is available, selection skips only these
+base-only tickets and applies existing FIFO or project-budget ordering to the
+remaining waiters. A real high-load or elevated-pressure reading still holds
+the queue under the existing policy. No telemetry error grants a burst lane.
+Cancellation, liveness, admission mutex and worker-cap checks are unchanged.
+
+Regression coverage: `resources-adaptive.test.ts` reproduces the minimal-PATH
+failure, retains the full-PATH control and high-load FIFO test, and exercises
+an unreadable head followed by a healthy burst waiter. macOS cases execute the
+real probe with deterministic pressure output and fixed host capacity/load;
+Linux CI skips those OS-specific cases. `resources-system-probes.test.ts`
+checks trusted paths, fallback, clean environment and bounded failure.
+
+Mastermind applied Studio's lane change on 2026-10-25: one pool A at 6 base/8
+max, physical ceiling 16; pool B was not created. Linux now has 3 lanes. This
+records the operator change and does not request another drain-window raise.
+The private Studio runbook is `/Users/thanh/Documents/STUDIO_LANES.md`. Read
+current status for worker caps; a declared total is not proof of effective
+admission caps. Future policy changes remain operator-owned and require an
+idle queue, preserved roots/settings and capacity evidence.
 
 ### Multi-host weighted admission
 
