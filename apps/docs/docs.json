@@ -406,6 +406,7 @@
               "build/development-tools/employee-address-migration",
               "build/development-tools/notification-email-freshness",
               "build/development-tools/remote-devboxes",
+              "build/development-tools/fleet-balancer",
               "build/development-tools/machine-storage-health",
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",

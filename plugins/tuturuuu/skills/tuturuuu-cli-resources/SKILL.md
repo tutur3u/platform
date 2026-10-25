@@ -184,6 +184,16 @@ queue or home.
   changes, the zshenv shim guard, then a +2 lane ramp with measurements.
   Never edit a shared host's live config from an agent session.
 
+## Fleet run balancer
+
+To run a test or check on other machines at an exact pushed commit, use
+`ttr balancer run --sha main --replicas N -- <argv>`. It places runs from fresh
+host probes (stale or missing telemetry is UNKNOWN, never idle). Each run
+executes in a fresh checkout inside that host's own `ttr resources run`
+queue. An UNKNOWN run is never rescheduled; settle it with
+`ttr balancer reconcile`. See
+`apps/docs/build/development-tools/fleet-balancer.mdx`.
+
 ## Multi-host weighted admission
 
 `ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off
