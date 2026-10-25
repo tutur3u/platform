@@ -48,6 +48,11 @@ const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   const finish = (response: NextResponse) =>
     pinFinanceDeployment(req, response);
+  const workspaceUrl = (pathname: string) => {
+    const url = new URL(req.url);
+    url.pathname = `${req.nextUrl.basePath}${pathname}`;
+    return url;
+  };
 
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
@@ -158,8 +163,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = `/${newPathSegments.join('/')}`;
+      const redirectUrl = workspaceUrl(`/${newPathSegments.join('/')}`);
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
@@ -179,8 +183,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           const wsIdIndex = hasLocaleInPath ? 1 : 0;
           newPathSegments[wsIdIndex] = 'personal';
 
-          const redirectUrl = req.nextUrl.clone();
-          redirectUrl.pathname = `/${newPathSegments.join('/')}`;
+          const redirectUrl = workspaceUrl(`/${newPathSegments.join('/')}`);
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
@@ -222,16 +225,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           : defaultWorkspace.id === ROOT_WORKSPACE_ID
             ? 'internal'
             : defaultWorkspace.id;
-        const redirectUrl = req.nextUrl.clone();
-        redirectUrl.pathname = `/${target}`;
+        const redirectUrl = workspaceUrl(`/${target}`);
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
         return finish(wsRedirect);
       }
 
       // Fallback to personal workspace if no default workspace found
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/personal';
+      const redirectUrl = workspaceUrl('/personal');
       const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
       return finish(fallbackRedirect);
