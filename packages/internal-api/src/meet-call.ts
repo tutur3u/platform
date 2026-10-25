@@ -1,7 +1,8 @@
-export { configureMeetApiPaths } from './meet-client';
-
-import { encodePathSegment, type InternalApiClientOptions } from './client';
-import { getMeetApiClient } from './meet-client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 import { type SignedUploadPayload, uploadFileWithSignedUrl } from './storage';
 
 /** Meet's Cloudflare-local refresh also supports invited guests outside a workspace. */
@@ -11,7 +12,7 @@ export function createMeetCallRealtimeToken(
   device?: { deviceId: string; joinMode?: 'switch' | 'additional' },
   signal?: AbortSignal
 ) {
-  return getMeetApiClient(options).json<
+  return getInternalApiClient(options).json<
     | {
         requiresDeviceChoice: true;
         otherDeviceCount: number;
@@ -28,7 +29,7 @@ export function createMeetCallRealtimeToken(
 
 /** Persist only the title; leave meeting time and calendar metadata intact. */
 export function updateMeetCallTitle(meetingId: string, name: string) {
-  return getMeetApiClient().json<{ name: string }>(
+  return getInternalApiClient().json<{ name: string }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/title`,
     {
       method: 'PATCH',
@@ -41,7 +42,7 @@ export function getMeetCallRoomState(
   meetingId: string,
   options?: { signal?: AbortSignal }
 ) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     ended: boolean;
     canReadNotes: boolean;
     lifecycleVersion: number;
@@ -56,7 +57,7 @@ export function restoreMeetCallRoom(
   expectedVersion: number,
   expectedActorId: string
 ) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     ended: false;
     lifecycleVersion: number;
   }>(`/api/meet-call/${encodePathSegment(meetingId)}/state`, {
@@ -71,7 +72,7 @@ export function askMeetAssistant(
   timezone?: string,
   workspaceId?: string
 ) {
-  return getMeetApiClient().json<{ ok: boolean; reviewId?: string }>(
+  return getInternalApiClient().json<{ ok: boolean; reviewId?: string }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/assistant`,
     {
       method: 'POST',
@@ -82,7 +83,7 @@ export function askMeetAssistant(
 export function uploadMeetChatFile(meetingId: string, file: File) {
   const form = new FormData();
   form.set('file', file);
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     id: string;
     name: string;
     size: number;
@@ -93,7 +94,7 @@ export function uploadMeetChatFile(meetingId: string, file: File) {
   });
 }
 export function readMeetChatFile(meetingId: string, id: string) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     url: string;
     name: string;
     size: number;
@@ -111,7 +112,7 @@ export async function uploadMeetRoomRecording(
   const contentType = blob.type.split(';')[0] || 'video/webm';
   const body = JSON.stringify({ sessionId, size: blob.size, contentType });
   const endpoint = `/api/meet-call/${encodePathSegment(meetingId)}/recording`;
-  const target = await getMeetApiClient().json<{
+  const target = await getInternalApiClient().json<{
     upload?: SignedUploadPayload;
     alreadyUploaded?: boolean;
     alreadySaved?: boolean;
@@ -126,13 +127,13 @@ export async function uploadMeetRoomRecording(
     await uploadFileWithSignedUrl(file, target.upload, fetch);
   } else if (!target.alreadyUploaded)
     throw new Error('Recording upload is unavailable');
-  return getMeetApiClient().json<{ ok: boolean }>(endpoint, {
+  return getInternalApiClient().json<{ ok: boolean }>(endpoint, {
     method: 'PUT',
     body,
   });
 }
 export function readMeetRecordings(meetingId: string) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     recordings: Array<{
       sessionId: string;
       startedAt: string;
@@ -144,14 +145,14 @@ export function readMeetRecordings(meetingId: string) {
   });
 }
 export function readMeetRecording(meetingId: string, sessionId: string) {
-  return getMeetApiClient().json<{ url: string }>(
+  return getInternalApiClient().json<{ url: string }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/recording?sessionId=${encodeURIComponent(sessionId)}`,
     { cache: 'no-store' }
   );
 }
 
 export function getMeetRoomCosts(meetingId: string) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     budget?: {
       historicalUsageUnknown?: boolean;
       expiresAt: number;
@@ -181,7 +182,7 @@ export function getMeetRoomCosts(meetingId: string) {
 }
 
 export function discardMeetChatFile(meetingId: string, id: string) {
-  return getMeetApiClient().json<{ ok: boolean }>(
+  return getInternalApiClient().json<{ ok: boolean }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/files`,
     {
       method: 'DELETE',
@@ -200,13 +201,13 @@ export interface MeetAssistantReview {
   revision: number;
 }
 export function listMeetAssistantReviews(meetingId: string) {
-  return getMeetApiClient().json<Array<{ id: string; status: string }>>(
+  return getInternalApiClient().json<Array<{ id: string; status: string }>>(
     `/api/meet-call/${encodePathSegment(meetingId)}/assistant/review`,
     { cache: 'no-store' }
   );
 }
 export function getMeetAssistantReview(meetingId: string, messageId: string) {
-  return getMeetApiClient().json<MeetAssistantReview>(
+  return getInternalApiClient().json<MeetAssistantReview>(
     `/api/meet-call/${encodePathSegment(meetingId)}/assistant/review?messageId=${encodeURIComponent(messageId)}`,
     { cache: 'no-store' }
   );
@@ -217,7 +218,7 @@ export function respondMeetAssistantReview(
   revision: number,
   action: 'approve' | 'deny' | 'share' | 'discard'
 ) {
-  return getMeetApiClient().json<{ ok: boolean }>(
+  return getInternalApiClient().json<{ ok: boolean }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/assistant/review`,
     { method: 'POST', body: JSON.stringify({ messageId, revision, action }) }
   );
@@ -233,7 +234,7 @@ export function askPersonalMeetAssistant(
     history: Array<{ body: string; assistant: boolean }>;
   }
 ) {
-  return getMeetApiClient().json<{ text: string }>(
+  return getInternalApiClient().json<{ text: string }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/assistant/personal`,
     {
       method: 'POST',
@@ -244,7 +245,7 @@ export function askPersonalMeetAssistant(
 }
 
 export function getMeetPublicInfoSettings(meetingId: string) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     publicLinkPreview: boolean;
     title: string;
   }>(`/api/meet-call/${encodePathSegment(meetingId)}/public-info`, {
@@ -255,7 +256,7 @@ export function updateMeetPublicInfoSettings(
   meetingId: string,
   publicLinkPreview: boolean
 ) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     publicLinkPreview: boolean;
     title: string;
   }>(`/api/meet-call/${encodePathSegment(meetingId)}/public-info`, {
@@ -277,16 +278,15 @@ export type MeetingProgrammingJoin =
 const programmingCallPath = (id: string) =>
   `/api/meet-call/${encodePathSegment(id)}/programming`;
 export function getMeetProgramming(id: string) {
-  return getMeetApiClient().json<MeetingProgrammingJoin | { selection: null }>(
-    programmingCallPath(id),
-    { cache: 'no-store' }
-  );
+  return getInternalApiClient().json<
+    MeetingProgrammingJoin | { selection: null }
+  >(programmingCallPath(id), { cache: 'no-store' });
 }
 export function selectMeetProgramming(
   id: string,
   selection: MeetingProgrammingSelection | null
 ) {
-  return getMeetApiClient().json<{
+  return getInternalApiClient().json<{
     selection: MeetingProgrammingSelection | null;
   }>(programmingCallPath(id), {
     method: 'PUT',
@@ -295,21 +295,21 @@ export function selectMeetProgramming(
   });
 }
 export function testMeetProgramming(id: string, source: string) {
-  return getMeetApiClient().json<{ id: string }>(programmingCallPath(id), {
+  return getInternalApiClient().json<{ id: string }>(programmingCallPath(id), {
     method: 'POST',
     body: JSON.stringify({ source }),
     headers: { 'Content-Type': 'application/json' },
   });
 }
 export function getMeetProgrammingTest(id: string, test: string) {
-  return getMeetApiClient().json<{ status: string; output: string | null }>(
+  return getInternalApiClient().json<{ status: string; output: string | null }>(
     `${programmingCallPath(id)}?test=${encodePathSegment(test)}`,
     { cache: 'no-store' }
   );
 }
 
 export function checkpointMeetProgramming(id: string) {
-  return getMeetApiClient().json<MeetingProgrammingJoin>(
+  return getInternalApiClient().json<MeetingProgrammingJoin>(
     `${programmingCallPath(id)}?checkpoint`,
     { method: 'POST', cache: 'no-store' }
   );
@@ -322,7 +322,7 @@ export function createMeetPlayground(
     language: import('@tuturuuu/types/primitives/playgrounds').PlaygroundLanguage;
   }
 ) {
-  return getMeetApiClient().json<{ id: string }>(
+  return getInternalApiClient().json<{ id: string }>(
     `${programmingCallPath(id)}?create`,
     {
       method: 'POST',
@@ -335,7 +335,7 @@ export function runMeetPlayground(
   id: string,
   payload: { operation: 'run' | 'stop'; requestId: string; stdin?: string }
 ) {
-  return getMeetApiClient().json<{ runId: string }>(
+  return getInternalApiClient().json<{ runId: string }>(
     `${programmingCallPath(id)}?run`,
     {
       method: 'POST',
@@ -345,7 +345,7 @@ export function runMeetPlayground(
   );
 }
 export function getMeetPlaygroundRun(id: string, run: string) {
-  return getMeetApiClient().json<
+  return getInternalApiClient().json<
     import('@tuturuuu/types/primitives/playgrounds').PlaygroundExecutionResult
   >(`${programmingCallPath(id)}?run=${encodePathSegment(run)}`, {
     cache: 'no-store',
@@ -365,7 +365,7 @@ export function getMeetDocument(
   meetingId: string,
   options?: InternalApiClientOptions
 ) {
-  return getMeetApiClient(options).json<MeetingDocumentJoin>(
+  return getInternalApiClient(options).json<MeetingDocumentJoin>(
     `/api/meet-call/${encodePathSegment(meetingId)}/document`
   );
 }

@@ -1,5 +1,8 @@
-import { encodePathSegment, type InternalApiClientOptions } from './client';
-import { getMeetApiClient } from './meet-client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 
 export type MeetAiNotes = {
   incomplete: boolean;
@@ -72,9 +75,12 @@ export function getMeetAiState(
   meetingId: string,
   options?: InternalApiClientOptions
 ) {
-  return getMeetApiClient(options).json<MeetAiState>(path(wsId, meetingId), {
-    cache: 'no-store',
-  });
+  return getInternalApiClient(options).json<MeetAiState>(
+    path(wsId, meetingId),
+    {
+      cache: 'no-store',
+    }
+  );
 }
 export function updateMeetAiSession(
   wsId: string,
@@ -88,7 +94,7 @@ export function updateMeetAiSession(
   },
   options?: InternalApiClientOptions
 ) {
-  return getMeetApiClient(options).json<{ sessionId: string }>(
+  return getInternalApiClient(options).json<{ sessionId: string }>(
     path(wsId, meetingId),
     {
       method: 'POST',
@@ -104,7 +110,7 @@ export function uploadMeetAiChunk(
   options?: InternalApiClientOptions,
   signal?: AbortSignal
 ) {
-  return getMeetApiClient(options).json<MeetAiChunk>(
+  return getInternalApiClient(options).json<MeetAiChunk>(
     `${path(wsId, meetingId)}/chunks`,
     {
       method: 'POST',
@@ -120,11 +126,14 @@ export function updateMeetNotesSharing(
   meetingId: string,
   settings: { shareNotes?: boolean; shareNotesAfterMeeting?: boolean }
 ) {
-  return getMeetApiClient().json<{ updated: boolean }>(path(wsId, meetingId), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'sharing', ...settings }),
-  });
+  return getInternalApiClient().json<{ updated: boolean }>(
+    path(wsId, meetingId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sharing', ...settings }),
+    }
+  );
 }
 
 export {

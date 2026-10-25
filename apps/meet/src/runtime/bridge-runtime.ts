@@ -1,5 +1,5 @@
 import { createIsomorphicFn } from '@tanstack/react-start';
-import { configureMeetApiPaths } from '@tuturuuu/internal-api/meet-call';
+import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
 import { configureMeetingUrls } from '@tuturuuu/meet-core/runtime';
 import { appPath, appUrl } from '@tuturuuu/start-bridge/app-url';
 import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
@@ -13,10 +13,15 @@ const documentOrigin = createIsomorphicFn()
   )
   .client(() => window.location.origin);
 
-configureMeetApiPaths(
+const isMeetApi = (path: string) =>
+  /^\/api\/(?:meet-call|meet-ai|meet-live)(?=\/|$|[?#])/u.test(path);
+
+registerDefaultAppBaseResolver(
   createIsomorphicFn()
-    .server((path: string) => appUrl(path, documentOrigin()))
-    .client(appPath)
+    .server((path: string) =>
+      isMeetApi(path) ? appUrl(path, documentOrigin()) : path
+    )
+    .client((path: string) => (isMeetApi(path) ? appPath(path) : path))
 );
 
 export function currentMeetBaseUrl() {
