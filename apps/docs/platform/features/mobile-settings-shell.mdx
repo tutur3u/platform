@@ -245,7 +245,7 @@ In-app entry points use the same editor. The Timer gear and the Requests gear
 deep-link to Apps → Timer. On return, Timer reloads Pomodoro lengths and Requests
 reloads its threshold and permissions for the same workspace. The Mail gear
 opens the current mailbox in the shared Mail editor. The Mira menu opens the
-shared Assistant hub.
+shared Assistant settings route at `/settings/apps/assistant`.
 
 These stay contextual on purpose:
 
@@ -299,21 +299,38 @@ Coverage:
 
 ### Assistant settings layout
 
-Mira quick settings and the central Assistant settings editor retain one branded
-header with the localized Assistant settings title and floating bottom Back
-control. Embedded live preferences, personal settings and local-model settings
-use consistent 16px horizontal gutters; the standalone quick-settings sheet
-keeps its modal padding. The route frame consumes the physical safe area and
-reserves the navigation boundary, while the settings list remains scrollable.
-This applies to English and Vietnamese, including enlarged text. Preference
-writes, memory consent, model selection, downloads and Live calls retain their
-existing semantics.
+Mira's settings action and Settings → Apps → Assistant open the same routed
+screen at `/settings/apps/assistant`. The shell keeps its destination title,
+background and floating bottom navbar; the screen adds no inner navbar. Nested
+personality and memory editors also stay routed, with Save in the shell dock.
+Editors explicitly retain the dock above the keyboard, including disabled or
+pending Save actions, so Back and Save remain reachable while typing. Other
+destinations retain their keyboard visibility policy.
+Back closes a custom explanation dialog before returning through the editor
+history. Standalone previews without shell providers retain fallback chrome.
 
-`assistant_settings_layout_test.dart` covers 320px, 390px and 430px widths at
-normal and 200% text scale, header/safe-area geometry and scrolling the final
-model control above the floating navigation. `assistant_settings_hub_test.dart`
-retains save confirmation and retry coverage. Native acceptance requires an
-authenticated device running the exact CI-built artifact.
+Personality restores only a verified actor-owned snapshot from the existing
+Assistant cache while revalidation runs. Personality editors remain read-only
+until fresh settings succeed, including after a failed refresh. An offline snapshot never enables an
+unknown memory-consent setting; unresolved consent shows progress during loading. Memory items, consent changes and revisioned
+memory edits remain authoritative network operations; full personality saves
+are not queued without a matching receipt contract. Cache and generation fences
+are covered by `assistant_personal_settings_cache_test.dart` and
+`assistant_personal_settings_cache_first_test.dart`.
+
+On-device models use compact rows with size and download/selection status.
+Installed rows expose Remove directly and distinguish Use from selected status.
+License and source actions live in custom explanation dialogs. Existing
+preference, memory consent, selection and download semantics remain unchanged.
+This scope applies to English and Vietnamese, including enlarged text.
+
+`assistant_settings_dock_route_test.dart` covers action lifecycle, blocking
+repeated or covered saves, and dialog Back.
+`assistant_routed_editors_test.dart` verifies Back and Save at 320px, doubled
+text size and an open keyboard. Compact rows are covered by
+`assistant_compact_settings_models_test.dart`; real caller-to-editor paths and
+EN/VI coverage remain in `settings_compact_navigation_test.dart`. Native
+acceptance requires an authenticated device running the exact CI-built artifact.
 
 ## Native text editing and keyboard dismissal
 
@@ -626,7 +643,8 @@ network. An open browser refreshes on a content revision; losing its owning acto
 workspace or permission dismisses it. Reopening starts a fresh search. The
 standalone preview uses an inline search field when no shell is present.
 
-Assistant quick settings and the central Assistant entry both open hosted sheets.
+Assistant quick settings and the central Assistant entry both open the routed
+Assistant settings screen.
 Nested personality and memory editors retain account/workspace cancellation and
 write fences. System-owned license and permission screens keep their framework
 or operating-system presentation.
