@@ -1,0 +1,46 @@
+name: Standalone API Worker
+
+on:
+  pull_request:
+    paths:
+      - apps/api/**
+      - packages/utils/src/platform-release.ts
+      - bun.lock
+      - .github/workflows/api-worker.yaml
+  push:
+    branches: [main]
+    paths:
+      - apps/api/**
+      - bun.lock
+      - .github/workflows/api-worker.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-worker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd apps/api registry:check
+      - run: bun run --cwd apps/api test
+      - run: bun run --cwd apps/api type-check
+      - run: bun run --cwd apps/api lint
+      - run: bun run --cwd apps/api build
+      - run: bun run --cwd apps/api test:runtime

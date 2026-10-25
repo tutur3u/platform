@@ -1229,3 +1229,7 @@ extensions. Use the real installed SDK and a synthetic fetch transport to
 assert the once-decoded request pathname and empty URL search/hash, including
 `%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
 section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
+
+## Standalone API foundation
+
+For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
