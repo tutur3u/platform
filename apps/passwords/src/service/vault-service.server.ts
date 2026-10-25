@@ -75,19 +75,41 @@ export function createPasswordsService(
   env: PasswordsEnvironment,
   database: PasswordsDatabase = createPasswordsDatabase(env, request)
 ): PasswordsServicePort {
-  const engine = new PasswordsVaultEngine({
-    repository: database.repository,
-    storage: database.storage,
-    enabled: database.enabled,
-    authorize: async (_wsId, fresh) => {
-      database.principal(fresh);
-    },
-    keyWrapper: {
-      wrap: (key) => workspaceKeyWrapper(env.ENCRYPTION_MASTER_KEY).wrap(key),
-      unwrap: (key) =>
-        workspaceKeyWrapper(env.ENCRYPTION_MASTER_KEY).unwrap(key),
-    },
-  });
+  function createEngine(committed: () => void) {
+    return new PasswordsVaultEngine({
+      repository: {
+        list: (wsId) => database.repository.list(wsId),
+        execute: async (scope, requestId, action, input) => {
+          const value = await database.repository.execute(
+            scope,
+            requestId,
+            action,
+            input
+          );
+          if (
+            [
+              'vault.create',
+              'item.write',
+              'member.set',
+              'vault.rotate',
+            ].includes(action)
+          )
+            committed();
+          return value;
+        },
+      },
+      storage: database.storage,
+      enabled: database.enabled,
+      authorize: async (_wsId, fresh) => {
+        database.principal(fresh);
+      },
+      keyWrapper: {
+        wrap: (key) => workspaceKeyWrapper(env.ENCRYPTION_MASTER_KEY).wrap(key),
+        unwrap: (key) =>
+          workspaceKeyWrapper(env.ENCRYPTION_MASTER_KEY).unwrap(key),
+      },
+    });
+  }
 
   function stepUp(): StepUpStatus {
     const proof = evaluateStepUp(database.principal().mfa);
@@ -123,22 +145,29 @@ export function createPasswordsService(
 
   async function run<T>(
     write: boolean,
-    work: () => Promise<T>
+    work: (engine: PasswordsVaultEngine) => Promise<T>
   ): Promise<PasswordsResult<T>> {
+    let committed = false;
     try {
       requireEnabled(database.enabled);
       database.principal();
       if (write) mutationRequest();
-      const value = await work();
+      const value = await work(
+        createEngine(() => {
+          committed = true;
+        })
+      );
       requireEnabled(database.enabled);
       return { ok: true, value };
     } catch (error) {
       const code =
-        error instanceof PasswordsError
-          ? error.code
-          : write
-            ? 'OPERATION_UNCERTAIN'
-            : 'UNAVAILABLE';
+        write && committed
+          ? 'OPERATION_UNCERTAIN'
+          : error instanceof PasswordsError
+            ? error.code
+            : write
+              ? 'OPERATION_UNCERTAIN'
+              : 'UNAVAILABLE';
       if (code === 'STEP_UP_REQUIRED') {
         try {
           return {
@@ -156,7 +185,7 @@ export function createPasswordsService(
 
   return {
     observeOperation: (input) =>
-      run(false, async () => {
+      run(false, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
         const observation = await engine.observeOperation({
           ...input,
@@ -212,12 +241,12 @@ export function createPasswordsService(
         return state;
       }),
     createVault: (input) =>
-      run(true, async () => {
+      run(true, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
         return engine.createVault({ ...input, wsId: workspace.wsId });
       }),
     putItem: (input) =>
-      run(true, async () => {
+      run(true, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
         const maxBytes = request.headers.has('origin')
           ? PASSWORDS_LIMITS.itemMaxBytes
@@ -233,7 +262,7 @@ export function createPasswordsService(
         }
       }),
     revealItem: (input) =>
-      run(true, async () => {
+      run(true, async (engine) => {
         database.principal(true);
         const workspace = await database.resolveWorkspace(input.wsId);
         const bytes = await engine.revealItem({
@@ -251,19 +280,19 @@ export function createPasswordsService(
         }
       }),
     setMember: (input) =>
-      run(true, async () => {
+      run(true, async (engine) => {
         database.principal(true);
         const workspace = await database.resolveWorkspace(input.wsId);
         return engine.setMember({ ...input, wsId: workspace.wsId });
       }),
     rotateVault: (input) =>
-      run(true, async () => {
+      run(true, async (engine) => {
         database.principal(true);
         const workspace = await database.resolveWorkspace(input.wsId);
         return engine.rotateVault({ ...input, wsId: workspace.wsId });
       }),
     audit: (input) =>
-      run(false, async () => {
+      run(false, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
         return (await engine.audit({ ...input, wsId: workspace.wsId })).map(
           (event) => {

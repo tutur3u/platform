@@ -210,8 +210,18 @@ export function createPasswordsDatabase(
           p_input: input,
         });
       if (result.error) sqlFailure(result.error, true);
-      principal();
-      return record(result.data);
+      try {
+        principal();
+        return record(result.data);
+      } catch (error) {
+        if (
+          ['vault.create', 'item.write', 'member.set', 'vault.rotate'].includes(
+            action
+          )
+        )
+          throw new PasswordsError('OPERATION_UNCERTAIN');
+        throw error;
+      }
     },
   };
 

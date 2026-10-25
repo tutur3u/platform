@@ -21,6 +21,9 @@ class PreviewEnvironment(unittest.TestCase):
             path.write_text("\n".join(key + "=" + json.dumps(value) for key, value in values.items()))
             module.prepare(directory)
             self.assertFalse(path.exists())
+            path.write_text("\n".join(key + "=" + value for key, value in values.items()))
+            module.prepare(directory)
+            self.assertFalse(path.exists())
 
     def test_refuses_unknown_values_and_private_keys_without_removing_file(self):
         for content in ['ENCRYPTION_MASTER_KEY="synthetic-secret"', 'NEXT_PUBLIC_SUPABASE_URL="https://other.invalid"', 'malformed']:

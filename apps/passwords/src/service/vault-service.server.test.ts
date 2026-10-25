@@ -74,6 +74,23 @@ describe('Passwords service with signed claims and real crypto', () => {
     return { port: createPasswordsService(request, env, database), database };
   }
 
+  it('retains an unknown write after the stop fence closes following SQL commit', async () => {
+    const execute = f.deps.repository.execute.bind(f.deps.repository);
+    vi.spyOn(f.deps.repository, 'execute').mockImplementation(
+      async (...args) => {
+        const value = await execute(...args);
+        if (args[2] === 'item.write') f.setEnabled(false);
+        return value;
+      }
+    );
+    const { port } = service();
+    expect(await port.putItem(input())).toEqual({
+      ok: false,
+      code: 'OPERATION_UNCERTAIN',
+    });
+    expect(f.items.size).toBe(1);
+  });
+
   it('round-trips a file via the real port and omits unavailable summary metadata', async () => {
     const { port } = service();
     const result = await port.putItem(input());

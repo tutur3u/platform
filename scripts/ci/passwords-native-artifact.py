@@ -14,6 +14,10 @@ WORKER = "tuturuuu-passwords"
 PUBLIC_FILES = ("favicon.ico", "site.webmanifest")
 IDENTITY = {
     "name": WORKER,
+    "secrets": {"required": [
+        "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY", "TUTURUUU_APP_COORDINATION_SECRET", "ENCRYPTION_MASTER_KEY",
+    ]},
     "compatibility_date": "2026-10-12",
     "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
     "workers_dev": False,
@@ -61,7 +65,7 @@ def prepare(directory):
         if not separator or key not in expected or key in found:
             raise ValueError("unreviewed build environment key")
         try:
-            found[key] = json.loads(value)
+            found[key] = json.loads(value) if value.startswith('"') else value
         except (ValueError, TypeError):
             raise ValueError("invalid build environment encoding") from None
     if found != expected:
