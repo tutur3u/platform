@@ -1,7 +1,8 @@
 {
   "appDir": "src/app",
   "api": {
-    "out": "src/start-bridge/api-registry.bridge.gen.ts"
+    "out": "src/start-bridge/api-registry.bridge.gen.ts",
+    "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts"
   },
   "pages": {
     "out": "src/start-bridge/page-registry.bridge.gen.ts"

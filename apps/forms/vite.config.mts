@@ -12,6 +12,7 @@ const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'forms',
   rsc: true,
+  og: '@cloudflare/pages-plugin-vercel-og/api',
   serverOnlySpecifiers: [
     '@tuturuuu/satellite/auth',
     '@tuturuuu/utils/api-proxy-guard',
@@ -26,7 +27,7 @@ export default defineConfig(({ command }) => ({
     startBridgeRscPlugin({
       rscEntries: {
         'bridge-api': new URL(
-          './src/start-bridge/api-registry.bridge.gen.ts',
+          './src/start-bridge/api-entry.ts',
           import.meta.url
         ),
         'bridge-pages': new URL(
