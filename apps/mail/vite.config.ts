@@ -28,11 +28,13 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
+  experimental: bridge.experimental,
   plugins: [
     mailActionPorts(),
     mailWorkerBuiltins(),
     voidPlugin(),
     tanstackStart({
+      start: bridge.tanstackStart.start,
       serverFns: bridge.tanstackStart.serverFns,
       router: {
         enableRouteGeneration: true,

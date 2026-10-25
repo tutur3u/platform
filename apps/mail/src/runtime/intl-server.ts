@@ -1,10 +1,14 @@
 import '@tanstack/react-start/server-only';
 import { createIntlServer } from '@tuturuuu/start-bridge/intl/server';
-import { appBasePath } from '@tuturuuu/start-bridge/start/base-path';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 
-export const { getLocale, getMessages, getTranslations } = createIntlServer(
-  { en, vi },
-  { basePath: appBasePath() }
-);
+const intl = () => createIntlServer({ en, vi }, { basePath: runtimeAppBase() });
+export const getLocale = () => intl().getLocale();
+export const getMessages = (
+  ...args: Parameters<ReturnType<typeof createIntlServer>['getMessages']>
+) => intl().getMessages(...args);
+export const getTranslations = (
+  ...args: Parameters<ReturnType<typeof createIntlServer>['getTranslations']>
+) => intl().getTranslations(...args);

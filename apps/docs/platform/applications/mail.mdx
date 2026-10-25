@@ -157,10 +157,11 @@ covers every generated `PagePattern`, so a new page also requires an explicit
 view policy. API regressions retain all 41 original routes and assert the
 authenticated request and decoded params reaching each handler.
 
-The frozen v0 bridge supports root and prefixed build profiles via
-`TUTURUUU_BASE_PATH`; app links, locale lookup, static assets and middleware use
-the same base. Profile support is source readiness, not canonical-route
-admission. Keep production publication held until the release owner records
+The bridge resolves the app base per request: the subdomain serves the root,
+while the apex serves `/mail`. Its head script hands the resolved base to the
+browser before hydration; asset, navigation and function URLs follow that base.
+Both hosts use one compiled artifact. Mount support is source readiness, not
+canonical-route admission. Keep production publication held until the release owner records
 the exact artifact, independent review, provider/webhook/attachment acceptance,
 mount/session acceptance and rollback evidence.
 

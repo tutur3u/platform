@@ -1,12 +1,12 @@
-import { createBasePath } from '@tuturuuu/start-bridge/base-path';
-import { appBasePath } from '@tuturuuu/start-bridge/start/base-path';
 import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
+import {
+  MAIL_FUNCTION_BASE,
+  MAIL_LEGACY_FUNCTION_BASE,
+} from './mail-api-policy';
+import { mailAppPath } from './mail-mount';
 
 export function applyMailResponsePolicy(request: Request, response: Response) {
-  const path =
-    createBasePath({ app: 'mail', basePath: appBasePath() }).strip(
-      new URL(request.url).pathname
-    ) ?? new URL(request.url).pathname;
+  const path = mailAppPath(request) ?? new URL(request.url).pathname;
   const result = new Response(response.body, response);
   result.headers.set('X-Robots-Tag', PRIVATE_ROBOTS_HEADER);
   if (
@@ -32,7 +32,8 @@ export function applyMailResponsePolicy(request: Request, response: Response) {
     }
   }
   if (
-    path.startsWith('/_mail/functions/') ||
+    path.startsWith(`${MAIL_FUNCTION_BASE}/`) ||
+    path.startsWith(`${MAIL_LEGACY_FUNCTION_BASE}/`) ||
     (!path.startsWith('/assets/') &&
       path !== '/api' &&
       !path.startsWith('/api/') &&
