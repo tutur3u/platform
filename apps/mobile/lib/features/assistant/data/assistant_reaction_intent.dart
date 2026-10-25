@@ -16,7 +16,7 @@ class AssistantReactionIntent {
         !isUuid(raw['opId'] as String) ||
         raw['emoji'] is! String ||
         (raw['emoji'] as String).trim().isEmpty ||
-        (raw['emoji'] as String).length > 64 ||
+        (raw['emoji'] as String).trim().length > 64 ||
         raw['present'] is! bool) {
       throw const FormatException('Invalid pending reaction intent');
     }

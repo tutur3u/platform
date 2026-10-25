@@ -51,6 +51,22 @@ void main() {
         'present': present,
       });
     });
+
+    test('decode applies the length cap after trimming for $present', () {
+      final canonical = 'x' * 64;
+      final padded = ' \t$canonical\n ';
+      expect(padded.length, greaterThan(64));
+      final intent = AssistantReactionIntent.decode({
+        'opId': actionOp,
+        'emoji': padded,
+        'present': present,
+      });
+      expect(intent.toJson(), {
+        'opId': actionOp,
+        'emoji': canonical,
+        'present': present,
+      });
+    });
   }
 
   test('malformed and blank decoded intents fail closed', () {
@@ -210,11 +226,13 @@ void main() {
 
     for (final present in [true, false]) {
       test(
-        'old padded pending intent replays original ID and $present',
+        'long padded legacy intent replays original ID and $present',
         () async {
+          final padded = '${' ' * 40}heart${' ' * 40}';
+          expect(padded.length, greaterThan(64));
           final legacy = {
             'opId': actionOp,
-            'emoji': ' \theart\n ',
+            'emoji': padded,
             'present': present,
           };
           await box.put(key, legacy);

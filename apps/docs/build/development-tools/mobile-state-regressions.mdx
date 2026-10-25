@@ -186,6 +186,21 @@ Create real file/cache operations and socket cancellation inside `runAsync`;
 passing a previously created fake-zone Future into it does not move its work.
 Keep the original dispatch, filename, ACK and retirement assertions.
 
+When advancing reconnect and readiness timers in a widget test, construct the
+Cubit inside that widget body. Ordinary `setUp` can put socket listeners and
+reconnect timers in a real zone while the watchdog runs in fake time. Hold and
+observe the actual replacement preparation so the clocks cannot conceal request
+supersession. `assistant_live_typed_dispatch_test.dart` covers this boundary.
+
+A retired send must leave shared setup in a terminal state, or under a newer
+preparation owner. Assert that state after abort and fence cleanup publication
+across native awaits. Notice guards must use the requested selection while a
+restore is pending; the previous loaded chat snapshot is not selection proof.
+`assistant_live_preparation_cases.dart` retains both same-chat recovery and
+no-notice controls for another conversation. Manual End needs a monotonic
+retirement fence independent of automatic recovery; resetting a connection flag
+must not revive a cancelled send during replacement preparation.
+
 Actor-ABA stream controls must establish that the actual response body is subscribed
 before retiring the actor/epoch. Complete an explicit handshake inside the existing
 `onListen`, after its prior callback, and await it before the actor change. Request

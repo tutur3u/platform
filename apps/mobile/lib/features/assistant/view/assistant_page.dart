@@ -572,7 +572,14 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _showInlineNotice(String message) {
-    showAppToast(context, message: message);
+    showAppToast(
+      context,
+      message: message,
+      bottomClearance: _composerReservedSpace(
+        context,
+        isComposerVisible: _isComposerVisible,
+      ),
+    );
   }
 
   double _composerReservedSpace(

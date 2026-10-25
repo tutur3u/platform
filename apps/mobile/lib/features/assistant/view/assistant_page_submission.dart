@@ -101,7 +101,21 @@ extension _AssistantPageSubmission on _AssistantPageState {
           await binding;
         },
       );
-      if (!mounted || !current()) return;
+      if (!mounted) return;
+      if (!current()) {
+        final selected = _chatCubit.state;
+        if ((dispatch == AssistantLiveDispatch.dispatched ||
+                dispatch == AssistantLiveDispatch.unknown) &&
+            guard.current &&
+            operation.current &&
+            context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId &&
+            _chatCubit.selectedConversationId == chatState.storedChatId &&
+            selected.chat?.id == chatState.chat?.id &&
+            selected.storedChatId == chatState.storedChatId) {
+          _showInlineNotice(context.l10n.assistantLiveSendUnknown);
+        }
+        return;
+      }
       switch (dispatch) {
         case AssistantLiveDispatch.dispatched:
           _chatCubit.takeUploadedComposerAttachments(matching: attachments);

@@ -106,6 +106,16 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final _streamCancellations = <Future<void>>{};
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
+  ({String workspaceId, String chatId, int version})? _chatSelection;
+  String? get selectedConversationId {
+    final selection = _chatSelection;
+    return selection != null &&
+            selection.workspaceId == state.workspaceId &&
+            selection.version == _workspaceVersion
+        ? selection.chatId
+        : state.storedChatId;
+  }
+
   String? _messageActorId;
   final _reactionState = _AssistantReactionState();
   AssistantConversationSettings? _restoredSettings;

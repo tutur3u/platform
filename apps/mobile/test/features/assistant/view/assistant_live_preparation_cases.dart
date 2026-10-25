@@ -174,12 +174,14 @@ void livePreparationCases() {
         final restores = f.repository.restoredIds.length;
         final sending = composer.onSend();
         await _untilPreparation(tester, () => f.liveRepository.requests == 1);
+        expect(f.live.state.status, AssistantLiveConnectionStatus.preparing);
         expect(f.connections, 0);
         expect(f.wire.textAttempts, 0);
         expect(composer.controller.value, draft);
         expect(f.h.chat.state.composerAttachments, attachments);
         f.releaseToken();
         await _untilPreparation(tester, () => f.repository.historyEntered);
+        expect(f.live.state.status, AssistantLiveConnectionStatus.connecting);
         expect(f.repository.restoredIds.length, restores + 1);
         expect(f.repository.restoredIds.last, _canonicalLiveChat);
         expect(f.h.chat.attachmentScopeVersion, version + 1);
@@ -243,15 +245,18 @@ void livePreparationCases() {
         final composer = _composer(tester);
         final sending = composer.onSend();
         await _untilPreparation(tester, () => f.liveRepository.requests == 1);
+        expect(f.live.state.status, AssistantLiveConnectionStatus.preparing);
         if (boundary == 'history') {
           f.releaseToken();
           await _untilPreparation(tester, () => f.repository.historyEntered);
+          expect(f.live.state.status, AssistantLiveConnectionStatus.connecting);
         }
         _departPreparation(f, change);
         if (boundary == 'token') f.releaseToken();
         f.history.complete();
         await tester.pump();
         await sending;
+        expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
         expect(f.connections, 0);
         expect(f.wire.textAttempts, 0);
         expect(f.h.repository.starts, 0);
@@ -269,6 +274,13 @@ void livePreparationCases() {
             'retained.txt',
           );
         }
+        await tester.pump(const Duration(seconds: 60));
+        expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
+        expect(f.connections, 0);
+        expect(f.wire.textAttempts, 0);
+        expect(f.h.repository.starts, 0);
+        expect(find.text(_refusedNotice), findsNothing);
+        expect(find.text(_unknownNotice), findsNothing);
         expect(tester.takeException(), isNull);
       });
     }
@@ -284,14 +296,17 @@ void livePreparationCases() {
       final restores = f.repository.restoredIds.length;
       final sending = composer.onSend();
       await _untilPreparation(tester, () => f.liveRepository.requests == 1);
+      expect(f.live.state.status, AssistantLiveConnectionStatus.preparing);
       f.releaseToken();
       await _untilPreparation(tester, () => f.repository.historyEntered);
+      expect(f.live.state.status, AssistantLiveConnectionStatus.connecting);
       expect(f.repository.restoredIds.length, restores + 1);
       expect(f.repository.restoredIds.last, _canonicalLiveChat);
       expect(f.h.chat.state.storedChatId, selected);
       expect(f.connections, 0);
       f.history.complete();
       await sending;
+      expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
       expect(f.h.chat.state.storedChatId, _canonicalLiveChat);
       expect(f.h.chat.state.chat?.id, _canonicalLiveChat);
       expect(f.connections, 0);
@@ -302,10 +317,97 @@ void livePreparationCases() {
       await tester.pump();
       expect(find.text(_refusedNotice), findsNothing);
       expect(find.text(_unknownNotice), findsNothing);
+      await tester.pump(const Duration(seconds: 60));
+      expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
+      expect(f.connections, 0);
+      expect(f.wire.textAttempts, 0);
+      expect(f.h.repository.starts, 0);
+      expect(find.text(_refusedNotice), findsNothing);
+      expect(find.text(_unknownNotice), findsNothing);
+      expect(tester.takeException(), isNull);
     });
   }
 
-  for (final change in ['actor', 'workspace', 'same canonical selection']) {
+  for (final change in [
+    'current',
+    'actor',
+    'workspace',
+    'conversation',
+    'local mode',
+  ]) {
+    testWidgets('Page observed Live drop keeps recovery in $change scope', (
+      tester,
+    ) async {
+      final wire = LiveDispatchTransport();
+      final h = await _mount(tester, transport: wire);
+      await _liveDraft(tester, h);
+      final live = h.pageContext.read<AssistantLiveCubit>();
+      final composer = _composer(tester);
+      final draft = composer.controller.value;
+      final attachments = h.chat.state.composerAttachments;
+      final sending = composer.onSend();
+      expect(wire.textAttempts, 0);
+      // Deliver transport state before the readiness await resumes.
+      wire.closeCode = 1006;
+      live.emit(
+        live.state.copyWith(status: AssistantLiveConnectionStatus.reconnecting),
+      );
+      switch (change) {
+        case 'current':
+          break;
+        case 'actor':
+          h.auth.change(const AuthState.unauthenticated());
+        case 'workspace':
+          h.workspace.change('88888888-8888-4888-8888-888888888888');
+        case 'conversation':
+          unawaited(h.chat.openChatById(_workspace, 'other-chat'));
+        case 'local mode':
+          await tester.runAsync(
+            () => h.pageContext.read<AssistantLocalChatCubit>().select(
+              assistantLocalModels.first.id,
+            ),
+          );
+      }
+      await tester.pump();
+      await sending;
+      await tester.pump();
+      expect(wire.textAttempts, 0);
+      expect(wire.texts, isEmpty);
+      expect(
+        wire.admitted.where((frame) => frame.containsKey('realtimeInput')),
+        isEmpty,
+      );
+      expect(h.repository.starts, 0);
+      expect(live.state.userDraft, isEmpty);
+      expect(h.chat.state.messages.where((row) => row.role == 'user'), isEmpty);
+      expect(find.text(_unknownNotice), findsNothing);
+      expect(
+        find.text(_refusedNotice),
+        change == 'current' ? findsOneWidget : findsNothing,
+      );
+      if (change == 'current') {
+        expect(composer.controller.value, draft);
+        expect(h.chat.state.composerAttachments, attachments);
+        expect(live.state.status, AssistantLiveConnectionStatus.reconnecting);
+      }
+      await tester.pump(const Duration(seconds: 1));
+      expect(wire.textAttempts, 0);
+      expect(h.repository.starts, 0);
+      expect(find.text(_unknownNotice), findsNothing);
+      expect(
+        find.text(_refusedNotice),
+        change == 'current' ? findsOneWidget : findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final change in [
+    'actor',
+    'workspace',
+    'conversation',
+    'same canonical selection',
+  ]) {
     testWidgets(
       'Page $change after sink add fences old cleanup without replay',
       (tester) async {
@@ -336,9 +438,22 @@ void livePreparationCases() {
         );
         await tester.pump();
         expect(find.text(_refusedNotice), findsNothing);
-        expect(find.text(_unknownNotice), findsNothing);
+        expect(
+          find.text(_unknownNotice),
+          change == 'same canonical selection' ? findsOneWidget : findsNothing,
+        );
         await tester.pump(const Duration(seconds: 1));
         expect(f.wire.textAttempts, 1);
+        if (change == 'same canonical selection') {
+          expect(f.h.chat.state.storedChatId, _canonicalLiveChat);
+          expect(composer.controller.value, draft);
+          expect(f.h.chat.state.composerAttachments, attachments);
+          expect(find.text(_unknownNotice), findsOneWidget);
+        } else {
+          expect(find.text(_unknownNotice), findsNothing);
+        }
+        expect(find.text(_refusedNotice), findsNothing);
+        expect(f.h.repository.starts, 0);
         expect(tester.takeException(), isNull);
       },
     );

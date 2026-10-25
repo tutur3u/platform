@@ -107,6 +107,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   Completer<void>? _readyCompleter;
   int _requestVersion = 0;
   int _typedSubmissionVersion = 0;
+  int _transportFailureVersion = 0;
+  int _disconnectVersion = 0;
   int _conversationVersion = 0;
   Future<void> _pendingPersistence = Future<void>.value();
   final _sealedParts = <AssistantLiveTurnParts>{};
@@ -280,7 +282,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       _emitError(error.toString());
     } finally {
       timings.finish();
-      if (currentRequest()) {
+      if (!_isStale(requestVersion) && !(isCurrent?.call() ?? true)) {
+        await disconnect();
+      } else if (currentRequest()) {
         emit(state.copyWith(startupTimings: timings.snapshot));
       }
     }
@@ -311,8 +315,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool reportSessionCleanupFailure = false,
   }) async {
     final endingVersion = _requestVersion;
+    if (finishTurn && _isStale(endingVersion)) return;
+    _disconnectVersion++;
     if (finishTurn) {
-      if (_isStale(endingVersion)) return;
       await _stopInputs();
       if (_isStale(endingVersion)) return;
     }
@@ -330,7 +335,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool superseded() => finishTurn
         ? _isStale(disconnectVersion)
         : isClosed || disconnectVersion != _requestVersion;
-    await _stopInputs();
+    await _stopInputs(isCurrent: () => !superseded());
     if (superseded()) return;
     await _socket.disconnect();
     if (superseded()) return;

@@ -13,12 +13,15 @@ extension _AssistantLiveTypedSubmission on AssistantLiveCubit {
     final actor = _currentUserId();
     final scope = _currentScopeToken();
     var request = _requestVersion;
+    final transportFailure = _transportFailureVersion;
+    final disconnect = _disconnectVersion;
     bool ownsScope() =>
         !_isClosing &&
         !isClosed &&
         invocation == _typedSubmissionVersion &&
         actor == _currentUserId() &&
         scope == _currentScopeToken() &&
+        disconnect == _disconnectVersion &&
         (isCurrent?.call() ?? true);
     bool current() =>
         ownsScope() &&
@@ -40,6 +43,12 @@ extension _AssistantLiveTypedSubmission on AssistantLiveCubit {
     var dispatchPossible = false;
     AssistantLiveDispatch stopped() => dispatchPossible
         ? AssistantLiveDispatch.unknown
+        : ownsScope() &&
+              state.workspaceId == wsId &&
+              !_manualDisconnect &&
+              (!_isStale(request) ||
+                  transportFailure != _transportFailureVersion)
+        ? AssistantLiveDispatch.refused
         : AssistantLiveDispatch.stale;
     try {
       if (state.status != AssistantLiveConnectionStatus.connected) {
@@ -51,9 +60,11 @@ extension _AssistantLiveTypedSubmission on AssistantLiveCubit {
         );
         if (!ownsScope()) return stopped();
         if (prepared == null) {
-          return _requestVersion == request + 1 && !_isStale(_requestVersion)
+          return _requestVersion == request + 1 &&
+                  !_isStale(_requestVersion) &&
+                  !_manualDisconnect
               ? AssistantLiveDispatch.refused
-              : AssistantLiveDispatch.stale;
+              : stopped();
         }
         request = prepared;
       } else {
@@ -125,10 +136,7 @@ extension _AssistantLiveTypedSubmission on AssistantLiveCubit {
 
       return AssistantLiveDispatch.dispatched;
     } on Object {
-      if (dispatchPossible) return AssistantLiveDispatch.unknown;
-      return current()
-          ? AssistantLiveDispatch.refused
-          : AssistantLiveDispatch.stale;
+      return stopped();
     }
   }
 }
