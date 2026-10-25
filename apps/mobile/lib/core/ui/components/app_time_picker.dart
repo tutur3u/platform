@@ -85,6 +85,10 @@ class _AppTimePickerState extends State<AppTimePicker> {
             children: [
               Expanded(
                 child: AppTextField(
+                  placeholder: m.formatHour(
+                    const TimeOfDay(hour: 9, minute: 30),
+                    alwaysUse24HourFormat: _use24,
+                  ),
                   controller: _hour,
                   label: m.timePickerHourLabel,
                   keyboardType: TextInputType.number,
@@ -97,6 +101,9 @@ class _AppTimePickerState extends State<AppTimePicker> {
               const Padding(padding: EdgeInsets.all(12), child: Text(':')),
               Expanded(
                 child: AppTextField(
+                  placeholder: m.formatMinute(
+                    const TimeOfDay(hour: 9, minute: 30),
+                  ),
                   controller: _minute,
                   label: m.timePickerMinuteLabel,
                   keyboardType: TextInputType.number,

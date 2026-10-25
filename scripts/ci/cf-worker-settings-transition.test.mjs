@@ -59,7 +59,9 @@ function liveWorker(identity, { settings = {}, ...overrides } = {}) {
     domains: [],
     zones: [],
     deployments: {
-      deployments: [{ id: 'live', versions: [{ version_id: 'v' }] }],
+      deployments: [
+        { id: 'live', versions: [{ version_id: 'v', percentage: 100 }] },
+      ],
     },
     ...overrides,
   };

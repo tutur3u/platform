@@ -473,6 +473,54 @@ describe('Tasks proxy auth mode', () => {
       expect(mocks.resolveTaskBoardEntrypoint).not.toHaveBeenCalled();
     }
   );
+
+  describe('under the tuturuuu.com/tasks basePath', () => {
+    const based = (path: string, init?: { headers?: HeadersInit }) =>
+      new NextRequest(`https://tuturuuu.com/tasks${path}`, {
+        ...init,
+        nextConfig: { basePath: '/tasks' },
+      });
+
+    it('keeps the default board redirect inside the base', async () => {
+      const response = await proxy(based('/vi?tab=tasks'));
+
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/tasks/vi/personal/boards/board-default?tab=tasks'
+      );
+    });
+
+    it('keeps the entrypoint fallback rewrite inside the base', async () => {
+      mocks.resolveTaskBoardEntrypoint.mockResolvedValueOnce(null);
+
+      const response = await proxy(based('/?retry=1'));
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        'https://tuturuuu.com/tasks/en/personal/tasks?retry=1'
+      );
+    });
+
+    it('keeps the root workspace normalization inside the base', async () => {
+      const response = await proxy(
+        based('/en/00000000-0000-0000-0000-000000000000/tasks?view=list')
+      );
+
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/tasks/en/internal/tasks?view=list'
+      );
+    });
+
+    it('keeps the crawler preview rewrite inside the base', async () => {
+      const response = await proxy(
+        based('/shared/task/share-code', {
+          headers: { 'user-agent': 'facebookexternalhit/1.1' },
+        })
+      );
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        'https://tuturuuu.com/tasks/en/task-link-preview'
+      );
+    });
+  });
 });
 
 describe('PWA public-route boundary', () => {

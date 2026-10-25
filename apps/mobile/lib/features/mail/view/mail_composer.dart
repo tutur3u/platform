@@ -306,6 +306,7 @@ class _MailComposerState extends State<MailComposer> {
           minLines: 2,
           maxLines: 5,
           decoration: InputDecoration(
+            hintText: context.l10n.inputPlaceholderMailDraftInstructions,
             labelText: context.l10n.mailAiInstructions,
           ),
         ),
@@ -466,12 +467,18 @@ class _MailComposerState extends State<MailComposer> {
                   controller: field.$1,
                   enabled: !_busy,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(labelText: field.$2),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.profileEmailHint,
+                    labelText: field.$2,
+                  ),
                 ),
               TextField(
                 controller: _subject,
                 enabled: !_busy,
-                decoration: InputDecoration(labelText: l10n.mailSubject),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderMailSubject,
+                  labelText: l10n.mailSubject,
+                ),
               ),
               MailBodyEditor(controller: _body),
               TextButton.icon(

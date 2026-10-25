@@ -21,6 +21,7 @@ import {
   receiveTokenFromBrowser,
 } from './auth';
 import { runCalendarFeedbackDispatch } from './calendar-feedback-dispatch';
+import { runUpgrade } from './cli-versions-command';
 import { readCommandConfig } from './command-config';
 import {
   type CliConfig,
@@ -72,7 +73,6 @@ import {
   resolveLocalTaskTemplatePath,
 } from './task-templates';
 import { runTiptapCommand } from './tiptap';
-import { upgradeCli } from './upgrade';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
 const closeActions = new Set(['archive', 'close', 'closed', 'mark-closed']);
@@ -2038,10 +2038,8 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
-  if (group === 'upgrade') {
-    await upgradeCli();
-    return;
-  }
+  if (group === 'upgrade')
+    return runUpgrade(rawAction, positionals.slice(2), json, flags.keep);
 
   if (group === 'tiptap') {
     await runTiptapCommand({ action: rawAction, flags, json });

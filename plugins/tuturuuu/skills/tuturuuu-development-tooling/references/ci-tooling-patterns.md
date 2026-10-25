@@ -52,6 +52,19 @@ pinned account and Zone/Workers Routes read on every zone; narrow visibility hid
 the parity runbook's permission table. The usage inventory scans tracked executable
 files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
 
+Drift-relevant settings list readback follows at most eight pages (50 entries per page) inside
+the existing 28-request budget; inconsistent or repeated pages fail closed.
+Object endpoints may carry list envelope metadata without being paginated.
+Deployment history is the explicit exception: Cloudflare defines its first
+entry as the current deployment. Capture only its id and complete valid traffic
+split from page one; reject missing/invalid current state rather than searching
+history. History length must not block publication. Preserve complete secrets,
+domains and routes and exact schedule comparison; see the parity runbook's
+deployment-history exception and twenty-page regression.
+Keep endpoint diagnostics free of response text and preserve zone ordinals.
+Planner recovery needs a new production SHA containing a script fix; an old
+run reuses its triggering SHA. See the parity runbook and settings regressions.
+
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
