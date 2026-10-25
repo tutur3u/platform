@@ -11570,4 +11570,32 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get feedbackAttachDescription => 'PNG, JPEG hoặc WebP, tối đa 2 MB';
+
+  @override
+  String workspacePickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count không gian làm việc',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workspacePickerCreateDescription => 'Tạo không gian mới cho nhóm hoặc dự án';
+
+  @override
+  String get workspacePickerCurrentLabel => 'Không gian đang dùng';
+
+  @override
+  String get workspacePickerDefaultDescription => 'Được mở đầu tiên khi bạn khởi động ứng dụng';
+
+  @override
+  String get workspacePickerEmptyMessage => 'Các không gian bạn tạo hoặc được mời tham gia sẽ hiện ở đây.';
+
+  @override
+  String get workspacePickerNoResultsMessage => 'Thử tên hoặc gói khác, hoặc xóa nội dung tìm kiếm.';
+
+  @override
+  String get workspacePickerTeamBadge => 'Nhóm';
 }
