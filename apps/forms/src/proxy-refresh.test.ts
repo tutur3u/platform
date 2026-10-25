@@ -117,3 +117,50 @@ describe('mounted Forms shared-session boundary', () => {
     }
   );
 });
+
+describe('public Forms build identity', () => {
+  beforeEach(() => {
+    pageAdapterMocks.refresh
+      .mockReset()
+      .mockResolvedValue({ ok: false, error: 'Token expired' });
+  });
+  it.each([
+    ['GET', false],
+    ['GET', true],
+    ['HEAD', false],
+    ['HEAD', true],
+  ])(
+    'keeps %s independent of ambient sessions (cookies=%s)',
+    async (method, cookies) => {
+      const request = new NextRequest(
+        'https://forms.tuturuuu.com/api/build-info',
+        {
+          method,
+          headers: cookies
+            ? {
+                cookie:
+                  'tuturuuu_app_session=expired; sb-example-auth-token=expired',
+                authorization: 'Bearer expired',
+              }
+            : {},
+        }
+      );
+      const response = await proxy(request);
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(pageAdapterMocks.refresh).not.toHaveBeenCalled();
+      expect(request.headers.get('cookie')).toBeNull();
+      expect(request.headers.get('authorization')).toBeNull();
+      expect(response.headers.getSetCookie()).toEqual([]);
+    }
+  );
+  it.each(['/api/build-info/private', '/api/v1/workspaces/ws/forms'])(
+    'preserves the session guard for %s',
+    async (path) => {
+      const response = await proxy(
+        new NextRequest(`https://forms.tuturuuu.com${path}`)
+      );
+      expect(pageAdapterMocks.refresh).toHaveBeenCalledOnce();
+      expect(response.status).toBe(401);
+    }
+  );
+});
