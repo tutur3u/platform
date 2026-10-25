@@ -22,6 +22,7 @@ describe('LoginForm returns for apps mounted on the platform apex', () => {
   });
 
   it('returns a mounted verify-token URL to its app, inside the mount', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'inventory');
     const tokenizedReturnUrl =
       'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal%2Fcatalog&token=cross-app-token&originApp=web&targetApp=inventory';
     mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
@@ -38,6 +39,16 @@ describe('LoginForm returns for apps mounted on the platform apex', () => {
       returnUrl: mountedInventoryReturnUrl,
     });
     expect(mocks.replace).not.toHaveBeenCalledWith('/personal/catalog');
+  });
+
+  it('never mints a token for an app that is not routed on the apex yet', async () => {
+    renderLoginForm(mountedInventoryReturnUrl);
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/personal/catalog');
+    });
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(mocks.assign).not.toHaveBeenCalled();
   });
 
   it.each([

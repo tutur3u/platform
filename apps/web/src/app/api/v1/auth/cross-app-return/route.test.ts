@@ -44,6 +44,7 @@ function createRequest(
 describe('cross-app return route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     mocks.getExternalAppByReturnUrl.mockResolvedValue(null);
     mocks.createClient.mockResolvedValue({
       auth: {
@@ -192,6 +193,7 @@ describe('cross-app return route', () => {
   });
 
   it('returns apex-mounted verifier URLs to the mounted app, inside the mount', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'inventory');
     const response = await POST(
       createRequest(
         'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal%2Fcatalog'
@@ -216,6 +218,7 @@ describe('cross-app return route', () => {
     ['an unsafe nextUrl', 'https%3A%2F%2Fevil.test', '/'],
     ['a nested verifier nextUrl', '%2Fverify-token%3FnextUrl%3D%252Fa', '/a'],
   ])('keeps %s inside the mount', async (_label, nextUrl, expected) => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'inventory');
     const response = await POST(
       createRequest(
         `https://tuturuuu.com/inventory/verify-token?nextUrl=${nextUrl}`
@@ -226,6 +229,21 @@ describe('cross-app return route', () => {
 
     expect(returnUrl.pathname).toBe('/inventory/verify-token');
     expect(returnUrl.searchParams.get('nextUrl')).toBe(expected);
+  });
+
+  it('never mints an app token to an apex path that is not an active mount', async () => {
+    const response = await POST(
+      createRequest(
+        'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal'
+      )
+    );
+    const body = (await response.json()) as {
+      returnUrl: string;
+      targetApp: string;
+    };
+
+    expect(body.targetApp).toBe('platform');
+    expect(new URL(body.returnUrl).pathname).toBe('/verify-token');
   });
 
   it('resolves the root platform URL when supplied over http', async () => {

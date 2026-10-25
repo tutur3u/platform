@@ -1,10 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { getMountedAppVerifyTokenMatch } from './internal-app-mounts';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  getActiveAppMounts,
+  getMountedAppVerifyTokenMatch,
+} from './internal-app-mounts';
+
+const active = new Set(['inventory', 'tasks', 'not-an-app']);
 
 describe('getMountedAppVerifyTokenMatch', () => {
   it('matches a registered app verifier mounted on the platform apex', () => {
     const match = getMountedAppVerifyTokenMatch(
-      'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal%2Fcatalog'
+      'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal%2Fcatalog',
+      active
     );
 
     expect(match).toMatchObject({
@@ -19,7 +25,8 @@ describe('getMountedAppVerifyTokenMatch', () => {
   it('accepts a locale segment before verify-token', () => {
     expect(
       getMountedAppVerifyTokenMatch(
-        'https://tuturuuu.com/tasks/vi/verify-token'
+        'https://tuturuuu.com/tasks/vi/verify-token',
+        active
       )?.name
     ).toBe('tasks');
   });
@@ -41,6 +48,34 @@ describe('getMountedAppVerifyTokenMatch', () => {
     ['credentials', 'https://user:pass@tuturuuu.com/inventory/verify-token'],
     ['a non-http scheme', 'javascript://tuturuuu.com/inventory/verify-token'],
   ])('rejects %s', (_label, url) => {
-    expect(getMountedAppVerifyTokenMatch(url)).toBeNull();
+    expect(getMountedAppVerifyTokenMatch(url, active)).toBeNull();
+  });
+
+  it('ignores a registered app that is not an active mount', () => {
+    expect(
+      getMountedAppVerifyTokenMatch(
+        'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fx',
+        new Set(['tasks'])
+      )
+    ).toBeNull();
+  });
+
+  it('has no active mounts by default', () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', '');
+
+    expect(
+      getMountedAppVerifyTokenMatch(
+        'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fx'
+      )
+    ).toBeNull();
+    vi.unstubAllEnvs();
+  });
+
+  it('parses the comma-separated active mount list', () => {
+    expect([...getActiveAppMounts(' tasks, ,inventory ')]).toEqual([
+      'tasks',
+      'inventory',
+    ]);
+    expect(getActiveAppMounts(undefined).size).toBe(0);
   });
 });
