@@ -1,0 +1,314 @@
+---
+title: "Start bridge (@tuturuuu/start-bridge)"
+description: "The frozen v0 contract for running Next App Router satellites on TanStack Start + Vite+ on Cloudflare, including the basePath and per-app session cookie rules."
+---
+
+`@tuturuuu/start-bridge` is the shared layer that lets a satellite's existing
+App Router source run under TanStack Start, Vite+ and Void on a Cloudflare
+Worker. It replaces the per-app `src/runtime` shim copies in Meet, Mail and
+Calendar. The core (`route-match`, `base-path`, `mounts`, `app-url`, `endpoints`,
+`pages`, `api-forward`, `canary`, `csp`, `request-context/core`) has no React, Start or
+Vite imports; the `next/*`, `start/*`, `intl/*` and `vite` entries are the
+framework adapters at the edge.
+
+This page is the **v0 API freeze**. App lanes convert against these export
+paths and signatures. Within v0, changes are additive only: a new optional
+option, a new export, or a new subpath. Removing or changing a frozen
+signature needs a new subpath and a coordinated migration.
+
+## Export map
+
+| Subpath | Exports | Notes |
+| --- | --- | --- |
+| `route-match` | `matchRoute`, `compareRoutePatterns`, `fromNextSourcePattern`, `routeParam`, `routeSegments`, `RouteParams` | `[x]`, `[...x]` (one or more), `[[...x]]` (zero or more); malformed encoding throws `URIError` |
+| `base-path` | `createBasePath`, `normalizeBasePath`, `prefixBase`, `retarget`, `BasePath`, `BasePathOptions` | Rules for one resolved base |
+| `mounts` | `resolveAppBase`, `APP_BASE_HEADER`, `AppMountConfig`, `ResolvedMount` | Per-request base from host + path |
+| `app-url` | `runtimeAppBase`, `withAppBase`, `appPath`, `appUrl`, `createApiPath`, `installAppBaseResolver`, `APP_BASE_GLOBAL` | Base-aware URLs for app code, SSR and packages; no Node/framework imports |
+| `request-context/core` | Portable context, `BridgeRequestStore`, `installRequestStore`, `REQUEST_STORE_KEY` | No Node or Next imports; the store is found under a global Symbol |
+| `request-context` | Server adapter: installs the AsyncLocalStorage store and adds Next's `cookies()`; re-exports the core: `withBridgeRequest`, `bridgeRequest`, `maybeBridgeRequest`, `createRequestLocal`, `headers`, `cookies`, `draftMode`, `connection`, `after`, `appendContextCookies` | One AsyncLocalStorage store for every alias; carries `appBase` |
+| `endpoints` | `dispatchEndpoint`, `sortEndpoints`, `BridgeEndpoint`, `RouteModule`, `HTTP_METHODS` | Next route-handler semantics (HEAD→GET, OPTIONS 204, 405 with `Allow`, 400 on bad encoding) |
+| `pages` | `matchPage`, `BridgePage` | Matches a generated page manifest |
+| `api-forward` | `forwardToCentralApi`, `centralApiOrigin`, `HOP_BY_HOP_HEADERS` | Unowned `/api/*` to the central Web API; a same-origin target is refused only for paths the app owns (`ownsPath`), so a mounted app reaches Web on `tuturuuu.com` while a root-mounted self-forward stays a 503 |
+| `csp` | `createNonce`, `requestNonce`, `defaultContentSecurityPolicy` | Per-response script nonce; `createBridgeHandler({ csp })` sends the policy, `createRouter({ ssr: { nonce: requestNonce() } })` and `appBaseHeadScript()` stamp scripts. Required before any app mounts on the apex |
+| `canary` | `RUNTIME_HEADER`, `tagResponse`; retained unused: `decideCohort`, `parseCanaryPercent`, `CANARY_PERCENT_VARIABLE`, `COHORT_COOKIE` | Runtime tag for the post-cutover watch; no staged canaries |
+| `next/headers`, `next/server`, `next/cache` | Next server APIs over the bridge request | `after()` needs a `waitUntil` binding |
+| `next/navigation`, `next/link` | Router-mode navigation; `BridgeParamsContext` | Client navigation on the TanStack router |
+| `next/root-params` (alias) | `locale`, `getRootParam` | Explicit `rootParams` in the request context, then the app-relative first segment of the request the app sees (the next-intl rewrite), then `x-next-intl-locale` |
+| `next-intl/routing`, `next-intl/navigation`, `next-intl/server` (aliases) | `defineRouting`, `hasLocale`; `createNavigation(routing)` honouring `localePrefix` `never`/`as-needed`/`always`; `getRequestConfig`, `setRequestLocale`, `getLocale`, `getMessages`, `getTranslations`, `getFormatter`, `getNow`, `getTimeZone` | The server shim evaluates the app's `i18n/request.ts` once per request through the `next-intl/config` alias (as next-intl's plugin does). The real `next-intl/middleware` runs unchanged |
+| Other aliases | `server-only` → Start's marker; `@tuturuuu/satellite/i18n` → `intl/localized-navigation`; `nuqs/adapters/next/app` → `nuqs/adapters/tanstack-router`; `next/og` → `og`; `next/<module>.js`; `intlServer` replaces the generic `next-intl/server` | Set by the Vite preset |
+| `next/navigation-document` | Document-mode `useRouter`/`NativeLink` | Full page loads (Apps gateway) |
+| `next/image`, `next/dynamic`, `next/cloudflare-context` | Optimizer-free image, lazy component, `getCloudflareContext` | |
+| `proxy-bridge` | `dispatchThroughProxy`, `defaultProxyMatches`, `toNextRequest`, `forwardedRequestInit` | Runs `proxy.ts` with Next's middleware protocol |
+| `function-proxy` | `createFunctionProxy({ targetApp, prefixBase?, continueWith? })` | Guards the server-function base |
+| `intl`, `intl/localized-navigation`, `intl/server` | `next-intl` on `use-intl`; en/vi localized links; `createIntlServer(messages)` | English unprefixed, Vietnamese under `/vi` |
+| `start/handler` | `createBridgeHandler(options)` | The Worker `fetch` skeleton; `mounts` resolves the base per request |
+| `start/server-entry` | `createBridgeStartHandler()` | Start handler that prefixes SSR asset URLs with the request's base |
+| `start/base-path` | `routerBasepath`, `appBaseHeadScript`, `bridgeServerFnFetch`, `runtimeAppBase`, `withAppBase`, `appPath`, `appUrl`, `appBasePath` (deprecated alias) | Router basepath, hydration hand-off and server-function routing |
+| `vite` | `startBridgePreset`, `startBridgeAliases`, `presetBasePath`, `NEXT_SHIMS` | Plain config fragments; imports only Node built-ins because Vite+ loads it with native type stripping |
+| `codegen` + bin `start-bridge-routes` | `planRegistries`, `classifyRouteFile`, renderers; CLI `generate`/`check` | Fails on any unregistered `route.*`/`page.*` |
+
+## Worker handler
+
+```ts
+import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
+import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
+import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
+import { proxy } from '../src/proxy';
+import { endpoints } from '../src/runtime/api-registry.bridge.gen';
+
+export default {
+  fetch: createBridgeHandler<Env, ExecutionContext>({
+    mounts: {
+      app: 'meet',
+      rootHosts: ['meet.tuturuuu.com'],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/meet',
+    },
+    start: createBridgeStartHandler(),
+    serverFnBase: '/_serverFn',
+    proxy,
+    endpoints,
+    functionBase: '/_serverFn',
+    functionProxy: createFunctionProxy({ targetApp: 'meet' }),
+    publicAssets,
+    assets: (env) => env.ASSETS,
+    centralApiOrigin: (env) => env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
+  }),
+};
+```
+
+Order: base resolution from `mounts` (a mount host outside the mount is 404),
+`/assets/*` and declared public files from `ASSETS` (base-stripped), then the
+app's `proxy.ts`, `centralFirst` paths to the central API (Next `beforeFiles`
+rewrites such as `TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS`; Next sources
+like `/api/v1/:wsId/x` or bracket patterns), the generated endpoint registry,
+unowned `/api/*` to the central API (base-stripped), server functions to Start (base-stripped), and
+finally pages to Start at the browser-visible URL. The response then gets
+Location rewriting. Cookies pass through unchanged. A `proxy.ts` rewrite to
+another origin throws unless that origin is the configured central API origin
+(`rewriteOrigins`), which is then fetched with manual redirects and hop-by-hop
+headers removed.
+
+In the app: `start.ts` passes `serverFns: { fetch: bridgeServerFnFetch }` to
+`createStart`, `getRouter()` sets `basepath: routerBasepath()` and
+`ssr: { nonce: requestNonce() }`, and the root route lists
+`appBaseHeadScript()` first in `head().scripts`. With `csp` set, every
+response gets a fresh nonce in its `Content-Security-Policy`, which the router
+and the head script repeat. On the apex the handler sits behind the one-origin
+gate (`decideOneOriginRequest`, #6746).
+
+## Registries and the unregistered-route check
+
+Each app declares `start-bridge.routes.json` at its root:
+
+```json
+{
+  "appDir": "src/app",
+  "stripSegments": { "[locale]": { "locale": "en" } },
+  "api": { "out": "src/runtime/api-registry.bridge.gen.ts" },
+  "pages": { "out": "src/runtime/page-registry.bridge.gen.ts" },
+  "owned": { "api/build-info/route.ts": "src/native/api.server.ts" },
+  "ignored": { "api/legacy/route.ts": "served by the central API" }
+}
+```
+
+`bun packages/start-bridge/src/codegen/cli.ts generate apps/<app>` writes the
+registries; `check` fails when `appDir` is missing or not a directory (declare
+`"appDir": null` for an app without App Router source), when a generated file is stale, a `route.*` or
+`page.*` is neither generated, `owned` by an existing native file, nor
+`ignored` with a reason, an `owned`/`ignored` entry names no file, two files
+map to one URL shape (including `[id]` vs `[slug]`, or a page and a route), or a parallel/intercepting route appears. Route groups are
+dropped from patterns. The page manifest exports `PagePattern`; type the page
+model as `satisfies Record<PagePattern, Loader>` so a new page fails
+type-check until it is handled. `*.bridge.gen.ts` files are excluded from
+Biome.
+
+## basePath contract
+
+One compiled artifact serves an app at its subdomain root and mounted at
+`tuturuuu.com/<app>`. The Worker resolves the base **per request** from the
+host and path against `mounts` (`rootHosts` → `''`; `mountHosts` + the
+`/<app>` prefix → `/<app>`; unlisted hosts default to the root, or 404 with
+`unknownHost: 'reject'`). The build-time `TUTURUUU_BASE_PATH` is only the
+fallback when no runtime base exists. Root mode is the identity everywhere.
+
+| Concern | Rule |
+| --- | --- |
+| Ownership | A mount host owns `/<app>` and `/<app>/*` only; `/meetings` is not `/meet` |
+| SSR | The request context carries `appBase`; `runtimeAppBase()` reads it per request |
+| Hydration | `appBaseHeadScript()` serializes the base before the client router starts |
+| Router | `basepath: routerBasepath()` (`/` or `/<app>`) |
+| Assets | The SSR manifest's script/stylesheet URLs get the request's base (`createBridgeStartHandler`); JS-referenced asset URLs read the runtime base (`renderBuiltUrl`), CSS ones stay relative to their stylesheet; requests are fetched from `ASSETS` base-stripped |
+| Server functions | Compiled against the root (`/_serverFn`); `bridgeServerFnFetch` sends them to `/<app>/_serverFn` in the browser, and the Worker strips the base before Start |
+| Next middleware | `NextRequest` carries Next's `basePath`; `nextUrl.pathname` is app-relative and `nextUrl.clone()` redirects keep the base |
+| Links and navigation | `next/link`, `useRouter().push/replace`, `redirect()` prefix path-absolute hrefs with the runtime base |
+| URLs in app code | `appPath('/...')` and `appUrl('/share/...', origin?)` from `app-url` (worklets, Live, preview, download, share) |
+| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` keeps calling Web relatively |
+| Location headers | Path-relative `Location` not already under the base gains it. Absolute URLs are never rewritten, so `new URL('/login', request.url)` behaves as in Next (it leaves the app) |
+| Central API | Unowned `/<app>/api/*` is forwarded as `/api/*` |
+| Auth return URLs | `appUrl(path, origin)` so the central login returns into the app |
+| Cookies | Never renamed or path-scoped. The canonical session cookie is `tuturuuu_app_session` (+ `tuturuuu_app_session_refresh`) everywhere; there is no per-app name. Subdomains keep today's behaviour until cutover; the apex uses the shared session below |
+
+`tuturuuu.com/meet` is the Meet app root; product marketing moves to
+`/products/<app>`.
+
+## Shared session on the apex (proposal for security review)
+
+**Decision (user, 2026-10-25):** keep one Tuturuuu session, usable across
+every app; no per-app session cookies. The bridge therefore leaves all cookies
+untouched. Making that safe on the apex needs the auth change below. It is a
+**proposal awaiting security review**; nothing here is implemented yet.
+
+### Current model and the apex problems
+
+- Each satellite holds a per-app access token in `tuturuuu_app_session`
+  (`target_app` = that app; `verifyAppSessionToken` requires an exact match)
+  plus `tuturuuu_app_session_refresh`, host-only at `Path=/` on its subdomain.
+- With `sessionMode: 'supabase-first'` and the root Supabase cookies
+  (`sb-<ref>-auth-token*`, shared on `.tuturuuu.com`) present,
+  `refreshAppSessionForRequest` already derives the app claims from Supabase,
+  mints the access token **in memory** as `Authorization: Bearer` for that
+  request, and then calls `clearAppSessionCookie`.
+- On the apex, `clearAppSessionCookie` would expire `tuturuuu_app_session`,
+  its refresh cookie **and Web's own `tuturuuu_web_app_session` (+ refresh)**
+  at `Path=/` on every mounted-app request.
+- Web's `createClient` (`packages/supabase/src/next/server.ts` and
+  `request/server.ts`, `requestHasAppSessionAuth`) switches to the isolated
+  app-session client whenever a `tuturuuu_app_session` cookie is present, so
+  any app writing that cookie at `Path=/` on the apex drops Web's Supabase
+  session. If several apps wrote it, they would overwrite each other's
+  per-app token.
+
+### Decision required: a JavaScript-readable shared session on one origin
+
+The root Supabase session cookies (`sb-<ref>-auth-token*`) are set with
+`Path=/`, `SameSite=Lax`, `Secure` and `Domain=.tuturuuu.com` but **not
+`HttpOnly`**: `getSupabaseCookieOptions`
+(`packages/supabase/src/next/common.ts`) leaves `@supabase/ssr`'s default
+`httpOnly: false`, because the browser Supabase client reads the session. Do
+not toggle that flag: browser auth depends on it.
+
+**Blast radius.** Today an XSS in one satellite can already read the root
+session through the shared `.tuturuuu.com` domain cookie. On one origin the
+radius is wider: script running under any `tuturuuu.com/<app>` path also shares
+the origin's `localStorage`, `sessionStorage`, IndexedDB, service-worker scope
+and same-origin `fetch`, so one app's XSS can act as the user in every app and
+in Web without reading a cookie at all. Path separation is not a security
+boundary within an origin.
+
+**Accepting this requires, per mounted app:**
+
+- an enforced CSP with per-response script nonces (`createBridgeHandler({ csp })`,
+  `requestNonce()`) and Trusted Types, which is already mandatory before an
+  app mounts on the apex;
+- no inline event handlers or `eval`-style sinks, and dependency review for
+  script injection;
+- the `decideOneOriginRequest` gate (#6746) in front of every mount.
+
+**Alternatives** if the risk is not accepted: keep satellites on their
+subdomains (today's isolation); mount only apps that pass a stricter security
+review; or move the browser to a backend-for-frontend session where an
+`HttpOnly` cookie is exchanged server-side and the browser Supabase client is
+not used on the apex.
+
+### Proposed model (if accepted)
+
+1. **The shared apex session is the root Supabase session.** Mounted apps
+   derive their per-app claims per request (in-memory bearer, as today) and
+   never write or clear `tuturuuu_app_session*` or
+   `tuturuuu_web_app_session*` on the apex. The audience check stays per app;
+   the Supabase JWT is validated on every request.
+2. **Mounted mode is decided by the bridge from the request URL only.** The
+   handler deletes any client-sent `x-tuturuuu-app-base` and sets its own from
+   the resolved mount. Auth code must not trust that header on any route a
+   client can reach without the bridge in front (direct Worker hosts, Web, or
+   tests); the invariant below is enforced by the writers themselves.
+3. **The no-app-cookie invariant holds at every writer and clearer on the
+   apex host:** `setAppSessionCookie`, `setAppSessionRefreshCookie`,
+   `setWebAppSessionCookie`, `setWebAppSessionRefreshCookie`,
+   `clearAppSessionCookie` (including the MFA-redirect clear in
+   `packages/auth/src/proxy/index.ts`), `createSupabaseBackedAppSessionResponse`,
+   and the cross-app helpers in `packages/auth/src/cross-app/server.ts`. Each
+   checks the response's target host, not a request header. The satellite
+   `api/auth/refresh-app-session` and `api/auth/verify-app-token` routes reject
+   apex (mounted) calls before any write.
+4. **CSRF.** Every unsafe, cookie-authenticated endpoint on the apex requires a
+   same-origin `Origin` (or a CSRF token) and rejects `Sec-Fetch-Site:
+   cross-site`; server functions keep Start's CSRF middleware. Logout is a
+   protected unsafe operation, not a GET.
+5. **Logout and refresh races.** Logout signs the user out of the Supabase
+   session, so it is global across Web and every mounted app by design.
+   Concurrent tabs and Workers may refresh the same Supabase refresh token:
+   rely on the project's refresh-token reuse interval, never let a refresh
+   response restore cookies after a sign-out (responses compare a session
+   generation before writing `Set-Cookie`), and accept that an already issued
+   access JWT stays valid until its expiry (bound the access-token lifetime
+   accordingly; revocation-sensitive operations re-check the session).
+6. **Verification cost.** Each mounted-app request validates the Supabase JWT
+   (local with asymmetric keys; JWKS cached with rotation-aware refetch),
+   refreshes when near expiry, and may run the MFA lookups the satellites
+   already run. Measure the p95 on staging before cutover.
+7. **Subdomains keep today's behaviour** until each app's cutover.
+
+### Code that must change (auth owner, after acceptance)
+
+| Where | Change |
+| --- | --- |
+| `packages/auth/src/proxy/index.ts` `refreshAppSessionForRequest` | Apex host: Supabase-only; skip `resolveSignedAppSessionForRequest`; a missing/invalid session goes to Web login with `appUrl(...)` as the return URL |
+| same file, `createSupabaseBackedAppSessionResponse` and the MFA-redirect branch | Apex host: keep the in-memory bearer and the Supabase `Set-Cookie` pass-through; never call `clearAppSessionCookie` |
+| same file, `appSessionFailureResponse` | Apex host: no app-cookie writes; absolute Web URLs |
+| `packages/auth/src/app-session.ts` setters and `clearAppSessionCookie`; `packages/auth/src/cross-app/server.ts` | Refuse apex-host writes (the invariant above) |
+| Satellite `app/api/auth/{logout,refresh-app-session,verify-app-token}` | Apex: logout is a protected POST to Web sign-out; refresh and verify reject before writes |
+| `packages/supabase/src/next/server.ts`, `packages/supabase/src/request/server.ts` `requestHasAppSessionAuth` | On the apex host, a valid Supabase cookie session wins over a cookie-borne `tuturuuu_app_session` |
+| `@tuturuuu/start-bridge` `function-proxy` and app `proxy.ts` calls | Pass the URL-derived mount through; never a header from the client |
+
+## Page adapter
+
+The generic App Router page adapter (React Server Components) and the
+`'use server'` path are owned by the conversion codemod in
+[#6760](https://github.com/tutur3u/platform/pull/6760), which also owns the
+RSC-environment shims for `next-intl/*` and `next/root-params`. The bridge
+keeps its request store on a global Symbol so every bundled environment
+observes the same request.
+
+## Runtime tag
+
+Cutovers are direct, with an instant one-step rollback prepared before the
+flip and a post-deploy watch (see the native Start migration runbook); there
+are no staged canaries. Tag every native response with `x-tuturuuu-runtime:
+native` (`RUNTIME_HEADER`; `tagResponse` with a `native` decision) so the
+watch can tell native traffic from the prior deployment. The cohort helpers
+in `canary` (`decideCohort`, `TUTURUUU_NATIVE_CANARY_PERCENT`) are retained
+but unused.
+
+## Vite preset
+
+```ts
+const bridge = startBridgePreset({
+  appRoot: import.meta.url,
+  app: 'apps',
+  navigation: 'document',
+  shims: ['next/headers', 'next/server', 'next/navigation', 'next/link', 'next-intl'],
+  serverOnlySpecifiers: ['@tuturuuu/satellite/auth'],
+});
+export default defineConfig(({ command }) => ({
+  base: bridge.base,
+  define: bridge.define,
+  experimental: bridge.experimental,
+  plugins: [voidPlugin(), tanstackStart(bridge.tanstackStart), react(), tailwindcss()],
+  environments: { client: { define: bridge.clientDefine(command) } },
+  resolve: { alias: bridge.alias },
+}));
+```
+
+`basePath` defaults to `TUTURUUU_BASE_PATH` at build time. List `shims`
+explicitly when converting an app whose current config aliases only some
+`next/*` modules, so the bundle does not change.
+
+## Verification
+
+`packages/start-bridge` unit tests cover each core module and adapter at the
+root and under `/meet`, plus the ported Meet proxy-bridge regressions. App
+adoption still needs that app's exact-commit CI: unit, type-check, lint,
+`vp build`, the sealed artifact and emitted-runtime acceptance where the app
+has them.
