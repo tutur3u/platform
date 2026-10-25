@@ -18,6 +18,7 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
+import { withAppBase } from '@tuturuuu/start-bridge/base-path';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
@@ -64,6 +65,19 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  const mounted = Boolean(req.nextUrl.basePath);
+  if (
+    mounted &&
+    [
+      '/api/auth/refresh-app-session',
+      '/api/auth/verify-app-token',
+      '/api/auth/logout',
+    ].includes(req.nextUrl.pathname)
+  )
+    return NextResponse.json(
+      { error: 'The shared session is managed by Web' },
+      { status: 409 }
+    );
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -86,7 +100,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       if (isBuildInfoRead) req.headers.delete('authorization');
     }
     const appSessionRefresh =
-      isLocalAuthApi || isBuildInfoRead || hasMachineKey
+      mounted || isLocalAuthApi || isBuildInfoRead || hasMachineKey
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -116,19 +130,28 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     return (
       appSessionRefresh?.response ??
-      clearSupabaseAuthCookies(req, NextResponse.next())
+      (mounted
+        ? NextResponse.next()
+        : clearSupabaseAuthCookies(req, NextResponse.next()))
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  if (
+    mounted &&
+    /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
+  )
+    return NextResponse.redirect(
+      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
+    );
+  const verifyTokenResponse = mounted
+    ? null
+    : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const authRes = mounted ? NextResponse.next() : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it
@@ -191,7 +214,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
+        req.nextUrl.origin
+      );
       redirectUrl.search = req.nextUrl.search;
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
@@ -213,8 +239,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           newPathSegments[wsIdIndex] = 'personal';
 
           const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
-            req.nextUrl
+            withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
+            req.nextUrl.origin
           );
           // Preserve query parameters
           redirectUrl.search = req.nextUrl.search;
@@ -262,13 +288,19 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             : defaultWorkspace.id === ROOT_WORKSPACE_ID
               ? 'internal'
               : defaultWorkspace.id;
-          const redirectUrl = new URL(`${localePrefix}/${target}`, req.nextUrl);
+          const redirectUrl = new URL(
+            withAppBase(`${localePrefix}/${target}`, req.nextUrl.basePath),
+            req.nextUrl.origin
+          );
           const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;
         }
 
-        const fallbackUrl = new URL(`${localePrefix}/no-access`, req.nextUrl);
+        const fallbackUrl = new URL(
+          withAppBase(`${localePrefix}/no-access`, req.nextUrl.basePath),
+          req.nextUrl.origin
+        );
         const fallbackRedirect = NextResponse.redirect(fallbackUrl);
         propagateAuthCookies(authRes, fallbackRedirect);
         return fallbackRedirect;
@@ -333,15 +365,21 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           : preferredWorkspace.id === ROOT_WORKSPACE_ID
             ? 'internal'
             : preferredWorkspace.id;
-        const redirectUrl = new URL(`${localePrefix}/${target}`, req.nextUrl);
+        const redirectUrl = new URL(
+          withAppBase(`${localePrefix}/${target}`, req.nextUrl.basePath),
+          req.nextUrl.origin
+        );
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
         return wsRedirect;
       }
 
       const fallbackUrl = new URL(
-        `${localePrefix}${isRootAdmin ? '/internal/projects' : '/no-access'}`,
-        req.nextUrl
+        withAppBase(
+          `${localePrefix}${isRootAdmin ? '/internal/projects' : '/no-access'}`,
+          req.nextUrl.basePath
+        ),
+        req.nextUrl.origin
       );
       const fallbackRedirect = NextResponse.redirect(fallbackUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
