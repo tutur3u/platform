@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -29,7 +30,8 @@ class ProfileAvatarPicker {
       source: source,
       maxWidth: 1024,
       maxHeight: 1024,
-      imageQuality: 85,
+      imageQuality: 90,
+      requestFullMetadata: false,
     );
     return file == null ? null : File(file.path);
   }
@@ -92,6 +94,10 @@ Future<void> pickAndUploadProfileAvatar(
               ),
             ),
     );
+  } on PlatformException catch (error) {
+    if (context.mounted && current()) {
+      cubit.reportAvatarSelectionFailure(error);
+    }
   } finally {
     await intent.dispose();
   }
