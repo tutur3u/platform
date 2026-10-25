@@ -62,22 +62,14 @@ describe('subdomain navigations', () => {
     expect(decision.response.headers.get('cache-control')).toBe('no-store');
   });
 
-  it('maps the root and already-prefixed paths without doubling the base', () => {
+  it('maps the subdomain root to the bare mount', () => {
     const root = decideOneOriginRequest(
       nav('https://meet.tuturuuu.com/'),
-      base
-    );
-    const prefixed = decideOneOriginRequest(
-      nav('https://meet.tuturuuu.com/meet/plans/x'),
       base
     );
     expect(
       root.action === 'redirect' && root.response.headers.get('location')
     ).toBe('https://tuturuuu.com/meet');
-    expect(
-      prefixed.action === 'redirect' &&
-        prefixed.response.headers.get('location')
-    ).toBe('https://tuturuuu.com/meet/plans/x');
   });
 
   it('uses 301 without a no-store header once promoted', () => {
@@ -126,6 +118,7 @@ describe('subdomain machine traffic is served, never redirected', () => {
       { headers: { upgrade: 'websocket' } },
     ],
     ['server function', 'https://meet.tuturuuu.com/_meet/functions/x', {}],
+    ['bridge server function', 'https://meet.tuturuuu.com/_serverFn/x', {}],
     ['asset', 'https://meet.tuturuuu.com/assets/app.js', {}],
     ['well-known', 'https://meet.tuturuuu.com/.well-known/meeting-runtime', {}],
   ])('%s', (_name, url, init) => {
@@ -133,11 +126,10 @@ describe('subdomain machine traffic is served, never redirected', () => {
       nav(url, init as RequestInit),
       base
     );
-    expect(decision.action).toBe('serve');
+    // The bridge serves the subdomain at its root: requests pass unchanged.
+    expect(decision).toMatchObject({ action: 'serve', noindex: false });
     if (decision.action === 'serve')
-      expect(new URL(decision.request.url).pathname).toBe(
-        `/meet${new URL(url).pathname}`
-      );
+      expect(decision.request.url).toBe(new Request(url).url);
   });
 
   it('does not redirect fetches or non-navigation GETs', () => {
@@ -148,19 +140,6 @@ describe('subdomain machine traffic is served, never redirected', () => {
       base
     );
     expect(decision.action).toBe('serve');
-  });
-
-  it('keeps POST bodies when rewriting into the base path', async () => {
-    const decision = decideOneOriginRequest(
-      new Request('https://meet.tuturuuu.com/api/x', {
-        method: 'POST',
-        body: 'payload',
-      }),
-      base
-    );
-    expect(decision.action).toBe('serve');
-    if (decision.action === 'serve')
-      expect(await decision.request.text()).toBe('payload');
   });
 });
 

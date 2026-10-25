@@ -85,10 +85,12 @@ Worker variables:
 
 Redirects apply only to subdomain GET/HEAD navigations: `Sec-Fetch-Mode: navigate`,
 or an HTML `Accept` header without Fetch Metadata. They keep the raw path and query
-bytes. Machine traffic is always served on the subdomain, rewritten into the base
-path, and never redirected. That covers `/api/*` (webhooks, OAuth callbacks),
-`/assets/*`, `/.well-known/*`, WebSocket upgrades, server functions and Meet's
-`/live-connect`.
+bytes. Machine traffic is always served on the subdomain and never redirected.
+That covers `/api/*` (webhooks, OAuth callbacks), `/assets/*`, `/.well-known/*`,
+WebSocket upgrades, server functions (`/_serverFn` and the legacy app bases) and
+Meet's `/live-connect`. The decision never rewrites URLs. The Start bridge
+resolves the base per request, serving the subdomain at its root and the shared
+origin under `/<app>` from one artifact.
 
 Each app's `basePathReady` constant (`apps/meet/cloudflare/one-origin.ts`,
 `apps/mail/src/runtime/one-origin.ts`)

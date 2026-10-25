@@ -2,9 +2,11 @@
  * Shared-origin mounting for apps moving from `<app>.tuturuuu.com` to
  * `tuturuuu.com/<app>` (docs: platform/architecture/one-origin-super-app).
  *
- * One Worker serves both hosts during migration. This module decides, per
- * request, whether to serve it (possibly rewritten into the base path),
- * redirect a subdomain navigation to the shared origin, or refuse it.
+ * One Worker artifact serves both hosts during migration: the Start bridge
+ * resolves the base per request (root on the subdomain, `/<app>` on the
+ * shared origin). This module only decides whether to serve a request
+ * unchanged, redirect a subdomain navigation to the shared origin, or refuse
+ * it; it never rewrites URLs.
  *
  * Portable: no framework or runtime imports. The caller passes the request and
  * resolved configuration, then applies the decision.
@@ -27,15 +29,16 @@ export interface OneOriginConfig {
   mode: OneOriginMode;
   redirectStatus: OneOriginRedirectStatus;
   /**
-   * Whether the deployed build routes under `basePath`. Until it does, the
-   * shared origin is refused in every mode, and subdomain requests are served
-   * unchanged instead of being rewritten into the base path.
+   * Whether the deployed build can serve under `basePath` (the Start bridge
+   * build). Until it can, the shared origin is refused in every mode and the
+   * subdomain never redirects.
    */
   basePathReady: boolean;
   /**
-   * App-relative path prefixes that machines call on the subdomain: webhooks,
-   * OAuth callbacks, WebSockets, server functions. They are always served and
-   * never redirected. `/api`, `/assets` and `/.well-known` are always included.
+   * Subdomain path prefixes that machines call: webhooks, OAuth callbacks,
+   * WebSockets, server functions. They are always served and never
+   * redirected. `/api`, `/assets`, `/.well-known` and `/_serverFn` are always
+   * included.
    */
   machinePathPrefixes?: readonly string[];
 }
@@ -45,7 +48,12 @@ export type OneOriginDecision =
   | { action: 'redirect'; response: Response }
   | { action: 'refuse'; response: Response };
 
-const ALWAYS_MACHINE_PREFIXES = ['/api', '/assets', '/.well-known'] as const;
+const ALWAYS_MACHINE_PREFIXES = [
+  '/api',
+  '/assets',
+  '/.well-known',
+  '/_serverFn',
+] as const;
 
 export const ONE_ORIGIN_MODES: readonly OneOriginMode[] = [
   'off',
@@ -88,26 +96,6 @@ function refuse() {
   });
 }
 
-function rewriteIntoBase(request: Request, url: URL, basePath: string) {
-  if (hasPrefix(url.pathname, basePath)) return request;
-  const rewritten = new URL(url);
-  rewritten.pathname = `${basePath}${url.pathname === '/' ? '' : url.pathname}`;
-  const hasBody =
-    request.body !== null &&
-    request.method !== 'GET' &&
-    request.method !== 'HEAD';
-  // Explicit init: some runtimes drop the body when a Request is the init.
-  return new Request(rewritten, {
-    method: request.method,
-    headers: request.headers,
-    redirect: request.redirect,
-    signal: request.signal,
-    ...(hasBody ? { body: request.body, duplex: 'half' } : {}),
-    // Cloudflare's per-request metadata (geo, TLS) must survive the rewrite.
-    ...('cf' in request ? { cf: (request as { cf?: unknown }).cf } : {}),
-  } as RequestInit);
-}
-
 export function decideOneOriginRequest(
   request: Request,
   config: OneOriginConfig
@@ -129,10 +117,8 @@ export function decideOneOriginRequest(
     // Staging, workers.dev and local hosts keep their current behaviour.
     return { action: 'serve', request, noindex: false };
 
-  const appPath =
-    config.basePathReady && hasPrefix(url.pathname, basePath)
-      ? url.pathname.slice(basePath.length) || '/'
-      : url.pathname;
+  // The subdomain serves the app at its root, so its path is the app path.
+  const appPath = url.pathname;
   const machine = [
     ...ALWAYS_MACHINE_PREFIXES,
     ...(config.machinePathPrefixes ?? []),
@@ -159,13 +145,7 @@ export function decideOneOriginRequest(
     }
   }
 
-  return {
-    action: 'serve',
-    request: config.basePathReady
-      ? rewriteIntoBase(request, url, basePath)
-      : request,
-    noindex: false,
-  };
+  return { action: 'serve', request, noindex: false };
 }
 
 /** Mark a shadow-mode response as not indexable without touching its body. */
