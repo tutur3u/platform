@@ -130,9 +130,12 @@ describe('next-intl/navigation locale escaping', () => {
       locales: ['en-US', 'x.y', 'a\\b'] as const,
       localePrefix: 'as-needed',
     });
-    expect(nav.getPathname({ href: '/x.y/people', locale: 'en-US' })).toBe('/people');
-    expect(nav.getPathname({ href: '/xzy/people', locale: 'en-US' })).toBe('/xzy/people');
+    expect(nav.getPathname({ href: '/x.y/people', locale: 'en-US' })).toBe(
+      '/people'
+    );
+    expect(nav.getPathname({ href: '/xzy/people', locale: 'en-US' })).toBe(
+      '/xzy/people'
+    );
     expect(nav.getPathname({ href: '/a\\b/p', locale: 'en-US' })).toBe('/p');
   });
 });
-
