@@ -423,7 +423,25 @@ test('dependencies are installed by package commands, never by edits', (t) => {
     '--dev',
     '--exact',
   ]);
+  assert.ok(
+    result.commands[1].argv.includes('@cloudflare/workers-types@5.20261022.1')
+  );
   assert.ok(result.commands.every((command) => command.cwd === 'apps/demo'));
+  // An app that already pinned it with `bun add --dev --exact` re-applies
+  // without touching it.
+  const manifestPath = path.join(root, 'apps/demo/package.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.devDependencies = {
+    ...manifest.devDependencies,
+    '@cloudflare/workers-types': '5.20261022.1',
+  };
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  assert.equal(
+    plan(root).commands.some((command) =>
+      command.argv.some((arg) => arg.startsWith('@cloudflare/workers-types@'))
+    ),
+    false
+  );
   const calls = [];
   applyPlan(root, result, {
     spawn: (bin, args, options) => {

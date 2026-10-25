@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { DEPENDENCIES } from './contract.mjs';
 import { unifiedDiff } from './diff.mjs';
 import { VERCEL_WORKFLOW } from './fixture-repo.mjs';
 import {
@@ -218,4 +219,18 @@ test('check:changed Biome skips an explicit routeTree.gen.ts but checks other fi
     ).status;
   assert.equal(check('apps/probe/src/routeTree.gen.ts'), 0);
   assert.notEqual(check('apps/probe/src/other.ts'), 0);
+});
+
+test('the Workers types pin matches the repository exact pin', () => {
+  const pinned = DEPENDENCIES.devDependencies['@cloudflare/workers-types'];
+  const exact = fs
+    .readdirSync(path.join(ROOT, 'apps'))
+    .map((app) => path.join('apps', app, 'package.json'))
+    .filter((file) => fs.existsSync(path.join(ROOT, file)))
+    .map((file) => JSON.parse(real(file)).devDependencies ?? {})
+    .map((dev) => dev['@cloudflare/workers-types'])
+    .filter((version) => version && /^\d/u.test(version));
+  // Native apps (Shortener, Apps, Calendar, ...) already pin it exactly.
+  assert.ok(exact.length > 0);
+  assert.deepEqual([...new Set(exact)], [pinned]);
 });

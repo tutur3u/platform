@@ -89,6 +89,8 @@ export const DEPENDENCIES = {
     '@tanstack/react-start': '1.169.3',
   },
   devDependencies: {
+    // The native binding type check resolves it from the owning app (#6787).
+    '@cloudflare/workers-types': '5.20261022.1',
     '@tailwindcss/vite': '4.3.3',
     '@vitejs/plugin-react': '6.1.2',
     '@vitejs/plugin-rsc': '0.5.38',
