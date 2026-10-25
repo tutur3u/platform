@@ -76,7 +76,10 @@ describe('automatic placement', () => {
   });
   it('queues only when all eligible hosts are full, choosing the shortest estimate', () => {
     const state = states();
-    expect(autoQueueTarget(registry, state, [], job)).toBeUndefined();
+    expect(autoQueueTarget(registry, state, [], job)).toEqual({
+      free: true,
+      target: undefined,
+    });
     for (const host of registry.hosts) state[host.id]!.external = { heavy: 2 };
     state['skr-studio']!.queuedJobs = 22;
     state['skr-studio']!.external = { heavy: 24 };
@@ -89,7 +92,7 @@ describe('automatic placement', () => {
       })),
     };
     expect(plan(state).assignments).toEqual([]);
-    expect(autoQueueTarget(timed, state, [], job)).toEqual({
+    expect(autoQueueTarget(timed, state, [], job).target).toEqual({
       hostId: 'skr-sonha',
       expectedWaitSeconds: 20,
     });
@@ -105,7 +108,7 @@ describe('automatic placement', () => {
     expect(chosen(state)).toBe('skr-sonha');
     for (const host of registry.hosts)
       if (host.id !== 'skr-studio') state[host.id]!.external = { heavy: 2 };
-    expect(autoQueueTarget(registry, state, [], job)?.hostId).not.toBe(
+    expect(autoQueueTarget(registry, state, [], job).target?.hostId).not.toBe(
       'skr-studio'
     );
     expect(plan(state).blocked.one).toContain('SSH connection refused');

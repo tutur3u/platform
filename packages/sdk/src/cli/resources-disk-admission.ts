@@ -13,6 +13,7 @@ import {
   hysteresisThresholds,
   recordVolumeState,
   storageHome,
+  volumeRecoveryThresholds,
 } from './storage-hysteresis';
 import type { StorageAction } from './storage-suggest';
 
@@ -102,17 +103,25 @@ export async function diskAdmission({
   const thresholds = hysteresisThresholds({
     ...env,
     TTR_STORAGE_MIN_FREE_PERCENT: env.TTR_STORAGE_MIN_FREE_PERCENT ?? '0',
-    TTR_STORAGE_RECOVER_FREE_PERCENT:
-      env.TTR_STORAGE_RECOVER_FREE_PERCENT ?? '0',
   });
   thresholds.low.minFreeBytes = Math.max(
     thresholds.low.minFreeBytes,
     floor * 1024 ** 3
   );
+  const explicitRecovery = (name: string) =>
+    Boolean(env[name]?.trim()) &&
+    !thresholds.warnings.some((warning) => warning.startsWith(`${name}:`));
+  const byteOverride = explicitRecovery('TTR_STORAGE_RECOVER_FREE');
+  const percentOverride = explicitRecovery('TTR_STORAGE_RECOVER_FREE_PERCENT');
   thresholds.recover.minFreeBytes = Math.max(
     thresholds.recover.minFreeBytes,
-    2 * thresholds.low.minFreeBytes,
-    (floor + 10) * 1024 ** 3
+    thresholds.low.minFreeBytes + 1024 ** 3,
+    byteOverride ? 0 : (floor + 10) * 1024 ** 3,
+    byteOverride || percentOverride ? 0 : 2 * thresholds.low.minFreeBytes
+  );
+  Object.assign(
+    thresholds.recover,
+    volumeRecoveryThresholds(volume, thresholds.recover)
   );
   const home = storageHome(env);
   const host = hostId(env);

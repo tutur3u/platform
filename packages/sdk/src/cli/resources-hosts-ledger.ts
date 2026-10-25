@@ -538,14 +538,21 @@ export async function previewHostTicket(
     ledger.reservations
   );
   const plan = planAdmissions(registry, states, ledger.reservations, [
-    ...ledger.tickets,
+    ...ledger.tickets.filter((entry) => entry.token !== ticket.token),
     ticket,
   ]);
+  const availability = autoQueueTarget(
+    registry,
+    states,
+    ledger.reservations,
+    ticket
+  );
   return {
     hostId: plan.assignments.find((entry) => entry.token === ticket.token)
       ?.hostId,
     reason: plan.blocked[ticket.token],
-    queue: autoQueueTarget(registry, states, ledger.reservations, ticket),
+    free: availability.free,
+    queue: availability.target,
     states,
     policy:
       'Free lanes first: Thanh, Sonha, Linux (pktm reservation), local. Queue only when all eligible hosts are full; shortest estimated wait.',

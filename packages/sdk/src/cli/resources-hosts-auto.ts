@@ -47,10 +47,11 @@ export function autoQueueTarget(
       (host.expectedJobSeconds ?? 60);
     return [{ hostId: host.id, expectedWaitSeconds }];
   });
-  if (free) return undefined;
-  return candidates.sort(
+  if (free) return { free, target: undefined };
+  const target = candidates.sort(
     (a, b) =>
       a.expectedWaitSeconds - b.expectedWaitSeconds ||
       a.hostId.localeCompare(b.hostId)
   )[0];
+  return { free, target };
 }

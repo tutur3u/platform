@@ -64,3 +64,24 @@ describe('review: repo wrapper capabilities', () => {
     }
   );
 });
+
+it.each(['npx', 'bunx'])(
+  '%s Supabase wrappers retain direct-tool requirements',
+  (command) => {
+    expect(hostsRequirements(command, ['supabase', 'start'])).toEqual([
+      'docker',
+      'supabase',
+    ]);
+    expect(hostsRequirements(command, ['supabase', 'db', 'reset'])).toEqual([
+      'docker',
+      'supabase',
+    ]);
+    expect(hostsRequirements(command, ['supabase', 'test', 'db'])).toEqual([
+      'docker',
+      'supabase',
+    ]);
+    expect(hostsRequirements(command, ['supabase', '--version'])).toEqual([
+      'supabase',
+    ]);
+  }
+);

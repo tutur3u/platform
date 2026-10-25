@@ -211,7 +211,7 @@ export async function hostsRun({
       await telemetry()
     );
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    return result.hostId || result.queue ? 0 : 75;
+    return result.hostId || result.queue || result.free ? 0 : 75;
   }
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 } as const;
   let cancelled: keyof typeof signalCodes | undefined;
@@ -272,7 +272,7 @@ export async function hostsRun({
             hosts,
             observation
           );
-          if (!explanation.queue && !explanation.hostId) {
+          if (!explanation.queue && !explanation.hostId && !explanation.free) {
             log(`automatic placement refused: ${result.reason}`);
             return 75;
           }

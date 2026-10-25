@@ -89,6 +89,11 @@ export function hostsRequirements(
   const wrapper = ['bun', 'bunx', 'npm', 'npx', 'pnpm', 'yarn'].includes(tool);
   if (wrapper) {
     const { script, cwd } = wrapperInvocation(args);
+    if ((tool === 'npx' || tool === 'bunx') && script === 'supabase') {
+      required.add('supabase');
+      if (args.some((arg) => ['start', 'reset', 'test'].includes(arg)))
+        required.add('docker');
+    }
     if (script?.startsWith('sb:')) {
       required.add('supabase');
       required.add('docker');

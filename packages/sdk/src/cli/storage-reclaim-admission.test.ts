@@ -64,7 +64,7 @@ describe('hysteresis and alert dedupe', () => {
       TTR_STORAGE_RECOVER_FREE: '20G',
       TTR_STORAGE_RECOVER_FREE_PERCENT: 'lots',
     });
-    expect(custom.recover.minFreeBytes).toBe(40 * GiB);
+    expect(custom.recover.minFreeBytes).toBe(41 * GiB);
     expect(custom.warnings).toHaveLength(1);
   });
 

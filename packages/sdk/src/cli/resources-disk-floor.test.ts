@@ -151,3 +151,39 @@ describe('absolute enqueue admission floor', () => {
     ).toBe(true);
   });
 });
+
+it('recovers admission on an 8 TB-class disk with 537 GiB free after low pressure', async () => {
+  const config = { ...(await env()), TTR_STORAGE_MIN_FREE_PERCENT: '5' };
+  for (const [free, refuse] of [
+    [300, true],
+    [537, false],
+  ] as const) {
+    const result = await diskAdmission({
+      cwd: '/job',
+      env: config,
+      probe: volume(free),
+      reclaim: async () => ({ result: null, note: 'disabled' }),
+      suggestions: async () => [],
+      holds: async () => [],
+    });
+    expect(result.refuse).toBe(refuse);
+  }
+});
+it('an explicit byte recovery override can lower twice-low while retaining a margin', async () => {
+  const config = { ...(await env()), TTR_STORAGE_RECOVER_FREE: '55G' };
+  for (const [free, refuse] of [
+    [49, true],
+    [54, true],
+    [55, false],
+  ] as const) {
+    const result = await diskAdmission({
+      cwd: '/job',
+      env: config,
+      probe: volume(free),
+      reclaim: async () => ({ result: null, note: 'disabled' }),
+      suggestions: async () => [],
+      holds: async () => [],
+    });
+    expect(result.refuse).toBe(refuse);
+  }
+});
