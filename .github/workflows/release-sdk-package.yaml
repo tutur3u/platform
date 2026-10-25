@@ -66,7 +66,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version-file: .node-version
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: timeout --kill-after=10s 300s bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -128,7 +128,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version-file: .node-version
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -198,7 +198,7 @@ jobs:
     steps:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version: 26.12.1
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -346,7 +346,7 @@ jobs:
     steps:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version: 26.12.1
           package-manager-cache: false
 
       - name: Dispatch dependent package releases

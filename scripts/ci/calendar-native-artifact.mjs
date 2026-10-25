@@ -246,7 +246,7 @@ function createManifest(directory, sha, sealedNormalization) {
     app: 'calendar',
     sha,
     bun: '1.4.4',
-    node: '24.22.0',
+    node: process.versions.node,
     config: relative(app, configPath).split(sep).join('/'),
     main: relative(app, main).split(sep).join('/'),
     files: hashes(app),

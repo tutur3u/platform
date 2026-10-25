@@ -53,10 +53,10 @@ jobs:
         with:
           bun-version: 1.4.4
 
-      - name: Use Node.js 24
+      - name: Use Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -176,10 +176,10 @@ jobs:
         with:
           family: unit-tests-${{ matrix.shard }}
 
-      - name: Use Node.js 24
+      - name: Use Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile

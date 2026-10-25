@@ -357,6 +357,7 @@ const globalVercelAffectingPaths = new Set([
 ]);
 
 const globalCloudflareAffectingPaths = new Set([
+  '.node-version',
   '.github/actions/run-with-turbo-remote-cache/action.yml',
   '.github/actions/setup-bun-with-retry/action.yml',
   'bun.lock',

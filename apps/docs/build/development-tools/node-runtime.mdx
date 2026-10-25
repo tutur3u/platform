@@ -95,6 +95,34 @@ If a change really needs one of these, stop and get the owner's approval.
 
 `bun doctor` still enforces the Node 22 floor rather than the exact pin.
 
+## Proving which runtime ran
+
+A pin in `.node-version`, `engines` or `packageManager` does not prove which
+Node a hosted builder or runtime used. Record four kinds of evidence
+separately and do not infer one from another:
+
+1. **Source pin**: the `.node-version` contents at the exact commit.
+2. **Local artifact**: the toolchain path, the tarball SHA-256 and
+   `bin/node --version`.
+3. **CI**: the `setup-node` log line (`Found in cache @ …/node/<version>` or the
+   download) and the job's `node --version` output, tied to the run's head SHA.
+4. **Hosted and deployed runtime**: one of the following, read-only:
+   - the version printed in real build logs, such as `Vercel CLI x (Node.js y)`;
+   - the provider's official project setting, such as the Node.js Version from
+     `vercel project inspect <project> --scope tuturuuu`.
+
+   Record it with the project root, the install and build commands, and the
+   canonical deployment identity. When none of this is observable, record
+   "pin changed, hosted runtime UNVERIFIED".
+
+As of 2026-10-23, for example:
+
+- The `platform` Vercel project has root `apps/web` and Node.js Version `24.x`.
+  It installs and builds through `apps/web/vercel.json`.
+- Its last production CI build logged `Vercel CLI 59.25.0 (Node.js 24.21.0)`.
+- The exact patch version of the deployed function runtime is not observable,
+  because Vercel rolls patches.
+
 ## Where 26.12.1 applies after #6496
 
 | Surface | Version | Source |
@@ -115,7 +143,15 @@ from the same tree as the workflow. Other jobs pin the literal `26.12.1`:
   an input SHA, because that tree may predate `.node-version`.
 
 The guard proposed in #6496 (`scripts/ci/node-version-pin.test.js`) requires every literal to equal
-`.node-version` and every exception to be listed. It also requires each
+`.node-version` and every exception to be listed. The shared planner in
+`scripts/ci/node-version-pin.js` regenerates workflow inputs and validation path
+filters with `node scripts/ci/node-version-pin.js --write`. It requires a real
+Vercel invocation in that job of a `vercel-*` workflow before granting the
+Node 24.22.1 exception. A foreign, sparse or differently conditioned checkout
+cannot supply the version file. Pin-only changes must pass both workflow event
+filters and the shared Cloudflare affected-path selector;
+`scripts/ci/node-version-selection.test.js` exercises Colab, Cron Control and
+Lettin with an unrelated-path negative control. The guard also requires each
 `test "$(node --version)" = v…` workflow assertion to name the pin.
 
 Each setup step logs the resolved version. Two receipts bind `node --version` to
@@ -124,19 +160,27 @@ the exact source SHA:
 - the SDK qualification receipt (`runtimeVersions.node` with `sourceSha`);
 - the Calendar native artifact receipt (`node` with `sha`).
 
+When qualifying a new pin, inspect the failing step before adding an exception.
+A contract job that stops while filling the Supabase image cache has not exercised
+the schema tests. An aggregate test job may only report a failed root-script
+prerequisite. For CodeQL, check the uploaded analysis SHA and language category;
+a successful scope-only workflow with skipped analysis does not refresh the
+baseline used by the new-result gate. Retest stale assertions against main with
+the same Node binary to separate repository failures from runtime incompatibility.
+
 ## Intentional exceptions
 
 | Surface | Runs | Why | Patched fallback |
 | --- | --- | --- | --- |
 | `employee-schema-contract.yaml` | Node 24.22.1 | It qualifies an input source SHA whose chat qualification binds a Node 24 runtime identity (`chat-initial-settings-qualification.mjs`). | 24.22.1 is the latest patched 24.x (2026-10-20 security release). |
 | `supabase-staging.yaml` | Node 24 (floating patch) | `supabase-production.yaml` admits staging completions only from allowlisted git blob SHAs of this file. #6496 preserves its bytes; any later setup-step change needs a coordinated gate update. | A floating `24` can use a cached patch; pinning 24.22.1 or adding `check-latest: true` needs that coordinated update. |
-| Vercel Functions and the `vercel build` / `vercel deploy` workflows | Node 24.x | [Vercel supports only 24.x (default) and 22.x](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions). The CI build should match the function runtime it produces. | The current floating `24` may use a cached patch. #6496 pins Vercel CI jobs to 24.22.1; Vercel patches its function runtime independently. |
+| Vercel Functions and the `vercel build` / `vercel deploy` workflows | Node 24.x | [Vercel supports only 24.x (default) and 22.x](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions). The CI build should match the function runtime it produces. | `node-version: 24.22.1` fixes the CI patch; Vercel applies patches to the function runtime independently. |
 | Cloudflare Workers | workerd, not Node | Workers implement Node APIs through the `nodejs_compat` flag and `compatibility_date`. That date is set in each `wrangler.jsonc`; the Node version is not configurable. | Advance `compatibility_date` deliberately with each Worker's acceptance tests. |
 | Supabase Edge Functions | Deno | The repository ships no Edge Functions today. Supabase Edge would run Deno, not Node. | Not applicable. |
 | JavaScript actions (`runs.using`) | Runner-embedded Node 24 | [Action metadata accepts only `node20` and `node24`](https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax). `setup-node` does not change it. | GitHub maintains the runner-embedded runtime. |
 | Local docs (`bun dev:docs`, docs validation) | Node 24.19.0 through `npx` | Mintlify CLI 4.2.520 rejects Node 25+, and its Got 12.6.1 connectivity probe crashes on Node 24.20+ (see [Mintlify runtime compatibility](/build/development-tools/documenting#mintlify-runtime-compatibility)). The host can run 26.12.1; the wrapper launches an isolated Node 24.19.0. | Upgrade Mintlify to a CLI that accepts Node 26 and reassess the Got defect, then move the pin. |
 | Docker images (`apps/web`, `apps/hive`, `apps/docs`, `apps/web/docker/native-runner.Dockerfile`) | `node:24-bookworm-slim` | The Docker runtime is paused (see [active runtime policy](/build/devops/active-runtime)), and `scripts/check-docker-web.js` enforces the retained builder stage. | On resumption, use `node:26.12.1-bookworm-slim`, digest `sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe` as of 2026-10-21. |
-| `apps/tanstack-web`, `apps/backend` | Unchanged | These runtimes are paused and their retained source is not updated. | Not applicable. |
+| `apps/tanstack-web`, `apps/backend`, and workflows disabled in `tuturuuu.ci.ts` | Unchanged | These runtimes are paused; their retained source and workflows are not updated. | Not applicable. |
 | Flutter (`apps/mobile`) | Flutter/Dart SDK | Flutter tooling does not use Node. Only the Node scripts around it follow the pin. | Not applicable. |
 | Electron | Not used | No workspace depends on Electron; desktop builds use Flutter. | Not applicable. |
 | `.idx/dev.nix` | `nodejs_20` | This Firebase Studio template depends on the nixpkgs channel that template pins. | Update it when that channel ships a Node 26 attribute. |

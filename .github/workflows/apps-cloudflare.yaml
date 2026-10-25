@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       [
+        '.node-version',
         'apps/apps/**',
         'packages/ai/**',
         'packages/apis/**',
@@ -52,6 +53,7 @@ on:
     branches: [main]
     paths:
       [
+        '.node-version',
         'apps/apps/**',
         'packages/ai/**',
         'packages/apis/**',
@@ -126,7 +128,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.22.0
+          node-version: 26.12.1
       - name: Verify immutable checkout identity
         run: test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
       - run: bun install --frozen-lockfile --ignore-scripts
@@ -360,7 +362,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.22.0
+          node-version: 26.12.1
       - name: Verify immutable checkout identity
         run: test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
       - run: bun install --frozen-lockfile --ignore-scripts

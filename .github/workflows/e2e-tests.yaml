@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - production
     paths:
+      - '.node-version'
       # Unknown future runtime inputs must reach the conservative planner too.
       - "**"
       - ".github/actions/**"
@@ -163,7 +164,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Setup Docker Buildx
@@ -284,7 +285,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Setup Docker Buildx
@@ -437,7 +438,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Install dependencies
@@ -567,7 +568,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Setup Docker Buildx

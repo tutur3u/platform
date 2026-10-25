@@ -62,7 +62,8 @@ Tuturuuu currently automates:
 ## Inline Type Check preflight regressions
 
 `type-check.yaml` runs `node --test --test-reporter=tap
-scripts/ci/type-check-inline-workflow.test.js` on its exact checkout with Node 24,
+scripts/ci/type-check-inline-workflow.test.js` on its exact checkout with the
+`.node-version` Node release,
 after the existing Setup Bun step and before dependency installation. Bun is
 required by the workflow YAML test helper; these 21 regression cases need no
 workspace dependency installation.
@@ -87,7 +88,9 @@ are supplied only to trusted main or production runs, never untrusted PRs.
 
 The `Test` workflow runs the complete selection exported by
 `scripts/run-script-tests.js` in a separate `Root script tests (24)` job on the
-exact checkout. Node 24 runs it with two test-file workers and the TAP reporter;
+exact checkout. The `(24)` suffix is a stable check name that duplicate-validation
+proofs match; the job runs the `.node-version` release (see
+[Node.js runtime pin](/build/development-tools/node-runtime)). Node runs it with two test-file workers and the TAP reporter;
 the existing paused-runtime discovery policy remains unchanged. No shell glob or
 subset replaces the canonical selection.
 

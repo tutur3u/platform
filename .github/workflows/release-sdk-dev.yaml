@@ -7,6 +7,7 @@ on:
       - "packages/sdk/**"
       - "scripts/ci/sdk-dev*"
       - ".github/workflows/release-sdk-dev.yaml"
+      - ".node-version"
   workflow_dispatch:
 
 # Serialize dev-tag movement. A newer push never cancels an in-flight publish.
@@ -43,7 +44,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version-file: .node-version
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
       - name: Install dependencies
@@ -81,7 +82,7 @@ jobs:
     steps:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.21.0
+          node-version: 26.12.1
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
       - name: Check npm trusted publishing support

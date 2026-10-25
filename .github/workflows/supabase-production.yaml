@@ -230,11 +230,11 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Use Node.js 24
+      - name: Use Node.js
         if: steps.resolve_target.outputs.target_sha != ''
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .node-version
           package-manager-cache: false
 
       - name: Compute pending migration changes

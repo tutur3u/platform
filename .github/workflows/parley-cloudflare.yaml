@@ -1,10 +1,10 @@
 name: Parley Cloudflare
 on:
   pull_request:
-    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
+    paths: ['.node-version', 'apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
   push:
     branches: [main]
-    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
+    paths: ['.node-version', 'apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -38,7 +38,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - name: Generate shared build metadata
         env:
@@ -104,7 +104,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:

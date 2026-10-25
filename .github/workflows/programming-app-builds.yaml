@@ -13,6 +13,7 @@ on:
       - 'turbo.json'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/programming-app-builds.yaml'
+      - '.node-version'
   workflow_dispatch:
 permissions:
   contents: read
@@ -53,7 +54,7 @@ jobs:
           bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version: 26.12.1
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Build application and shared dependencies without deployment
         uses: ./.github/actions/run-with-turbo-remote-cache

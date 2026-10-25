@@ -120,7 +120,7 @@ An advisory without a published fix remains an explicit blocker, even when other
 packages are clean. Do not remove a used dependency or suppress an advisory merely
 to reduce the reported count.
 
-React-PDF 11 requires Node.js 22.13 or newer; CI uses Node.js 24. Its default
+React-PDF 11 requires Node.js 22.13 or newer; CI uses Node.js 26.12.1. Its default
 Suspense behavior differs from version 10, so the shared PDF viewer explicitly
 keeps its existing loading and error handling with `suspense={false}`. Mermaid 12
 also changes visual defaults; the chat renderers set `layout: 'dagre'` and
