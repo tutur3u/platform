@@ -78,6 +78,22 @@ Future<void> send(WidgetTester tester, RepairHarness h, String text) async {
   }
 }
 
+// A held first-message response can keep progress animations active. Observe
+// the actual scope transition and cancellation instead of global animation idle.
+Future<void> scopeReady(WidgetTester tester, RepairHarness h, String ws) async {
+  for (var i = 0; i < 10; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    if (h.chat.state.workspaceId == ws && !h.chat.state.isBusy) return;
+  }
+  expect(h.chat.state.workspaceId, ws);
+  expect(
+    h.chat.state.isBusy,
+    isFalse,
+    reason: 'Scope departure must not wait for the held creation response',
+  );
+}
+
 void main() {
   for (final source in AssistantCreditSource.values) {
     testWidgets('first $source creation requires no manage PATCH', (
@@ -203,12 +219,12 @@ void main() {
         h.auth.change(const AuthState.unauthenticated());
         await tester.pump();
         h.auth.change(original);
-        await tester.pumpAndSettle();
+        await scopeReady(tester, h, repairWorkspace);
       } else if (departure == 'workspace ABA') {
         h.workspace.change('88888888-8888-4888-8888-888888888888');
-        await tester.pumpAndSettle();
+        await scopeReady(tester, h, '88888888-8888-4888-8888-888888888888');
         h.workspace.change(repairWorkspace);
-        await tester.pumpAndSettle();
+        await scopeReady(tester, h, repairWorkspace);
       } else if (departure == 'revision') {
         shell.restoreSelectedModel(shell.state.selectedModel);
       } else {
