@@ -1,4 +1,9 @@
 import { parseInternalApiError } from './internal-api-error';
+import {
+  normalizeApiPath,
+  resolveInternalApiUrlWithAppBase,
+  type InternalApiAppBaseResolver,
+} from './internal-api-url';
 import { mergeHeaders } from './request-headers';
 
 export type InternalApiQueryValue =
@@ -15,11 +20,7 @@ export type InternalApiFetchInit = Omit<RequestInit, 'headers'> & {
 };
 
 export type InternalApiClientOptions = {
-  /**
-   * Optional app-owned path resolver (for example `appPath` from
-   * `@tuturuuu/start-bridge/app-url`). Omit it for central Web API calls.
-   */
-  appBaseResolver?: (path: string) => string;
+  appBaseResolver?: InternalApiAppBaseResolver;
   baseUrl?: string;
   defaultHeaders?: HeadersInit;
   fetch?: typeof fetch;
@@ -176,20 +177,12 @@ function isProductionDeployment() {
 
   return process.env.NODE_ENV === 'production';
 }
-function normalizePath(path: string): string {
-  if (/^https?:\/\//.test(path)) {
-    return path;
-  }
-
-  return path.startsWith('/') ? path : `/${path}`;
-}
-
 function appendQuery(path: string, query?: InternalApiQuery): string {
   if (!query || Object.keys(query).length === 0) {
     return path;
   }
 
-  const normalizedPath = normalizePath(path);
+  const normalizedPath = normalizeApiPath(path);
   const isAbsoluteUrl = /^https?:\/\//.test(normalizedPath);
   const url = isAbsoluteUrl
     ? new URL(normalizedPath)
@@ -516,34 +509,15 @@ export function withFinanceApiBaseUrl(
   };
 }
 
-function resolveInternalApiUrlWithAppBase(
-  path: string,
-  baseUrl?: string,
-  appBaseResolver?: InternalApiClientOptions['appBaseResolver']
-) {
-  const normalizedPath = normalizePath(path);
-
-  if (/^https?:\/\//.test(normalizedPath)) {
-    return normalizedPath;
-  }
-
-  const resolvedPath = appBaseResolver?.(normalizedPath) ?? normalizedPath;
-
-  const resolvedBaseUrl = baseUrl
-    ? normalizeBaseUrl(baseUrl)
-    : typeof window === 'undefined'
-      ? getConfiguredInternalApiBaseUrl()
-      : undefined;
-
-  if (!resolvedBaseUrl) {
-    return resolvedPath;
-  }
-
-  return new URL(resolvedPath, resolvedBaseUrl).toString();
-}
-
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
-  return resolveInternalApiUrlWithAppBase(path, baseUrl);
+  return resolveInternalApiUrlWithAppBase(
+    path,
+    baseUrl,
+    undefined,
+    typeof window === 'undefined'
+      ? getConfiguredInternalApiBaseUrl()
+      : undefined
+  );
 }
 
 function getCookieName(cookiePart: string) {
@@ -655,7 +629,10 @@ export function createInternalApiClient(
     const url = resolveInternalApiUrlWithAppBase(
       requestPath,
       baseUrl || options.baseUrl,
-      options.appBaseResolver
+      options.appBaseResolver,
+      typeof window === 'undefined'
+        ? getConfiguredInternalApiBaseUrl()
+        : undefined
     );
     const headers = mergeHeaders(options.defaultHeaders, requestHeaders);
 
