@@ -105,7 +105,11 @@ jobs:
         if: inputs.helper-tests != ''
         run: bash -c "$HELPER_TESTS"
       - name: Build required active workspace dependencies
-        run: bun turbo:local run build --filter="${APP_PACKAGE}^..." --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="${APP_PACKAGE}^..." --concurrency=2
+          token: ''
+          team: ''
       - name: Generate exact-checkout build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
@@ -122,8 +126,11 @@ jobs:
           read -r -a paths <<< "$FORMAT_PATHS"
           bun x --no-install biome check "${paths[@]}"
       - name: Build native Start SSR with the official Void SDK
-        working-directory: apps/${{ inputs.app }}
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd "$APP_DIR" && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Reject tracked route tree drift
         if: always()
         run: |
@@ -132,8 +139,11 @@ jobs:
             git diff --exit-code HEAD -- "$route_tree"
           fi
       - name: Type-check native app without a build
-        working-directory: apps/${{ inputs.app }}
-        run: bun run type-check
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd "$APP_DIR" && bun run type-check
+          token: ''
+          team: ''
       - name: Discover actual emitted config and assert staging resource/static contract
         id: output
         run: python3 "$ARTIFACT_SCRIPT" config "$APP_DIR"
