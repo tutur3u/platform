@@ -6,6 +6,7 @@ import { useI18n } from '../i18n/provider';
 import type { PasswordsClientError } from '../service/client-error';
 import type { AuditEvent, StepUpStatus, VaultDetail } from '../service/port';
 import { AuditPanel } from './audit-panel';
+import { CredentialsDialog } from './credentials-dialog';
 import { ItemsPanel } from './items-panel';
 import { MembersPanel } from './members-panel';
 import { RotateVaultButton } from './rotate-vault-button';
@@ -39,6 +40,7 @@ export function VaultPanel({ wsId, vault, tab, audit, stepUp }: Props) {
             {t(`vault.role.${vault.summary.role}`)}
           </Badge>
         </div>
+        {isOwner && <CredentialsDialog wsId={wsId} vault={vault} />}
         {isOwner && (
           <RotateVaultButton
             wsId={wsId}

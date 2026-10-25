@@ -54,6 +54,17 @@
     "retry": "Try again",
     "unknownUser": "Unknown user"
   },
+  "credentials": {
+    "access": "Permissions",
+    "agent": "Grant access and download credentials (15 min)",
+    "both": "Read and write",
+    "items": "Agent item access",
+    "owner": "Download owner CLI credentials (up to 5 min)",
+    "permissions": "After downloading, set file permissions to owner-only (chmod 600) before using the CLI. Credentials are never displayed here.",
+    "read": "Read only",
+    "title": "CLI and agents",
+    "write": "Write only"
+  },
   "errors": {
     "FORBIDDEN": "You do not have access to this.",
     "INVALID_INPUT": "Check the entered values and try again.",
@@ -90,8 +101,8 @@
     "restore": "Restore",
     "revoke": "Revoke",
     "revokeBody": "They lose access now. Secrets they already copied stay exposed to them.",
-    "revoked": "Revoked",
     "revokeTitle": "Revoke {name}?",
+    "revoked": "Revoked",
     "role": "Role",
     "saved": "Access updated"
   },
@@ -129,8 +140,8 @@
     },
     "rotate": "Rotate key",
     "rotateBody": "Every item is re-encrypted under a new key. Copies members already saved stay readable.",
-    "rotated": "Key rotated",
     "rotateTitle": "Rotate the key for {name}?",
+    "rotated": "Key rotated",
     "rotationRequired": "An owner must rotate the vault key to resume secret access.",
     "select": "Select a vault"
   }

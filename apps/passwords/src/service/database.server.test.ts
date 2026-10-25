@@ -2,8 +2,10 @@
 import { randomUUID } from 'node:crypto';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cliScopeName } from './cli-scope';
 import { createPasswordsDatabase } from './database.server';
 import type { PasswordsEnvironment } from './environment';
+import { createSecretsHandler } from './secrets-adapter.server';
 
 describe('Passwords request-bound Supabase adapter', () => {
   const actor = randomUUID();
@@ -29,10 +31,16 @@ describe('Passwords request-bound Supabase adapter', () => {
 
   function request(
     targetApp = 'passwords',
-    secret = env.TUTURUUU_APP_COORDINATION_SECRET
+    secret = env.TUTURUUU_APP_COORDINATION_SECRET,
+    scopes?: string[]
   ) {
     const signed = createAppSessionToken(
-      { targetApp, userId: actor },
+      {
+        targetApp,
+        userId: actor,
+        scopes,
+        expiresInSeconds: scopes ? 300 : undefined,
+      },
       { secret }
     );
     return new Request(`${env.NEXT_PUBLIC_APP_URL}/en/${workspace}`, {
@@ -133,6 +141,61 @@ describe('Passwords request-bound Supabase adapter', () => {
       expect(transport).not.toHaveBeenCalled();
     }
   );
+
+  it('rejects a general browser bearer on the CLI path before any network operation', async () => {
+    const signed = request();
+    const response = await createSecretsHandler(env).handle(
+      new Request('https://passwords.tuturuuu.com/api/v1/secrets/operation', {
+        method: 'POST',
+        headers: {
+          authorization: signed.headers.get('authorization')!,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          workspaceId: workspace,
+          vaultId: randomUUID(),
+          requestId: randomUUID(),
+          action: 'list',
+        }),
+      })
+    );
+    expect(response?.status).toBe(403);
+    expect(transport).not.toHaveBeenCalled();
+  });
+
+  it('enforces a scoped human credential on RPC and Storage paths', async () => {
+    const vault = randomUUID();
+    const database = createPasswordsDatabase(
+      env,
+      request('passwords', env.TUTURUUU_APP_COORDINATION_SECRET, [
+        cliScopeName(workspace, vault),
+      ])
+    );
+    await expect(
+      database.repository.execute(
+        { wsId: workspace, vaultId: randomUUID() },
+        randomUUID(),
+        'item.list',
+        {}
+      )
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(
+      transport.mock.calls.some(([url]) => String(url).includes('/rpc/'))
+    ).toBe(false);
+    transport.mockClear();
+    await expect(database.repository.list(randomUUID())).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    expect(transport).not.toHaveBeenCalled();
+    await expect(
+      database.storage.download(
+        `${workspace}/${randomUUID()}/1/${randomUUID()}/${randomUUID()}`
+      )
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(
+      transport.mock.calls.some(([url]) => String(url).includes('/storage/'))
+    ).toBe(false);
+  });
 
   it('derives actor from the signature and sends only audited private RPCs', async () => {
     const database = createPasswordsDatabase(env, request());

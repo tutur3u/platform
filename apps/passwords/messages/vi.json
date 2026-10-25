@@ -54,6 +54,17 @@
     "retry": "Thử lại",
     "unknownUser": "Người dùng không xác định"
   },
+  "credentials": {
+    "access": "Quyền truy cập",
+    "agent": "Cấp quyền và tải thông tin xác thực (15 phút)",
+    "both": "Đọc và ghi",
+    "items": "Các mục tác nhân được truy cập",
+    "owner": "Tải thông tin CLI của chủ sở hữu (tối đa 5 phút)",
+    "permissions": "Sau khi tải xuống, đặt quyền tệp chỉ dành cho chủ sở hữu (chmod 600) trước khi dùng CLI. Thông tin xác thực không được hiển thị tại đây.",
+    "read": "Chỉ đọc",
+    "title": "CLI và tác nhân",
+    "write": "Chỉ ghi"
+  },
   "errors": {
     "FORBIDDEN": "Bạn không có quyền truy cập mục này.",
     "INVALID_INPUT": "Kiểm tra các giá trị đã nhập rồi thử lại.",
@@ -90,8 +101,8 @@
     "restore": "Khôi phục",
     "revoke": "Thu hồi",
     "revokeBody": "Họ mất quyền truy cập ngay. Các bí mật họ đã sao chép vẫn nằm trong tay họ.",
-    "revoked": "Đã thu hồi",
     "revokeTitle": "Thu hồi {name}?",
+    "revoked": "Đã thu hồi",
     "role": "Vai trò",
     "saved": "Đã cập nhật quyền truy cập"
   },
@@ -129,8 +140,8 @@
     },
     "rotate": "Xoay khóa",
     "rotateBody": "Mọi mục được mã hóa lại bằng khóa mới. Các bản thành viên đã lưu vẫn đọc được.",
-    "rotated": "Đã xoay khóa",
     "rotateTitle": "Xoay khóa của {name}?",
+    "rotated": "Đã xoay khóa",
     "rotationRequired": "Chủ sở hữu cần đổi khóa kho để tiếp tục truy cập bí mật.",
     "select": "Chọn một kho"
   }

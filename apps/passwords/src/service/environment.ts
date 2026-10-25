@@ -3,6 +3,7 @@ export interface PasswordsEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
   /** Durable stop fence. Only the exact string `true` enables vault work. */
   PASSWORDS_ENABLED?: string;
+  PASSWORDS_GITHUB_POLICIES?: string;
   NEXT_PUBLIC_APP_URL: string;
   NEXT_PUBLIC_WEB_APP_URL: string;
   NEXT_PUBLIC_SUPABASE_URL: string;

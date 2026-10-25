@@ -62,7 +62,13 @@ async function begin(session = '', stepUp = false) {
       stepUp
         ? '/api/auth/step-up?next=%2Fvi%2Fworkspace%3Ftab%3Ditems'
         : '/vi/workspace?tab=items',
-      { headers: { accept: 'text/html', cookie: session } }
+      {
+        headers: {
+          accept: 'text/html',
+          cookie: session,
+          ...(stepUp ? { 'sec-fetch-site': 'same-origin' } : {}),
+        },
+      }
     )
   );
   expect(result?.status).toBe(303);
@@ -409,18 +415,57 @@ describe('Passwords browser auth edge', () => {
       )?.status
     ).toBe(401);
   });
-  it('preserves target-bound bearer requests without allowing bearer identity to bypass callback state', async () => {
+  it('rejects bearer credentials on browser routes without bypassing callback state', async () => {
     const headers = { authorization: `Bearer ${tokens().appSessionToken}` };
     expect(
-      await edge().handle(
-        request('/_passwords/functions/test', { method: 'POST', headers })
-      )
-    ).toBeNull();
+      (
+        await edge().handle(
+          request('/_passwords/functions/test', { method: 'POST', headers })
+        )
+      )?.status
+    ).toBe(401);
     const callback = await edge().handle(
       request('/verify-token?token=unsolicited', { headers })
     );
     expect(callback?.headers.get('location')).toBe(`${origin}/api/auth/error`);
     expect(transport).not.toHaveBeenCalled();
+  });
+  it.each(['same-site', 'cross-site', 'none'])(
+    'denies %s step-up replacement',
+    async (site) => {
+      const result = await edge().handle(
+        request('/api/auth/step-up?next=%2Fen%2Fworkspace', {
+          headers: { cookie: sessionCookies(), 'sec-fetch-site': site },
+        })
+      );
+      expect(result?.status).toBe(403);
+      expect(result?.headers.has('set-cookie')).toBe(false);
+      expect(transport).not.toHaveBeenCalled();
+    }
+  );
+  it('denies step-up without an attributable same-origin initiator', async () => {
+    const result = await edge().handle(
+      request('/api/auth/step-up?next=%2Fen%2Fworkspace', {
+        headers: { cookie: sessionCookies() },
+      })
+    );
+    expect(result?.status).toBe(403);
+    expect(result?.headers.has('set-cookie')).toBe(false);
+  });
+  it('does not let fetch metadata or an ambient cookie authorize a bearer browser request', async () => {
+    const result = await edge().handle(
+      request('/_passwords/functions/test', {
+        method: 'POST',
+        headers: {
+          cookie: sessionCookies(),
+          authorization: `Bearer ${tokens().appSessionToken}`,
+          'sec-fetch-site': 'same-origin',
+          referer: origin,
+          origin,
+        },
+      })
+    );
+    expect(result?.status).toBe(401);
   });
   it('bounds the upstream payload and rejects it without echoing contents', async () => {
     const attempt = await begin();

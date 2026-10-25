@@ -58,3 +58,19 @@ export function sanitizedValidator<T>(schema: z.ZodType<T>) {
     return result.data;
   };
 }
+
+export const ownerCredentialInput = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('owner'), wsId, vaultId: id }),
+  z.object({
+    kind: z.literal('agent'),
+    wsId,
+    vaultId: id,
+    grantRequestId: id,
+    tokenRequestId: id,
+    itemIds: z.array(id).min(1).max(16),
+    scopes: z
+      .array(z.enum(['item.read', 'item.write']))
+      .min(1)
+      .max(2),
+  }),
+]);

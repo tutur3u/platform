@@ -2,6 +2,7 @@
   "extends": "@tuturuuu/typescript-config/base.json",
   "compilerOptions": {
     "module": "ESNext",
+    "allowJs": true,
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "noEmit": true,
@@ -18,6 +19,7 @@
   },
   "include": [
     "src",
+    "scripts",
     "cloudflare/worker.ts",
     "vite.config.ts",
     "void.config.ts",

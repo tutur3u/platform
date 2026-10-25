@@ -18,7 +18,11 @@ function setup(enabled: string | undefined) {
       new URL(request.url).pathname === '/api/build-info'
         ? Response.json({ app: 'passwords' })
         : null,
-    createRuntime: vi.fn(() => ({ edge: { handle: edgeHandle }, service })),
+    createRuntime: vi.fn(() => ({
+      secrets: { handle: async () => null },
+      edge: { handle: edgeHandle },
+      service,
+    })),
     renderPage: vi.fn(async () => new Response('page')),
     withContext: vi.fn((_context, work) => work()),
   } satisfies PasswordsRequestDependencies;
@@ -40,6 +44,9 @@ describe('passwordsRequest stop fence', () => {
         ['/en/personal', 'GET'],
         ['/_passwords/functions/revealItem', 'POST'],
         ['/api/auth/verify-app-token', 'POST'],
+        ['/api/v1/secrets/operation', 'POST'],
+        ['/api/v1/secrets/oidc/exchange', 'POST'],
+        ['/api/v1/secrets/credentials', 'POST'],
       ] as const) {
         const response = await call(path, method);
         expect(response.status).toBe(503);

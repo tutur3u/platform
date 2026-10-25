@@ -1,11 +1,10 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session-core';
 import {
   decodeValue,
   integer,
-  PASSWORDS_MAX_BYTES,
   PASSWORDS_MAX_ITEMS,
   PasswordsError,
   type PasswordsRecord,
+  record,
   requireEnabled,
   role,
   text,
@@ -21,6 +20,7 @@ import type { PasswordsEnvironment } from './environment';
 import {
   AUDIT_EVENT_TYPES,
   type AuditEventType,
+  PASSWORDS_ERROR_CODES,
   PASSWORDS_LIMITS,
   type PasswordsResult,
   type PasswordsServicePort,
@@ -28,6 +28,8 @@ import {
   type StepUpStatus,
   type VaultSummary,
 } from './port';
+import { createSecretsHandler } from './secrets-adapter.server';
+import { AGENT_CREDENTIALS_PATH, CREDENTIALS_PATH } from './secrets-protocol';
 import { evaluateStepUp } from './step-up';
 
 export function passwordsStepUpUrl(
@@ -126,20 +128,10 @@ export function createPasswordsService(
     const app = new URL(env.NEXT_PUBLIC_APP_URL);
     if (new URL(request.url).origin !== app.origin)
       throw new PasswordsError('FORBIDDEN');
-    const origin = request.headers.get('origin');
-    if (origin === app.origin) return;
-    if (origin !== null) throw new PasswordsError('FORBIDDEN');
-    const authorization = request.headers.get('authorization');
-    const bearer =
-      authorization &&
-      getAppSessionClaimsFromRequest(
-        { headers: new Headers({ authorization }) },
-        {
-          targetApp: 'passwords',
-          secret: env.TUTURUUU_APP_COORDINATION_SECRET,
-        }
-      );
-    if (!bearer || bearer.sub !== database.principal().sub)
+    if (
+      request.headers.get('origin') !== app.origin ||
+      request.headers.has('authorization')
+    )
       throw new PasswordsError('FORBIDDEN');
   }
 
@@ -157,6 +149,7 @@ export function createPasswordsService(
           committed = true;
         })
       );
+      if (write) committed = true;
       requireEnabled(database.enabled);
       return { ok: true, value };
     } catch (error) {
@@ -240,6 +233,55 @@ export function createPasswordsService(
         }
         return state;
       }),
+    downloadCredentials: (input) =>
+      run(input.kind === 'agent', async () => {
+        database.principal(true);
+        const workspace = await database.resolveWorkspace(input.wsId);
+        const path =
+          input.kind === 'agent' ? AGENT_CREDENTIALS_PATH : CREDENTIALS_PATH;
+        const body = {
+          workspaceId: workspace.wsId,
+          vaultId: input.vaultId,
+          ...(input.kind === 'agent'
+            ? {
+                grantRequestId: input.grantRequestId,
+                tokenRequestId: input.tokenRequestId,
+                itemIds: input.itemIds,
+                scopes: input.scopes,
+              }
+            : {}),
+        };
+        const headers = new Headers(request.headers);
+        headers.set('content-type', 'application/json');
+        const response = await createSecretsHandler(env).handle(
+          new Request(new URL(path, env.NEXT_PUBLIC_APP_URL), {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+            signal: request.signal,
+          })
+        );
+        const uncertain = input.kind === 'agent';
+        if (!response || (uncertain && response.status >= 500))
+          throw new PasswordsError(
+            uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE'
+          );
+        let data: PasswordsRecord;
+        try {
+          data = record(await response.json());
+        } catch {
+          throw new PasswordsError(
+            uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE'
+          );
+        }
+        if (!response.ok) {
+          const code = PASSWORDS_ERROR_CODES.find(
+            (code) => code.toLowerCase() === data.code
+          );
+          throw new PasswordsError(code ?? 'UNAVAILABLE');
+        }
+        return { base64: Buffer.from(JSON.stringify(data)).toString('base64') };
+      }),
     createVault: (input) =>
       run(true, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
@@ -248,10 +290,7 @@ export function createPasswordsService(
     putItem: (input) =>
       run(true, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
-        const maxBytes = request.headers.has('origin')
-          ? PASSWORDS_LIMITS.itemMaxBytes
-          : PASSWORDS_MAX_BYTES;
-        const bytes = decodeValue(input.base64, maxBytes);
+        const bytes = decodeValue(input.base64, PASSWORDS_LIMITS.itemMaxBytes);
         try {
           return await engine.putItem(
             { ...input, wsId: workspace.wsId },
