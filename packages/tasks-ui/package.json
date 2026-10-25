@@ -98,7 +98,11 @@
       "types": "./src/tu-do/shared/text-diff-viewer.tsx",
       "import": "./src/tu-do/shared/text-diff-viewer.tsx"
     },
-    "./tu-do/*": "./src/tu-do/*.tsx"
+    "./tu-do/*": "./src/tu-do/*.tsx",
+    "./tu-do/shared/task-page-model": "./src/tu-do/shared/task-page-model.ts",
+    "./tu-do/shared/workspace-actions": "./src/tu-do/shared/workspace-actions.ts",
+    "./tu-do/shared/boards-transport": "./src/tu-do/shared/boards-transport.ts",
+    "./tu-do/shared/task-page-view": "./src/tu-do/shared/task-page-view.tsx"
   },
   "license": "MIT",
   "scripts": {
