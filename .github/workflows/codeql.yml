@@ -6,6 +6,7 @@ name: CodeQL Manual Fallback
 # diff touches; security-checks.yaml calls this workflow on its daily schedule.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches:
       - main
@@ -114,7 +115,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     needs: scope
-    if: needs.scope.outputs.run == 'true'
+    if: needs.scope.outputs.run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

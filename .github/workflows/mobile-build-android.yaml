@@ -14,6 +14,7 @@ on:
       - ".github/actions/setup-flutter-with-cache/**"
       - "scripts/ci/gradle-cache-budget.js"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
@@ -25,6 +26,7 @@ permissions:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
