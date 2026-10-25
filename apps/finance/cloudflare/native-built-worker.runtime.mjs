@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
-import { app, financeRuntime, modes } from './native-runtime-fixture.mjs';
+import { withNativeBrowserFence } from '../../apps/cloudflare/native-browser-fence.mjs';
+import {
+  app,
+  financeBrowserListener,
+  financeRuntime,
+  modes,
+} from './native-runtime-fixture.mjs';
 
 test('emitted Finance Worker: public shell, API ownership and action admission', {
   timeout: 180000,
@@ -18,7 +25,7 @@ test('emitted Finance Worker: public shell, API ownership and action admission',
         assert.equal(anonymous.status, 401);
         await anonymous.text();
         const info = await runtime.fetch(`${origin}${base}/api/build-info`, {
-          headers: { authorization: 'Bearer fixture' },
+          headers: { authorization: 'Bearer ttr_finance_runtime_fixture' },
         });
         assert.equal(info.status, 200);
         assert.equal(
@@ -58,7 +65,7 @@ test('emitted Finance Worker: public shell, API ownership and action admission',
       const response = await runtime.fetch(
         `${origin}${base}/api/workspaces/invitations?ref=a&ref=b`,
         {
-          headers: { authorization: 'Bearer fixture' },
+          headers: { authorization: 'Bearer ttr_finance_runtime_fixture' },
         }
       );
       assert.equal(response.status, 202);
@@ -74,7 +81,7 @@ test('emitted Finance Worker: public shell, API ownership and action admission',
     });
 
     await t.test(
-      `English/Vietnamese redirects and rendered token shell at ${origin}${base}`,
+      `English/Vietnamese auth and verification fallback at ${origin}${base}`,
       async () => {
         for (const locale of ['en', 'vi']) {
           const protectedPage = await runtime.fetch(
@@ -83,107 +90,78 @@ test('emitted Finance Worker: public shell, API ownership and action admission',
           assert.equal(protectedPage.status, 307);
           const login = new URL(protectedPage.headers.get('location'));
           assert.equal(login.origin, 'https://tuturuuu.com');
-          assert.ok(login.pathname.includes('login'));
-          const shell = await runtime.fetch(
+          assert.equal(login.pathname, '/login');
+          const fallback = await runtime.fetch(
             `${origin}${base}/${locale}/verify-token`
           );
-          assert.equal(shell.status, 200);
-          const html = await shell.text();
-          assert.match(html, new RegExp(`<html[^>]*lang="${locale}"`));
+          assert.equal(fallback.status, 307);
           assert.equal(
-            html.includes(runtime.secret),
-            false,
-            'Synthetic secret leaked to SSR'
+            fallback.headers.get('location'),
+            `${origin}${base}/`,
+            'Missing-token fallback must retain its app mount'
           );
-          const scripts = [
-            ...html.matchAll(/src="([^" ]+\.js(?:\?[^" ]*)?)"/g),
-          ].map((match) => match[1]);
-          assert.ok(
-            scripts.some((script) => script.startsWith(`${base}/assets/`)),
-            'Native client entry missing'
-          );
-          for (const script of scripts) {
-            const url = new URL(script, origin);
-            assert.equal(url.origin, origin, 'Unexpected script origin');
-            assert.ok(
-              url.pathname.startsWith(`${base}/assets/`),
-              `Unexpected script path: ${url.pathname}`
-            );
-            const asset = await runtime.fetch(url.href);
-            assert.equal(asset.status, 200);
-            await asset.arrayBuffer();
-          }
         }
       }
     );
+
+    await t.test(`emitted static assets at ${origin}${base}`, async () => {
+      const files = await readdir(join(app, 'dist/client/assets'));
+      const javascript = files.find((file) => file.endsWith('.js'));
+      const stylesheet = files.find((file) => file.endsWith('.css'));
+      assert.ok(
+        javascript && stylesheet,
+        'Compiled client scripts/styles are required'
+      );
+      for (const path of [
+        '/favicon.ico',
+        '/robots.txt',
+        `/assets/${javascript}`,
+        `/assets/${stylesheet}`,
+      ]) {
+        const response = await runtime.fetch(`${origin}${base}${path}`);
+        assert.equal(response.status, 200, path);
+        assert.ok((await response.arrayBuffer()).byteLength > 0, path);
+      }
+    });
   }
 
   await t.test(
-    'Chromium hydrates the token shell and reaches the guarded login in both URL modes',
+    'Chromium follows anonymous auth redirects with every hop fixture-fenced',
     async (browserTest) => {
       const require = createRequire(join(app, '../web/package.json'));
       const { chromium } = require('playwright');
       const browser = await chromium.launch({ headless: true });
       browserTest.after(() => browser.close());
-      for (const { origin, base } of modes) {
-        const page = await browser.newPage();
-        const failures = [];
-        const errors = [];
-        const scripts = [];
-        page.on('pageerror', (error) => errors.push(error.message));
-        page.on('requestfailed', (request) => failures.push(request.url()));
-        await page.route('**/*', async (route) => {
-          const request = route.request();
-          const url = new URL(request.url());
-          if (
-            url.origin === origin &&
-            (base === '' || url.pathname.startsWith(`${base}/`))
-          ) {
-            if (request.resourceType() === 'script') scripts.push(url.pathname);
-            const response = await runtime.fetch(url.href, {
-              method: request.method(),
-              headers: request.headers(),
-              ...(request.postDataBuffer()
-                ? { body: request.postDataBuffer() }
-                : {}),
+      for (const mode of modes) {
+        const origin = await financeBrowserListener(browserTest, runtime, mode);
+        const result = await withNativeBrowserFence(
+          browser,
+          origin,
+          ['https://tuturuuu.com'],
+          async (page) => {
+            const errors = [];
+            page.on('pageerror', (error) => errors.push(error.message));
+            await page.goto(`${origin}${mode.base}/en/ws-1?ref=a&ref=b`, {
+              waitUntil: 'domcontentloaded',
             });
-            const headers = Object.fromEntries(response.headers);
-            const cookies = response.headers.getSetCookie();
-            if (cookies.length) headers['set-cookie'] = cookies.join('\n');
-            return route.fulfill({
-              status: response.status,
-              headers,
-              body: Buffer.from(await response.arrayBuffer()),
-            });
-          }
-          if (
-            url.origin === 'https://tuturuuu.com' &&
-            url.pathname.includes('login')
-          ) {
-            return route.fulfill({
-              contentType: 'text/html',
-              body: '<title>Fixture Login</title>',
-            });
-          }
-          failures.push(url.href);
-          await route.abort();
-        });
-        await page.goto(`${origin}${base}/en/verify-token`, {
-          waitUntil: 'domcontentloaded',
-        });
-        await page.waitForURL(
-          (url) =>
-            url.origin === 'https://tuturuuu.com' &&
-            url.pathname.includes('login')
+            await page.waitForURL(
+              (url) =>
+                url.origin === 'https://tuturuuu.com' &&
+                url.pathname === '/login'
+            );
+            assert.equal(new URL(page.url()).pathname, '/login');
+            assert.equal(await page.title(), 'Disposable destination fixture');
+            assert.deepEqual(errors, []);
+          },
+          { maxRequests: 100 }
         );
-        assert.equal(await page.title(), 'Fixture Login');
-        assert.ok(scripts.length > 0, 'Compiled client did not hydrate');
-        assert.deepEqual(errors, []);
-        assert.deepEqual(failures, []);
-        await page.close();
+        assert.ok(result.counts.fulfilled > 0);
+        assert.equal(result.counts.blocked, 0);
+        assert.equal(result.counts.excess, 0);
       }
     }
   );
+
   assert.deepEqual(
     runtime.unexpected,
     [],

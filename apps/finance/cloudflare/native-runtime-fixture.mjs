@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { cp, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -105,4 +106,58 @@ export async function financeRuntime(t) {
     return worker.fetch(url, { redirect: 'manual', signal: t.signal, ...init });
   };
   return { worker, source, fetch, central, unexpected, secret };
+}
+
+export async function financeBrowserListener(t, runtime, mode) {
+  let origin;
+  let count = 0;
+  const server = createServer(async (request, response) => {
+    try {
+      if (++count > 100 || !['GET', 'HEAD'].includes(request.method)) {
+        response.writeHead(405).end();
+        return;
+      }
+      const target = new URL(request.url, mode.origin);
+      const output = await runtime.fetch(target.href, {
+        method: request.method,
+      });
+      const headers = Object.fromEntries(output.headers);
+      delete headers['content-encoding'];
+      delete headers['content-length'];
+      delete headers['transfer-encoding'];
+      const location = output.headers.get('location');
+      if (location) {
+        const destination = new URL(location, target);
+        const owned =
+          mode.base === '' ||
+          destination.pathname === mode.base ||
+          destination.pathname.startsWith(`${mode.base}/`);
+        if (destination.origin === mode.origin && owned) {
+          headers.location = new URL(
+            destination.pathname + destination.search + destination.hash,
+            origin
+          ).href;
+        }
+      }
+      const cookies = output.headers.getSetCookie();
+      if (cookies.length) headers['set-cookie'] = cookies;
+      response.writeHead(output.status, headers);
+      response.end(Buffer.from(await output.arrayBuffer()));
+    } catch {
+      response.writeHead(500).end('Fixture transport failed');
+    }
+  });
+  t.after(async () => {
+    if (!server.listening) return;
+    await new Promise((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+      server.closeAllConnections();
+    });
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  origin = `http://127.0.0.1:${server.address().port}`;
+  return origin;
 }

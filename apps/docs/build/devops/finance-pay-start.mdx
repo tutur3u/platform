@@ -168,10 +168,13 @@ The workflow repeats runtime acceptance after restoring the sealed bytes.
 
 The emitted suite covers exact build identity, anonymous API denial, function
 method/content-type admission, reserved Web routing and separate response
-cookies, bilingual redirects, token-page SSR, mounted assets and client
-hydration. Every Worker and browser request is bounded and fixture-fenced; the
-suite never authenticates to Cloudflare or a real provider. It does not qualify
-logged-in Finance operations or hosted shared-session behavior. Those remain
+cookies, bilingual auth and verification redirects, mounted assets and browser
+navigation. Browser redirects use the existing CDP fence because Playwright
+page routing does not intercept every redirect hop. Every Worker and browser request is bounded and fixture-fenced; the
+suite never authenticates to Cloudflare or a real provider. Production token
+verification runs on the server, so a missing token redirects and does not
+render a public React shell. The suite does not qualify authenticated UI
+hydration, Finance operations or hosted shared-session behavior. Those remain
 required staging acceptance, including workspace and mutation flows.
 
 Run exact-head unit, type, and lint checks on Sonha and the real `vp build`,

@@ -6,6 +6,7 @@ on:
     paths:
       [
         'apps/finance/**',
+        'apps/apps/cloudflare/native-browser-fence.mjs',
         'packages/ai/**',
         'packages/apis/**',
         'packages/auth/**',
@@ -61,6 +62,7 @@ on:
     paths:
       [
         'apps/finance/**',
+        'apps/apps/cloudflare/native-browser-fence.mjs',
         'packages/ai/**',
         'packages/apis/**',
         'packages/auth/**',
