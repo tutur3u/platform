@@ -988,6 +988,7 @@
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/start-bridge": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",

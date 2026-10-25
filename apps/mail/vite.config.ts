@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
@@ -9,14 +10,30 @@ import { MAIL_FUNCTION_BASE } from './src/runtime/mail-api-policy';
 import { mailWorkerBuiltins } from './src/runtime/worker-builtins-plugin';
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
+const bridge = startBridgePreset({
+  appRoot: import.meta.url,
+  app: 'mail',
+  serverFnBase: MAIL_FUNCTION_BASE,
+  shims: [
+    'next/headers',
+    'next/cache',
+    'next/server',
+    'next/navigation',
+    'next/link',
+    'next/dynamic',
+    'next/image',
+    '@opennextjs/cloudflare',
+  ],
+});
 
 export default defineConfig(({ command }) => ({
+  base: bridge.base,
   plugins: [
     mailActionPorts(),
     mailWorkerBuiltins(),
     voidPlugin(),
     tanstackStart({
-      serverFns: { base: MAIL_FUNCTION_BASE },
+      serverFns: bridge.tanstackStart.serverFns,
       router: {
         enableRouteGeneration: true,
         routesDirectory: 'routes',
@@ -49,41 +66,10 @@ export default defineConfig(({ command }) => ({
         find: /^#mail-handler$/u,
         replacement: local('./src/runtime/handler.ts'),
       },
-      {
-        find: /^next\/headers(?:\.js)?$/u,
-        replacement: local('./src/runtime/request-context.ts'),
-      },
-      {
-        find: /^next\/cache(?:\.js)?$/u,
-        replacement: local('./src/runtime/request-cache.ts'),
-      },
-      {
-        find: /^next\/server(?:\.js)?$/u,
-        replacement: local('./src/runtime/next-server.ts'),
-      },
-      {
-        find: /^next\/navigation(?:\.js)?$/u,
-        replacement: local('./src/runtime/next-navigation.tsx'),
-      },
-      {
-        find: /^next\/link(?:\.js)?$/u,
-        replacement: local('./src/runtime/next-link.tsx'),
-      },
-      {
-        find: /^next\/dynamic(?:\.js)?$/u,
-        replacement: local('./src/runtime/next-dynamic.tsx'),
-      },
-      {
-        find: /^next\/image(?:\.js)?$/u,
-        replacement: local('./src/runtime/next-image.tsx'),
-      },
+      ...bridge.alias,
       {
         find: /^next-intl\/server$/u,
         replacement: local('./src/runtime/intl-server.ts'),
-      },
-      {
-        find: /^@opennextjs\/cloudflare$/u,
-        replacement: local('./src/runtime/cloudflare-context.ts'),
       },
       {
         find: /^@tuturuuu\/satellite\/i18n$/u,
@@ -116,6 +102,7 @@ export default defineConfig(({ command }) => ({
     ],
   },
   define: {
+    ...bridge.define,
     'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(
       process.env.NEXT_PUBLIC_SUPABASE_URL
     ),
@@ -135,14 +122,7 @@ export default defineConfig(({ command }) => ({
   environments: {
     client: {
       define: {
-        'process.env': JSON.stringify({
-          ...Object.fromEntries(
-            Object.entries(process.env).filter(([key]) =>
-              key.startsWith('NEXT_PUBLIC_')
-            )
-          ),
-          NODE_ENV: command === 'serve' ? 'development' : 'production',
-        }),
+        ...bridge.clientDefine(command),
       },
     },
   },

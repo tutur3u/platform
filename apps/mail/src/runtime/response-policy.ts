@@ -1,7 +1,12 @@
+import { createBasePath } from '@tuturuuu/start-bridge/base-path';
+import { appBasePath } from '@tuturuuu/start-bridge/start/base-path';
 import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
 
 export function applyMailResponsePolicy(request: Request, response: Response) {
-  const path = new URL(request.url).pathname;
+  const path =
+    createBasePath({ app: 'mail', basePath: appBasePath() }).strip(
+      new URL(request.url).pathname
+    ) ?? new URL(request.url).pathname;
   const result = new Response(response.body, response);
   result.headers.set('X-Robots-Tag', PRIVATE_ROBOTS_HEADER);
   if (

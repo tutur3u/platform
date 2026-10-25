@@ -365,13 +365,8 @@ describe('every original Mail API registration', () => {
         expect(handler).toHaveBeenCalledTimes(1);
         const args = handler.mock.calls[0];
         if (!args) throw new Error('Missing handler call');
-        const zeroArgumentMethods: readonly string[] = fixture.zeroMethods;
-        if (zeroArgumentMethods.includes(method)) {
-          expect(args).toEqual([]);
-          return;
-        }
         expect(args[0]).toBe(request);
-        if (fixture.params.length) {
+        {
           const context = args[1];
           if (
             typeof context !== 'object' ||
@@ -380,6 +375,6 @@ describe('every original Mail API registration', () => {
           )
             throw new Error('Missing native context');
           expect(await context.params).toEqual(params);
-        } else expect(args).toHaveLength(1);
+        }
       });
 });

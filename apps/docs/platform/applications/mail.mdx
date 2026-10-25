@@ -141,6 +141,30 @@ delay notifications do not produce automatic blacklist suggestions.
 
 ## Architecture
 
+### Native Start runtime
+
+The Mail candidate uses `@tuturuuu/start-bridge` for request context, middleware,
+route dispatch, function authentication, navigation and locale adapters. Mail
+keeps its own function-body bounds, API middleware matcher, action ports and
+response policy, including signed webhook exemptions and attachment framing.
+The Email Routing Worker remains a separate service.
+
+`apps/mail/start-bridge.routes.json` generates the API registry and page manifest.
+Run `bun run --cwd apps/mail bridge:generate` after adding or moving routes, then
+`bun run --cwd apps/mail bridge:check`. The owning Mail build runs the check
+before `vp build`; stale or unregistered routes fail closed. The page policy
+covers every generated `PagePattern`, so a new page also requires an explicit
+view policy. API regressions retain all 41 original routes and assert the
+authenticated request and decoded params reaching each handler.
+
+The frozen v0 bridge supports root and prefixed build profiles via
+`TUTURUUU_BASE_PATH`; app links, locale lookup, static assets and middleware use
+the same base. Profile support is source readiness, not canonical-route
+admission. Keep production publication held until the release owner records
+the exact artifact, independent review, provider/webhook/attachment acceptance,
+mount/session acceptance and rollback evidence.
+
+
 - `apps/mail` owns the mailbox UI and protected app-local APIs under
   `/api/v1/workspaces/:wsId/mail/*`.
 - The mailbox mirror is stored in service-only `private.mail_*` tables. Browser
