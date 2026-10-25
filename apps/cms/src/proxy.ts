@@ -18,7 +18,7 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
-import { withAppBase } from '@tuturuuu/start-bridge/base-path';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
