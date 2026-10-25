@@ -25,23 +25,32 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
     _reconnectTimer = null;
   }
 
-  /// Disconnect and close: retire the pending reconnect and refuse new ones
-  /// until the user starts a call again.
-  void _closeReconnect() {
+  /// End Call, any disconnect, and close: a new intent that retires pending
+  /// and in-flight reconnects and refuses new ones until a user start.
+  int _endIntent() {
     _reconnectClosed = true;
     _cancelReconnect();
+    return ++_intentEpoch;
   }
 
-  /// A user start: an older reconnect must never supersede it, even while it
-  /// still waits on pending persistence before taking a request version.
-  void _openReconnectForUserStart() {
+  /// A user start: the latest intent, so no older reconnect or preparation
+  /// can supersede it, even before it takes a request version.
+  int _startIntent() {
     _cancelReconnect();
     _reconnectClosed = false;
     _reconnectAttempts = 0;
+    return ++_intentEpoch;
   }
 
   void _scheduleReconnect() {
-    if (_manualDisconnect || _reconnectClosed || state.workspaceId == null) {
+    // Only a drop of a session prepared under the current intent may
+    // reconnect, and only while admission is open.
+    if (_isClosing ||
+        isClosed ||
+        _manualDisconnect ||
+        _reconnectClosed ||
+        _sessionEpoch != _intentEpoch ||
+        state.workspaceId == null) {
       return;
     }
     // One pending reconnect per request; one left by an older request (a
@@ -64,6 +73,7 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
     final attempt = _reconnectAttempts++;
     final requestVersion = _requestVersion;
     final preparationVersion = _preparationVersion;
+    final intentEpoch = _intentEpoch;
     final wsId = state.workspaceId!;
     final chatId = state.chatId;
     final model = state.model;
@@ -75,6 +85,7 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
       _reconnectTimer = null;
       if (_manualDisconnect ||
           _reconnectClosed ||
+          intentEpoch != _intentEpoch ||
           preparationVersion != _preparationVersion ||
           _isStale(requestVersion)) {
         return;

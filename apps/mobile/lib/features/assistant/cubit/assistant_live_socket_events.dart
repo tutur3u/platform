@@ -4,6 +4,8 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
   Future<void> _handleSocketEvent(AssistantLiveSocketEvent event) async {
     switch (event) {
       case AssistantLiveSocketConnected():
+        // A session from a retired intent must not report itself as live.
+        if (_sessionEpoch != _intentEpoch) return;
         _emitMicrophoneState(
           state.copyWith(
             status: AssistantLiveConnectionStatus.connecting,
@@ -11,10 +13,12 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
           ),
         );
       case AssistantLiveSocketReady():
-        _readyAt = _now();
+        // Release the ready wait either way; its preparation re-checks intent.
         if (!(_readyCompleter?.isCompleted ?? true)) {
           _readyCompleter?.complete();
         }
+        if (_sessionEpoch != _intentEpoch) return;
+        _readyAt = _now();
         _emitMicrophoneState(
           state.copyWith(
             status: AssistantLiveConnectionStatus.connected,
