@@ -9,6 +9,7 @@ const basePath = new URL(self.registration.scope).pathname.replace(/\/$/u, '');
 const contract = calendarOfflineContract(basePath);
 self.__TUTURUUU_PRECACHE_MANIFEST = contract.precache;
 createOfflineWorker({
+  cacheNamespace: 'calendar',
   offlineFallbackUrl: contract.fallback,
   cacheNavigations: false,
   staticAssetsOnly: true,
