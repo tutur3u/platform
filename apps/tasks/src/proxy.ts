@@ -31,6 +31,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
 import { proxyAppUrl } from './lib/proxy-app-url';
 import { resolveTaskBoardEntrypoint } from './lib/tasks/task-board-entrypoint';
 
@@ -101,10 +102,25 @@ function getTaskLinkPreviewRewrite(req: NextRequest) {
 
   const { locale } = getLocale(req);
   const previewUrl = proxyAppUrl(req, `/${locale}/task-link-preview`);
-  const response = NextResponse.rewrite(previewUrl);
+  const response = NextResponse.rewrite(previewUrl, {
+    request: { headers: withPageRewrite(req, previewUrl) },
+  });
   response.headers.set('Cache-Control', 'private, no-store, max-age=0');
   response.headers.append('Vary', 'User-Agent');
   return response;
+}
+
+/** Names a page rewrite for the native Start loader (see `page-rewrite`). */
+function withPageRewrite(req: NextRequest, destination: URL) {
+  const base = req.nextUrl.basePath;
+  const { pathname, search } = destination;
+  const appPath =
+    base && (pathname === base || pathname.startsWith(`${base}/`))
+      ? pathname.slice(base.length) || '/'
+      : pathname;
+  const headers = new Headers(req.headers);
+  headers.set(PAGE_REWRITE_HEADER, `${appPath}${search}`);
+  return headers;
 }
 
 function getNonTasksWorkspaceRedirect(req: NextRequest) {
@@ -440,7 +456,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       req,
       `/${locale}/${target}/tasks${req.nextUrl.search}`
     );
-    const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
+    const fallbackRewrite = NextResponse.rewrite(entrypointUrl, {
+      request: { headers: withPageRewrite(req, entrypointUrl) },
+    });
     propagateAuthCookies(authRes, fallbackRewrite);
     return fallbackRewrite;
   }
