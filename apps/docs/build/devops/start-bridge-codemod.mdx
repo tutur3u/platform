@@ -211,6 +211,10 @@ configuration, so apps regenerate instead of forking generated files:
 | `next/og` | any `next/og` import under `src/` | preset `og: '@cloudflare/pages-plugin-vercel-og/api'` (as Meet) and the pinned dependency |
 | Internal API app base | `@tuturuuu/internal-api` exports `registerDefaultAppBaseResolver` (#6764) and the app depends on it | `src/start-bridge/app-base.ts` registers `createAppBaseResolver(appApiPatterns, centralFirst)` from the codegen's client-safe `api-patterns.bridge.gen.ts`: app-owned routes are mounted in the browser and absolute on the request host on the server; Web routes are untouched |
 
+The preset renders `@tuturuuu/vercel`'s Analytics and Speed Insights as
+nothing, because Workers serve no `/_vercel/*` scripts; an app with an explicit
+`shims` list opts in with `inertVercel: true`.
+
 Each environment bundle (browser, SSR, rsc) carries its own internal-api
 module, so the registration is imported by `src/router.tsx`, the page route
 and the rsc API entry (`src/start-bridge/api-entry.ts`).
