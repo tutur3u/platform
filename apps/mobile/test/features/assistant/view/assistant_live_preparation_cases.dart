@@ -142,6 +142,19 @@ Future<void> _untilPreparation(
   expect(reached(), isTrue);
 }
 
+/// Retiring an opened provider closes the fake transport's stream, which needs
+/// real event-loop turns; a retired send settles only after that teardown.
+Future<void> _untilSettled(WidgetTester tester, Future<Object?> sending) async {
+  var settled = false;
+  unawaited(sending.whenComplete(() => settled = true));
+  for (var i = 0; i < 20 && !settled; i++) {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  expect(settled, isTrue);
+  await sending;
+}
+
 void _departPreparation(_PreparationPage fixture, String change) {
   final h = fixture.h;
   switch (change) {
@@ -181,11 +194,11 @@ void livePreparationCases() {
         expect(f.h.chat.state.composerAttachments, attachments);
         f.releaseToken();
         await _untilPreparation(tester, () => f.repository.historyEntered);
-        expect(f.live.state.status, AssistantLiveConnectionStatus.connecting);
+        // The provider handshake overlaps binding; the send stays held.
+        await _untilPreparation(tester, () => f.connections == 1);
         expect(f.repository.restoredIds.length, restores + 1);
         expect(f.repository.restoredIds.last, _canonicalLiveChat);
         expect(f.h.chat.attachmentScopeVersion, version + 1);
-        expect(f.connections, 0);
         expect(f.wire.textAttempts, 0);
         expect(composer.controller.value, draft);
         expect(f.h.chat.state.composerAttachments, attachments);
@@ -249,15 +262,18 @@ void livePreparationCases() {
         if (boundary == 'history') {
           f.releaseToken();
           await _untilPreparation(tester, () => f.repository.historyEntered);
-          expect(f.live.state.status, AssistantLiveConnectionStatus.connecting);
         }
+        // Binding overlaps the handshake, so a history-boundary departure may
+        // retire an opened provider connection; it never carries user text.
+        final maxConnections = boundary == 'history' ? 1 : 0;
         _departPreparation(f, change);
         if (boundary == 'token') f.releaseToken();
         f.history.complete();
-        await tester.pump();
-        await sending;
+        await _untilSettled(tester, sending);
         expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
-        expect(f.connections, 0);
+        expect(f.connections, lessThanOrEqualTo(maxConnections));
+        // A provider wire opened during binding must be closed, not leaked.
+        expect(f.wire.sinkCloses, f.connections == 0 ? 0 : greaterThan(0));
         expect(f.wire.textAttempts, 0);
         expect(f.h.repository.starts, 0);
         expect(f.live.state.userDraft, isEmpty);
@@ -276,7 +292,7 @@ void livePreparationCases() {
         }
         await tester.pump(const Duration(seconds: 60));
         expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
-        expect(f.connections, 0);
+        expect(f.connections, lessThanOrEqualTo(maxConnections));
         expect(f.wire.textAttempts, 0);
         expect(f.h.repository.starts, 0);
         expect(find.text(_refusedNotice), findsNothing);
@@ -299,17 +315,19 @@ void livePreparationCases() {
       expect(f.live.state.status, AssistantLiveConnectionStatus.preparing);
       f.releaseToken();
       await _untilPreparation(tester, () => f.repository.historyEntered);
-      expect(f.live.state.status, AssistantLiveConnectionStatus.connecting);
       expect(f.repository.restoredIds.length, restores + 1);
       expect(f.repository.restoredIds.last, _canonicalLiveChat);
       expect(f.h.chat.state.storedChatId, selected);
-      expect(f.connections, 0);
+      expect(f.wire.textAttempts, 0);
       f.history.complete();
-      await sending;
+      await _untilSettled(tester, sending);
+      // The overlapped handshake may have opened (then retired) a connection;
+      // the prior selection's send never crosses into the bound namespace.
       expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
       expect(f.h.chat.state.storedChatId, _canonicalLiveChat);
       expect(f.h.chat.state.chat?.id, _canonicalLiveChat);
-      expect(f.connections, 0);
+      expect(f.connections, lessThanOrEqualTo(1));
+      expect(f.wire.sinkCloses, f.connections == 0 ? 0 : greaterThan(0));
       expect(f.wire.textAttempts, 0);
       expect(composer.controller.value, draft);
       expect(f.h.chat.state.composerAttachments, attachments);
@@ -319,7 +337,7 @@ void livePreparationCases() {
       expect(find.text(_unknownNotice), findsNothing);
       await tester.pump(const Duration(seconds: 60));
       expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
-      expect(f.connections, 0);
+      expect(f.connections, lessThanOrEqualTo(1));
       expect(f.wire.textAttempts, 0);
       expect(f.h.repository.starts, 0);
       expect(find.text(_refusedNotice), findsNothing);

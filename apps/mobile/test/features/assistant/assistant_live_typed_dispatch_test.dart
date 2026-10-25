@@ -200,7 +200,8 @@ void main() {
     });
   }
 
-  for (final phase in ['history', 'audio']) {
+  // Chat binding overlaps the handshake; audio is the last pre-socket fence.
+  for (final phase in ['audio']) {
     for (final change in ['actor', 'request', 'page scope']) {
       test('$change during $phase await prevents socket admission', () async {
         final entered = Completer<void>();
@@ -210,11 +211,7 @@ void main() {
           return gate.future;
         }
 
-        if (phase == 'history') {
-          f.onBound = hold;
-        } else {
-          when(f.player.initialize).thenAnswer((_) => hold());
-        }
+        when(f.player.initialize).thenAnswer((_) => hold());
         var pageCurrent = true;
         final sending = f.send(isCurrent: () => pageCurrent);
         await entered.future;
@@ -234,7 +231,7 @@ void main() {
     }
   }
 
-  for (final boundary in ['token', 'history']) {
+  for (final boundary in ['token']) {
     test(
       'obsolete $boundary cleanup preserves a held replacement prepare',
       () async {
