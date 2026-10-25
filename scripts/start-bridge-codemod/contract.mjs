@@ -8,6 +8,7 @@ export const BRIDGE_DIR = 'packages/start-bridge';
 export const BRIDGE = {
   vitePreset: `${BRIDGE_PACKAGE}/vite`,
   handler: `${BRIDGE_PACKAGE}/start/handler`,
+  assets: `${BRIDGE_PACKAGE}/assets`,
   serverEntry: `${BRIDGE_PACKAGE}/start/server-entry`,
   basePath: `${BRIDGE_PACKAGE}/base-path`,
   startBasePath: `${BRIDGE_PACKAGE}/start/base-path`,

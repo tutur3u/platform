@@ -16,6 +16,8 @@ const HOLD_FILES = [
 ];
 const plan = (root, options = {}) =>
   planConversion(root, 'demo', { codegen: fakeCodegen(), ...options });
+const generated = (result, file) =>
+  result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
 
 test('dry run reads only and plans the full owned file set', (t) => {
   const root = createFixtureRepo(t);
@@ -154,8 +156,6 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
 
 test('generator inputs come from the app configuration, not hand edits', (t) => {
   const root = createFixtureRepo(t);
-  const generated = (result, file) =>
-    result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
   // Defaults: no proxy config, no Web rewrites, no app-base resolver.
   const plain = plan(root);
   assert.doesNotMatch(generated(plain, 'cloudflare/worker.ts'), /matches:/);
@@ -225,6 +225,30 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
     generated(full, 'src/start-bridge/api-entry.ts'),
     /^import '\.\/app-base';\nexport \{ endpoints \}/m
   );
+});
+
+test('types ASSETS as the portable binding once the bridge exports it (#6753)', (t) => {
+  const root = createFixtureRepo(t);
+  const legacy = generated(plan(root), 'cloudflare/worker.ts');
+  assert.match(
+    legacy,
+    /\n {2}ASSETS: \{ fetch\(request: Request\): Promise<Response> \};\n/
+  );
+  assert.doesNotMatch(legacy, /AssetsBinding/);
+
+  writeTree(root, {
+    'packages/start-bridge/package.json': `${JSON.stringify({
+      name: '@tuturuuu/start-bridge',
+      exports: { './assets': './src/core/assets.ts' },
+    })}\n`,
+  });
+  const worker = generated(plan(root), 'cloudflare/worker.ts');
+  assert.match(
+    worker,
+    /^import type \{ AssetsBinding \} from '@tuturuuu\/start-bridge\/assets';$/m
+  );
+  assert.match(worker, /\n {2}ASSETS: AssetsBinding;\n/);
+  assert.match(worker, /\n {4}assets: \(env\) => env\.ASSETS,\n/);
 });
 
 test('native CI is a thin caller of the reusable template, once it exists', (t) => {
@@ -370,6 +394,56 @@ test('hand-maintained route config entries survive a re-run', (t) => {
     pendingWrites(again).some((write) => write.path.endsWith('routes.json')),
     false
   );
+});
+
+test('a Biome-formatted route config is unchanged; a changed one is formatted', (t) => {
+  const root = createFixtureRepo(t);
+  applyPlan(root, plan(root), { spawn: noCommands });
+  const file = path.join(root, 'apps/demo/start-bridge.routes.json');
+  const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  config.api.forwarded = ['/api/v1/inventory/[...path]'];
+  // Biome keeps a short array on one line (Storefront's api.forwarded).
+  const biomeLayout = `${JSON.stringify(config, null, 2).replace(
+    /\[\n\s+("\/api\/v1\/inventory\/\[\.\.\.path\]")\n\s+\]/u,
+    '[$1]'
+  )}\n`;
+  assert.match(biomeLayout, /"forwarded": \["\/api\/v1\/inventory/u);
+  fs.writeFileSync(file, biomeLayout);
+  const formatted = [];
+  const format = (relativePath, content) => {
+    formatted.push(relativePath);
+    return content;
+  };
+  const again = plan(root, { format });
+  assert.equal(
+    pendingWrites(again).some((write) => write.path.endsWith('routes.json')),
+    false
+  );
+  assert.equal(fs.readFileSync(file, 'utf8'), biomeLayout);
+
+  // Key order is layout too.
+  const reordered = `${JSON.stringify(
+    Object.fromEntries(Object.entries(config).reverse()),
+    null,
+    2
+  )}\n`;
+  fs.writeFileSync(file, reordered);
+  assert.equal(
+    pendingWrites(plan(root, { format })).some((write) =>
+      write.path.endsWith('routes.json')
+    ),
+    false
+  );
+
+  // A missing default is restored, so the merged config is rewritten.
+  const { pages: _pages, ...withoutPages } = config;
+  fs.writeFileSync(file, `${JSON.stringify(withoutPages)}\n`);
+  formatted.length = 0;
+  const changed = plan(root, { format });
+  assert.ok(
+    pendingWrites(changed).some((write) => write.path.endsWith('routes.json'))
+  );
+  assert.ok(formatted.includes('apps/demo/start-bridge.routes.json'));
 });
 
 test('an unmarked hand-written owned file is a conflict unless adopted', (t) => {
