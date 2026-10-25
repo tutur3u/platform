@@ -6,6 +6,10 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 
 - Prefer additive migrations.
 - Keep PR migration filenames ahead of latest `main` migrations after rebases.
+- Every definer replacement must retain a privilege-checked search path with
+  `pg_temp` explicitly last; use `pg_catalog, pg_temp` for qualified bodies.
+  Run `security-definer-search-paths.sql` on the full chain: even trigger-only
+  functions with revoked client EXECUTE can regress after earlier hardening.
 - Avoid seed-dependent backfills unless they tolerate missing reference rows.
 - Materialize replacement parent rows before rewiring child tables.
 - Update trigger helpers and underlying `CHECK` constraints together when tightening limits.
