@@ -209,7 +209,7 @@ controls conservative while expanding API-key issuance workspace by workspace.
 
 AI Studio retains its Next routes while the staging candidate renders them with
 TanStack Start and the shared Start bridge. Generate the adapters with
-`node scripts/start-bridge-codemod/cli.mjs ai --apply --hold`; rerun the generator
+`node scripts/start-bridge-codemod/cli.mjs ai --apply`; rerun the generator
 rather than editing its marked files. The app route registry includes the public
 `/v1/**` provider endpoints as well as `/api/**`. Public provider authentication
 continues to use API keys or scoped external-app tokens, independently of browser
@@ -226,4 +226,4 @@ Run `bun run routes:check`, `bun run type-check:cloudflare`, and
 emitted Worker, mounted browser flows, public credential denials, and staging
 canonical-host rejection must pass before promotion. Hosted provider calls are
 separate acceptance; local fixtures do not prove billable provider behavior.
-Production publication is held in `tuturuuu.ci.ts` until an explicit cutover PR.
+The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.
