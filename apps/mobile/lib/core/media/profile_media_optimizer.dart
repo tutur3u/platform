@@ -8,7 +8,7 @@ enum ProfileMediaKind { avatar, banner }
 
 /// A source can exceed the upload limit before compression. Decoding still has
 /// an independent pixel ceiling and the encoded result keeps its smaller cap.
-const int profileMediaSourceByteLimit = 64 * 1024 * 1024;
+const int profileMediaSourceByteLimit = 20 * 1024 * 1024;
 
 class ProfileMediaSizeException extends FormatException {
   const ProfileMediaSizeException(super.message);

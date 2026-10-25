@@ -132,13 +132,20 @@ void main() {
     expect(result.bytes.length, lessThanOrEqualTo(2000000));
   });
   test(
-    'decodable source above 20 MiB is optimized rather than rejected',
+    'accepts the 20 MiB source boundary and rejects one byte above it',
     () async {
+      expect(profileMediaSourceByteLimit, 20 * 1024 * 1024);
       final jpg = img.encodeJpg(img.Image(width: 32, height: 32));
-      final input = Uint8List(24 * 1024 * 1024)..setAll(0, jpg);
+      final input = Uint8List(20 * 1024 * 1024)..setAll(0, jpg);
       final result = await optimizeProfileMediaBytes(input);
       expect(img.decodeJpg(result.bytes)!.width, 32);
       expect(result.bytes.length, lessThanOrEqualTo(1000000));
+      await expectLater(
+        optimizeProfileMediaBytes(
+          Uint8List(20 * 1024 * 1024 + 1)..setAll(0, jpg),
+        ),
+        throwsA(isA<ProfileMediaSizeException>()),
+      );
     },
   );
   test('orients and strips metadata', () async {

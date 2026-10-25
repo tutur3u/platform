@@ -86,12 +86,13 @@ function request({
 }: {
   kind?: (typeof kinds)[number];
   body: Buffer;
-  token?: string;
+  token?: string | null;
   length?: string;
   method?: string;
   path?: string;
 }) {
-  return new NextRequest(`https://app.test${path}?token=${token}`, {
+  const query = token === null ? '' : `?token=${token}`;
+  return new NextRequest(`https://app.test${path}${query}`, {
     method,
     headers: {
       'content-type': 'image/png',
@@ -159,6 +160,49 @@ it.each(kinds)(
     expect((await sharp(stored).metadata()).format).toBe('webp');
     expect(stored.equals(body)).toBe(false);
     expect(f.cost).toHaveBeenCalledTimes(1);
+  }
+);
+
+it.each(
+  kinds.flatMap((kind) =>
+    ['declared', 'absent', 'understated'].flatMap((length) =>
+      [null, ''].map((token) => ({ kind, length, token }))
+    )
+  )
+)(
+  'keeps the generic cap for $kind without a usable ticket ($length length, token=$token)',
+  async ({ kind, length, token }) => {
+    const body = await image(MAX_PAYLOAD_SIZE + 1);
+    const response = await dispatch(
+      request({
+        kind,
+        body,
+        token,
+        length:
+          length === 'declared'
+            ? String(body.length)
+            : length === 'understated'
+              ? '1'
+              : undefined,
+      }),
+      kind
+    );
+    expect(response.status).toBe(413);
+    expect(f.budget).not.toHaveBeenCalled();
+    expect(f.upload).not.toHaveBeenCalled();
+  }
+);
+
+it.each(kinds)(
+  'still authenticates a small %s upload without a ticket',
+  async (kind) => {
+    const response = await dispatch(
+      request({ kind, body: await image(), token: null }),
+      kind
+    );
+    expect(response.status).toBe(401);
+    expect(f.budget).not.toHaveBeenCalled();
+    expect(f.upload).not.toHaveBeenCalled();
   }
 );
 

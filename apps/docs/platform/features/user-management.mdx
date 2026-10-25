@@ -251,13 +251,15 @@ The same optimizer handles offline replay and workspace avatars; there is no
 second codec policy. Workspace avatar authorization and its separate storage
 upload protocol retain their existing limits.
 
-The source allowance is 64 MiB with a separate 20-megapixel decode ceiling.
-Files above 20 MiB can therefore be optimized; input beyond the safety limits is
+The source allowance is 20 MiB with a separate 20-megapixel decode ceiling,
+bounding memory use on mobile devices. Input beyond these safety limits is
 rejected before full pixel decoding, and oversized files before reading their
 bytes. Upload targets remain 1,000,000 bytes for avatars and 2,000,000 for banners,
 below the server's authoritative 2 MiB and 5 MiB caps. Only the exact profile PUT
-paths receive those proxy limits; unrelated API payloads retain their normal
-limit. Actual streamed bytes, one-use tickets, upload budgets and server-side
+paths with a nonempty `token` query parameter receive those proxy limits;
+requests without one retain the generic 512 KiB cap. The handler still validates
+the ticket. Unrelated API payloads retain their normal limit.
+Actual streamed bytes, one-use tickets, upload budgets and server-side
 WebP re-encoding remain authoritative; client sizes do not grant permission.
 Empty/corrupt images and native decode failures use invalid-image guidance,
 rather than size guidance. Recovery uses a compact design-system alert and
@@ -266,13 +268,14 @@ retains fresh selection, dismissal and authorized sanitized diagnostics.
 ![Profile image recovery with a fresh selection and dismissal](/images/mobile-profile-media-recovery-synthetic.png)
 
 Regression coverage: `profile_media_optimizer_test.dart` exercises phone JPEG,
-PNG, tiny and panoramic images, orientation/metadata, transparency, sources over
-20 MiB and bounded-input rejection. `profile_native_media_options_test.dart`
+PNG, tiny and panoramic images, orientation/metadata, transparency, the exact
+20 MiB source boundary and rejection above it. `profile_native_media_options_test.dart`
 covers picker/crop conversion options (real HEIC selection still needs device
 acceptance). `profile_media_failure_mapping_test.dart` and the existing actor,
 delivery and recovery suites cover errors and ownership.
 `apps/web/src/lib/profile-media-proxy.test.ts` exercises the real proxy guard
-and route exports, including valid images above the old 512 KiB proxy ceiling.
+and route exports, including valid ticketed images above the old 512 KiB proxy
+ceiling and the generic cap for missing or empty tickets.
 
 
 ### Mobile profile banners

@@ -1067,7 +1067,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         additionalRoutePolicies,
         ...calendarPreferenceGuardOptions(req),
         maxPayloadBytes:
-          profileMediaProxyPayloadLimit(req.method, req.nextUrl.pathname) ??
+          profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
           feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
         trustedBypassRules: [
           {
