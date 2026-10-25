@@ -14,6 +14,19 @@ const mocks = vi.hoisted(() => ({
   requestHeaders: new Headers(),
 }));
 
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: async () => ({
+    user: { id: 'actor-a' },
+    authError: null,
+  }),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async ({ wsId }: { wsId: string }) => ({
+    wsId,
+    withoutPermission: () => false,
+  }),
+}));
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
   createClient: mocks.createClient,
@@ -210,7 +223,7 @@ describe('dataset routes bind API-key access to the URL workspace', () => {
       mocks.requestHeaders = new Headers();
     });
 
-    it('uses the RLS client and still binds the dataset to the URL workspace', async () => {
+    it('uses admin after session authorization and still binds the dataset to the URL workspace', async () => {
       const crossWorkspace = await DELETE(
         request(datasetUrl('ws-a', 'ds-b'), { method: 'DELETE' }),
         params('ws-a', 'ds-b')
@@ -226,7 +239,7 @@ describe('dataset routes bind API-key access to the URL workspace', () => {
       expect(crossWorkspace.status).toBe(404);
       expect(datasetB()).toBeDefined();
       expect(sameWorkspace.status).toBe(200);
-      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      expect(mocks.createAdminClient).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -350,4 +363,9 @@ describe('dataset routes bind API-key access to the URL workspace', () => {
       expect(mocks.logApiKeyUsage).not.toHaveBeenCalled();
     });
   });
+});
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return { ...actual, connection: async () => undefined };
 });

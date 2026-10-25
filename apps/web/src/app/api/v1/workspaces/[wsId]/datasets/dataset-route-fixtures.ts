@@ -28,6 +28,7 @@ export function createFakeSupabase(db: Db) {
   return {
     from(table: string) {
       const filters: [string, unknown][] = [];
+      const predicates: ((row: Row) => boolean)[] = [];
       let op: 'select' | 'insert' | 'update' | 'delete' = 'select';
       let payload: Row | Row[] = {};
       let columns = '*';
@@ -58,8 +59,10 @@ export function createFakeSupabase(db: Db) {
           return { data: single ? data[0] : data, error: null };
         }
 
-        const matched = rows.filter((row) =>
-          filters.every(([column, value]) => row[column] === value)
+        const matched = rows.filter(
+          (row) =>
+            filters.every(([column, value]) => row[column] === value) &&
+            predicates.every((predicate) => predicate(row))
         );
 
         if (op === 'update') {
@@ -103,6 +106,14 @@ export function createFakeSupabase(db: Db) {
         },
         eq: (column: string, value: unknown) => {
           filters.push([column, value]);
+          return query;
+        },
+        in: (column: string, values: unknown[]) => {
+          predicates.push((row) => values.includes(row[column]));
+          return query;
+        },
+        gt: (column: string, value: string) => {
+          predicates.push((row) => String(row[column]) > value);
           return query;
         },
         order: () => query,

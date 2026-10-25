@@ -3,25 +3,30 @@ import {
   validateApiKey,
   type WorkspaceContext,
 } from '@tuturuuu/auth/api-keys';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import {
+  bindDataset,
+  DATASET_PERMISSION,
+  type DatasetAccess,
+  resolveDatasetWorkspaceAccess,
+} from '@/lib/datasets/access';
 
 /** Datasets live under AI Lab; API keys must carry the same permission. */
-export const DATASET_API_KEY_PERMISSION = 'ai_lab';
+export const DATASET_API_KEY_PERMISSION = DATASET_PERMISSION;
 
 type DatasetRouteHandler = (
-  supabase: TypedSupabaseClient
+  supabase: TypedSupabaseClient,
+  scope: DatasetAccess
 ) => Promise<NextResponse>;
 
 type WorkspaceDatasetsHandler = (
   supabase: TypedSupabaseClient,
-  apiKeyContext: WorkspaceContext | null
+  apiKeyContext: WorkspaceContext | null,
+  scope: { wsId: string }
 ) => Promise<NextResponse | Denial>;
 
 type Denial = { response: NextResponse; reason: string | null };
@@ -36,29 +41,25 @@ export async function withDatasetAccess(
   { wsId, datasetId }: { wsId: string; datasetId: string },
   handler: DatasetRouteHandler
 ): Promise<NextResponse> {
-  return withWorkspaceDatasetsAccess(request, wsId, async (supabase) => {
-    const { data: dataset, error } = await supabase
-      .from('workspace_datasets')
-      .select('id')
-      .eq('id', datasetId)
-      .eq('ws_id', wsId)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error verifying workspace dataset:', error);
-      return deny(
-        500,
-        'Error verifying workspace dataset',
-        'Dataset verification failed'
+  return withWorkspaceDatasetsAccess(
+    request,
+    wsId,
+    async (supabase, _key, scope) => {
+      const access = await bindDataset(
+        { supabase, wsId: scope.wsId },
+        datasetId
       );
+      if (!access.ok)
+        return {
+          response: access.response,
+          reason:
+            access.response.status === 404
+              ? 'Dataset not found in workspace'
+              : 'Dataset verification failed',
+        };
+      return handler(supabase, access);
     }
-
-    if (!dataset) {
-      return deny(404, 'Dataset not found', 'Dataset not found in workspace');
-    }
-
-    return handler(supabase);
-  });
+  );
 }
 
 /**
@@ -88,6 +89,7 @@ export async function withWorkspaceDatasetsAccess(
       apiKeyContext,
       wsId,
       handler,
+      request,
     });
     if ('reason' in result) {
       errorMessage = result.reason;
@@ -122,13 +124,23 @@ async function authorizeAndRun({
   apiKeyContext,
   wsId,
   handler,
+  request,
 }: {
+  request: Request;
   apiKey: string | null;
   apiKeyContext: WorkspaceContext | null;
   wsId: string;
   handler: WorkspaceDatasetsHandler;
 }): Promise<NextResponse | Denial> {
-  if (!apiKey) return handler(await createClient(), null);
+  if (!apiKey) {
+    const access = await resolveDatasetWorkspaceAccess(wsId, request);
+    if (!access.ok)
+      return {
+        response: access.response,
+        reason: 'Session dataset access denied',
+      };
+    return handler(access.supabase, null, { wsId: access.wsId });
+  }
 
   if (!apiKeyContext || apiKeyContext.wsId !== wsId) {
     return deny(401, 'Invalid API key', 'API key workspace mismatch');
@@ -142,7 +154,9 @@ async function authorizeAndRun({
     );
   }
 
-  return handler(await createAdminClient(), apiKeyContext);
+  return handler(await createAdminClient(), apiKeyContext, {
+    wsId: apiKeyContext.wsId,
+  });
 }
 
 /**
