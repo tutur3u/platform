@@ -30,7 +30,11 @@ const fail = (message: string): never => {
 // A clean relative directory inside the checkout: no absolute paths,
 // traversal, dot segments or backslashes.
 export function cleanRelativeDirectory(value: string) {
-  const trimmed = value.replace(/\/+$/u, '');
+  if (value.length > 513)
+    fail('cwd must be at most 513 characters before normalization.');
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end--;
+  const trimmed = value.slice(0, end);
   if (trimmed === '' || trimmed === '.') return '';
   if (
     trimmed.length > 512 ||
