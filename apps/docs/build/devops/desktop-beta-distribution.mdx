@@ -124,7 +124,7 @@ The seven-day `desktop-windows-x64-dry-run` artifact contains:
 - `windows-installed-files.json`: installed filenames, sizes/hashes, source SHA, run ID/attempt and installer hash.
 
 The smoke verifies the receipt, required Flutter files and hidden/system files, using literal paths.
-Reject all reparse points. Root files match the runner/DLL/uninstaller allowlist; `data/` permits ICU, AOT and Flutter assets, rejecting MZ headers and executable/script/debug/credential types.
+Reject all reparse points. Root files match the runner/DLL/uninstaller allowlist; `data/` permits ICU, AOT and Flutter assets, rejecting `.env*` path segments, MZ headers and executable/script/debug/credential types.
 The runner stays hidden until Flutter's first frame. After 15 seconds the smoke requires a visible main window
 with the exact title `Tuturuuu`. Installation and uninstallation each have a 120-second wait, then a 10-second
 owned-process-tree stop attempt. Uninstall is skipped if the installer is still running; original errors survive cleanup.

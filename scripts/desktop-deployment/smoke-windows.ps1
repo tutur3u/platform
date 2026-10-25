@@ -41,7 +41,7 @@ try {
         if ($relative -notmatch '^(tuturuuu\.exe|[^\\/]+\.dll|data[\\/](icudtl\.dat|app\.so|flutter_assets[\\/].+)|unins000\.(exe|dat|msg))$') {
             throw "Unexpected installed file: $relative"
         }
-        if ($relative -match '^data[\\/]' -and ($relative -match '[\\/]\.env(?:\.|$)' -or $relative -match '\.(exe|dll|sys|msi|bat|cmd|ps1|com|scr|vbs|pdb|lib|exp|ilk|env|p12|pfx|pem|key|p8|jks|keystore|mobileprovision|provisionprofile)$')) {
+        if ($relative -match '^data[\\/]' -and ($relative -match '[\\/]\.env' -or $relative -match '\.(exe|dll|sys|msi|bat|cmd|ps1|com|scr|vbs|lnk|hta|wsf|psm1|vbe|jse|pdb|lib|exp|ilk|env|p12|pfx|pem|key|p8|jks|keystore|mobileprovision|provisionprofile)$')) {
             throw "Unexpected installed file type: $relative"
         }
         if ($relative -match '^data[\\/]') {

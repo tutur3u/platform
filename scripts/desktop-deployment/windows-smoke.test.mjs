@@ -59,7 +59,7 @@ $global:SmokeHandles = 0
 $global:SmokeUninstalls = 0
 function New-FixtureInstaller($ExitCode, $TimesOut) {
     $child = [pscustomobject]@{ ExitCode = $ExitCode; HasExited = !$TimesOut; TimesOut = $TimesOut; WasKilled = $false }
-    $child | Add-Member -MemberType ScriptProperty -Name Handle -Value { $global:SmokeHandles++; return 0 }
+    $child | Add-Member -MemberType ScriptProperty -Name Handle -Value { $global:SmokeHandles++; $global:SmokeWaits += 'h'; return 0 }
     $child | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value {
         param($Milliseconds)
         $global:SmokeWaits += $Milliseconds
@@ -97,6 +97,10 @@ function Start-Process {
         }
         if ($env:SMOKE_SCENARIO -eq 'bad-data-file') { Set-Content (Join-Path $root 'data/flutter_assets/tool.exe') 'fixture' }
         if ($env:SMOKE_SCENARIO -eq 'extra-data-file') { Set-Content (Join-Path $root 'data/extra.bin') 'fixture' }
+        if ($env:SMOKE_SCENARIO -eq 'dotenv-directory') {
+            New-Item -ItemType Directory -Path (Join-Path $root 'data/flutter_assets/.env') > $null
+            Set-Content (Join-Path $root 'data/flutter_assets/.env/credentials.txt') 'fixture'
+        }
         if ($env:SMOKE_SCENARIO -eq 'dotenv-file') { Set-Content (Join-Path $root 'data/flutter_assets/.env.production') 'fixture' }
         if ($env:SMOKE_SCENARIO -eq 'disguised-mz-file') { [IO.File]::WriteAllBytes((Join-Path $root 'data/flutter_assets/payload.bin'), [byte[]]@(0x4D, 0x5A, 0, 0)) }
         if ($env:SMOKE_SCENARIO -eq 'junction') {
@@ -135,6 +139,7 @@ for (const scenario of [
   'installer-stop-fails-timeout',
   'extra-data-file',
   'dotenv-file',
+  'dotenv-directory',
   'disguised-mz-file',
   'junction',
   'lowercase-title',
@@ -198,7 +203,7 @@ for (const scenario of [
         assert.equal(inventory.installerSha256, sha256);
         assert.equal(inventory.attempt, '2');
         assert.equal(inventory.windowTitle, 'Tuturuuu');
-        assert.deepEqual(observed.waits, [120000, 120000]);
+        assert.deepEqual(observed.waits, ['h', 120000, 'h', 120000]);
         assert.equal(observed.handles, 2);
         assert.ok(
           inventory.files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))
@@ -208,17 +213,18 @@ for (const scenario of [
         const expected = {
           hidden: /did not render its first frame/,
           'hidden-cleanup-failure': /did not render its first frame/,
-          'unexpected-file': /Unexpected installed file/,
+          'unexpected-file': /Unexpected installed file: /,
           'tampered-receipt': /Installer does not match/,
-          'hidden-file': /Unexpected installed file/,
+          'hidden-file': /Unexpected installed file: /,
           'bad-data-file': /Unexpected installed file type/,
           'wrong-title': /main window title is not Tuturuuu/,
           'installer-timeout': /Installer timed out after 120 seconds/,
           'uninstaller-timeout': /Uninstaller timed out after 120 seconds/,
           'installer-stop-fails-timeout':
             /Installer timed out after 120 seconds/,
-          'extra-data-file': /Unexpected installed file/,
+          'extra-data-file': /Unexpected installed file: /,
           'dotenv-file': /Unexpected installed file type/,
+          'dotenv-directory': /Unexpected installed file type/,
           'disguised-mz-file': /Unexpected MZ payload in data/,
           junction: /contains a reparse point/,
           'lowercase-title': /main window title is not Tuturuuu/,
