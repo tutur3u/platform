@@ -223,7 +223,14 @@ class SettingsApi extends ApiClient {
       'id': chatId,
       'initialAiSettings': body['initialConversation'],
     });
-    final receipt = {...creation, 'creationRequestId': body['clientRequestId']};
+    final receipt = {
+      ...creation,
+      'creationRequestId': body['clientRequestId'],
+      'conversation': {
+        ...creation['conversation'] as Map<String, dynamic>,
+        'creationRequestId': body['clientRequestId'],
+      },
+    };
     var cancelled = false;
     StreamSubscription<ChatMessageStreamEvent>? subscription;
     late final StreamController<List<int>> controller;

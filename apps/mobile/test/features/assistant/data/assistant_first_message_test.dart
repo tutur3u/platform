@@ -52,7 +52,7 @@ class FirstApi extends ApiClient {
       'createdBy': actor,
       'type': 'ai',
       'createdAt': '2026-10-25T14:00:00Z',
-      'creationRequestId': key,
+      'creationRequestId': malformed == 'nested key' ? chat : key,
       'initialAiSettings': {
         ...settings.toJson(),
         'actorUserId': actor,
@@ -195,6 +195,7 @@ void main() {
     'id',
     'settings',
     'key',
+    'nested key',
   ]) {
     test(
       'invalid $malformed receipt stays held and cannot retry with a new ID',

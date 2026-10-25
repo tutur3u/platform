@@ -83,7 +83,9 @@ extension AssistantFirstMessageOperations on AssistantRepository {
           utf8.decode(base64Url.decode(base64Url.normalize(encoded))),
         );
         if (raw is! Map<String, dynamic> ||
-            raw['creationRequestId'] != requestId) {
+            raw['creationRequestId'] != requestId ||
+            raw['conversation'] is! Map<String, dynamic> ||
+            (raw['conversation'] as Map)['creationRequestId'] != requestId) {
           throw const FormatException('Invalid first message creation key');
         }
         acknowledged = AcknowledgedChatConversation.fromResponse(
