@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -20,13 +19,13 @@ import {
   getUserConfig,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -511,21 +510,13 @@ const getDefaultLocale = (
   req: NextRequest
 ): {
   locale: Locale;
-} => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
-  return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
-  };
-};
+} => ({
+  locale: negotiateAcceptLanguage(
+    req.headers.get('accept-language'),
+    supportedLocales,
+    defaultLocale
+  ),
+});
 
 const getLocale = (
   req: NextRequest

@@ -21,6 +21,7 @@ import {
   API_REGISTRY,
   APP_BASE,
   APP_CONFIG,
+  BRIDGE_DIR,
   CENTRAL_FIRST,
   DEPENDENCIES,
   GENERATED_MARKER,
@@ -73,14 +74,25 @@ export function validRuntimeExpectation(route, expected) {
   );
 }
 
+/** JSON with sorted object keys: equal values compare equal in any layout. */
+const canonicalJson = (value) =>
+  JSON.stringify(value, (_key, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.entries(item).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        )
+      : item
+  );
+
 const NEXT_CONFIGS = ['next.config.ts', 'next.config.mjs', 'next.config.js'];
 
 /**
  * Generator inputs read from the app's existing configuration, so apps
  * regenerate instead of forking generated files: the proxy's own
  * `config.matcher`, the Web workspace API paths its `next.config` rewrites
- * `beforeFiles` (`centralFirst`), `next/og` use, and whether internal-api
- * offers the default app-base resolver (#6764).
+ * `beforeFiles` (`centralFirst`), `next/og` use, whether internal-api
+ * offers the default app-base resolver (#6764), and whether the bridge
+ * exports the portable `AssetsBinding` (#6753).
  */
 export function detectInputs(repoRoot, appPath, inventory, manifest) {
   const proxySource = inventory.proxy
@@ -95,6 +107,9 @@ export function detectInputs(repoRoot, appPath, inventory, manifest) {
   const internalApi =
     read(repoRoot, 'packages/internal-api/src/internal-api-url.ts') ?? '';
   const deps = { ...manifest.dependencies, ...manifest.devDependencies };
+  const bridgeExports =
+    JSON.parse(read(repoRoot, `${BRIDGE_DIR}/package.json`) ?? '{}').exports ??
+    {};
   return {
     proxyMatcher: /export\s+const\s+config\b/u.test(proxySource),
     workspaceApiCentralFirst: /createTuturuuuWebWorkspaceApiRewrites/u.test(
@@ -104,6 +119,7 @@ export function detectInputs(repoRoot, appPath, inventory, manifest) {
     appBase:
       /export function registerDefaultAppBaseResolver/u.test(internalApi) &&
       '@tuturuuu/internal-api' in deps,
+    assetsBinding: './assets' in bridgeExports,
   };
 }
 
@@ -207,9 +223,16 @@ export function planConversion(repoRoot, app, options = {}) {
       problems.push(
         `${appPath}/${ROUTES_CONFIG_FILE}: runtime[${JSON.stringify(route)}] must be a non-5xx status or { "redirect": "<path or URL prefix>" }`
       );
+  // An unchanged config keeps its bytes (however Biome laid it out); a
+  // changed one is formatted with the owned output.
+  const unchanged =
+    existingConfig !== null &&
+    canonicalJson(JSON.parse(existingConfig)) === canonicalJson(config);
   writes.push({
     path: `${appPath}/${ROUTES_CONFIG_FILE}`,
-    content: `${JSON.stringify(config, null, 2)}\n`,
+    content: unchanged
+      ? existingConfig
+      : `${JSON.stringify(config, null, 2)}\n`,
     owner: 'merged',
   });
 
@@ -433,10 +456,12 @@ export function createBiomeFormatter(repoRoot, spawn = spawnSync) {
 
 function formatWrites(writes, format, appPath) {
   if (!format) return writes;
-  // Owned files, plus the app's own JSON edits (package.json, tsconfig.json).
+  // Owned files, the merged routes config, and the app's own JSON edits
+  // (package.json, tsconfig.json).
   const formattable = (write) =>
     write.owner === 'generated' ||
     write.owner === 'app-owned' ||
+    write.owner === 'merged' ||
     (write.owner === 'edit' &&
       write.path.startsWith(`${appPath}/`) &&
       write.path.endsWith('.json'));

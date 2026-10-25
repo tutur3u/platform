@@ -461,6 +461,24 @@ describe('Tasks proxy auth mode', () => {
     );
   });
 
+  it.each(['*', '*;q=0.5', 'vi-VN,*;q=0.1', 'not a language!!'])(
+    'negotiates a locale for Accept-Language %s instead of failing',
+    async (acceptLanguage) => {
+      const response = await proxy(
+        new NextRequest('https://tasks.tuturuuu.com/shared/task/share-code', {
+          headers: {
+            'accept-language': acceptLanguage,
+            'user-agent': 'facebookexternalhit/1.1',
+          },
+        })
+      );
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        `https://tasks.tuturuuu.com/${acceptLanguage.startsWith('vi') ? 'vi' : 'en'}/task-link-preview`
+      );
+    }
+  );
+
   it.each(['no-redirect=1', 'hash-nav=1', 'multiAccount=1'])(
     'keeps root redirect exclusions for %s',
     async (query) => {
