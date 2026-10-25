@@ -14960,7 +14960,7 @@ export type Database = {
           created_at: string;
           expires_at: string;
           id: string;
-          issuer_user_id: string;
+          issuer_user_id: string | null;
           item_ids: string[];
           revoked_at: string | null;
           scopes: string[];
@@ -14972,7 +14972,7 @@ export type Database = {
           created_at?: string;
           expires_at: string;
           id: string;
-          issuer_user_id: string;
+          issuer_user_id?: string | null;
           item_ids: string[];
           revoked_at?: string | null;
           scopes: string[];
@@ -14984,7 +14984,7 @@ export type Database = {
           created_at?: string;
           expires_at?: string;
           id?: string;
-          issuer_user_id?: string;
+          issuer_user_id?: string | null;
           item_ids?: string[];
           revoked_at?: string | null;
           scopes?: string[];
@@ -14997,7 +14997,7 @@ export type Database = {
             columns: ['ws_id', 'vault_id'];
             isOneToOne: false;
             referencedRelation: 'password_vaults';
-            referencedColumns: ['ws_id', 'id'];
+            referencedColumns: ['scope_ws_id', 'id'];
           },
         ];
       };
@@ -15045,25 +15045,28 @@ export type Database = {
       password_vault_members: {
         Row: {
           created_at: string;
+          id: string;
           revoked_at: string | null;
           role: string;
-          user_id: string;
+          user_id: string | null;
           vault_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
+          id?: string;
           revoked_at?: string | null;
           role: string;
-          user_id: string;
+          user_id?: string | null;
           vault_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
+          id?: string;
           revoked_at?: string | null;
           role?: string;
-          user_id?: string;
+          user_id?: string | null;
           vault_id?: string;
           ws_id?: string;
         };
@@ -15073,7 +15076,7 @@ export type Database = {
             columns: ['ws_id', 'vault_id'];
             isOneToOne: false;
             referencedRelation: 'password_vaults';
-            referencedColumns: ['ws_id', 'id'];
+            referencedColumns: ['scope_ws_id', 'id'];
           },
         ];
       };
@@ -15117,7 +15120,7 @@ export type Database = {
             columns: ['ws_id', 'vault_id'];
             isOneToOne: false;
             referencedRelation: 'password_vaults';
-            referencedColumns: ['ws_id', 'id'];
+            referencedColumns: ['scope_ws_id', 'id'];
           },
         ];
       };
@@ -15152,7 +15155,7 @@ export type Database = {
             columns: ['ws_id', 'vault_id'];
             isOneToOne: false;
             referencedRelation: 'password_vaults';
-            referencedColumns: ['ws_id', 'id'];
+            referencedColumns: ['scope_ws_id', 'id'];
           },
         ];
       };
@@ -15161,42 +15164,48 @@ export type Database = {
           active_version: number;
           authorization_epoch: number;
           created_at: string;
-          created_by: string;
+          created_by: string | null;
           id: string;
           label: string;
+          retired_at: string | null;
           revision: number;
           rotation_required: boolean;
+          scope_ws_id: string;
           updated_at: string;
-          ws_id: string;
+          ws_id: string | null;
         };
         Insert: {
           active_version?: number;
           authorization_epoch?: number;
           created_at?: string;
-          created_by: string;
+          created_by?: string | null;
           id: string;
           label: string;
+          retired_at?: string | null;
           revision?: number;
           rotation_required?: boolean;
+          scope_ws_id: string;
           updated_at?: string;
-          ws_id: string;
+          ws_id?: string | null;
         };
         Update: {
           active_version?: number;
           authorization_epoch?: number;
           created_at?: string;
-          created_by?: string;
+          created_by?: string | null;
           id?: string;
           label?: string;
+          retired_at?: string | null;
           revision?: number;
           rotation_required?: boolean;
+          scope_ws_id?: string;
           updated_at?: string;
-          ws_id?: string;
+          ws_id?: string | null;
         };
         Relationships: [
           {
             foreignKeyName: 'password_vault_active_version_fk';
-            columns: ['ws_id', 'id', 'active_version'];
+            columns: ['scope_ws_id', 'id', 'active_version'];
             isOneToOne: false;
             referencedRelation: 'password_vault_versions';
             referencedColumns: ['ws_id', 'vault_id', 'version'];
