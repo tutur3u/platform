@@ -21,3 +21,5 @@ export const requireDatasetAccess = cache(
     return access;
   }
 );
+
+export { resolveDatasetWorkspaceAccess } from './access';
