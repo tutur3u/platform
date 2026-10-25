@@ -30,6 +30,7 @@ class FirstApi extends ApiClient {
   Map<String, dynamic>? body;
   String? malformed;
   bool transportFailure = false;
+  Completer<void>? responseGate;
   final headers = Completer<void>();
   final releaseBody = Completer<void>();
   @override
@@ -75,6 +76,7 @@ class FirstApi extends ApiClient {
       ),
     );
     if (!headers.isCompleted) headers.complete();
+    await responseGate?.future;
     var cancelled = false;
     late final StreamController<List<int>> controller;
     controller = StreamController<List<int>>(
@@ -226,6 +228,20 @@ void main() {
       expect(api.requests, 1);
     },
   );
+  test('cancellation before creation ACK returns promptly and permanently fences the late receipt', () async {
+    api.responseGate = Completer<void>();
+    final events = <AssistantStreamEvent>[];
+    final subscription = send().listen(events.add);
+    await api.headers.future;
+    await subscription.cancel();
+    expect(api.responseGate!.isCompleted, isFalse);
+    api.responseGate!.complete();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    expect(events.whereType<AssistantChatCreatedStreamEvent>(), isEmpty);
+    expect(await repository.hasUnknownChatCreation(ws), isTrue);
+    expect(api.requests, 1);
+  });
   test('retired admission performs no HTTP', () async {
     current = false;
     await expectLater(send().toList(), throwsA(isA<Object>()));

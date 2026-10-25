@@ -101,7 +101,7 @@ class AssistantRepository
     required List<AssistantMessage> messages,
     required String timezone,
     required ApiMutationAdmission admission,
-  }) => _streamFirstChat(
+  }) => _firstChatDispatchStream(
     creation: creation,
     chatId: chatId,
     wsId: wsId,
