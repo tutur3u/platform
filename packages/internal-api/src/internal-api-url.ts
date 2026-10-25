@@ -2,7 +2,15 @@
  * Resolve an app-owned path to a mounted path or an absolute server URL.
  * Adapters own request context and route selection for central Web APIs.
  */
-export type InternalApiAppBaseResolver = (path: string) => string;
+export type InternalApiAppBaseResolver = ((path: string) => string) & {
+  /**
+   * Whether the resolver's app owns `path` (pathname, no query). Untagged
+   * registrations need it to keep their own routes local on cross-app helper
+   * calls; without it they never claim one. Ownership is never inferred from
+   * the resolved string, which equals the input at a root mount.
+   */
+  owns?: (path: string) => boolean;
+};
 
 type AppBaseRegistration = {
   resolver: InternalApiAppBaseResolver;
@@ -42,12 +50,6 @@ function defaultAppBaseRegistration() {
 
 function defaultAppBaseResolver() {
   return defaultAppBaseRegistration()?.resolver;
-}
-
-export function hasAppBaseResolver(options: {
-  appBaseResolver?: InternalApiAppBaseResolver;
-}) {
-  return Boolean(options.appBaseResolver ?? defaultAppBaseResolver());
 }
 
 /**
@@ -130,17 +132,20 @@ export function resolveInternalApiUrlWithAppBase(
 
   if (crossAppBaseUrl) {
     // A cross-app call keeps its owning app's origin. Only an untagged
-    // default may keep the path local, and only when it claims the path.
-    const claimed =
-      registration && registration.app === undefined
-        ? registration.resolver(normalizedPath)
-        : normalizedPath;
-    if (claimed === normalizedPath)
+    // default that explicitly owns the path keeps it local.
+    const pathname = normalizedPath.split(/[?#]/u, 1)[0] ?? normalizedPath;
+    const owner =
+      registration &&
+      registration.app === undefined &&
+      registration.resolver.owns?.(pathname) === true
+        ? registration.resolver
+        : undefined;
+    if (!owner)
       return new URL(
         normalizedPath,
         normalizeBaseUrl(crossAppBaseUrl)
       ).toString();
-    return absoluteOrDefault(claimed, defaultBaseUrl);
+    return absoluteOrDefault(owner(normalizedPath), defaultBaseUrl);
   }
 
   const resolvedPath = resolver?.(normalizedPath) ?? normalizedPath;

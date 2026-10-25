@@ -46,3 +46,20 @@ describe('createAppBaseResolver', () => {
     );
   });
 });
+
+describe('app base resolver ownership', () => {
+  it('reports ownership explicitly, even where an owned path resolves to itself', () => {
+    const resolver = createAppBaseResolver(
+      ['/api/v1/workspaces/[wsId]/mail/bootstrap', '/api/v1/workspaces/[wsId]/tasks'],
+      ['/api/v1/workspaces/:wsId/tasks']
+    );
+    expect(resolver.owns('/api/v1/workspaces/ws-1/mail/bootstrap')).toBe(true);
+    // centralFirst wins over an app pattern; unknown paths are not owned.
+    expect(resolver.owns('/api/v1/workspaces/ws-1/tasks')).toBe(false);
+    expect(resolver.owns('/api/v1/users/me')).toBe(false);
+    // Outside a request at a root mount, the owned path is unchanged.
+    expect(resolver('/api/v1/workspaces/ws-1/mail/bootstrap')).toBe(
+      '/api/v1/workspaces/ws-1/mail/bootstrap'
+    );
+  });
+});

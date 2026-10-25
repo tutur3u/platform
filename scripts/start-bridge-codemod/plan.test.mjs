@@ -210,7 +210,7 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
   );
   assert.match(
     generated(full, 'src/start-bridge/app-base.ts'),
-    /registerDefaultAppBaseResolver\(\n {2}createAppBaseResolver\(appApiPatterns, centralFirst\)/
+    /registerDefaultAppBaseResolver\(\n {2}createAppBaseResolver\(appApiPatterns, centralFirst\),\n {2}\{ app: 'demo' \}\n\);/
   );
   // Registered in every environment bundle: browser/ssr, rsc pages, rsc API.
   assert.match(

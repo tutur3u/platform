@@ -10,6 +10,7 @@ import {
   createInternalApiClient,
   registerDefaultAppBaseResolver,
   withFinanceApiBaseUrl,
+  withMailApiBaseUrl,
   withTaskApiBaseUrl,
 } from './client';
 import { getUserConfig } from './users';
@@ -136,6 +137,19 @@ describe('cross-app helpers in a native Worker', () => {
     ]);
   });
 
+  it('never treats an untagged resolver without an ownership predicate as owning a path', async () => {
+    // A bare resolver that rewrites everything still cannot capture a
+    // cross-app call: ownership is explicit, never inferred from its output.
+    register((path) => `/finance${path}`);
+    const fetch = mockFetch();
+    await createInternalApiClient(withTaskApiBaseUrl()).fetch(
+      '/api/v1/workspaces/ws-1/tasks'
+    );
+    expect(fetch.mock.calls[0]?.[0]).toBe(
+      'https://tasks.example.com/api/v1/workspaces/ws-1/tasks'
+    );
+  });
+
   it('always honours an explicit base', async () => {
     register(createAppBaseResolver(FINANCE_PATTERNS), 'finance');
     const fetch = mockFetch();
@@ -164,3 +178,71 @@ describe('cross-app helpers in a native Worker', () => {
     });
   });
 });
+
+// The generated Mail registration at a ROOT mount on an unknown preview host:
+// an owned path resolves to itself there, so ownership must be explicit.
+const MAIL_PATTERNS = [
+  '/api/v1/workspaces/[wsId]/mail/bootstrap',
+  '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages',
+];
+
+describe.each([
+  ['tagged', 'mail'],
+  ['untagged', undefined],
+] as const)('a root-mounted Mail Worker on a preview host (%s)', (_label, app) => {
+  beforeEach(() => {
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://web.example.com');
+    vi.stubEnv('TASKS_APP_URL', 'https://tasks.example.com');
+    vi.stubEnv('MAIL_APP_URL', 'https://mail.example.com');
+    register(createAppBaseResolver(MAIL_PATTERNS), app);
+  });
+  afterEach(() => {
+    for (const remove of unregister.splice(0)) remove();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('keeps owned Mail calls relative in the browser and sends foreign calls to their origin', async () => {
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('location', { hostname: 'mail-preview.example.com' });
+    const fetch = mockFetch();
+    await createInternalApiClient(withMailApiBaseUrl()).fetch(
+      '/api/v1/workspaces/ws-1/mail/bootstrap'
+    );
+    await createInternalApiClient(withMailApiBaseUrl()).fetch(
+      '/api/v1/workspaces/ws-1/mail/mailboxes/m-1/messages',
+      { method: 'POST' }
+    );
+    await createInternalApiClient(withTaskApiBaseUrl()).fetch(
+      '/api/v1/workspaces/ws-1/tasks'
+    );
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      '/api/v1/workspaces/ws-1/mail/bootstrap',
+      '/api/v1/workspaces/ws-1/mail/mailboxes/m-1/messages',
+      'https://tasks.example.com/api/v1/workspaces/ws-1/tasks',
+    ]);
+  });
+
+  it('keeps owned Mail calls on the preview host during SSR', async () => {
+    const fetch = mockFetch();
+    await withBridgeRequest(
+      {
+        request: new Request('https://mail-preview.example.com/inbox'),
+        appBase: '',
+      },
+      async () => {
+        await createInternalApiClient(withMailApiBaseUrl()).fetch(
+          '/api/v1/workspaces/ws-1/mail/bootstrap'
+        );
+        await createInternalApiClient(withTaskApiBaseUrl()).fetch(
+          '/api/v1/workspaces/ws-1/tasks'
+        );
+      }
+    );
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      'https://mail-preview.example.com/api/v1/workspaces/ws-1/mail/bootstrap',
+      'https://tasks.example.com/api/v1/workspaces/ws-1/tasks',
+    ]);
+  });
+});
+
