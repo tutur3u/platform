@@ -1347,6 +1347,31 @@
   "assistantLiveCallAssistant": "Gọi {assistantName}",
   "assistantLiveCallingAssistant": "Đang gọi {assistantName}",
   "assistantLiveCameraPreview": "Camera trực tiếp",
+  "assistantLiveCallCamera": "Camera",
+  "assistantLiveCallCaptions": "Phụ đề",
+  "assistantLiveCallCaptionsEmpty": "Phụ đề sẽ hiện ở đây khi bạn nói.",
+  "assistantLiveCallClose": "Đóng",
+  "assistantLiveCallConnected": "Đã kết nối",
+  "assistantLiveCallConnecting": "Đang kết nối…",
+  "assistantLiveCallDuration": "Thời lượng cuộc gọi",
+  "assistantLiveCallEnd": "Kết thúc",
+  "assistantLiveCallEndedWithDuration": "Đã kết thúc · {duration}",
+  "@assistantLiveCallEndedWithDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallFailed": "Không thể kết nối",
+  "assistantLiveCallKeyboard": "Bàn phím",
+  "assistantLiveCallMinimize": "Thu nhỏ",
+  "assistantLiveCallMute": "Tắt tiếng",
+  "assistantLiveCallMuted": "Đã tắt tiếng",
+  "assistantLiveCallReconnecting": "Đang kết nối lại…",
+  "assistantLiveCallRetry": "Thử lại",
+  "assistantLiveCallReturn": "Quay lại cuộc gọi",
+  "assistantLiveCallYou": "Bạn",
   "assistantLiveCancelCall": "Hủy cuộc gọi",
   "assistantLiveConnect": "Bắt đầu phiên trực tiếp",
   "assistantLiveDescriptionConnecting": "Đang kết nối cuộc trò chuyện trực tiếp.",

@@ -594,6 +594,20 @@ Mira Live inherits the app background and follows the [shared calling behavior](
 
 Regression coverage: `assistant_live_mode_view_test.dart` and `assistant_live_call_controls_test.dart` cover narrow/landscape and enlarged-text layouts, real connection-state action availability, and the absence of a body-owned control rail. `shared_navbar_large_text_test.dart` exercises the actual shell at enlarged text size and verifies the same dock Material element survives Chat, Live, global-navigation and full-screen transitions.
 
+#### Full-screen call
+
+Starting a call (not unmuting) opens a full-screen call surface on the root navigator, above the app shell, as a system-like flow. It keeps the gradient and blob appearance backdrops, and it adds no navbar or second shell.
+- **Identity and status.** The surface shows the assistant's voice-reactive orb, name and one status line: Connecting…, the elapsed time, Reconnecting…, "Call ended · mm:ss", or "Couldn't connect".
+- **Elapsed time.** Shown as mm:ss, then h:mm:ss from one hour. Only the timer redraws each second, and screen readers get it as "Call duration". The call clock starts on the first connection, keeps running through reconnects and transient errors, records the duration on disconnect, and resets when a new call starts.
+- **Controls.** 64 dp circular controls: Mute, Camera, Keyboard, Captions, a 72 dp red End, and Minimize. In-call controls stay in place, disabled, while connecting; End stays available and cancels a connecting call. Mute appears toggled only while connected.
+- **Captions.** An optional drawer shows the latest turns and live drafts.
+- **After a call.** Ended and failed calls offer Close plus Call again or Retry.
+- **Minimizing.** Minimize or system Back keeps the call running and returns to the in-shell Live view, whose Return to call control reopens the surface. The dock call controls stay the in-shell control set.
+- **Teardown.** If the owning page closes the session (logout, workspace change or disposal), the surface dismisses itself.
+- **Speaker routing.** Live keeps its existing speaker and Bluetooth routing. A speaker/earpiece toggle, CallKit/ConnectionService, an Android microphone foreground service and proximity dimming are follow-ups that need native work and device verification.
+
+Regression coverage: `live_call/assistant_live_call_model_test.dart` (duration format, call clock, phases, captions), `live_call/assistant_live_call_view_test.dart` (timer ticks without rebuilding peers, labels and tap targets, connecting/muted/ended states, and the 390×844 and 820×1180 light/dark/blob render matrix written to `MIRA_LIVE_CALL_RENDER_DIR`), and `live_call/assistant_live_call_route_test.dart` (opens above the host, Minimize keeps the call, Return to call, dismissal on session close).
+
 ### Mobile draft editing and previews
 
 The mobile prompt grows inline through five lines and preserves text selection.

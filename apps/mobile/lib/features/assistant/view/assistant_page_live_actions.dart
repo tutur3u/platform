@@ -111,6 +111,10 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         _chatCubit.state,
         liveState,
       );
+      // Starting (not unmuting) a call opens the full-screen call surface.
+      if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
+        unawaited(_presentLiveCall(wsId));
+      }
       await enableAssistantLiveMicrophone(
         liveCubit: _liveCubit,
         prepareSession:

@@ -10,6 +10,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/view/assistant_live_call_screen.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
@@ -261,6 +262,36 @@ void main() {
     expect(h.tokens.requests, hasLength(1));
     expect(h.permissions, hasLength(1));
     expect(h.recorder.captures, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  startupTest('the presented call surface never hangs up the call it starts', (
+    tester,
+    cleanup,
+  ) async {
+    final h = _KeyboardHarness();
+    await h.mount(tester);
+    cleanup(() => h.dispose(tester));
+    final entering = h.tokens.entered(1);
+    await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+    await driveLiveStartupFuture(
+      tester,
+      entering,
+      reason: 'Starting a call must enter its token request.',
+    );
+    // Covering the page disables its tickers; the page's own call surface
+    // must not trigger the hidden-page Live teardown.
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
+    expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+    expect(h.chrome.state.isLiveMode, isTrue);
+
+    await minimizeLiveCallSurface(tester);
+    expect(find.byType(AssistantLiveCallScreen), findsNothing);
+    expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+    expect(find.byKey(const ValueKey('live-return-to-call')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

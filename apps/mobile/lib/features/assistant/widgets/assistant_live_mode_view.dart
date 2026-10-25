@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
@@ -26,6 +28,7 @@ class AssistantLiveModeView extends StatelessWidget {
     required this.onToggleCamera,
     required this.onDisconnect,
     required this.onOpenTextEntry,
+    this.onReturnToCall,
     this.cameraController,
     super.key,
   });
@@ -40,6 +43,9 @@ class AssistantLiveModeView extends StatelessWidget {
   final Future<void> Function() onToggleCamera;
   final Future<void> Function() onDisconnect;
   final Future<void> Function() onOpenTextEntry;
+
+  /// Reopens the full-screen call while a call is connecting or connected.
+  final Future<void> Function()? onReturnToCall;
   final CameraController? cameraController;
 
   @override
@@ -65,6 +71,18 @@ class AssistantLiveModeView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (onReturnToCall != null &&
+                    (liveState.isBusy ||
+                        liveState.status ==
+                            AssistantLiveConnectionStatus.connected)) ...[
+                  AppButton(
+                    key: const ValueKey('live-return-to-call'),
+                    onPressed: () => unawaited(onReturnToCall!()),
+                    leading: const Icon(LucideIcons.phone),
+                    child: Text(context.l10n.assistantLiveCallReturn),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 _LiveCallStage(
                   key: const ValueKey('live-call-stage'),
                   liveState: liveState,

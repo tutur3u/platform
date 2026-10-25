@@ -1344,6 +1344,31 @@
   "assistantLiveCallAssistant": "Call {assistantName}",
   "assistantLiveCallingAssistant": "Calling {assistantName}",
   "assistantLiveCameraPreview": "Live camera",
+  "assistantLiveCallCamera": "Camera",
+  "assistantLiveCallCaptions": "Captions",
+  "assistantLiveCallCaptionsEmpty": "Captions appear here as you talk.",
+  "assistantLiveCallClose": "Close",
+  "assistantLiveCallConnected": "Connected",
+  "assistantLiveCallConnecting": "Connecting…",
+  "assistantLiveCallDuration": "Call duration",
+  "assistantLiveCallEnd": "End",
+  "assistantLiveCallEndedWithDuration": "Call ended · {duration}",
+  "@assistantLiveCallEndedWithDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallFailed": "Couldn't connect",
+  "assistantLiveCallKeyboard": "Keyboard",
+  "assistantLiveCallMinimize": "Minimize",
+  "assistantLiveCallMute": "Mute",
+  "assistantLiveCallMuted": "Muted",
+  "assistantLiveCallReconnecting": "Reconnecting…",
+  "assistantLiveCallRetry": "Retry",
+  "assistantLiveCallReturn": "Return to call",
+  "assistantLiveCallYou": "You",
   "assistantLiveCancelCall": "Cancel call",
   "assistantLiveConnect": "Start live session",
   "assistantLiveDescriptionConnecting": "Connecting your live conversation.",

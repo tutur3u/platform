@@ -1021,6 +1021,114 @@ abstract class AppLocalizations {
   /// **'Live camera'**
   String get assistantLiveCameraPreview;
 
+  /// No description provided for @assistantLiveCallCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get assistantLiveCallCamera;
+
+  /// No description provided for @assistantLiveCallCaptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Captions'**
+  String get assistantLiveCallCaptions;
+
+  /// No description provided for @assistantLiveCallCaptionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Captions appear here as you talk.'**
+  String get assistantLiveCallCaptionsEmpty;
+
+  /// No description provided for @assistantLiveCallClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get assistantLiveCallClose;
+
+  /// No description provided for @assistantLiveCallConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get assistantLiveCallConnected;
+
+  /// No description provided for @assistantLiveCallConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get assistantLiveCallConnecting;
+
+  /// No description provided for @assistantLiveCallDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Call duration'**
+  String get assistantLiveCallDuration;
+
+  /// No description provided for @assistantLiveCallEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get assistantLiveCallEnd;
+
+  /// No description provided for @assistantLiveCallEndedWithDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ended · {duration}'**
+  String assistantLiveCallEndedWithDuration(String duration);
+
+  /// No description provided for @assistantLiveCallFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect'**
+  String get assistantLiveCallFailed;
+
+  /// No description provided for @assistantLiveCallKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard'**
+  String get assistantLiveCallKeyboard;
+
+  /// No description provided for @assistantLiveCallMinimize.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get assistantLiveCallMinimize;
+
+  /// No description provided for @assistantLiveCallMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get assistantLiveCallMute;
+
+  /// No description provided for @assistantLiveCallMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get assistantLiveCallMuted;
+
+  /// No description provided for @assistantLiveCallReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get assistantLiveCallReconnecting;
+
+  /// No description provided for @assistantLiveCallRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantLiveCallRetry;
+
+  /// No description provided for @assistantLiveCallReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to call'**
+  String get assistantLiveCallReturn;
+
+  /// No description provided for @assistantLiveCallYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get assistantLiveCallYou;
+
   /// No description provided for @assistantLiveCancelCall.
   ///
   /// In en, this message translates to:

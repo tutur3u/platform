@@ -486,6 +486,62 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Camera trực tiếp';
 
   @override
+  String get assistantLiveCallCamera => 'Camera';
+
+  @override
+  String get assistantLiveCallCaptions => 'Phụ đề';
+
+  @override
+  String get assistantLiveCallCaptionsEmpty => 'Phụ đề sẽ hiện ở đây khi bạn nói.';
+
+  @override
+  String get assistantLiveCallClose => 'Đóng';
+
+  @override
+  String get assistantLiveCallConnected => 'Đã kết nối';
+
+  @override
+  String get assistantLiveCallConnecting => 'Đang kết nối…';
+
+  @override
+  String get assistantLiveCallDuration => 'Thời lượng cuộc gọi';
+
+  @override
+  String get assistantLiveCallEnd => 'Kết thúc';
+
+  @override
+  String assistantLiveCallEndedWithDuration(String duration) {
+    return 'Đã kết thúc · $duration';
+  }
+
+  @override
+  String get assistantLiveCallFailed => 'Không thể kết nối';
+
+  @override
+  String get assistantLiveCallKeyboard => 'Bàn phím';
+
+  @override
+  String get assistantLiveCallMinimize => 'Thu nhỏ';
+
+  @override
+  String get assistantLiveCallMute => 'Tắt tiếng';
+
+  @override
+  String get assistantLiveCallMuted => 'Đã tắt tiếng';
+
+  @override
+  String get assistantLiveCallReconnecting => 'Đang kết nối lại…';
+
+  @override
+  String get assistantLiveCallRetry => 'Thử lại';
+
+  @override
+  String get assistantLiveCallReturn => 'Quay lại cuộc gọi';
+
+  @override
+  String get assistantLiveCallYou => 'Bạn';
+
+  @override
   String get assistantLiveCancelCall => 'Hủy cuộc gọi';
 
   @override

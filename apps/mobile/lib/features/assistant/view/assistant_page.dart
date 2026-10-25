@@ -48,6 +48,7 @@ import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart'
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
+import 'package:mobile/features/assistant/view/assistant_live_call_screen.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
@@ -88,6 +89,7 @@ part 'assistant_page_settings.dart';
 part 'assistant_page_theme.dart';
 part 'assistant_page_message_actions.dart';
 part 'assistant_page_live_actions.dart';
+part 'assistant_page_live_call.dart';
 part 'assistant_page_layout.dart';
 part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
@@ -332,10 +334,15 @@ class _AssistantPageState extends State<AssistantPage>
     _syncThemeActor();
     if (TickerMode.valuesOf(context).enabled) {
       _resumeLocal();
-    } else {
+    } else if (!_isLiveCallPresented) {
+      // Another route hides the page. Its own call surface keeps Live going.
       _liveHaptics.suspend();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || TickerMode.valuesOf(context).enabled) return;
+        if (!mounted ||
+            TickerMode.valuesOf(context).enabled ||
+            _isLiveCallPresented) {
+          return;
+        }
         unawaited(_voiceCapture.cancel());
         unawaited(_localCubit.invalidate());
         _collapseComposerToFab();
@@ -346,7 +353,11 @@ class _AssistantPageState extends State<AssistantPage>
 
   Future<void> _disconnectWhenHidden() async {
     await _liveBrowsingPreferenceLoad;
-    if (!mounted || TickerMode.valuesOf(context).enabled) return;
+    if (!mounted ||
+        TickerMode.valuesOf(context).enabled ||
+        _isLiveCallPresented) {
+      return;
+    }
     if (!_keepLiveWhileBrowsing) await _disconnectForLifecycle();
   }
 
@@ -642,51 +653,6 @@ class _AssistantPageState extends State<AssistantPage>
 
   String _activeConversationKey(AssistantChatState state) {
     return state.chat?.id ?? state.storedChatId ?? 'new';
-  }
-
-  Widget _buildLiveModeView(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-    AssistantLiveUiState liveUiState,
-    AssistantShellState shellState,
-    CameraController? liveCameraController,
-  ) {
-    return AssistantLiveModeView(
-      chatState: chatState,
-      liveState: liveState,
-      liveUiState: liveUiState,
-      assistantName: shellState.soul.name,
-      cameraController: liveCameraController,
-      scrollController: _scrollController,
-      onRetry: () => _handleLiveRetry(wsId, chatState),
-      onToggleMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
-      onToggleCamera: _liveCubit.toggleCamera,
-      onDisconnect: () =>
-          _liveCubit.disconnect(clearSession: true, finishTurn: true),
-      onOpenTextEntry: _openChatComposerFromLiveMode,
-    );
-  }
-
-  Widget _buildLiveStageCard(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-    CameraController? liveCameraController,
-  ) {
-    return AssistantLiveStageCard(
-      liveState: liveState,
-      cameraController: liveCameraController,
-      onOpenLiveMode: () => _enterLiveMode(
-        wsId: wsId,
-        activeChatId: chatState.chat?.id ?? chatState.storedChatId,
-        autoStartMicrophone: false,
-      ),
-      onRetry: () => _handleLiveRetry(wsId, chatState),
-      onDisconnect: () =>
-          _liveCubit.disconnect(clearSession: true, finishTurn: true),
-      onCameraToggle: _liveCubit.toggleCamera,
-    );
   }
 }
 

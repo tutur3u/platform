@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 typedef LiveStartupCleanup = void Function(Future<void> Function() cleanup);
@@ -17,6 +18,22 @@ void startupTest(
       await dispose?.call();
     }
   });
+}
+
+/// Minimizes (or closes, once ended) a presented full-screen Live call, as a
+/// user does before using the in-shell dock controls beneath it.
+Future<void> minimizeLiveCallSurface(WidgetTester tester) async {
+  for (final key in [
+    'assistant-live-call-minimize',
+    'assistant-live-call-close',
+  ]) {
+    final control = find.byKey(ValueKey(key));
+    if (control.evaluate().isEmpty) continue;
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    return;
+  }
 }
 
 /// Requires the owned operation to finish without advancing a timeout clock.

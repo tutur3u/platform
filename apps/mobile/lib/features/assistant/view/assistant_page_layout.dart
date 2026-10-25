@@ -104,7 +104,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                       _appIsForeground &&
                       WidgetsBinding.instance.lifecycleState ==
                           AppLifecycleState.resumed &&
-                      TickerMode.valuesOf(context).enabled &&
+                      (TickerMode.valuesOf(context).enabled ||
+                          _isLiveCallPresented) &&
                       context.read<AssistantChromeCubit>().state.isLiveMode &&
                       _currentActor() != null &&
                       _shellCubit.state.workspace?.id == state.workspaceId,
