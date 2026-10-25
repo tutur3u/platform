@@ -10908,9 +10908,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get feedbackTitle => 'Gửi phản hồi';
 
   @override
-  String get feedbackPrivate => 'Gửi phản hồi sản phẩm riêng tư cho nhân viên Tuturuuu. Không gửi mật khẩu hoặc bí mật. Có thể đính kèm một ảnh PNG, JPEG hoặc WebP tối đa 2 MB.';
-
-  @override
   String get feedbackSubject => 'Tiêu đề';
 
   @override
@@ -11494,4 +11491,83 @@ class AppLocalizationsVi extends AppLocalizations {
   String settingsWorkspaceCountValue(int count) {
     return '$count không gian';
   }
+
+  @override
+  String get offlineStoredOnDevice => 'Lưu trên thiết bị này';
+
+  @override
+  String get offlineStorageUsed => 'Dung lượng đã dùng';
+
+  @override
+  String offlineQueuedChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thay đổi đang chờ đồng bộ',
+      zero: 'Không có thay đổi nào chờ đồng bộ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineCollectionSummary(int items, String size, String time) {
+    return '$items mục · $size · Cập nhật $time';
+  }
+
+  @override
+  String get offlineManageData => 'Quản lý dữ liệu';
+
+  @override
+  String get offlineEvictRowDescription => 'Giải phóng dung lượng. Dữ liệu sẽ được tải lại khi bạn trực tuyến.';
+
+  @override
+  String get offlineTechnicalDetails => 'Chi tiết kỹ thuật';
+
+  @override
+  String get mailSettingsReadingGroup => 'Đọc thư';
+
+  @override
+  String get mailSettingsComposeGroup => 'Người gửi và chữ ký';
+
+  @override
+  String get mailSettingsAiGroup => 'Bản nháp AI';
+
+  @override
+  String get mailSettingsDeliveryGroup => 'Gửi và chuyển tiếp';
+
+  @override
+  String get mailSettingsGroupPermissions => 'Quyền của nhóm';
+
+  @override
+  String get mailSettingsOrganizeGroup => 'Sắp xếp';
+
+  @override
+  String get mailSenderNameHelper => 'Người nhận thấy tên này bên cạnh địa chỉ của bạn.';
+
+  @override
+  String get mailSignatureHelper => 'Được thêm vào cuối thư mới và thư trả lời.';
+
+  @override
+  String get mailAutoDraftDescription => 'Chuẩn bị sẵn bản nháp trả lời để bạn xem lại trước khi gửi.';
+
+  @override
+  String get mailDraftInstructions => 'Hướng dẫn soạn nháp';
+
+  @override
+  String get mailDraftInstructionsHelper => 'Cho trợ lý biết cách viết bản nháp trả lời của bạn.';
+
+  @override
+  String get feedbackIntro => 'Hãy cho chúng tôi biết điều gì ổn và điều gì chưa ổn. Chỉ đội ngũ Tuturuuu đọc góp ý của bạn.';
+
+  @override
+  String get feedbackYourFeedback => 'Góp ý của bạn';
+
+  @override
+  String get feedbackDetailsHelper => 'Không ghi mật khẩu hoặc thông tin bí mật khác.';
+
+  @override
+  String get feedbackScreenshotGroup => 'Ảnh chụp màn hình (không bắt buộc)';
+
+  @override
+  String get feedbackAttachDescription => 'PNG, JPEG hoặc WebP, tối đa 2 MB';
 }

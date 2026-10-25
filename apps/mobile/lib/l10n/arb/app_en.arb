@@ -4737,7 +4737,6 @@
   "assistantPreviewPlay": "Play preview",
   "assistantPreviewPause": "Pause preview",
   "feedbackTitle": "Send feedback",
-  "feedbackPrivate": "Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.",
   "feedbackSubject": "Subject",
   "feedbackDetails": "Details",
   "feedbackAttach": "Attach screenshot",
@@ -4990,5 +4989,48 @@
         "type": "int"
       }
     }
-  }
+  },
+  "offlineStoredOnDevice": "Stored on this device",
+  "offlineStorageUsed": "Storage used",
+  "offlineQueuedChanges": "{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@offlineQueuedChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineCollectionSummary": "{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}",
+  "@offlineCollectionSummary": {
+    "placeholders": {
+      "items": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineManageData": "Manage data",
+  "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
+  "offlineTechnicalDetails": "Technical details",
+  "mailSettingsReadingGroup": "Reading",
+  "mailSettingsComposeGroup": "Sender and signature",
+  "mailSettingsAiGroup": "AI drafts",
+  "mailSettingsDeliveryGroup": "Delivery and routing",
+  "mailSettingsGroupPermissions": "Group permissions",
+  "mailSettingsOrganizeGroup": "Organize",
+  "mailSenderNameHelper": "Recipients see this name next to your address.",
+  "mailSignatureHelper": "Added to the end of new messages and replies.",
+  "mailAutoDraftDescription": "Prepare reply drafts for you to review before sending.",
+  "mailDraftInstructions": "Draft instructions",
+  "mailDraftInstructionsHelper": "Tells the assistant how to write your reply drafts.",
+  "feedbackIntro": "Tell us what works and what doesn't. Only the Tuturuuu team reads your feedback.",
+  "feedbackYourFeedback": "Your feedback",
+  "feedbackDetailsHelper": "Do not include passwords or other secrets.",
+  "feedbackScreenshotGroup": "Screenshot (optional)",
+  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB"
 }

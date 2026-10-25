@@ -20881,12 +20881,6 @@ abstract class AppLocalizations {
   /// **'Send feedback'**
   String get feedbackTitle;
 
-  /// No description provided for @feedbackPrivate.
-  ///
-  /// In en, this message translates to:
-  /// **'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.'**
-  String get feedbackPrivate;
-
   /// No description provided for @feedbackSubject.
   ///
   /// In en, this message translates to:
@@ -22008,6 +22002,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
   String settingsWorkspaceCountValue(int count);
+
+  /// No description provided for @offlineStoredOnDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on this device'**
+  String get offlineStoredOnDevice;
+
+  /// No description provided for @offlineStorageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage used'**
+  String get offlineStorageUsed;
+
+  /// No description provided for @offlineQueuedChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}'**
+  String offlineQueuedChanges(int count);
+
+  /// No description provided for @offlineCollectionSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}'**
+  String offlineCollectionSummary(int items, String size, String time);
+
+  /// No description provided for @offlineManageData.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage data'**
+  String get offlineManageData;
+
+  /// No description provided for @offlineEvictRowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Frees space. Data downloads again when you are online.'**
+  String get offlineEvictRowDescription;
+
+  /// No description provided for @offlineTechnicalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical details'**
+  String get offlineTechnicalDetails;
+
+  /// No description provided for @mailSettingsReadingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get mailSettingsReadingGroup;
+
+  /// No description provided for @mailSettingsComposeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender and signature'**
+  String get mailSettingsComposeGroup;
+
+  /// No description provided for @mailSettingsAiGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'AI drafts'**
+  String get mailSettingsAiGroup;
+
+  /// No description provided for @mailSettingsDeliveryGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery and routing'**
+  String get mailSettingsDeliveryGroup;
+
+  /// No description provided for @mailSettingsGroupPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Group permissions'**
+  String get mailSettingsGroupPermissions;
+
+  /// No description provided for @mailSettingsOrganizeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize'**
+  String get mailSettingsOrganizeGroup;
+
+  /// No description provided for @mailSenderNameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipients see this name next to your address.'**
+  String get mailSenderNameHelper;
+
+  /// No description provided for @mailSignatureHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to the end of new messages and replies.'**
+  String get mailSignatureHelper;
+
+  /// No description provided for @mailAutoDraftDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare reply drafts for you to review before sending.'**
+  String get mailAutoDraftDescription;
+
+  /// No description provided for @mailDraftInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft instructions'**
+  String get mailDraftInstructions;
+
+  /// No description provided for @mailDraftInstructionsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Tells the assistant how to write your reply drafts.'**
+  String get mailDraftInstructionsHelper;
+
+  /// No description provided for @feedbackIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what works and what doesn\'t. Only the Tuturuuu team reads your feedback.'**
+  String get feedbackIntro;
+
+  /// No description provided for @feedbackYourFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback'**
+  String get feedbackYourFeedback;
+
+  /// No description provided for @feedbackDetailsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not include passwords or other secrets.'**
+  String get feedbackDetailsHelper;
+
+  /// No description provided for @feedbackScreenshotGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot (optional)'**
+  String get feedbackScreenshotGroup;
+
+  /// No description provided for @feedbackAttachDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'PNG, JPEG or WebP, up to 2 MB'**
+  String get feedbackAttachDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
