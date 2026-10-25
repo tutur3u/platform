@@ -123,6 +123,7 @@ test('emitted Passwords Worker stops vault and auth work across restart', {
     try {
       if (enabled === 'true') {
         const response = await worker.fetch(`${origin}/en/personal`, {
+          headers: { Accept: 'text/html' },
           redirect: 'manual',
         });
         guarded(response);
