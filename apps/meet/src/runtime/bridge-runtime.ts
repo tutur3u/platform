@@ -2,7 +2,7 @@ import { createIsomorphicFn } from '@tanstack/react-start';
 import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
 import { configureMeetingUrls } from '@tuturuuu/meet-core/runtime';
 import { appPath, appUrl } from '@tuturuuu/start-bridge/app-url';
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
 
 const documentOrigin = createIsomorphicFn()
   .server(
