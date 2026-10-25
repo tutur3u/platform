@@ -64,6 +64,10 @@ export function resolveInternalApiUrlWithAppBase(
     return normalizedPath;
   }
 
+  if (baseUrl) {
+    return new URL(normalizedPath, normalizeBaseUrl(baseUrl)).toString();
+  }
+
   const resolver = appBaseResolver ?? defaultAppBaseResolver();
   const resolvedPath = resolver?.(normalizedPath) ?? normalizedPath;
 
@@ -71,11 +75,9 @@ export function resolveInternalApiUrlWithAppBase(
     return resolvedPath;
   }
 
-  const resolvedBaseUrl = baseUrl
-    ? normalizeBaseUrl(baseUrl)
-    : defaultBaseUrl
-      ? normalizeBaseUrl(defaultBaseUrl)
-      : undefined;
+  const resolvedBaseUrl = defaultBaseUrl
+    ? normalizeBaseUrl(defaultBaseUrl)
+    : undefined;
 
   return resolvedBaseUrl
     ? new URL(resolvedPath, resolvedBaseUrl).toString()
