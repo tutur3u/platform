@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from 'vitest';
+import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
 import {
   assistantMessage,
   conversation,
@@ -58,6 +59,12 @@ it('starts the authorized history read while settings are still pending', async 
 });
 
 it('streams first text while initial realtime publication is still pending', async () => {
+  const nativeUser: ChatMessage = { ...userMessage, kind: 'user' };
+  const nativeConversation: ChatConversation = {
+    ...conversation,
+    type: 'ai',
+    latestMessage: nativeUser,
+  };
   let release!: () => void;
   const publication = new Promise<void>((resolve) => {
     release = resolve;
@@ -75,8 +82,8 @@ it('streams first text while initial realtime publication is still pending', asy
   const response = streamNativeAiConversationResponse({
     auth: mocks.auth as never,
     context: { normalizedWsId: 'workspace-1' } as never,
-    conversation,
-    userMessage,
+    conversation: nativeConversation,
+    userMessage: nativeUser,
     request: createRequest() as never,
     miraMode: false,
     publishInitialMessages: async () => {
