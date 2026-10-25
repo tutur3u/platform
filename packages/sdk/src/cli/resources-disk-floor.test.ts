@@ -36,19 +36,60 @@ describe('absolute enqueue admission floor', () => {
     });
     expect(result.refuse).toBe(false);
   });
-  it('refuses below 50 GiB without starting a reclaim or a job', async () => {
+  it('P2: attempts reclaim below 50 GiB and reports blockers before refusing', async () => {
     const reclaim = vi.fn(async () => ({ result: null, note: null }));
     const result = await diskAdmission({
       cwd: '/job',
       env: await env(),
-      probe: volume(49),
+      probe: volume(40),
       reclaim,
+      suggestions: async () => [],
+      holds: async () => [],
     });
     expect(result).toMatchObject({
       refuse: true,
-      message: expect.stringContaining('50 GiB admission floor'),
+      message: expect.stringContaining('Resume:'),
     });
-    expect(reclaim).not.toHaveBeenCalled();
+    expect(reclaim).toHaveBeenCalledOnce();
+    expect(result.message).toContain('50GiB');
+  });
+  it('P2: reclaim can recover the admission floor and a partial reclaim remains blocked', async () => {
+    for (const free of [45, 55]) {
+      const before = await volume(40)();
+      const after = await volume(free)();
+      const reclaim = vi.fn<
+        NonNullable<Parameters<typeof diskAdmission>[0]['reclaim']>
+      >(async () => ({
+        note: null,
+        result: {
+          status:
+            free >= 50 ? ('recovered' as const) : ('insufficient' as const),
+          host: 'fixture',
+          orchestrator: null,
+          trigger: 'admission',
+          before,
+          after,
+          freedBytes: after.freeBytes - before.freeBytes,
+          items: [],
+        },
+      }));
+      const result = await diskAdmission({
+        cwd: '/job',
+        env: await env(),
+        probe: async () => before,
+        reclaim,
+        suggestions: async () => [],
+        holds: async () => [],
+      });
+      expect(reclaim).toHaveBeenCalledOnce();
+      expect(reclaim.mock.calls[0]?.[0]?.thresholds.low.minFreeBytes).toBe(
+        50 * 1024 ** 3
+      );
+      expect(result.refuse).toBe(free < 50);
+      expect(result.message).toContain(
+        free < 50 ? 'Resume:' : 'automatic reclaim'
+      );
+    }
   });
   it('admits at the threshold and honors an explicit higher floor', async () => {
     expect(
@@ -66,6 +107,9 @@ describe('absolute enqueue admission floor', () => {
           cwd: '/job',
           env: { ...(await env()), TTR_RESOURCES_MIN_FREE_GIB: '60' },
           probe: volume(50),
+          reclaim: async () => ({ result: null, note: 'disabled' }),
+          suggestions: async () => [],
+          holds: async () => [],
         })
       ).refuse
     ).toBe(true);

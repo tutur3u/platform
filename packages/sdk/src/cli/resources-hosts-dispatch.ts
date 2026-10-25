@@ -22,6 +22,7 @@ import {
   type HostReservation,
   type HostTelemetry,
   type HostTicket,
+  hostLedger,
   hostReservationMarker,
   nestedHostReservation,
   previewHostTicket,
@@ -330,7 +331,12 @@ export async function hostsRun({
         host.id,
         await deps.fleet().catch(() => undefined),
         ticket.requires,
-        await probeHosts()
+        await probeHosts(),
+        {
+          jobClass,
+          reservations: (await hostLedger(home)).reservations,
+          token: held.token,
+        }
       );
       if (blocker) {
         await requeue(

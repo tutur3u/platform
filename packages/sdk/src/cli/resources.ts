@@ -27,7 +27,7 @@ import {
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
 import { diskAdmission } from './resources-disk-admission';
-import { diskGate, resourceDiskFloorGiB } from './resources-disk-gate';
+import { resourceDiskStatus } from './resources-disk-gate';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -518,13 +518,7 @@ export async function runResourcesCommand(argv: string[]) {
     ];
     const details = await resourceStatusDetails(state);
     const result = {
-      disk: {
-        floorGiB: resourceDiskFloorGiB(),
-        ...(await diskGate(process.cwd(), {
-          ...process.env,
-          TTR_RESOURCES_IGNORE_DISK: undefined,
-        })),
-      },
+      disk: await resourceDiskStatus(process.cwd()),
       ...installedBuildIdentity(),
       installed: Boolean(config) || Boolean(configError),
       enabled: config?.enabled ?? false,

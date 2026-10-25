@@ -356,3 +356,15 @@ host's reserved disk and `minDiskFreeGiB` (default 50). Resource admission does 
 explicit storage percentage thresholds and inode gates remain. Configure Sonha's 2–4 lanes and Linux's pktm reservation
 from current evidence. See the SDK reference's automatic placement section for
 activation, estimation limits and regression coverage.
+
+Remote reservations without identity-bearing lane confirmation stay charged
+until completion, including before remote creation. Dispatch and planning share
+class/physical-lane/budget checks and exclude only the dispatcher's own
+reservation during its final check. Current aggregate telemetry may conservatively
+overcount a running job; it must never erase an unconfirmed reservation.
+
+Known `sb:*` wrappers infer Supabase plus Docker. Mobile/Flutter scripts and
+Dart/Melos wrappers infer Flutter, with Apple build requirements preserved.
+Ambiguous heavy scripts need explicit `--requires` for automatic placement.
+Invalid disk-floor configuration appears in status/probe explanations. Admission
+below the byte floor runs reclaim and blocker reporting before refusal.

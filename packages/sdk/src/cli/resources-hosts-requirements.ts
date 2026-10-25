@@ -14,8 +14,8 @@ export const hostCapabilitySchema = z.enum([
 ]);
 export type HostCapability = z.infer<typeof hostCapabilitySchema>;
 
-// Explicit requirements augment direct-tool inference; wrappers must declare
-// their requirements because shell/package scripts are not parsed as code.
+// Explicit requirements augment direct tools and known repository wrappers.
+// Arbitrary shell and package-script bodies are never evaluated for inference.
 export function hostsRequirements(
   command: string,
   args: string[],
@@ -45,6 +45,40 @@ export function hostsRequirements(
     required.add('supabase');
     if (args.some((arg) => ['start', 'reset', 'test'].includes(arg)))
       required.add('docker');
+  }
+  if (tool === 'dart' || tool === 'melos') required.add('flutter');
+  const wrapper = ['bun', 'bunx', 'npm', 'npx', 'pnpm', 'yarn'].includes(tool);
+  if (wrapper) {
+    if (args.some((arg) => /^sb:/u.test(arg))) {
+      required.add('supabase');
+      required.add('docker');
+    }
+    if (
+      args.some((arg) =>
+        /(?:^|[:/\\_-])(?:mobile|flutter|melos)(?:$|[:/\\_-])/u.test(arg)
+      ) ||
+      /(?:^|[/\\])apps[/\\]mobile(?:$|[/\\])/u.test(process.cwd())
+    )
+      required.add('flutter');
+    if (args.some((arg) => /^build:(?:android|ios|macos)(?:$|:)/u.test(arg)))
+      required.add('flutter');
+    if (args.some((arg) => /^build:ios(?:$|:)/u.test(arg))) required.add('ios');
+    if (args.some((arg) => /^build:macos(?:$|:)/u.test(arg)))
+      required.add('macos');
+    if (
+      options.includes('--host') &&
+      options.includes('auto') &&
+      !required.size &&
+      (args.includes('run') || ['npm', 'pnpm', 'yarn'].includes(tool)) &&
+      args.some((arg) =>
+        /^(?:build|test|check|lint|analyze|type-check|validate)(?:$|:)/u.test(
+          arg
+        )
+      )
+    )
+      throw new Error(
+        'Automatic placement cannot infer this heavy script toolchain; declare --requires explicitly.'
+      );
   }
   return [...required].sort();
 }

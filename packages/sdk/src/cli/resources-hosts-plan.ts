@@ -18,6 +18,7 @@ export interface HostState {
   platform?: string;
   loadPerCpu?: number;
   queuedJobs?: number;
+  remoteLanes?: { capacity: number; occupied: number };
   // Fresh, reachable and eligible for trusted work right now.
   healthy: boolean;
   reason?: string;
@@ -64,6 +65,7 @@ export interface Plan {
 }
 
 interface Usage {
+  lanes: number;
   slots: Record<JobClass, number>;
   cpus: number;
   memoryGiB: number;
@@ -74,6 +76,7 @@ export function usageFor(
   reservations: Reservation[]
 ): Usage {
   const usage: Usage = {
+    lanes: state?.remoteLanes?.occupied ?? 0,
     slots: { light: 0, heavy: 0 },
     cpus: 0,
     memoryGiB: 0,
@@ -84,8 +87,10 @@ export function usageFor(
     usage.memoryGiB += host.weights[jobClass].memoryGiB * count;
   };
   for (const reservation of reservations)
-    if (reservation.scope === 'host' && reservation.hostId === host.id)
+    if (reservation.scope === 'host' && reservation.hostId === host.id) {
+      usage.lanes += 1;
       add(reservation.jobClass, 1);
+    }
   for (const jobClass of jobClasses)
     add(jobClass, state?.external?.[jobClass] ?? 0);
   return usage;
@@ -115,6 +120,8 @@ export function hostBlocker(
     return `${host.id}: free disk is unknown`;
   if (state.diskFreeGiB < hostDiskFloor(host))
     return `${host.id}: ${state.diskFreeGiB.toFixed(1)} GiB free is below the ${hostDiskFloor(host)} GiB floor`;
+  if (state.remoteLanes && usage.lanes >= state.remoteLanes.capacity)
+    return `${host.id}: physical lane slots full (${usage.lanes}/${state.remoteLanes.capacity})`;
   if (host.slots[jobClass] === 0) return `${host.id}: no ${jobClass} slots`;
   if (usage.slots[jobClass] >= host.slots[jobClass])
     return `${host.id}: ${jobClass} slots full (${usage.slots[jobClass]}/${host.slots[jobClass]})`;

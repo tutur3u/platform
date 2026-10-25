@@ -15,8 +15,10 @@ import {
 } from './resources-hosts-config';
 import {
   type HostState,
+  hostBlocker,
   planAdmissions,
   type Reservation,
+  usageFor,
   type Waiter,
 } from './resources-hosts-plan';
 import type { HostProbe } from './resources-hosts-probe';
@@ -264,7 +266,6 @@ export function hostStates(
       age >= 0 &&
       age < registry.telemetryTtlSeconds * 1000;
     const busy = runner.activity.running_runs + runner.activity.queued_runs;
-    const ours = owned(host.id, 'light') + owned(host.id, 'heavy');
     states[host.id] = {
       platform: runner.capabilities?.os?.platform,
       loadPerCpu: load,
@@ -277,7 +278,7 @@ export function hostStates(
         : verdict.reason,
       diskFreeGiB: runnerDisk(runner.capabilities),
       // Runs this ledger did not create (other machines) occupy heavy slots.
-      external: { heavy: Math.max(0, busy - ours) },
+      external: { heavy: busy },
     };
     if (telemetry.probes) {
       const probe = telemetry.probes[host.id];
@@ -299,16 +300,20 @@ export function hostStates(
           sample.diskFreeGiB,
           state.diskFreeGiB ?? -1
         );
-        // Both local FIFO waiters and running work reserve their lane ahead
-        // of a newly dispatched job; do not count our own job twice.
+        // Probes carry no reservation identity proving lane ownership. Keep
+        // all remote reservations charged until completion; an aggregate
+        // count cannot confirm that an admitted run has actually started.
+        state.remoteLanes = {
+          capacity: sample.effectiveLanes,
+          occupied: sample.occupied + sample.waiting,
+        };
         state.external = {
           heavy: Math.max(
-            busy - ours,
+            busy,
             host.slots.heavy -
               sample.effectiveLanes +
               sample.occupied +
-              sample.waiting -
-              owned(host.id, 'heavy'),
+              sample.waiting,
             0
           ),
         };
@@ -327,7 +332,8 @@ export function remoteDispatchBlocker(
   hostId: string,
   snapshot: DevboxFleetSnapshot | undefined,
   requires: HostCapability[] = [],
-  probes?: Record<string, HostProbe>
+  probes?: Record<string, HostProbe>,
+  admission?: { jobClass: JobClass; reservations: Reservation[]; token: string }
 ) {
   const host = registry.hosts.find((entry) => entry.id === hostId);
   if (host?.kind !== 'runner') return 'host is not a runner';
@@ -337,15 +343,23 @@ export function remoteDispatchBlocker(
   );
   if (!Number.isFinite(serverNow))
     return 'fleet snapshot has no server timestamp';
+  const reservations =
+    admission?.reservations.filter(
+      (entry) => entry.token !== admission.token
+    ) ?? [];
   const state = hostStates(
     registry,
     { snapshot, now: serverNow, probes },
     { owners: 0, waiters: 0 },
-    []
+    reservations
   )[hostId]!;
   if (!state.healthy) return state.reason ?? 'runner is not eligible';
-  if (probes && (state.external?.heavy ?? 0) >= host.slots.heavy)
-    return 'live admission probe reports no free lanes';
+  if (admission)
+    return hostBlocker(host, state, usageFor(host, state, reservations), {
+      jobClass: admission.jobClass,
+      requires,
+      remoteOk: true,
+    });
   const capability = capabilityBlocker(host, requires);
   if (capability) return capability;
   if (host.platform && state.platform !== host.platform)

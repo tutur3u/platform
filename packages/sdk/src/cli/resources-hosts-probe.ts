@@ -4,6 +4,7 @@ import type { HostRegistry } from './resources-hosts-config';
 
 const sampleSchema = z.object({
   platform: z.enum(['darwin', 'linux']),
+  admissionError: z.string().max(512).nullish(),
   occupied: z.number().int().nonnegative(),
   waiting: z.number().int().nonnegative(),
   effectiveLanes: z.number().int().positive(),
@@ -22,7 +23,7 @@ env=dict(os.environ)
 env['PATH']=home+'/.bun/bin:'+home+'/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:'+env.get('PATH','')
 r=subprocess.run([home+'/.bun/bin/ttr','resources','status','--json'],env=env,capture_output=True,text=True,timeout=8,check=True)
 s=json.loads(r.stdout)
-print(json.dumps(dict(platform=s['machine']['platform'],occupied=s['occupied'],waiting=len(s['waiting']),effectiveLanes=s['effectiveLanes'],diskFreeGiB=shutil.disk_usage(home).free/1024**3,loadPerCpu=os.getloadavg()[0]/s['machine']['cpus'])))`;
+print(json.dumps(dict(admissionError=s.get('disk',{}).get('reason') if s.get('disk',{}).get('unknown') else None,platform=s['machine']['platform'],occupied=s['occupied'],waiting=len(s['waiting']),effectiveLanes=s['effectiveLanes'],diskFreeGiB=shutil.disk_usage(home).free/1024**3,loadPerCpu=os.getloadavg()[0]/s['machine']['cpus'])))`;
 export const admissionProbeCommand = `python3 -c '${python.replaceAll("'", "'\\''")}'`;
 
 export type ProbeExec = (host: string) => Promise<string>;
@@ -64,6 +65,8 @@ export async function probeAutomaticHosts(
           const sample = sampleSchema.parse(
             JSON.parse(await exec(host.sshHost))
           );
+          if (sample.admissionError)
+            return [host.id, { healthy: false, reason: sample.admissionError }];
           return [host.id, { healthy: true, sample }];
         } catch {
           // Do not echo SSH stderr or remote status: either may contain private

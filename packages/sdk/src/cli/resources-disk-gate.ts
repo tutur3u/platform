@@ -171,3 +171,27 @@ export async function diskGate(
     };
   return { admit: true, freeGiB };
 }
+
+export async function resourceDiskStatus(
+  path: string,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  let floorGiB: number;
+  try {
+    floorGiB = resourceDiskFloorGiB(env);
+  } catch (error) {
+    return {
+      floorGiB: null,
+      admit: false,
+      unknown: true,
+      reason:
+        error instanceof Error
+          ? error.message
+          : 'Invalid admission disk floor.',
+    };
+  }
+  return {
+    floorGiB,
+    ...(await diskGate(path, { ...env, TTR_RESOURCES_IGNORE_DISK: undefined })),
+  };
+}

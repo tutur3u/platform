@@ -2093,12 +2093,31 @@ eligible host means exit 75. Remote eligibility changes are retried at most
 three times before exit 75; ambiguous remote writes retain the existing
 operation identity and never fall back blindly.
 
+Remote lane observations have no operation identity that confirms a local
+reservation is included. Reservations therefore remain charged until completion,
+including the interval before remote creation. Dispatch rechecks other in-flight
+reservations using the same class, physical-lane and resource-budget rules as
+planning, excluding only its own reservation. Running work can be counted
+conservatively twice until identity-bearing confirmation is available. Both light
+and heavy remote jobs require a free physical lane; a full remote host can fall
+back to eligible local light capacity.
+
+Known repository wrappers infer their toolchains: `sb:*` scripts require Supabase
+and Docker, and mobile/Flutter scripts plus Dart/Melos wrappers require Flutter.
+Apple build scripts also require the matching Apple capability. Ambiguous known
+heavy `run` scripts fail automatic placement unless `--requires` is explicit.
+An explicit requirement augments inferred requirements and cannot remove them.
+
 The local admission floor is 50 GiB by default, configurable with
 `TTR_RESOURCES_MIN_FREE_GIB`. Resource admission uses an absolute byte floor by default, so a large volume
 with hundreds of GiB free is not refused solely by a default percentage. Explicit
 `TTR_STORAGE_MIN_FREE_PERCENT` and the existing storage byte/inode floors still
 apply. Storage health reporting retains its own percentage defaults. `ttr resources status [--json]` reports the configured floor,
-current measured headroom and admission verdict. A remote host's effective
+current measured headroom and admission verdict. Invalid admission configuration
+is reported in structured status and preserved as the remote probe exclusion
+reason. Falling below the admission floor enters the storage reclaim and blocker
+reporting path; successful reclaim must reach that floor before a job is admitted.
+A remote host's effective
 floor is `max(reserved.diskGiB, minDiskFreeGiB ?? 50)` in `hosts.json` and is
 rechecked before dispatch. Disk probes that fail are unavailable, never zero
 cost capacity. Disk overrides remain explicit operator decisions.

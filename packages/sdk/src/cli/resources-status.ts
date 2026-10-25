@@ -78,7 +78,7 @@ export async function resourceStatusDetails(
 const round = (value: number) => Math.round(value * 10) / 10;
 export function renderResourceStatus(result: {
   disk?: {
-    floorGiB: number;
+    floorGiB: number | null;
     admit: boolean;
     freeGiB?: number;
     reason?: string;
@@ -106,7 +106,7 @@ export function renderResourceStatus(result: {
   ];
   if (result.disk)
     lines.push(
-      `Disk: floor ${result.disk.floorGiB} GiB; ${result.disk.admit ? `${result.disk.freeGiB?.toFixed(1) ?? 'unknown'} GiB free, admitted` : (result.disk.reason ?? 'unavailable')}`
+      `Disk: floor ${result.disk.floorGiB === null ? 'invalid' : `${result.disk.floorGiB} GiB`}; ${result.disk.admit ? `${result.disk.freeGiB?.toFixed(1) ?? 'unknown'} GiB free, admitted` : (result.disk.reason ?? 'unavailable')}`
     );
   if (result.budget) {
     const { ceiling, used } = result.budget;
