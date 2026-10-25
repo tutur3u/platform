@@ -22,7 +22,8 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
 }, async (t) => {
   const signedCalls = [];
   const runtime = await financeRuntime(t, {
-    fixtureResponse: (request) => signedSsrFixtureResponse(request, signedCalls),
+    fixtureResponse: (request) =>
+      signedSsrFixtureResponse(request, signedCalls),
   });
   for (const { origin, base } of modes) {
     await t.test(
@@ -175,7 +176,11 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
           response = await runtime.fetch(url, { headers });
           if (![307, 308].includes(response.status)) break;
           const next = new URL(response.headers.get('location'), url);
-          assert.equal(next.origin, origin, 'Signed-in SSR must stay on Finance');
+          assert.equal(
+            next.origin,
+            origin,
+            'Signed-in SSR must stay on Finance'
+          );
           for (const cookie of response.headers.getSetCookie()) {
             headers.cookie += `; ${cookie.split(';')[0]}`;
           }
@@ -183,20 +188,36 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
           url = next.href;
         }
         assert.equal(response.status, 200, `Signed-in ${locale} SSR`);
-        assert.equal(response.headers.get('cache-control'), 'private, no-store');
+        assert.equal(
+          response.headers.get('cache-control'),
+          'private, no-store'
+        );
         assert.match(response.headers.get('vary') ?? '', /Cookie/i);
         assert.equal(response.headers.get('x-frame-options'), 'DENY');
         const html = await response.text();
         assert.match(html, new RegExp(`<html[^>]+lang=["']${locale}["']`));
-        assert.ok(html.includes(fixtureWorkspaceName), 'Workspace shell must render');
+        assert.ok(
+          html.includes(fixtureWorkspaceName),
+          'Workspace shell must render'
+        );
       }
       assert.ok(signedCalls.some((path) => path.startsWith('/auth/v1/')));
       assert.ok(signedCalls.includes('/rest/v1/workspaces'));
-      const rejected = await runtime.fetch(`${origin}/en/${fixtureWorkspaceId}`, {
-        headers: syntheticSessionHeaders(`${runtime.secret}-invalid`),
-      });
-      assert.equal(rejected.status, 307, 'Invalid signatures must not reach SSR');
-      assert.equal(new URL(rejected.headers.get('location')).pathname, '/login');
+      const rejected = await runtime.fetch(
+        `${origin}/en/${fixtureWorkspaceId}`,
+        {
+          headers: syntheticSessionHeaders(`${runtime.secret}-invalid`),
+        }
+      );
+      assert.equal(
+        rejected.status,
+        307,
+        'Invalid signatures must not reach SSR'
+      );
+      assert.equal(
+        new URL(rejected.headers.get('location')).pathname,
+        '/login'
+      );
       await rejected.text();
     });
 
