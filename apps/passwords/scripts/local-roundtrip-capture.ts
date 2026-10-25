@@ -1,8 +1,10 @@
 import { formatWithOptions } from 'node:util';
 
 export class FixtureCheckError extends Error {
-  constructor(readonly code: string) {
+  readonly code: string;
+  constructor(code: string) {
     super('Fixture check failed');
+    this.code = code;
   }
 }
 
