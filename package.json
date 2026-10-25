@@ -272,7 +272,7 @@
     "format-and-lint:fix": "biome check --write",
     "i18n:add": "node scripts/i18n-add-key.js",
     "i18n:setup-check": "node scripts/check-next-intl-setup.js",
-    "i18n:check": "node scripts/run-i18n-check.js -l apps/web/messages apps/apps/messages apps/calendar/messages apps/chat/messages apps/cms/messages apps/drive/messages apps/finance/messages apps/inventory/messages apps/storefront/messages apps/mail/messages apps/nova/messages apps/rewise/messages apps/shortener/messages apps/tasks/messages apps/meet/messages apps/track/messages apps/learn/messages apps/teach/messages apps/hive/messages apps/mind/messages apps/tools/messages -s en -f i18next -o missingKeys invalidKeys -i landing.pricing.plans.enterprise.period",
+    "i18n:check": "node scripts/run-i18n-check.js -l apps/web/messages apps/apps/messages apps/calendar/messages apps/chat/messages apps/cms/messages apps/drive/messages apps/finance/messages apps/inventory/messages apps/storefront/messages apps/mail/messages apps/nova/messages apps/rewise/messages apps/shortener/messages apps/passwords/messages apps/tasks/messages apps/meet/messages apps/track/messages apps/learn/messages apps/teach/messages apps/hive/messages apps/mind/messages apps/tools/messages -s en -f i18next -o missingKeys invalidKeys -i landing.pricing.plans.enterprise.period",
     "i18n:key-parity": "node scripts/i18n-key-parity.js",
     "docs:gen-ui": "bun scripts/generate-ui-component-docs.ts",
     "docs:gen-ui:check": "bun scripts/generate-ui-component-docs.ts --check",
@@ -310,7 +310,9 @@
     "update-all": "bun ./scripts/package-update.js",
     "oxc:lint": "node scripts/oxc.js lint",
     "oxc:format": "node scripts/oxc.js format",
-    "oxc:write": "node scripts/oxc.js write"
+    "oxc:write": "node scripts/oxc.js write",
+    "dev:passwords": "node scripts/dev-workspaces.js passwords",
+    "type-check:passwords": "bun turbo:local run type-check -F @tuturuuu/passwords"
   },
   "trustedDependencies": [
     "@tailwindcss/oxide",

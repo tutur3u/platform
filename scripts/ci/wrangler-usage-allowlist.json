@@ -128,6 +128,16 @@
       },
       "digest": "9277cfdb4d2c575212c57c3969b41d019932f379df4a9e677f27a655e310fb5a"
     },
+    ".github/workflows/passwords-cloudflare.yaml": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6731",
+        "reason": "Passwords retains the native Start/Void adapter gap for emitted-config dry-run, actual built-Worker acceptance and sealed bytes. There is no deploy job or production route; operator activation follows independent security review. Remove when cf prebuilt artifact parity is proven."
+      },
+      "digest": "b1ebefff7a977485ff7a07edd7e5bbd78296f973c91e7e3c99ba3d58c9296350"
+    },
     ".github/workflows/rust-backend.yml": {
       "lines": 14,
       "uses": 18,
@@ -637,6 +647,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "b6dc0cd6589acfa0a56eace8fba5d57323ed82f22f8b0f44dea1132509ea8063"
+    },
+    "apps/passwords/cloudflare/native-built-worker.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6731",
+        "reason": "Passwords retains the native Start/Void adapter gap for emitted-config dry-run, actual built-Worker acceptance and sealed bytes. There is no deploy job or production route; operator activation follows independent security review. Remove when cf prebuilt artifact parity is proven."
+      },
+      "digest": "be43445013c158f2494e580bd24ff352f4765143bf158a72e5c6d6e4235102ae"
+    },
+    "apps/passwords/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6731",
+        "reason": "Passwords retains the native Start/Void adapter gap for emitted-config dry-run, actual built-Worker acceptance and sealed bytes. There is no deploy job or production route; operator activation follows independent security review. Remove when cf prebuilt artifact parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/shortener/cloudflare/native-built-worker.test.mjs": {
       "lines": 1,

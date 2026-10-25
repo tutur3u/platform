@@ -11917,6 +11917,9 @@
     "scope": "Phạm vi",
     "unblocked_ip_count": "IP đã bỏ chặn"
   },
+  "passwords_vault": {
+    "title": "Mật khẩu"
+  },
   "pending-invoice-data-table": {
     "actions": "Hành động",
     "attendance_days": "Số buổi tham gia",

@@ -29,6 +29,7 @@ export const ci = {
   'codecov.yaml': true,
   'apps-cloudflare.yaml': true,
   'shortener-cloudflare.yaml': true,
+  'passwords-cloudflare.yaml': true,
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
@@ -118,6 +119,10 @@ export const ci = {
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  passwords: {
+    state: 'held',
+    reason: 'awaiting security review and operator activation',
+  },
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
   calendar: { state: 'held', reason: 'held for wave-1 cutover' },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },

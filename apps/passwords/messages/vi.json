@@ -1,0 +1,137 @@
+{
+  "app": {
+    "title": "Mật khẩu"
+  },
+  "audit": {
+    "actor": "Người thực hiện",
+    "empty": "Chưa có hoạt động",
+    "event": "Sự kiện",
+    "time": "Thời gian",
+    "type": {
+      "audit": {
+        "list": "Đã xem hoạt động"
+      },
+      "grant": {
+        "create": "Đã cấp quyền cho máy",
+        "revoke": "Đã thu hồi quyền của máy"
+      },
+      "item": {
+        "delete": "Đã xóa mục",
+        "list": "Đã xem danh sách mục",
+        "read": "Đã đọc mục",
+        "write": "Đã lưu mục"
+      },
+      "key": {
+        "read": "Đã truy cập khóa ghi"
+      },
+      "member": {
+        "account_erased": "Đã xóa quyền của tài khoản",
+        "list": "Đã xem danh sách thành viên",
+        "set": "Đã thay đổi quyền thành viên",
+        "workspace_revoke": "Đã thu hồi quyền không gian làm việc"
+      },
+      "request": {
+        "status": "Đã kiểm tra thao tác"
+      },
+      "rotation": {
+        "snapshot": "Đã chuẩn bị đổi khóa"
+      },
+      "token": {
+        "issue": "Đã cấp mã truy cập cho máy"
+      },
+      "vault": {
+        "create": "Đã tạo kho",
+        "list": "Đã xem danh sách kho",
+        "rename": "Đã đổi tên kho",
+        "rotate": "Đã đổi khóa",
+        "workspace_erased": "Đã ngừng kho của không gian làm việc"
+      }
+    }
+  },
+  "common": {
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "retry": "Thử lại",
+    "unknownUser": "Người dùng không xác định"
+  },
+  "errors": {
+    "FORBIDDEN": "Bạn không có quyền truy cập mục này.",
+    "INVALID_INPUT": "Kiểm tra các giá trị đã nhập rồi thử lại.",
+    "NOT_FOUND": "Kho hoặc mục này không còn tồn tại.",
+    "OPERATION_UNCERTAIN": "Chưa rõ kết quả. Các thao tác ghi tiếp theo bị chặn cho đến khi xác nhận được biên nhận gốc.",
+    "RATE_LIMITED": "Quá nhiều lần thử. Hãy đợi một lát rồi thử lại.",
+    "REVISION_CONFLICT": "Kho đã thay đổi và đã được tải lại. Hãy xem lại rồi thử lại.",
+    "STEP_UP_REQUIRED": "Hãy xác minh bằng MFA để tiếp tục.",
+    "STOPPED": "Quản trị viên đã tạm dừng Mật khẩu.",
+    "TOO_LARGE": "Tệp quá lớn.",
+    "UNAUTHENTICATED": "Hãy đăng nhập lại để tiếp tục.",
+    "UNAVAILABLE": "Mật khẩu hiện không khả dụng. Hãy thử lại sau ít phút."
+  },
+  "items": {
+    "add": "Thêm mục",
+    "download": "Tải xuống",
+    "empty": "Kho này chưa có mục nào",
+    "file": "Tệp",
+    "label": "Nhãn",
+    "labelWarning": "Thành viên có thể thấy nhãn. Không bao giờ đặt bí mật vào nhãn.",
+    "reveal": "Hiển thị",
+    "save": "Lưu",
+    "saved": "Đã lưu mục",
+    "size": "Kích thước",
+    "tooLarge": "Tệp vượt quá giới hạn {limit}.",
+    "updated": "Cập nhật",
+    "version": "Phiên bản"
+  },
+  "members": {
+    "add": "Thêm thành viên",
+    "empty": "Chỉ bạn có thể truy cập kho này",
+    "member": "Thành viên",
+    "pick": "Thành viên không gian làm việc",
+    "restore": "Khôi phục",
+    "revoke": "Thu hồi",
+    "revokeBody": "Họ mất quyền truy cập ngay. Các bí mật họ đã sao chép vẫn nằm trong tay họ.",
+    "revoked": "Đã thu hồi",
+    "revokeTitle": "Thu hồi {name}?",
+    "role": "Vai trò",
+    "saved": "Đã cập nhật quyền truy cập"
+  },
+  "reveal": {
+    "binary": "Nội dung nhị phân. Hãy tải xuống thay vì hiển thị.",
+    "clipboardUnverified": "Không thể xác nhận bộ nhớ tạm đã được xóa. Hãy xóa thủ công.",
+    "copied": "Đã sao chép. Bộ nhớ tạm sẽ được xóa sau {seconds} giây nếu không thay đổi.",
+    "copy": "Sao chép",
+    "hide": "Ẩn",
+    "hidesIn": "Tự ẩn sau {seconds} giây",
+    "show": "Hiện",
+    "title": "Hiển thị {name}",
+    "value": "Giá trị bí mật"
+  },
+  "stepUp": {
+    "action": "Xác minh bằng MFA",
+    "body": "Xác nhận bằng MFA để tiếp tục. Xác nhận có hiệu lực trong {minutes} phút.",
+    "title": "Cần xác minh"
+  },
+  "tabs": {
+    "activity": "Hoạt động",
+    "items": "Mục",
+    "members": "Thành viên"
+  },
+  "vault": {
+    "create": "Kho mới",
+    "created": "Đã tạo kho",
+    "empty": "Tạo một kho để lưu bí mật cho không gian làm việc này",
+    "list": "Kho",
+    "name": "Tên",
+    "role": {
+      "editor": "Biên tập viên",
+      "owner": "Chủ sở hữu",
+      "viewer": "Người xem"
+    },
+    "rotate": "Xoay khóa",
+    "rotateBody": "Mọi mục được mã hóa lại bằng khóa mới. Các bản thành viên đã lưu vẫn đọc được.",
+    "rotated": "Đã xoay khóa",
+    "rotateTitle": "Xoay khóa của {name}?",
+    "rotationRequired": "Chủ sở hữu cần đổi khóa kho để tiếp tục truy cập bí mật.",
+    "select": "Chọn một kho"
+  }
+}

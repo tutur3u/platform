@@ -1,0 +1,137 @@
+{
+  "app": {
+    "title": "Passwords"
+  },
+  "audit": {
+    "actor": "Actor",
+    "empty": "No activity yet",
+    "event": "Event",
+    "time": "Time",
+    "type": {
+      "audit": {
+        "list": "Activity viewed"
+      },
+      "grant": {
+        "create": "Machine access granted",
+        "revoke": "Machine access revoked"
+      },
+      "item": {
+        "delete": "Item deleted",
+        "list": "Items listed",
+        "read": "Item read",
+        "write": "Item saved"
+      },
+      "key": {
+        "read": "Write key accessed"
+      },
+      "member": {
+        "account_erased": "Account access erased",
+        "list": "Members listed",
+        "set": "Member access changed",
+        "workspace_revoke": "Workspace access revoked"
+      },
+      "request": {
+        "status": "Operation checked"
+      },
+      "rotation": {
+        "snapshot": "Rotation prepared"
+      },
+      "token": {
+        "issue": "Machine token issued"
+      },
+      "vault": {
+        "create": "Vault created",
+        "list": "Vaults listed",
+        "rename": "Vault renamed",
+        "rotate": "Key rotated",
+        "workspace_erased": "Workspace vault retired"
+      }
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Try again",
+    "unknownUser": "Unknown user"
+  },
+  "errors": {
+    "FORBIDDEN": "You do not have access to this.",
+    "INVALID_INPUT": "Check the entered values and try again.",
+    "NOT_FOUND": "This vault or item no longer exists.",
+    "OPERATION_UNCERTAIN": "The outcome is unknown. Further writes stay blocked until the original receipt is confirmed.",
+    "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
+    "REVISION_CONFLICT": "The vault changed. It was reloaded; review it and try again.",
+    "STEP_UP_REQUIRED": "Verify with MFA to continue.",
+    "STOPPED": "Passwords is paused by an administrator.",
+    "TOO_LARGE": "The file is too large.",
+    "UNAUTHENTICATED": "Sign in again to continue.",
+    "UNAVAILABLE": "Passwords is unavailable. Try again shortly."
+  },
+  "items": {
+    "add": "Add item",
+    "download": "Download",
+    "empty": "No items in this vault",
+    "file": "File",
+    "label": "Label",
+    "labelWarning": "Labels are visible to members. Never put a secret in a label.",
+    "reveal": "Reveal",
+    "save": "Save",
+    "saved": "Item saved",
+    "size": "Size",
+    "tooLarge": "The file exceeds the {limit} limit.",
+    "updated": "Updated",
+    "version": "Version"
+  },
+  "members": {
+    "add": "Add member",
+    "empty": "Only you can access this vault",
+    "member": "Member",
+    "pick": "Workspace member",
+    "restore": "Restore",
+    "revoke": "Revoke",
+    "revokeBody": "They lose access now. Secrets they already copied stay exposed to them.",
+    "revoked": "Revoked",
+    "revokeTitle": "Revoke {name}?",
+    "role": "Role",
+    "saved": "Access updated"
+  },
+  "reveal": {
+    "binary": "Binary content. Download it instead.",
+    "clipboardUnverified": "Could not confirm the clipboard was cleared. Clear it manually.",
+    "copied": "Copied. The clipboard clears in {seconds} s if unchanged.",
+    "copy": "Copy",
+    "hide": "Hide",
+    "hidesIn": "Hides in {seconds} s",
+    "show": "Show",
+    "title": "Reveal {name}",
+    "value": "Secret value"
+  },
+  "stepUp": {
+    "action": "Verify with MFA",
+    "body": "Confirm with MFA to continue. The confirmation stays valid for {minutes} minutes.",
+    "title": "Verification required"
+  },
+  "tabs": {
+    "activity": "Activity",
+    "items": "Items",
+    "members": "Members"
+  },
+  "vault": {
+    "create": "New vault",
+    "created": "Vault created",
+    "empty": "Create a vault to store secrets for this workspace",
+    "list": "Vaults",
+    "name": "Name",
+    "role": {
+      "editor": "Editor",
+      "owner": "Owner",
+      "viewer": "Viewer"
+    },
+    "rotate": "Rotate key",
+    "rotateBody": "Every item is re-encrypted under a new key. Copies members already saved stay readable.",
+    "rotated": "Key rotated",
+    "rotateTitle": "Rotate the key for {name}?",
+    "rotationRequired": "An owner must rotate the vault key to resume secret access.",
+    "select": "Select a vault"
+  }
+}

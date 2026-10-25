@@ -11917,6 +11917,9 @@
     "scope": "Scope",
     "unblocked_ip_count": "Unblocked IPs"
   },
+  "passwords_vault": {
+    "title": "Passwords"
+  },
   "pending-invoice-data-table": {
     "actions": "Actions",
     "attendance_days": "Attendance Days",

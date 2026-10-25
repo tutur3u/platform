@@ -1,5 +1,5 @@
 import { createTranslator } from 'next-intl';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMoreToolsNavigation } from './navigation-more-tools';
 
 const t = createTranslator({
@@ -9,6 +9,8 @@ const t = createTranslator({
 });
 const input = {
   t,
+  locale: 'en',
+  canAccessPasswords: true,
   personalOrWsId: 'personal',
   resolvedWorkspaceId: 'workspace',
   ENABLE_AI_ONLY: false,
@@ -54,5 +56,25 @@ describe('more-tools journal navigation', () => {
     ).toEqual(
       personal.children?.filter((item) => item?.id !== 'personal_journal')
     );
+  });
+});
+
+afterEach(() => vi.unstubAllEnvs());
+it('keeps Passwords disabled until activation and links the actual locale for members', () => {
+  vi.stubEnv('PASSWORDS_APP_URL', '');
+  const passwords = (overrides = {}) =>
+    createMoreToolsNavigation({ ...input, ...overrides }).children?.find(
+      (item) => item?.id === 'passwords'
+    );
+  expect(passwords()).toMatchObject({ disabled: true });
+  vi.stubEnv('PASSWORDS_APP_URL', 'https://passwords.tuturuuu.com');
+  expect(passwords({ locale: 'vi' })).toMatchObject({
+    disabled: false,
+    href: 'https://passwords.tuturuuu.com/vi/personal',
+    external: true,
+    aliases: ['/personal/passwords', '/personal/passwords/*'],
+  });
+  expect(passwords({ canAccessPasswords: false })).toMatchObject({
+    disabled: true,
   });
 });

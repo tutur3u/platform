@@ -17,6 +17,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getSecret: () => undefined,
 }));
 vi.mock('next-intl/server', () => ({
+  getLocale: async () => 'en',
   getTranslations: async () => (key: string) => key,
 }));
 vi.mock('next/navigation', () => ({

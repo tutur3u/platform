@@ -30,6 +30,7 @@ const APPS = [
   { name: 'apps/nova', dir: 'apps/nova' },
   { name: 'apps/rewise', dir: 'apps/rewise' },
   { name: 'apps/storefront', dir: 'apps/storefront' },
+  { name: 'apps/passwords', dir: 'apps/passwords' },
   { name: 'apps/shortener', dir: 'apps/shortener' },
 ];
 

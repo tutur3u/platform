@@ -1,0 +1,11 @@
+{
+  "name": "Tuturuuu Passwords",
+  "short_name": "Passwords",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ],
+  "display": "standalone",
+  "start_url": "/en",
+  "scope": "/",
+  "prefer_related_applications": false
+}
