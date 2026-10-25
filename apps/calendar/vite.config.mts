@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
+import { startBridgeNodeBuiltinsPlugin } from '@tuturuuu/start-bridge/vite/rsc';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type UserConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
@@ -12,6 +13,7 @@ const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'calendar',
+  inertVercel: true,
   serverFnBase: CALENDAR_FUNCTION_BASE,
   shims: [
     'next/headers',
@@ -62,6 +64,7 @@ export default defineConfig(
             return local('./src/runtime/workspace-actions.ts');
         },
       },
+      startBridgeNodeBuiltinsPlugin(),
       voidPlugin(),
       tanstackStart({
         start: bridge.tanstackStart.start,
