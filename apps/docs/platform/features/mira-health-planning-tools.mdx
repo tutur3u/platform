@@ -77,7 +77,8 @@ older operation must not undo a newer one. Migrations
   - A repeated key with the same body returns the entry with `replayed: true`
     (HTTP 200) without writing, and Mira reports `alreadyLogged: true`.
   - Daily summaries keep one mutable row per day, but receipts are separate:
-    after A (70) and B (71), retrying A replays and the day stays 71.
+    after A (70) and B (71), retrying A replays and the day stays 71. The
+    result reports the current stored weight (71), not the old requested 70.
   - Reusing a key for a different body is rejected with HTTP 409.
   - Deleting an entry keeps its receipt, so a late retry reports 409 instead
     of bringing the entry back.
@@ -89,12 +90,20 @@ older operation must not undo a newer one. Migrations
 Mira derives entry keys by hashing the operation scope and normalized input:
 
 - **Body weight:** the conversation (or tool call when there is no
-  conversation), tracker, day, stored value, unit and note. Re-logging the same
-  weight on the same day in a conversation returns the first entry. A
-  different value is a new operation.
+  conversation), tracker, day, explicit occurrence time when supplied, stored
+  value, unit and note. Re-logging the same weight without an explicit time on
+  the same day in a conversation replays. A different value or explicit instant
+  is a new operation; equivalent time-zone representations normalize to one
+  instant.
 - **Generic entries:** the tool call ID plus tracker, time, values and note.
   Counters legitimately repeat identical input, so only a retry of the same tool
   call is deduplicated. Without a tool call ID, no key is sent.
+
+Both executors omit `occurred_at` when no time was supplied, so the server's
+receipt hash stays stable across retries. An explicit time is sent and binds
+the receipt. The cross-boundary regression tests call the real Tasks sanitizer
+and request hasher from both Mira executors in
+`apps/tasks/src/lib/habit-trackers/mira-idempotency.test.ts`.
 
 The tracker column is new and nullable, so existing rows, including duplicate
 trackers already in the data, keep `NULL` keys and cannot violate the index.
@@ -119,10 +128,12 @@ transaction:
 
 The DDL and validation migrations use a 5-second `lock_timeout` to bound lock
 acquisition waits. That setting does not limit how long an acquired lock is
-held. No index is built on the entries table. The schema and idempotency
-contracts remain identical to the original combined migration. Regression
-coverage is in `supabase/tests/habit-tracker-idempotency.sql` and the Tasks
-habit writer and Mira habit executor tests.
+held. No index is built on the entries table. The receipt table also has
+leading-column indexes on `user_id` and `ws_id` for cascading parent deletions;
+these are built while the table is new and empty. Columns, constraints and RPCs
+retain the original combined migration's definitions. Regression coverage is in
+`supabase/tests/habit-tracker-idempotency.sql` and the Tasks habit writer and Mira
+habit executor tests.
 
 ### Recover a failed concurrent creation-key index
 

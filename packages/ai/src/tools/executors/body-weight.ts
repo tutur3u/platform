@@ -226,11 +226,12 @@ export async function executeLogBodyWeight(
     const storedUnit = trackerUnit;
     const storedValue = round2(convertWeight(value, unit, storedUnit));
     const entryDate = toDateKey(occurredAt, timezone);
-    // Same conversation, day, value and note: a retry returns the stored entry.
+    // Bind an explicit instant, but never bind an inferred retry time.
     const idempotencyKey = await buildOperationKey('weight', [
       ctx.chatId ?? options?.toolCallId ?? null,
       resolved.tracker.id,
       entryDate,
+      parsed.data.occurredAt ? occurredAt.toISOString() : null,
       storedValue,
       storedUnit,
       note ?? null,
@@ -244,7 +245,9 @@ export async function executeLogBodyWeight(
         resolved.tracker.id,
         {
           entry_date: entryDate,
-          occurred_at: occurredAt.toISOString(),
+          ...(parsed.data.occurredAt
+            ? { occurred_at: occurredAt.toISOString() }
+            : {}),
           values: { [resolved.tracker.primary_metric_key]: storedValue },
           ...(note ? { note } : {}),
           idempotency_key: idempotencyKey,
@@ -272,7 +275,9 @@ export async function executeLogBodyWeight(
       entry: {
         id: written.entry.id,
         date: written.entry.entry_date,
-        value: storedValue,
+        value: written.replayed
+          ? getEntryPrimaryValue(resolved.tracker, written.entry)
+          : storedValue,
         unit: storedUnit,
       },
       ...(written.replayed ? { alreadyLogged: true } : {}),

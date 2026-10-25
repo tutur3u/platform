@@ -26,6 +26,12 @@ create table if not exists public.workspace_habit_tracker_entry_receipts (
 create index if not exists idx_workspace_habit_tracker_entry_receipts_entry
   on public.workspace_habit_tracker_entry_receipts (entry_id);
 
+create index if not exists idx_workspace_habit_tracker_entry_receipts_user
+  on public.workspace_habit_tracker_entry_receipts (user_id);
+
+create index if not exists idx_workspace_habit_tracker_entry_receipts_ws
+  on public.workspace_habit_tracker_entry_receipts (ws_id);
+
 alter table public.workspace_habit_tracker_entry_receipts
   enable row level security;
 

@@ -151,7 +151,9 @@ export async function executeLogHabitEntry(
         trackerId,
         {
           entry_date: entryDate,
-          occurred_at: occurredAt.toISOString(),
+          ...(parsed.data.occurredAt
+            ? { occurred_at: occurredAt.toISOString() }
+            : {}),
           values: entryValues,
           ...(note ? { note } : {}),
           ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),

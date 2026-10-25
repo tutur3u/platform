@@ -239,7 +239,7 @@ describe('createHabitTrackerEntry', () => {
   });
 
   it('binds the receipt to the request body, not the retry time', async () => {
-    const run = async (input: typeof keyed) => {
+    const run = async (input: typeof keyed & { occurred_at?: string }) => {
       const mock = supabaseMock({
         lookups: { workspace_habit_trackers: [{ ...tracker }] },
         rpc: { data: [{ entry_id: 'e', replayed: false }], error: null },
@@ -257,6 +257,13 @@ describe('createHabitTrackerEntry', () => {
     const first = await run(keyed);
     expect(await run(keyed)).toBe(first);
     expect(await run({ ...keyed, values: { glasses: 2 } })).not.toBe(first);
+    const timed = { ...keyed, occurred_at: '2026-10-25T08:00:00Z' };
+    const timedHash = await run(timed);
+    expect(await run(timed)).toBe(timedHash);
+    expect(timedHash).not.toBe(first);
+    expect(
+      await run({ ...timed, occurred_at: '2026-10-25T09:00:00Z' })
+    ).not.toBe(timedHash);
   });
 
   it('rejects a key reused for a different request', async () => {
