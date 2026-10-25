@@ -161,6 +161,7 @@ export function createPasswordsService(
           committed = true;
         })
       );
+      if (write) committed = true;
       requireEnabled(database.enabled);
       return { ok: true, value };
     } catch (error) {
@@ -245,7 +246,7 @@ export function createPasswordsService(
         return state;
       }),
     downloadCredentials: (input) =>
-      run(false, async () => {
+      run(input.kind === 'agent', async () => {
         database.principal(true);
         const workspace = await database.resolveWorkspace(input.wsId);
         const path =
@@ -272,8 +273,15 @@ export function createPasswordsService(
             signal: request.signal,
           })
         );
-        if (!response) throw new PasswordsError('UNAVAILABLE');
-        const data = record(await response.json());
+        const uncertain = input.kind === 'agent';
+        if (!response || (uncertain && response.status >= 500))
+          throw new PasswordsError(uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE');
+        let data: PasswordsRecord;
+        try {
+          data = record(await response.json());
+        } catch {
+          throw new PasswordsError(uncertain ? 'OPERATION_UNCERTAIN' : 'UNAVAILABLE');
+        }
         if (!response.ok) {
           const code = PASSWORDS_ERROR_CODES.find(
             (code) => code.toLowerCase() === data.code
