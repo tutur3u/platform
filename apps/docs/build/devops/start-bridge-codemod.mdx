@@ -174,12 +174,15 @@ Shortener:
   `tuturuuu.ci.ts`.
 - `scripts/ci/<app>-native-artifact.py`: the app's Worker identity and public
   files over `scripts/ci/apps-native-artifact.py`.
-- `cloudflare/native-built-worker.test.mjs` (`test:runtime`): a generic
+- `cloudflare/native-built-worker.runtime.mjs` (`test:runtime`, run with
+  `node --test` after the build; not a `*.test.*` file, so source test runs
+  never pick it up): a generic
   emitted-Worker smoke run on the sealed artifact, with all egress denied:
   Worker identity, public-file parity, build identity when the app has
   `/api/build-info`, and no server error on the root, the `tuturuuu.com/<app>`
   mount or an unknown path. App-specific acceptance goes in further
-  `cloudflare/*.test.mjs` files.
+  `cloudflare/*.runtime.mjs` files, which `test:runtime`
+  (`node --test cloudflare/*.runtime.mjs`) runs with it.
 
 There is no publisher: production stays with the held record and the
 cutover PR.

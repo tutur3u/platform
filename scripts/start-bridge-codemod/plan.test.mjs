@@ -271,14 +271,16 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
     content('scripts/ci/demo-native-artifact.py'),
     /WORKER = "tuturuuu-demo-vite-staging"[\s\S]*"favicon\.ico",[\s\S]*DEMO_SOURCE_SHA/
   );
-  const runtime = content('apps/demo/cloudflare/native-built-worker.test.mjs');
+  const runtime = content(
+    'apps/demo/cloudflare/native-built-worker.runtime.mjs'
+  );
   assert.match(runtime, /const WORKER = "tuturuuu-demo-vite-staging";/);
   assert.match(runtime, /build identity is the exact compiled source/);
   assert.match(runtime, /statusFor\('\/demo', 'tuturuuu\.com'\)/);
   assert.match(content('tuturuuu.ci.ts'), /'demo-cloudflare\.yaml': true,/);
   assert.equal(
     JSON.parse(content('apps/demo/package.json')).scripts['test:runtime'],
-    'node --test cloudflare/native-built-worker.test.mjs'
+    'node --test cloudflare/*.runtime.mjs'
   );
 });
 

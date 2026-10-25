@@ -9,7 +9,14 @@ import { GENERATED_MARKER } from './contract.mjs';
 import { pascal } from './templates.mjs';
 
 export const NATIVE_TEMPLATE = '.github/workflows/native-start-app.yaml';
-export const RUNTIME_TEST = 'cloudflare/native-built-worker.test.mjs';
+/**
+ * Runs only through `test:runtime` (`node --test <file>`) after the native
+ * build: not a `*.test.*` name, so source Vitest and check:changed never run
+ * it against a missing artifact.
+ */
+export const RUNTIME_TEST = 'cloudflare/native-built-worker.runtime.mjs';
+/** `test:runtime`: the generated runtime test and any app-owned ones. */
+export const RUNTIME_COMMAND = 'node --test cloudflare/*.runtime.mjs';
 
 /** Repository CI files every native app workflow depends on (as Shortener). */
 const SHARED_CI_PATHS = [
@@ -197,7 +204,8 @@ if __name__ == "__main__":
  * The generic emitted-Worker acceptance the template runs after sealing:
  * Worker identity, public-file parity, and that the root, the apex mount and
  * an unknown path answer without a server error, with all egress denied.
- * App-specific acceptance belongs in further \`cloudflare/*.test.mjs\` files.
+ * App-specific acceptance belongs in further \`cloudflare/*.runtime.mjs\` files,
+ * which \`test:runtime\` runs with it.
  */
 export function runtimeTest({ app, workerName, publicFiles, hasBuildInfo }) {
   const buildInfo = hasBuildInfo

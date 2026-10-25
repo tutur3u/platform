@@ -10,6 +10,7 @@ import {
   callerPath,
   callerWorkflow,
   NATIVE_TEMPLATE,
+  RUNTIME_COMMAND,
   RUNTIME_TEST,
   runtimeTest,
   workspaceClosure,
@@ -249,7 +250,7 @@ export function planConversion(repoRoot, app, options = {}) {
     nativeCi
       ? {
           ...nativeScripts(devPort(manifest)),
-          'test:runtime': `node --test ${RUNTIME_TEST}`,
+          'test:runtime': RUNTIME_COMMAND,
         }
       : nativeScripts(devPort(manifest))
   );
