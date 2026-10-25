@@ -99,14 +99,14 @@
       "digest": "a5e511a92544ac9fdf20c4f5933836f11d10fe388be6d4c5c7902dbadf16ea02"
     },
     ".github/workflows/mail-calendar-tasks-builds.yaml": {
-      "lines": 8,
-      "uses": 8,
+      "lines": 7,
+      "uses": 7,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6637",
+        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
       },
-      "digest": "41921485da0ed2571deaa5229e178d3e2ed68370c7ca1145e6c4a8f0e4daa172"
+      "digest": "ab93d38ca88f0b634967f90a6e829b02f43b3b50a9ab31c00dfe42d91d6a925f"
     },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 30,
@@ -229,14 +229,14 @@
       "digest": "df3f9e7568bde2881c4b73d791468a87eaa6c1c48faf94672890d090b120943c"
     },
     "apps/calendar/package.json": {
-      "lines": 2,
-      "uses": 2,
+      "lines": 1,
+      "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6637",
+        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
       },
-      "digest": "cb164988a4b62ae085f64eaad548e91e9310e9e46a8b1c5d60760ed67a85fb64"
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/colab/package.json": {
       "lines": 3,

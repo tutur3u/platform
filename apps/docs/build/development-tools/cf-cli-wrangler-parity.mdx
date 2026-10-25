@@ -106,6 +106,42 @@ secrets and DOs; assets, AI, R2, D1, KV, services and email triggers need explic
 profiles. The retained publication adapter separately enforces the original `v1`
 history and exact module inventory. Preserve both gates and unknown-field rejection.
 
+### Calendar emitted binding types
+
+Calendar's ASSETS-only profile uses `calendar-cf-types.mjs` after its existing
+emitted-artifact validator. The helper creates a disposable literal typed config
+and runs the owning pinned `cf workers types --no-include-runtime` on a supported
+Node executor. It never loads a Worker module, environment file or credential.
+
+The self-contained `cloudflare-env.d.ts` comes from an ASSETS-only template; cf
+output checks that template rather than supplying the declaration text. A new
+binding requires changing the template and validator together. The cf-inferred
+binding and template must have the exact required ASSETS key and Fetcher type,
+with no `any`. During CI
+qualification the existing producer remains an explicit reference oracle; the
+same checks apply to its declaration. Additional resources, vars, secrets and
+named environments remain rejected by the existing artifact profile.
+
+Only after declaration parity and unchanged hashes for the bundle, assets,
+emitted config and deploy pointer does the helper atomically replace
+`cloudflare-env.d.ts`. Exclusive directory custody serializes supported generators
+through comparison and replacement; an existing lock fails closed. Detected edits
+and partial, empty or symlinked producer output preserve prior declarations. This
+is cooperative publication custody; do not edit the destination during generation.
+Its disposable config is
+removed; the output remains self-contained when the sealed artifact is restored.
+The JSON receipt records source/tool versions and before/after artifact digests.
+
+Local `cf:typegen` requires a qualified existing build; it does not build or
+publish. Exact-head CI must run the real cf CLI and the retained reference
+producer. Fixture tests exercise failure handling and the real TypeScript proof;
+they do not establish supported-runtime cf execution on an older local Node.
+Read declaration and receipt inputs through an opened regular-file descriptor; verify its inode/device against the named file before reading. Path checks alone leave a replacement race.
+Keep supplier-dependent fixtures and restored copies under `apps/calendar/tmp`.
+Copying the workspace manifest into repository-level `tmp` does not install its
+dependencies there; Bun's isolated layout resolves cf and its type imports through
+the owning Calendar workspace. Test that layout without a root-hoisted cf package.
+
 ## Native Worker template
 
 Applied to Cron Control, Devbox Control and Coordination. Each migrated Worker has:
