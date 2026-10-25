@@ -11,12 +11,14 @@ import { VERCEL_WORKFLOW } from './fixture-repo.mjs';
 import {
   addBiomeRouteTreeOverride,
   addCiWorkflow,
+  addGitignoreEntries,
   addHeldRecord,
   addPackageScripts,
   addPolicyTestApp,
   addProtectedSurface,
   addVercelProductionPolicyGate,
   dependencyCommands,
+  VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
 
 const ROOT = path.resolve(
@@ -233,4 +235,25 @@ test('the Workers types pin matches the repository exact pin', () => {
   // Native apps (Shortener, Apps, Calendar, ...) already pin it exactly.
   assert.ok(exact.length > 0);
   assert.deepEqual([...new Set(exact)], [pinned]);
+});
+
+test('app .gitignore gains the Void build output, appended once', () => {
+  const entries = VOID_OUTPUT_IGNORES;
+  assert.deepEqual(entries, ['.void/', '.void-wrangler.jsonc']);
+  assert.equal(
+    addGitignoreEntries(null, entries),
+    '.void/\n.void-wrangler.jsonc\n'
+  );
+  // Existing lines keep their order; only the missing entries are appended.
+  const hand = '# app\nnode_modules\n/.next/\n.void/';
+  const added = addGitignoreEntries(hand, entries);
+  assert.equal(added, `${hand}\n.void-wrangler.jsonc\n`);
+  assert.equal(addGitignoreEntries(added, entries), added);
+  // Equivalent forms already cover the entries (Tasks, Track by hand).
+  for (const existing of [
+    '.void/\n.void-wrangler.jsonc\n',
+    '/.void\n/.void-wrangler.jsonc\n',
+    'dist\n  .void  \n.void-wrangler.jsonc',
+  ])
+    assert.equal(addGitignoreEntries(existing, entries), existing);
 });

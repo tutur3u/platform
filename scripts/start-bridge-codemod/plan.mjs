@@ -38,6 +38,7 @@ import { inventoryApp, walk } from './inventory.mjs';
 import {
   addBiomeRouteTreeOverride,
   addCiWorkflow,
+  addGitignoreEntries,
   addHeldRecord,
   addPackageScripts,
   addPolicyTestApp,
@@ -45,6 +46,7 @@ import {
   addTsconfigExcludes,
   addVercelProductionPolicyGate,
   dependencyCommands,
+  VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
 import { runtimeExpectationProblems } from './runtime-outcome.mjs';
 import * as templates from './templates.mjs';
@@ -346,6 +348,12 @@ export function planConversion(repoRoot, app, options = {}) {
       edited(vercelWorkflow, addVercelProductionPolicyGate(vercelSource, app));
   }
   edited('biome.json', addBiomeRouteTreeOverride(read(repoRoot, 'biome.json')));
+  // Local `vp build` output must not show up as changes (check:changed).
+  const gitignorePath = `${appPath}/.gitignore`;
+  const gitignore = read(repoRoot, gitignorePath);
+  const ignored = addGitignoreEntries(gitignore, VOID_OUTPUT_IGNORES);
+  if (ignored !== (gitignore ?? ''))
+    writes.push({ path: gitignorePath, content: ignored, owner: 'edit' });
   if (nativeCi) {
     owned(
       RUNTIME_TEST,
