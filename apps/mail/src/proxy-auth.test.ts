@@ -318,3 +318,24 @@ it('persists an explicit English entry locale over a Vietnamese cookie or langua
   );
   expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
 });
+
+describe('mounted Mail app-owned redirects', () => {
+  it.each(['/login', '/vi/login'])(
+    'keeps the explicit signed-in destination under /mail from %s',
+    async (path) => {
+      mocks.authProxy.mockResolvedValue(NextResponse.next());
+      mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+      const request = new NextRequest(
+        `https://tuturuuu.com/mail${path}?next=/vi/personal/sent`,
+        {
+          nextConfig: { basePath: '/mail' },
+        }
+      );
+      const response = await proxy(request);
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/mail/vi/personal/sent'
+      );
+    }
+  );
+});
