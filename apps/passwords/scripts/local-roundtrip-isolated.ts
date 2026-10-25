@@ -86,14 +86,15 @@ async function privateJson(path: string) {
 
 export async function isolated(argv: string[]) {
   check(argv.length === 2, 'USAGE_ROOT_CONTAINER');
-  const root = resolve(argv[0]!);
+  const requestedRoot = resolve(argv[0]!);
+  const root = await realpath(requestedRoot);
   const container = argv[1]!;
   check(
-    (await realpath(root)) === root &&
+    dirname(requestedRoot) === resolve(tmpdir()) &&
       dirname(root) === (await realpath(tmpdir())),
     'ROOT_LOCATION'
   );
-  const stat = await lstat(root);
+  const stat = await lstat(requestedRoot);
   check(
     stat.isDirectory() &&
       !stat.isSymbolicLink() &&
@@ -110,7 +111,8 @@ export async function isolated(argv: string[]) {
   );
   check(
     metadata.version === 1 &&
-      metadata.disposableRoot === root &&
+      metadata.disposableRoot === requestedRoot &&
+      (await realpath(metadata.disposableRoot)) === root &&
       metadata.repositoryRoot === repository &&
       /^[a-f0-9]{40}$/.test(metadata.headSha),
     'METADATA_IDENTITY'
