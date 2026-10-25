@@ -25,6 +25,25 @@ handoff, the same satellite pattern used by
 [hive](/platform/applications/hive), and [tasks](/platform/applications/tasks).
 </Note>
 
+## Session integrity
+
+Nova participant submissions require the caller's own `IN_PROGRESS` session and
+an associated problem in that session's challenge. The server rejects submissions
+at or after `min(start_time + duration, close_at)`, including before the expiry
+cleanup runs. Manager submissions without a session retain their existing bypass;
+a supplied session must satisfy the same ownership, challenge and expiry checks.
+
+Active-session reads select the newest start. Session inserts serialize on the
+challenge row and reject an overlapping active session with HTTP 409. Expired rows
+remain as attempt history and do not prevent a new attempt. Daily attempt limits
+use UTC in both the API and database. Criteria retain catalog/password eligibility
+before `open_at`; starting a session still requires the opening window.
+
+Regression coverage: `submissions/route.test.ts`,
+`packages/utils/src/nova/submissions/check-permission.test.ts`,
+`challenge-catalog-access.test.ts`, `sessions/route.test.ts`, and
+`supabase/tests/private-schema-nova-session-limits.sql`.
+
 ## Architecture / Satellite Auth
 
 Nova is a Next.js App Router app under `apps/nova` that owns the prompt
