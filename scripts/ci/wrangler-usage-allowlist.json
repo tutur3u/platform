@@ -239,14 +239,14 @@
       "digest": "cb164988a4b62ae085f64eaad548e91e9310e9e46a8b1c5d60760ed67a85fb64"
     },
     "apps/colab/package.json": {
-      "lines": 4,
-      "uses": 4,
+      "lines": 3,
+      "uses": 3,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6621",
+        "reason": "Replace the local preview CLI with the Vite+ Worker dev server; preserve production configuration and publication."
       },
-      "digest": "4c1ed0c6973427416bf15812d5389183f4c091d996df136e5f17cb11f3fe5a47"
+      "digest": "aff89e0ea26e56bc0c6e71a9c97fb00d948478bc6f58b2126f1ac99a80929c45"
     },
     "apps/colab/scripts/verify-expiry-runtime.mjs": {
       "lines": 2,

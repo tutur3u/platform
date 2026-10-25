@@ -309,6 +309,7 @@
         "remark-gfm": "^4.0.1",
       },
       "devDependencies": {
+        "@cloudflare/vite-plugin": "1.64.0",
         "@cloudflare/workers-types": "^5.20261022.1",
         "@playwright/test": "^1.64.1",
         "@tailwindcss/vite": "^4.3.3",
