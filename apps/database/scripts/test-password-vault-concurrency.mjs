@@ -205,6 +205,53 @@ SELECT 'PW_READY';
   console.log(
     'PASS: an unrelated workspace FK insert completes before the vault lock is released'
   );
+  succeeded(
+    await query(
+      `SET ROLE service_role; ${operation('member.set', {
+        expected_revision: 6,
+        user_id: viewer,
+        role: 'viewer',
+        revoked: false,
+      })}`
+    )
+  );
+  const membership = connect(`pw-membership-holder-${randomUUID()}`);
+  membership.process.stdin.write(`BEGIN; SELECT 1 FROM public.workspace_members
+    WHERE ws_id = '${workspace}' AND user_id = '${viewer}' FOR UPDATE; SELECT 'PW_READY';\n`);
+  await waitUntil(
+    () => membership.ready,
+    'Membership holder did not acquire its row'
+  );
+  const admittedName = `pw-membership-reader-${randomUUID()}`;
+  const admitted = connect(admittedName);
+  admitted.process.stdin.end(
+    `SET ROLE service_role; ${operation('item.list', {}, viewer)}\n`
+  );
+  await waitUntil(
+    async () =>
+      succeeded(
+        await query(`SELECT count(*) FROM pg_stat_activity
+    WHERE application_name = '${admittedName}' AND wait_event_type = 'Lock';`)
+      ) === '1',
+    'Reader did not wait at the membership fence'
+  );
+  membership.process.stdin.end(`DELETE FROM public.workspace_members
+    WHERE ws_id = '${workspace}' AND user_id = '${viewer}'; COMMIT;\n`);
+  succeeded(await membership.done);
+  const denied = await admitted.done;
+  assert.notEqual(
+    denied.code,
+    0,
+    'Removed member unexpectedly completed a read'
+  );
+  assert.match(
+    denied.state.diagnostic,
+    /\b42501\b/u,
+    'Membership race must deny access without deadlock'
+  );
+  console.log(
+    'PASS: membership erasure wins before vault locking without deadlock'
+  );
 } finally {
   for (const client of clients) client.process.stdin.end('ROLLBACK;\n');
   await Promise.allSettled([...clients].map((client) => client.done));
