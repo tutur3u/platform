@@ -87,6 +87,7 @@ export default async function FleetPage({ params }: Props) {
           icon={<Server />}
           label={t('stats.online')}
           tone={fleet.counts.online > 0 ? 'positive' : 'neutral'}
+          unknownLabel={t('resources.unknown')}
           value={fleet.counts.online}
         />
         <StatTile
@@ -94,6 +95,7 @@ export default async function FleetPage({ params }: Props) {
           icon={<AlertTriangle />}
           label={t('stats.attention')}
           tone={fleet.counts.attention > 0 ? 'warning' : 'neutral'}
+          unknownLabel={t('resources.unknown')}
           value={fleet.counts.attention}
         />
         <StatTile
@@ -101,6 +103,7 @@ export default async function FleetPage({ params }: Props) {
           icon={<Clock />}
           label={t('stats.queued')}
           tone={fleet.counts.queued > 0 ? 'warning' : 'neutral'}
+          unknownLabel={t('resources.unknown')}
           value={fleet.counts.queued}
         />
         <StatTile
@@ -108,6 +111,7 @@ export default async function FleetPage({ params }: Props) {
           icon={<Play />}
           label={t('stats.running')}
           tone={fleet.counts.running > 0 ? 'info' : 'neutral'}
+          unknownLabel={t('resources.unknown')}
           value={fleet.counts.running}
         />
         <StatTile
@@ -116,6 +120,7 @@ export default async function FleetPage({ params }: Props) {
           icon={<CircleHelp />}
           label={t('stats.outcome_unknown')}
           tone={fleet.counts.outcomeUnknown > 0 ? 'unknown' : 'neutral'}
+          unknownLabel={t('resources.unknown')}
           value={fleet.counts.outcomeUnknown}
         />
       </div>
