@@ -41,6 +41,8 @@ import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -131,6 +133,7 @@ class _AppState extends State<App> {
   late final WorkspaceCubit _workspaceCubit;
   late final LocaleCubit _localeCubit;
   late final ThemeCubit _themeCubit;
+  late final void Function() _unregisterAssistantActions;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final ExperimentalAppsCubit _experimentalAppsCubit;
   late final FinancePreferencesCubit _financePreferencesCubit;
@@ -233,6 +236,17 @@ class _AppState extends State<App> {
       _inventoryAccessCubit,
       _appTabCubit,
       initialLocation: widget.initialRoute,
+    );
+    _unregisterAssistantActions = AssistantClientActions.register(
+      AppAssistantClientActionBridge(
+        go: _router.go,
+        setTheme: (theme, isCurrent) => _themeCubit.setThemeMode(
+          ThemeCubit.parseThemeMode(theme),
+          isCurrent: isCurrent,
+        ),
+        currentWorkspaceId: () => _workspaceCubit.state.currentWorkspace?.id,
+        currentActorId: () => _authCubit.state.user?.id,
+      ),
     );
     _initializeDeepLinks();
     unawaited(_localeCubit.loadLocale());
@@ -359,6 +373,7 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    _unregisterAssistantActions();
     _unregisterOfflinePreparation();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     unawaited(_appLinkSubscription?.cancel());

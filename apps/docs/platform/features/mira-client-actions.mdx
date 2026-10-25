@@ -56,6 +56,133 @@ change data. Each client maps destinations to its own routes. Web uses
 app. Web ignores markers with an unknown destination or an unsafe workspace
 segment. Web Live navigation leaves the Live page.
 
+## Mobile bridge and screen context
+
+The mobile app registers one app-level bridge (`AssistantClientActions`) in
+`app.dart`. It owns the router and theme, so chat and Live apply markers without
+the Assistant page.
+
+- **Chat** declares `theme`, `immersive` and, with the bridge, `navigate`. Theme
+  and immersive are applied by the chat cubit; `open_app` goes through the
+  bridge.
+- **Live** declares the bridge's set (`theme`, `navigate`) with each canonical
+  execution, and sends the verified device timezone. When
+  `execute_workspace_tool` returns a `set_theme` or `open_app` marker, the device
+  applies it before answering the model.
+  - A marker the device could not apply is returned to the model as an error,
+    never as a success.
+  - This includes a theme that failed to save, a marker for a workspace other
+    than the one selected on the device, and a marker whose turn went stale.
+  - An unexpected client action exception becomes `apply_failed`; the response
+    contains no success marker and subsequent tool calls can continue.
+- **Scope:** each action is bound to the actor and workspace that requested it.
+  A sign-out, account or workspace switch, or the caller's own turn guard
+  cancels it until the effect is dispatched. In Live, an interruption or a new
+  typed turn also cancels UI actions still pending from the earlier turn.
+- **Theme writes:** the cancellation point is the synchronous scope check and
+  preference dispatch. A scope change before it skips the write; after it, the
+  write stands and the device theme follows the stored value. Mira never claims
+  a cancellation it cannot guarantee. A storage write the platform reports as
+  failed, or that throws, is returned as `theme_not_saved` and the current
+  theme is kept.
+- **Overlapping theme choices:** writes never wait on each other. One ledger
+  per preference store gives every dispatch a sequence, including the repair
+  writes it issues, and records the newest saved choice. When no write is
+  outstanding, it rewrites the newest saved choice if a write was stored after
+  a newer one or the cache holds a newer failed value. A choice is shown only
+  if it is still the newest saved choice when its write returns.
+  - Result: the UI, the cache and the store end on the newest saved choice
+    for every completion order of overlapping choices and repairs.
+  - Limit: a repair that itself fails or throws is not retried. The UI and
+    cache keep the newest choice, but the store may hold an older value until
+    the next theme write settles it.
+- **Destinations** map to shell routes (`time_tracker` opens Timer). Access
+  gates stay with the router redirects.
+- **Leaving the Assistant:** when the app switches away, Live continues only if
+  the user enabled Live while browsing; otherwise it disconnects as it does
+  today.
+
+`get_mobile_screen_context` (Live) still requires the Live while browsing opt-in.
+It returns:
+
+- the app section;
+- `visibleRecords`: type and id pairs that the foreground screen registers;
+- `form`: the open form's fields.
+
+The rules for that content:
+
+- Values are read only when Mira asks and are capped (20 records, 30 fields,
+  500 characters per value).
+- A field is sent as `[redacted]` when:
+  - its rendered control is obscured or uses the `visiblePassword` keyboard;
+    these are read from the real `EditableText`, not declared by the screen;
+  - no rendered `EditableText` uses the registered controller (for example a
+    custom widget with its own internal controller), so obscuring cannot be
+    verified;
+  - it is a closure field (no controller) that is not a well-formed `boolean`,
+    `date`, `time` or `datetime` value;
+  - its input type normalizes to a password, PIN or OTP type;
+  - its key or label looks like a password, PIN, OTP, token, card, CVV, IBAN,
+    account number or API key;
+  - any recoverable reading of its value contains a secret (below).
+- The whole field is redacted, not just the match, because a match in a
+  normalized or decoded reading cannot be mapped back safely.
+- Values are scanned before truncation, first folded (invisible format
+  characters removed; fullwidth forms, superscript digits, Unicode dashes and
+  the ellipsis folded; tab, NBSP and other spaces collapsed) and then decoded
+  up to three layers (percent, `\x`/`\u`/HTML numeric escapes, base64 and hex
+  runs that decode to valid text). Each reading is checked for:
+  - credential shapes: JWTs, `sk-`/`sk_live_`, GitHub, Slack, AWS, Google and
+    GitLab keys, bearer tokens and private keys;
+  - Luhn-valid card numbers;
+  - mod-97-valid IBANs;
+  - long high-entropy tokens that mix letters with digits or both cases.
+- **Supported characters only.** The app does not claim full NFKC coverage.
+  Every supported character whose NFKC reading contains an ASCII letter or
+  digit (for example the rupee sign, long s, ligatures, digraphs, ordinal
+  indicators and fractions) is folded to that reading first. The fold table
+  is generated from the supported ranges by
+  `apps/mobile/tool/generate_assistant_compat_fold.mjs`; rerun it after
+  changing the ranges. `--check` verifies the committed table and runs in the
+  mobile CI analyze job and `bun check:mobile`. Every reading,
+  raw and decoded, may then contain only ASCII, Latin letters and marks
+  (Latin-1, Extended-A/B and Additional, combining diacritics), common
+  punctuation, currency, arrows, shapes and emoji. Dotless i and j are
+  rejected as look-alikes. Any other character, including other scripts and
+  non-ASCII digits, redacts the field. An encoding still decodable after three
+  layers also redacts the field.
+- Supported standalone slash look-alikes (fraction slash U+2044, diagonal
+  slash U+2571 and heavy solidus U+1F67C) become ASCII `/` in scan readings,
+  including when produced by fraction folding. Fullwidth slash uses the existing
+  fullwidth ASCII fold. This keeps embedded credentials in one scan token;
+  ordinary fraction text retains its original display value. Other unsupported
+  characters still redact the whole field, including after decoding.
+- Free-text fields are also scanned together on what is actually sent (each
+  value's first 500 characters): joined in order and in reverse, and every
+  ordered pair across its boundary (256 characters each side). Pair boundaries
+  of the full values are checked too. A secret only visible across fields
+  redacts every free-text field.
+- **Known limit (adopter gate):** a secret split over three or more fields
+  in an order other than registration or reverse order is not detected. The
+  calendar form registers only two free-text fields, so this is not reachable
+  today. Before a screen registers three or more free-text fields, add a
+  conservative fragment policy; do not add permutation scanning.
+- Screen-context results reach the model only. Live turn parts, persisted chat
+  history and restored caches keep a placeholder, never the payload.
+- The most recently registered visible screen wins. Offstage shell pages report
+  themselves hidden. Workspace-scoped screens provide `isCurrentScope` to
+  `AssistantScreenContextScope`; the registry checks it on every read, before
+  accessing records or field values. Mounted create and edit event forms stop
+  sharing their context as soon as the selected actor or workspace changes,
+  even before the next frame. Non-workspace screens may omit the predicate.
+- Record ids are hints: the server re-reads records with the user's
+  permissions, and Mira treats field values as user data, never instructions.
+
+The calendar event form is the first adopter: event id, title, description,
+all-day and start/end. Mira can read a half-filled event and help finish it.
+Filling fields from Mira and sending screen context with chat messages are
+separate follow-ups.
+
 ## Regression coverage
 
 - `packages/ai/src/tools/mira-client-capabilities.test.ts`: resolution, gating,
@@ -70,3 +197,39 @@ segment. Web Live navigation leaves the Live page.
 - `apps/web/src/app/api/v1/assistant/live/tools/execute/route.test.ts`:
   canonical defaults and timezone.
 - The native messages `route.test.ts`: forwarded and default capabilities.
+- `apps/mobile/test/features/assistant/bridge/`: bridge mapping, workspace
+  guard, registration, Live marker truthfulness, screen-context redaction,
+  bounds and visibility.
+- `apps/mobile/test/features/assistant/data/assistant_live_repository_test.dart`
+  and `apps/mobile/test/features/chat/data/chat_mira_timezone_test.dart`:
+  declared capabilities and timezone.
+- `apps/mobile/test/features/assistant/bridge/assistant_secret_scan_test.dart`
+  and `assistant_screen_context_test.dart`: tab, NBSP, zero-width, fullwidth,
+  percent, escape, base64 and hex readings; digit-free base64; unsupported
+  characters in raw and decoded readings (other scripts, encoded non-ASCII
+  digits); supported characters with an ASCII compatibility reading (long s,
+  the rupee sign and vulgar fractions), folded and redacted only when the
+  folded reading holds a secret, raw and encoded; the depth limit; secrets split across fields, including
+  at the end of a bounded long field; custom controls with their own
+  controller; structured closure fields; misleading field names; real-control
+  obscuring and `visiblePassword`.
+- `apps/mobile/test/features/calendar/widgets/event_form_assistant_context_test.dart`:
+  read-time scope checks and mounted create/edit forms across a
+  `WorkspaceCubit` switch, including no reads of stale fields.
+- `apps/mobile/test/features/assistant/assistant_live_screen_context_persistence_test.dart`:
+  the serialized persistence request has no screen payload.
+- `app_assistant_client_action_bridge_test.dart`: a thrown and a `false`
+  theme storage result, and an account switch during a delayed theme write.
+- `apps/mobile/test/features/settings/cubit/theme_action_scope_test.dart`: a
+  held platform write keeps its result after a scope change; a `false` result
+  keeps the old theme; a failed older write cannot roll back a newer
+  same-value write; a failed newer write reconciles to the older saved value;
+  two successful choices completing newest first end on the newest, in the UI
+  and the store.
+- `apps/mobile/test/features/settings/cubit/theme_write_ledger_test.dart`:
+  repairs held across a newer choice (newest saved first and newest failed
+  first), a newer dispatch failing during a repair, a repair that fails or
+  throws, a throwing write, and all 56 two- and three-write success and
+  completion-order schedules, checked at the UI, cache and store.
+- `apps/mobile/test/features/assistant/assistant_live_client_action_turn_test.dart`:
+  an interruption or new typed turn cancels a pending Live UI action.

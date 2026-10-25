@@ -100,6 +100,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         }
         await _audioPlayer.play(bytes);
       case AssistantLiveSocketInterrupted():
+        _turnGeneration++;
         final interruptedTurn = _finalizeTurn();
         await _audioPlayer.clear();
         _clearAssistantActivity();

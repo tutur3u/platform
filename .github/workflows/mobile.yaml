@@ -359,6 +359,9 @@ jobs:
       - name: 🔣 Lucide icons match the web
         run: node ../../scripts/check-mobile-lucide-sync.js
 
+      - name: 🔡 Mira compatibility fold table is current
+        run: node tool/generate_assistant_compat_fold.mjs --check
+
       - name: 🧹 shadcn_flutter import ratchet
         env:
           # The allowlist may only shrink relative to the PR base or the

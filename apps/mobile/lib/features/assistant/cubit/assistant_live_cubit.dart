@@ -8,6 +8,7 @@ import 'package:equatable/equatable.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/bridge/assistant_live_client_markers.dart';
 import 'package:mobile/features/assistant/data/assistant_audio_buffer.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
@@ -112,6 +113,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   int _transportFailureVersion = 0;
   int _disconnectVersion = 0;
   int _conversationVersion = 0;
+  // Bumped when a turn is interrupted or a new typed submission begins;
+  // pending client UI actions from an earlier turn must not apply after it.
+  int _turnGeneration = 0;
   Future<void> _pendingPersistence = Future<void>.value();
   final _sealedParts = <AssistantLiveTurnParts>{};
   final _retryTurns = <String, Future<void> Function()>{};

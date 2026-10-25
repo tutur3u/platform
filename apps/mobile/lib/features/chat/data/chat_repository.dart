@@ -14,6 +14,7 @@ import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
@@ -29,14 +30,18 @@ class ChatRepository {
     bool ownsApiClient = false,
     OfflineMutationQueue? mutationQueue,
     Future<String> Function()? deviceTimezone,
+    List<String> Function()? miraClientCapabilities,
   }) : _apiClient = apiClient ?? ApiClient(),
        _httpClient = httpClient ?? http.Client(),
        _ownsApiClient = ownsApiClient || apiClient == null,
        _messageMutationQueue = mutationQueue ?? OfflineMutationQueue.instance,
-       _deviceTimezone = deviceTimezone ?? getVerifiedDeviceTimezoneIdentifier;
+       _deviceTimezone = deviceTimezone ?? getVerifiedDeviceTimezoneIdentifier,
+       _miraClientCapabilities =
+           miraClientCapabilities ?? AssistantClientActions.chatCapabilities;
 
   final ApiClient _apiClient;
   final Future<String> Function() _deviceTimezone;
+  final List<String> Function() _miraClientCapabilities;
   final http.Client _httpClient;
   final bool _ownsApiClient;
   final OfflineMutationQueue _messageMutationQueue;
@@ -315,6 +320,7 @@ class ChatRepository {
       'clientRequestId': requestId,
       if (miraMode) 'miraMode': true,
       if (timezone != null) 'timezone': timezone,
+      if (miraMode) 'clientCapabilities': _miraClientCapabilities(),
     };
     ChatMessage pendingMessage() => ChatMessage.fromJson({
       ...payload,
