@@ -96,23 +96,49 @@ supervisor, which stops the queue admission and its command.
 
 ## Controller ledger locking
 
-All controllers sharing one local ledger serialize submit and revision updates
-with a SQLite `BEGIN IMMEDIATE` transaction on
-`ledger/mutation-lock.sqlite`. The ledger data remains in atomic JSON files;
-SQLite provides only the interprocess lock. A contender retries a busy lock
-with asynchronous waits for at most 30 seconds, then fails closed. Closing the
-connection releases the lock on success or error; the OS also releases it when
-the process dies. Recovery never reads a PID or deletes a lock pathname, so it
-cannot remove a successor controller's live lock. Keep the persistent SQLite
-file in place, on a local filesystem with working OS file locks.
+The published `ttr balancer` launcher selects Node.js for controller execution.
+Node.js must be available on `PATH`. Direct Bun calls to ledger mutation fail
+before store creation because Bun 1.4.4 lacks the native binding's libuv error
+and thread APIs. Host agents continue to use their host's Bun runtime.
 
-Before upgrading from the PID-directory protocol, stop and drain every old
-controller sharing that ledger. Upgrade all of them before restarting; mixed
-protocol versions do not share a lock. A leftover legacy `ledger/.lock`
-directory is ignored and is never removed by the new controller. Do not unlink,
-replace or restore the SQLite lock file while any controller is running.
-The controller requires a runtime supporting `node:sqlite`, as the SDK's
-operational store already does.
+Controllers serialize submit and revision updates with a descriptor-owned OS
+lock (`fs-native-extensions` 1.5.1: Linux OFD locks, macOS BSD flock). The SDK
+ships the dependency's prebuilt binaries; an unavailable native binding or
+unsupported locking syscall fails before mutation. Busy locks use bounded
+asynchronous retries. Closing the descriptor, action failure and process death
+release its lock. No PID or elapsed-time heuristic recovers a lock.
+
+A fresh store creates `ledger/.lock/protocol.json` last, recording the device
+and inode of its mutex and store directories. Ordinary acquisition opens
+`ledger/.lock/mutex` without `O_CREAT`. After acquiring the lock, it verifies
+the open descriptor, current pathname and recorded identity before allowing
+mutation. A missing or replaced mutex is refused, including while another
+controller still holds the original inode; it is never silently recreated.
+
+The new protocol also permanently fences both predecessors. The `.lock`
+directory has no PID, so PID-lock controllers cannot acquire or reclaim it.
+A directory at `ledger/mutation-lock.sqlite` prevents earlier SQLite
+controllers from opening their database. Both fences are created before
+checking that no legacy run/request directories exist. A controller already
+inside a predecessor mutation therefore prevents new-store admission, and a
+predecessor started later cannot enter the fresh store.
+
+Existing unmarked ledgers, interrupted initialization, changed store identities
+and insecure or symlinked store directories fail closed. Stop old controllers
+and use a fresh `TTR_BALANCER_HOME`; preserve the old store for reconciliation.
+Do not replay old request/run IDs from a fresh home until their outcomes have
+been reconciled.
+There is no automatic state migration, reset or repair. Concurrent callers
+that observe incomplete first initialization must retry after its creator
+finishes. Never remove or replace a protocol fence or mutex while controllers
+may run.
+
+Filesystem admission allows APFS and HFS on macOS; ext2/3/4, XFS, Btrfs and
+tmpfs on Linux. Unknown types, NFS, SMB, FUSE and cluster filesystems are
+refused. Store directories and the mutex must remain private, owned by the
+controller user and on the same device. This does not qualify shared block
+storage mounted concurrently by independent kernels; such storage is outside
+the supported local-store contract.
 
 An exclusive request-intent link that loses reads and validates the winning
 marker. Conflicting parameters fail without creating runs; a matching intent
@@ -120,7 +146,9 @@ retains its original source identity and creation time, and a committed marker
 returns the existing runs. Regression coverage lives in
 `packages/sdk/src/cli/balancer-stale-lock.test.ts` (the concurrent stale-recovery
 dispatch race and process-death recovery) and `balancer-ledger.test.ts` (intent
-link conflicts and partial-submit recovery).
+link conflicts and partial-submit recovery). The mixed-protocol, unsupported
+filesystem and missing/replaced-inode regressions live in
+`packages/sdk/src/cli/balancer-ledger-admission.test.ts`.
 
 ## Infrastructure view
 

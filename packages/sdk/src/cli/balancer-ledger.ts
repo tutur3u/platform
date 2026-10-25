@@ -1,16 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
-import {
-  link,
-  mkdir,
-  readdir,
-  readFile,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { link, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
-import { setTimeout as sleep } from 'node:timers/promises';
 import {
   type BalancerRun,
   type BalancerRunRequest,
@@ -21,6 +12,7 @@ import {
 } from '@tuturuuu/devbox';
 import { z } from 'zod';
 import { writeFileAtomically } from './atomic-file';
+import { withLedgerLock } from './balancer-ledger-lock';
 
 // Controller-side durable ledger. Every mutation is a compare-and-swap on
 // the run revision inside one short ledger lock, so two controller processes
@@ -92,38 +84,8 @@ export class BalancerLedger {
     return join(this.root, 'requests', `${requestId}.json`);
   }
 
-  // SQLite holds an OS file lock on a persistent inode. Never unlink this
-  // database: process death releases the lock without deleting a successor.
   async withLock<T>(action: () => Promise<T>): Promise<T> {
-    await mkdir(join(this.root, 'runs'), { recursive: true, mode: 0o700 });
-    await mkdir(join(this.root, 'requests'), { recursive: true, mode: 0o700 });
-    const db = new DatabaseSync(join(this.root, 'mutation-lock.sqlite'));
-    try {
-      for (let attempt = 0; ; attempt++) {
-        try {
-          db.exec('BEGIN IMMEDIATE');
-          break;
-        } catch (error) {
-          if (
-            typeof error !== 'object' ||
-            error === null ||
-            !(
-              ('errcode' in error && error.errcode === 5) ||
-              ('code' in error && error.code === 'SQLITE_BUSY')
-            )
-          )
-            throw error;
-          if (attempt >= 600) throw new Error('Balancer ledger lock is held.');
-          // Yield so another connection in this process can finish its I/O.
-          await sleep(50);
-        }
-      }
-      return await action();
-    } finally {
-      // Closing rolls back this lock-only transaction, including on action
-      // failure. No ledger data is stored in SQLite.
-      db.close();
-    }
+    return withLedgerLock(this.root, action);
   }
 
   async readRun(runId: string): Promise<BalancerRun | undefined> {

@@ -45,8 +45,13 @@ an explicit kill deadline so a blocking-open defect cannot hang the test runner.
 
 ## Balancer controller lock protocol
 
-Drain every controller sharing a ledger before upgrading from PID-directory
-locking to SQLite transaction locking. Keep `ledger/mutation-lock.sqlite` in
-place while any controller runs; unlinking it would create a second lock inode.
+Unmarked stores are refused by the descriptor-lock protocol; preserve them for
+reconciliation and choose a fresh `TTR_BALANCER_HOME` after stopping predecessors.
+Do not remove either permanent protocol fence (`.lock` and
+`mutation-lock.sqlite`, both directories) or its mutex. Missing or replaced
+identity fails closed without repair. The published balancer launcher selects Node.js; direct Bun mutations fail
+closed before native binding use. The SDK includes the pinned native lock
+supplier's prebuilt binaries; do not compile replacements or activate an
+unreviewed supplier during validation.
 The [fleet balancer runbook](../../../../../apps/docs/build/development-tools/fleet-balancer.mdx#controller-ledger-locking)
-owns runtime requirements, legacy-lock recovery and regression coverage.
+owns filesystem admission, cutover, runtime requirements and regression coverage.

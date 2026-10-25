@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -75,8 +75,12 @@ it('dispatches exactly once across hosts after concurrent stale-lock recovery', 
     );
     if (!run) throw new Error('Missing submitted run');
     const lock = join(a.root, '.lock');
-    mkdirSync(lock);
-    writeFileSync(join(lock, 'pid'), '2147483647');
+    // Current stores retain their permanent legacy fence. The historical
+    // negative control still receives the reviewer's abandoned PID lock.
+    if (!existsSync(lock)) {
+      mkdirSync(lock);
+      writeFileSync(join(lock, 'pid'), '2147483647');
+    }
     const hosts = [fixtureHost('linux'), fixtureHost('thanh')];
     const starts: { host: string; runId: string }[] = [];
     let lease = 0;
@@ -120,15 +124,16 @@ it('keeps a live process lock exclusive and releases it after process death', as
       '--input-type=module',
       '-e',
       `
-    import { DatabaseSync } from 'node:sqlite';
-    const db = new DatabaseSync(process.argv[1]);
-    db.exec('BEGIN IMMEDIATE');
+    import { openSync } from 'node:fs';
+    import { tryLock } from 'fs-native-extensions';
+    const fd = openSync(process.argv[1], 'r+');
+    if (!tryLock(fd)) throw new Error('Child failed to acquire kernel lock');
     process.stdout.write('locked');
     setInterval(() => {}, 1000);
   `,
-      join(ledger.root, 'mutation-lock.sqlite'),
+      join(ledger.root, '.lock', 'mutex'),
     ],
-    { stdio: ['ignore', 'pipe', 'inherit'] }
+    { cwd: join(__dirname, '../..'), stdio: ['ignore', 'pipe', 'inherit'] }
   );
   const exited = once(child, 'exit');
   try {
