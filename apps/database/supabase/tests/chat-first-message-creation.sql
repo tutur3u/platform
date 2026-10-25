@@ -69,6 +69,17 @@ update private.chat_conversation_ai_settings set thinking_mode='thinking'
 select is(pg_temp.first_send()->'creationReceipt',
  (select payload->'creationReceipt' from first_receipts where kind='new'),'mutable settings edits preserve the initial receipt');
 select is((select thinking_mode from private.chat_conversation_ai_settings where conversation_id='a6742000-0000-4000-8000-000000000021'),'thinking','replay does not overwrite later settings');
+-- A pre-existing different conversation type is never adopted by client ID.
+insert into private.chat_conversations(id,ws_id,created_by,type,title)
+ values('a6742000-0000-4000-8000-000000000025','a6742000-0000-4000-8000-000000000011',
+ 'a6742000-0000-4000-8000-000000000002','channel','Existing channel');
+select throws_ok($$select pg_temp.first_send(pg_temp.first_input('a6742000-0000-4000-8000-000000000025','a6742000-0000-4000-8000-000000000035'))$$,
+ '42501','chat_creation_forbidden','an existing channel cannot be adopted as an AI conversation');
+select is((select count(*)::int from private.chat_messages where conversation_id='a6742000-0000-4000-8000-000000000025'),0,'type collision writes no message');
+delete from public.workspace_members where ws_id='a6742000-0000-4000-8000-000000000011'
+ and user_id='a6742000-0000-4000-8000-000000000003';
+select throws_ok($$select pg_temp.first_send(pg_temp.first_input('a6742000-0000-4000-8000-000000000026','a6742000-0000-4000-8000-000000000036'),'a6742000-0000-4000-8000-000000000003')$$,
+ '42501','chat_workspace_membership_required','a non-member cannot create a first conversation');
 create function pg_temp.fail_first_message() returns trigger language plpgsql as $$
 begin
  if new.conversation_id='a6742000-0000-4000-8000-000000000024' then

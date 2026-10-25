@@ -33,7 +33,9 @@ extension AssistantFirstMessageOperations on AssistantRepository {
       attempt = await store.beginCreation(requestId);
       admission.check();
       if (!current()) {
-        throw const AssistantCreationUncertainException('First message origin changed');
+        throw const AssistantCreationUncertainException(
+          'First message origin changed',
+        );
       }
       yield const AssistantJsonStreamEvent({
         'type': 'native-dispatch-admitted',
@@ -97,8 +99,10 @@ extension AssistantFirstMessageOperations on AssistantRepository {
         creationAcknowledged = true;
         admission.check();
         if (!current()) {
-        throw const AssistantCreationUncertainException('First message origin changed');
-      }
+          throw const AssistantCreationUncertainException(
+            'First message origin changed',
+          );
+        }
       } on Object {
         await response.stream.listen((_) {}).cancel();
         rethrow;

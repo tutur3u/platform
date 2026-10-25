@@ -353,9 +353,13 @@ class RepairChats extends ChatRepository {
   }
 }
 
-Map<String,dynamic> wireMessage(ChatMessage message) => {
-  'id':message.id,'conversationId':message.conversationId,'kind':message.kind.name,
-  'senderId':message.senderId,'content':message.content,
-  'createdAt':message.createdAt?.toUtc().toIso8601String(), 'metadata':message.metadata,
-  'attachments':<Object>[],
+Map<String, dynamic> wireMessage(ChatMessage message) => {
+  'id': message.id,
+  'conversationId': message.conversationId,
+  'kind': message.kind.name,
+  'senderId': message.senderId,
+  'content': message.content,
+  'createdAt': message.createdAt?.toUtc().toIso8601String(),
+  'metadata': message.metadata,
+  'attachments': <Object>[],
 };

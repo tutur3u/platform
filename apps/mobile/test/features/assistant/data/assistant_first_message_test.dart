@@ -82,7 +82,7 @@ class FirstApi extends ApiClient {
         'senderId': actor,
         'content': 'hello',
         'createdAt': '2026-10-25T14:00:00Z',
-        'metadata': {'clientRequestId': key},
+        'metadata': {'clientRequestId': malformed == 'user' ? chat : key},
         'attachments': <Object>[],
       };
       final assistant = {
@@ -194,7 +194,8 @@ void main() {
     );
   }
   test(
-    'lost response preserves the original attempt and never blindly dispatches again',
+    'lost response preserves the original attempt '
+    'and never blindly dispatches again',
     () async {
       api.transportFailure = true;
       await expectLater(send().toList(), throwsA(isA<Object>()));
@@ -203,6 +204,12 @@ void main() {
       expect(api.requests, 1);
     },
   );
+  test('invalid user receipt after creation ACK does not re-hold known creation', () async {
+    api.malformed = 'user'; api.releaseBody.complete();
+    await expectLater(send().toList(),throwsA(isA<Object>()));
+    expect(await repository.hasUnknownChatCreation(ws),isFalse);
+    expect(api.requests,1);
+  });
   test('retired admission performs no HTTP', () async {
     current = false;
     await expectLater(send().toList(), throwsA(isA<Object>()));

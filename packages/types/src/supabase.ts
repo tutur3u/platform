@@ -3271,6 +3271,51 @@ export type Database = {
           },
         ];
       };
+      chat_creation_requests: {
+        Row: {
+          actor_user_id: string;
+          conversation_id: string;
+          conversation_type: string;
+          created_at: string;
+          initial_settings: Json;
+          request_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_user_id: string;
+          conversation_id: string;
+          conversation_type: string;
+          created_at?: string;
+          initial_settings: Json;
+          request_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          conversation_id?: string;
+          conversation_type?: string;
+          created_at?: string;
+          initial_settings?: Json;
+          request_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_creation_requests_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_creation_requests_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       chat_friend_requests: {
         Row: {
           created_at: string;
@@ -21085,12 +21130,25 @@ export type Database = {
         Args: { p_actor_user_id: string; p_conversation_id: string };
         Returns: Json;
       };
+      chat_create_ai_first_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_content: string;
+          p_input: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_create_conversation: {
         Args: { p_actor_user_id: string; p_input: Json; p_ws_id: string };
         Returns: Json;
       };
       chat_create_friend_request_by_email: {
         Args: { p_actor_user_id: string; p_email: string; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_creation_receipt_json: {
+        Args: { p_conversation_id: string };
         Returns: Json;
       };
       chat_delete_conversation: {

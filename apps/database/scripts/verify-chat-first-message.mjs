@@ -102,10 +102,17 @@ const gen = () =>
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, timeout: 120_000 }
   );
 const format = (file) =>
-  execFileSync(
-    path.join(root, 'node_modules/.bin/biome'),
-    ['format', '--write', '--config-path', root, file],
-    { stdio: 'ignore' }
+  writeFileSync(
+    file,
+    execFileSync(
+      path.join(root, 'node_modules/.bin/biome'),
+      ['format', '--stdin-file-path', 'packages/types/src/supabase.ts'],
+      {
+        input: readFileSync(file),
+        encoding: 'utf8',
+        maxBuffer: 16 * 1024 * 1024,
+      }
+    )
   );
 let beforeTypes;
 const runner = async (command, args, cwd) => {
@@ -195,8 +202,16 @@ const runner = async (command, args, cwd) => {
           stdio: ['pipe', 'pipe', 'pipe'],
         });
       } catch (error) {
-        writeFileSync(path.join(typeRoot, 'schema-delta.patch'), delta);
-        throw error;
+        try {
+          execFileSync('git', ['apply', '--reverse', '--check'], {
+            cwd: root,
+            input: delta,
+            stdio: ['pipe', 'pipe', 'pipe'],
+          });
+        } catch {
+          writeFileSync(path.join(typeRoot, 'schema-delta.patch'), delta);
+          throw error;
+        }
       }
     }
     console.log(
