@@ -1,0 +1,151 @@
+---
+title: "Finance and Pay Start migration"
+description: "Inventory the Finance canary and Pay integration before adopting the shared Start bridge."
+---
+
+Finance and Pay retain their Next.js entrypoints during preparation. Their Start
+conversion consumes `@tuturuuu/start-bridge`; neither app owns a copy of its
+Next adapters, request context, proxy, server-function transport, or cohort
+selector. This page records the conversion requirements, not runtime acceptance.
+
+## Refresh the source inventory
+
+Run these commands from the repository root after a frozen dependency install:
+
+```bash
+node apps/finance/migration/inventory.mjs finance > /tmp/finance-inventory.json
+node apps/finance/migration/inventory.mjs pay > /tmp/pay-inventory.json
+node --test apps/finance/migration/inventory.test.mjs
+```
+
+The tool reuses the repository's Next route inventory and parses modules with
+the root's pinned Babel parser. It excludes declaration files and tests, records
+source hashes, and never evaluates app code. The JSON includes every page,
+layout, route handler with its exported methods, server-action declaration,
+direct framework import, and workspace import. Imported action implementations
+and transitive framework imports require a separate caller review.
+
+The initial inventory has these counts. Regenerate it when source changes:
+
+| App | Pages | Layouts | Local API handlers | Action modules | Direct framework imports |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Finance | 18 | 3 | 82 | 1 | 132 |
+| Pay | 6 | 1 | 26 | 1 | 79 |
+
+## Preserve Finance route ownership
+
+Finance has 17 workspace pages plus the token verification page. Workspace
+pages cover the overview, analytics, budgets, categories, debts and debt detail,
+invoices and invoice creation/detail, promotions, recurring transactions, tags,
+transactions and transaction detail/categories, and wallets and wallet detail.
+
+The 82 local handlers include both `/api/workspaces/*` and
+`/api/v1/workspaces/*`. Preserve every exported method and unsupported-method
+response. The Next configuration sends selected workspace routes to Web before
+local route matching and forwards unmatched `/api/*` requests to Web afterwards.
+Port that precedence with the bridge's guarded forwarding contract. A page
+catch-all must never capture an API request.
+
+Keep the existing authorization and mutation behavior for invoices, wallet
+checkpoints and reconciliation, interest, budgets, promotions, inventory, and
+offline mutation replay. These handlers are not permission to change schemas,
+replay an uncertain write, or move a local handler to Web.
+
+`fetchWorkspaces` is Finance's app-owned server action. It calls
+`fetchSatelliteWorkspaces` in the shared satellite package, which reads request
+headers and forwards internal API authorization. Convert the complete call path
+with the bridge server-function transport. Preserve same-origin CSRF protection,
+session admission, and workspace visibility.
+
+The root layout needs replacements for `next/root-params`, the Next Nuqs
+adapter, shared font/metadata helpers, and Vercel analytics. Retain the current
+offline provider's `register={false}` behavior. The workspace layout reads
+request cookies and headers, checks membership and permissions, and renders
+async shared components. Verify those components through the bridge page adapter
+before expanding their children.
+
+The proxy currently pins Vercel's `__vdpl` cookie with `Path=/`. The native
+candidate must leave deployment pinning to the Vercel control path. Do not turn
+that cookie into cohort identity or copy it onto the shared origin.
+
+## Qualify both Finance URL modes
+
+The candidate must work on both `finance.<host>` and `<host>/finance`.
+The bridge owns base-path normalization and cookie serialization. Preserve the
+external prefix on redirects, ordinary links, assets, action requests, and API
+calls while matching the internal route once.
+
+Use `tuturuuu_app_session_finance` and the corresponding app-specific refresh
+cookie. Cookies use `Path=/finance` under the prefix and `Path=/` on the
+subdomain. The shared bridge owns the 14-day legacy-cookie read window on
+subdomains. Do not accept the legacy cookie on the shared origin. Cookie paths
+prevent name collisions but do not establish an authorization boundary.
+
+Acceptance covers English and Vietnamese URLs, anonymous login, cross-app token
+verification, refresh and logout, MFA recovery, personal/internal workspace
+aliases, invitations, permission denial, and query preservation. Inspect every
+`Set-Cookie` separately. Exercise parallel requests with different users and
+workspaces to detect request-context leakage.
+
+Keep the staging profile noindex and require its exact account, Worker, origin,
+bindings, and rollback mapping before publication. Source configuration alone
+does not prove that a hosted staging environment exists. Follow the
+[Apps artifact and runtime contract](/build/devops/apps-viteplus-cloudflare)
+for sealed original/restored artifact and browser acceptance.
+
+## Consume the shared canary decision
+
+The canary operator owns the ladder `staff -> 5% -> 25% -> 100%`. The build
+consumes the shared bridge's sticky cohort decision. Tag server observations
+and client error/TTFB measurements with the same cohort and source identity.
+The decision must come from the Worker; a caller-supplied cohort header must
+not select staff admission or override the configured percentage. Do not expose
+session tokens, user identities, or payment data in telemetry.
+
+Each step requires at least 200 sessions **and** at least four hours, with every
+gate green against the Vercel control. The operator automatically returns to
+0% if any threshold is breached:
+
+| Gate | Breach |
+| --- | --- |
+| 5xx rate | Greater than control plus 0.5 percentage points |
+| Authentication | Any rise in loops or failures |
+| p95 TTFB | Greater than 1.3 times control |
+| Client errors | Greater than 1.5 times control |
+
+Thin traffic cannot qualify a step. A stage stays pending until both duration
+and session evidence are sufficient. The build must support the bridge's 0%
+rollback without creating a second cohort selector or router Worker. No canary
+traffic is admitted by this preparation.
+
+## Require Pay sandbox acceptance
+
+Pay's six pages cover the locale root, dashboard, login, token verification,
+workspace billing, and billing success. Its billing action module exports six
+functions for billing details, payment methods, billing address, and the
+customer portal. Preserve each action's current actor and permission checks.
+
+The 26 handlers include payment webhooks, checkout, subscription changes,
+seat changes, billing invoices, credits, auth, existing cron endpoints, and
+subscription migration endpoints. Inventory is not authority to invoke those
+jobs or migrations. Preserve Web fallback and local payment-route precedence.
+
+Before staging sign-off, run payment-provider sandbox acceptance for checkout
+completion/cancellation, signed webhook rejection and replay, subscription and
+seat changes, billing details, customer portal, and invoice delivery. Reuse the
+original operation identity when a write outcome is unknown. Do not send live
+payments or enable live provider bindings to obtain acceptance.
+
+## Close the migration gates
+
+Run exact-head unit, type, and lint checks on Sonha and the real `vp build`,
+sealed-artifact verification, emitted-runtime tests, and browser acceptance on
+Thanh through `ttr resources run`. Install frozen dependencies. Keep the M4 for
+editing and focused source checks; it runs no builds, Docker, or local Supabase.
+If its `check:changed` gate refuses admission, run the same committed source
+through a Thanh bundle. Never bypass the gate.
+
+An independent Claude review is required before integration. Keep Finance and
+Pay publication held in `tuturuuu.ci.ts` and the shared publication-policy
+enforcement until an explicit cutover PR admits them. Preparation cannot stand
+in for the real Start build, provider sandbox, hosted acceptance, or cutover.
