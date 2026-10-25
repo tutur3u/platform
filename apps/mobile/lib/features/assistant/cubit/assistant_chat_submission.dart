@@ -301,7 +301,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
     _queuedSubmissionRequestId = clientRequestId;
     _queuedSubmissionEntry = queued;
     _queueDebounce?.cancel();
-    _queueDebounce = Timer(const Duration(milliseconds: 220), () {
+    void flush() {
       if (!current()) {
         _staleSubmission(clientRequestId);
         return;
@@ -321,7 +321,12 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           isCurrent: current,
         ),
       );
-    });
+    }
+    if (shouldPrimeUi) {
+      flush();
+    } else {
+      _queueDebounce = Timer(const Duration(milliseconds: 220), flush);
+    }
     return true;
   }
 
@@ -412,8 +417,10 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         }
         chat = created;
         chatId = created.id;
-        phase = OperationalPhase.assistantPreferencePersist;
-        await _preferences.saveChatId(wsId, chatId, shouldWrite: current);
+        if (created is! AssistantCreatedChat) {
+          phase = OperationalPhase.assistantPreferencePersist;
+          await _preferences.saveChatId(wsId, chatId, shouldWrite: current);
+        }
         if (!current()) {
           _staleSubmission(clientRequestId);
           return;

@@ -27,6 +27,7 @@ import '../models/assistant_soul_snapshot.dart';
 import 'assistant_attachment_upload.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_chat_persistence_contract.dart';
+import 'assistant_created_chat.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_reaction_journal.dart';
