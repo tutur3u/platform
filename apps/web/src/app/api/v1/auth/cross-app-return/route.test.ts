@@ -191,6 +191,43 @@ describe('cross-app return route', () => {
     expect(returnUrl.searchParams.get('targetApp')).toBe('chat');
   });
 
+  it('returns apex-mounted verifier URLs to the mounted app, inside the mount', async () => {
+    const response = await POST(
+      createRequest(
+        'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal%2Fcatalog'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      returnUrl: string;
+      targetApp: string;
+    };
+    const returnUrl = new URL(body.returnUrl);
+
+    expect(body.targetApp).toBe('inventory');
+    expect(returnUrl.origin).toBe('https://tuturuuu.com');
+    expect(returnUrl.pathname).toBe('/inventory/verify-token');
+    expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal/catalog');
+    expect(returnUrl.searchParams.get('targetApp')).toBe('inventory');
+  });
+
+  it.each([
+    ['an unsafe nextUrl', 'https%3A%2F%2Fevil.test', '/'],
+    ['a nested verifier nextUrl', '%2Fverify-token%3FnextUrl%3D%252Fa', '/a'],
+  ])('keeps %s inside the mount', async (_label, nextUrl, expected) => {
+    const response = await POST(
+      createRequest(
+        `https://tuturuuu.com/inventory/verify-token?nextUrl=${nextUrl}`
+      )
+    );
+    const body = (await response.json()) as { returnUrl: string };
+    const returnUrl = new URL(body.returnUrl);
+
+    expect(returnUrl.pathname).toBe('/inventory/verify-token');
+    expect(returnUrl.searchParams.get('nextUrl')).toBe(expected);
+  });
+
   it('resolves the root platform URL when supplied over http', async () => {
     const response = await POST(
       createRequest('http://tuturuuu.com', { generateToken: false })
