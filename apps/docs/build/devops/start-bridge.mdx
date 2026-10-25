@@ -305,6 +305,35 @@ export default defineConfig(({ command }) => ({
 explicitly when converting an app whose current config aliases only some
 `next/*` modules, so the bundle does not change.
 
+## CI template
+
+`.github/workflows/native-start-app.yaml` is the reusable validation for a
+bridged app. Each app keeps a thin caller (`<app>-cloudflare.yaml`) that owns
+the triggers, the **path filters** (the app, every workspace package in its
+dependency closure including `packages/start-bridge/**`, its artifact helper,
+`bun.lock`, the caller and the template), concurrency and the `ci-check.yml`
+gate, then calls the template with:
+
+| Input | Example (Shortener) |
+| --- | --- |
+| `app`, `package` | `shortener`, `@tuturuuu/shortener` |
+| `artifact-script` | `scripts/ci/shortener-native-artifact.py` (config/seal/verify/pack/restore) |
+| `env-interface`, `worker-environment-type` | `ShortenerGeneratedEnv`, `ShortenerEnvironment` |
+| `public-env` | Newline-separated `NEXT_PUBLIC_*`/`TUTURUUU_NOINDEX` build fixtures; anything else is rejected |
+| `format-paths` | Owning paths for Biome |
+| `helper-tests`, `unit-command`, `runtime-command` | Optional overrides |
+
+The template validates the inputs and runs, on the exact source SHA: frozen
+install, dependency build, build identity, the registry check, unit tests,
+Biome, the Void build, route-tree drift, type-check, emitted-config validation,
+emitted binding-type compatibility, Wrangler `deploy --dry-run`, then seal →
+emitted runtime → verify → pack. A second job restores the archive into clean
+output and repeats the dry-run, runtime acceptance and byte verification. It
+has no publish job or provider credential; production stays held in
+`tuturuuu.ci.ts`. Apps with extra acceptance (Apps' browser anchors, Meet's
+realtime Worker) keep those steps in their own workflow until the template
+grows an input for them.
+
 ## Verification
 
 `packages/start-bridge` unit tests cover each core module and adapter at the
