@@ -11716,4 +11716,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackAttachDescription => 'PNG, JPEG or WebP, up to 2 MB';
+
+  @override
+  String workspacePickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspaces',
+      one: '1 workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workspacePickerCreateDescription => 'Start a new space for a team or project';
+
+  @override
+  String get workspacePickerCurrentLabel => 'Current workspace';
+
+  @override
+  String get workspacePickerDefaultDescription => 'Opens first when you launch the app';
+
+  @override
+  String get workspacePickerEmptyMessage => 'Workspaces you create or are invited to appear here.';
+
+  @override
+  String get workspacePickerNoResultsMessage => 'Try another name or plan, or clear the search.';
+
+  @override
+  String get workspacePickerTeamBadge => 'Team';
 }

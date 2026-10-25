@@ -22134,6 +22134,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PNG, JPEG or WebP, up to 2 MB'**
   String get feedbackAttachDescription;
+
+  /// No description provided for @workspacePickerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
+  String workspacePickerCount(int count);
+
+  /// No description provided for @workspacePickerCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new space for a team or project'**
+  String get workspacePickerCreateDescription;
+
+  /// No description provided for @workspacePickerCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current workspace'**
+  String get workspacePickerCurrentLabel;
+
+  /// No description provided for @workspacePickerDefaultDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens first when you launch the app'**
+  String get workspacePickerDefaultDescription;
+
+  /// No description provided for @workspacePickerEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces you create or are invited to appear here.'**
+  String get workspacePickerEmptyMessage;
+
+  /// No description provided for @workspacePickerNoResultsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another name or plan, or clear the search.'**
+  String get workspacePickerNoResultsMessage;
+
+  /// No description provided for @workspacePickerTeamBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get workspacePickerTeamBadge;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

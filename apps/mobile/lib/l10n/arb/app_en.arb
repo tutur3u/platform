@@ -5031,5 +5031,19 @@
   "feedbackYourFeedback": "Your feedback",
   "feedbackDetailsHelper": "Do not include passwords or other secrets.",
   "feedbackScreenshotGroup": "Screenshot (optional)",
-  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB"
+  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB",
+  "workspacePickerCount": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@workspacePickerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workspacePickerCreateDescription": "Start a new space for a team or project",
+  "workspacePickerCurrentLabel": "Current workspace",
+  "workspacePickerDefaultDescription": "Opens first when you launch the app",
+  "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
+  "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
+  "workspacePickerTeamBadge": "Team"
 }
