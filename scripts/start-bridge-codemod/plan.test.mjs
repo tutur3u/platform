@@ -276,12 +276,25 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   );
   assert.match(runtime, /const WORKER = "tuturuuu-demo-vite-staging";/);
   assert.match(runtime, /build identity is the exact compiled source/);
-  assert.match(runtime, /statusFor\('\/demo', 'tuturuuu\.com'\)/);
   // A public root must answer 200, not merely "no 5xx" (a login redirect).
   assert.match(runtime, /^const EXPECTED = \{"\/":200\};$/m);
-  assert.match(runtime, /assert\.equal\(response\.status, expected, outcome\)/);
-  assert.match(runtime, /assert\.equal\(mounted, root,/);
-  assert.doesNotMatch(runtime, /root < 500|mounted < 500/);
+  assert.match(runtime, /^const BASE = "\/demo";$/m);
+  assert.match(
+    runtime,
+    /from '\.\.\/\.\.\/\.\.\/scripts\/start-bridge-codemod\/runtime-outcome\.mjs';/
+  );
+  assert.match(runtime, /runtimeExpectationProblems\(EXPECTED\), \[\]/);
+  // Every declared page on the apex mount, with base-aware redirects.
+  assert.match(
+    runtime,
+    /mountedGet\(mountedPath\(BASE, path\)\)[\s\S]*origin: MOUNT_ORIGIN,\s*base: BASE,/
+  );
+  assert.doesNotMatch(runtime, /root < 500|mounted < 500|statusFor/);
+  assert.ok(
+    content('.github/workflows/demo-cloudflare.yaml').includes(
+      "'scripts/start-bridge-codemod/runtime-outcome.mjs',"
+    )
+  );
   assert.deepEqual(
     JSON.parse(content('apps/demo/start-bridge.routes.json')).runtime,
     { '/': 200 }
@@ -309,8 +322,17 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
     );
     assert.match(
       plan(root).problems.join('\n'),
-      /runtime\["\/"\] must be a non-5xx status or \{ "redirect"/,
+      /start-bridge\.routes\.json: runtime\["\/"\]: /,
       JSON.stringify(invalid)
+    );
+  }
+  // Containers that would drop the root assertion are problems, not defaults.
+  for (const runtime of [{}, [], { '/about': 200 }]) {
+    fs.writeFileSync(routesPath, `${JSON.stringify({ runtime })}\n`);
+    assert.match(
+      plan(root).problems.join('\n'),
+      /start-bridge\.routes\.json: runtime (?:must declare the root|must be a record)/,
+      JSON.stringify(runtime)
     );
   }
   assert.match(content('tuturuuu.ci.ts'), /'demo-cloudflare\.yaml': true,/);

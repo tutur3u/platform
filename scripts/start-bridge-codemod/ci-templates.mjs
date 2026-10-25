@@ -26,6 +26,7 @@ const SHARED_CI_PATHS = [
   'scripts/ci/native-config-default-probe.mjs',
   'scripts/ci/native-receipt-layout.mjs',
   'scripts/ci/production-publication-policy.ts',
+  'scripts/start-bridge-codemod/runtime-outcome.mjs',
   'bun.lock',
   NATIVE_TEMPLATE,
   '.github/workflows/ci-check.yml',
@@ -205,7 +206,8 @@ if __name__ == "__main__":
  * Worker identity, public-file parity, the app's declared page outcomes
  * (\`runtime\` in start-bridge.routes.json: an exact status or an expected
  * redirect, so a login redirect never passes as a public page), the apex
- * mount answering like the root, and an unknown path without a server error,
+ * mount serving every declared page alike (redirects keep the mount and the
+ * origin), and an unknown path without a server error,
  * with all egress denied.
  * App-specific acceptance belongs in further \`cloudflare/*.runtime.mjs\` files,
  * which \`test:runtime\` runs with it.
@@ -237,6 +239,11 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import {
+  mountedPath,
+  runtimeExpectationProblems,
+  runtimeOutcomeFailure,
+} from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -244,6 +251,7 @@ const WORKER = ${js(workerName)};
 const PUBLIC_FILES = [${publicFiles.map(js).join(', ')}];
 // From start-bridge.routes.json \`runtime\`: a status, or a redirect prefix.
 const EXPECTED = ${JSON.stringify(expectations)};
+const BASE = ${js(`/${app}`)};
 
 async function sha256(path) {
   return createHash('sha256').update(await readFile(path)).digest('hex');
@@ -336,14 +344,23 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
   const get = (path, init = {}) =>
     fetch(\`\${origin}\${path}\`, { redirect: 'manual', ...init });
   // fetch() drops a custom Host header; the apex mount needs one.
-  const statusFor = (path, host) =>
+  const MOUNT_ORIGIN = 'http://tuturuuu.com';
+  const mountedGet = (path) =>
     new Promise((resolve, reject) => {
       const target = new URL(path, origin);
       httpRequest(
-        { host: target.hostname, port: target.port, path: target.pathname, headers: { host } },
+        {
+          host: target.hostname,
+          port: target.port,
+          path: \`\${target.pathname}\${target.search}\`,
+          headers: { host: new URL(MOUNT_ORIGIN).host },
+        },
         (response) => {
           response.resume();
-          resolve(response.statusCode ?? 0);
+          resolve({
+            status: response.statusCode ?? 0,
+            location: response.headers.location ?? null,
+          });
         }
       )
         .on('error', reject)
@@ -351,26 +368,32 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
     });
 ${buildInfo}
   await t.test('public pages answer as start-bridge.routes.json expects', async () => {
+    assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
     for (const [path, expected] of Object.entries(EXPECTED)) {
       const response = await get(path);
-      const location = response.headers.get('location');
-      const outcome = \`\${path}: \${response.status}\${location ? \` -> \${location}\` : ''}\`;
-      if (typeof expected === 'number') {
-        assert.equal(response.status, expected, outcome);
-        continue;
-      }
-      assert.ok(response.status >= 300 && response.status < 400 && location, outcome);
-      const target = new URL(location, origin);
-      const actual =
-        target.origin === origin ? \`\${target.pathname}\${target.search}\` : target.href;
-      assert.ok(actual.startsWith(expected.redirect), \`\${outcome}; expected \${expected.redirect}\`);
+      const failure = runtimeOutcomeFailure({
+        path,
+        expected,
+        status: response.status,
+        location: response.headers.get('location'),
+        origin,
+      });
+      assert.equal(failure, null, failure ?? '');
     }
   });
 
-  await t.test('the apex mount answers like the root', async () => {
-    const root = (await get('/')).status;
-    const mounted = await statusFor('/${app}', 'tuturuuu.com');
-    assert.equal(mounted, root, \`tuturuuu.com/${app}: \${mounted}, root /: \${root}\`);
+  await t.test('the apex mount serves every declared page alike', async () => {
+    for (const [path, expected] of Object.entries(EXPECTED)) {
+      const response = await mountedGet(mountedPath(BASE, path));
+      const failure = runtimeOutcomeFailure({
+        path,
+        expected,
+        ...response,
+        origin: MOUNT_ORIGIN,
+        base: BASE,
+      });
+      assert.equal(failure, null, failure ?? '');
+    }
   });
 
   await t.test('an unknown path is not a server error', async () => {
