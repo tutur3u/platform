@@ -16,6 +16,8 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": "https://staging.tuturuuu.com/login"
+    "/": {
+      "redirect": "https://staging.tuturuuu.com/login"
+    }
   }
 }

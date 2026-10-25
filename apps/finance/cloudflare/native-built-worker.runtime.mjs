@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
+import {
+  runtimeExpectationProblems,
+  runtimeOutcomeFailure,
+} from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 import { withNativeBrowserFence } from '../../apps/cloudflare/native-browser-fence.mjs';
 import {
   app,
@@ -16,6 +20,11 @@ import {
   signedSsrFixtureResponse,
   syntheticSessionHeaders,
 } from './signed-ssr-fixture.mjs';
+
+const runtimeExpectations = JSON.parse(
+  await readFile(join(app, 'start-bridge.routes.json'), 'utf8')
+).runtime;
+assert.deepEqual(runtimeExpectationProblems(runtimeExpectations), []);
 
 async function qualifyMode(t, mode) {
   const { origin, base } = mode;
@@ -146,7 +155,16 @@ async function qualifyMode(t, mode) {
       const control = await runtime.fetch(`${origin}${base}/`, {
         headers: { 'accept-language': supported },
       });
-      assert.ok([200, 307, 308].includes(control.status));
+      assert.equal(
+        runtimeOutcomeFailure({
+          path: '/',
+          expected: runtimeExpectations['/'],
+          origin,
+          status: control.status,
+          location: control.headers.get('location'),
+        }),
+        null
+      );
       const expectedLocation = control.headers.get('location');
       await control.text();
       const response = await runtime.fetch(`${origin}${base}/`, {
