@@ -6,7 +6,13 @@ import {
   reviewMeetLiveTool,
 } from '@tuturuuu/internal-api';
 import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   MIRA_VOLUME_ID,
   usePlaybackVolume,
@@ -48,7 +54,6 @@ export function useLiveAssistant(
 ) {
   const volume = usePlaybackVolume(MIRA_VOLUME_ID);
   const volumeRef = useRef(volume);
-  volumeRef.current = volume;
   const [status, setStatus] = useState('idle');
   const [mode, setMode] = useState<LiveAudience>('personal');
   const [transcript, setTranscript] = useState<
@@ -62,7 +67,10 @@ export function useLiveAssistant(
   const startGeneration = useRef(0);
   const starting = useRef(false);
   const roomAudioRef = useRef(roomAudio);
-  roomAudioRef.current = roomAudio;
+  useLayoutEffect(() => {
+    volumeRef.current = volume;
+    roomAudioRef.current = roomAudio;
+  }, [roomAudio, volume]);
   const send = useCallback((message: LiveClientCommand) => {
     const current = active.current;
     if (!current) return false;
