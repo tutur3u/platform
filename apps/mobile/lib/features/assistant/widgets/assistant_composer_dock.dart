@@ -18,6 +18,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_primary_act
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_inline_voice_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_reply_preview.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -54,6 +55,7 @@ class AssistantComposerDock extends StatelessWidget {
     this.localModelLabel,
     this.onOpenLocalModels,
     this.onStopLocal,
+    this.onCancelReply,
     super.key,
   });
 
@@ -74,6 +76,7 @@ class AssistantComposerDock extends StatelessWidget {
   final String? localModelLabel;
   final Future<void> Function()? onOpenLocalModels;
   final Future<void> Function()? onStopLocal;
+  final VoidCallback? onCancelReply;
   final bool navigationExpanded;
   final double bottomInset;
   final bool isPersonalWorkspace;
@@ -92,6 +95,7 @@ class AssistantComposerDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         AssistantComposerOptions(
           localOnly: localOnly,
@@ -113,6 +117,7 @@ class AssistantComposerDock extends StatelessWidget {
           child: ListenableBuilder(
             listenable: focusNode,
             builder: (context, _) => AppTextField(
+              key: const ValueKey('assistant-composer-editor'),
               style: const TextStyle(fontSize: 16, height: 1.25),
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
               controller: controller,
@@ -123,6 +128,7 @@ class AssistantComposerDock extends StatelessWidget {
               textInputAction: TextInputAction.newline,
               onTapOutside: (_) => focusNode.unfocus(),
               placeholder: context.l10n.assistantAskPlaceholder,
+              hintMaxLines: 1,
               borderless: true,
             ),
           ),
@@ -133,21 +139,27 @@ class AssistantComposerDock extends StatelessWidget {
             final hasPrompt =
                 value.text.trim().isNotEmpty ||
                 chatState.composerAttachments.isNotEmpty;
-            if (hasPrompt || localGenerating) return const SizedBox.shrink();
-            return AppIconButton(
-              tooltip: localOnly
-                  ? context.l10n.assistantLocalTextOnly
-                  : context.l10n.voiceRecord,
-              onPressed:
-                  localBlocked ||
-                      localOnly ||
-                      chatState.status == AssistantChatStatus.restoring
-                  ? null
-                  : () {
-                      focusNode.unfocus();
-                      unawaited(onMicrophoneTap());
-                    },
-              icon: const Icon(LucideIcons.mic),
+            return Visibility(
+              key: const ValueKey('assistant-composer-microphone-slot'),
+              visible: !hasPrompt && !localGenerating,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: AppIconButton(
+                tooltip: localOnly
+                    ? context.l10n.assistantLocalTextOnly
+                    : context.l10n.voiceRecord,
+                onPressed:
+                    localBlocked ||
+                        localOnly ||
+                        chatState.status == AssistantChatStatus.restoring
+                    ? null
+                    : () {
+                        focusNode.unfocus();
+                        unawaited(onMicrophoneTap());
+                      },
+                icon: const Icon(LucideIcons.mic),
+              ),
             );
           },
         ),
@@ -187,8 +199,20 @@ class AssistantComposerDock extends StatelessWidget {
       constraints: BoxConstraints(minHeight: assistantComposerHeight(context)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (chatState.replyTarget case final reply? when !localOnly)
+            AssistantReplyPreview(
+              label: reply.role == 'user'
+                  ? context.l10n.assistantYouLabel
+                  : shellState.soul.name,
+              text: reply.parts
+                  .where((part) => part.type == 'text')
+                  .map((part) => part.text ?? '')
+                  .join('\n'),
+              onCancel: onCancelReply,
+            ),
           if (!localOnly && chatState.composerAttachments.isNotEmpty)
             AssistantComposerAttachments(
               attachments: chatState.composerAttachments,

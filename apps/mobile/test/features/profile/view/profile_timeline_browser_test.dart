@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/profile/view/profile_timeline_days.dart';
@@ -68,7 +70,7 @@ void main() {
     );
     expect(
       find.descendant(
-        of: find.byType(ListTile),
+        of: find.byType(AppGroupedRow),
         matching: find.text('Created 1 task'),
       ),
       findsOneWidget,
@@ -173,7 +175,7 @@ void main() {
       expect(find.text(entry.value), findsOneWidget);
       expect(find.text('No recent activity in this workspace'), findsNothing);
       tester
-          .widget<IconButton>(
+          .widget<AppIconButton>(
             find.byKey(
               const ValueKey('timeline-date-toggle'),
               skipOffstage: false,
@@ -196,7 +198,7 @@ void main() {
       expect(find.text('Older task'), findsNothing);
       final semantics = tester.ensureSemantics();
       tester
-          .widget<IconButton>(
+          .widget<AppIconButton>(
             find.byKey(
               const ValueKey('timeline-date-toggle'),
               skipOffstage: false,
@@ -221,7 +223,7 @@ void main() {
       expect(find.text('October task'), findsOneWidget);
       for (var i = 0; i < 4; i++) {
         tester
-            .widget<IconButton>(
+            .widget<AppIconButton>(
               find.byKey(
                 const ValueKey('timeline-date-toggle'),
                 skipOffstage: false,
@@ -261,7 +263,7 @@ void main() {
       final before = tester.getTopLeft(find.text('Task 2')).dy;
       for (var i = 0; i < 6; i++) {
         tester
-            .widget<IconButton>(
+            .widget<AppIconButton>(
               find.byKey(
                 const ValueKey('timeline-date-toggle'),
                 skipOffstage: false,
@@ -282,8 +284,18 @@ void main() {
   testWidgets(
     'pagination appends returned days without moving rendered content',
     (tester) async {
-      await mount(tester, pageSize: 2);
-      expect(find.text('Older task'), findsNothing);
+      // The first page must overflow the 300px auto-append threshold, so
+      // the More days action is still present before scrolling.
+      await mount(
+        tester,
+        pageSize: 2,
+        items: [
+          ...data,
+          for (var i = 0; i < 4; i++)
+            item('October task $i', DateTime(2026, 10, 1, 9, -i)),
+        ],
+      );
+      expect(find.text('Older task', skipOffstage: false), findsNothing);
       await tester.ensureVisible(
         find.byKey(const ValueKey('timeline-more-days'), skipOffstage: false),
       );
@@ -334,7 +346,7 @@ void main() {
         cold,
       );
       tester
-          .widget<IconButton>(
+          .widget<AppIconButton>(
             find.byKey(
               const ValueKey('timeline-date-toggle'),
               skipOffstage: false,
@@ -373,7 +385,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await mount(tester, reduceMotion: true, scale: 2);
       tester
-          .widget<IconButton>(
+          .widget<AppIconButton>(
             find.byKey(
               const ValueKey('timeline-date-toggle'),
               skipOffstage: false,
@@ -501,7 +513,7 @@ void main() {
 
     await capture('agenda');
     tester
-        .widget<IconButton>(
+        .widget<AppIconButton>(
           find.byKey(
             const ValueKey('timeline-date-toggle'),
             skipOffstage: false,

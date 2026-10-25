@@ -25,13 +25,18 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
 
-class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+class _Auth extends MockCubit<AuthState> implements AuthCubit {
+  _Auth() {
+    when(() => isClosed).thenReturn(false);
+  }
+}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 

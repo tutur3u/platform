@@ -673,6 +673,30 @@
       }
     }
   },
+  "@profileDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "@profileEmailPendingChange": {
     "placeholders": {
       "email": {
@@ -769,9 +793,6 @@
         "type": "String"
       },
       "occurrence": {
-        "type": "String"
-      },
-      "timezone": {
         "type": "String"
       }
     }
@@ -1344,20 +1365,45 @@
   "assistantLiveCallAssistant": "Call {assistantName}",
   "assistantLiveCallingAssistant": "Calling {assistantName}",
   "assistantLiveCameraPreview": "Live camera",
+  "assistantLiveCallCamera": "Camera",
+  "assistantLiveCallCaptions": "Captions",
+  "assistantLiveCallCaptionsEmpty": "Captions appear here as you talk.",
+  "assistantLiveCallClose": "Close",
+  "assistantLiveCallConnected": "Connected",
+  "assistantLiveCallConnecting": "Connecting…",
+  "assistantLiveCallDuration": "Call duration",
+  "assistantLiveCallEnd": "End",
+  "assistantLiveCallEndedWithDuration": "Call ended · {duration}",
+  "@assistantLiveCallEndedWithDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallFailed": "Couldn't connect",
+  "assistantLiveCallKeyboard": "Keyboard",
+  "assistantLiveCallMinimize": "Minimize",
+  "assistantLiveCallMute": "Mute",
+  "assistantLiveCallMuted": "Muted",
+  "assistantLiveCallReconnecting": "Reconnecting…",
+  "assistantLiveCallRetry": "Retry",
+  "assistantLiveCallReturn": "Return to call",
+  "assistantLiveCallYou": "You",
   "assistantLiveCancelCall": "Cancel call",
   "assistantLiveConnect": "Start live session",
-  "assistantLiveDescriptionConnecting": "Creating a direct Gemini Live session for text, audio, and camera input.",
+  "assistantLiveDescriptionConnecting": "Connecting your live conversation.",
   "assistantLiveDescriptionError": "The live session hit an error. Retry or start a fresh session.",
-  "assistantLiveDescriptionIdle": "Start a live session to talk, type, or stream camera context into the same assistant chat.",
+  "assistantLiveDescriptionIdle": "Tap the microphone to start talking. Your conversation stays here.",
   "assistantLiveDescriptionListening": "Microphone streaming is active. Mira will keep listening for new audio input.",
-  "assistantLiveDescriptionPreparing": "Minting an ephemeral token and restoring the last resumable live session.",
+  "assistantLiveDescriptionPreparing": "Getting your live conversation ready.",
   "assistantLiveDescriptionReady": "Live text and audio are ready. Type a turn, talk, or share your camera feed.",
-  "assistantLiveDescriptionReconnecting": "The session is reconnecting with the latest resumable handle and restored history.",
+  "assistantLiveDescriptionReconnecting": "Reconnecting your conversation. Your transcript is still here.",
   "assistantLiveDisconnect": "End live session",
   "assistantLiveDraftAssistant": "Mira is replying",
   "assistantLiveDraftUser": "You are speaking",
   "assistantLiveHideCamera": "Hide camera",
-  "assistantLiveIdleHeading": "Talk with Mira",
+  "assistantLiveIdleHeading": "Ready to talk",
   "assistantLiveInfoAccessHeading": "Current access",
   "assistantLiveInfoDismiss": "Got it",
   "assistantLiveInfoTitle": "Live information",
@@ -2823,6 +2869,8 @@
   "mailOpenFailed": "Could not open this message. Please try again.",
   "mailOrganization": "Organization",
   "mailOwner": "Owner",
+  "mailPreviewEmptyMessage": "Pick a conversation from the list to read it here.",
+  "mailPreviewEmptyTitle": "Select a conversation",
   "mailRemoveAttachment": "Remove attachment",
   "mailReply": "Reply",
   "mailReplyAll": "Reply all",
@@ -3271,6 +3319,9 @@
   "profileDisplayNameDescription": "This name appears in collaborative surfaces across the app.",
   "profileDisplayNameHint": "Your display name",
   "profileDisplayNameRequired": "Display name cannot be empty",
+  "profileDurationHours": "{hours}h",
+  "profileDurationHoursMinutes": "{hours}h {minutes}m",
+  "profileDurationMinutes": "{minutes}m",
   "profileEmail": "Email",
   "profileEmailDescription": "Updating your email sends confirmation to both the old and new addresses.",
   "profileEmailHint": "example@tuturuuu.com",
@@ -3374,7 +3425,7 @@
   "remindersLastChecked": "Last checked: {time}",
   "remindersNeverChecked": "Waiting for the first refresh",
   "remindersNext": "Next reminder: {time}",
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence}",
   "remindersPermissionOff": "Device notifications disabled",
   "remindersPermissionOn": "Device notifications enabled",
   "remindersRefresh": "Refresh now",
@@ -4815,5 +4866,39 @@
   "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
   "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
   "mailSettingsReadOnly": "Saved settings are read-only until access can be verified.",
-  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online."
+  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online.",
+  "assistantReactionCelebrate": "Celebrate",
+  "assistantReactionInsightful": "Insightful",
+  "assistantReactionLabel": "Reaction",
+  "assistantReactionLike": "Like",
+  "assistantReactionLove": "Love",
+  "assistantReactionUnconfirmed": "The reaction could not be confirmed. Refresh reactions to reconcile it safely.",
+  "assistantReactionUnavailable": "Reactions are unavailable right now. Try again.",
+  "assistantRefreshReactions": "Refresh reactions",
+  "assistantReplyMessageAction": "Reply",
+  "assistantReplyUnavailable": "Original message unavailable",
+  "assistantThemeAdvanced": "Advanced",
+  "assistantThemeBackground": "Background colors",
+  "assistantThemeBackgroundStyle": "Background style",
+  "assistantThemeCustom": "Custom",
+  "assistantThemeDeviceScope": "For your Assistant chats on this device, across workspaces.",
+  "assistantThemeIntensity": "Background intensity",
+  "assistantThemeLoading": "Loading appearance…",
+  "assistantThemeMessages": "Message colors",
+  "assistantThemeOmbre": "Ombre",
+  "assistantThemePreset": "Preset",
+  "assistantThemePreview": "Chat appearance preview",
+  "assistantThemePreviewAssistant": "Let’s make room for what matters.",
+  "assistantThemePreviewUser": "Help me plan a focused day.",
+  "assistantThemeReset": "Reset appearance",
+  "assistantThemeRetry": "Retry",
+  "assistantThemeSaving": "Saving appearance…",
+  "assistantThemeStorageError": "Appearance could not be saved or loaded on this device.",
+  "assistantThemeText": "Text colors",
+  "assistantThemeTitle": "Chat appearance",
+  "assistantReplyPending": "The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.",
+  "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending.",
+  "assistantReplyChangedBeforeSend": "The reply changed before sending. Your draft was kept. Review it and send again.",
+  "assistantLiveSendRefused": "Live did not accept this message. Your draft was kept. Check the connection before trying again.",
+  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates."
 }

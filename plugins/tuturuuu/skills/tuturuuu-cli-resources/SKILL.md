@@ -224,6 +224,14 @@ installation and the existing queue, verifies checksums, records rollback, and
 qualifies each host. Source changes never authorize activation.
 
 ## Diagnose and recover
+
+System probes use trusted absolute sysctl/ps paths and bounded platform
+fallbacks; Linux pressure reads `/proc/meminfo`. Unreadable burst telemetry
+marks only that waiter base-only. Its original ticket stays first for base
+capacity; eligible burst waiters follow the existing FIFO/project-share rules.
+Real high load or elevated pressure still blocks under the original policy.
+See [burst probe behavior and regression evidence](../../../../apps/docs/reference/packages/sdk.mdx#burst-telemetry-and-minimal-path).
+
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
 ages. It warns when an owner has been idle at 0% CPU for more than 10 minutes.
 Inspect such an owner and its thread; status never kills anything.

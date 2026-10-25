@@ -164,4 +164,6 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 - Parse touched JSON with `python3 -m json.tool`.
 - Run `bun ff` on touched docs, scripts, config, and workflow files.
 - Run `git diff --check`.
-- Run `bun validate` when root TypeScript config or repo-wide script/config behavior changed.
+- Run `bun check:changed` before pushing; when root TypeScript config or repo-wide
+  script/config behavior changed, require `bun validate` to pass in CI for the exact
+  commit (never run it on agent machines).

@@ -51,6 +51,17 @@ Future<GoRouter> pumpShellRender(
   Locale locale = const Locale('en'),
   Map<String, Object> preferences = const {},
   List<String> extraLocations = const [],
+  bool hasAuthenticatedActor = false,
+  Widget Function(int replayToken)? profilePageBuilder,
+  AuthState authState = const AuthState.unauthenticated(),
+  ShellProfileState profileState = const ShellProfileState(
+    profile: UserProfile(id: 'synthetic-user', displayName: 'Linh'),
+  ),
+  WorkspaceState workspaceState = const WorkspaceState(
+    status: WorkspaceStatus.loaded,
+    currentWorkspace: renderWorkspace,
+    workspaces: [renderWorkspace],
+  ),
 }) async {
   SharedPreferences.setMockInitialValues(preferences);
   final settings = SettingsRepository();
@@ -60,29 +71,21 @@ Future<GoRouter> pumpShellRender(
   final auth = _Auth();
   final workspaces = _Workspaces();
   final profile = _Profile();
-  whenListen(
-    auth,
-    const Stream<AuthState>.empty(),
-    initialState: const AuthState.unauthenticated(),
-  );
+  whenListen(auth, const Stream<AuthState>.empty(), initialState: authState);
   whenListen(
     workspaces,
     const Stream<WorkspaceState>.empty(),
-    initialState: const WorkspaceState(
-      status: WorkspaceStatus.loaded,
-      currentWorkspace: renderWorkspace,
-      workspaces: [renderWorkspace],
-    ),
+    initialState: workspaceState,
   );
   // The workspace picker reads these when it opens.
   when(workspaces.refreshHiddenWorkspaces).thenAnswer((_) async {});
-  when(() => workspaces.hasAuthenticatedActor).thenReturn(false);
+  when(
+    () => workspaces.hasAuthenticatedActor,
+  ).thenReturn(hasAuthenticatedActor);
   whenListen(
     profile,
     const Stream<ShellProfileState>.empty(),
-    initialState: const ShellProfileState(
-      profile: UserProfile(id: 'synthetic-user', displayName: 'Linh'),
-    ),
+    initialState: profileState,
   );
   final router = GoRouter(
     initialLocation: location,
@@ -93,6 +96,7 @@ Future<GoRouter> pumpShellRender(
           enableDebugLogs: false,
           homePageBuilder: homePageBuilder,
           notificationsPageBuilder: notificationsPageBuilder,
+          profilePageBuilder: profilePageBuilder,
           child: child,
         ),
         routes: [

@@ -144,11 +144,13 @@ extension _ShellPageLayout on _ShellPageState {
                                     context,
                                   ) ??
                                   const NotificationsPage(),
-                              (_) => ProfileOverviewPage(
-                                replayToken:
+                              (_) {
+                                final token =
                                     _rootTabReplayTokens[Routes.profileRoot] ??
-                                    0,
-                              ),
+                                    0;
+                                return widget.profilePageBuilder?.call(token) ??
+                                    ProfileOverviewPage(replayToken: token);
+                              },
                             ],
                           ),
                         ),

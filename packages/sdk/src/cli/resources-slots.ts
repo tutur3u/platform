@@ -32,6 +32,7 @@ const ownerSchema = z.object({
   command: z.string().optional(),
   queuedAt: z.string(),
   startedAt: z.string().optional(),
+  burstUnavailable: z.literal(true).optional(),
   limits: z
     .object({
       vitestWorkers: z.number().int().positive(),
