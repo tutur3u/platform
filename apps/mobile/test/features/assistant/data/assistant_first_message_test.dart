@@ -228,7 +228,8 @@ void main() {
       expect(api.requests, 1);
     },
   );
-  test('cancellation before creation ACK returns promptly and permanently fences the late receipt', () async {
+  test('cancellation before creation ACK returns promptly '
+      'and permanently fences the late receipt', () async {
     api.responseGate = Completer<void>();
     final events = <AssistantStreamEvent>[];
     final subscription = send().listen(events.add);

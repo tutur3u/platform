@@ -562,6 +562,10 @@ The `x-mira-chat-creation` response header contains a bounded, encoded creation
 receipt. Mobile validates its identity/settings and durably selects the chat
 before consuming message receipts. Losing this acknowledgement retains the
 creation hold; it never causes a fresh key or replacement UUID to be sent.
+Leaving the scope before creation acknowledgement does not wait for the pending
+HTTP response. That bounded operation remains observed with a permanent origin
+fence, so a late receipt cannot select a chat or publish messages. Cancellation
+after creation acknowledgement keeps the existing stream cleanup semantics.
 Attachment-first sends and adapters without a captured settings plan retain the
 separate creation path. Live keeps its existing transport and turn fences.
 
