@@ -18,6 +18,7 @@ export default defineBridgeAppConfig<FinanceEnvironment>({
     secured.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     const pathname = new URL(request.url).pathname;
     const staticAsset =
+      (request.method === 'GET' || request.method === 'HEAD') &&
       (pathname.startsWith('/assets/') || publicAssets.has(pathname)) &&
       response.status === 200 &&
       !response.headers.get('content-type')?.includes('text/html');

@@ -23,7 +23,7 @@ async function qualifyMode(t, mode) {
   const runtime = await financeRuntime(t, {
     financeOrigin: origin,
     fixtureResponse: (request) =>
-      signedSsrFixtureResponse(request, signedCalls),
+      signedSsrFixtureResponse(request, signedCalls, origin),
   });
   await t.test(
     `exact build and anonymous API admission at ${origin}${base}`,

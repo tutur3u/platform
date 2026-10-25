@@ -35,6 +35,29 @@ describe('Finance response security independent of staging flags', () => {
     }
   );
 
+  it.each(['POST', 'PUT', 'DELETE'])(
+    'does not classify %s asset responses as cacheable files',
+    async (method) => {
+      const response = await wrap(
+        new Response('personalized', {
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'public, max-age=3600',
+          },
+        }),
+        {
+          request: new Request(
+            'https://finance.tuturuuu.com/assets/fixture.js',
+            { method }
+          ),
+          env: { ASSETS: { fetch: async () => new Response('asset') } },
+        }
+      );
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.get('vary')).toContain('Cookie');
+    }
+  );
+
   it('preserves compiled static caching while retaining security headers', async () => {
     const response = await wrap(
       new Response('export {}', {

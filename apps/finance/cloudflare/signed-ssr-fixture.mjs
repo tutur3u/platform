@@ -48,14 +48,11 @@ export function syntheticSessionHeaders(secret) {
   };
 }
 
-export function signedSsrFixtureResponse(request, calls) {
+export function signedSsrFixtureResponse(request, calls, financeOrigin) {
   const url = new URL(request.url);
   const transactions = `/api/workspaces/${fixtureWorkspaceId}/transactions`;
   if (
-    ['finance.tuturuuu.com', 'finance-staging.tuturuuu.com'].includes(
-      url.hostname
-    ) &&
-    url.protocol === 'https:' &&
+    url.origin === financeOrigin &&
     request.method === 'GET' &&
     url.pathname === transactions &&
     url.searchParams.size === 2 &&
@@ -67,10 +64,7 @@ export function signedSsrFixtureResponse(request, calls) {
     return Response.json([]);
   }
   if (
-    ['finance.tuturuuu.com', 'finance-staging.tuturuuu.com'].includes(
-      url.hostname
-    ) &&
-    url.protocol === 'https:' &&
+    url.origin === financeOrigin &&
     request.method === 'GET' &&
     url.pathname === `/api/workspaces/${fixtureWorkspaceId}/finance/overview` &&
     url.searchParams.size === 2 &&
