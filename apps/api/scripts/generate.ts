@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { z } from 'zod';
+import { validateRetainedCoverage } from '../src/route-safety';
 import { endpoints } from '../src/routes';
 import { retainedInventory } from './inventory';
 import { clients } from './render-clients';
@@ -70,6 +71,7 @@ const spec = {
   paths,
 };
 const retained = await retainedInventory();
+validateRetainedCoverage(endpoints, retained);
 const manifest = endpoints.map(
   ({ execute: _execute, input: _input, output: _output, ...endpoint }) =>
     endpoint

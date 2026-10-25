@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
+import { type AssetsBinding, fetchAsset } from '../core/assets';
 import { type BasePath, createBasePath } from '../core/base-path';
 import { createNonce } from '../core/csp';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
@@ -16,9 +17,7 @@ import {
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
 
-export interface AssetsBinding {
-  fetch(request: Request): Promise<Response>;
-}
+export type { AssetsBinding } from '../core/assets';
 
 export interface BridgeHandlerOptions<Env, Ctx> {
   /** Where this artifact is served; the base is resolved per request. */
@@ -47,6 +46,16 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * bracket patterns; matched against the app-relative path.
    */
   centralFirst?: readonly string[];
+  /**
+   * Picks the origin for one unowned `/api/*` request (e.g. Storefront sends
+   * `/api/v1/inventory/**` to Inventory); `undefined` keeps
+   * `centralApiOrigin`. The request still goes through the central forward:
+   * base stripping, the loop guard and hop-by-hop header removal.
+   */
+  apiOrigin?: (
+    request: NextRequest,
+    context: { env: Env; path: string }
+  ) => string | undefined;
   /** Overrides the unowned `/api/*` forwarder. */
   forwardApi?: (request: NextRequest, origin: string) => Promise<Response>;
   matches?: (pathname: string) => boolean;
@@ -116,7 +125,10 @@ export function createBridgeHandler<
     ) {
       const assets = options.assets(env);
       if (!assets) throw new Error('Assets binding is unavailable');
-      response = await assets.fetch(base.stripRequest(request) ?? request);
+      response = await fetchAsset(
+        assets,
+        base.stripRequest(request) ?? request
+      );
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
@@ -129,7 +141,9 @@ export function createBridgeHandler<
             : null;
         if (endpoint) return endpoint;
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
-          const origin = options.centralApiOrigin(env);
+          const origin =
+            options.apiOrigin?.(forwarded, { env, path: pathname }) ??
+            options.centralApiOrigin(env);
           if (options.forwardApi) return options.forwardApi(forwarded, origin);
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(

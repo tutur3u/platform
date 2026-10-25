@@ -1,6 +1,5 @@
 import {
   notFound as startNotFound,
-  redirect as startRedirect,
   useLocation,
   useNavigate,
   useParams as useStartParams,
@@ -8,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { createServerOnlyFn } from '@tanstack/react-start';
 import { createContext, useContext, useMemo } from 'react';
+import { bridgeRedirect } from '../start/absolute-redirect';
 import { withAppBase } from '../start/base-path';
 
 /** Logical App Router params supplied by a catch-all page view. */
@@ -32,7 +32,7 @@ const observeRedirect = createServerOnlyFn(
 );
 
 export function redirect(href: string): never {
-  const result = startRedirect({ href: withAppBase(href) });
+  const result = bridgeRedirect(href);
   try {
     observeRedirect(href, result);
   } catch {
@@ -41,7 +41,7 @@ export function redirect(href: string): never {
   throw result;
 }
 export function permanentRedirect(href: string): never {
-  throw startRedirect({ href: withAppBase(href), statusCode: 308 });
+  throw bridgeRedirect(href, 308);
 }
 export function notFound(): never {
   throw startNotFound();

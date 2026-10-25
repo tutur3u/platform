@@ -118,6 +118,16 @@
       },
       "digest": "cf6695ee9df5d0771a1d45408d20c86bc921f2eb7dc72db33eebee4f47b19b2d"
     },
+    ".github/workflows/native-start-app.yaml": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6753",
+        "reason": "Reusable native Start app validation moves Shortener's admitted Wave 1 qualification (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts) into one shared template; Shortener's own workflow no longer uses Wrangler. Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "ae29e4eed3d835907be955f5b148c2ef37c053c6d8da4b817e67e5cd7930487e"
+    },
     ".github/workflows/parley-cloudflare.yaml": {
       "lines": 3,
       "uses": 4,
@@ -147,16 +157,6 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
-    },
-    ".github/workflows/shortener-cloudflare.yaml": {
-      "lines": 7,
-      "uses": 7,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6433",
-        "reason": "Shortener Worker acceptance mirrors the Apps Wave 1 template: Void rebuilds on deploy, so CI qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
-      },
-      "digest": "fb1bbb635e80bfb369b4d52826ad07de464bd380a59955d5579cc5614fd367c9"
     },
     ".github/workflows/wave1-native-app.yaml": {
       "lines": 6,

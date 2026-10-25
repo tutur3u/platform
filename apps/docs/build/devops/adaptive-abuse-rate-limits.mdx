@@ -431,3 +431,22 @@ needs a trusted workspace, IP/CIDR uplift, or app-level batching fix.
 Manual overrides require a reason and are written to the audit signal stream.
 Prefer expiry-bound overrides for trust and watch decisions so stale operational
 judgment does not become permanent policy.
+
+
+### Signed client IPs from the standalone API Worker
+
+`apps/api` uses the same `x-tuturuuu-origin-auth` header and
+`TRUSTED_PROXY_ORIGIN_SECRET` as the apex origin gate. Its `hmac-v1` proof
+contains a canonical IPv4/IPv6 address, a timestamp and an HMAC-SHA256 signature.
+The shared `cloudflare-origin` resolver accepts it for 60 seconds, with at most
+five seconds of future clock skew, and derives the client address from the
+verified proof instead of the Worker egress headers. Forged, expired, malformed,
+missing-key and weak-key assertions retain the Vercel-header fallback. Existing
+raw-secret Transform Rules continue to authenticate `cf-connecting-ip`.
+
+Configure the same existing secret on the API Worker and retained Next origin;
+keep `TRUSTED_PROXY=cloudflare-origin` on Next. This is one origin trust mechanism
+and rotation boundary. Verify distinct synthetic client IPs, spoof/expiry negative
+controls and direct-origin fallback before API activation. Regression coverage is
+in `origin-ip-proof.test.ts`, `origin-client-ip.test.ts`, the existing
+`client-ip-cloudflare-origin.test.ts`, and `apps/api/src/forward.test.ts`.
