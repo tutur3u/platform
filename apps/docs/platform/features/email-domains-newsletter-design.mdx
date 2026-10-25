@@ -20,8 +20,8 @@ Existing personal/connected mail and transactional notifications retain their ru
 Two launch gates need resolution before implementation can promise delivery:
 
 1. [Cloudflare Email Sending](https://developers.cloudflare.com/email-service/)
-   is a real beta product, but its current documentation describes **transactional**
-   email. Obtain written Cloudflare confirmation that permission-based marketing
+   is a real beta product, but its [FAQ](https://developers.cloudflare.com/email-service/reference/faq/)
+   explicitly excludes marketing email. Obtain written Cloudflare confirmation that permission-based marketing
    newsletters and this multi-tenant resale model are supported. Do not relabel a
    newsletter as transactional or silently switch to SES to bypass this gate.
 2. [Domain onboarding](https://developers.cloudflare.com/email-service/get-started/send-emails/)
@@ -201,7 +201,7 @@ The hard envelope is **not** just a dollar counter around sending. Atomically
 reserve conservative micro-dollar cost and finite operation credits before work:
 provider submissions, enqueue/read/delete/DLQ operations, Worker invocations,
 DB calls, R2 bytes/requests, verification polls and event ingestion. Account,
-workspace, campaign, UTC-day and billing-month budgets all apply; exhaustion fails
+workspace, campaign, workspace-local-day and billing-period budgets all apply; exhaustion fails
 closed. Do not discount included provider allowance when reserving. Concurrent
 leases reserve disjoint credits; no restart resets budgets. A bounded sweeper
 expires leases but never refunds unknown provider writes.
@@ -220,10 +220,15 @@ work and use provider/edge controls as additional defenses.
 currently includes 3,000 outbound messages/account/month on Workers Paid, then
 $0.35/1,000; accepted hard-bounces still count. Marginal reservation is therefore
 $0.00035/message, before compute, storage, queues, database and payment costs.
-For a 31-day month, full use is 15,500 messages at 500/day ($5.425 marginal email
-cost) and 62,000 at 2,000/day ($21.70). These are conservative calculations without
-the shared included allowance, **not measured costs or profitable plans**. Both
-requested price examples need an explicit subsidy/margin decision before sale.
+For a 31-day month, 500/day is 15,500 emails, costing $5.425 at the
+marginal rate and leaving $4.575 of the $10 price before other costs. The $2
+add-on is a **2,000-email monthly pool**, capped at 200/day: full pool consumption
+costs $0.70 and leaves $1.30 before other costs. These are calculated email-only
+contributions, not measured net margins; payment fees, compute, queues, storage,
+database and support still apply. Free-tier email costs and shared included
+allowances are separate. If the pool stacks with free, its incremental maximum
+is 2,000/month, alongside up to 310 free emails in a 31-local-day period.
+No $2-for-2,000/day offer is proposed.
 
 [Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/) bills
 operations, with payload billing in 64 KiB chunks and retries adding reads. Pin
@@ -314,7 +319,7 @@ keys `(ws_id, resource_id)` prevent cross-workspace parent/child references.
 | `newsletter_consent_events`, `newsletter_import_jobs` | Append-only purpose/version/evidence and withdrawal; import checksum, bounded cursor/attempts, retention expiry and deletion generation. |
 | `newsletter_templates`, `newsletter_campaigns`, `newsletter_campaign_revisions` | Draft/template versions; immutable send revision, recipient cutoff/count, timezone/scheduled UTC instant, sender, content reference/hash and state. |
 | `newsletter_deliveries`, `newsletter_outbox` | Unique revision/subscriber key, payload hash, attempt/lease, provider ID, unknown state; durable publication cursor and generation. |
-| `newsletter_usage_daily`, `newsletter_budget_ledger` | Unique workspace/add-on/UTC date counters for reserved/accepted/unknown; immutable reservation entries and account/workspace/campaign cost credits. |
+| `newsletter_usage_daily`, `newsletter_budget_ledger` | Unique workspace/quota-source/local-day and billing-period counters for reserved/accepted/unknown; immutable reservation entries and account/workspace/campaign cost credits. |
 | `newsletter_suppressions`, `newsletter_provider_events` | Scope/reason/source and protected address hash; unique provider account/event ID; receipt binding and retention. |
 | `newsletter_control`, `newsletter_audit_events`, `billing_webhook_receipts` | Stop generations/leases; append-only actor/action/revision/reason; environment + merchant + webhook ID uniqueness and bounded payload digest/reference. |
 
@@ -354,42 +359,84 @@ production promotion and the gated `supabase-production.yaml` result. No manual
 
 ## Add-ons, Polar and daily quota
 
-| Offer requested | Entitlement proposal | Billing proposal |
+### Recorded product decisions (2026-10-25)
+
+Scope: customer newsletter sending in Mail and platform administration in
+Infrastructure. Transactional email, connected accounts, workspace base tiers and
+AI credits retain their current policies. These decisions govern live and future
+migration paths; no older $5/500 or $2/2,000-per-day proposal may be seeded.
+
+| Offer | Entitlement | Billing |
 | --- | --- | --- |
-| Free | 10 recipient sends/day for an approved workspace | No paid Polar subscription required. |
-| Newsletter 500 | 500/day | Independent $5 USD/month recurring product/price. |
-| Promotional 2000 | 2,000/day while qualified | Explicit 2,000/day plan plus a product-restricted discount yielding $2/month; duration and normal price require a decision. |
+| Free | 10 recipient sends per workspace-local day, after approval | No paid subscription required. |
+| Newsletter 500 | 500 recipient sends per workspace-local day | Separate $10 USD/month recurring Polar product. |
+| Newsletter pool add-on | 2,000 additional recipient sends per subscription billing period, at most 200 per workspace-local day | Separate $2 USD/month recurring Polar product; approved workspaces only. Stacks with free. |
 
-A Polar discount changes price, **not entitlement**. Therefore a coupon on the
-500/day product cannot implicitly create 2,000/day. Use a separate 2,000/day
-catalog plan and validated promotion mapping (recommended), or an explicit
-server-side time-bounded grant linked to the subscription/discount. Do not infer
-quota from charged amount or a browser coupon string. Do not stack subscriptions
-or sum overlapping promotional limits. One deterministic effective plan wins;
-invalid/unknown mappings fail closed to the free entitlement if access is approved.
+The prices and pool size are user decisions. Workspace timezone day boundaries,
+billing-anniversary pool reset, free-plus-add-on stacking, exact corporate identity
+plus explicit platform permission for approvers, conservative workspace daily and
+monthly spending caps and a global kill switch are orchestrator-selected defaults
+that the user may override. Numeric spend caps remain a launch configuration gate.
+Whether the pool stacks with Newsletter 500 remains undecided; until decided,
+checkout and entitlement resolution must reject that combination. Newsletter 500
+replaces free daily allowance by default; the $2 pool explicitly stacks with free.
 
-Entitlement resolution is a pure versioned function: workspace approval + provider
-eligibility + current add-on state + valid promotion → daily plan limit, constrained
-by global/provider/domain/abuse ceilings. Free is not an extra 10 on top of paid.
-Workspace secrets may lower abuse limits but cannot mint a paid entitlement or
-raise approval/provider limits. Snapshot the decision/version on each reservation;
-re-evaluate immediately before send when approvals or plans change.
+A Polar discount changes price, **not entitlement**. Coupons remain supported as
+product-restricted Polar discounts on these offers; the $2 add-on does not require
+a coupon. Never infer quota from paid amount or browser coupon text. Do not sum
+duplicate subscriptions, grant the same pool twice, or silently permit an unresolved
+plan/add-on combination. Bind each catalog entry to merchant, environment, product,
+price, currency and immutable entitlement version.
 
-Proposed quota clock is **UTC**, shared across plan changes. Use database time and
-`(ws_id, addon_key, utc_date)`; no reset cron or mutable counter reset. Reserve
-with one conditional atomic update under the same transaction as the delivery
-claim. Count accepted and unknown submissions, including accepted hard bounces;
-release only proven unsent attempts. No rollover; tests, confirmations and retries
-have explicit separate budgets and display semantics. A reservation cannot carry
-unused yesterday capacity into today: before submission, atomically transfer an
-unsent reservation to today's bucket or refuse it. Unknown/accepted stays charged
-to its original submission day. Upgrading does not reset usage; downgrading below
-already-used quota blocks remaining sends until the next day.
+Entitlement resolution is a pure versioned function over approval, provider
+eligibility, subscriptions and valid promotions. All resulting grants remain
+constrained by global/provider/domain/abuse/spending ceilings. Workspace secrets
+may lower abuse limits but cannot create grants or bypass approval. An approved
+workspace with only the pool can send up to 210/day while pool balance remains:
+10 free + at most 200 pool-funded, with only 2,000 pool-funded across the billing
+period. Once the pool is exhausted, only free allowance remains. For deterministic
+accounting, consume free first, then pool; record the source on every delivery.
+Newsletter 500 alone permits 500/day. Overlapping purchases never multiply grants.
+
+Daily quota uses database time converted through the workspace's persisted IANA
+timezone and resets at local midnight. Store timezone version, period start/end
+UTC instants and local date, not a bare date alone. DST days may be 23/25 hours.
+New timezone settings take effect at a scheduled boundary without opening an extra
+bucket; retain prior usage and enforce a transition interval that cannot grant
+two allowances. The UI shows the actual next reset in the workspace timezone.
+This product quota is separate from Cloudflare's account-level daily limit.
+
+Monthly pool periods use authoritative subscription billing-period start/end
+instants, anchored to the billing anniversary, not calendar months, quota-day
+boundaries or a reset cron. Respect Polar's returned interval for short months,
+leap days and subscription changes; do not approximate it as 30 days. A UTC instant
+at the boundary belongs to exactly one half-open interval. Webhook reconciliation
+can reveal the new period late, but must never backdate duplicate grants. Period
+renewal and subscription eligibility must be verified before creating new capacity.
+
+In one transaction, claim recipient identity and conditionally reserve the selected
+source's daily allowance, pool balance when applicable, and spending credits.
+Store `quota_source`, daily period ID, billing period ID, entitlement revision and
+reservation state. Count accepted and unknown submissions, including accepted
+hard bounces; release only proven unsent attempts to their original source and
+period. A proven-unsent reservation crossing either boundary is reallocated
+atomically against the new eligible periods before submission; accepted/unknown
+remains charged to its submission periods. Release cannot revive expired capacity.
+Upgrades do not reset existing use. No rollover or reset on retry, restart, coupon
+change or duplicate webhook; no negative balances under concurrency. Tests and
+confirmations have separate bounded budgets and cannot masquerade as campaigns.
+
+Regression requirements for these product decisions: 10-free boundary; 500-plan
+boundary; free-first 210/day with pool; the 2,000-period boundary across many days;
+exhausted pool falling back to free; pending/unapproved denial; unresolved
+plan-plus-pool denial; local-midnight/DST/timezone-edit transitions; billing
+anniversary/short-month renewal; replay and concurrent reservation races. These
+are required implementation coverage, not tests executed by this documentation PR.
 
 ### Checkout and lifecycle
 
-Use the platform merchant's independent recurring add-on product, fixed USD minor
-unit prices and environment-specific allowlisted IDs. Preserve existing seat/base
+Use the platform merchant's separate Newsletter 500 ($10) and Newsletter pool
+($2) recurring products, fixed USD minor-unit prices of 1000 and 200 and environment-specific allowlisted IDs. Preserve existing seat/base
 subscription handling and classify `newsletter_addon` separately from tier and
 credit-pack products. Polar [subscriptions](https://polar.sh/docs/features/subscriptions/introduction)
 and [discounts](https://polar.sh/docs/features/discounts) support recurring offers
@@ -422,22 +469,23 @@ Active confirmed paid state grants quota. Canceled-at-period-end retains paid qu
 to the verified effective end; immediate revocation ends it immediately. Downgrades
 are scheduled for the next paid boundary by default; upgrades activate after the
 verified payment/state transition. Pending/unpaid/expired cannot grant paid quota.
-Proposed past-due behavior is free quota while preserving content; confirm this
-against Polar payment-recovery behavior before launch. Refunds/chargebacks require
+Past-due behavior remains an open user decision; do not grant unverified renewed
+paid capacity. Preserve content while the policy is resolved. Refunds/chargebacks require
 reconciliation and explicit revocation rules; no automatic subscription deletion
 or retroactive quota refund. Scheduled campaigns revalidate at execution; paused
 campaigns and subscriber exports remain visible within permissions.
 
 ### Sandbox acceptance plan
 
-Phase 1 performs no provider writes. Later use a dedicated
+The design phase performs no provider writes. Provider feasibility uses a dedicated
 [Polar sandbox](https://polar.sh/docs/integrate/sandbox), sandbox API/token/webhook
 secret and sandbox catalog IDs. The environment is separate from production;
 assert endpoint/organization before each setup action. Never fall back to production
 when credentials are absent. Current sandbox confirmation emails have recipient
 restrictions; lack of an email is not payment failure evidence.
 
-Create 500/day and 2,000/day test products, recurring prices and once/fixed/forever
+Create $10/month 500/day and $2/month 2,000-per-period (200/day) sandbox
+products, recurring prices and once/fixed/forever
 restricted discounts only in that sandbox. Exercise successful/failed checkout,
 invalid/expired/exhausted coupon, duplicate click, abandoned checkout, renewal,
 upgrade/proration, downgrade, scheduled and immediate cancellation, recovery,
@@ -499,8 +547,8 @@ admission so customers can use newsletters without access to staff mailboxes.
 - **Domain and sender setup:** step-by-step DNS rows, copy controls, last checked,
   next check/expiry, independent verification and approval badges, denial reason
   and bounded retry. Explain Cloudflare DNS eligibility before collecting payment.
-- **Plan and usage:** daily accepted/unknown/reserved and remaining quota, UTC reset
-  instant rendered locally, current price/discount duration/next price, payment
+- **Plan and usage:** daily accepted/unknown/reserved and remaining quota sources and monthly pool balance, workspace-local reset
+  and subscription-period end, current price/discount duration/next price, payment
   state, upgrade/coupon entry and manage/cancel link. Show both plan and safety
   ceilings when the latter limits sends; avoid misleading unused-capacity claims.
 
@@ -540,18 +588,18 @@ merge/promotion. This draft PR is never merged by the design child.
 
 | Phase / PR | Dependencies and deliverable | Risk / decisions | Required tests and acceptance |
 | --- | --- | --- | --- |
-| 1. Design (this PR) | Inventory, decisions, architecture and docs navigation only | Low; resolve open questions below | Docs links/frontmatter/navigation and changed-file gate; no runtime claim. |
-| 2. Provider feasibility | After design: documented marketing permission, customer-zone delegation, account capacity and API/SDK compatibility spike, default off | High; Cloudflare confirmation, account ownership, margins/caps | Disposable hosted domain proof, DNS alignment, header/DKIM capture, trusted feedback and provider unknown-outcome contract. No customer rollout. |
+| 0. Design (this PR) | Inventory, decisions, architecture and docs navigation only | Low; resolve open questions below | Docs links/frontmatter/navigation and changed-file gate; no runtime claim. |
+| 1. Provider feasibility | After design: documented marketing permission, customer-zone delegation, account capacity and API/SDK compatibility spike, default off | High; Cloudflare confirmation, account ownership, margins/caps | Disposable hosted domain proof, DNS alignment, header/DKIM capture, trusted feedback and provider unknown-outcome contract. No customer rollout. |
 | 3a. Add-on schema | After decisions: catalog/subscriptions/promotions/receipts, pure entitlement resolver | High; coupon lifetime and cancellation policy | Applied isolated migration, pgTAP RLS/grants/search-path, duplicate subscription, pure resolution boundaries. |
-| 3b. Newsletter approval schema | Can parallel 3a after 2: workspace/domain/sender approval, audit and control generations | High; approver permission and retention | Lock rehearsal, cross-tenant/actor/revision negatives, state transition and suspension tests. |
+| 3b. Newsletter approval schema | Can parallel 3a after 1: workspace/domain/sender approval, audit and control generations | High; approver permission and retention | Lock rehearsal, cross-tenant/actor/revision negatives, state transition and suspension tests. |
 | 4a. Polar checkout | Stack on 3a: product classification, bound intents and sandbox-only setup adapter | High; prices, subsidy, proration | Checkout intent duplication, wrong merchant/env, unknown create; hosted sandbox checkout receipt. |
 | 4b. Polar lifecycle | Stack on 4a: verified inbox/webhook, reconcile, downgrade/cancel | High; recovery/refund policy | Full sandbox matrix, forged signatures, replay/order/crash; existing tier/credit-pack regressions. |
-| 5a. Domain/sender APIs | Stack on 3b and 2: proofs, approval mutations and bounded Cron Control verification | High; customer delegation | DNS fixtures, poll exhaustion, expiry, transfer, permission removal and Worker stop/reschedule races. |
+| 5a. Domain/sender APIs | Stack on 3b and 1: proofs, approval mutations and bounded Cron Control verification | High; customer delegation | DNS fixtures, poll exhaustion, expiry, transfer, permission removal and Worker stop/reschedule races. |
 | 5b. Infrastructure console | Stack on 5a: workspace/domain/sender decisions and audit views | Medium | EN/VI, keyboard/accessibility, stale decisions, unauthorized direct calls and admitted browser QA. |
 | 6a. Audience foundation | Stack on 3b: subscriber/list/consent/import/suppression model and APIs | High; lawful basis and retention | Applied migrations, import bounds, consent/withdrawal/deletion races, CSV and tenant negatives. |
-| 6b. Unsubscribe + feedback | Stack on 6a and 2: RFC 8058 endpoint, provider events and suppression sync | High; DKIM/feedback support | Received header evidence, scanner GET/noninteractive POST, duplicate/late events, queue trust and outage pause. |
+| 6b. Unsubscribe + feedback | Stack on 6a and 1: RFC 8058 endpoint, provider events and suppression sync | High; DKIM/feedback support | Received header evidence, scanner GET/noninteractive POST, duplicate/late events, queue trust and outage pause. |
 | 7a. Campaign authoring | Stack on 6a and 5a: templates, revisions, composer and request/setup UX | Medium | Sanitization/merge fields, autosave conflicts, EN/VI and accessible desktop/mobile browser flows. |
-| 7b. Send ledger and caps | Stack on 3a/3b/6b: quota, spend, outbox, stop and finite leases; no live sending | High; numeric budgets | Parallel quota races, midnight/DST, upgrade/downgrade, duplicate outbox, crash and unknown-state tests with counted operations. |
+| 7b. Send ledger and caps | Stack on 3a/3b/6b: quota, spend, outbox, stop and finite leases; no live sending | High; numeric budgets | Parallel quota races, workspace midnight/DST, billing anniversary/pool exhaustion, upgrade/downgrade, duplicate outbox, crash and unknown-state tests with counted operations. |
 | 8a. Cloudflare fan-out | Stack on 7b: schedule dispatch, queue consumer and transport | High; provider gate must be closed out | Real isolated Worker + emitted CI artifact, poison/no-progress/empty/expiry/restart/stop races, maximum operation counts. |
 | 8b. Mail management | Stack on 7a/8a/4b: scheduling, usage, coupons, portal and analytics | Medium | End-to-end sandbox billing to quota, paused/rejected/unknown recovery, EN/VI/navigation and browser QA. |
 | 9. Operations and pilot | After all above: Infrastructure health/stop UI, dashboards/runbook, approved limited pilot | High; explicit promotion and legal/provider approval | Exact-SHA CI builds, staged migrations, hosted stop/revoke and residual cost proof, real bounce/unsubscribe tests, rollback rehearsal and customer acceptance. |
@@ -565,11 +613,8 @@ catalog writes and customer sending need separate release authorization and proo
 
 ## Open questions for the user
 
-1. Can we obtain Cloudflare approval for newsletters/resale, and should v1 accept
-   only customer domains with a proven Cloudflare DNS/account delegation path?
-2. Is $2/month for 2,000/day a subsidized separate plan; for how long, for which
-   workspaces, and what price/quota applies afterward? Both example paid offers
-   can cost more in email alone than their subscription revenue at full usage.
-3. Accept UTC daily quotas and next-period downgrades, with free quota on past-due?
-4. Who approves newsletters, what are the global/workspace spend caps, and what
-   consent-evidence/PII retention and legal review are required for the pilot?
+1. Cloudflare currently documents transactional-only sending. Can Cloudflare approve
+   newsletter/resale use and a customer-domain/account delegation path?
+2. What consent evidence, lawful basis, PII retention and legal review are required?
+3. What should downgrade timing and past-due behavior be (including unused pool)?
+4. Should the $2 pool add-on also stack with the $10 Newsletter 500 plan?
