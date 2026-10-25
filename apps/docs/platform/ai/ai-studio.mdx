@@ -227,3 +227,9 @@ emitted Worker, mounted browser flows, public credential denials, and staging
 canonical-host rejection must pass before promotion. Hosted provider calls are
 separate acceptance; local fixtures do not prove billable provider behavior.
 The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.
+
+Client currency pickers import only the values and normalization helpers from
+`src/lib/display-currency.ts`. The database rate lookup lives in
+`display-currency.server.ts` and is imported only by server pages. Keep this
+boundary: the native build rejects a client import of the Supabase server
+adapter; do not relax that import protection to bundle a mixed utility module.
