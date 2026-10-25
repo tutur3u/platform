@@ -10,6 +10,8 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
+import 'package:mobile/features/assistant/data/assistant_created_chat.dart';
+import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -138,6 +140,46 @@ class ReplyRepository extends AssistantRepository {
     ChatInitialAiSettings? initialSettings,
     bool Function()? isCurrent,
   }) async => AssistantChatRecord(id: id, model: modelId);
+  // Synthetic durable creation transport for page reply-lifecycle tests.
+  // Wire receipt validation is exercised by the real repository tests.
+  @override
+  Stream<AssistantStreamEvent> streamFirstChat({
+    required AssistantFirstMessageCreation creation,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
+    required ApiMutationAdmission admission,
+  }) async* {
+    admission.check();
+    await AssistantPreferences(currentUserId: () => currentActorId).saveChatId(
+      wsId,
+      chatId,
+      shouldWrite: () => admission.current && creation.isCurrent(),
+    );
+    admission.check();
+    yield AssistantChatCreatedStreamEvent(
+      AssistantCreatedChat(id: chatId, model: creation.settings.modelId),
+      messages.lastWhere((m) => m.role == 'user').clientRequestId!,
+    );
+    yield* streamChat(
+      chatId: chatId,
+      wsId: wsId,
+      workspaceContextId: wsId,
+      modelId: creation.settings.modelId,
+      messages: messages,
+      thinkingMode: AssistantThinkingMode.values.byName(
+        creation.settings.thinkingMode,
+      ),
+      creditSource: AssistantCreditSource.values.byName(
+        creation.settings.creditSource,
+      ),
+      creditWsId: creation.settings.creditWsId,
+      timezone: timezone,
+      admission: admission,
+    );
+  }
+
   @override
   Stream<AssistantStreamEvent> streamChat({
     required String chatId,
