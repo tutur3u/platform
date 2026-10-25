@@ -4,7 +4,7 @@ extension _AssistantLiveDisposal on AssistantLiveCubit {
   Future<void> _disposeLive(Future<void> Function() closeState) async {
     // Close admission synchronously; Bloc closes only after native teardown.
     _isClosing = true;
-    _cancelReconnect();
+    _closeReconnect();
     _requestVersion++;
     _conversationVersion++;
     _manualDisconnect = true;

@@ -18,15 +18,32 @@ Duration assistantLiveReconnectDelay(int attempt) {
 }
 
 extension _AssistantLiveReconnect on AssistantLiveCubit {
-  /// Retires a pending automatic reconnect (disconnect, close, or a newer
-  /// request taking over), so its slot never blocks a later call.
+  /// Retires a pending automatic reconnect, so its slot never blocks or
+  /// supersedes a later call.
   void _cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
   }
 
+  /// Disconnect and close: retire the pending reconnect and refuse new ones
+  /// until the user starts a call again.
+  void _closeReconnect() {
+    _reconnectClosed = true;
+    _cancelReconnect();
+  }
+
+  /// A user start: an older reconnect must never supersede it, even while it
+  /// still waits on pending persistence before taking a request version.
+  void _openReconnectForUserStart() {
+    _cancelReconnect();
+    _reconnectClosed = false;
+    _reconnectAttempts = 0;
+  }
+
   void _scheduleReconnect() {
-    if (_manualDisconnect || state.workspaceId == null) return;
+    if (_manualDisconnect || _reconnectClosed || state.workspaceId == null) {
+      return;
+    }
     // One pending reconnect per request; one left by an older request (a
     // previous call, actor or workspace) is retired rather than trusted.
     if (_reconnectTimer?.isActive ?? false) {
@@ -46,6 +63,7 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
 
     final attempt = _reconnectAttempts++;
     final requestVersion = _requestVersion;
+    final preparationVersion = _preparationVersion;
     final wsId = state.workspaceId!;
     final chatId = state.chatId;
     final model = state.model;
@@ -55,7 +73,12 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
     // binding schedules the next attempt instead of being ignored.
     _reconnectTimer = Timer(assistantLiveReconnectDelay(attempt), () {
       _reconnectTimer = null;
-      if (_manualDisconnect || _isStale(requestVersion)) return;
+      if (_manualDisconnect ||
+          _reconnectClosed ||
+          preparationVersion != _preparationVersion ||
+          _isStale(requestVersion)) {
+        return;
+      }
       // prepareSession reads this synchronously to keep the budget.
       _automaticReconnect = true;
       try {

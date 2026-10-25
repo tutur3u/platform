@@ -124,6 +124,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   Future<void>? _closeFuture;
   Timer? _reconnectTimer;
   int _reconnectTimerRequest = 0;
+  bool _reconnectClosed = false;
   int _reconnectAttempts = 0;
   bool _automaticReconnect = false;
   DateTime? _readyAt;
@@ -156,8 +157,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool Function()? isCurrent,
     Future<void> Function(String wsId, String chatId)? onChatBound,
   }) async {
-    // A start the user asked for gets a fresh automatic-reconnect budget.
-    if (!_automaticReconnect) _reconnectAttempts = 0;
+    // A start the user asked for retires any pending automatic reconnect,
+    // reopens reconnect admission, and gets a fresh reconnect budget.
+    if (!_automaticReconnect) _openReconnectForUserStart();
     final preparationVersion = ++_preparationVersion;
     final admissionVersion = _requestVersion;
     final requestedActor = _currentUserId();
@@ -372,7 +374,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     final endingVersion = _requestVersion;
     final preparationVersion = _preparationVersion;
     if (finishTurn && _isStale(endingVersion)) return;
-    _cancelReconnect();
+    // Close reconnect admission before the first await: a provider drop during
+    // a slow teardown must not reconnect a call the user ended.
+    _closeReconnect();
     _disconnectVersion++;
     if (finishTurn) {
       bool current() =>

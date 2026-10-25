@@ -31,7 +31,18 @@ class _DroppingProvider {
     when(player.dispose).thenAnswer((_) async {});
     when(player.pause).thenAnswer((_) async {});
     when(player.clear).thenAnswer((_) async {});
-    when(recorder.stop).thenAnswer((_) async {});
+    when(
+      recorder.stop,
+    ).thenAnswer((_) => heldRecorderStop?.future ?? Future<void>.value());
+    when(
+      () => repository.persistLiveTurn(
+        wsId: any(named: 'wsId'),
+        chatId: any(named: 'chatId'),
+        turnId: any(named: 'turnId'),
+        model: any(named: 'model'),
+        messages: any(named: 'messages'),
+      ),
+    ).thenAnswer((_) => heldPersistence?.future ?? Future<void>.value());
     when(recorder.dispose).thenAnswer((_) async {});
     when(camera.stopStreaming).thenAnswer((_) async {});
     when(camera.dispose).thenAnswer((_) async {});
@@ -42,8 +53,9 @@ class _DroppingProvider {
         model: any(named: 'model'),
         forceFresh: any(named: 'forceFresh'),
       ),
-    ).thenAnswer((_) async {
+    ).thenAnswer((invocation) async {
       tokens++;
+      requestedModels.add(invocation.namedArguments[#model] as String?);
       return const AssistantLiveTokenEnvelope(
         token: 'synthetic-token',
         chatId: 'chat',
@@ -97,12 +109,17 @@ class _DroppingProvider {
   Duration dropAfter = const Duration(seconds: 1);
   int scope = 0;
   Completer<void>? heldBinding;
+  Completer<void>? heldPersistence;
+  Completer<void>? heldRecorderStop;
+  final requestedModels = <String?>[];
 
   /// Stops drops and releases binding so pending fixture timers drain.
   Future<void> settle(WidgetTester tester) async {
     dropping = false;
-    heldBinding?.complete();
-    heldBinding = null;
+    for (final held in [heldBinding, heldPersistence, heldRecorderStop]) {
+      if (held != null && !held.isCompleted) held.complete();
+    }
+    heldBinding = heldPersistence = heldRecorderStop = null;
     await _advance(tester, const Duration(seconds: 20));
   }
 
@@ -231,5 +248,68 @@ void main() {
     expect(closed, isTrue);
     await p.events.close();
     expect(p.tokens, 1);
+  });
+
+  testWidgets('an old reconnect cannot supersede a user start that is still '
+      'waiting on persistence', (tester) async {
+    final p = _DroppingProvider()
+      ..dropping = false
+      ..heldPersistence = Completer<void>();
+    addTearDown(p.close);
+    unawaited(p.cubit.prepareSession(wsId: 'ws'));
+    await _advance(tester, const Duration(milliseconds: 400));
+    expect(p.cubit.state.status, AssistantLiveConnectionStatus.connected);
+    // A finished turn leaves its save pending, then the provider drops.
+    p.events
+      ..add(
+        const AssistantLiveSocketTranscriptDelta(
+          text: 'Saved answer',
+          isUserInput: false,
+        ),
+      )
+      ..add(const AssistantLiveSocketTurnCompleted())
+      ..add(const AssistantLiveSocketClosed('provider dropped'));
+    await tester.pump();
+    // The user starts again before the 0.8 s reconnect fires; the start waits
+    // on the pending save before it takes a request version.
+    int? userResult = -1;
+    unawaited(
+      p.cubit
+          .prepareSession(wsId: 'ws', model: 'user-model')
+          .then((value) => userResult = value),
+    );
+    await _advance(tester, const Duration(seconds: 2));
+    p.heldPersistence!.complete();
+    await _advance(tester, const Duration(seconds: 2));
+    expect(p.requestedModels.skip(1), ['user-model']);
+    expect(userResult, isNotNull, reason: 'the user start was superseded');
+    expect(p.cubit.state.status, AssistantLiveConnectionStatus.connected);
+    await p.settle(tester);
+  });
+
+  testWidgets('a drop during a slow End Call teardown never reconnects', (
+    tester,
+  ) async {
+    final p = _DroppingProvider()..dropping = false;
+    addTearDown(p.close);
+    unawaited(p.cubit.prepareSession(wsId: 'ws'));
+    await _advance(tester, const Duration(milliseconds: 400));
+    expect(p.cubit.state.status, AssistantLiveConnectionStatus.connected);
+    p.heldRecorderStop = Completer<void>();
+    var ended = false;
+    unawaited(
+      p.cubit.disconnect(finishTurn: true).whenComplete(() => ended = true),
+    );
+    await tester.pump();
+    // The provider drops while native teardown is still in progress.
+    p.events.add(const AssistantLiveSocketClosed('provider dropped'));
+    await _advance(tester, const Duration(seconds: 3));
+    p.heldRecorderStop!.complete();
+    await _advance(tester, const Duration(seconds: 3));
+    expect(ended, isTrue);
+    expect(p.tokens, 1, reason: 'End Call was superseded by a reconnect');
+    expect(p.cubit.state.status, AssistantLiveConnectionStatus.disconnected);
+    expect(p.cubit.state.hasEnded, isTrue);
+    await p.settle(tester);
   });
 }
