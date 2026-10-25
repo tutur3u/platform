@@ -54,9 +54,9 @@ export function VaultPanel({ wsId, vault, tab, audit, stepUp }: Props) {
         )}
       </header>
       {vault.summary.rotationRequired && (
-        <p role="status" className="text-muted-foreground text-sm">
+        <output className="text-muted-foreground text-sm">
           {t('vault.rotationRequired')}
-        </p>
+        </output>
       )}
       {rotateStepUp && <StepUpNotice url={rotateStepUp} />}
       <Tabs

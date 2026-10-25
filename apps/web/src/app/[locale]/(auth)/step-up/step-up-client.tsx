@@ -93,7 +93,7 @@ export function StepUpClient({
     },
   });
   if (factors.isPending)
-    return <p role="status">{t('required_mfa_loading')}</p>;
+    return <output>{t('required_mfa_loading')}</output>;
   const hasFactor = Boolean(enrollment || factors.data?.length);
   return (
     <section className="space-y-4">

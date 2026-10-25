@@ -903,11 +903,7 @@ function waitForOutputPattern({ child, patterns = [], timeoutMs = 8000 } = {}) {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => {
-    const timeout = setTimeout(resolve, ms);
-
-    timeout.unref?.();
-  });
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function waitForChildExitOrTimeout(exitPromise, timeoutMs) {

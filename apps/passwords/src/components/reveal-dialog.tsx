@@ -25,11 +25,20 @@ function useRemainingSeconds(expiresAt: number | undefined) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!expiresAt) return;
-    setNow(Date.now());
     const ticker = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(ticker);
   }, [expiresAt]);
   return expiresAt ? Math.max(0, Math.ceil((expiresAt - now) / 1000)) : 0;
+}
+
+function LeaseCountdown({ expiresAt }: { expiresAt: number | undefined }) {
+  const { t } = useI18n();
+  const remaining = useRemainingSeconds(expiresAt);
+  return (
+    <DialogDescription role="timer" aria-live="off">
+      {t('reveal.hidesIn', { seconds: remaining })}
+    </DialogDescription>
+  );
 }
 
 export function RevealDialog({ lease, onClose }: Props) {
@@ -37,7 +46,6 @@ export function RevealDialog({ lease, onClose }: Props) {
   const [shown, setShown] = useState<SecretLease | null>(null);
   // Tied to the lease so a new reveal always starts masked.
   const visible = lease !== null && shown === lease;
-  const remaining = useRemainingSeconds(lease?.expiresAt);
   // Decoded only while the lease lives; the bytes are zeroed when it ends.
   const text = useMemo(() => (lease ? decodeUtf8(lease.bytes) : null), [lease]);
 
@@ -64,9 +72,7 @@ export function RevealDialog({ lease, onClose }: Props) {
           <DialogTitle>
             {t('reveal.title', { name: lease?.name ?? '' })}
           </DialogTitle>
-          <DialogDescription role="timer" aria-live="off">
-            {t('reveal.hidesIn', { seconds: remaining })}
-          </DialogDescription>
+          <LeaseCountdown key={lease?.expiresAt} expiresAt={lease?.expiresAt} />
         </DialogHeader>
         {text === null ? (
           <p className="text-muted-foreground text-sm">{t('reveal.binary')}</p>
