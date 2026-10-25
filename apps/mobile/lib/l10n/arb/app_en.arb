@@ -4815,5 +4815,15 @@
   "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
   "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
   "mailSettingsReadOnly": "Saved settings are read-only until access can be verified.",
-  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online."
+  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online.",
+  "assistantLaunchVoiceConfirmTitle": "Start voice chat with {assistantName}?",
+  "@assistantLaunchVoiceConfirmTitle": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLaunchVoiceConfirmDescription": "A shortcut asked to start a voice chat. Your microphone turns on only after you choose Start.",
+  "assistantLaunchVoiceConfirmStart": "Start"
 }

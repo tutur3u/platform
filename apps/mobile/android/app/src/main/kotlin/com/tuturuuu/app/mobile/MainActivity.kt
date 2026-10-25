@@ -1,5 +1,6 @@
 package com.tuturuuu.app.mobile
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -9,6 +10,8 @@ import android.util.Log
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
+import com.tuturuuu.app.mobile.assistant.AssistantShortcutIntents
+import com.tuturuuu.app.mobile.assistant.AssistantShortcutsPlugin
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -23,6 +26,7 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private val shellBack = ShellBackCoordinator(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        neutraliseForeignShortcut(intent)
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -38,11 +42,26 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        neutraliseForeignShortcut(intent)
+        super.onNewIntent(intent)
+    }
+
+    // MainActivity is exported as the launcher, so any app can target it with
+    // Mira shortcut actions. Those are only honoured by the non-exported
+    // MiraShortcutActivity; here they degrade to a plain app launch.
+    private fun neutraliseForeignShortcut(intent: Intent?) {
+        if (intent == null || !AssistantShortcutIntents.isForeignShortcutAction(intent.action)) return
+        intent.action = Intent.ACTION_MAIN
+        intent.replaceExtras(Bundle())
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.notifications.DeliveredInboxNotificationsPlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.live.LiveScreenCapturePlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.meet.MeetScreenSharePlugin())
+        flutterEngine.plugins.add(AssistantShortcutsPlugin())
 
         // Safety-net registration for video_player. Auto-registration should
         // already handle this, but explicit registration avoids runtime

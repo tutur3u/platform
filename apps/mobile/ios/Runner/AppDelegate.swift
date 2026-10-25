@@ -71,6 +71,9 @@ import UserNotifications
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LiveScreenCapturePlugin") {
       LiveScreenCapturePlugin.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AssistantShortcutsPlugin") {
+      AssistantShortcutsPlugin.register(with: registrar)
+    }
   }
 }
 

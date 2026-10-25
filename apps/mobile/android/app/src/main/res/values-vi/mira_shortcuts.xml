@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mira_shortcut_voice_short">Giọng nói Mira</string>
+    <string name="mira_shortcut_voice_long">Trò chuyện giọng nói với Mira</string>
+    <string name="mira_shortcut_chat_short">Chat Mira</string>
+    <string name="mira_shortcut_chat_long">Mở trò chuyện với Mira</string>
+</resources>

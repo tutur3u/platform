@@ -21168,6 +21168,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load or save calendar preferences. Retry when online.'**
   String get calendarSettingsError;
+
+  /// No description provided for @assistantLaunchVoiceConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start voice chat with {assistantName}?'**
+  String assistantLaunchVoiceConfirmTitle(String assistantName);
+
+  /// No description provided for @assistantLaunchVoiceConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A shortcut asked to start a voice chat. Your microphone turns on only after you choose Start.'**
+  String get assistantLaunchVoiceConfirmDescription;
+
+  /// No description provided for @assistantLaunchVoiceConfirmStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get assistantLaunchVoiceConfirmStart;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

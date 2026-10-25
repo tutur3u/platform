@@ -11064,4 +11064,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarSettingsError => 'Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng.';
+
+  @override
+  String assistantLaunchVoiceConfirmTitle(String assistantName) {
+    return 'Bắt đầu trò chuyện bằng giọng nói với $assistantName?';
+  }
+
+  @override
+  String get assistantLaunchVoiceConfirmDescription => 'Một lối tắt đã yêu cầu bắt đầu trò chuyện bằng giọng nói. Micrô chỉ bật sau khi bạn chọn Bắt đầu.';
+
+  @override
+  String get assistantLaunchVoiceConfirmStart => 'Bắt đầu';
 }
