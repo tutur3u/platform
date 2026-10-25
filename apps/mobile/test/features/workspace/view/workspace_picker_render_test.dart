@@ -2,20 +2,14 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/design_render_harness.dart';
+import '../../../helpers/helpers.dart';
 
 class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -73,41 +67,25 @@ void main() {
             const Stream<WorkspaceState>.empty(),
             initialState: state,
           );
-          const appearance = AppearanceSettings();
-          final router = GoRouter(
-            initialLocation: '/',
-            routes: [
-              GoRoute(
-                path: '/',
-                builder: (context, _) => Scaffold(
-                  body: Center(
-                    child: TextButton(
-                      onPressed: () => showWorkspacePickerSheet(context),
-                      child: const Text('Open picker'),
-                    ),
+          tester.platformDispatcher.localesTestValue = [locale];
+          addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+          await tester.pumpThemedHome(
+            Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: TextButton(
+                    onPressed: () => showWorkspacePickerSheet(context),
+                    child: const Text('Open picker'),
                   ),
                 ),
               ),
-            ],
-          );
-          addTearDown(router.dispose);
-          await tester.pumpWidget(
-            RepaintBoundary(
+            ),
+            brightness: brightness,
+            wrap: (app) => RepaintBoundary(
               key: DesignRenderApp.boundaryKey,
               child: BlocProvider<WorkspaceCubit>.value(
                 value: cubit,
-                child: shad.ShadcnApp.router(
-                  debugShowCheckedModeBanner: false,
-                  locale: locale,
-                  theme: AppearanceTheme.shadTheme(appearance, brightness),
-                  localizationsDelegates: const [
-                    ...AppLocalizations.localizationsDelegates,
-                    AppShadcnLocalizationsDelegate(),
-                  ],
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  builder: ShadcnMaterialBridge.appBuilder,
-                  routerConfig: router,
-                ),
+                child: app,
               ),
             ),
           );
