@@ -169,3 +169,72 @@ describe('Web-first API precedence', () => {
     ).toBe('local setting');
   });
 });
+
+describe('a root-only artifact (no apex mount, unknown hosts rejected)', () => {
+  it('rejects the apex and unknown hosts before any app code or egress', async () => {
+    const hooks = {
+      start: vi.fn(async () => new Response('start')),
+      proxy: vi.fn(async () => NextResponse.next()),
+      endpoint: vi.fn(async () => new Response('endpoint')),
+      functionProxy: vi.fn(async () => NextResponse.next()),
+      assets: vi.fn(async () => new Response('asset')),
+      centralApiOrigin: vi.fn(() => 'https://central.example'),
+      apiOrigin: vi.fn(() => undefined),
+      requestInit: vi.fn((initial: Request) => initial),
+      matches: vi.fn(() => true),
+      csp: vi.fn(() => "default-src 'self'"),
+    };
+    const rootCtx = { waitUntil: vi.fn() };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const rootOnly = createBridgeHandler<Env, typeof rootCtx>({
+      mounts: {
+        app: 'cms',
+        rootHosts: ['cms.tuturuuu.com'],
+        mountHosts: [],
+        basePath: '/cms',
+        unknownHost: 'reject',
+      },
+      start: { fetch: hooks.start },
+      proxy: hooks.proxy,
+      endpoints: [{ pattern: '/api/own', module: { GET: hooks.endpoint } }],
+      serverFnBase: '/_serverFn',
+      functionBase: '/api/fn',
+      functionProxy: hooks.functionProxy,
+      publicAssets: new Set(['/robots.txt']),
+      assets: () => ({ fetch: hooks.assets }),
+      centralApiOrigin: hooks.centralApiOrigin,
+      apiOrigin: hooks.apiOrigin,
+      requestInit: hooks.requestInit,
+      matches: hooks.matches,
+      csp: hooks.csp,
+    });
+    for (const url of [
+      'https://tuturuuu.com/cms',
+      'https://tuturuuu.com/cms/en',
+      'https://tuturuuu.com/cms/api/own',
+      'https://tuturuuu.com/cms/api/v1/workspaces',
+      'https://tuturuuu.com/cms/assets/a.js',
+      'https://tuturuuu.com/cms/robots.txt',
+      'https://tuturuuu.com/cms/_serverFn/x',
+      'https://tuturuuu.com/',
+      'https://cms-preview.workers.dev/',
+    ]) {
+      const response = await rootOnly(new Request(url), env, rootCtx);
+      expect(response.status, url).toBe(404);
+      expect(await response.text(), url).toBe('Not Found');
+    }
+    for (const [name, hook] of Object.entries(hooks))
+      expect(hook, name).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(rootCtx.waitUntil).not.toHaveBeenCalled();
+
+    // The root host is still served (the control for the rejections above).
+    const served = await rootOnly(
+      new Request('https://cms.tuturuuu.com/'),
+      env,
+      rootCtx
+    );
+    expect(await served.text()).toBe('start');
+    expect(hooks.start).toHaveBeenCalledOnce();
+  });
+});

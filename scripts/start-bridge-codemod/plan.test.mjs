@@ -335,7 +335,36 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   assert.doesNotMatch(runtime, /build-info'[^)]*headers/);
   // A public root must answer 200, not merely "no 5xx" (a login redirect).
   assert.match(runtime, /^const EXPECTED = \{"\/":200\};$/m);
-  assert.match(runtime, /^const BASE = "\/demo";$/m);
+  // The mounts come from the same defaults as worker.ts plus the app-owned
+  // config, so the root/apex expectations cannot drift from the Worker.
+  const defaults = JSON.parse(
+    /^const DEFAULT_MOUNTS = (.*);$/m.exec(runtime)?.[1] ?? 'null'
+  );
+  assert.deepEqual(defaults, {
+    rootHosts: ['demo.tuturuuu.com'],
+    mountHosts: ['tuturuuu.com'],
+    basePath: '/demo',
+  });
+  const worker = content('apps/demo/cloudflare/worker.ts');
+  assert.match(worker, /rootHosts: \['demo\.tuturuuu\.com'\],/);
+  assert.match(worker, /mountHosts: \['tuturuuu\.com'\],/);
+  assert.match(worker, /basePath: '\/demo',\n {6}\.\.\.appConfig\.mounts,/);
+  assert.match(
+    runtime,
+    /pathToFileURL\(join\(app, 'start-bridge\.config\.ts'\)\)[\s\S]*const MOUNTS = \{ \.\.\.DEFAULT_MOUNTS, \.\.\.appConfig\.mounts \};/
+  );
+  // Raw Host headers on every probe: never fetch() against the dev origin.
+  assert.match(runtime, /headers: \{ host \}/);
+  assert.doesNotMatch(runtime, /fetch\(`\$\{origin\}/);
+  assert.match(runtime, /const get = \(path\) => call\(path, ROOT_HOST\);/);
+  assert.match(runtime, /for \(const host of MOUNTS\.rootHosts\)/);
+  // Root-only: the bridge rejects the apex and unknown hosts, with no egress.
+  assert.match(runtime, /must set mounts\.unknownHost to "reject"/);
+  assert.match(runtime, /\['unknown-host\.invalid', '\/'\]/);
+  assert.match(
+    runtime,
+    /assert\.equal\(response\.status, 404,[\s\S]*assert\.equal\(response\.body, 'Not Found',[\s\S]*assert\.equal\(egress\.length, before,/
+  );
   assert.ok(
     runtime.includes(`assert.deepEqual(config.compatibility_flags, ${flags});`)
   );
@@ -347,7 +376,7 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   // Every declared page on the apex mount, with base-aware redirects.
   assert.match(
     runtime,
-    /mountedGet\(mountedPath\(BASE, path\)\)[\s\S]*origin: MOUNT_ORIGIN,\s*base: BASE,/
+    /if \(MOUNTED\) \{[\s\S]*call\(mountedPath\(BASE, path\), APEX\)[\s\S]*origin: `http:\/\/\$\{APEX\}`,\s*base: BASE,/
   );
   assert.doesNotMatch(runtime, /root < 500|mounted < 500|statusFor/);
   assert.ok(
