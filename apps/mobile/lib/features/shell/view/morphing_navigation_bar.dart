@@ -276,21 +276,16 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                           children: [
                             if (widget.paintSurface)
                               Positioned.fill(
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(
-                                    sigmaX: 24,
-                                    sigmaY: 24,
-                                  ),
+                                child: GlassBlur(
+                                  sigma: 24,
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.background
                                           .withValues(
-                                            alpha:
-                                                MediaQuery.highContrastOf(
-                                                  context,
-                                                )
-                                                ? 1
-                                                : 0.72,
+                                            alpha: GlassEffects.fillAlpha(
+                                              context,
+                                              0.72,
+                                            ),
                                           ),
                                     ),
                                   ),

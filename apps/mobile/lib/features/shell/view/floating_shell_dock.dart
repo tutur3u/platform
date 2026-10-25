@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -212,11 +211,11 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       );
     }
     return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+      child: GlassBlur(
+        sigma: 18,
         child: ColoredBox(
           key: const ValueKey('floating-shell-header-surface'),
-          color: color.withValues(alpha: 0.55),
+          color: color.withValues(alpha: GlassEffects.fillAlpha(context, 0.55)),
           child: child,
         ),
       ),
@@ -234,7 +233,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             .background ??
         Theme.of(context).colorScheme.surface;
     final active = widget.bottomInset > 0;
-    final navigationHidden = _hidden && !widget.keepNavigationVisible;
+    final editorAction =
+        context
+            .watch<ShellChromeActionsCubit?>()
+            ?.state
+            .resolveForLocation(widget.location)
+            .any((action) => action.inDock && action.keepVisibleWithKeyboard) ??
+        false;
+    final editing = editorAction && widget.keyboardVisible;
+    final navigationHidden =
+        _hidden && !widget.keepNavigationVisible && !editing;
     final reserveClearance =
         widget.reserveNavigationClearance &&
         (!widget.hideIdleNavigation || _dockHasContent(context)) &&
@@ -299,7 +307,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                 top: false,
                 child: ShellKeyboardChrome(
                   keyboardVisible: widget.keyboardVisible,
-                  keepVisible: widget.composerVisible,
+                  keepVisible: widget.composerVisible || editorAction,
                   builder: (context, {required hidden, required settled}) =>
                       ExcludeSemantics(
                         excluding: navigationHidden || hidden,

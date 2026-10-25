@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
@@ -23,6 +24,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/repositories/workspace_secrets_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -37,6 +39,10 @@ import 'package:mobile/features/assistant/widgets/assistant_memory_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_settings_chrome.dart';
+import 'package:mobile/features/mail/view/mail_settings_hub.dart';
+import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
@@ -45,6 +51,7 @@ import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/settings/view/offline_page.dart';
+import 'package:mobile/features/settings/view/offline_search_chrome.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
@@ -77,6 +84,7 @@ import '../../assistant/local/assistant_local_chat_harness.dart';
 import '../../assistant/view/background_reply_harness.dart';
 
 part 'settings_compact_harness.dart';
+part 'settings_render_fonts.dart';
 part 'settings_hidden_recovery_checks.dart';
 part 'settings_detail_shell_checks.dart';
 part 'settings_product_editor_checks.dart';
@@ -86,6 +94,8 @@ part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
 part 'settings_appearance_shell_checks.dart';
 part 'settings_apps_checks.dart';
+part 'settings_mail_visual_checks.dart';
+part 'settings_offline_visual_checks.dart';
 part 'settings_timezone_rows_checks.dart';
 part 'settings_timezone_picker_checks.dart';
 
@@ -100,6 +110,8 @@ void main() {
   registerSettingsSecretsShellChecks();
   registerSettingsAppearanceShellChecks();
   registerSettingsAppsChecks();
+  registerSettingsMailVisualChecks();
+  registerSettingsOfflineVisualChecks();
   registerSettingsTimezoneRowsChecks();
   registerTimezonePickerChecks();
   setUpAll(() async {
@@ -108,24 +120,7 @@ void main() {
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
     );
-    // Real proportional glyphs for the Material default family, so text
-    // geometry (wrapping, trailing values) matches devices instead of Ahem.
-    final materialFont = Platform.environment['SETTINGS_MATERIAL_FONT'];
-    await (FontLoader('Roboto')..addFont(
-          materialFont == null
-              ? rootBundle.load('assets/fonts/NotoSans.ttf')
-              : File(materialFont).readAsBytes().then(ByteData.sublistView),
-        ))
-        .load();
-    for (final font in {
-      'NotoSans': 'assets/fonts/NotoSans.ttf',
-      'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
-      'packages/shadcn_flutter/LucideIcons':
-          'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
-      'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
-    }.entries) {
-      await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
-    }
+    await _loadSettingsRenderFonts();
   });
   setUp(() {
     GoRouter.optionURLReflectsImperativeAPIs = true;

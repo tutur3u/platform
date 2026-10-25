@@ -1,3 +1,4 @@
+import 'package:mobile/features/assistant/data/assistant_reaction_journal.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
@@ -11,4 +12,7 @@ Future<void> clearAuthFeatureCaches({String? userId}) async {
   TransactionCategoriesPage.clearCaches();
   HabitsCubit.clearCache();
   CalendarCubit.clearCache();
+  if (userId != null && userId.isNotEmpty) {
+    await AssistantReactionJournal().clearActor(userId);
+  }
 }

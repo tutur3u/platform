@@ -21,9 +21,10 @@ class ProfileBannerPicker {
   Future<File?> pickImage(ImageSource source) async {
     final image = await ImagePicker().pickImage(
       source: source,
-      maxWidth: 2048,
-      maxHeight: 2048,
-      imageQuality: 85,
+      maxWidth: 2560,
+      maxHeight: 1440,
+      imageQuality: 90,
+      requestFullMetadata: false,
     );
     return image == null ? null : File(image.path);
   }

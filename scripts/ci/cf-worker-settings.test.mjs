@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   captureSettings,
@@ -23,18 +24,19 @@ const identity = {
     logs: { enabled: true, headSamplingRate: 0.05, invocationLogs: true },
   },
 };
-function fixture(overrides = {}) {
+function fixture(overrides = {}, target = identity) {
   const responses = {
     settings: {
-      compatibility_date: identity.compatibilityDate,
+      compatibility_date: target.compatibilityDate,
+      compatibility_flags: target.compatibilityFlags,
       observability: { enabled: true, head_sampling_rate: 0.05 },
       bindings: [
         { name: 'ORIGIN', type: 'plain_text', text: 'private-fixture-value' },
       ],
     },
     subdomain: { enabled: true, previews_enabled: true },
-    schedules: { schedules: [{ cron: '*/5 * * * *' }] },
-    secrets: [{ name: 'TOKEN' }],
+    schedules: { schedules: target.crons.map((cron) => ({ cron })) },
+    secrets: target.secrets.map((name) => ({ name })),
     domains: [],
     zones: [],
     deployments: {
@@ -61,9 +63,9 @@ function fixture(overrides = {}) {
     },
   };
 }
-const options = (api) => ({
-  identity,
-  accountId: identity.accountId,
+const options = (api, target = identity) => ({
+  identity: target,
+  accountId: target.accountId,
   token: 'disposable-fixture',
   fetchImpl: api.fetchImpl,
 });
@@ -357,3 +359,47 @@ test('a token id hex-encoding a token prefix is printed only as a fingerprint', 
     `Cloudflare API token ${fingerprint(id)} status active (account token)`,
   ]);
 });
+const coordination = JSON.parse(
+  readFileSync(
+    new URL('./fixtures/cf-worker-parity/coordination.json', import.meta.url),
+    'utf8'
+  )
+).identity;
+
+test('Coordination snapshots retain the required token with one bounded secret read per phase', async () => {
+  assert.deepEqual(coordination.secrets, ['COORDINATION_TOKEN']);
+  const snapshots = [];
+  for (const phase of ['before', 'after']) {
+    const api = fixture({}, coordination);
+    const snapshot = await captureSettings(options(api, coordination));
+    assert.deepEqual(snapshot.secrets, ['COORDINATION_TOKEN'], phase);
+    assert.equal(
+      api.calls.filter((url) => url.endsWith('/secrets')).length,
+      1,
+      phase
+    );
+    assert.equal(api.calls.length, 7, phase);
+    assert.equal(
+      api.calls.find((url) => url.endsWith('/secrets')),
+      `https://api.cloudflare.com/client/v4/accounts/${coordination.accountId}/workers/scripts/${coordination.name}/secrets`,
+      phase
+    );
+    assert.ok(
+      api.calls.every((url) => url.includes(coordination.accountId)),
+      phase
+    );
+    snapshots.push(snapshot);
+  }
+  compareSettings(snapshots[0], snapshots[1]);
+});
+
+for (const phase of ['before', 'after']) {
+  test(`Coordination ${phase} snapshot rejects a missing token`, async () => {
+    const api = fixture({ secrets: [] }, coordination);
+    await assert.rejects(
+      captureSettings(options(api, coordination)),
+      /missing declared secret COORDINATION_TOKEN/
+    );
+    assert.equal(api.calls.filter((url) => url.endsWith('/secrets')).length, 1);
+  });
+}

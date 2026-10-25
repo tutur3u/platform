@@ -56,6 +56,7 @@ import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
+import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
@@ -1062,10 +1063,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const guardResponse = await guardApiProxyRequest(req, {
         additionalRoutePolicies,
         ...calendarPreferenceGuardOptions(req),
-        maxPayloadBytes: feedbackProxyPayloadLimit(
-          req.method,
-          req.nextUrl.pathname
-        ),
+        maxPayloadBytes:
+          profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
+          feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
         trustedBypassRules: [
           {
             matches: isTrustedCliTuturuuuRateLimitBypass,
