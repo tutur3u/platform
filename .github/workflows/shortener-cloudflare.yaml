@@ -127,9 +127,11 @@ jobs:
       env-interface: ShortenerGeneratedEnv
       worker-environment-type: ShortenerEnvironment
       helper-tests: python3 scripts/ci/shortener-native-artifact.test.py
+      # Public staging values from repository variables for same-repository
+      # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
-        NEXT_PUBLIC_SUPABASE_URL=https://shortener-ci.supabase.invalid
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_shortener_ci_placeholder
+        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://shortener-ci.supabase.invalid' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_shortener_ci_placeholder' }}
         NEXT_PUBLIC_APP_URL=https://ttr.gg
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1

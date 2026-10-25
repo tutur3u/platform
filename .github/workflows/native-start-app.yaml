@@ -90,6 +90,10 @@ jobs:
           [[ "$ENV_INTERFACE" =~ ^[A-Za-z][A-Za-z0-9]*$ ]]
           [[ "$WORKER_ENVIRONMENT_TYPE" =~ ^[A-Za-z][A-Za-z0-9]*$ ]]
           test -f "$APP_DIR/start-bridge.routes.json"
+      - name: Export the app's own source SHA channel
+        # Artifact helpers read <APP>_SOURCE_SHA (e.g. SHORTENER_SOURCE_SHA)
+        # and refuse a generic fallback, so export the exact checkout under it.
+        run: echo "$(printf '%s' "$APP" | tr 'a-z-' 'A-Z_')_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
       - name: Admit only public build fixtures
         run: |
           while IFS= read -r line; do
@@ -205,6 +209,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      APP: ${{ inputs.app }}
       APP_DIR: apps/${{ inputs.app }}
       ARTIFACT_SCRIPT: ${{ inputs.artifact-script }}
       RUNTIME_COMMAND: ${{ inputs.runtime-command }}
@@ -223,7 +228,11 @@ jobs:
         with:
           node-version: 24.22.0
       - name: Verify immutable checkout identity
-        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          [[ "$APP" =~ ^[a-z0-9][a-z0-9-]*$ ]]
+      - name: Export the app's own source SHA channel
+        run: echo "$(printf '%s' "$APP" | tr 'a-z-' 'A-Z_')_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
       - run: bun install --frozen-lockfile --ignore-scripts
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
