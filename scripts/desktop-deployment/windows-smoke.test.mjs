@@ -55,8 +55,11 @@ $ErrorActionPreference = 'Stop'
 $global:SmokeChildEnvironmentClean = $true
 $global:SmokeWaits = @()
 $global:SmokeKills = 0
+$global:SmokeHandles = 0
+$global:SmokeUninstalls = 0
 function New-FixtureInstaller($ExitCode, $TimesOut) {
     $child = [pscustomobject]@{ ExitCode = $ExitCode; HasExited = !$TimesOut; TimesOut = $TimesOut; WasKilled = $false }
+    $child | Add-Member -MemberType ScriptProperty -Name Handle -Value { $global:SmokeHandles++; return 0 }
     $child | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value {
         param($Milliseconds)
         $global:SmokeWaits += $Milliseconds
@@ -66,8 +69,10 @@ function New-FixtureInstaller($ExitCode, $TimesOut) {
         param($EntireProcessTree)
         if (!$EntireProcessTree) { throw 'Timeout must stop the owned process tree' }
         $global:SmokeKills++
-        $this.WasKilled = $true
-        $this.HasExited = $true
+        if ($env:SMOKE_SCENARIO -ne 'installer-stop-fails-timeout') {
+            $this.WasKilled = $true
+            $this.HasExited = $true
+        }
     }
     return $child
 }
@@ -91,20 +96,29 @@ function Start-Process {
             [IO.File]::SetAttributes($hidden, [IO.FileAttributes]::Hidden)
         }
         if ($env:SMOKE_SCENARIO -eq 'bad-data-file') { Set-Content (Join-Path $root 'data/flutter_assets/tool.exe') 'fixture' }
-        return New-FixtureInstaller 0 ($env:SMOKE_SCENARIO -eq 'installer-timeout')
+        if ($env:SMOKE_SCENARIO -eq 'extra-data-file') { Set-Content (Join-Path $root 'data/extra.bin') 'fixture' }
+        if ($env:SMOKE_SCENARIO -eq 'dotenv-file') { Set-Content (Join-Path $root 'data/flutter_assets/.env.production') 'fixture' }
+        if ($env:SMOKE_SCENARIO -eq 'disguised-mz-file') { [IO.File]::WriteAllBytes((Join-Path $root 'data/flutter_assets/payload.bin'), [byte[]]@(0x4D, 0x5A, 0, 0)) }
+        if ($env:SMOKE_SCENARIO -eq 'junction') {
+            $target = Join-Path $env:RUNNER_TEMP 'junction-target'
+            New-Item -ItemType Directory -Path $target > $null
+            New-Item -ItemType Junction -Path (Join-Path $root 'data/flutter_assets/link') -Target $target > $null
+        }
+        return New-FixtureInstaller 0 ($env:SMOKE_SCENARIO -in @('installer-timeout', 'installer-stop-fails-timeout'))
     }
     if ($FilePath.EndsWith('unins000.exe')) {
+        $global:SmokeUninstalls++
         return New-FixtureInstaller $(if ($env:SMOKE_SCENARIO -eq 'hidden-cleanup-failure') { 9 } else { 0 }) ($env:SMOKE_SCENARIO -eq 'uninstaller-timeout')
     }
     $visible = $env:SMOKE_SCENARIO -ne 'hidden' -and $env:SMOKE_SCENARIO -ne 'hidden-cleanup-failure'
-    $process = [pscustomobject]@{ Id = 123; HasExited = $false; MainWindowHandle = $(if ($visible) { 42 } else { 0 }); MainWindowTitle = $(if ($env:SMOKE_SCENARIO -eq 'wrong-title') { 'Plugin dialog' } else { 'Tuturuuu' }); ExitCode = 0 }
+    $process = [pscustomobject]@{ Id = 123; HasExited = $false; MainWindowHandle = $(if ($visible) { 42 } else { 0 }); MainWindowTitle = $(if ($env:SMOKE_SCENARIO -eq 'wrong-title') { 'Plugin dialog' } elseif ($env:SMOKE_SCENARIO -eq 'lowercase-title') { 'tuturuuu' } else { 'Tuturuuu' }); ExitCode = 0 }
     $process | Add-Member -MemberType ScriptMethod -Name Refresh -Value {}
     $process | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param($Milliseconds) $true }
     return $process
 }
 $message = $null
 try { & $env:TUTURUUU_SMOKE_SCRIPT; $status = 'passed' } catch { $status = 'failed'; $message = $_.Exception.Message }
-[ordered]@{ status = $status; message = $message; childEnvironmentClean = $global:SmokeChildEnvironmentClean; waits = @($global:SmokeWaits); kills = $global:SmokeKills } | ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'result.json')
+[ordered]@{ status = $status; message = $message; childEnvironmentClean = $global:SmokeChildEnvironmentClean; waits = @($global:SmokeWaits); kills = $global:SmokeKills; handles = $global:SmokeHandles; uninstalls = $global:SmokeUninstalls } | ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'result.json')
 `;
 
 for (const scenario of [
@@ -118,6 +132,12 @@ for (const scenario of [
   'wrong-title',
   'installer-timeout',
   'uninstaller-timeout',
+  'installer-stop-fails-timeout',
+  'extra-data-file',
+  'dotenv-file',
+  'disguised-mz-file',
+  'junction',
+  'lowercase-title',
 ]) {
   test(`Windows smoke fixture: ${scenario}`, {
     skip: process.platform !== 'win32',
@@ -179,6 +199,7 @@ for (const scenario of [
         assert.equal(inventory.attempt, '2');
         assert.equal(inventory.windowTitle, 'Tuturuuu');
         assert.deepEqual(observed.waits, [120000, 120000]);
+        assert.equal(observed.handles, 2);
         assert.ok(
           inventory.files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))
         );
@@ -194,12 +215,30 @@ for (const scenario of [
           'wrong-title': /main window title is not Tuturuuu/,
           'installer-timeout': /Installer timed out after 120 seconds/,
           'uninstaller-timeout': /Uninstaller timed out after 120 seconds/,
+          'installer-stop-fails-timeout':
+            /Installer timed out after 120 seconds/,
+          'extra-data-file': /Unexpected installed file/,
+          'dotenv-file': /Unexpected installed file type/,
+          'disguised-mz-file': /Unexpected MZ payload in data/,
+          junction: /contains a reparse point/,
+          'lowercase-title': /main window title is not Tuturuuu/,
         };
         assert.match(observed.message, expected[scenario]);
         if (scenario.endsWith('-timeout')) {
           assert.equal(observed.kills, 1);
           assert.ok(observed.waits.includes(120000));
           assert.ok(observed.waits.includes(10000));
+        }
+        if (scenario === 'installer-stop-fails-timeout') {
+          assert.equal(observed.uninstalls, 0);
+          assert.match(
+            result.stdout,
+            /Installer is still running; uninstall skipped/
+          );
+          assert.match(
+            result.stdout,
+            /Installer did not stop within 10 seconds/
+          );
         }
         if (scenario === 'hidden-cleanup-failure')
           assert.match(

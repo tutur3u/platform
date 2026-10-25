@@ -29,17 +29,26 @@ function Wait-SmokeInstaller($Child, $Phase) {
 }
 try {
     $setup = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$installRoot`"") -PassThru
+    $null = $setup.Handle
     Wait-SmokeInstaller $setup 'Installer'
     foreach ($relative in @('tuturuuu.exe', 'flutter_windows.dll', 'data\icudtl.dat', 'data\app.so', 'data\flutter_assets')) {
         if (!(Test-Path (Join-Path $installRoot $relative))) { throw "Installed bundle missing $relative" }
     }
-    $files = @(Get-ChildItem -LiteralPath $installRoot -Recurse -File -Force | ForEach-Object {
+    $files = @(Get-ChildItem -LiteralPath $installRoot -Recurse -Force | ForEach-Object {
+        if ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Installed bundle contains a reparse point: $($_.FullName)" }
+        if ($_.PSIsContainer) { return }
         $relative = [IO.Path]::GetRelativePath($installRoot, $_.FullName)
         if ($relative -notmatch '^(tuturuuu\.exe|[^\\/]+\.dll|data[\\/](icudtl\.dat|app\.so|flutter_assets[\\/].+)|unins000\.(exe|dat|msg))$') {
             throw "Unexpected installed file: $relative"
         }
-        if ($relative -match '^data[\\/]' -and ($relative -match '[\\/]\.env(?:\.|$)' -or $relative -match '\.(exe|pdb|lib|exp|ilk|env|p12|pfx|pem|key|p8|jks|keystore|mobileprovision|provisionprofile)$')) {
+        if ($relative -match '^data[\\/]' -and ($relative -match '[\\/]\.env(?:\.|$)' -or $relative -match '\.(exe|dll|sys|msi|bat|cmd|ps1|com|scr|vbs|pdb|lib|exp|ilk|env|p12|pfx|pem|key|p8|jks|keystore|mobileprovision|provisionprofile)$')) {
             throw "Unexpected installed file type: $relative"
+        }
+        if ($relative -match '^data[\\/]') {
+            $stream = [IO.File]::OpenRead($_.FullName)
+            try {
+                if ($stream.ReadByte() -eq 0x4D -and $stream.ReadByte() -eq 0x5A) { throw "Unexpected MZ payload in data: $relative" }
+            } finally { $stream.Dispose() }
         }
         [ordered]@{ name = $relative; bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
@@ -72,6 +81,7 @@ try {
         $uninstaller = Join-Path $installRoot 'unins000.exe'
         if (Test-Path $uninstaller) {
             $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru
+            $null = $uninstall.Handle
             Wait-SmokeInstaller $uninstall 'Uninstaller'
         }
     } catch { $cleanupErrors += $_ }
