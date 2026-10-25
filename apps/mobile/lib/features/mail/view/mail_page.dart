@@ -18,6 +18,7 @@ import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
+import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
@@ -128,6 +129,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   bool _childRouteOpen = false;
   bool _pushDestinationHandled = false;
   late final MailPreviewStore _previews = _createPreviewStore();
+  final _renderedDocuments = MailRenderedDocuments();
   _MailSelection? _selection;
   bool _split = false;
   Route<void>? _readerRoute;
@@ -254,6 +256,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _snoozeRefreshTimer?.cancel();
     _prefetchDebounce?.cancel();
     _previews.dispose();
+    _renderedDocuments.dispose();
     _generation++;
     _bootstrapGeneration++;
     _organizationGeneration++;

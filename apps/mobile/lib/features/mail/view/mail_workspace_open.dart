@@ -78,12 +78,14 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     if (!_split) await _presentReaderRoute(selection);
   }
 
+  /// Drafts change whenever the composer saves, so they always load fresh
+  /// through the repository instead of the long-lived preview store.
   Future<void> _openDraft(Map<String, dynamic> item, String box) async {
     try {
-      final draft = await _previews.load(
+      final draft = await _readOpenDetailWithRetry(
         box,
         item['id'] as String,
-        thread: false,
+        false,
       );
       if (mounted && box == _mailboxId && _folder == 'drafts') {
         await _compose(draft);
@@ -131,10 +133,23 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     _syncSelectionWithLayout();
   }
 
-  void _syncSelectionWithLayout() {
+  /// The selection, unless it belongs to a mailbox that is no longer shown.
+  _MailSelection? get _activeSelection {
     final selection = _selection;
-    if (!mounted || selection == null) return;
+    return selection != null && selection.mailboxId == _mailboxId
+        ? selection
+        : null;
+  }
+
+  void _syncSelectionWithLayout() {
+    if (!mounted || _selection == null) return;
+    final selection = _activeSelection;
     final route = _readerRoute;
+    if (selection == null) {
+      // Never resurrect another mailbox's conversation on a resize.
+      if (route == null) _updateState(() => _selection = null);
+      return;
+    }
     if (_split && route != null && route.isCurrent) {
       _migratingReader = true;
       Navigator.of(context).removeRoute(route);
@@ -147,16 +162,19 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     final box = selection.mailboxId;
     final cached = _previews.peek(box, selection.id, thread: selection.thread);
     return MailReader(
+      renderedDocuments: _renderedDocuments,
       key: ValueKey('mail-reader:$box:${selection.id}'),
       repository: _repository,
       workspaceId: widget.workspaceId,
       mailboxId: box,
-      detail: cached,
+      detail: cached?.detail,
       summary: selection.item,
       loadDetail: () =>
           _previews.load(box, selection.id, thread: selection.thread),
       onClose: pane ? _closeSelection : null,
       pushRoute: pane ? _pushChild : null,
+      // Bodies shown from memory or the encrypted snapshot are revalidated
+      // once on open; the reader also revalidates a snapshot it hydrates.
       refreshOnOpen: cached != null && selection.thread,
       notificationEntry: selection.notificationEntry,
       onReadFailed: () {
@@ -199,9 +217,8 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
   }
 
   Widget? _buildDetailPane() {
-    final selection = _selection;
-    if (selection == null || selection.mailboxId != _mailboxId) return null;
-    return _buildReader(selection, pane: true);
+    final selection = _activeSelection;
+    return selection == null ? null : _buildReader(selection, pane: true);
   }
 
   /// Rows report themselves while they are within the list's viewport (plus

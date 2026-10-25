@@ -26,6 +26,7 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
         _mailboxes = mailRows(result['mailboxes']);
         _accessVerified = true;
         if (!_mailboxes.any((box) => box['id'] == _mailboxId)) {
+          _selection = null;
           _mailboxId = _mailboxes.firstOrNull?['id'] as String?;
           _items = [];
           _labelId = null;

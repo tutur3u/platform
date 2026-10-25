@@ -71,12 +71,17 @@ actions; the shell navbar and dock keep the inbox title, filters and actions.
 Opening never waits for the network. The reader renders the inbox row's
 subject, participants and snippet in the opening frame, then hydrates from the
 in-memory preview store, the encrypted Mail cache, or one detail request (one
-retry on transient failures). A failed load stays in the reader with an inline
-Retry, keeping notification-entry image suppression. Drafts still open the
-composer after their detail loads.
+retry on transient failures). A conversation shown from memory or from the
+encrypted snapshot is revalidated with one refresh request when it opens. A
+failed load stays in the reader with an inline Retry, keeping
+notification-entry image suppression. Drafts bypass the preview store: each
+open loads the saved draft through the repository before the composer opens.
+Switching mailbox closes the open conversation, and a resize never reopens a
+conversation from another mailbox.
 
-Prefetching is bounded: only threads of verified mailboxes, for rows currently
-built in the list, are fetched after scrolling pauses for 250ms. At most two
+Prefetching is bounded. For verified mailboxes it fetches the rows currently
+built in the list, after scrolling pauses for 250ms: conversations in thread
+folders and message details in Sent; never drafts. At most two
 requests run, eight are queued, and each makes one attempt. A failure is not
 retried in the background. The queue is replaced when the visible rows change,
 and the neighbours of an opened conversation are queued next. Prefetching
@@ -84,10 +89,14 @@ fetches message JSON only; images load only when a body is shown, under the
 saved remote-image preference (or the notification-entry suppression). The
 preview store lives in memory for one signed-in workspace view, holds 40
 details, and is cleared on access denial. Rendered HTML documents of plain
-bodies are memoized in memory (12 entries) by their exact HTML and appearance.
+bodies are memoized by their exact HTML and rendering options (12 entries) in
+the same view. The memo is cleared on access denial and discarded with the
+view, which is keyed by account and workspace; a render finishing after its
+reader or view closed is not stored.
 
 Regression coverage: `mail_master_detail_test.dart`,
-`mail_preview_latency_test.dart` and `mail_workspace_test.dart` in
+`mail_preview_latency_test.dart`, `mail_preview_revalidation_test.dart`,
+`mail_rendered_documents_test.dart` and `mail_workspace_test.dart` in
 `apps/mobile/test/features/mail`, and `core/layout/master_detail_test.dart`.
 
 ## Read state and archive actions
@@ -777,9 +786,11 @@ change group membership. No grouping occurs across mailbox access boundaries.
 
 ### Mobile inbox restoration
 
-Mail is a core mobile app for accounts whose email domain is exactly
-`tuturuuu.com`; other accounts do not see its launcher or direct-route content.
-API authorization still controls mailbox access.
+Mail is a core mobile app for accounts whose email domain is `tuturuuu.com` or
+one of its managed subdomains, and for marked review accounts on `tutur3u.com`
+(see [Flutter Mail](#flutter-mail)); other accounts do not see its launcher or
+direct-route content. Discovery is only a hint: API authorization still controls
+mailbox access.
 
 The mobile inbox restores its last mailbox, folder, search, labels, and message
 list from encrypted, account- and workspace-scoped storage. Snapshots expire
@@ -788,11 +799,12 @@ send permissions are never trusted. A denied access response clears the cached
 view and prevents late requests from restoring it. Draft editing and attachment
 downloads continue to use authenticated network requests.
 
-Opening a mobile message keeps its request active while the inbox revalidates.
-Cached thread detail opens immediately; transient detail failures get one
-bounded retry. If opening still fails, the inbox shows a Retry action above the
-floating dock. The reader leaves enough bottom scroll space to reveal the end
-of long messages above that dock.
+Opening a mobile message shows the reader immediately from the inbox row and
+keeps its detail request active while the inbox revalidates. Cached thread
+detail renders at once; transient detail failures get one bounded retry. If
+loading still fails, the reader shows the error with an inline Retry. A failed
+draft open still shows a Retry action above the floating dock. The reader leaves
+enough bottom scroll space to reveal the end of long messages above that dock.
 
 ## Mobile incoming-mail notifications
 

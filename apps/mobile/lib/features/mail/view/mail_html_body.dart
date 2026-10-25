@@ -8,22 +8,10 @@ import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
+import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
-typedef _DocumentKey = (
-  String html,
-  bool loadImages,
-  MailMessageAppearance appearance,
-  int? backgroundArgb,
-);
-
-/// Recently rendered documents, so reopening a body (or moving it between a
-/// split pane and a pushed reader) skips another isolate round trip. Keys
-/// hold the exact HTML, so a lookup only succeeds for its own message.
-final _renderedDocuments = <_DocumentKey, String>{};
-const _renderedDocumentLimit = 12;
 
 /// Native rendering isolated from the app's authenticated browser state.
 class MailHtmlBody extends StatefulWidget {
@@ -36,10 +24,14 @@ class MailHtmlBody extends StatefulWidget {
     this.imagesVisible,
     this.onImagesChanged,
     this.showControls = true,
+    this.renderedDocuments,
     super.key,
   });
 
   final String html;
+
+  /// The owning Mail view's memo of rendered documents, if any.
+  final MailRenderedDocuments? renderedDocuments;
   final bool? imagesVisible;
   final ValueChanged<bool>? onImagesChanged;
   final bool showControls;
@@ -140,31 +132,18 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
             ? shad.Theme.of(context).colorScheme.background.toARGB32()
             : null,
       );
-      // Inline images arrive later as data URIs; only plain bodies memoize.
-      final key = request.inlineImages.isEmpty
-          ? (
-              request.html,
-              request.loadImages,
-              request.appearance,
-              request.backgroundArgb,
-            )
-          : null;
-      final memo = key == null ? null : _renderedDocuments.remove(key);
+      final documents = widget.renderedDocuments;
+      final memo = documents?.lookup(request);
       final document =
           memo ??
           await compute<MailDocumentRequest, String>(
             renderMailDocument,
             request,
           );
-      if (key != null) {
-        _renderedDocuments[key] = document;
-        while (_renderedDocuments.length > _renderedDocumentLimit) {
-          _renderedDocuments.remove(_renderedDocuments.keys.first);
-        }
-      }
-      if (mounted && generation == _generation) {
-        setState(() => _document = document);
-      }
+      // A render that outlived this body (or its Mail view) is discarded.
+      if (!mounted || generation != _generation) return;
+      if (memo == null) documents?.store(request, document);
+      setState(() => _document = document);
     } on Object {
       if (mounted && generation == _generation) setState(() => _failed = true);
     }

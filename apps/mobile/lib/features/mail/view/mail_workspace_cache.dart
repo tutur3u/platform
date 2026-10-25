@@ -116,6 +116,7 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
     _organizationGeneration++;
     _accessVerified = false;
     _previews.clear();
+    _renderedDocuments.clear();
     if (mounted) {
       _updateState(() {
         _selection = null;

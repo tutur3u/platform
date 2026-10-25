@@ -6,6 +6,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
@@ -16,6 +17,7 @@ import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
+import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -47,6 +49,7 @@ class MailReader extends StatefulWidget {
     this.loadDetail,
     this.onClose,
     this.pushRoute,
+    this.renderedDocuments,
     this.refreshOnOpen = false,
     this.notificationEntry = false,
     this.onReadFailed,
@@ -67,7 +70,13 @@ class MailReader extends StatefulWidget {
   /// inbox row) renders immediately while [loadDetail] hydrates the body.
   final Map<String, dynamic>? detail;
   final Map<String, dynamic>? summary;
-  final Future<Map<String, dynamic>> Function()? loadDetail;
+
+  /// Loads the body and reports whether it came from the network. A body
+  /// hydrated from the encrypted snapshot is revalidated once.
+  final Future<MailPreview> Function()? loadDetail;
+
+  /// The owning Mail view's memo of rendered HTML documents.
+  final MailRenderedDocuments? renderedDocuments;
 
   /// Closes a reader shown in a split layout's detail pane. Pushed readers
   /// pop their route instead.
@@ -148,10 +157,10 @@ class _MailReaderState extends State<MailReader> {
     if (load == null) return;
     if (_loadError != null) setState(() => _loadError = null);
     try {
-      final detail = await load();
+      final preview = await load();
       if (!mounted) return;
-      setState(() => _detail = detail);
-      _detailReady(refresh: false);
+      setState(() => _detail = preview.detail);
+      _detailReady(refresh: widget.thread && !preview.fromNetwork);
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
         await widget.repository.denyAccess(widget.workspaceId);

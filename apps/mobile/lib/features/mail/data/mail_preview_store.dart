@@ -16,6 +16,11 @@ typedef MailPreviewPeek =
       required bool thread,
     });
 
+/// A detail and whether this view fetched it from the network. Details read
+/// from the encrypted snapshot (or shown from memory) still need a
+/// revalidation request when they are opened.
+typedef MailPreview = ({Map<String, dynamic> detail, bool fromNetwork});
+
 /// Opened and prefetched Mail details kept in memory for one signed-in
 /// workspace view, so a reader can render its body in the opening frame.
 ///
@@ -40,8 +45,8 @@ class MailPreviewStore {
   final int maxQueued;
   final int maxConcurrent;
 
-  final LinkedHashMap<String, Map<String, dynamic>> _entries = LinkedHashMap();
-  final Map<String, Future<Map<String, dynamic>>> _inFlight = {};
+  final LinkedHashMap<String, MailPreview> _entries = LinkedHashMap();
+  final Map<String, Future<MailPreview>> _inFlight = {};
   final Set<String> _failed = {};
   List<({String mailboxId, String id, bool thread})> _queue = const [];
   int _running = 0;
@@ -53,11 +58,7 @@ class MailPreviewStore {
   static String _key(String mailboxId, String id, bool thread) =>
       '$mailboxId:${thread ? 't' : 'm'}:$id';
 
-  Map<String, dynamic>? peek(
-    String mailboxId,
-    String id, {
-    required bool thread,
-  }) {
+  MailPreview? peek(String mailboxId, String id, {required bool thread}) {
     final key = _key(mailboxId, id, thread);
     final entry = _entries.remove(key);
     if (entry != null) _entries[key] = entry;
@@ -69,12 +70,13 @@ class MailPreviewStore {
     String id,
     Map<String, dynamic> detail, {
     required bool thread,
+    required bool fromNetwork,
   }) {
     if (_disposed) return;
     final key = _key(mailboxId, id, thread);
     _entries
       ..remove(key)
-      ..[key] = detail;
+      ..[key] = (detail: detail, fromNetwork: fromNetwork);
     _failed.remove(key);
     while (_entries.length > capacity) {
       _entries.remove(_entries.keys.first);
@@ -83,7 +85,7 @@ class MailPreviewStore {
 
   /// Loads one detail for display: memory, then the encrypted store, then
   /// the network. Concurrent callers for the same id share one request.
-  Future<Map<String, dynamic>> load(
+  Future<MailPreview> load(
     String mailboxId,
     String id, {
     required bool thread,
@@ -94,11 +96,26 @@ class MailPreviewStore {
     final key = _key(mailboxId, id, thread);
     return _inFlight[key] ??= () async {
       try {
-        final detail =
-            await peekStored(mailboxId, id, thread: thread) ??
-            await fetch(mailboxId, id, thread: thread, background: background);
-        remember(mailboxId, id, detail, thread: thread);
-        return detail;
+        final stored = await peekStored(mailboxId, id, thread: thread);
+        final preview = stored != null
+            ? (detail: stored, fromNetwork: false)
+            : (
+                detail: await fetch(
+                  mailboxId,
+                  id,
+                  thread: thread,
+                  background: background,
+                ),
+                fromNetwork: true,
+              );
+        remember(
+          mailboxId,
+          id,
+          preview.detail,
+          thread: thread,
+          fromNetwork: preview.fromNetwork,
+        );
+        return preview;
       } finally {
         // Drop the entry without touching the future other callers await.
         _inFlight.removeWhere((entry, _) => entry == key);

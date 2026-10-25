@@ -179,6 +179,7 @@ extension _MailReaderBody on _MailReaderState {
                   message: message,
                   threadId: _id,
                   showControls: !headerControls,
+                  renderedDocuments: widget.renderedDocuments,
                   imagesVisible: headerControls || widget.notificationEntry
                       ? _showImages
                       : null,

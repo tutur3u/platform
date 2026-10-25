@@ -45,7 +45,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
       },
       onPressed: chooseFolder,
     );
-    final paneOpen = _split && _selection != null;
+    final paneOpen = _split && _activeSelection != null;
     return PopScope(
       canPop: !paneOpen,
       onPopInvokedWithResult: (didPop, _) {
@@ -145,7 +145,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                 : null,
             body: AppMasterDetail(
               detail: _buildDetailPane(),
-              detailKey: _selection?.id,
+              detailKey: _activeSelection?.id,
               onSplitChanged: _onSplitChanged,
               onCloseDetail: _closeSelection,
               emptyDetail: AppMasterDetailEmpty(
@@ -356,7 +356,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                                       thread: _threads,
                                       active:
                                           _split &&
-                                          _selection?.id == item['id'],
+                                          _activeSelection?.id == item['id'],
                                       selected: _selected.contains(item['id']),
                                       onSelect: () {
                                         if (_mutating) return;
