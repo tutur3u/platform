@@ -127,7 +127,7 @@ test('emitted Passwords Worker stops vault and auth work across restart', {
           redirect: 'manual',
         });
         guarded(response);
-        assert.equal(response.status, 302);
+        assert.equal(response.status, 303);
         const location = new URL(response.headers.get('location'));
         assert.equal(location.origin, 'https://web.example.test');
         assert.equal(location.pathname, '/en/login');
