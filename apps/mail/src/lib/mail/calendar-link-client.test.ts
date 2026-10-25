@@ -8,7 +8,7 @@ import {
 import { expect, it, vi } from 'vitest';
 
 it('uses encoded Mail paths, uncached authenticated requests and the exact preview/confirm/unlink payloads', async () => {
-  const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(
+  const fetch = vi.fn<typeof globalThis.fetch>(
     async () =>
       new Response(
         JSON.stringify({
