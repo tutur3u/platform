@@ -5,24 +5,34 @@ import {
 } from '@tuturuuu/internal-api';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mailApiOptions, mailApiPath } from './mail-api-options';
+import { registerMailBrowserApiPaths } from './mail-api-client';
+import { mailApiPath } from './mail-api-options';
 
-afterEach(() => vi.unstubAllGlobals());
+let unregister: (() => void) | undefined;
+afterEach(() => {
+  unregister?.();
+  unregister = undefined;
+  vi.unstubAllGlobals();
+});
 describe('mounted Mail client transport', () => {
   it('sends actual typed Mail clients to their own mount and leaves Web APIs at root', async () => {
     vi.stubGlobal('__tuturuuuAppBase', '/mail');
+    vi.stubGlobal('window', {
+      location: { hostname: 'tuturuuu.com', origin: 'https://tuturuuu.com' },
+    });
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
       Response.json({ messages: [] })
     );
-    const options = { ...mailApiOptions, fetch };
-    await listMailMessages('workspace', 'mailbox', {}, options);
+    vi.stubGlobal('fetch', fetch);
+    unregister = registerMailBrowserApiPaths();
+    await listMailMessages('workspace', 'mailbox');
     await connectedMailRequest(
       'workspace',
       ['account', 'messages'],
       {},
-      options
+      undefined
     );
-    await createInternalApiClient(options).json('/api/v1/users/me/profile');
+    await createInternalApiClient().json('/api/v1/users/me/profile');
     expect(fetch.mock.calls.map(([path]) => path)).toEqual([
       '/mail/api/v1/workspaces/workspace/mail/mailboxes/mailbox/messages',
       '/mail/api/v1/workspaces/workspace/mail/connected/account/messages',

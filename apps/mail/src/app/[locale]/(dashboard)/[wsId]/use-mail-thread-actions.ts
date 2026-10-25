@@ -14,7 +14,6 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import {
   reconcileMailWhenIdle,
   waitForMailBackgroundReads,
@@ -192,8 +191,7 @@ export function useMailThreadActions({
         targetWorkspaceId,
         mailboxId,
         targetThreadId,
-        { action },
-        mailApiOptions
+        { action }
       );
     },
     onMutate: async (variables) => {
@@ -265,15 +263,10 @@ export function useMailThreadActions({
         mailboxId,
         threadIds
       );
-      return bulkUpdateMailThreads(
-        targetWorkspaceId,
-        mailboxId,
-        {
-          action,
-          threadIds,
-        },
-        mailApiOptions
-      );
+      return bulkUpdateMailThreads(targetWorkspaceId, mailboxId, {
+        action,
+        threadIds,
+      });
     },
     onMutate: async (variables) => {
       const { action, threadIds } = variables;

@@ -1,5 +1,4 @@
 'use client';
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   type MailMailboxMember,
@@ -20,7 +19,6 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 export function MailMemberSettings({
   mailboxId,
@@ -45,19 +43,8 @@ export function MailMemberSettings({
         | { remove: string }
     ) => {
       if ('remove' in change)
-        await removeMailMailboxMember(
-          workspaceId,
-          mailboxId,
-          change.remove,
-          mailApiOptions
-        );
-      else
-        await upsertMailMailboxMember(
-          workspaceId,
-          mailboxId,
-          change,
-          mailApiOptions
-        );
+        await removeMailMailboxMember(workspaceId, mailboxId, change.remove);
+      else await upsertMailMailboxMember(workspaceId, mailboxId, change);
     },
     onSuccess: async () => {
       setEmail('');

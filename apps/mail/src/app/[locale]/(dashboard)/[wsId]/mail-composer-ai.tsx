@@ -14,7 +14,6 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 interface GenerationRequest {
   instructions: string;
@@ -68,22 +67,17 @@ export function MailComposerAi({
   const generation = useMutation({
     mutationFn: async (request: GenerationRequest & { context: string }) => ({
       context: request.context,
-      result: await generateMailAiDraft(
-        workspaceId,
-        mailboxId,
-        {
-          bodyHtml,
-          bodyText,
-          instructions: selectionOnly
-            ? `Rewrite only the selected passage. Return only its replacement, without greeting, subject, signature or quoted history. ${request.instructions}`
-            : request.instructions,
-          mode: selectionOnly ? 'rewrite' : request.mode,
-          recipients,
-          subject,
-          threadId,
-        },
-        mailApiOptions
-      ),
+      result: await generateMailAiDraft(workspaceId, mailboxId, {
+        bodyHtml,
+        bodyText,
+        instructions: selectionOnly
+          ? `Rewrite only the selected passage. Return only its replacement, without greeting, subject, signature or quoted history. ${request.instructions}`
+          : request.instructions,
+        mode: selectionOnly ? 'rewrite' : request.mode,
+        recipients,
+        subject,
+        threadId,
+      }),
     }),
     onSuccess: setCompletion,
   });

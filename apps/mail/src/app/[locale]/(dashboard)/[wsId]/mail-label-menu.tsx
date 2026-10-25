@@ -11,7 +11,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailIconButton } from './mail-icon-button';
 import { MailThreadPreferenceMenu } from './mail-thread-preference-menu';
 
@@ -29,8 +28,7 @@ export function MailLabelMenu({
   const t = useTranslations('mail');
   const organization = useQuery({
     enabled: Boolean(mailboxId),
-    queryFn: () =>
-      getMailboxOrganization(workspaceId, mailboxId, mailApiOptions),
+    queryFn: () => getMailboxOrganization(workspaceId, mailboxId),
     queryKey: ['mail', workspaceId, mailboxId, 'organization'],
   });
   const update = useMutation({
@@ -41,16 +39,11 @@ export function MailLabelMenu({
       action: 'add_label' | 'remove_label';
       labelId: string;
     }) =>
-      bulkUpdateMailThreads(
-        workspaceId,
-        mailboxId,
-        {
-          action,
-          labelId,
-          threadIds,
-        },
-        mailApiOptions
-      ),
+      bulkUpdateMailThreads(workspaceId, mailboxId, {
+        action,
+        labelId,
+        threadIds,
+      }),
     onSuccess: async () => {
       await onChanged();
       toast.success(t('labels_updated'));
@@ -58,16 +51,11 @@ export function MailLabelMenu({
   });
   const smart = useMutation({
     mutationFn: () =>
-      suggestMailLabels(
-        workspaceId,
-        mailboxId,
-        {
-          action: 'classify',
-          apply: true,
-          threadIds,
-        },
-        mailApiOptions
-      ),
+      suggestMailLabels(workspaceId, mailboxId, {
+        action: 'classify',
+        apply: true,
+        threadIds,
+      }),
     onSuccess: async (result) => {
       await onChanged();
       toast.success(t('smart_labels_applied', { count: result.applied }));

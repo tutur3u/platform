@@ -4,7 +4,6 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api/client';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { mailApiOptions } from '../../../runtime/mail-api-options';
 import {
   type CalendarLinkDependencies,
   createCalendarLinkService,
@@ -55,10 +54,7 @@ export function mailCalendarLinks(
     )
   )
     throw new Error('Calendar requires a secure origin');
-  const options = withForwardedInternalApiAuth(headers, {
-    ...{ baseUrl },
-    ...mailApiOptions,
-  });
+  const options = withForwardedInternalApiAuth(headers, { baseUrl });
   async function sourceMetadata() {
     const access = await requireMailboxAccess(ctx, mailboxId, [
       'owner',
@@ -89,10 +85,7 @@ export function mailCalendarLinks(
           actor,
           workspace,
           event,
-          await getCalendarEventLinkPreview(workspace, event, {
-            ...options,
-            ...mailApiOptions,
-          }),
+          await getCalendarEventLinkPreview(workspace, event, options),
           calendarOrigin
         );
       } catch (error) {

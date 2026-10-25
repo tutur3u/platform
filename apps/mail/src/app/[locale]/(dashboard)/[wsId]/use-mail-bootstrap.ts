@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getMailBootstrap, getMailUnreadCounts } from '@tuturuuu/internal-api';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 export function useMailBootstrap(workspaceId: string) {
   const bootstrap = useQuery({
@@ -12,7 +11,7 @@ export function useMailBootstrap(workspaceId: string) {
   });
   const counts = useQuery({
     queryKey: ['mail', workspaceId, 'bootstrap-counts'],
-    queryFn: () => getMailUnreadCounts(workspaceId, mailApiOptions),
+    queryFn: () => getMailUnreadCounts(workspaceId),
     enabled: Boolean(bootstrap.data),
     staleTime: 30_000,
   });

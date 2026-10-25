@@ -9,7 +9,6 @@ import {
   updateMailDraft,
   uploadMailDraftAttachment,
 } from '@tuturuuu/internal-api';
-
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -32,7 +31,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerFooter } from './mail-composer-footer';
@@ -217,15 +215,9 @@ export function FloatingComposer({
                 workspaceId,
                 mailboxId,
                 currentId,
-                nextSnapshot,
-                mailApiOptions
+                nextSnapshot
               )
-            : await createMailDraft(
-                workspaceId,
-                mailboxId,
-                nextSnapshot,
-                mailApiOptions
-              );
+            : await createMailDraft(workspaceId, mailboxId, nextSnapshot);
           draftIdRef.current = response.message.id;
           setDraftId(response.message.id);
           setSaveState('saved');
@@ -280,8 +272,7 @@ export function FloatingComposer({
           workspaceId,
           mailboxId,
           savedDraftId,
-          copy,
-          mailApiOptions
+          copy
         );
         setAttachments((current) => [...current, ...response.attachments]);
       } catch {
@@ -340,8 +331,7 @@ export function FloatingComposer({
           savedDraftId,
           file,
           file.name,
-          { contentId, disposition: inline ? 'inline' : 'attachment' },
-          mailApiOptions
+          { contentId, disposition: inline ? 'inline' : 'attachment' }
         );
         setAttachments((current) => [...current, response.attachment]);
         if (inline) {
@@ -644,8 +634,7 @@ export function FloatingComposer({
                   workspaceId,
                   mailboxId,
                   draftId,
-                  attachment.id,
-                  mailApiOptions
+                  attachment.id
                 );
                 setAttachments((items) =>
                   items.filter((item) => item.id !== attachment.id)

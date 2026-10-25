@@ -22,7 +22,6 @@ import {
   mailAttachmentPreviewType,
   mailAttachmentPreviewUrl,
 } from '@/lib/mail/attachment-preview';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 const PDFViewer = dynamic(
   () =>
@@ -54,8 +53,7 @@ export function MailAttachmentCard({
     : undefined;
   const textPreview = useQuery({
     queryKey: ['mail', 'attachment-text', url],
-    queryFn: ({ signal }) =>
-      getMailAttachmentText(url!, signal, mailApiOptions),
+    queryFn: ({ signal }) => getMailAttachmentText(url!, signal),
     enabled: open && preview?.kind === 'text' && Boolean(url),
     retry: false,
     gcTime: 0,

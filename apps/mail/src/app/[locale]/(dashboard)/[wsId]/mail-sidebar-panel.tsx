@@ -23,7 +23,6 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
-import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { isMailFolder } from './mail-folders';
 import { MailSettingsDialog } from './mail-settings-dialog';
 import {
@@ -66,12 +65,7 @@ export function MailSidebarPanel({
     null;
   const organizationQuery = useQuery({
     enabled: Boolean(activeMailboxId),
-    queryFn: () =>
-      getMailboxOrganization(
-        workspaceId,
-        activeMailboxId ?? '',
-        mailApiOptions
-      ),
+    queryFn: () => getMailboxOrganization(workspaceId, activeMailboxId ?? ''),
     queryKey: ['mail', workspaceId, activeMailboxId, 'organization'],
   });
   const [mailSettings, setMailSettings] = useQueryState(
@@ -120,16 +114,11 @@ export function MailSidebarPanel({
       getNextPageParam: getNextMailThreadPage,
       initialPageParam: 1,
       queryFn: ({ pageParam }) =>
-        listMailThreads(
-          workspaceId,
-          activeMailboxId,
-          {
-            folder,
-            page: pageParam,
-            pageSize: MAIL_THREAD_PAGE_SIZE,
-          },
-          mailApiOptions
-        ),
+        listMailThreads(workspaceId, activeMailboxId, {
+          folder,
+          page: pageParam,
+          pageSize: MAIL_THREAD_PAGE_SIZE,
+        }),
       queryKey: getMailThreadsQueryKey({
         folder,
         mailboxId: activeMailboxId,

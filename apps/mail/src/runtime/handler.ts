@@ -8,6 +8,7 @@ import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
 import { endpoints } from './api-registry.bridge.gen';
 import { MAIL_FUNCTION_BASE } from './mail-api-policy';
+import { registerMailServerApiPaths } from './mail-api-server';
 import { mailAppPath, mailMounts } from './mail-mount';
 import { prepareMailFunctionRequest } from './native-function-body';
 import { nativeFunctionProxy } from './native-function-proxy';
@@ -15,6 +16,8 @@ import { proxyMatches } from './proxy-bridge';
 import { publicAssets } from './public-assets';
 import { applyMailResponsePolicy } from './response-policy';
 import type { MailExecutionContext, MailRuntimeEnv } from './worker-contract';
+
+registerMailServerApiPaths();
 
 const dispatch = createBridgeHandler<MailRuntimeEnv, MailExecutionContext>({
   mounts: mailMounts,
