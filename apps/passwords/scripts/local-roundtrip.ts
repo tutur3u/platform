@@ -46,6 +46,7 @@ async function main() {
   let stage = 'ISOLATION';
   let passed = false;
   let failure = 'UNEXPECTED';
+  let failureLocation = 'unknown';
   let stats = { requests: 0, uploads: 0, captures: 0, tls: 0 };
   let stack: Awaited<ReturnType<typeof isolated>> | undefined;
   const since = new Date().toISOString();
@@ -135,6 +136,7 @@ async function main() {
       name: 'Synthetic file fixture',
     });
     check(created.ok && created.value.vaultId === VAULT, 'CREATE_VAULT');
+    stage = 'TLS_START';
     bridge = await tlsBridge(
       directory,
       createSecretsHandler(env).handle,
@@ -143,6 +145,7 @@ async function main() {
     const tlsKey = await readFile(join(directory, 'server.key'));
     capture.secret(tlsKey);
     tlsKey.fill(0);
+    stage = 'CREDENTIAL_FILE';
     const signed = mint(true);
     const credentials = join(directory, 'credentials.json');
     const source = join(directory, 'source.bin');
@@ -363,6 +366,8 @@ async function main() {
   } catch (error) {
     passed = false;
     if (error instanceof FixtureCheckError) failure = error.code;
+    if (error instanceof Error)
+      failureLocation = error.stack?.match(/local-roundtrip[-a-z]*\.ts:\d+:\d+/)?.[0] ?? 'unknown';
   } finally {
     controller.abort();
     try {
@@ -419,7 +424,10 @@ async function main() {
     process.stdout.write(
       `PASS passwords-real-roundtrip tls=${stats.tls} uploads=${stats.uploads} requests=${stats.requests} captures=${stats.captures}\n`
     );
-  else process.stderr.write(`FAIL passwords-real-roundtrip stage=${stage} code=${failure}\n`);
+  else
+    process.stderr.write(
+      `FAIL passwords-real-roundtrip stage=${stage} code=${failure} location=${failureLocation}\n`
+    );
   return passed ? 0 : 1;
 }
 

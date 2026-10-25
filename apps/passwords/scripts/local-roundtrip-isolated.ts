@@ -6,7 +6,11 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getSupabaseBinaryPath } from '../../database/scripts/run-supabase.js';
 import { deriveIsolatedIdentity } from '../../database/scripts/run-supabase-isolated.js';
-import { type Capture, check, FixtureCheckError } from './local-roundtrip-capture';
+import {
+  type Capture,
+  check,
+  FixtureCheckError,
+} from './local-roundtrip-capture';
 
 export const ACTOR = 'f8000000-0000-4000-8000-000000000001';
 export const WORKSPACE = 'f8100000-0000-4000-8000-000000000001';
