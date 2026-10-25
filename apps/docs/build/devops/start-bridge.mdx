@@ -308,6 +308,54 @@ not used on the apex.
 | `packages/supabase/src/next/server.ts`, `packages/supabase/src/request/server.ts` `requestHasAppSessionAuth` | On the apex host, a valid Supabase cookie session wins over a cookie-borne `tuturuuu_app_session` |
 | `@tuturuuu/start-bridge` `function-proxy` and app `proxy.ts` calls | Pass the URL-derived mount through; never a header from the client |
 
+### Mounted no-writer guard (design; not implemented)
+
+The function-proxy change (#6774) covers server-function middleware only: a
+mounted request there never refreshes or writes app-session cookies. The
+guarantee is not complete until every other mounted path is covered too. The
+app's ordinary `proxy.ts` and the endpoint registry still reach the auth
+writers, for example Meet's `/api/auth/verify-app-token` and
+`/api/auth/refresh-app-session`, whose `createPOST` and `createRefreshPOST`
+(`packages/auth/src/cross-app/server.ts`) call `setAppSessionCookie`,
+`setAppSessionRefreshCookie`, `setWebAppSessionCookie` and
+`setWebAppSessionRefreshCookie` with `Path=/`. Implementing the guard waits on
+the shared-session decision above.
+
+**Where the guard lives.** Enforce it once, at a shared boundary rather than
+per app:
+
+1. **Admission in the bridge handler**, before `proxy.ts` and endpoint
+   dispatch: for a mounted request (non-empty URL-derived `appBase` in the
+   request context), answer `409` for the satellite session-minting
+   endpoints, without verification, token rotation or `Set-Cookie`. The
+   endpoint list is part of the handler contract, not per-app code.
+2. **The auth writers themselves**: the app-session setters and
+   `clearAppSessionCookie` refuse to write when the bridge context is mounted
+   (read from the server-side request context, never a header). This also
+   catches writes reached through `proxy.ts` refresh, MFA redirects
+   (`packages/auth/src/proxy/index.ts`) and any endpoint the admission list
+   misses.
+
+**Endpoints in scope:** `/api/auth/verify-app-token`,
+`/api/auth/refresh-app-session` (both `409` when mounted), every route that
+reaches `refreshAppSessionForRequest`, `createSupabaseBackedAppSessionResponse`
+or `appSessionFailureResponse` through `proxy.ts`, and app logout routes, which
+go to Web sign-out when mounted.
+
+**Whole-handler tests** (through `createBridgeHandler`, not a mocked
+factory):
+
+- Mounted verify and refresh `POST`s return `409` with no `Set-Cookie`, and no
+  token verification or rotation runs.
+- A mounted, authenticated ordinary page and API request succeeds on the
+  shared session and emits no `tuturuuu_app_session*` or
+  `tuturuuu_web_app_session*` `Set-Cookie`, including on MFA-redirect and
+  refresh-failure paths.
+- Root-mode controls: the same verify, refresh, page and API requests on a
+  subdomain host behave exactly as today, including their app-session cookies.
+- A client-sent `x-tuturuuu-app-base` never switches a root request into
+  mounted mode.
+
 ## Page adapter
 
 The generic App Router page adapter (React Server Components) and the
