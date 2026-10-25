@@ -70,21 +70,20 @@ that cookie into cohort identity or copy it onto the shared origin.
 ## Qualify both Finance URL modes
 
 The candidate must work on both `finance.<host>` and `<host>/finance`.
-The bridge owns base-path normalization and cookie serialization. Preserve the
+The bridge owns request-based mount resolution and the shared session model. Preserve the
 external prefix on redirects, ordinary links, assets, action requests, and API
 calls while matching the internal route once.
 
-Use the shared bridge's cookie translation and app-specific session/refresh
-names. The frozen v0 bridge derives `tuturuuu_app_session__finance` and
-`tuturuuu_app_session_refresh__finance` under a base. Verify the exact naming
-contract with the bridge owner before cutover; the original lane brief requested
-a single underscore before `finance`.
+All apps on `tuturuuu.com` use one shared apex session. Finance must not add
+an app-specific session cookie name or path. The shared bridge and auth owner
+implement that model; app code consumes it. Preserve subdomain behavior until
+cutover. Session handover follows the shared bridge contract, with no cross-host
+token copy.
 
-Cookies use `Path=/finance` under the prefix. Root-mode behavior and legacy
-fallback follow the shared bridge contract and require separate subdomain
-acceptance. Subdomain-to-path cutover permits a one-time re-login, with no
-cross-host token handoff. Cookie paths prevent name collisions but do not
-establish an authorization boundary.
+A mounted request must retain the shared session during refresh and failure
+handling. Signing out on the apex is global. Require independent security
+acceptance of the mounted-auth implementation before cutover. The bridge's
+proposal alone does not qualify authentication behavior.
 
 Acceptance covers English and Vietnamese URLs, anonymous login, cross-app token
 verification, refresh and logout, MFA recovery, personal/internal workspace
