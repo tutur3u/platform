@@ -40,6 +40,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:record/record.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -54,6 +55,17 @@ class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Profile extends MockCubit<ShellProfileState>
     implements ShellProfileCubit {}
+
+class _RecordingPlatform extends RecordPlatform {
+  @override
+  Future<void> create(String recorderId) async {}
+  @override
+  Stream<RecordState> onStateChanged(String recorderId) => const Stream.empty();
+  @override
+  Future<void> dispose(String recorderId) async {}
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 Future<void> _pump(WidgetTester tester) async {
   for (var i = 0; i < 12; i++) {
@@ -108,6 +120,9 @@ void main() {
   tearDownAll(() => supa.Supabase.instance.dispose());
 
   setUp(() async {
+    final previousRecorder = RecordPlatform.instance;
+    RecordPlatform.instance = _RecordingPlatform();
+    addTearDown(() => RecordPlatform.instance = previousRecorder);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('mobile/shell_back'),
@@ -405,11 +420,14 @@ void main() {
           }
           final semantics = tester.ensureSemantics();
           expect(
-            find.bySemanticsLabel(
-              RegExp(
-                assistantSection
-                    ? '^${RegExp.escape(renderedTitle)}\$'
-                    : '$renderedTitle, Search apps',
+            find.descendant(
+              of: find.byType(ShellTopBarTitle),
+              matching: find.bySemanticsLabel(
+                RegExp(
+                  assistantSection
+                      ? '^${RegExp.escape(renderedTitle)}\$'
+                      : '$renderedTitle, Search apps',
+                ),
               ),
             ),
             findsOneWidget,
