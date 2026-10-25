@@ -1,20 +1,22 @@
 /// <reference lib="webworker" />
 import { createOfflineWorker } from '../../../../packages/offline/src/worker';
-import { isNativeStaticAsset, offlinePrecache } from './offline-assets';
+import { calendarOfflineContract, isNativeStaticAsset } from './offline-assets';
 
 declare const self: ServiceWorkerGlobalScope & {
   __TUTURUUU_PRECACHE_MANIFEST: string[];
 };
-self.__TUTURUUU_PRECACHE_MANIFEST = offlinePrecache;
+const basePath = new URL(self.registration.scope).pathname.replace(/\/$/u, '');
+const contract = calendarOfflineContract(basePath);
+self.__TUTURUUU_PRECACHE_MANIFEST = contract.precache;
 createOfflineWorker({
-  offlineFallbackUrl: '/offline.html',
+  offlineFallbackUrl: contract.fallback,
   cacheNavigations: false,
   staticAssetsOnly: true,
   maxRuntimeCacheEntries: 160,
   additionalCaching: [
     {
       matcher: ({ request }) =>
-        isNativeStaticAsset(request, self.location.origin),
+        isNativeStaticAsset(request, self.location.origin, basePath),
       strategy: 'cache-first',
     },
   ],

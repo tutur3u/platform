@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type UserConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
@@ -8,8 +9,25 @@ import { CALENDAR_FUNCTION_BASE } from './src/runtime/native-function-config';
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
+const bridge = startBridgePreset({
+  appRoot: import.meta.url,
+  app: 'calendar',
+  serverFnBase: CALENDAR_FUNCTION_BASE,
+  shims: [
+    'next/headers',
+    'next/cache',
+    'next/server',
+    'next/navigation',
+    'next/link',
+    'next/dynamic',
+    'next/image',
+    '@opennextjs/cloudflare',
+  ],
+});
 export default defineConfig(
   ({ command }): UserConfig => ({
+    base: bridge.base,
+    experimental: bridge.experimental,
     plugins: [
       {
         name: 'calendar-owned-native-ports',
@@ -46,7 +64,8 @@ export default defineConfig(
       },
       voidPlugin(),
       tanstackStart({
-        serverFns: { base: CALENDAR_FUNCTION_BASE },
+        start: bridge.tanstackStart.start,
+        serverFns: bridge.tanstackStart.serverFns,
         router: {
           enableRouteGeneration: true,
           routesDirectory: 'routes',
@@ -91,34 +110,7 @@ export default defineConfig(
           replacement: local('./src/runtime/request-telemetry.server.ts'),
         },
 
-        {
-          find: /^next\/headers$/u,
-          replacement: local('./src/runtime/request-context.ts'),
-        },
-        {
-          find: /^next\/cache$/u,
-          replacement: local('./src/runtime/request-cache.ts'),
-        },
-        {
-          find: /^next\/server$/u,
-          replacement: local('./src/runtime/next-server.ts'),
-        },
-        {
-          find: /^next\/navigation$/u,
-          replacement: local('./src/runtime/next-navigation.tsx'),
-        },
-        {
-          find: /^next\/link$/u,
-          replacement: local('./src/runtime/next-link.tsx'),
-        },
-        {
-          find: /^next\/dynamic$/u,
-          replacement: local('./src/runtime/next-dynamic.tsx'),
-        },
-        {
-          find: /^next\/image$/u,
-          replacement: local('./src/runtime/next-image.tsx'),
-        },
+        ...bridge.alias,
         {
           find: /^next-intl\/server$/u,
           replacement: local('./src/runtime/intl-server.ts'),
@@ -146,6 +138,7 @@ export default defineConfig(
       rollupOptions: { output: { entryFileNames: 'serwist/sw.js' } },
     },
     define: {
+      ...bridge.define,
       'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(
         process.env.NEXT_PUBLIC_SUPABASE_URL
       ),
@@ -162,14 +155,7 @@ export default defineConfig(
     environments: {
       client: {
         define: {
-          'process.env': JSON.stringify({
-            ...Object.fromEntries(
-              Object.entries(process.env).filter(([key]) =>
-                key.startsWith('NEXT_PUBLIC_')
-              )
-            ),
-            NODE_ENV: command === 'serve' ? 'development' : 'production',
-          }),
+          ...bridge.clientDefine(command),
         },
       },
     },

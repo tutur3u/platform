@@ -18,6 +18,7 @@ import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
@@ -175,7 +176,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     const loginRedirect = clearSupabaseAuthCookies(
       req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+      NextResponse.redirect(
+        new URL(withAppBase(nextPath, req.nextUrl.basePath), req.nextUrl)
+      )
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
@@ -214,7 +217,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
+        req.nextUrl
+      );
       redirectUrl.search = req.nextUrl.search;
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
@@ -236,7 +242,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           newPathSegments[wsIdIndex] = 'personal';
 
           const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
+            withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
             req.nextUrl
           );
           // Preserve query parameters
@@ -282,13 +288,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             ? 'internal'
             : defaultWorkspace.id
         : 'personal';
-      const redirectUrl = new URL(`/${target}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withAppBase(`/${target}`, req.nextUrl.basePath),
+        req.nextUrl
+      );
       const wsRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, wsRedirect);
       return wsRedirect;
     } catch {
       const fallbackRedirect = NextResponse.redirect(
-        new URL('/personal', req.nextUrl)
+        new URL(withAppBase('/personal', req.nextUrl.basePath), req.nextUrl)
       );
       propagateAuthCookies(authRes, fallbackRedirect);
       return fallbackRedirect;

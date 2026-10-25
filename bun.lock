@@ -143,6 +143,7 @@
         "@tuturuuu/microsoft": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/start-bridge": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/tasks-ui": "workspace:*",
         "@tuturuuu/trigger": "workspace:*",
