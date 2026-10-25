@@ -8,6 +8,7 @@ import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-en
 import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import appConfig from '../start-bridge.config';
 
 export interface CmsEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -33,7 +34,10 @@ const handler = (
       rootHosts: ['cms.tuturuuu.com'],
       mountHosts: ['tuturuuu.com'],
       basePath: '/cms',
+      ...appConfig.mounts,
     },
+    csp: appConfig.csp,
+    apiOrigin: appConfig.apiOrigin,
     start: createBridgeStartHandler(),
     serverFnBase: '/_serverFn',
     proxy,
@@ -52,6 +56,9 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: CmsEnvironment, ctx: WorkerContext) {
-    return (await handler)(request, env, ctx);
+    const response = await (await handler)(request, env, ctx);
+    return appConfig.wrapResponse
+      ? appConfig.wrapResponse(response, { request, env })
+      : response;
   },
 };
