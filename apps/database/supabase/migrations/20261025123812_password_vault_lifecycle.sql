@@ -55,6 +55,62 @@ CREATE TRIGGER password_vault_workspace_user_archived
 CREATE TRIGGER password_vault_workspace_user_unlinked
   AFTER DELETE ON public.workspace_user_linked_users
   FOR EACH ROW EXECUTE FUNCTION private.password_vault_workspace_user_unlinked();
+-- Identity erasure nulls live FK links but cannot rewrite immutable audit history.
+CREATE FUNCTION private.password_vault_account_erased() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE v private.password_vaults;
+BEGIN
+  FOR v IN SELECT x.* FROM private.password_vaults x
+    WHERE x.created_by = OLD.id
+      OR EXISTS (SELECT 1 FROM private.password_vault_members m WHERE m.vault_id = x.id AND m.user_id = OLD.id)
+      OR EXISTS (SELECT 1 FROM private.password_vault_machine_grants g WHERE g.vault_id = x.id AND g.issuer_user_id = OLD.id)
+    ORDER BY x.id FOR UPDATE OF x LOOP
+    UPDATE private.password_vault_members SET revoked_at = COALESCE(revoked_at, now())
+      WHERE vault_id = v.id AND user_id = OLD.id;
+    UPDATE private.password_vault_machine_tokens SET revoked_at = COALESCE(revoked_at, now())
+      WHERE vault_id = v.id AND grant_id IN (SELECT id FROM private.password_vault_machine_grants
+        WHERE vault_id = v.id AND issuer_user_id = OLD.id);
+    UPDATE private.password_vault_machine_grants SET revoked_at = COALESCE(revoked_at, now())
+      WHERE vault_id = v.id AND issuer_user_id = OLD.id;
+    UPDATE private.password_vaults SET revision = revision + 1, authorization_epoch = authorization_epoch + 1,
+      rotation_required = true, updated_at = now() WHERE id = v.id RETURNING * INTO v;
+    INSERT INTO private.password_vault_audit_events(ws_id, vault_id, request_id, actor_user_id,
+      actor_type, event_type, metadata) VALUES (v.scope_ws_id, v.id, gen_random_uuid(), OLD.id,
+      'system', 'member.account_erased', jsonb_build_object('revision', v.revision,
+        'authorizationEpoch', v.authorization_epoch));
+  END LOOP;
+  RETURN OLD;
+END $$;
+CREATE FUNCTION private.password_vault_workspace_erased() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE v private.password_vaults;
+BEGIN
+  FOR v IN SELECT x.* FROM private.password_vaults x WHERE x.ws_id = OLD.id
+    ORDER BY x.id FOR UPDATE OF x LOOP
+    UPDATE private.password_vault_members SET revoked_at = COALESCE(revoked_at, now()) WHERE vault_id = v.id;
+    UPDATE private.password_vault_machine_grants SET revoked_at = COALESCE(revoked_at, now()) WHERE vault_id = v.id;
+    UPDATE private.password_vault_machine_tokens SET revoked_at = COALESCE(revoked_at, now()) WHERE vault_id = v.id;
+    UPDATE private.password_vaults SET ws_id = NULL, retired_at = now(), revision = revision + 1,
+      authorization_epoch = authorization_epoch + 1, rotation_required = true, updated_at = now()
+      WHERE id = v.id RETURNING * INTO v;
+    INSERT INTO private.password_vault_audit_events(ws_id, vault_id, request_id, actor_user_id,
+      actor_type, event_type, metadata) VALUES (OLD.id, v.id, gen_random_uuid(),
+      COALESCE(OLD.creator_id, '00000000-0000-0000-0000-000000000000'::uuid), 'system',
+      'vault.workspace_erased', jsonb_build_object('revision', v.revision,
+        'authorizationEpoch', v.authorization_epoch));
+  END LOOP;
+  RETURN OLD;
+END $$;
+CREATE TRIGGER password_vault_account_erased BEFORE DELETE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION private.password_vault_account_erased();
+CREATE TRIGGER password_vault_workspace_erased BEFORE DELETE ON public.workspaces
+  FOR EACH ROW EXECUTE FUNCTION private.password_vault_workspace_erased();
+ALTER FUNCTION private.password_vault_account_erased() OWNER TO postgres;
+ALTER FUNCTION private.password_vault_workspace_erased() OWNER TO postgres;
+REVOKE ALL ON FUNCTION private.password_vault_account_erased()
+  FROM PUBLIC, anon, authenticated, supabase_auth_admin, service_role;
+REVOKE ALL ON FUNCTION private.password_vault_workspace_erased()
+  FROM PUBLIC, anon, authenticated, supabase_auth_admin, service_role;
 ALTER FUNCTION private.password_vault_workspace_member_changed() OWNER TO postgres;
 ALTER FUNCTION private.password_vault_workspace_user_archived() OWNER TO postgres;
 ALTER FUNCTION private.password_vault_workspace_user_unlinked() OWNER TO postgres;

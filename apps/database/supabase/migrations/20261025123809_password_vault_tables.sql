@@ -3,27 +3,33 @@ BEGIN;
 CREATE SCHEMA IF NOT EXISTS private;
 CREATE TABLE private.password_vaults (
   id uuid PRIMARY KEY,
-  ws_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE RESTRICT,
+  ws_id uuid REFERENCES public.workspaces(id) ON DELETE SET NULL,
+  -- Stable encryption/FK context survives detachment from a hard-deleted workspace.
+  scope_ws_id uuid NOT NULL,
+  retired_at timestamptz,
   label text NOT NULL CHECK (label = btrim(label) AND char_length(label) BETWEEN 1 AND 128 AND label !~ '[[:cntrl:]]'),
   revision bigint NOT NULL DEFAULT 1 CHECK (revision > 0),
   authorization_epoch bigint NOT NULL DEFAULT 1 CHECK (authorization_epoch > 0),
   active_version integer NOT NULL DEFAULT 1 CHECK (active_version > 0),
   rotation_required boolean NOT NULL DEFAULT false,
-  created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (ws_id, id)
+  UNIQUE (scope_ws_id, id),
+  UNIQUE (ws_id, id),
+  CHECK (ws_id IS NULL OR ws_id = scope_ws_id)
 );
 CREATE UNIQUE INDEX password_vault_label_idx ON private.password_vaults(ws_id, lower(label));
 CREATE TABLE private.password_vault_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ws_id uuid NOT NULL,
   vault_id uuid NOT NULL,
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   role text NOT NULL CHECK (role IN ('owner', 'editor', 'viewer')),
   revoked_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (ws_id, vault_id, user_id),
-  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(ws_id, id) ON DELETE RESTRICT
+  UNIQUE (ws_id, vault_id, user_id),
+  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(scope_ws_id, id) ON DELETE RESTRICT
 );
 CREATE INDEX password_vault_members_user_idx ON private.password_vault_members(ws_id, user_id, vault_id)
   WHERE revoked_at IS NULL;
@@ -35,10 +41,10 @@ CREATE TABLE private.password_vault_versions (
   algorithm text NOT NULL DEFAULT 'AES256GCM' CHECK (algorithm = 'AES256GCM'),
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (ws_id, vault_id, version),
-  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(ws_id, id) ON DELETE RESTRICT
+  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(scope_ws_id, id) ON DELETE RESTRICT
 );
 ALTER TABLE private.password_vaults ADD CONSTRAINT password_vault_active_version_fk
-  FOREIGN KEY (ws_id, id, active_version)
+  FOREIGN KEY (scope_ws_id, id, active_version)
   REFERENCES private.password_vault_versions(ws_id, vault_id, version) DEFERRABLE INITIALLY DEFERRED;
 CREATE TABLE private.password_vault_files (
   id uuid PRIMARY KEY,
@@ -84,7 +90,7 @@ CREATE TABLE private.password_vault_machine_grants (
   ws_id uuid NOT NULL,
   vault_id uuid NOT NULL,
   id uuid NOT NULL,
-  issuer_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  issuer_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   authorization_epoch bigint NOT NULL,
   scopes text[] NOT NULL CHECK (cardinality(scopes) BETWEEN 1 AND 2
     AND scopes <@ ARRAY['item.read', 'item.write']::text[] AND array_position(scopes, NULL) IS NULL),
@@ -94,7 +100,7 @@ CREATE TABLE private.password_vault_machine_grants (
   expires_at timestamptz NOT NULL,
   revoked_at timestamptz,
   PRIMARY KEY (ws_id, vault_id, id),
-  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(ws_id, id) ON DELETE RESTRICT,
+  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(scope_ws_id, id) ON DELETE RESTRICT,
   CHECK (expires_at > created_at AND expires_at <= created_at + interval '24 hours')
 );
 CREATE TABLE private.password_vault_machine_tokens (
@@ -128,7 +134,7 @@ CREATE TABLE private.password_vault_requests (
   response jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (ws_id, vault_id, request_id),
-  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(ws_id, id) ON DELETE RESTRICT
+  FOREIGN KEY (ws_id, vault_id) REFERENCES private.password_vaults(scope_ws_id, id) ON DELETE RESTRICT
 );
 CREATE TABLE private.password_vault_audit_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -141,7 +147,7 @@ CREATE TABLE private.password_vault_audit_events (
   event_type text NOT NULL CHECK (event_type IN ('vault.create', 'item.read', 'item.list',
     'item.write', 'item.delete', 'member.set', 'rotation.snapshot', 'vault.rotate',
     'grant.create', 'grant.revoke', 'token.issue', 'member.workspace_revoke', 'vault.rename', 'vault.list', 'key.read',
-    'member.list', 'audit.list', 'request.status')),
+    'member.list', 'audit.list', 'request.status', 'member.account_erased', 'vault.workspace_erased')),
   item_id uuid,
   -- Fixed counters and opaque pagination cursor only; never labels or client metadata.
   metadata jsonb NOT NULL CHECK (jsonb_typeof(metadata) = 'object'

@@ -176,6 +176,35 @@ try {
   console.log(
     'PASS: observed revocation lock contention denies the later read'
   );
+  const foreignKeys = succeeded(
+    await query(`SELECT count(*) FROM pg_constraint
+    WHERE conrelid = 'public.workspace_users'::regclass AND confrelid = 'public.workspaces'::regclass AND contype = 'f';`)
+  );
+  assert.equal(foreignKeys, '1', 'Fixture must exercise a real workspace FK');
+  const reader = connect(`pw-fk-holder-${randomUUID()}`);
+  reader.process.stdin.write(`BEGIN; SET LOCAL ROLE service_role;
+${operation('item.list', {})}
+SELECT 'PW_READY';
+`);
+  await waitUntil(() => reader.ready, 'Vault reader did not acquire its locks');
+  const writer = connect(`pw-fk-writer-${randomUUID()}`);
+  writer.process.stdin.write(`BEGIN; SET LOCAL lock_timeout = '2s';
+    INSERT INTO public.workspace_users(id, ws_id, display_name)
+    VALUES ('${randomUUID()}', '${workspace}', 'FK writer fixture');
+    SELECT 'PW_READY';
+`);
+  await waitUntil(
+    () => writer.ready,
+    'An unrelated FK writer was blocked by the vault operation'
+  );
+  // The insert completed while the vault transaction is still open.
+  writer.process.stdin.end('ROLLBACK;\n');
+  succeeded(await writer.done);
+  reader.process.stdin.end('COMMIT;\n');
+  succeeded(await reader.done);
+  console.log(
+    'PASS: an unrelated workspace FK insert completes before the vault lock is released'
+  );
 } finally {
   for (const client of clients) client.process.stdin.end('ROLLBACK;\n');
   await Promise.allSettled([...clients].map((client) => client.done));
