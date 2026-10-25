@@ -596,6 +596,21 @@ coverage is in `assistant_live_startup_diagnostics_test.dart`.
 This removes serial client-side waiting; actual device/provider speed remains a
 runtime measurement rather than a promised fixed latency reduction.
 
+The mobile token route (`/api/v1/assistant/live/token`) returns a
+`Server-Timing` header with durations only: `auth`, `session`, `workspace`,
+`access` (membership and tier together), `prompt` and `history` (overlapped),
+`mint`, and `total`. Use it to split the client's "Session authorization" phase
+into server stages and network time. Membership and the tier lookup run
+concurrently; prompt personalization runs alongside chat binding and history,
+both only after both access gates pass. The token is minted only when both
+succeed, and the response is `private, no-store`.
+Fresh sessions replay at most the newest 60 stored messages within a
+32,000-character budget, read in one ownership-joined query. Per-chat message
+reads use `ai_chat_messages_chat_created_idx (chat_id, created_at, id)`.
+Coverage: `assistant-live-token-routes.test.ts` (stage overlap, gates, timing
+header), `assistant-history.test.ts` (budget and ownership join), and
+`ai-chat-messages-chat-order-index.sql` (index and ordered plan).
+
 ## Canonical mobile Live capabilities
 
 New mobile clients request the `canonical-v1` tool protocol. The token response

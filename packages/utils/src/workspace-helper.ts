@@ -329,22 +329,21 @@ export async function getWorkspaceTier(
   wsId: string,
   options: { useAdmin?: boolean } = {}
 ): Promise<WorkspaceProductTier> {
-  const supabase = await (options.useAdmin
-    ? createAdminClient()
-    : createClient());
-
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-
-  const { data } = await supabase
-    .from('workspaces')
-    .select('id')
-    .eq('id', resolvedWorkspaceId)
-    .maybeSingle();
-
-  if (!data?.id) return 'FREE';
-
-  const tierMap = await getWorkspaceTierMap([data.id]);
-  return tierMap.get(data.id) || 'FREE';
+  const resolvedId = resolveWorkspaceId(wsId);
+  // An admin existence read filters nothing (unknown workspaces have no
+  // subscriptions), so skip it; RLS visibility still gates request clients.
+  const client = options.useAdmin ? null : await createClient();
+  const workspaceId = client
+    ? (
+        await client
+          .from('workspaces')
+          .select('id')
+          .eq('id', resolvedId)
+          .maybeSingle()
+      ).data?.id
+    : isWorkspaceUuidLiteral(resolvedId) && resolvedId;
+  if (!workspaceId) return 'FREE';
+  return (await getWorkspaceTierMap([workspaceId])).get(workspaceId) || 'FREE';
 }
 
 /**
