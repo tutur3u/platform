@@ -30,7 +30,9 @@ export default defineConfig(({ command }) => ({
       importProtection: {
         behavior: 'error',
         client: {
+          files: bridge.tanstackStart.importProtection.client.files,
           specifiers: [
+            ...bridge.tanstackStart.importProtection.client.specifiers,
             'server-only',
             'next/headers',
             '@tuturuuu/supabase/next/server',
