@@ -27,7 +27,10 @@ Per request, a Start server function in the app (generated
    Start redirect and any other terminal response reloads the document.
    Match that app-relative path (mount stripped; a leading locale segment
    addresses a manifest with a stripped `[locale]`) against the generated
-   page manifest. No match answers 404.
+   page manifest. A localized page for the stripped path wins over a dynamic
+   segment that would capture the locale (`/en` is the landing page, not
+   workspace `en`); a page whose first segment is literally the locale still
+   wins. No match answers 404.
 2. Load the page and its layout/template chain from the generated
    `page-modules.bridge.gen.ts` (lazy imports keyed by the manifest `file`).
 3. Pass Next's props: `params` and `searchParams` as Promises; repeated query
