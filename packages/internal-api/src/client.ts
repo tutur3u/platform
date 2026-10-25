@@ -15,6 +15,11 @@ export type InternalApiFetchInit = Omit<RequestInit, 'headers'> & {
 };
 
 export type InternalApiClientOptions = {
+  /**
+   * Optional app-owned path resolver (for example `appPath` from
+   * `@tuturuuu/start-bridge/app-url`). Omit it for central Web API calls.
+   */
+  appBaseResolver?: (path: string) => string;
   baseUrl?: string;
   defaultHeaders?: HeadersInit;
   fetch?: typeof fetch;
@@ -260,7 +265,11 @@ export function getConfiguredTasksApiBaseUrl() {
 export function withTaskApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isTasksApiProxyBrowserRuntime()) {
+  if (
+    options.baseUrl ||
+    options.appBaseResolver ||
+    isTasksApiProxyBrowserRuntime()
+  ) {
     return options;
   }
 
@@ -284,7 +293,7 @@ export function getConfiguredMailApiBaseUrl() {
 export function withMailApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isMailAppRuntime()) {
+  if (options.baseUrl || options.appBaseResolver || isMailAppRuntime()) {
     return options;
   }
 
@@ -352,7 +361,7 @@ export function getConfiguredLearnApiBaseUrl() {
 export function withLearnApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isLearnAppRuntime()) {
+  if (options.baseUrl || options.appBaseResolver || isLearnAppRuntime()) {
     return options;
   }
 
@@ -376,7 +385,7 @@ export function getConfiguredTeachApiBaseUrl() {
 export function withTeachApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isTeachAppRuntime()) {
+  if (options.baseUrl || options.appBaseResolver || isTeachAppRuntime()) {
     return options;
   }
 
@@ -407,7 +416,7 @@ export function getConfiguredPayApiBaseUrl() {
 export function withPayApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isPayAppRuntime()) {
+  if (options.baseUrl || options.appBaseResolver || isPayAppRuntime()) {
     return options;
   }
 
@@ -440,7 +449,7 @@ export function getConfiguredContactsApiBaseUrl() {
 export function withContactsApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isContactsAppRuntime()) {
+  if (options.baseUrl || options.appBaseResolver || isContactsAppRuntime()) {
     return options;
   }
 
@@ -459,7 +468,7 @@ export function withContactsApiBaseUrl(
 export function withEducationBootstrapBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl) {
+  if (options.baseUrl || options.appBaseResolver) {
     return options;
   }
 
@@ -497,7 +506,7 @@ export function getConfiguredFinanceApiBaseUrl() {
 export function withFinanceApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isFinanceBrowserRuntime()) {
+  if (options.baseUrl || options.appBaseResolver || isFinanceBrowserRuntime()) {
     return options;
   }
 
@@ -507,12 +516,18 @@ export function withFinanceApiBaseUrl(
   };
 }
 
-export function resolveInternalApiUrl(path: string, baseUrl?: string) {
+function resolveInternalApiUrlWithAppBase(
+  path: string,
+  baseUrl?: string,
+  appBaseResolver?: InternalApiClientOptions['appBaseResolver']
+) {
   const normalizedPath = normalizePath(path);
 
   if (/^https?:\/\//.test(normalizedPath)) {
     return normalizedPath;
   }
+
+  const resolvedPath = appBaseResolver?.(normalizedPath) ?? normalizedPath;
 
   const resolvedBaseUrl = baseUrl
     ? normalizeBaseUrl(baseUrl)
@@ -521,10 +536,14 @@ export function resolveInternalApiUrl(path: string, baseUrl?: string) {
       : undefined;
 
   if (!resolvedBaseUrl) {
-    return normalizedPath;
+    return resolvedPath;
   }
 
-  return new URL(normalizedPath, resolvedBaseUrl).toString();
+  return new URL(resolvedPath, resolvedBaseUrl).toString();
+}
+
+export function resolveInternalApiUrl(path: string, baseUrl?: string) {
+  return resolveInternalApiUrlWithAppBase(path, baseUrl);
 }
 
 function getCookieName(cookiePart: string) {
@@ -633,7 +652,11 @@ export function createInternalApiClient(
     const fetchImpl = options.fetch ?? globalThis.fetch;
     const { baseUrl, headers: requestHeaders, query, ...requestInit } = init;
     const requestPath = appendQuery(path, query);
-    const url = resolveInternalApiUrl(requestPath, baseUrl || options.baseUrl);
+    const url = resolveInternalApiUrlWithAppBase(
+      requestPath,
+      baseUrl || options.baseUrl,
+      options.appBaseResolver
+    );
     const headers = mergeHeaders(options.defaultHeaders, requestHeaders);
 
     return fetchImpl(url, {
