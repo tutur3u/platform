@@ -370,6 +370,7 @@ SELECT ok(r->>'n'='0' OR r->>'error'='42501',role || ' cannot list the dedicated
 -- Restore a viewer, rotate, then archive their linked workspace-user record.
 SELECT is(pg_temp.pw_op('member.set',jsonb_build_object('expected_revision',pg_temp.pw_revision(),
  'user_id','f7000000-0000-0000-0000-000000000003','role','viewer','revoked',false))->>'error',NULL,'owner explicitly restores viewer membership');
+SELECT ok(pg_temp.pw_op('item.list','{}') ? 'items','metadata item listing remains available during rotation hold');
 SELECT is(pg_temp.pw_op('vault.rotate',pg_temp.pw_rotate())->>'error',NULL,'owner rotates restored membership');
 INSERT INTO public.workspace_users(id,ws_id,display_name) SELECT
  'f7700000-0000-0000-0000-000000000001','f7100000-0000-0000-0000-000000000001','Viewer fixture'
