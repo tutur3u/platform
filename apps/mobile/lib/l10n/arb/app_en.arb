@@ -4981,5 +4981,13 @@
   "mailDraftInstructionsPlaceholder": "e.g. Keep replies short and friendly. Sign off with my first name.",
   "mailForwardToPlaceholder": "name@example.com",
   "feedbackSubjectPlaceholder": "e.g. Calendar doesn't sync on Wi-Fi",
-  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there."
+  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there.",
+  "settingsWorkspaceCountValue": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@settingsWorkspaceCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

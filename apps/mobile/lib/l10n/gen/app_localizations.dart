@@ -21996,6 +21996,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What happened, what you expected, and the steps to get there.'**
   String get feedbackDetailsPlaceholder;
+
+  /// No description provided for @settingsWorkspaceCountValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
+  String settingsWorkspaceCountValue(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

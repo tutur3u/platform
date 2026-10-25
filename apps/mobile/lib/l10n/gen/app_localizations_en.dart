@@ -11622,4 +11622,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackDetailsPlaceholder => 'What happened, what you expected, and the steps to get there.';
+
+  @override
+  String settingsWorkspaceCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspaces',
+      one: '1 workspace',
+    );
+    return '$_temp0';
+  }
 }

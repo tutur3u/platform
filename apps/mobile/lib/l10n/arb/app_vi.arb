@@ -4884,5 +4884,6 @@
   "mailDraftInstructionsPlaceholder": "Ví dụ: Trả lời ngắn gọn, thân thiện. Ký tên bằng tên của tôi.",
   "mailForwardToPlaceholder": "ten@example.com",
   "feedbackSubjectPlaceholder": "Ví dụ: Lịch không đồng bộ khi dùng Wi-Fi",
-  "feedbackDetailsPlaceholder": "Chuyện gì đã xảy ra, bạn mong đợi điều gì và các bước để tái hiện."
+  "feedbackDetailsPlaceholder": "Chuyện gì đã xảy ra, bạn mong đợi điều gì và các bước để tái hiện.",
+  "settingsWorkspaceCountValue": "{count} không gian"
 }
