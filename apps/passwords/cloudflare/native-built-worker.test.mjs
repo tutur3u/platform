@@ -70,6 +70,7 @@ async function launch(staged, enabled, network) {
       enableContainers: false,
       registry: staged.registry,
       server: { hostname: '127.0.0.1', port: 0 },
+      origin: { hostname: 'passwords.tuturuuu.com', secure: true },
       inferOriginFromRoutes: false,
       routeRequestsByRoutes: false,
       auth: () => {
