@@ -145,7 +145,7 @@ BEGIN
     'grant.create', 'grant.revoke', 'token.issue', 'member.list', 'audit.list')
     AND m.role <> 'owner' THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
   IF v.rotation_required AND p_action NOT IN ('rotation.snapshot', 'vault.rotate', 'member.set', 'grant.revoke',
-    'member.list', 'audit.list', 'request.status') THEN
+    'member.list', 'item.list', 'audit.list', 'request.status') THEN
     RAISE EXCEPTION 'Vault rotation required' USING ERRCODE = '55000';
   END IF;
   SELECT * INTO old_request FROM private.password_vault_requests
