@@ -15,7 +15,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   activateRelease,
@@ -137,10 +137,6 @@ describe('review fixes: Bun runtime', () => {
     const launcher = await readFile(join(f.store, 'bin/ttr'), 'utf8');
     expect(launcher).toContain(canonical);
     expect(launcher).not.toContain(relative(process.cwd(), planted));
-    expect(isAbsolute(realExecutable('bun', '/nonexistent'))).toBe(true);
-    expect(dirname(realExecutable('bun', '/nonexistent'))).toBe(
-      dirname(canonical)
-    );
   });
 
   it('resolves Bun under Node for installation', async () => {

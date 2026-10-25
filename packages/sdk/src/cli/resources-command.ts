@@ -7,14 +7,7 @@ import {
   realpathSync,
   statSync,
 } from 'node:fs';
-import {
-  basename,
-  delimiter,
-  dirname,
-  isAbsolute,
-  join,
-  resolve,
-} from 'node:path';
+import { basename, delimiter, dirname, join, resolve } from 'node:path';
 import type { ResourceConfig } from './resources-config';
 
 const heavyTask =
@@ -587,15 +580,13 @@ export function realExecutable(
 ) {
   if (name.includes('/') || name.includes('\\')) return resolve(name);
   for (const directory of path.split(delimiter)) {
-    if (!isAbsolute(directory) || resolve(directory) === resolve(shimDir))
-      continue;
+    if (resolve(directory) === resolve(shimDir)) continue;
     const candidate = join(directory, name);
     try {
       accessSync(candidate, constants.X_OK);
-      const executable = realpathSync(candidate);
-      if (executable.startsWith(`${resolve(shimDir)}/`)) continue;
-      if (isManagedShim(executable)) continue;
-      return executable;
+      if (realpathSync(candidate).startsWith(`${resolve(shimDir)}/`)) continue;
+      if (isManagedShim(candidate)) continue;
+      return candidate;
     } catch {
       /* Try the next PATH entry. */
     }

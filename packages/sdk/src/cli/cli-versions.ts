@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
+import { realpathSync } from 'node:fs';
 import {
   chmod,
   lstat,
@@ -13,7 +14,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { basename, join, resolve } from 'node:path';
+import { basename, delimiter, isAbsolute, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { extractCliArchive } from './cli-versions-archive';
 import {
@@ -89,7 +90,14 @@ function resolveBunRuntime(explicit?: string) {
   if (explicit) return explicit;
   if (process.versions.bun) return process.execPath;
   try {
-    return realExecutable('bun', join(resourceHome(), 'bin'));
+    const absolutePath = (process.env.PATH || '')
+      .split(delimiter)
+      .filter(isAbsolute)
+      .join(delimiter);
+    if (!absolutePath) throw new Error('No absolute Bun search directories.');
+    return realpathSync(
+      realExecutable('bun', join(resourceHome(), 'bin'), absolutePath)
+    );
   } catch (error) {
     throw new Error(
       'Cannot find Bun. Bun is required for versioned CLI releases; install it or add it to PATH.',
