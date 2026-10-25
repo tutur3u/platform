@@ -136,3 +136,44 @@ describe('registry CLI', () => {
     );
   });
 });
+
+describe('route shape conflicts and app directories', () => {
+  it('rejects differently named dynamic segments and page/route clashes', () => {
+    const plan = planRegistries(
+      { api: { out: 'api.ts' }, pages: { out: 'pages.ts' } },
+      [
+        'api/[id]/route.ts',
+        'api/[slug]/route.ts',
+        'p/[id]/page.tsx',
+        'p/[x]/route.ts',
+      ],
+      () => true
+    );
+    expect(plan.errors).toEqual([
+      'api/[slug]/route.ts: route /api/[slug] conflicts with route /api/[id] (api/[id]/route.ts)',
+      'p/[x]/route.ts: route /p/[x] conflicts with page /p/[id] (p/[id]/page.tsx)',
+    ]);
+  });
+
+  it('fails on a missing app directory unless declared absent', () => {
+    const root = mkdtempSync(join(tmpdir(), 'start-bridge-appdir-'));
+    writeFileSync(
+      join(root, 'start-bridge.routes.json'),
+      JSON.stringify({ api: null, pages: null })
+    );
+    expect(runRegistries(root, 'check')[0]).toContain(
+      'App Router directory is missing or not a directory'
+    );
+    writeFileSync(join(root, 'src'), 'not a directory');
+    writeFileSync(
+      join(root, 'start-bridge.routes.json'),
+      JSON.stringify({ appDir: 'src', api: null, pages: null })
+    );
+    expect(runRegistries(root, 'check')).toHaveLength(1);
+    writeFileSync(
+      join(root, 'start-bridge.routes.json'),
+      JSON.stringify({ appDir: null, api: null, pages: null })
+    );
+    expect(runRegistries(root, 'check')).toEqual([]);
+  });
+});

@@ -1,10 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
+import { withDatasetAccess } from '../../dataset-access';
 
 interface Params {
   params: Promise<{
@@ -15,39 +10,34 @@ interface Params {
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
-  const apiKey = (await headers()).get('API_KEY');
 
-  if (apiKey) {
-    const isValid = await validateWorkspaceApiKey(wsId, apiKey);
-    if (!isValid) {
-      return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
+  // The row-cells view has no ws_id column, so the dataset id is only queried
+  // after withDatasetAccess proves it belongs to wsId.
+  return withDatasetAccess(req, { wsId, datasetId }, async (supabase) => {
+    const searchParams = req.nextUrl.searchParams;
+
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+    const limit = searchParams.get('limit');
+
+    const query = supabase
+      .from('workspace_dataset_row_cells')
+      .select('row_id, cells')
+      .eq('dataset_id', datasetId);
+
+    if (from && to) query.range(parseInt(from, 10), parseInt(to, 10));
+    if (limit) query.limit(parseInt(limit, 10));
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error fetching dataset rows' },
+        { status: 500 }
+      );
     }
-  }
 
-  const supabase = apiKey ? await createAdminClient() : await createClient();
-  const searchParams = req.nextUrl.searchParams;
-
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const limit = searchParams.get('limit');
-
-  const query = supabase
-    .from('workspace_dataset_row_cells')
-    .select('row_id, cells')
-    .eq('dataset_id', datasetId);
-
-  if (from && to) query.range(parseInt(from, 10), parseInt(to, 10));
-  if (limit) query.limit(parseInt(limit, 10));
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching dataset rows' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ data });
+    return NextResponse.json({ data });
+  });
 }

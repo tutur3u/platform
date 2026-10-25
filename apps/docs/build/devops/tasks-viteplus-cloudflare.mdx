@@ -49,7 +49,11 @@ as a mount (`TASKS_MOUNTS` in `worker-handler.ts`); the bridge resolves the
 base per request, so assets, server functions and redirects follow the host.
 Outside the mount the apex answers 404. Cookies are not renamed or
 path-scoped: Tasks uses the one shared Tuturuuu session. Every native
-response carries `x-tuturuuu-runtime: native` for post-cutover attribution.
+response carries `x-tuturuuu-runtime: native` for post-cutover attribution, plus the Next build's anti-framing headers
+(`Content-Security-Policy: frame-ancestors 'none'`, `X-Frame-Options: DENY`).
+Before Tasks mounts on the apex, adopt the bridge's nonce CSP
+(`createBridgeHandler({ csp })`, router `ssr.nonce`); inline scripts such as the
+theme script then need the request nonce.
 The staging profile (`void.config.ts`, `tuturuuu-tasks-vite-staging`) sets
 `TUTURUUU_NOINDEX=1`.
 
@@ -81,7 +85,7 @@ checks or signed-in acceptance on staging.
 
 The Calendar task model and view live in `packages/tasks-ui/tu-do/shared`.
 The model receives headers, navigation and workspace permission services
-from its framework adapter. Its portable entrypoint imports no request
+from its framework adapter. Its server-only entrypoint imports no request
 globals or framework navigation APIs. Calendar's previous paths remain
 small adapters and re-exports.
 

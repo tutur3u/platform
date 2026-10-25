@@ -13,6 +13,7 @@ import {
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
+  withRequestBasePath,
 } from '@tuturuuu/auth/proxy';
 import {
   getCurrentUserDefaultWorkspace,
@@ -153,7 +154,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withRequestBasePath(req, `/${newPathSegments.join('/')}`),
+        req.nextUrl
+      );
       redirectUrl.search = req.nextUrl.search;
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
@@ -175,7 +179,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           newPathSegments[wsIdIndex] = 'personal';
 
           const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
+            withRequestBasePath(req, `/${newPathSegments.join('/')}`),
             req.nextUrl
           );
           // Preserve query parameters
@@ -222,14 +226,20 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             ? 'internal'
             : defaultWorkspace.id;
         // Track app root is the overview page — redirect to /{wsId}
-        const redirectUrl = new URL(`/${target}`, req.nextUrl);
+        const redirectUrl = new URL(
+          withRequestBasePath(req, `/${target}`),
+          req.nextUrl
+        );
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
         return wsRedirect;
       }
 
       // Fallback to personal workspace if no default workspace found
-      const redirectUrl = new URL('/personal', req.nextUrl);
+      const redirectUrl = new URL(
+        withRequestBasePath(req, '/personal'),
+        req.nextUrl
+      );
       const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
       return fallbackRedirect;

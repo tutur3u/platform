@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cookies } from '../core/request-context';
+import { cookies } from '../server/request-context';
 import { routerBasepath } from './base-path';
 import { createBridgeHandler } from './handler';
 

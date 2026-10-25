@@ -6,6 +6,7 @@ name: CodeQL Manual Fallback
 # diff touches; security-checks.yaml calls this workflow on its daily schedule.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches:
       - main

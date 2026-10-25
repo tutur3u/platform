@@ -1,1 +1,1 @@
-export { cookies, draftMode, headers } from '../core/request-context';
+export { cookies, draftMode, headers } from '../server/request-context';

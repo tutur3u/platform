@@ -7,8 +7,11 @@ import { posix } from 'node:path';
  * explicitly ignored with a reason, otherwise the check fails.
  */
 export interface RegistryConfig {
-  /** App Router directory relative to the app root (default `src/app`). */
-  appDir?: string;
+  /**
+   * App Router directory relative to the app root (default `src/app`). Use
+   * `null` for an app with no App Router source; a missing directory fails.
+   */
+  appDir?: string | null;
   /** Segments removed from patterns, with the params they imply. */
   stripSegments?: Record<string, Record<string, string>>;
   /**
@@ -65,6 +68,22 @@ export function classifyRouteFile(
     kept.push(segment);
   }
   return { file, kind, pattern: `/${kept.join('/')}`, defaults };
+}
+
+/** A pattern with dynamic segment names erased: `/a/[id]` -> `/a/[]`. */
+export function routeShape(pattern: string) {
+  return pattern
+    .split('/')
+    .map((segment) =>
+      segment.startsWith('[[...')
+        ? '[[...]]'
+        : segment.startsWith('[...')
+          ? '[...]'
+          : segment.startsWith('[')
+            ? '[]'
+            : segment
+    )
+    .join('/');
 }
 
 function importPath(fromFile: string, toFile: string) {
@@ -180,16 +199,19 @@ export function planRegistries(
   for (const file of [...Object.keys(owned), ...Object.keys(ignored)])
     if (!seen.has(file))
       errors.push(`${file}: declared in owned/ignored but no such route file`);
-  for (const kind of ['route', 'page'] as const) {
-    const byPattern = new Map<string, string>();
-    for (const route of routes.filter((item) => item.kind === kind)) {
-      const previous = byPattern.get(route.pattern);
-      if (previous)
-        errors.push(
-          `${route.file}: ${kind} pattern ${route.pattern} duplicates ${previous}`
-        );
-      byPattern.set(route.pattern, route.file);
-    }
+  // Next rejects two files resolving to one URL shape, whatever the dynamic
+  // segment names (`[id]` vs `[slug]`) or file kind (page vs route).
+  const byShape = new Map<string, RouteFile>();
+  for (const route of routes) {
+    const shape = routeShape(route.pattern);
+    const previous = byShape.get(shape);
+    if (previous)
+      errors.push(
+        previous.pattern === route.pattern && previous.kind === route.kind
+          ? `${route.file}: ${route.kind} pattern ${route.pattern} duplicates ${previous.file}`
+          : `${route.file}: ${route.kind} ${route.pattern} conflicts with ${previous.kind} ${previous.pattern} (${previous.file})`
+      );
+    else byShape.set(shape, route);
   }
   const generated: RegistryPlan['generated'] = [];
   if (config.api)

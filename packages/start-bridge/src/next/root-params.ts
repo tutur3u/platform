@@ -1,4 +1,4 @@
-import { maybeBridgeRequest } from '../core/request-context';
+import { maybeBridgeRequest } from '../server/request-context';
 
 const LOCALE = /^[a-z]{2}(?:-[A-Z]{2})?$/u;
 
