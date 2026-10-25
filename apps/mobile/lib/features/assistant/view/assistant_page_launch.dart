@@ -9,9 +9,11 @@ const _launchReadyTimeout = Duration(seconds: 20);
 extension _AssistantPageLaunch on _AssistantPageState {
   void _scheduleLaunchDrain() {
     if (_launchCoordinator.request.value == null) return;
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => unawaited(_drainLaunchRequest()),
-    );
+    // A warm request can arrive while this page is already visible and idle,
+    // so ask for a frame instead of waiting for an unrelated rebuild.
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) => unawaited(_drainLaunchRequest()))
+      ..ensureVisualUpdate();
   }
 
   Future<void> _drainLaunchRequest() async {

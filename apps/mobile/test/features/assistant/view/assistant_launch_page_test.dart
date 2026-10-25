@@ -11,13 +11,16 @@ import 'compact_model_header_harness.dart';
 const _actor = '33333333-3333-4333-8333-333333333333';
 
 class _LiveRepository extends ReplyRepository {
-  _LiveRepository({required this.tier});
-  final String tier;
+  _LiveRepository({required this.live});
+  final bool live;
   @override
   Future<AssistantCredits> fetchCredits(
     String wsId, {
     bool forceRefresh = false,
-  }) async => AssistantCredits(remaining: 1000, tier: tier);
+  }) async => AssistantCredits(
+    remaining: 1000,
+    allowedFeatures: live ? const ['live_assistant'] : const [],
+  );
 }
 
 void main() {
@@ -52,10 +55,10 @@ void main() {
 
   Future<CompactModelHeaderHarness> mount(
     WidgetTester tester, {
-    String tier = 'PRO',
+    bool live = true,
   }) async {
     final h = CompactModelHeaderHarness(
-      repository: _LiveRepository(tier: tier),
+      repository: _LiveRepository(live: live),
     );
     addTearDown(() => h.dispose(tester));
     await h.mount(tester, textScale: 1);
@@ -85,7 +88,7 @@ void main() {
   testWidgets('voice without Live access explains instead of failing', (
     tester,
   ) async {
-    await mount(tester, tier: 'FREE');
+    await mount(tester, live: false);
     coordinator.submit(action(AssistantLaunchKind.voice, trusted: true));
     await settle(tester);
     expect(find.byType(AssistantLiveInfoSheetBody), findsOneWidget);
