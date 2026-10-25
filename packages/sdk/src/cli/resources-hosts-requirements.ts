@@ -14,6 +14,45 @@ export const hostCapabilitySchema = z.enum([
 ]);
 export type HostCapability = z.infer<typeof hostCapabilitySchema>;
 
+function wrapperInvocation(args: string[]) {
+  let cwd: string | undefined;
+  let launcher = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (['--cwd', '--dir', '-C', '--prefix'].includes(arg)) {
+      cwd = args[++i];
+      continue;
+    }
+    if (arg.startsWith('--cwd=')) {
+      cwd = arg.slice(6);
+      continue;
+    }
+    if (
+      [
+        '--filter',
+        '-F',
+        '--workspace',
+        '-w',
+        '--env-file',
+        '--config',
+        '-c',
+        '--preload',
+        '-r',
+      ].includes(arg)
+    ) {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('-')) continue;
+    if (!launcher && ['run', 'run-script', 'exec', 'x'].includes(arg)) {
+      launcher = true;
+      continue;
+    }
+    return { script: arg, cwd };
+  }
+  return { script: undefined, cwd };
+}
+
 // Explicit requirements augment direct tools and known repository wrappers.
 // Arbitrary shell and package-script bodies are never evaluated for inference.
 export function hostsRequirements(
@@ -49,31 +88,31 @@ export function hostsRequirements(
   if (tool === 'dart' || tool === 'melos') required.add('flutter');
   const wrapper = ['bun', 'bunx', 'npm', 'npx', 'pnpm', 'yarn'].includes(tool);
   if (wrapper) {
-    if (args.some((arg) => /^sb:/u.test(arg))) {
+    const { script, cwd } = wrapperInvocation(args);
+    if (script?.startsWith('sb:')) {
       required.add('supabase');
       required.add('docker');
     }
     if (
-      args.some((arg) =>
-        /(?:^|[:/\\_-])(?:mobile|flutter|melos)(?:$|[:/\\_-])/u.test(arg)
-      ) ||
-      /(?:^|[/\\])apps[/\\]mobile(?:$|[/\\])/u.test(process.cwd())
+      (script &&
+        (/^(?:mobile|flutter|melos)(?:$|[:-])/u.test(script) ||
+          /^(?:setup|check|dev|test|build|lint|analyze):mobile(?:$|:)/u.test(
+            script
+          ))) ||
+      /(?:^|[/\\])apps[/\\]mobile(?:$|[/\\])/u.test(cwd ?? process.cwd())
     )
       required.add('flutter');
-    if (args.some((arg) => /^build:(?:android|ios|macos)(?:$|:)/u.test(arg)))
+    if (script && /^build:(?:android|ios|macos)(?:$|:)/u.test(script))
       required.add('flutter');
-    if (args.some((arg) => /^build:ios(?:$|:)/u.test(arg))) required.add('ios');
-    if (args.some((arg) => /^build:macos(?:$|:)/u.test(arg)))
-      required.add('macos');
+    if (script && /^build:ios(?:$|:)/u.test(script)) required.add('ios');
+    if (script && /^build:macos(?:$|:)/u.test(script)) required.add('macos');
     if (
       options.includes('--host') &&
       options.includes('auto') &&
       !required.size &&
-      (args.includes('run') || ['npm', 'pnpm', 'yarn'].includes(tool)) &&
-      args.some((arg) =>
-        /^(?:build|test|check|lint|analyze|type-check|validate)(?:$|:)/u.test(
-          arg
-        )
+      script &&
+      /^(?:build|test|check|lint|analyze|type-check|validate)(?:$|:)/u.test(
+        script
       )
     )
       throw new Error(

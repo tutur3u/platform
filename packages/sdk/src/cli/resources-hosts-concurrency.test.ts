@@ -156,6 +156,116 @@ describe('review: remote lane custody', () => {
     }
     expect(await hostLedger(path)).toEqual({ tickets: [], reservations: [] });
   });
+  it('P2: fleet-only hosts shares an idle two-lane runner after the first hub run starts', async () => {
+    const path = await home();
+    const dependencies = deps();
+    let running = 0;
+    dependencies.fleet = async () => {
+      const snapshot = await fleet();
+      return {
+        ...snapshot,
+        runners: snapshot.runners.map((runner) => ({
+          ...runner,
+          activity: { running_runs: running, queued_runs: 0, active_leases: 0 },
+        })),
+      };
+    };
+    let entered!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const selected: string[] = [];
+    dependencies.runRemote = async ({ host }) => {
+      selected.push(host.id);
+      if (selected.length === 1) {
+        running = 1;
+        entered();
+        await held;
+      }
+      return 0;
+    };
+    dependencies.runLocal = async ({ host }) => {
+      selected.push(host.id);
+      return 0;
+    };
+    const invoke = () =>
+      hostsRun({
+        home: path,
+        command: 'bun',
+        args: ['test'],
+        registry,
+        deps: dependencies,
+        jobClass: 'heavy',
+        auto: false,
+      });
+    const a = invoke();
+    try {
+      await started;
+      expect(running).toBe(1);
+      expect(await invoke()).toBe(0);
+      expect(selected).toEqual(['sonha', 'sonha']);
+    } finally {
+      release();
+      await a;
+    }
+    expect(await hostLedger(path)).toEqual({ tickets: [], reservations: [] });
+  });
+  it('control: the dynamic probe includes the first started job and conservatively charges its reservation', async () => {
+    const path = await home();
+    const dependencies = deps();
+    let running = 0;
+    dependencies.fleet = async () => {
+      const snapshot = await fleet();
+      return {
+        ...snapshot,
+        runners: snapshot.runners.map((runner) => ({
+          ...runner,
+          activity: { running_runs: running, queued_runs: 0, active_leases: 0 },
+        })),
+      };
+    };
+    const observed: number[] = [];
+    dependencies.probeHosts = async () => {
+      observed.push(running);
+      return probes(running);
+    };
+    let entered!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const selected: string[] = [];
+    dependencies.runRemote = async ({ host }) => {
+      selected.push(host.id);
+      running = 1;
+      entered();
+      await held;
+      return 0;
+    };
+    dependencies.runLocal = async ({ host }) => {
+      selected.push(host.id);
+      return 0;
+    };
+    const a = run(path, dependencies);
+    try {
+      await started;
+      expect(await run(path, dependencies)).toBe(0);
+      expect(selected).toEqual(['sonha', 'm4']);
+      expect(observed).toContain(0);
+      expect(observed).toContain(1);
+    } finally {
+      release();
+      await a;
+    }
+    expect(await hostLedger(path)).toEqual({ tickets: [], reservations: [] });
+  });
   it('P1: dispatch recheck counts other in-flight reservations but excludes its own', async () => {
     const reservation = (token: string): Reservation => ({
       token,

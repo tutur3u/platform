@@ -278,7 +278,12 @@ export function hostStates(
         : verdict.reason,
       diskFreeGiB: runnerDisk(runner.capabilities),
       // Runs this ledger did not create (other machines) occupy heavy slots.
-      external: { heavy: busy },
+      external: {
+        heavy: Math.max(
+          0,
+          busy - owned(host.id, 'heavy') - owned(host.id, 'light')
+        ),
+      },
     };
     if (telemetry.probes) {
       const probe = telemetry.probes[host.id];

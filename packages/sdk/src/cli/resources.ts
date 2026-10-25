@@ -89,9 +89,10 @@ queues only when all eligible hosts are full (shortest estimated wait). No daemo
 --hosts admits across hosts.json hosts (weighted light/heavy slots,
 per-host budgets); off unless an operator installs hosts.json. Jobs are heavy
 unless --class light is given.
-Run option: --requires ios|macos|flutter|web|rust|docker (repeatable) restricts
+Run option: --requires ios|macos|flutter|web|rust|docker|supabase (repeatable) restricts
 placement to declared host capabilities. Direct Apple/Flutter/Rust/Docker tools
-add requirements automatically; wrappers must declare theirs. Runner dispatch
+and known repository script names infer requirements automatically. Ambiguous
+heavy scripts need explicit --requires for auto placement. Runner dispatch
 requires hosts.json hubHostname to match this machine (the M4 hub).
 
 One base lane is the default; opt in to burst lanes only after an idle migration.

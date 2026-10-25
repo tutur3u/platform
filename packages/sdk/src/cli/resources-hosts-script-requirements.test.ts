@@ -40,4 +40,27 @@ describe('review: repo wrapper capabilities', () => {
       )
     ).toEqual(['web']);
   });
+  it('P3: test path arguments do not imply Flutter', () => {
+    expect(
+      hostsRequirements('bun', ['run', 'test', '--', 'src/mobile-nav.test.ts'])
+    ).toEqual([]);
+    expect(
+      hostsRequirements(
+        'bun',
+        ['run', 'test', '--', 'src/mobile-nav.test.ts'],
+        ['--host', 'auto', '--requires', 'web']
+      )
+    ).toEqual(['web']);
+  });
+  it('P3: the mobile API mapping checker is not a Flutter script', () => {
+    expect(hostsRequirements('bun', ['check:mobile-api-mappings'])).toEqual([]);
+  });
+  it.each([['build'], ['run', 'build']])(
+    'P3: bare and run heavy scripts both fail closed: %j',
+    (...args) => {
+      expect(() => hostsRequirements('bun', args, ['--host', 'auto'])).toThrow(
+        '--requires'
+      );
+    }
+  );
 });

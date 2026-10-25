@@ -54,7 +54,7 @@ describe('absolute enqueue admission floor', () => {
     expect(result.message).toContain('50GiB');
   });
   it('P2: reclaim can recover the admission floor and a partial reclaim remains blocked', async () => {
-    for (const free of [45, 55]) {
+    for (const free of [55, 105]) {
       const before = await volume(40)();
       const after = await volume(free)();
       const reclaim = vi.fn<
@@ -63,7 +63,7 @@ describe('absolute enqueue admission floor', () => {
         note: null,
         result: {
           status:
-            free >= 50 ? ('recovered' as const) : ('insufficient' as const),
+            free >= 100 ? ('recovered' as const) : ('insufficient' as const),
           host: 'fixture',
           orchestrator: null,
           trigger: 'admission',
@@ -85,11 +85,34 @@ describe('absolute enqueue admission floor', () => {
       expect(reclaim.mock.calls[0]?.[0]?.thresholds.low.minFreeBytes).toBe(
         50 * 1024 ** 3
       );
-      expect(result.refuse).toBe(free < 50);
+      expect(result.refuse).toBe(free < 100);
       expect(result.message).toContain(
-        free < 50 ? 'Resume:' : 'automatic reclaim'
+        free < 100 ? 'Resume:' : 'automatic reclaim'
       );
     }
+  });
+  it('P3: admission remains low through the recovery band and does not flap near 50 GiB', async () => {
+    const config = await env();
+    const reclaim = vi.fn<
+      NonNullable<Parameters<typeof diskAdmission>[0]['reclaim']>
+    >(async () => ({ result: null, note: 'disabled' }));
+    const refused: boolean[] = [];
+    for (const free of [49, 51, 99, 100, 55]) {
+      const result = await diskAdmission({
+        cwd: '/job',
+        env: config,
+        probe: volume(free),
+        reclaim,
+        suggestions: async () => [],
+        holds: async () => [],
+      });
+      refused.push(result.refuse);
+    }
+    expect(refused).toEqual([true, true, true, false, false]);
+    expect(reclaim).toHaveBeenCalledTimes(3);
+    expect(reclaim.mock.calls[0]?.[0]?.thresholds.recover.minFreeBytes).toBe(
+      100 * 1024 ** 3
+    );
   });
   it('admits at the threshold and honors an explicit higher floor', async () => {
     expect(

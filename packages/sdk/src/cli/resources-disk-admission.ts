@@ -111,7 +111,8 @@ export async function diskAdmission({
   );
   thresholds.recover.minFreeBytes = Math.max(
     thresholds.recover.minFreeBytes,
-    thresholds.low.minFreeBytes
+    2 * thresholds.low.minFreeBytes,
+    (floor + 10) * 1024 ** 3
   );
   const home = storageHome(env);
   const host = hostId(env);
