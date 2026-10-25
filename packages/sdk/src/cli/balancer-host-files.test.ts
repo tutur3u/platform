@@ -193,8 +193,13 @@ it('replaces a destination symlink without following it', () => {
   fs.symlinkSync(victim, path);
   writeJson(path, { phase: 'new' });
   expect(fs.readFileSync(victim, 'utf8')).toBe('untouched');
-  expect(fs.lstatSync(path).isSymbolicLink()).toBe(false);
-  expect(JSON.parse(fs.readFileSync(path, 'utf8'))).toEqual({ phase: 'new' });
+  const fd = fs.openSync(path, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  try {
+    expect(fs.fstatSync(fd).isFile()).toBe(true);
+    expect(JSON.parse(fs.readFileSync(fd, 'utf8'))).toEqual({ phase: 'new' });
+  } finally {
+    fs.closeSync(fd);
+  }
 });
 
 it('retains the first complete cancellation notice without a pathname precheck', () => {

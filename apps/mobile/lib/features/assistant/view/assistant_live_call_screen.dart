@@ -59,7 +59,11 @@ class AssistantLiveCallScreen extends StatefulWidget {
 
 class _AssistantLiveCallScreenState extends State<AssistantLiveCallScreen> {
   StreamSubscription<AssistantLiveState>? _states;
-  late bool _started = assistantLiveCallStarted(widget.cubit.state.status);
+  // Returning to a call (no start attempt) never waits for a session start,
+  // so a later disconnect reads as ended rather than Connecting.
+  late bool _started =
+      widget.startAttempt == null ||
+      assistantLiveCallStarted(widget.cubit.state.status);
 
   @override
   void initState() {
@@ -87,7 +91,7 @@ class _AssistantLiveCallScreenState extends State<AssistantLiveCallScreen> {
   }
 
   void _dismiss() {
-    if (mounted) unawaited(Navigator.of(context).maybePop());
+    if (mounted) dismissAssistantLiveCallRoute(context);
   }
 
   @override
@@ -109,4 +113,19 @@ class _AssistantLiveCallScreenState extends State<AssistantLiveCallScreen> {
       ),
     ),
   );
+}
+
+/// Closes the call route that owns [routeContext], and only that route: it
+/// pops when the call is on top and is removed in place when another route
+/// covers it. Either way the route's push future completes.
+void dismissAssistantLiveCallRoute(BuildContext routeContext) {
+  if (!routeContext.mounted) return;
+  final route = ModalRoute.of(routeContext);
+  if (route == null || !route.isActive) return;
+  final navigator = Navigator.of(routeContext);
+  if (route.isCurrent) {
+    navigator.pop();
+  } else {
+    navigator.removeRoute(route);
+  }
 }

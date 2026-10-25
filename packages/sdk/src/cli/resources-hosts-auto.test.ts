@@ -255,8 +255,11 @@ describe.each(['darwin', 'linux'] as const)(
                   executionMode: 'trusted',
                   protocols: { commitRun: [1] },
                   os: { platform: host.platform },
-                  disk: { freeGiB: 100 },
-                  resources: { loadAverage: [2], cpu: { cores: 32 } },
+                  resources: {
+                    loadAverage: [2],
+                    cpu: { cores: 32 },
+                    disk: { freeGiB: 100, freePct: 50 },
+                  },
                 },
                 activity: {
                   queued_runs: 0,
