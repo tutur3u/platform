@@ -220,7 +220,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
     expect(plan.blocked.w1).toMatch(/free disk is unknown/u);
     states.m4!.diskFreeGiB = 10;
     const low = planAdmissions(registry, states, [], [waiter('w1', 'light')]);
-    expect(low.blocked.w1).toMatch(/below the 15 GiB floor/u);
+    expect(low.blocked.w1).toMatch(/below the 50 GiB floor/u);
   });
 
   it('keeps dirty or unpushed trees off remote runners', () => {

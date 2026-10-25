@@ -24,12 +24,14 @@ import {
   type HostTicket,
   hostReservationMarker,
   nestedHostReservation,
+  previewHostTicket,
   releaseHostReservation,
   remoteDispatchBlocker,
   removeHostTicket,
   updateHostReservation,
 } from './resources-hosts-ledger';
 import { canEverHold } from './resources-hosts-plan';
+import type { HostProbe } from './resources-hosts-probe';
 import {
   assertHostsHub,
   assertNestedHostRequirements,
@@ -68,6 +70,7 @@ export function projectIdentity(cwd: string) {
 export interface HostDispatchDeps {
   // Fleet snapshot from the devbox control plane, or undefined if unreachable.
   fleet: () => Promise<DevboxFleetSnapshot | undefined>;
+  probeHosts?: (registry: HostRegistry) => Promise<Record<string, HostProbe>>;
   // Exact pushed commit for remote runs, or undefined when the tree is dirty
   // or unpushed (the job is then local-only).
   commitPlan: (
@@ -118,6 +121,8 @@ export async function hostsRun({
   env = process.env,
   registry,
   deps,
+  auto = false,
+  dryRun = false,
 }: {
   home: string;
   command: string;
@@ -128,6 +133,8 @@ export async function hostsRun({
   env?: NodeJS.ProcessEnv;
   registry?: HostRegistry;
   deps: HostDispatchDeps;
+  auto?: boolean;
+  dryRun?: boolean;
 }) {
   const log =
     deps.log ??
@@ -141,6 +148,8 @@ export async function hostsRun({
   // Nested inside an admitted hosts job: run under the ancestor's
   // reservation rather than queueing behind it.
   const parent = await nestedHostReservation(home, env, true);
+  if (parent && dryRun)
+    throw new Error('Run placement dry-run outside an admitted hosts job.');
   if (parent) {
     const host = hosts.hosts.find((entry) => entry.id === parent.hostId);
     if (host?.kind === 'local') {
@@ -168,12 +177,41 @@ export async function hostsRun({
     bypassed: 0,
     remoteOk: Boolean(plan),
     requires,
+    ...(auto ? { placement: 'auto' as const } : {}),
     command: commandSummary(command, args),
   };
   if (!canEverHold(hosts, ticket))
     throw new Error(
       `No registered host can ever run a ${jobClass} job${plan ? '' : ' from this tree (remote runs need a clean, pushed commit)'}; check hosts.json capabilities, platforms, slots and weights.`
     );
+  const unavailableProbes: Record<string, HostProbe> = {};
+  const probeHosts = async () => {
+    if (!auto || !deps.probeHosts) return undefined;
+    const current = await deps.probeHosts({
+      ...hosts,
+      hosts: hosts.hosts.filter((host) => !unavailableProbes[host.id]),
+    });
+    for (const [id, probe] of Object.entries(current))
+      if (!probe.healthy) unavailableProbes[id] = probe;
+    return { ...current, ...unavailableProbes };
+  };
+  const telemetry = async (): Promise<HostTelemetry> => ({
+    probes: await probeHosts(),
+    localDiskFreeGiB: await (deps.localDiskFreeGiB ?? defaultDisk)(cwd),
+    snapshot: remoteHosts
+      ? await deps.fleet().catch(() => undefined)
+      : undefined,
+  });
+  if (dryRun) {
+    const result = await previewHostTicket(
+      home,
+      ticket,
+      hosts,
+      await telemetry()
+    );
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return result.hostId || result.queue ? 0 : 75;
+  }
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 } as const;
   let cancelled: keyof typeof signalCodes | undefined;
   let remoteRunning = false;
@@ -205,24 +243,42 @@ export async function hostsRun({
         );
     }
   };
+  let attempts = 0;
   try {
     for (;;) {
+      if (auto && attempts++ >= 3) {
+        log(
+          'automatic placement stopped after repeated eligibility changes; no new run dispatched'
+        );
+        return 75;
+      }
       await enqueueHostTicket(home, ticket);
       let announced = 0;
       while (!reservation) {
         if (cancelled) return signalCodes[cancelled];
-        const telemetry: HostTelemetry = {
-          localDiskFreeGiB: await (deps.localDiskFreeGiB ?? defaultDisk)(cwd),
-          snapshot: remoteHosts
-            ? await deps.fleet().catch(() => undefined)
-            : undefined,
-        };
+        const observation = await telemetry();
         if (cancelled) return signalCodes[cancelled];
-        const result = await admitHostTicket(home, ticket, hosts, telemetry);
+        const result = await admitHostTicket(home, ticket, hosts, observation);
         if (result.admitted) {
           reservation = result.reservation;
           ticket.bypassed = result.ticket.bypassed;
           break;
+        }
+        if (auto) {
+          const explanation = await previewHostTicket(
+            home,
+            ticket,
+            hosts,
+            observation
+          );
+          if (!explanation.queue && !explanation.hostId) {
+            log(`automatic placement refused: ${result.reason}`);
+            return 75;
+          }
+          if (Date.now() - announced > 30_000 && explanation.queue)
+            log(
+              `all eligible hosts full; queue target ${explanation.queue.hostId}, estimated wait ${explanation.queue.expectedWaitSeconds}s; ${result.reason}`
+            );
         }
         if (Date.now() - announced > 30_000) {
           log(
@@ -230,7 +286,7 @@ export async function hostsRun({
           );
           announced = Date.now();
         }
-        await sleep(deps.pollMs ?? 1_000, undefined, {
+        await sleep(deps.pollMs ?? (auto ? 5_000 : 1_000), undefined, {
           signal: waiting.signal,
         }).catch(() => undefined);
       }
@@ -252,7 +308,9 @@ export async function hostsRun({
             continue;
           }
         }
-        log(`admitted ${jobClass} PID ${process.pid} on host ${host.id}`);
+        log(
+          `admitted ${jobClass} PID ${process.pid} on host ${host.id}${auto ? (host.kind === 'local' ? ' (local fallback: no remote host eligible)' : ' (automatic placement: free lane in Thanh, Sonha, Linux, local order)') : ''}`
+        );
         return await deps.runLocal({
           host,
           jobClass,
@@ -271,7 +329,8 @@ export async function hostsRun({
         hosts,
         host.id,
         await deps.fleet().catch(() => undefined),
-        ticket.requires
+        ticket.requires,
+        await probeHosts()
       );
       if (blocker) {
         await requeue(
@@ -289,7 +348,9 @@ export async function hostsRun({
         continue;
       }
       if (cancelled) return signalCodes[cancelled];
-      log(`admitted ${jobClass} PID ${process.pid} on host ${host.id}`);
+      log(
+        `admitted ${jobClass} PID ${process.pid} on host ${host.id}${auto ? ' (automatic placement: free lane in Thanh, Sonha, Linux, local order)' : ''}`
+      );
       remoteRunning = true;
       const outcome = await deps
         .runRemote({

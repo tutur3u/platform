@@ -330,3 +330,29 @@ fi
 ```
 
 Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity. Resolve HOME and the Bun install base independently: a symlinked `.bun` or `.bun/install` is supported, while entries outside that resolved install base are still refused.
+
+## Automatic placement (requires released CLI and operator activation)
+
+Use `ttr resources run --host auto --dry-run -- COMMAND` to explain one
+invocation against the trusted registry. Without `--dry-run`, eligible free
+lanes are tried in Thanh, Sonha, Linux, M4 order. Never queue on a full host
+while another eligible host has a free lane. Only all-full eligible hosts may
+wait; report the shortest estimated wait and recheck for free lanes at admission.
+An unreachable runner/fleet or failed/unknown/stale probe is ineligible, with a
+reason. Capabilities (`--requires`, including Supabase) and OS filter first.
+
+Keep the registry operator-owned and disabled until activation is explicitly
+coordinated. Execution uses the existing devbox API transport. Configure `sshHost` aliases
+for bounded read-only admission probes that count each remote canonical queue.
+Probes respect SSH config and host-key checks; failures exclude the host.
+SSH reachability alone does not admit a host. Do not rewrite SSH configuration.
+Do not forward ambient local secrets. Explicit nonsecret environment assignments
+can travel as literal `/usr/bin/env KEY=value COMMAND` argv without shell quoting.
+Local worker caps still apply. Preserve remote operation keys on unknown writes.
+
+New local jobs require 50 GiB free by default (`TTR_RESOURCES_MIN_FREE_GIB`);
+status reports the floor and verdict. Remote placement uses the larger of the
+host's reserved disk and `minDiskFreeGiB` (default 50). Existing storage percentage
+and inode gates remain. Configure Sonha's 2–4 lanes and Linux's pktm reservation
+from current evidence. See the SDK reference's automatic placement section for
+activation, estimation limits and regression coverage.

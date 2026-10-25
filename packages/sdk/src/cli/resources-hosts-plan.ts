@@ -2,6 +2,7 @@ import {
   type HostRegistry,
   type HostSpec,
   hostBudget,
+  hostDiskFloor,
   type JobClass,
   jobClasses,
 } from './resources-hosts-config';
@@ -15,6 +16,8 @@ import {
 
 export interface HostState {
   platform?: string;
+  loadPerCpu?: number;
+  queuedJobs?: number;
   // Fresh, reachable and eligible for trusted work right now.
   healthy: boolean;
   reason?: string;
@@ -38,6 +41,7 @@ export interface Reservation {
 }
 export interface Waiter {
   requires?: HostCapability[];
+  placement?: 'auto';
   token: string;
   jobClass: JobClass;
   project: string;
@@ -64,7 +68,7 @@ interface Usage {
   cpus: number;
   memoryGiB: number;
 }
-function usageFor(
+export function usageFor(
   host: HostSpec,
   state: HostState | undefined,
   reservations: Reservation[]
@@ -97,16 +101,20 @@ export function hostBlocker(
   const { jobClass } = waiter;
   const capability = capabilityBlocker(host, waiter.requires);
   if (capability) return `${host.id}: ${capability}`;
-  if (host.platform && state?.platform !== host.platform)
-    return `${host.id}: platform telemetry is unknown or differs from ${host.platform}`;
   if (!state?.healthy)
     return `${host.id}: ${state?.reason ?? 'no fresh telemetry'}`;
+  if (host.platform && state.platform !== host.platform)
+    return `${host.id}: platform telemetry is unknown or differs from ${host.platform}`;
   if (host.kind === 'runner' && !waiter.remoteOk)
     return `${host.id}: remote runs need a clean, pushed commit`;
-  if (state.diskFreeGiB === undefined)
+  if (
+    state.diskFreeGiB === undefined ||
+    !Number.isFinite(state.diskFreeGiB) ||
+    state.diskFreeGiB < 0
+  )
     return `${host.id}: free disk is unknown`;
-  if (state.diskFreeGiB < host.reserved.diskGiB)
-    return `${host.id}: ${state.diskFreeGiB.toFixed(1)} GiB free is below the ${host.reserved.diskGiB} GiB floor`;
+  if (state.diskFreeGiB < hostDiskFloor(host))
+    return `${host.id}: ${state.diskFreeGiB.toFixed(1)} GiB free is below the ${hostDiskFloor(host)} GiB floor`;
   if (host.slots[jobClass] === 0) return `${host.id}: no ${jobClass} slots`;
   if (usage.slots[jobClass] >= host.slots[jobClass])
     return `${host.id}: ${jobClass} slots full (${usage.slots[jobClass]}/${host.slots[jobClass]})`;
@@ -185,11 +193,55 @@ export function planAdmissions(
     let best: HostSpec | undefined;
     let bestScore = -Infinity;
     let bestRank = Infinity;
+    let bestAuto: number[] | undefined;
     for (const host of options) {
       const current = usage.get(host.id)!;
       const reason = hostBlocker(host, states[host.id], current, waiter);
       if (reason) {
         reasons.push(reason);
+        continue;
+      }
+      if (waiter.placement === 'auto') {
+        if (!host.platform) {
+          reasons.push(`${host.id}: OS registration is unknown`);
+          continue;
+        }
+        const load = states[host.id]?.loadPerCpu;
+        if (load === undefined || !Number.isFinite(load) || load < 0) {
+          reasons.push(`${host.id}: load telemetry is unknown`);
+          continue;
+        }
+        // Studios are the primary pool; Linux preserves pktm capacity and
+        // local execution is the last eligible fallback. Free hosts follow
+        // operator preference, then free lanes, load and disk headroom.
+        const tier =
+          host.kind === 'local' ? 2 : host.platform === 'linux' ? 1 : 0;
+        const weight = host.weights[waiter.jobClass];
+        const budget = hostBudget(host);
+        const free = Math.min(
+          host.slots[waiter.jobClass] - current.slots[waiter.jobClass],
+          Math.floor((budget.cpus - current.cpus) / weight.cpus),
+          Math.floor((budget.memoryGiB - current.memoryGiB) / weight.memoryGiB)
+        );
+        const score = [
+          tier,
+          host.preference ?? 99,
+          -free,
+          load,
+          -(states[host.id]!.diskFreeGiB! - hostDiskFloor(host)),
+        ];
+        const firstDifference = bestAuto?.findIndex(
+          (value, i) => value !== score[i]
+        );
+        if (
+          !bestAuto ||
+          (firstDifference !== undefined &&
+            firstDifference >= 0 &&
+            score[firstDifference]! < bestAuto[firstDifference]!)
+        ) {
+          best = host;
+          bestAuto = score;
+        }
         continue;
       }
       const left =

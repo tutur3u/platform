@@ -32,6 +32,17 @@ function percent(
   return number;
 }
 
+export function resourceDiskFloorGiB(env: NodeJS.ProcessEnv = process.env) {
+  const raw = env.TTR_RESOURCES_MIN_FREE_GIB;
+  if (raw === undefined) return 50;
+  const floor = Number(raw);
+  if (!raw.trim() || !Number.isFinite(floor) || floor < 0)
+    throw new Error(
+      'TTR_RESOURCES_MIN_FREE_GIB must be a nonnegative finite number.'
+    );
+  return floor;
+}
+
 export interface DiskProbe {
   freeBytes: number;
   totalBytes: number;
@@ -111,7 +122,10 @@ export async function diskGate(
   let minPercent: number;
   let minInodePercent: number;
   try {
-    minBytes = bytes(env.TTR_STORAGE_MIN_FREE, 15 * GiB);
+    minBytes = Math.max(
+      bytes(env.TTR_STORAGE_MIN_FREE, 15 * GiB),
+      resourceDiskFloorGiB(env) * GiB
+    );
     minPercent = percent(env.TTR_STORAGE_MIN_FREE_PERCENT, 5);
     minInodePercent = percent(
       env.TTR_STORAGE_MIN_FREE_INODE_PERCENT,

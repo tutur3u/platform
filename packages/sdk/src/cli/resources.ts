@@ -27,6 +27,7 @@ import {
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
 import { diskAdmission } from './resources-disk-admission';
+import { diskGate, resourceDiskFloorGiB } from './resources-disk-gate';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -71,6 +72,7 @@ Setup options:
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
+The admission floor defaults to 50 GiB (TTR_RESOURCES_MIN_FREE_GIB).
 Heavy commands exit 75 when the disk holding their cwd is critical (below
 TTR_STORAGE_MIN_FREE 15G, 5% free or 5% inodes) and print the top
 \`ttr storage suggest\` actions; --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1
@@ -82,7 +84,9 @@ attested trusted-development devbox runner (ttr box) when local lanes are
 saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
 no local environment is sent. --timeout <30s|10m|2h> bounds it (default 30m).
 ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
-Run option: --hosts admits across hosts.json hosts (weighted light/heavy slots,
+Run option: --host auto [--dry-run] chooses once (Studios, Linux, local), then
+queues only when all eligible hosts are full (shortest estimated wait). No daemon or registry activation. Ineligible hosts fail closed.
+--hosts admits across hosts.json hosts (weighted light/heavy slots,
 per-host budgets); off unless an operator installs hosts.json. Jobs are heavy
 unless --class light is given.
 Run option: --requires ios|macos|flutter|web|rust|docker (repeatable) restricts
@@ -135,6 +139,8 @@ export async function runResourcesCommand(argv: string[]) {
       '--offload',
       '--timeout',
       '--hosts',
+      '--host',
+      '--dry-run',
       '--class',
       '--requires',
       '--tokens',
@@ -160,6 +166,7 @@ export async function runResourcesCommand(argv: string[]) {
         [
           '--seconds',
           '--offload',
+          '--host',
           '--timeout',
           '--runner',
           '--class',
@@ -176,6 +183,15 @@ export async function runResourcesCommand(argv: string[]) {
   }
   const home = resourceHome();
   if (action === 'run' || action === 'shim') {
+    const automatic = optionValue(options, '--host');
+    if (automatic !== undefined && automatic !== 'auto')
+      throw new Error(
+        '--host must be auto; configure eligible hosts in hosts.json.'
+      );
+    const multiHost = options.includes('--hosts') || automatic === 'auto';
+    const dryRun = options.includes('--dry-run');
+    if (dryRun && !multiHost)
+      throw new Error('--dry-run requires --host auto or --hosts.');
     const command = divider < 0 ? [] : argv.slice(divider + 1);
     const shim = action === 'shim';
     const name = shim ? options[1] : command.shift();
@@ -203,6 +219,12 @@ export async function runResourcesCommand(argv: string[]) {
     const total = config || defaultResourceConfig();
     const caps = enabled ? laneResourceConfig(total) : total;
     const parent = enabled ? await nestedOwner(home) : undefined;
+    if (automatic === 'auto' && !enabled)
+      throw new Error(
+        'Multi-host placement requires resource admission; remove TTR_RESOURCES_BYPASS.'
+      );
+    if (dryRun && parent)
+      throw new Error('Run placement dry-run outside an admitted job.');
     const settings = parent?.limits ? { ...caps, ...parent.limits } : caps;
     const args = enabled
       ? limitCommand(basename(name), command, settings)
@@ -212,8 +234,10 @@ export async function runResourcesCommand(argv: string[]) {
     // executable that was validated, never the swappable original name.
     const trivial = enabled && !shim ? trivialExecutable(name, env) : undefined;
     const queued =
-      enabled && (shim ? isHeavyCommand(name, command) : trivial === undefined);
-    if (enabled && !shim && options.includes('--hosts')) {
+      enabled &&
+      (multiHost ||
+        (shim ? isHeavyCommand(name, command) : trivial === undefined));
+    if (enabled && !shim && multiHost) {
       const { assertNestedHostRequirements, hostsRequirements } = await import(
         './resources-hosts-requirements.js'
       );
@@ -232,10 +256,7 @@ export async function runResourcesCommand(argv: string[]) {
     const diskGated =
       queued &&
       !parent &&
-      !(
-        !shim &&
-        (options.includes('--ignore-disk') || options.includes('--hosts'))
-      );
+      !(!shim && (options.includes('--ignore-disk') || multiHost));
     // The queue re-checks disk at dequeue; one override covers both gates.
     if (!shim && options.includes('--ignore-disk'))
       env.TTR_RESOURCES_IGNORE_DISK = '1';
@@ -267,7 +288,7 @@ export async function runResourcesCommand(argv: string[]) {
       const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
     }
-    if (!shim && queued && !parent && options.includes('--hosts')) {
+    if (!shim && queued && !parent && multiHost) {
       if (offload) throw new Error('Use --hosts or --offload, not both.');
       const { hostsRun } = await import('./resources-hosts-dispatch.js');
       const { hostsDependencies, hostsJobClass } = await import(
@@ -283,6 +304,8 @@ export async function runResourcesCommand(argv: string[]) {
         command: name,
         args: command,
         jobClass,
+        auto: automatic === 'auto',
+        dryRun,
         requires: hostsRequirements(name, command, options),
         deps: hostsDependencies({
           home,
@@ -495,6 +518,13 @@ export async function runResourcesCommand(argv: string[]) {
     ];
     const details = await resourceStatusDetails(state);
     const result = {
+      disk: {
+        floorGiB: resourceDiskFloorGiB(),
+        ...(await diskGate(process.cwd(), {
+          ...process.env,
+          TTR_RESOURCES_IGNORE_DISK: undefined,
+        })),
+      },
       ...installedBuildIdentity(),
       installed: Boolean(config) || Boolean(configError),
       enabled: config?.enabled ?? false,

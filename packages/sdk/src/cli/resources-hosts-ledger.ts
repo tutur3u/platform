@@ -1,5 +1,5 @@
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
-import { platform } from 'node:os';
+import { availableParallelism, loadavg, platform } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 import {
@@ -7,13 +7,19 @@ import {
   evaluateTrustedRunner,
 } from '../devbox-fleet-types';
 import { atomicJson } from './resources-config';
-import type { HostRegistry, JobClass } from './resources-hosts-config';
+import { autoQueueTarget } from './resources-hosts-auto';
+import {
+  type HostRegistry,
+  hostDiskFloor,
+  type JobClass,
+} from './resources-hosts-config';
 import {
   type HostState,
   planAdmissions,
   type Reservation,
   type Waiter,
 } from './resources-hosts-plan';
+import type { HostProbe } from './resources-hosts-probe';
 import {
   capabilityBlocker,
   type HostCapability,
@@ -41,7 +47,8 @@ const ticketSchema = z.object({
   queuedAt: z.number().int().nonnegative(),
   bypassed: z.number().int().nonnegative(),
   remoteOk: z.boolean(),
-  requires: z.array(hostCapabilitySchema).max(6).optional(),
+  requires: z.array(hostCapabilitySchema).max(7).optional(),
+  placement: z.literal('auto').optional(),
   command: z.string().optional(),
 });
 const reservationSchema = z.object({
@@ -137,6 +144,7 @@ export async function hostLedger(home: string, prune = false) {
 }
 
 export interface HostTelemetry {
+  probes?: Record<string, HostProbe>;
   // Free GiB on the local job volume, undefined when it could not be read.
   localDiskFreeGiB?: number;
   // Undefined when the fleet could not be read: every runner is unreachable.
@@ -197,6 +205,7 @@ export function hostStates(
       // hosts job until its lane owner appears, so never count both.
       states[host.id] = {
         platform: platform(),
+        loadPerCpu: loadavg()[0]! / availableParallelism(),
         healthy: true,
         diskFreeGiB: telemetry.localDiskFreeGiB,
         external: {
@@ -258,6 +267,8 @@ export function hostStates(
     const ours = owned(host.id, 'light') + owned(host.id, 'heavy');
     states[host.id] = {
       platform: runner.capabilities?.os?.platform,
+      loadPerCpu: load,
+      queuedJobs: runner.activity.queued_runs,
       healthy: verdict.eligible && fresh,
       reason: verdict.eligible
         ? fresh
@@ -268,6 +279,41 @@ export function hostStates(
       // Runs this ledger did not create (other machines) occupy heavy slots.
       external: { heavy: Math.max(0, busy - ours) },
     };
+    if (telemetry.probes) {
+      const probe = telemetry.probes[host.id];
+      const state = states[host.id]!;
+      if (!probe?.healthy) {
+        state.healthy = false;
+        state.reason = probe?.reason ?? 'no live admission probe';
+      } else if (probe.sample.platform !== state.platform) {
+        state.healthy = false;
+        state.reason = 'SSH probe OS differs from runner telemetry';
+      } else {
+        const sample = probe.sample;
+        state.loadPerCpu = sample.loadPerCpu;
+        if (sample.loadPerCpu >= (host.maxLoadPerCpu ?? 1)) {
+          state.healthy = false;
+          state.reason = 'SSH admission probe reports excessive load';
+        }
+        state.diskFreeGiB = Math.min(
+          sample.diskFreeGiB,
+          state.diskFreeGiB ?? -1
+        );
+        // Both local FIFO waiters and running work reserve their lane ahead
+        // of a newly dispatched job; do not count our own job twice.
+        state.external = {
+          heavy: Math.max(
+            busy - ours,
+            host.slots.heavy -
+              sample.effectiveLanes +
+              sample.occupied +
+              sample.waiting -
+              owned(host.id, 'heavy'),
+            0
+          ),
+        };
+      }
+    }
   }
   return states;
 }
@@ -280,7 +326,8 @@ export function remoteDispatchBlocker(
   registry: HostRegistry,
   hostId: string,
   snapshot: DevboxFleetSnapshot | undefined,
-  requires: HostCapability[] = []
+  requires: HostCapability[] = [],
+  probes?: Record<string, HostProbe>
 ) {
   const host = registry.hosts.find((entry) => entry.id === hostId);
   if (host?.kind !== 'runner') return 'host is not a runner';
@@ -292,17 +339,19 @@ export function remoteDispatchBlocker(
     return 'fleet snapshot has no server timestamp';
   const state = hostStates(
     registry,
-    { snapshot, now: serverNow },
+    { snapshot, now: serverNow, probes },
     { owners: 0, waiters: 0 },
     []
   )[hostId]!;
   if (!state.healthy) return state.reason ?? 'runner is not eligible';
+  if (probes && (state.external?.heavy ?? 0) >= host.slots.heavy)
+    return 'live admission probe reports no free lanes';
   const capability = capabilityBlocker(host, requires);
   if (capability) return capability;
   if (host.platform && state.platform !== host.platform)
     return 'runner platform telemetry is unknown or differs from its registration';
   if (state.diskFreeGiB === undefined) return 'runner free disk is unknown';
-  if (state.diskFreeGiB < host.reserved.diskGiB)
+  if (state.diskFreeGiB < hostDiskFloor(host))
     return 'runner free disk is below its floor';
   return undefined;
 }
@@ -362,6 +411,7 @@ function ticketIdentity(entry: HostTicket) {
     entry.jobClass,
     entry.queuedAt,
     entry.remoteOk,
+    entry.placement,
     entry.command,
     [...(entry.requires ?? [])].sort(),
   ]);
@@ -406,6 +456,7 @@ export async function admitHostTicket(
       bypassed: entry.bypassed,
       remoteOk: entry.remoteOk,
       requires: entry.requires,
+      placement: entry.placement,
     }));
     const plan = planAdmissions(registry, states, ledger.reservations, waiters);
     const mine = plan.assignments.find((entry) => entry.token === ticket.token);
@@ -447,6 +498,41 @@ export async function admitHostTicket(
   });
   return result ?? { admitted: false, reason: 'admission was cancelled' };
 }
+// Read-only planning includes older queued tickets, so an explanation does
+// not promise capacity already owed to someone else. Execution rechecks under
+// the canonical admission mutex before creating any reservation.
+export async function previewHostTicket(
+  home: string,
+  ticket: HostTicket,
+  registry: HostRegistry,
+  telemetry: HostTelemetry
+) {
+  const ledger = await hostLedger(home);
+  const lanes = await occupancy(home, false);
+  const states = hostStates(
+    registry,
+    telemetry,
+    {
+      owners: lanes.occupied.length,
+      waiters: (await tickets(home)).length,
+    },
+    ledger.reservations
+  );
+  const plan = planAdmissions(registry, states, ledger.reservations, [
+    ...ledger.tickets,
+    ticket,
+  ]);
+  return {
+    hostId: plan.assignments.find((entry) => entry.token === ticket.token)
+      ?.hostId,
+    reason: plan.blocked[ticket.token],
+    queue: autoQueueTarget(registry, states, ledger.reservations, ticket),
+    states,
+    policy:
+      'Free lanes first: Thanh, Sonha, Linux (pktm reservation), local. Queue only when all eligible hosts are full; shortest estimated wait.',
+  };
+}
+
 export async function updateHostReservation(
   home: string,
   reservation: HostReservation

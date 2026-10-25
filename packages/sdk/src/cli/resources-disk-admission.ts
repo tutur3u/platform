@@ -1,3 +1,4 @@
+import { resourceDiskFloorGiB } from './resources-disk-gate';
 import type { AutoReclaimOutcome } from './storage-auto-reclaim';
 import {
   formatBytes,
@@ -85,6 +86,25 @@ export async function diskAdmission({
       ].join('\n'),
     };
   }
+  let floor: number;
+  try {
+    floor = resourceDiskFloorGiB(env);
+  } catch (error) {
+    return {
+      pressure: 'unknown',
+      refuse: true,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Invalid admission disk floor.',
+    };
+  }
+  if (volume.freeBytes < floor * 1024 ** 3)
+    return {
+      pressure: 'critical',
+      refuse: true,
+      message: `refusing a heavy command: ${(volume.freeBytes / 1024 ** 3).toFixed(1)} GiB free is below the ${floor} GiB admission floor (TTR_RESOURCES_MIN_FREE_GIB). Run ttr storage suggest or choose another host.`,
+    };
   const thresholds = hysteresisThresholds(env);
   const home = storageHome(env);
   const host = hostId(env);

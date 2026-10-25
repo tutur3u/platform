@@ -10,6 +10,7 @@ export const hostCapabilitySchema = z.enum([
   'web',
   'rust',
   'docker',
+  'supabase',
 ]);
 export type HostCapability = z.infer<typeof hostCapabilitySchema>;
 
@@ -26,7 +27,7 @@ export function hostsRequirements(
     const parsed = hostCapabilitySchema.safeParse(options[++i]);
     if (!parsed.success)
       throw new Error(
-        '--requires must be ios, macos, flutter, web, rust or docker.'
+        '--requires must be ios, macos, flutter, web, rust, docker or supabase.'
       );
     required.add(parsed.data);
   }
@@ -40,6 +41,11 @@ export function hostsRequirements(
   }
   if (['cargo', 'rustc', 'rustup'].includes(tool)) required.add('rust');
   if (tool === 'docker') required.add('docker');
+  if (tool === 'supabase') {
+    required.add('supabase');
+    if (args.some((arg) => ['start', 'reset', 'test'].includes(arg)))
+      required.add('docker');
+  }
   return [...required].sort();
 }
 
