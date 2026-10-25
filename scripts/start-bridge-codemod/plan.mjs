@@ -348,7 +348,16 @@ export function planConversion(repoRoot, app, options = {}) {
         content: callerWorkflow({
           ...resolved,
           packageName: manifest.name,
-          closure: workspaceClosure(repoRoot, manifest),
+          // Include the workspace packages --apply is about to add
+          // (@tuturuuu/start-bridge), so the first run's filters equal the
+          // re-run's.
+          closure: workspaceClosure(repoRoot, {
+            ...manifest,
+            dependencies: {
+              ...manifest.dependencies,
+              ...DEPENDENCIES.dependencies,
+            },
+          }),
           hasTestScript: Boolean(manifest.scripts?.test),
           formatPaths: NATIVE_FORMAT_PATHS,
         }),
