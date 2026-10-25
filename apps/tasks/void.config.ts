@@ -2,7 +2,9 @@ import { defineConfig } from 'void/config';
 
 // Staging profile for the native Tasks candidate. The source-declared sandbox
 // name does not establish a hosted Worker, route or credential; production
-// stays on Vercel until an explicit cutover PR.
+// stays on Vercel until an explicit cutover PR. The Worker always sends the
+// Tasks SEO policy's noindex; operators admit staging hostnames with the
+// TUTURUUU_STAGING_HOSTS var at deploy time (unlisted hosts get 404).
 export default defineConfig({
   target: 'cloudflare',
   inference: {
@@ -20,9 +22,6 @@ export default defineConfig({
       binding: 'ASSETS',
       run_worker_first: true,
       not_found_handling: 'none',
-    },
-    vars: {
-      TUTURUUU_NOINDEX: '1',
     },
     workers_dev: false,
   },
