@@ -81,6 +81,6 @@ describe('Apps concurrent request cookies', () => {
     );
   });
   it('fails outside the owning request', async () => {
-    await expect(headers()).rejects.toThrow('Apps request context unavailable');
+    await expect(headers()).rejects.toThrow('Start bridge request context unavailable');
   });
 });

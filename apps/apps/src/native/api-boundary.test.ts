@@ -9,7 +9,7 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 import { apiRequest } from './api.server';
-import { NextRequest } from './next-server';
+import { NextRequest } from '@tuturuuu/start-bridge/next/server';
 
 afterEach(() => {
   vi.unstubAllGlobals();
