@@ -1,5 +1,12 @@
-import { createHash } from 'node:crypto';
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
+import {
+  link,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -35,6 +42,29 @@ const canonical = (value: unknown): string =>
       : JSON.stringify(value);
 export const sourceIdentity = (source: BalancerSource) =>
   createHash('sha256').update(canonical(source)).digest('hex');
+
+type RequestMarker = {
+  request: BalancerRunRequest;
+  sourceId: string;
+  createdAt: string;
+  state?: 'intent' | 'committed';
+};
+
+// Publishes a complete file only if `path` does not exist yet; an existing
+// file is left untouched. link(2) is atomic and fails with EEXIST.
+async function createExclusively(path: string, contents: string) {
+  const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
+  await writeFile(temporary, contents, { mode: 0o600, flag: 'wx' });
+  try {
+    await link(temporary, path);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
+    throw error;
+  } finally {
+    await rm(temporary, { force: true });
+  }
+}
 
 export class BalancerConflictError extends Error {
   constructor(message: string) {
@@ -115,34 +145,55 @@ export class BalancerLedger {
     );
   }
 
-  /** Idempotent submit: the same request ID returns its existing runs. */
+  /**
+   * Idempotent submit: the same request ID returns its existing runs.
+   *
+   * The request intent is created exclusively before any runnable file is
+   * exposed. A retry after a partial submit only adds missing run files and
+   * never rewrites an existing run, so a run another controller already
+   * placed keeps its state and lease.
+   */
   async submit(request: BalancerRunRequest, at = new Date().toISOString()) {
     return this.withLock(async () => {
       const path = this.requestPath(request.requestId);
       const existing = await readFile(path, 'utf8').catch(() => undefined);
+      let marker: RequestMarker;
       if (existing !== undefined) {
-        if (canonical(JSON.parse(existing).request) !== canonical(request))
+        marker = JSON.parse(existing);
+        if (canonical(marker.request) !== canonical(request))
           throw new BalancerConflictError(
             `Request ${request.requestId} already exists with different parameters.`
           );
-        return { created: false, runs: await this.listRuns(request.requestId) };
+        // Markers without a state predate intents and were written last.
+        if (marker.state !== 'intent')
+          return {
+            created: false,
+            runs: await this.listRuns(request.requestId),
+          };
+      } else {
+        marker = {
+          request,
+          sourceId: sourceIdentity(request.source),
+          createdAt: at,
+          state: 'intent',
+        };
+        await createExclusively(path, JSON.stringify(marker));
       }
-      const sourceId = sourceIdentity(request.source);
-      const runs = runsForRequest(request, sourceId, at);
-      for (const run of runs)
-        await writeFileAtomically(
-          this.runPath(run.runId),
-          JSON.stringify(run),
-          {
-            mode: 0o600,
-          }
-        );
+      for (const run of runsForRequest(
+        request,
+        marker.sourceId,
+        marker.createdAt
+      ))
+        await createExclusively(this.runPath(run.runId), JSON.stringify(run));
       await writeFileAtomically(
         path,
-        JSON.stringify({ request, sourceId, createdAt: at }),
+        JSON.stringify({ ...marker, state: 'committed' }),
         { mode: 0o600 }
       );
-      return { created: true, runs };
+      return {
+        created: existing === undefined,
+        runs: await this.listRuns(request.requestId),
+      };
     });
   }
 
