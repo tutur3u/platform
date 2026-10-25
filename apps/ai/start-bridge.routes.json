@@ -16,6 +16,9 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 200
+    "/": {
+      "redirect": "/login"
+    },
+    "/v1/models": 401
   }
 }

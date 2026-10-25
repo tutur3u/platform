@@ -228,7 +228,7 @@ restoring the archive into a fresh checkout. Run `bun run test:runtime` only
 after a native build, with the exact source identity required by the workflow.
 
 Initial promotion serves `ai.tuturuuu.com` in root mode. Root browser flows,
-public credential denials, and staging canonical-host rejection are required.
+public credential denials, and apex/unknown-host rejection are required.
 The `/ai` mount is rejected by this root-only profile; apex cutover waits for the
 shared-session decision and auth-boundary guard. Hosted provider calls are
 separate acceptance; local fixtures do not prove billable provider behavior.
@@ -276,3 +276,8 @@ aborts the provider operation. Cloudflare documents this as an explicit opt-in
 route with disposable API credentials, synthetic provider and database responses,
 and a real client disconnect. It requires one reservation and one settlement
 with status `aborted`; external egress and live billing remain forbidden.
+
+The anonymous root outcome is a redirect to `/login`, matching the existing
+AI proxy authentication rule. The app-owned `runtime` declaration requires that
+redirect to stay on the requested root host, rather than accepting a generic
+non-error response. Unauthenticated `/v1/models` must return 401.
