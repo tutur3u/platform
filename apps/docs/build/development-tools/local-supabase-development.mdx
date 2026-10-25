@@ -823,6 +823,21 @@ Database seeding is the process of populating your database with initial data. I
 
 In Tuturuuu, seed files are stored in `apps/database/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
 
+### Replaying migrations with existing storage buckets
+
+An in-place remote `supabase db reset --linked` preserves managed storage
+tables while replaying migrations. Bucket creation must tolerate an existing
+bucket ID. Use `ON CONFLICT (id) DO NOTHING` for creation defaults; retain
+intentional upserts that apply later configuration changes. This preserves
+existing bucket settings and objects without changing fresh-database defaults.
+
+`node --test apps/database/scripts/storage-bucket-inserts.test.js` executes every
+migration bucket insert in a disposable PGlite database, replays each insert,
+and verifies that creation-only inserts preserve existing settings. This focused
+check does not replace full migration replay or authorize a remote reset. The
+database package's `sbr:reset` wrapper deletes buckets before resetting; use a
+separately approved, explicitly targeted procedure when storage must survive.
+
 ### Real Examples from Tuturuuu's Seed File
 
 Let's look at some real examples from Tuturuuu's seed.sql file:

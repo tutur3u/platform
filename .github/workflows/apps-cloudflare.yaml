@@ -16,6 +16,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -63,6 +64,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -152,11 +154,13 @@ jobs:
       - name: Test exact emitter resource guard and fixture egress policy
         working-directory: apps/apps
         run: node --test cloudflare/native-runtime-fence.test.mjs
+      - name: Reject unregistered App Router routes and pages
+        run: bun packages/start-bridge/src/codegen/cli.ts check apps/apps
       - name: Test actual native app boundaries
         working-directory: apps/apps
         run: bun run test:cloudflare
       - name: Check native owning source and fixture formatting
-        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
+        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json apps/apps/start-bridge.routes.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
       - name: Record Apps route tree presence before frontend build
         id: apps-route-tree-before
         shell: bash

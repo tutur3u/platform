@@ -15,6 +15,7 @@ const DEFAULT_SUPPLEMENTAL_PATHS = [
   'apps/database/scripts/new-migration.test.js',
   'apps/database/scripts/rls-perf-initplan-migration.test.js',
   'apps/database/scripts/seed-sql.test.js',
+  'apps/database/scripts/storage-bucket-inserts.test.js',
   'plugins/tuturuuu/skills/tuturuuu-pr-merge-sync/scripts/watchers.test.mjs',
 ];
 
