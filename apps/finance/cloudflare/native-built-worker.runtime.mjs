@@ -11,7 +11,7 @@ import {
   modes,
 } from './native-runtime-fixture.mjs';
 
-test('emitted Finance Worker: public shell, API ownership and action admission', {
+test('emitted Finance Worker: auth redirects, API ownership and action admission', {
   timeout: 180000,
 }, async (t) => {
   const runtime = await financeRuntime(t);
@@ -91,13 +91,17 @@ test('emitted Finance Worker: public shell, API ownership and action admission',
           const login = new URL(protectedPage.headers.get('location'));
           assert.equal(login.origin, 'https://tuturuuu.com');
           assert.equal(login.pathname, '/login');
-          const fallback = await runtime.fetch(
-            `${origin}${base}/${locale}/verify-token`
-          );
+        }
+        for (const path of [
+          '/verify-token',
+          '/en/verify-token',
+          '/vi/verify-token',
+        ]) {
+          const fallback = await runtime.fetch(`${origin}${base}${path}`);
           assert.equal(fallback.status, 307);
           assert.equal(
             fallback.headers.get('location'),
-            `${origin}${base}/`,
+            `${origin}${base || '/'}`,
             'Missing-token fallback must retain its app mount'
           );
         }
