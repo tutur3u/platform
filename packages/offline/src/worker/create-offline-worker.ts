@@ -194,6 +194,7 @@ export class TuturuuuServiceWorker {
   private readonly staticAssetsOnly: boolean;
   private readonly maxRuntimeCacheEntries: number | undefined;
   private readonly additionalCaching: RuntimeCachingRule[];
+  private readonly bypassPathPrefixes: readonly string[];
   private readonly clientsClaim: boolean;
   private readonly navigationPreload: boolean;
   private readonly offlineFallbackUrl: string;
@@ -220,6 +221,14 @@ export class TuturuuuServiceWorker {
     this.clientsClaim = config.clientsClaim ?? true;
     this.navigationPreload = config.navigationPreload ?? true;
     this.additionalCaching = config.additionalCaching ?? [];
+    this.bypassPathPrefixes = config.bypassPathPrefixes ?? [];
+    for (const prefix of this.bypassPathPrefixes) {
+      if (!/^\/[^/]/u.test(prefix) || prefix.endsWith('/')) {
+        throw new RangeError(
+          'bypassPathPrefixes entries must start with "/" and have no trailing slash'
+        );
+      }
+    }
     this.precacheEntries = self.__TUTURUUU_PRECACHE_MANIFEST ?? [];
     this.precacheName = createPrecacheName(this.precacheEntries);
     this.precacheUrls = new Set(
@@ -300,6 +309,13 @@ export class TuturuuuServiceWorker {
     }
 
     const url = new URL(request.url);
+    if (this.isBypassedPath(url)) {
+      // Another app owns this path on the shared origin. Answer navigations
+      // with the preload response so they are not requested twice.
+      return request.mode === 'navigate'
+        ? (async () => (await event.preloadResponse) ?? fetch(request))()
+        : null;
+    }
     if (this.precacheUrls.has(url.href)) {
       return runStrategy('cache-first', request, this.precacheName);
     }
@@ -345,6 +361,16 @@ export class TuturuuuServiceWorker {
     }
 
     return null;
+  }
+
+  private isBypassedPath(url: URL) {
+    return (
+      url.origin === self.location.origin &&
+      this.bypassPathPrefixes.some(
+        (prefix) =>
+          url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)
+      )
+    );
   }
 
   private async handleNavigation(event: FetchEvent) {

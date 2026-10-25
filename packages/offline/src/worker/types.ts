@@ -58,6 +58,15 @@ export interface ServiceWorkerConfig {
   navigationPreload?: boolean;
 
   /**
+   * Same-origin path prefixes owned by another app (for example `/meet` on the
+   * shared `tuturuuu.com` origin). The worker never caches them or serves its
+   * offline fallback for them; navigations reuse the preload response so the
+   * browser does not fetch them twice. Each prefix starts with `/` and has no
+   * trailing slash, and matches itself and its descendants only.
+   */
+  bypassPathPrefixes?: readonly string[];
+
+  /**
    * Additional runtime caching strategies
    */
   additionalCaching?: RuntimeCachingRule[];
