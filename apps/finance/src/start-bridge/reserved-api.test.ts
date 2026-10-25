@@ -3,7 +3,7 @@ import type { BridgeEndpoint } from '@tuturuuu/start-bridge/endpoints';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { NextResponse } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { financeCentralFirst } from './reserved-api.server';
+import { financeCentralFirst } from './api-ownership';
 
 const context = { waitUntil: vi.fn() };
 afterEach(() => vi.unstubAllGlobals());

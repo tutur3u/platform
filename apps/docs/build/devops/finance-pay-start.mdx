@@ -54,8 +54,18 @@ reads the same shared rewrite definitions as the Next configuration.
 `/api/workspaces/[wsId]` wildcard. The shared forwarder strips the app mount
 and preserves the request method/body/query and every response cookie. Ordinary local routes
 retain their existing handlers. `reserved-api.test.ts` covers that boundary.
-Re-running the codemod must report the Worker as a manual-file conflict instead
-of replacing this adapter.
+Finance also registers IA-BASE's shared URL resolver in the browser, SSR and
+RSC environments. The bridge's client-safe `appApiPatterns` output and the
+reserved Web paths decide which API calls gain `/finance`. Server callbacks
+read the incoming request inside each call; they never capture a request at
+startup. Explicit caller base URLs retain precedence. `api-base.test.ts` covers
+root/mount routing and interleaved request isolation.
+
+The Worker, router and Vite configuration are app-maintained adapters. Their RSC
+entries load the app resolver before exporting the generated API/page modules.
+Refresh the registries with `bun packages/start-bridge/src/codegen/cli.ts generate
+apps/finance`. Re-running the full codemod reports those adapters as manual-file
+conflicts; preserve their app glue instead of adopting over them.
 
 Keep the existing authorization and mutation behavior for invoices, wallet
 checkpoints and reconciliation, interest, budgets, promotions, inventory, and

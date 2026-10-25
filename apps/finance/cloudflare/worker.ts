@@ -1,10 +1,11 @@
 /// <reference types="@vitejs/plugin-rsc/types" />
+import '../src/start-bridge/api-base.server';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { proxy } from '../src/proxy';
+import { financeCentralFirst } from '../src/start-bridge/api-ownership';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
-import { financeCentralFirst } from '../src/start-bridge/reserved-api.server';
 
 export interface FinanceEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
