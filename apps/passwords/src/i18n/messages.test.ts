@@ -20,7 +20,7 @@ describe('messages', () => {
   it('resolves every SQL audit event through the public translator', () => {
     for (const locale of ['en', 'vi'] as const)
       for (const event of AUDIT_EVENT_TYPES) {
-        const key = `audit.type.${event}`;
+        const key = `audit.type.${event}` as const;
         expect(createTranslator(locale)(key)).not.toBe(key);
       }
   });
