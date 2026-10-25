@@ -1,5 +1,4 @@
-import { match } from '@formatjs/intl-localematcher';
-import Negotiator from 'negotiator';
+import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import { defaultLocale, type Locale, supportedLocales } from '@/i18n/routing';
 
 function supported(value: string | null | undefined): Locale | null {
@@ -21,20 +20,9 @@ export function resolveRequestLocale({
 
 /** The supported locale best matching an `Accept-Language` header. */
 export function preferredRequestLocale(acceptLanguage: string | null): Locale {
-  const languages = new Negotiator({
-    headers: { 'accept-language': acceptLanguage ?? 'en-US,en;q=0.5' },
-  })
-    .languages()
-    .flatMap((language) => {
-      if (language === '*') return [];
-      try {
-        return Intl.getCanonicalLocales(language);
-      } catch {
-        return [];
-      }
-    });
-  return (
-    supported(match(languages, supportedLocales, defaultLocale)) ??
+  return negotiateAcceptLanguage(
+    acceptLanguage,
+    supportedLocales,
     defaultLocale
   );
 }
