@@ -14,7 +14,7 @@ Run these commands from the repository root after a frozen dependency install:
 ```bash
 node apps/finance/migration/inventory.mjs finance > /tmp/finance-inventory.json
 node apps/finance/migration/inventory.mjs pay > /tmp/pay-inventory.json
-node --test apps/finance/migration/inventory.test.mjs
+(cd apps/finance && bun run test migration/inventory.test.mjs)
 ```
 
 The tool reuses the repository's Next route inventory and parses modules with
