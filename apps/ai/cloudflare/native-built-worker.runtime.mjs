@@ -17,11 +17,19 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import {
+  mountedPath,
+  runtimeExpectationProblems,
+  runtimeOutcomeFailure,
+} from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
 const WORKER = 'tuturuuu-ai-vite-staging';
 const PUBLIC_FILES = ['robots.txt'];
+// From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
+const EXPECTED = { '/': 200 };
+const BASE = '/ai';
 
 async function sha256(path) {
   return createHash('sha256')
@@ -66,7 +74,10 @@ test('emitted ai Worker serves its root, mount and unknown paths', {
   assert.equal(config.name, WORKER);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
-  assert.ok(config.compatibility_flags.includes('nodejs_compat'));
+  assert.deepEqual(config.compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
   for (const name of PUBLIC_FILES)
     assert.equal(
@@ -119,19 +130,23 @@ test('emitted ai Worker serves its root, mount and unknown paths', {
   const get = (path, init = {}) =>
     fetch(`${origin}${path}`, { redirect: 'manual', ...init });
   // fetch() drops a custom Host header; the apex mount needs one.
-  const statusFor = (path, host) =>
+  const MOUNT_ORIGIN = 'http://tuturuuu.com';
+  const mountedGet = (path) =>
     new Promise((resolve, reject) => {
       const target = new URL(path, origin);
       httpRequest(
         {
           host: target.hostname,
           port: target.port,
-          path: target.pathname,
-          headers: { host },
+          path: `${target.pathname}${target.search}`,
+          headers: { host: new URL(MOUNT_ORIGIN).host },
         },
         (response) => {
           response.resume();
-          resolve(response.statusCode ?? 0);
+          resolve({
+            status: response.statusCode ?? 0,
+            location: response.headers.location ?? null,
+          });
         }
       )
         .on('error', reject)
@@ -139,20 +154,51 @@ test('emitted ai Worker serves its root, mount and unknown paths', {
     });
 
   await t.test('build identity is the exact compiled source', async () => {
-    const info = await (await get('/api/build-info')).json();
+    // A public deploy-verification endpoint, read anonymously as production
+    // smoke does (packages/utils/src/build-info-route.ts).
+    const response = await get('/api/build-info');
+    assert.notEqual(
+      response.status,
+      401,
+      'app proxy must admit GET /api/build-info (public deploy verification)'
+    );
+    assert.equal(response.status, 200, `/api/build-info: ${response.status}`);
+    const info = await response.json();
     assert.equal(info.appName, 'ai');
     assert.equal(info.commitHash, source);
   });
 
   await t.test(
-    'the root and the apex mount answer without a server error',
+    'public pages answer as start-bridge.routes.json expects',
     async () => {
-      const root = (await get('/')).status;
-      assert.ok(root < 500, `root /: ${root}`);
-      const mounted = await statusFor('/ai', 'tuturuuu.com');
-      assert.ok(mounted < 500, `tuturuuu.com/ai: ${mounted}`);
+      assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
+      for (const [path, expected] of Object.entries(EXPECTED)) {
+        const response = await get(path);
+        const failure = runtimeOutcomeFailure({
+          path,
+          expected,
+          status: response.status,
+          location: response.headers.get('location'),
+          origin,
+        });
+        assert.equal(failure, null, failure ?? '');
+      }
     }
   );
+
+  await t.test('the apex mount serves every declared page alike', async () => {
+    for (const [path, expected] of Object.entries(EXPECTED)) {
+      const response = await mountedGet(mountedPath(BASE, path));
+      const failure = runtimeOutcomeFailure({
+        path,
+        expected,
+        ...response,
+        origin: MOUNT_ORIGIN,
+        base: BASE,
+      });
+      assert.equal(failure, null, failure ?? '');
+    }
+  });
 
   await t.test('an unknown path is not a server error', async () => {
     const response = await get('/__native-smoke-missing__');
