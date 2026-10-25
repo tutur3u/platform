@@ -1,8 +1,5 @@
-import {
-  notFound as startNotFound,
-  redirect as startRedirect,
-} from '@tanstack/router-core';
-import { withAppBase } from '../start/base-path';
+import { notFound as startNotFound } from '@tanstack/router-core';
+import { bridgeRedirect } from '../start/absolute-redirect';
 
 /**
  * `next/navigation` inside the RSC environment: server components may only
@@ -12,10 +9,10 @@ import { withAppBase } from '../start/base-path';
 export const RedirectType = { push: 'push', replace: 'replace' } as const;
 
 export function redirect(href: string): never {
-  throw startRedirect({ href: withAppBase(href) });
+  throw bridgeRedirect(href);
 }
 export function permanentRedirect(href: string): never {
-  throw startRedirect({ href: withAppBase(href), statusCode: 308 });
+  throw bridgeRedirect(href, 308);
 }
 export function notFound(): never {
   throw startNotFound();

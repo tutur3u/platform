@@ -1,3 +1,4 @@
+/// <reference path="./path-to-regexp.d.ts" />
 import { pathToRegexp } from 'next/dist/compiled/path-to-regexp';
 
 /**

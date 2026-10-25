@@ -64,6 +64,14 @@ compiled once, in `rsc`; the request store is global, so `next/headers`,
 cookies and the mount see the same request. Never alias or disable plugin-rsc's
 import validation to make a build pass.
 
+`redirect()` from `next/navigation` keeps an absolute URL absolute, as in
+Next. Start's router reduces a same-origin absolute href to its path, and on
+the apex Web's `https://tuturuuu.com/login` is same-origin with
+`tuturuuu.com/<app>`, so the bridge marks the target for its response
+finalization (which otherwise adds the mount) and sets `reloadDocument` for
+client navigation. Without it, a mounted app's login redirect loops into its
+own `/<app>/login`.
+
 Fonts from `next/font` resolve to inert objects; load font CSS through the app
 stylesheet. A page that needs Next behaviour the adapter lacks (parallel or
 intercepting routes) stays a hand-written page via `owned`/`ignored` in
