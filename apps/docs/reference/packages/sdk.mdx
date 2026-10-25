@@ -239,6 +239,23 @@ errors, and non-JSON notices. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` on a single command, or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`,
 to disable the check.
 
+`ttr upgrade install [version]` instead keeps releases side by side in
+`~/.tuturuuu/cli/versions/<version>`. It accepts only the npm registry tarball
+for `tuturuuu`, verifies its sha512 `dist.integrity` before extracting, installs
+with `bun install --production --ignore-scripts`, and records a per-file sha256
+manifest in `release.json`; a mismatch publishes nothing, and an existing
+release that no longer verifies is reported, never overwritten. Running
+processes keep their own release files.
+`ttr upgrade activate <version>` first runs the target release's own
+`resources setup --root <first-root> --shell none --force --json`, which refuses
+while any resource owner or ticket is live, and only then atomically switches
+`~/.tuturuuu/cli/current`, rewrites the `ttr`/`tuturuuu`/`tutur3u` launchers in
+`~/.tuturuuu/cli/bin` and records the previous release. Roll back by activating
+the previous version. `ttr upgrade list` shows verification state and
+`ttr upgrade prune --keep <n>` never removes the current or previous release.
+Unknown `ttr upgrade` subcommands fail rather than running the global install.
+Regression coverage: `cli-versions.test.ts` and `cli-versions-command.test.ts`.
+
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT
 plus a longer-lived refresh JWT, refreshes shortly before access-token expiry,
