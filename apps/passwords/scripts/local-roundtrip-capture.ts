@@ -1,7 +1,13 @@
 import { formatWithOptions } from 'node:util';
 
+export class FixtureCheckError extends Error {
+  constructor(readonly code: string) {
+    super('Fixture check failed');
+  }
+}
+
 export function check(ok: unknown, code: string): asserts ok {
-  if (!ok) throw new Error(code);
+  if (!ok) throw new FixtureCheckError(code);
 }
 
 /** Retained only in process memory; failures never interpolate inspected values. */

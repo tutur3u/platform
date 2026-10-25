@@ -12,6 +12,7 @@ import type { PasswordsEnvironment } from '../src/service/environment';
 import {
   Capture,
   check,
+  FixtureCheckError,
   interceptBackend,
   interceptLogs,
 } from './local-roundtrip-capture';
@@ -44,6 +45,7 @@ async function main() {
   let env: PasswordsEnvironment | undefined;
   let stage = 'ISOLATION';
   let passed = false;
+  let failure = 'UNEXPECTED';
   let stats = { requests: 0, uploads: 0, captures: 0, tls: 0 };
   let stack: Awaited<ReturnType<typeof isolated>> | undefined;
   const since = new Date().toISOString();
@@ -358,8 +360,9 @@ async function main() {
       tls: tls.encrypted,
     };
     passed = true;
-  } catch {
+  } catch (error) {
     passed = false;
+    if (error instanceof FixtureCheckError) failure = error.code;
   } finally {
     controller.abort();
     try {
@@ -416,7 +419,7 @@ async function main() {
     process.stdout.write(
       `PASS passwords-real-roundtrip tls=${stats.tls} uploads=${stats.uploads} requests=${stats.requests} captures=${stats.captures}\n`
     );
-  else process.stderr.write(`FAIL passwords-real-roundtrip stage=${stage}\n`);
+  else process.stderr.write(`FAIL passwords-real-roundtrip stage=${stage} code=${failure}\n`);
   return passed ? 0 : 1;
 }
 

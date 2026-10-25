@@ -45,7 +45,7 @@ export function command(
   if (result.error || result.status !== 0 || result.signal) {
     result.stdout?.fill(0);
     result.stderr?.fill(0);
-    throw new Error('CHILD_COMMAND_FAILED');
+    throw new FixtureCheckError('CHILD_COMMAND_FAILED');
   }
   return { stdout: result.stdout, stderr: result.stderr };
 }
