@@ -61,7 +61,7 @@ so trackers created from mobile are named in English.
 
 Retries and concurrent requests must not duplicate habit data, and a retried
 older operation must not undo a newer one. Migration
-`20261025034500_add_habit_tracker_idempotency_keys` enforces this in the
+`20261025125500_add_habit_tracker_idempotency_keys` enforces this in the
 database:
 
 - **Tracker `creation_key`.** A partial unique index allows one active,

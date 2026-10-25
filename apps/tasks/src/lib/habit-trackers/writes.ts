@@ -21,7 +21,7 @@ type TrackerInsert = TablesInsert<'workspace_habit_trackers'>;
 type EntryInsert = TablesInsert<'workspace_habit_tracker_entries'>;
 type EntryUpdate = TablesUpdate<'workspace_habit_tracker_entries'>;
 
-// Opt-in key columns from migration 20261025034500. They are declared here as
+// Opt-in key columns from migration 20261025125500. They are declared here as
 // well as in the generated types so the writers also compile in checkouts whose
 // generated declarations predate the migration.
 type KeyedTrackerInput = HabitTrackerInput & { creation_key?: string };
@@ -158,7 +158,7 @@ type ReceiptRpc = (
 ) => PromiseLike<{ data: ReceiptOutcome[] | null; error: PostgrestError }>;
 
 /**
- * The receipt function from migration 20261025034500. Until it reaches an
+ * The receipt function from migration 20261025125500. Until it reaches an
  * environment, PostgREST reports it missing and keyed writes fall back to the
  * unkeyed path instead of failing every request.
  */
