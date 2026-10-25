@@ -201,6 +201,10 @@ The rules for that content:
 
 The calendar event form is the first adopter: event id, title, description,
 all-day and start/end. Mira can read a half-filled event and help finish it.
+Timed start and end values are the wall time shown in the form, in the
+calendar's timezone, written as ISO 8601 with that zone's UTC offset (for
+example `2026-10-26T09:00:00+07:00`), never as UTC. A time skipped by a DST
+change has no offset. All-day values are plain `yyyy-MM-dd` dates.
 Filling fields from Mira and sending screen context with chat messages are
 separate follow-ups.
 
@@ -243,7 +247,11 @@ separate follow-ups.
   stay shareable while unsupported characters still redact the field.
 - `apps/mobile/test/features/calendar/widgets/event_form_assistant_context_test.dart`:
   read-time scope checks and mounted create/edit forms across a
-  `WorkspaceCubit` switch, including no reads of stale fields.
+  `WorkspaceCubit` switch, including no reads of stale fields; start and end
+  pinned to the calendar zone's offset in a non-UTC zone.
+- `apps/mobile/test/features/calendar/utils/calendar_wall_iso8601_test.dart`:
+  wall times with positive, negative and half-hour offsets, a DST gap and
+  parsing back to the stored instant.
 - `apps/mobile/test/features/assistant/assistant_live_screen_context_persistence_test.dart`:
   the serialized persistence request has no screen payload.
 - `app_assistant_client_action_bridge_test.dart`: a thrown and a `false`

@@ -299,7 +299,7 @@ class _EventFormContentState extends State<_EventFormContent> {
   AssistantScreenContextEntry _assistantContext(AppLocalizations l10n) {
     String when(DateTime date, TimeOfDay time) => _isAllDay
         ? DateFormat('yyyy-MM-dd').format(date)
-        : _combineDateAndTime(date, time).toIso8601String();
+        : calendarWallIso8601(_combineDateAndTime(date, time), widget.timezone);
     return AssistantScreenContextEntry(
       entities: [
         if (widget.event case final event?)
