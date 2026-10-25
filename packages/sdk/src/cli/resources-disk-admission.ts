@@ -1,3 +1,4 @@
+import { resourceDiskFloorGiB } from './resources-disk-gate';
 import type { AutoReclaimOutcome } from './storage-auto-reclaim';
 import {
   formatBytes,
@@ -12,6 +13,7 @@ import {
   hysteresisThresholds,
   recordVolumeState,
   storageHome,
+  volumeRecoveryThresholds,
 } from './storage-hysteresis';
 import type { StorageAction } from './storage-suggest';
 
@@ -42,9 +44,9 @@ const realHolds = async (env: NodeJS.ProcessEnv) => {
 
 /**
  * Heavy commands are refused while the volume holding their working directory
- * is `low`: it entered that state below TTR_STORAGE_MIN_FREE* (default
- * 15 GiB / 5% / 5% inodes) and leaves it only at TTR_STORAGE_RECOVER_FREE*
- * (default twice each), so admission does not flap. On entering or staying
+ * is `low`: it entered that state below the larger of the admission floor
+ * and TTR_STORAGE_MIN_FREE, or an explicit percentage/inode floor. Recovery
+ * never falls below admission. On entering or staying
  * low, automatic reclaim runs under this storage authority's cleanup lease;
  * if it cannot recover the volume, the command is refused with the owners of
  * what is left and the resume condition. Alerts print once per storage
@@ -85,7 +87,42 @@ export async function diskAdmission({
       ].join('\n'),
     };
   }
-  const thresholds = hysteresisThresholds(env);
+  let floor: number;
+  try {
+    floor = resourceDiskFloorGiB(env);
+  } catch (error) {
+    return {
+      pressure: 'unknown',
+      refuse: true,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Invalid admission disk floor.',
+    };
+  }
+  const thresholds = hysteresisThresholds({
+    ...env,
+    TTR_STORAGE_MIN_FREE_PERCENT: env.TTR_STORAGE_MIN_FREE_PERCENT ?? '0',
+  });
+  thresholds.low.minFreeBytes = Math.max(
+    thresholds.low.minFreeBytes,
+    floor * 1024 ** 3
+  );
+  const explicitRecovery = (name: string) =>
+    Boolean(env[name]?.trim()) &&
+    !thresholds.warnings.some((warning) => warning.startsWith(`${name}:`));
+  const byteOverride = explicitRecovery('TTR_STORAGE_RECOVER_FREE');
+  const percentOverride = explicitRecovery('TTR_STORAGE_RECOVER_FREE_PERCENT');
+  thresholds.recover.minFreeBytes = Math.max(
+    thresholds.recover.minFreeBytes,
+    thresholds.low.minFreeBytes + 1024 ** 3,
+    byteOverride ? 0 : (floor + 10) * 1024 ** 3,
+    byteOverride || percentOverride ? 0 : 2 * thresholds.low.minFreeBytes
+  );
+  Object.assign(
+    thresholds.recover,
+    volumeRecoveryThresholds(volume, thresholds.recover)
+  );
   const home = storageHome(env);
   const host = hostId(env);
   const record = (probed: VolumeProbe) =>
