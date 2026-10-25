@@ -437,8 +437,9 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     final directory = await Directory.systemTemp.createTemp('pr6277-v116-');
     final storage = _Storage();
     final secrets = <String, String>{};
-    when(() => storage.read(key: any(named: 'key')))
-        .thenAnswer((i) async => secrets[i.namedArguments[#key] as String]);
+    when(
+      () => storage.read(key: any(named: 'key')),
+    ).thenAnswer((i) async => secrets[i.namedArguments[#key] as String]);
     when(
       () => storage.write(
         key: any(named: 'key'),
