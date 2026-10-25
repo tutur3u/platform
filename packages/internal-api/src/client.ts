@@ -1,10 +1,11 @@
 import { parseInternalApiError } from './internal-api-error';
 import {
-  hasAppBaseResolver,
+  hasAppBaseResolverFor,
   type InternalApiAppBaseResolver,
   normalizeApiPath,
   normalizeBaseUrl,
   resolveInternalApiUrlWithAppBase,
+  withAppApiBaseUrl,
 } from './internal-api-url';
 import { mergeHeaders } from './request-headers';
 
@@ -24,6 +25,8 @@ export type InternalApiFetchInit = Omit<RequestInit, 'headers'> & {
 export type InternalApiClientOptions = {
   appBaseResolver?: InternalApiAppBaseResolver;
   baseUrl?: string;
+  /** Owning app origin for a cross-app helper call (see `withAppApiBaseUrl`). */
+  crossAppBaseUrl?: string;
   defaultHeaders?: HeadersInit;
   fetch?: typeof fetch;
 };
@@ -88,6 +91,7 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
 
 export { InternalApiError } from './internal-api-error';
 export {
+  hasAppBaseResolverFor,
   type InternalApiAppBaseResolver,
   registerDefaultAppBaseResolver,
 } from './internal-api-url';
@@ -254,18 +258,12 @@ export function getConfiguredTasksApiBaseUrl() {
 export function withTaskApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (
-    options.baseUrl ||
-    hasAppBaseResolver(options) ||
-    isTasksApiProxyBrowserRuntime()
-  ) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredTasksApiBaseUrl(),
-  };
+  return withAppApiBaseUrl(
+    'tasks',
+    options,
+    getConfiguredTasksApiBaseUrl,
+    isTasksApiProxyBrowserRuntime
+  );
 }
 
 export function getConfiguredMailApiBaseUrl() {
@@ -282,14 +280,7 @@ export function getConfiguredMailApiBaseUrl() {
 export function withMailApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || hasAppBaseResolver(options) || isMailAppRuntime()) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredMailApiBaseUrl(),
-  };
+  return withAppApiBaseUrl('mail', options, getConfiguredMailApiBaseUrl, isMailAppRuntime);
 }
 
 function isCurrentBrowserHostname(...hostnames: string[]) {
@@ -350,14 +341,7 @@ export function getConfiguredLearnApiBaseUrl() {
 export function withLearnApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || hasAppBaseResolver(options) || isLearnAppRuntime()) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredLearnApiBaseUrl(),
-  };
+  return withAppApiBaseUrl('learn', options, getConfiguredLearnApiBaseUrl, isLearnAppRuntime);
 }
 
 export function getConfiguredTeachApiBaseUrl() {
@@ -374,14 +358,7 @@ export function getConfiguredTeachApiBaseUrl() {
 export function withTeachApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || hasAppBaseResolver(options) || isTeachAppRuntime()) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredTeachApiBaseUrl(),
-  };
+  return withAppApiBaseUrl('teach', options, getConfiguredTeachApiBaseUrl, isTeachAppRuntime);
 }
 
 function isPayAppRuntime() {
@@ -405,14 +382,7 @@ export function getConfiguredPayApiBaseUrl() {
 export function withPayApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || hasAppBaseResolver(options) || isPayAppRuntime()) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredPayApiBaseUrl(),
-  };
+  return withAppApiBaseUrl('pay', options, getConfiguredPayApiBaseUrl, isPayAppRuntime);
 }
 
 function isContactsAppRuntime() {
@@ -438,18 +408,7 @@ export function getConfiguredContactsApiBaseUrl() {
 export function withContactsApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (
-    options.baseUrl ||
-    hasAppBaseResolver(options) ||
-    isContactsAppRuntime()
-  ) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredContactsApiBaseUrl(),
-  };
+  return withAppApiBaseUrl('contacts', options, getConfiguredContactsApiBaseUrl, isContactsAppRuntime);
 }
 
 /**
@@ -461,21 +420,16 @@ export function withContactsApiBaseUrl(
 export function withEducationBootstrapBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || hasAppBaseResolver(options)) {
+  // A resolver registered for either education app serves its own bootstrap.
+  if (
+    !options.baseUrl &&
+    (hasAppBaseResolverFor('teach', options) ||
+      hasAppBaseResolverFor('learn', options))
+  )
     return options;
-  }
-
-  if (isTeachAppRuntime()) {
-    return {
-      ...options,
-      baseUrl: getConfiguredTeachApiBaseUrl(),
-    };
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredLearnApiBaseUrl(),
-  };
+  return isTeachAppRuntime()
+    ? withAppApiBaseUrl('teach', options, getConfiguredTeachApiBaseUrl)
+    : withAppApiBaseUrl('learn', options, getConfiguredLearnApiBaseUrl);
 }
 
 function isFinanceBrowserRuntime() {
@@ -499,18 +453,7 @@ export function getConfiguredFinanceApiBaseUrl() {
 export function withFinanceApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (
-    options.baseUrl ||
-    hasAppBaseResolver(options) ||
-    isFinanceBrowserRuntime()
-  ) {
-    return options;
-  }
-
-  return {
-    ...options,
-    baseUrl: getConfiguredFinanceApiBaseUrl(),
-  };
+  return withAppApiBaseUrl('finance', options, getConfiguredFinanceApiBaseUrl, isFinanceBrowserRuntime);
 }
 
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
@@ -636,7 +579,8 @@ export function createInternalApiClient(
       options.appBaseResolver,
       typeof window === 'undefined'
         ? getConfiguredInternalApiBaseUrl()
-        : undefined
+        : undefined,
+      options.crossAppBaseUrl
     );
     const headers = mergeHeaders(options.defaultHeaders, requestHeaders);
 

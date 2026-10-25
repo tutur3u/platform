@@ -115,6 +115,8 @@ describe('default app base resolver', () => {
       expect.anything()
     );
 
+    // An untagged resolver no longer drops the owning app's origin: helpers
+    // keep it as crossAppBaseUrl, used unless the resolver claims the path.
     for (const withBase of [
       withTaskApiBaseUrl,
       withMailApiBaseUrl,
@@ -125,7 +127,12 @@ describe('default app base resolver', () => {
       withEducationBootstrapBaseUrl,
       withFinanceApiBaseUrl,
     ]) {
-      expect(withBase()).toEqual({});
+      expect(withBase()).toEqual({ crossAppBaseUrl: expect.any(String) });
+    }
+    for (const withBase of [withMailApiBaseUrl, withTaskApiBaseUrl]) {
+      expect(
+        withBase({ appBaseResolver: (path: string) => path })
+      ).toEqual({ appBaseResolver: expect.any(Function) });
     }
   });
 
