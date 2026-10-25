@@ -25,7 +25,7 @@ try {
         run = $env:GITHUB_RUN_ID
         verification = 'installed-window-opened-15s'
         files = $files
-    } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $artifacts 'windows-installed-files.json') -Encoding utf8
+    } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $env:RUNNER_TEMP 'windows-installed-files.json') -Encoding utf8
 } finally {
     if ($process -and !$process.HasExited) { Stop-Process -Id $process.Id -Force }
     $uninstaller = Join-Path $installRoot 'unins000.exe'
