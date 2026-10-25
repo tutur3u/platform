@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { cp, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -118,9 +118,65 @@ export async function financeRuntime(t, options = {}) {
   });
   await worker.ready;
   let requests = 0;
-  const fetch = (url, init = {}) => {
+  const listener = new URL((await worker.url).origin);
+  const fetch = async (url, init = {}) => {
     assert.ok(++requests <= 600, 'Runtime request budget exceeded');
-    return worker.fetch(url, { redirect: 'manual', signal: t.signal, ...init });
+    const input = new Request(url, init);
+    const target = new URL(input.url);
+    const body = Buffer.from(await input.arrayBuffer());
+    const headers = Object.fromEntries(input.headers);
+    headers.host = target.host;
+    return new Promise((resolve, reject) => {
+      const request = httpRequest(
+        {
+          hostname: listener.hostname,
+          port: listener.port,
+          path: target.pathname + target.search,
+          method: input.method,
+          headers,
+          signal: t.signal,
+        },
+        (response) => {
+          const chunks = [];
+          let bytes = 0;
+          response.on('error', reject);
+          response.on('data', (chunk) => {
+            bytes += chunk.length;
+            if (bytes > 16 * 1024 * 1024) {
+              response.destroy(
+                new Error('Runtime response byte budget exceeded')
+              );
+              return;
+            }
+            chunks.push(chunk);
+          });
+          response.on('end', () => {
+            const outputHeaders = new Headers();
+            for (
+              let index = 0;
+              index < response.rawHeaders.length;
+              index += 2
+            ) {
+              outputHeaders.append(
+                response.rawHeaders[index],
+                response.rawHeaders[index + 1]
+              );
+            }
+            const status = response.statusCode ?? 500;
+            resolve(
+              new Response(
+                input.method === 'HEAD' || [204, 205, 304].includes(status)
+                  ? null
+                  : Buffer.concat(chunks),
+                { status, headers: outputHeaders }
+              )
+            );
+          });
+        }
+      );
+      request.on('error', reject);
+      request.end(body.length ? body : undefined);
+    });
   };
   return { worker, source, fetch, central, unexpected, secret };
 }

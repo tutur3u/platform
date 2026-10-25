@@ -14,5 +14,8 @@
     }
   },
   "owned": {},
-  "ignored": {}
+  "ignored": {},
+  "runtime": {
+    "/": "https://staging.tuturuuu.com/login"
+  }
 }
