@@ -7,11 +7,11 @@
     "build": "vp build && tsc --noEmit",
     "type-check": "tsc --noEmit",
     "test": "vp test --pool=threads",
-    "preview": "wrangler dev --port 8795",
+    "preview": "vp dev --config vite.worker.config.ts",
     "deploy": "bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
-    "lint": "vp lint --config .oxlintrc.json src vite.config.ts --deny-warnings",
-    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts --check"
+    "lint": "vp lint --config .oxlintrc.json src vite.config.ts vite.worker.config.ts --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts vite.worker.config.ts --check"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",
@@ -26,6 +26,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "1.64.0",
     "@cloudflare/workers-types": "^5.20261022.1",
     "@playwright/test": "^1.64.1",
     "@tailwindcss/vite": "^4.3.3",

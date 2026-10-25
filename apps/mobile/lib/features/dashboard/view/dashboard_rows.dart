@@ -1,90 +1,159 @@
 part of 'dashboard_page.dart';
 
 class _TaskRow extends StatelessWidget {
-  const _TaskRow({required this.task, required this.paletteModuleId});
+  const _TaskRow({required this.task});
 
   final UserTask task;
-  final String paletteModuleId;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final palette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: paletteModuleId,
-    );
-    final boardName = task.list?.board?.name;
-    final listName = task.list?.name;
-    final locationLabel = [boardName, listName]
-        .where((value) => value != null && value.isNotEmpty)
-        .cast<String>()
-        .join(' • ');
-    final dueLabel = _dueLabel(context, task.endDate);
+    final tokens = AppTokens.of(context);
+    final location = [
+      task.list?.board?.name,
+      task.list?.name,
+    ].whereType<String>().where((value) => value.isNotEmpty).join(' · ');
+    final (dueLabel, tone) = _due(context, task.endDate);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => unawaited(
-          openUserTaskBoardDetailWithWorkspace(
-            context,
-            task,
-            workspaceCubit: context.read<WorkspaceCubit>(),
-          ),
+    return AppGroupedRow(
+      leading: AppIconTile(
+        icon: tone == AppTone.destructive
+            ? LucideIcons.circleAlert
+            : LucideIcons.circle,
+        tone: tone,
+      ),
+      title: Text(task.name ?? context.l10n.tasksUntitled),
+      subtitle: Text.rich(
+        TextSpan(
+          children: [
+            if (dueLabel != null)
+              TextSpan(
+                text: dueLabel,
+                style: TextStyle(
+                  color: tone == AppTone.neutral
+                      ? null
+                      : tone.foreground(tokens.colorScheme),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            if (dueLabel != null && location.isNotEmpty)
+              const TextSpan(text: ' · '),
+            if (location.isNotEmpty) TextSpan(text: location),
+          ],
         ),
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              palette.iconBackground.withValues(alpha: 0.5),
-              palette.background,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: palette.border.withValues(alpha: 0.46)),
-          ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      showChevron: true,
+      onTap: () => unawaited(
+        openUserTaskBoardDetailWithWorkspace(
+          context,
+          task,
+          workspaceCubit: context.read<WorkspaceCubit>(),
+        ),
+      ),
+    );
+  }
+
+  (String?, AppTone) _due(BuildContext context, DateTime? date) {
+    final l10n = context.l10n;
+    if (date == null) return (null, AppTone.neutral);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final delta = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).difference(today).inDays;
+
+    if (delta < 0) return (l10n.dashboardTaskOverdue, AppTone.destructive);
+    if (delta == 0) return (l10n.dashboardTaskToday, AppTone.warning);
+    if (delta == 1) return (l10n.dashboardTaskTomorrow, AppTone.primary);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return (DateFormat.MMMEd(locale).format(date), AppTone.neutral);
+  }
+}
+
+class _EventRow extends StatelessWidget {
+  const _EventRow({required this.event});
+
+  static const double _leafSize = 44;
+  static const double dividerInset =
+      AppLayout.rowHorizontalPadding + _leafSize + AppLayout.rowLeadingGap;
+
+  final CalendarEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = event.startAt;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final when = start == null
+        ? context.l10n.dashboardEventAllDay
+        : '${DateFormat.EEEE(locale).format(start)}'
+              ' · ${DateFormat.Hm(locale).format(start)}';
+    final detail = calendarDescriptionPreview(event.description ?? '');
+
+    return AppGroupedRow(
+      leading: _DateLeaf(date: start, size: _leafSize),
+      title: Text(event.title ?? context.l10n.dashboardUntitledEvent),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(when, maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (detail.isNotEmpty)
+            Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+}
+
+/// Calendar-leaf date badge: short month above the day number.
+class _DateLeaf extends StatelessWidget {
+  const _DateLeaf({required this.date, required this.size});
+
+  final DateTime? date;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final date = this.date;
+    return ExcludeSemantics(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppTone.primary.fill(c),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: FittedBox(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          task.name ?? context.l10n.tasksUntitled,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: palette.textColor,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if (locationLabel.isNotEmpty)
-                              _DashboardTaskPill(
-                                icon: Icons.view_kanban_outlined,
-                                label: locationLabel,
-                                palette: palette,
-                              ),
-                            if (task.endDate != null)
-                              _DashboardTaskPill(
-                                icon: Icons.schedule_outlined,
-                                label: dueLabel,
-                                palette: palette,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              Text(
+                date == null
+                    ? '--'
+                    : DateFormat.MMM(locale).format(date).toUpperCase(),
+                maxLines: 1,
+                style: tokens.typography.xSmall.copyWith(
+                  fontSize: 10,
+                  height: 1.1,
+                  color: c.primary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              Text(
+                date == null ? '' : '${date.day}',
+                maxLines: 1,
+                style: tokens.typography.large.copyWith(
+                  height: 1.1,
+                  color: c.foreground,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -92,244 +161,4 @@ class _TaskRow extends StatelessWidget {
       ),
     );
   }
-
-  String _dueLabel(BuildContext context, DateTime? date) {
-    final l10n = context.l10n;
-    if (date == null) return l10n.dashboardTaskNoDate;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dueDay = DateTime(date.year, date.month, date.day);
-    final delta = dueDay.difference(today).inDays;
-
-    if (delta < 0) return l10n.dashboardTaskOverdue;
-    if (delta == 0) return l10n.dashboardTaskToday;
-    if (delta == 1) return l10n.dashboardTaskTomorrow;
-    final formattedDate = DateFormat('EEE, d MMM').format(date);
-    return '${l10n.dashboardTaskUpcoming} • $formattedDate';
-  }
-}
-
-class _DashboardTaskPill extends StatelessWidget {
-  const _DashboardTaskPill({
-    required this.icon,
-    required this.label,
-    required this.palette,
-  });
-
-  final IconData icon;
-  final String label;
-  final AppCardPalette palette;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: palette.iconBackground.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: palette.border.withValues(alpha: 0.46)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: palette.iconColor),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: palette.textColor,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EventRow extends StatelessWidget {
-  const _EventRow({required this.event, required this.paletteModuleId});
-
-  final CalendarEvent event;
-  final String paletteModuleId;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = event.startAt;
-    final theme = Theme.of(context);
-    final palette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: paletteModuleId,
-    );
-    final dateLabel = start == null
-        ? context.l10n.dashboardEventAllDay
-        : '${DateFormat('EEE, d MMM').format(start)}'
-              ' • ${DateFormat('HH:mm').format(start)}';
-    final dayLabel = start == null ? '--' : DateFormat('d').format(start);
-    final monthLabel = start == null
-        ? context.l10n.dashboardEventAllDay
-        : DateFormat('MMM').format(start);
-    final detail = calendarDescriptionPreview(event.description ?? '');
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          palette.iconBackground.withValues(alpha: 0.5),
-          palette.background,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: palette.border.withValues(alpha: 0.46)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            decoration: BoxDecoration(
-              color: palette.background.withValues(alpha: 0.84),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: palette.border.withValues(alpha: 0.44)),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  dayLabel,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: palette.iconColor,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  monthLabel.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: palette.iconColor.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  event.title ?? 'Untitled event',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: palette.textColor,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  dateLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: palette.iconColor.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (detail.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    detail,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: palette.textColor.withValues(alpha: 0.74),
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyHint extends StatelessWidget {
-  const _EmptyHint({
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.tone,
-  });
-
-  final String title;
-  final String description;
-  final IconData icon;
-  final _Tone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            tone.background,
-            Color.alphaBlend(
-              tone.foreground.withValues(alpha: isDark ? 0.08 : 0.04),
-              tone.background,
-            ),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: tone.border),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: tone.foreground, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                Text(description, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tone {
-  const _Tone({
-    required this.background,
-    required this.border,
-    required this.foreground,
-  });
-
-  final Color background;
-  final Color border;
-  final Color foreground;
 }

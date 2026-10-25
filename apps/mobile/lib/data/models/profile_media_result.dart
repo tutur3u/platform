@@ -32,6 +32,8 @@ class ProfileMediaFailure {
               'photo_access_restricted',
         ) =>
           ProfileMediaFailureKind.authorization,
+        PlatformException(code: 'invalid_image') =>
+          ProfileMediaFailureKind.image,
         ProfileMediaSizeException() => ProfileMediaFailureKind.size,
         ApiException(failureKind: ApiFailureKind.transport) =>
           ProfileMediaFailureKind.network,

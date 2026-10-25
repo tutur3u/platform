@@ -1,337 +1,230 @@
 part of 'cms_page.dart';
 
-class _CmsMetricsGrid extends StatelessWidget {
-  const _CmsMetricsGrid({required this.summary});
+/// Visual treatment of an entry status: one tone and icon per stage of the
+/// draft → scheduled → published → archived pipeline.
+abstract final class _CmsStatus {
+  static const statuses = ['draft', 'scheduled', 'published', 'archived'];
+  static const double leadingSize = 40;
+  static const double rowDividerInset =
+      AppLayout.rowHorizontalPadding + leadingSize + AppLayout.rowLeadingGap;
 
-  final CmsSummary summary;
+  static AppTone tone(String status) => switch (status) {
+    'published' => AppTone.success,
+    'scheduled' => AppTone.info,
+    'archived' => AppTone.neutral,
+    _ => AppTone.warning,
+  };
+
+  static IconData icon(String status) => switch (status) {
+    'published' => LucideIcons.circleCheck,
+    'scheduled' => LucideIcons.calendarClock,
+    'archived' => LucideIcons.archive,
+    _ => LucideIcons.pencilLine,
+  };
+
+  static String label(BuildContext context, String status) => switch (status) {
+    'published' => context.l10n.cmsStatusPublished,
+    'scheduled' => context.l10n.cmsStatusScheduled,
+    'archived' => context.l10n.cmsStatusArchived,
+    _ => context.l10n.cmsStatusDraft,
+  };
+
+  static String? when(BuildContext context, String? iso) {
+    final parsed = iso == null ? null : DateTime.tryParse(iso);
+    if (parsed == null) return null;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return DateFormat.MMMd(locale).add_Hm().format(parsed.toLocal());
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    final counts = summary.counts;
-    return LayoutBuilder(
-      builder: (context, constraints) => GridView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: constraints.maxWidth >= 760
-              ? 4
-              : constraints.maxWidth < 360
-              ? 1
-              : 2,
-          childAspectRatio: constraints.maxWidth < 360 ? 2.5 : 1.55,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+    final tokens = context.tokens;
+    final c = tokens.colorScheme;
+    final tone = _CmsStatus.tone(status);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tone.fill(c),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xxs,
         ),
-        children: [
-          _MetricTile(
-            label: context.l10n.cmsCollections,
-            value: counts.collections,
-            icon: Icons.collections_bookmark_outlined,
+        child: Text(
+          _CmsStatus.label(context, status),
+          style: tokens.typography.label.copyWith(
+            color: tone == AppTone.neutral ? c.foreground : tone.foreground(c),
           ),
-          _MetricTile(
-            label: context.l10n.cmsEntries,
-            value: counts.entries,
-            icon: Icons.article_outlined,
-          ),
-          _MetricTile(
-            label: context.l10n.cmsStatusPublished,
-            value: counts.published,
-            icon: Icons.verified_outlined,
-          ),
-          _MetricTile(
-            label: context.l10n.cmsStatusDraft,
-            value: counts.drafts,
-            icon: Icons.edit_note_outlined,
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({
-    required this.label,
-    required this.value,
+class _AttentionRow extends StatelessWidget {
+  const _AttentionRow({
+    required this.item,
     required this.icon,
+    required this.tone,
+    this.onTap,
   });
-
-  final String label;
-  final int value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return FinancePanel(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, color: theme.colorScheme.primary),
-          Text(
-            '$value',
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
-          ),
-          Text(
-            label,
-            style: TextStyle(color: theme.colorScheme.mutedForeground),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttentionSection extends StatelessWidget {
-  const _AttentionSection({
-    required this.title,
-    required this.items,
-    required this.emptyText,
-  });
-
-  final String title;
-  final List<CmsAttentionItem> items;
-  final String emptyText;
-
-  @override
-  Widget build(BuildContext context) {
-    return FinancePanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 10),
-          if (items.isEmpty)
-            Text(emptyText)
-          else
-            ...items
-                .take(4)
-                .map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _AttentionTile(item: item),
-                  ),
-                ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttentionTile extends StatelessWidget {
-  const _AttentionTile({required this.item});
 
   final CmsAttentionItem item;
+  final IconData icon;
+  final AppTone tone;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.muted.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(16),
+    final when = _CmsStatus.when(context, item.scheduledFor);
+    return AppRichRow(
+      leading: AppIconTile(
+        icon: icon,
+        tone: tone,
+        size: _CmsStatus.leadingSize,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(
-            item.detail,
-            style: TextStyle(color: theme.colorScheme.mutedForeground),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _Pill(label: item.collectionTitle),
-              _Pill(label: item.status),
-            ],
-          ),
-        ],
-      ),
+      title: item.title,
+      subtitle: item.detail,
+      meta: [
+        AppMetaItem(icon: LucideIcons.folder, label: item.collectionTitle),
+        if (when != null) AppMetaItem(icon: LucideIcons.clock, label: when),
+      ],
+      trailing: _StatusBadge(status: item.status),
+      onTap: onTap,
     );
   }
 }
 
-class _CollectionTile extends StatelessWidget {
-  const _CollectionTile({
+class _CollectionRow extends StatelessWidget {
+  const _CollectionRow({
     required this.collection,
-    required this.onEdit,
-    required this.onDelete,
+    required this.onTap,
+    this.entryCount,
   });
 
   final CmsCollection collection;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final int? entryCount;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return FinancePanel(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Icon(
-            Icons.collections_bookmark_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  collection.title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${collection.slug} · ${collection.collectionType}',
-                  style: TextStyle(color: theme.colorScheme.mutedForeground),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: context.l10n.commonEdit,
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          IconButton(
-            tooltip: context.l10n.commonDelete,
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline_rounded),
-          ),
-        ],
+    final l10n = context.l10n;
+    final count = entryCount;
+    return AppRichRow(
+      leading: AppIconTile(
+        icon: LucideIcons.libraryBig,
+        tone: collection.isEnabled ? AppTone.info : AppTone.neutral,
+        size: _CmsStatus.leadingSize,
       ),
+      title: collection.title,
+      subtitle: collection.description,
+      meta: [
+        AppMetaItem(icon: LucideIcons.link, label: collection.slug),
+        AppMetaItem(icon: LucideIcons.tag, label: collection.collectionType),
+        if (count != null)
+          AppMetaItem(
+            icon: LucideIcons.fileText,
+            label: l10n.cmsEntryCount(count),
+          ),
+      ],
+      trailing: collection.isEnabled
+          ? null
+          : AppBadge.outline(child: Text(l10n.cmsCollectionDisabled)),
+      onTap: onTap,
     );
   }
 }
 
-class _EntryTile extends StatelessWidget {
-  const _EntryTile({
+class _EntryRow extends StatelessWidget {
+  const _EntryRow({
     required this.entry,
-    required this.statusLabel,
-    required this.onEdit,
-    required this.onDelete,
+    required this.onTap,
     this.collectionTitle,
   });
 
   final CmsEntry entry;
-  final String statusLabel;
   final String? collectionTitle;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return FinancePanel(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  entry.title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
+    final when = _CmsStatus.when(
+      context,
+      entry.status == 'scheduled' ? entry.scheduledFor : null,
+    );
+    return AppRichRow(
+      leading: AppIconTile(
+        icon: _CmsStatus.icon(entry.status),
+        tone: _CmsStatus.tone(entry.status),
+        size: _CmsStatus.leadingSize,
+      ),
+      title: entry.title,
+      subtitle: entry.summary,
+      meta: [
+        if (collectionTitle case final title?)
+          AppMetaItem(icon: LucideIcons.folder, label: title),
+        if (when != null)
+          AppMetaItem(icon: LucideIcons.clock, label: when)
+        else
+          AppMetaItem(icon: LucideIcons.link, label: entry.slug),
+      ],
+      trailing: _StatusBadge(status: entry.status),
+      onTap: onTap,
+    );
+  }
+}
+
+class _CollectionProgress extends StatelessWidget {
+  const _CollectionProgress({required this.collection});
+
+  final CmsSummaryCollection collection;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final c = tokens.colorScheme;
+    final total = collection.totalEntries;
+    final published = collection.publishedEntries;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                collection.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: tokens.typography.small.copyWith(
+                  color: c.foreground,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              IconButton(
-                tooltip: context.l10n.commonEdit,
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined),
-              ),
-              IconButton(
-                tooltip: context.l10n.commonDelete,
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
-              ),
-            ],
-          ),
-          if (entry.summary != null) ...[
-            const SizedBox(height: 6),
+            ),
+            const SizedBox(width: AppSpacing.sm),
             Text(
-              entry.summary!,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: theme.colorScheme.mutedForeground),
+              context.l10n.cmsPublishedOfTotal(published, total),
+              style: tokens.typography.xSmall.copyWith(
+                color: c.mutedForeground,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ],
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _Pill(label: statusLabel),
-              if (collectionTitle != null) _Pill(label: collectionTitle!),
-              _Pill(label: entry.slug),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.28),
         ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: theme.colorScheme.primary,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
+        const SizedBox(height: AppSpacing.xs + 2),
+        AppMeter(
+          value: total == 0 ? 0 : published / total,
+          tone: collection.isEnabled ? AppTone.success : AppTone.neutral,
+          semanticLabel: context.l10n.cmsPublishedOfTotal(published, total),
         ),
-      ),
-    );
-  }
-}
-
-class _CmsMessageCard extends StatelessWidget {
-  const _CmsMessageCard({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return FinancePanel(
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: TextStyle(color: shad.Theme.of(context).colorScheme.foreground),
-      ),
+      ],
     );
   }
 }

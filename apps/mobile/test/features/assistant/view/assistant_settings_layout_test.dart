@@ -58,17 +58,17 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.byType(MobileSectionAppBar), findsNothing);
-        expect(find.byType(AppSheetScaffold), findsOneWidget);
+        expect(find.byType(MobileSectionAppBar), findsOneWidget);
+        expect(find.byType(AppSheetScaffold), findsNothing);
         expect(find.text('Assistant Settings'), findsOneWidget);
-        final header = tester.getRect(find.text('Assistant Settings'));
+        final header = tester.getRect(find.byType(MobileSectionAppBar));
         final setting = tester.getRect(find.byType(AppToggleRow));
         expect(header.top, greaterThanOrEqualTo(47));
         expect(setting.top - header.bottom, inInclusiveRange(0, AppSpacing.xl));
         expect(setting.left, 16);
         expect(setting.right, width - 16);
 
-        final scroll = find.byType(CustomScrollView).first;
+        final scroll = find.byType(ListView).first;
         await tester.scrollUntilVisible(
           find.text('On-device models'),
           300,
@@ -127,6 +127,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.textContaining(l.assistantLocalHelp), findsOneWidget);
+        expect(find.textContaining(l.assistantLocalHardware), findsOneWidget);
         expect(
           find.textContaining(l.assistantLocalBudgetDescription),
           findsOneWidget,

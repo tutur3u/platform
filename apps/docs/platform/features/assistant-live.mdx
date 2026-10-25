@@ -1,6 +1,6 @@
 ---
 title: "Assistant Live"
-updatedAt: "2026-09-16"
+updatedAt: "2026-10-25"
 description: "Gemini voice, screen context, workspace tools, and session recovery in the dashboard assistant."
 ---
 
@@ -84,6 +84,41 @@ shell consumes the keyboard inset once. Regressions cover controller and capture
 transitions, retained dock identity, transparent tool inspection, and actual shell
 geometry in `apps/mobile/test/features/assistant/widgets/`.
 
+
+
+### Native mobile reaction operations
+
+Mobile persists reactions only for acknowledged messages in native Assistant
+conversations. It uses the actor-scoped private Chat model and **PUT** on the
+conversation reactions endpoint with a stable `opId`, `emoji` and desired
+`present` value. The reaction and operation receipt commit atomically; repeating
+an operation acknowledges it without applying it again, including after a newer
+operation. Existing web Chat **POST** callers retain toggle behavior. Old servers
+without PUT reject the new request before any reaction write; mobile never falls
+back to a toggle. Apply the operation migration before enabling this client.
+
+Before dispatch, an independent Hive journal must acknowledge and flush the
+intent. Failed storage adds no uncertainty. Scope retirement before dispatch
+removes the matching unsent marker. A valid terminal receipt cleans its exact
+operation even after navigation or a client timeout; it cannot erase a successor.
+Unknown outcomes retain the original operation. **Refresh reactions** retries
+that same idempotent intent and reads the exact message, so older messages do not
+depend on the latest history page. Reads alone never prove a mutation terminal.
+
+Sign-out retires dispatch admission synchronously, including auth-event logout,
+and removes actor/message/workspace/emoji journal metadata. Only hashed actor
+keys and unresolved operation IDs remain as a minimal retirement fence. Before
+that actor can submit another reaction, bounded authenticated retirement batches
+mark those IDs terminal on the server; delayed original requests cannot restore
+an old reaction after a later choice. Failed retirement retains the fence for an
+explicit retry. No reaction operation enters the offline queue.
+
+Coverage: `chat-reaction-operations.sql`, the reactions/retire route tests,
+`assistant_reaction_lifecycle_review_test.dart`,
+`api_client_operation_review_test.dart`, and the journal/flush regression suites.
+
+
+### Web dashboard Live
 
 On the web dashboard, start or stop Live with the waveform icon in the chat
 composer. Live keeps the

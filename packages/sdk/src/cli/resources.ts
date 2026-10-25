@@ -64,8 +64,8 @@ Usage: ttr resources <setup|status|monitor|run|hosts|enable|disable|uninstall> [
 
 Setup options:
   --shell zsh|bash|none   shell hooks; defaults to the current shell
-  --lanes <1..8>          base lanes; default 1, change only when idle
-  --max-lanes <1..8>      burst ceiling; default base, change only when idle
+  --lanes <1..${maxResourceLanes}>         base lanes; default 1, change only when idle
+  --max-lanes <1..${maxResourceLanes}>     burst ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
   --force                permit cross-install replacement only after draining
   --dry-run              inspect the setup plan without writing files
@@ -88,7 +88,7 @@ unless --class light is given.
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
 Burst admission requires normal memory pressure and low CPU load, and stays
-under a host lane ceiling (RAM/4 GiB, CPUs-2, at most 8). Each lane gets at
+under a host lane ceiling (RAM/4 GiB, CPUs-2, at most ${maxResourceLanes}). Each lane gets at
 least one worker and at most its share of the configured worker totals.
 All lanes share one per-user FIFO queue. Out-of-range config values are clamped
 with a warning; an unreadable config makes shims run commands unmanaged.
@@ -379,7 +379,8 @@ export async function runResourcesCommand(argv: string[]) {
         if (arg === '--workers') workers = Number(value);
         if (arg === '--max-lanes') maxLanes = Number(value);
         if (arg === '--lanes') {
-          if (!/^[1-8]$/.test(value))
+          // The same bound setup enforces: maxResourceLanes, not a literal.
+          if (!/^[1-9]\d*$/u.test(value) || Number(value) > maxResourceLanes)
             throw new Error(
               `--lanes must be an integer from 1 to ${maxResourceLanes}.`
             );

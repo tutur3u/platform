@@ -35,6 +35,8 @@ class _SettingsHarness {
   _SettingsHarness({
     String initial = Routes.settings,
     GoRouterWidgetBuilder? settingsBuilder,
+    GoRouterWidgetBuilder? offlineBuilder,
+    GoRouterWidgetBuilder? offlineModuleBuilder,
     this.assistantPageBuilder,
     this.assistantSettingsRepository,
     GoRouterWidgetBuilder? workspaceSecretsBuilder,
@@ -57,7 +59,10 @@ class _SettingsHarness {
     whenListen(
       calendar,
       const Stream<CalendarSettingsState>.empty(),
-      initialState: const CalendarSettingsState(),
+      initialState: const CalendarSettingsState(
+        userLoaded: true,
+        workspaceLoaded: true,
+      ),
     );
     whenListen(
       profile,
@@ -119,9 +124,20 @@ class _SettingsHarness {
                     Routes.settingsWorkspace,
                     Routes.settingsAbout,
                   }.contains((route as GoRoute).path) &&
+                  (offlineBuilder == null ||
+                      route.path != Routes.settingsOffline) &&
+                  (offlineModuleBuilder == null ||
+                      route.path != Routes.settingsOfflineModule) &&
                   (workspaceSecretsBuilder == null ||
                       route.path != Routes.settingsWorkspaceSecrets),
             ),
+            if (offlineBuilder != null)
+              GoRoute(path: Routes.settingsOffline, builder: offlineBuilder),
+            if (offlineModuleBuilder != null)
+              GoRoute(
+                path: Routes.settingsOfflineModule,
+                builder: offlineModuleBuilder,
+              ),
             if (workspaceSecretsBuilder != null)
               GoRoute(
                 path: Routes.settingsWorkspaceSecrets,
