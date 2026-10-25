@@ -42,19 +42,21 @@ the native offline port; the native shell does not register a service worker.
   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`); build
   environment only reaches the client bundle.
 
-## basePath and cohort
+## Mounts
 
-`TUTURUUU_BASE_PATH=/tasks` builds the `tuturuuu.com/tasks` variant: assets
-under `/tasks/assets`, server functions under `/tasks/_serverFn`, and 404
-outside the base. The bridge scopes the app session cookie as
-`tuturuuu_app_session__tasks` with `Path=/tasks`. Every native response carries
-`x-tuturuuu-runtime: native`; cohort selection belongs to the canary router.
+One artifact serves `tasks.tuturuuu.com` at its root and `tuturuuu.com/tasks`
+as a mount (`TASKS_MOUNTS` in `worker-handler.ts`); the bridge resolves the
+base per request, so assets, server functions and redirects follow the host.
+Outside the mount the apex answers 404. Cookies are not renamed or
+path-scoped: Tasks uses the one shared Tuturuuu session. Every native
+response carries `x-tuturuuu-runtime: native` for post-cutover attribution.
 The staging profile (`void.config.ts`, `tuturuuu-tasks-vite-staging`) sets
-`TUTURUUU_NOINDEX=1` and `TUTURUUU_NATIVE_CANARY_PERCENT=0`.
+`TUTURUUU_NOINDEX=1`.
 
-Known gap under a basePath: the shared `@tuturuuu/auth/proxy` builds its
-`verify-token` return URL without the base, so path-mode sign-in returns to
-the origin root. The subdomain is unaffected.
+Cutover is direct (no staged canary): exact-head gates, cross-family review
+and a staging smoke where staging exists, then the flip with the prior Vercel
+deployment and captured routing ready as a one-step rollback, a post-deploy
+smoke and a 30–60 minute watch.
 
 ## Local emitted smoke
 
@@ -71,6 +73,6 @@ bunx wrangler dev --config dist/server/wrangler.json --ip 127.0.0.1 \
 Check `/api/build-info`, a static file, an unauthenticated page (redirect to
 the central login with a `verify-token` return URL), an API route without a
 session (401), the server-function base (415 for a non-JSON POST) and the
-runtime header. Repeat with a `TUTURUUU_BASE_PATH=/tasks` build under
-`/tasks/...`. This smoke does not replace exact-commit CI, sealed-artifact
+runtime header. Probe the mount with `Host: tuturuuu.com` and `/tasks/...` paths
+against the same artifact. This smoke does not replace exact-commit CI, sealed-artifact
 checks or signed-in acceptance on staging.

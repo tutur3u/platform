@@ -1,5 +1,8 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
+import {
+  appBaseHeadScript,
+  withAppBase,
+} from '@tuturuuu/start-bridge/start/base-path';
 import { loadTasksLocale } from '../runtime/page-loader';
 import { Document, TasksError } from '../runtime/router-shell';
 
@@ -11,6 +14,7 @@ export const Route = createRootRoute({
   component: Outlet,
   errorComponent: TasksError,
   head: () => ({
+    scripts: [appBaseHeadScript()],
     meta: [
       { charSet: 'utf-8' },
       {
