@@ -87,7 +87,7 @@ function protectedChallenge(overrides: Record<string, unknown> = {}) {
     max_attempts: 3,
     max_daily_attempts: 2,
     open_at: null,
-    password_hash: 'scrypt$32768$8$1$stored$hash',
+    password_hash: `scrypt$32768$8$1$${'A'.repeat(22)}$${'B'.repeat(43)}`,
     previewable_at: '2020-01-01T00:00:00.000Z',
     whitelisted_only: false,
     ...overrides,
