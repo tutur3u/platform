@@ -30,6 +30,7 @@
     "./start/handler": "./src/start/handler.ts",
     "./start/base-path": "./src/start/base-path.ts",
     "./start/server-entry": "./src/start/server-entry.ts",
+    "./start/page-route": "./src/start/page-route.ts",
     "./vite": "./src/vite/preset.ts",
     "./codegen": "./src/codegen/registry.ts",
     "./pages": "./src/core/pages.ts"

@@ -123,3 +123,15 @@ describe('bridge request context', () => {
     });
   });
 });
+
+describe('request store anchoring', () => {
+  it('is shared through globalThis with a second bundle copy', async () => {
+    const key = Symbol.for('tuturuuu.start-bridge.request-context');
+    const shared = (globalThis as Record<symbol, unknown>)[key] as {
+      getStore(): { request: Request } | undefined;
+    };
+    await withBridgeRequest(new Request('https://x.test/rsc'), async () => {
+      expect(shared.getStore()?.request.url).toBe('https://x.test/rsc');
+    });
+  });
+});

@@ -45,7 +45,15 @@ export interface BridgeRequestInit {
   locals?: Map<symbol, unknown>;
 }
 
-const storage = new AsyncLocalStorage<BridgeRequestContext>();
+// Anchored on globalThis: with React Server Components the Worker bundles an
+// `rsc` environment beside SSR, and both must observe the same request.
+const STORAGE_KEY = Symbol.for('tuturuuu.start-bridge.request-context');
+const anchor = globalThis as {
+  [STORAGE_KEY]?: AsyncLocalStorage<BridgeRequestContext>;
+};
+if (!anchor[STORAGE_KEY])
+  anchor[STORAGE_KEY] = new AsyncLocalStorage<BridgeRequestContext>();
+const storage: AsyncLocalStorage<BridgeRequestContext> = anchor[STORAGE_KEY];
 
 // Server-side `runtimeAppBase()` reads the current request's base.
 installAppBaseResolver(() => storage.getStore()?.appBase);
