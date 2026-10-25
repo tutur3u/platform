@@ -99,6 +99,24 @@ rows. Row layout belongs to the owning feature (for example `SettingsTile`).
 Cards use theme `surface` / `outlineVariant` and become solid in high-contrast
 mode.
 
+### Rows, tiles and states
+
+`core/layout/grouped_rows.dart` and `core/layout/state_message.dart` hold the
+shared row vocabulary for grouped cards. Feature screens compose these instead
+of drawing their own tinted tiles, list tiles or empty-state columns.
+
+| Widget | Use |
+| --- | --- |
+| `AppTone` | Semantic tint: `neutral`, `primary`, `info`, `success`, `warning`, `destructive`. `foreground` and `fill` resolve from `AppColorTokens`, so every appearance theme, accent and brightness applies. Never pick a hue in feature code. |
+| `AppIconTile(icon:, tone:, size:, badge:)` | Rounded leading tile. `badge: true` adds the primary unread dot. Default size is `AppLayout.rowLeadingSize` (32). |
+| `AppGroupedRow(title:, subtitle:, leading:, trailing:, onTap:, showChevron:)` | Row inside an `AppGroupedCard`: at least `AppLayout.rowMinHeight` tall, row padding from the tokens, and the whole row is the tap target and a semantic button. |
+| `AppSkeletonRows(count:, leadingSize:)` | First-load placeholder rows inside a card. Use it instead of a centred spinner. |
+| `AppStateMessage` / `.inline` | Empty, error and unavailable states. The default constructor centres a 56dp tile, title, message and optional outline action for a page or pane. `.inline` lays the same content out as a card row. Destructive messages are live regions. |
+
+When a row's leading tile is larger than 32dp, pass the matching
+`dividerInset` to the card (padding + tile + gap) so dividers align with the
+text column.
+
 ## Icons
 
 Mobile icons match the web's Lucide icons in glyph and name. `LucideIcons`
