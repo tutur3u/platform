@@ -58,9 +58,9 @@ export function createFunctionProxy(options: FunctionProxyOptions) {
     const hasSession =
       !mounted &&
       (hasSupportedSupabaseAuthCookie(request) ||
-      getAppSessionTokenFromRequest(request) ||
-      getWebAppSessionTokenFromRequest(request) ||
-      getAppSessionRefreshTokenFromRequest(request) ||
+        getAppSessionTokenFromRequest(request) ||
+        getWebAppSessionTokenFromRequest(request) ||
+        getAppSessionRefreshTokenFromRequest(request) ||
         getWebAppSessionRefreshTokenFromRequest(request));
     const session = hasSession
       ? await refreshAppSessionForRequest(request, {

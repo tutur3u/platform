@@ -29,7 +29,10 @@ const proxy = createFunctionProxy({ targetApp: 'meet' });
 type Init = NonNullable<ConstructorParameters<typeof NextRequest>[1]>;
 const call = (url: string, appBase: string, init: Init = {}) => {
   const request = new NextRequest(url, {
-    headers: { cookie: 'sb-ref-auth-token=x', 'content-type': 'application/json' },
+    headers: {
+      cookie: 'sb-ref-auth-token=x',
+      'content-type': 'application/json',
+    },
     ...init,
   });
   return withBridgeRequest({ request, appBase }, () => proxy(request));
@@ -56,10 +59,14 @@ describe('function proxy session handling', () => {
   });
 
   it('never refreshes or writes cookies for a mounted request', async () => {
-    const response = await call('https://tuturuuu.com/meet/_serverFn/x', '/meet', {
-      method: 'POST',
-      body: '{}',
-    });
+    const response = await call(
+      'https://tuturuuu.com/meet/_serverFn/x',
+      '/meet',
+      {
+        method: 'POST',
+        body: '{}',
+      }
+    );
     expect(auth.refresh).not.toHaveBeenCalled();
     expect(auth.guard).toHaveBeenCalledOnce();
     expect(response.headers.getSetCookie()).toEqual([]);
@@ -68,15 +75,21 @@ describe('function proxy session handling', () => {
 
   it('keeps method, content-type and guard checks for mounted requests', async () => {
     expect(
-      (await call('https://tuturuuu.com/meet/_serverFn/x', '/meet', { method: 'PUT' }))
-        .status
+      (
+        await call('https://tuturuuu.com/meet/_serverFn/x', '/meet', {
+          method: 'PUT',
+        })
+      ).status
     ).toBe(405);
     expect(
       (
         await call('https://tuturuuu.com/meet/_serverFn/x', '/meet', {
           method: 'POST',
           body: 'a=1',
-          headers: { 'content-type': 'text/plain', cookie: 'sb-ref-auth-token=x' },
+          headers: {
+            'content-type': 'text/plain',
+            cookie: 'sb-ref-auth-token=x',
+          },
         })
       ).status
     ).toBe(415);
