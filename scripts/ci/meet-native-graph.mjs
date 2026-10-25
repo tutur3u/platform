@@ -277,8 +277,9 @@ export async function createMeetGraph(
           registry: prepared.registry,
           server: { hostname: '127.0.0.1', port: 0 },
           origin: {
-            hostname:
-              role === 'app' ? 'meet.tuturuuu.com' : 'meet-ci-probe.invalid',
+            // A fixed app hostname rewrites every public Worker.fetch URL,
+            // preventing the same graph from exercising both document origins.
+            ...(role === 'probe' ? { hostname: 'meet-ci-probe.invalid' } : {}),
             secure: true,
           },
           inferOriginFromRoutes: false,
