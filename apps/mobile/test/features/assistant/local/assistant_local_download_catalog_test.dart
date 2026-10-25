@@ -4,7 +4,8 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
-import 'package:mobile/l10n/l10n.dart';
+
+import '../../../helpers/pump_app.dart';
 
 class _Models extends AssistantLocalModelsCubit {
   _Models() : super(workspaceId: 'team', isScopeCurrent: () => true);
@@ -31,20 +32,20 @@ Future<void> _mount(
   WidgetTester tester,
   _Models models, {
   bool Function()? current,
-}) => tester.pumpWidget(
-  MaterialApp(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: Scaffold(
-      body: SingleChildScrollView(
-        child: AssistantLocalModelsSection(
-          workspaceId: 'team',
-          isScopeCurrent: current ?? () => true,
-          cubit: models,
-        ),
+}) => tester.pumpThemedHome(
+  Scaffold(
+    body: SingleChildScrollView(
+      child: AssistantLocalModelsSection(
+        workspaceId: 'team',
+        isScopeCurrent: current ?? () => true,
+        cubit: models,
       ),
     ),
   ),
+);
+
+Finder _action(String tooltip) => find.byWidgetPredicate(
+  (widget) => widget is AppIconButton && widget.tooltip == tooltip,
 );
 
 void main() {
@@ -95,11 +96,16 @@ void main() {
     final models = _Models()..show();
     await _mount(tester, models);
     expect(find.text('Gemma 3 270M'), findsNothing);
-    expect(find.text('Import licensed file'), findsNothing);
+    expect(_action('Import licensed file'), findsNothing);
     expect(find.text('Get model from publisher'), findsNothing);
     expect(find.text('Qwen 3 0.6B'), findsOneWidget);
     expect(find.text('SmolLM2 360M'), findsOneWidget);
-    expect(find.text('Download'), findsNWidgets(2));
+    expect(find.byTooltip('Download'), findsNWidgets(2));
+    for (final action in tester.widgetList<AppIconButton>(
+      _action('Download'),
+    )) {
+      expect(action.onPressed, isNotNull);
+    }
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
     expect(models.isClosed, isTrue);
@@ -113,7 +119,7 @@ void main() {
       for (final model in assistantLocalModels) {
         expect(find.text(model.name), findsNothing);
       }
-      expect(find.text('Download'), findsNothing);
+      expect(_action('Download'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     },
@@ -126,14 +132,21 @@ void main() {
       await _mount(tester, models);
       expect(find.text('Gemma 3 270M'), findsOneWidget);
       expect(find.text('Qwen 3 0.6B'), findsNothing);
-      final use = tester.widget<AppButton>(
-        find.widgetWithText(AppButton, 'Use on this device'),
-      );
+      final use = tester.widget<AppIconButton>(_action('Use on this device'));
       expect(use.onPressed, isNull);
-      final remove = tester.widget<AppButton>(
-        find.widgetWithText(AppButton, 'Remove weights'),
-      );
+      final remove = tester.widget<AppIconButton>(_action('Remove weights'));
       expect(remove.onPressed, isNotNull);
+      expect(find.text('Remove weights'), findsNothing);
+      await tester.tap(find.byTooltip('About Gemma 3 270M'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsOneWidget);
+      expect(find.text('License'), findsOneWidget);
+      expect(find.text('Get model from publisher'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Remove weights'), findsNothing);
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsNothing);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     },
@@ -150,8 +163,8 @@ void main() {
         find.widgetWithText(AppButton, 'Cancel'),
       );
       expect(cancel.onPressed, isNotNull);
-      final install = tester.widget<AppButton>(
-        find.widgetWithText(AppButton, 'Import licensed file'),
+      final install = tester.widget<AppIconButton>(
+        _action('Import licensed file'),
       );
       expect(install.onPressed, isNull);
       await tester.pumpWidget(const SizedBox());
@@ -165,15 +178,20 @@ void main() {
     var current = true;
     final models = _Models();
     await _mount(tester, models, current: () => current);
-    expect(find.text('Download'), findsNothing);
+    expect(_action('Download'), findsNothing);
     models.show();
     await tester.pump();
-    expect(find.text('Download'), findsNWidgets(2));
+    expect(find.byTooltip('Download'), findsNWidgets(2));
+    for (final action in tester.widgetList<AppIconButton>(
+      _action('Download'),
+    )) {
+      expect(action.onPressed, isNotNull);
+    }
     current = false;
     models.show(supported: false);
     await tester.pump();
     expect(find.text('Remote models'), findsNothing);
-    expect(find.text('Download'), findsNothing);
+    expect(_action('Download'), findsNothing);
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
     expect(tester.takeException(), isNull);

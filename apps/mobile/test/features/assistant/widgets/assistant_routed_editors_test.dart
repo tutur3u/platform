@@ -1,28 +1,104 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
+import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 import '../../../helpers/pump_app.dart';
 import '../assistant_personal_settings_harness.dart';
+
+class _Shell extends StatelessWidget {
+  const _Shell({required this.location, required this.child});
+  final String location;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: FloatingShellDock(
+      location: location,
+      bottomInset: 80,
+      navigationWidth: 104,
+      keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
+      header: BlocBuilder<ShellTitleOverrideCubit, ShellTitleOverrideState>(
+        builder: (_, state) =>
+            MobileSectionAppBar(title: state.resolveForLocation(location)),
+      ),
+      navigation: BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
+        builder: (context, state) => ShellDockActionButton(
+          primary: false,
+          action: ShellActionSpec(
+            id: 'test-dock-back',
+            icon: Icons.chevron_left,
+            tooltip: context.l10n.navBack,
+            onPressed: () => unawaited(state.backForLocation(location)?.call()),
+          ),
+        ),
+      ),
+      child: child,
+    ),
+  );
+}
 
 Future<void> openPersonality(
   WidgetTester tester,
   SettingsRepository repository,
 ) async {
-  await tester.pumpApp(
-    SingleChildScrollView(
-      child: AssistantPersonalSettingsSection(
-        workspaceId: 'workspace-a',
-        isScopeCurrent: () => true,
-        currentUserId: () => 'actor-a',
-        repository: repository,
+  final chrome = ShellChromeActionsCubit();
+  final titles = ShellTitleOverrideCubit();
+  final nav = ShellMiniNavCubit();
+  final router = GoRouter(
+    initialLocation: '/test',
+    routes: [
+      ShellRoute(
+        builder: (_, state, child) =>
+            _Shell(location: state.uri.path, child: child),
+        routes: [
+          GoRoute(
+            path: '/test',
+            builder: (context, _) => AssistantSettingsEditorPage(
+              title: context.l10n.assistantSettingsTitle,
+              child: SingleChildScrollView(
+                child: AssistantPersonalSettingsSection(
+                  workspaceId: 'workspace-a',
+                  isScopeCurrent: () => true,
+                  currentUserId: () => 'actor-a',
+                  repository: repository,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    ],
+  );
+  addTearDown(router.dispose);
+  addTearDown(chrome.close);
+  addTearDown(titles.close);
+  addTearDown(nav.close);
+  await tester.pumpWidget(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: chrome),
+        BlocProvider.value(value: titles),
+        BlocProvider.value(value: nav),
+      ],
+      child: shellTestApp(router: router),
     ),
   );
   await tester.pumpAndSettle();
@@ -30,17 +106,24 @@ Future<void> openPersonality(
   await tester.pumpAndSettle();
 }
 
-void expectChrome() {
-  expect(find.byType(AppSheetScaffold).hitTestable(), findsOneWidget);
-  expect(
-    find.byKey(const ValueKey('app-sheet-close')).hitTestable(),
-    findsOneWidget,
-  );
+void expectChrome({String backLabel = 'Back'}) {
+  expect(find.byType(AppSheetScaffold), findsNothing);
+  expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
+  expect(find.byType(MobileSectionAppBar), findsOneWidget);
+  expect(find.byType(PersistentShellDock), findsOneWidget);
+  expect(find.byTooltip(backLabel).hitTestable(), findsOneWidget);
   expect(find.byType(AppBar), findsNothing);
+  expect(
+    find.descendant(
+      of: find.byType(MobileSectionAppBar),
+      matching: find.byTooltip(backLabel),
+    ),
+    findsNothing,
+  );
 }
 
 void main() {
-  testWidgets('actual personality entry opens a hosted settings sheet', (
+  testWidgets('actual personality entry opens a routed settings editor', (
     tester,
   ) async {
     await openPersonality(tester, SettingsRepository());
@@ -48,7 +131,7 @@ void main() {
     expect(find.byType(AppTextFormField), findsNothing);
     expect(
       find.descendant(
-        of: find.byType(AppSheetScaffold).last,
+        of: find.byType(AssistantPersonalityEditor),
         matching: find.byType(AppListTile),
       ),
       findsNWidgets(5),
@@ -97,7 +180,7 @@ void main() {
           await tester.ensureVisible(row);
           await tester.tap(row);
           await tester.pumpAndSettle();
-          expectChrome();
+          expectChrome(backLabel: language == 'en' ? 'Back' : 'Quay lại');
           if (entry.key
               .options(
                 tester.element(find.byType(AssistantPersonalityFieldEditor)),
@@ -114,9 +197,10 @@ void main() {
             await tester.tap(find.text(label).last);
             await tester.pumpAndSettle();
           }
-          final save = find.widgetWithText(
-            AppButton,
-            language == 'en' ? 'Save' : 'Lưu',
+          final save = find.byTooltip(language == 'en' ? 'Save' : 'Lưu');
+          expect(
+            find.widgetWithText(AppButton, language == 'en' ? 'Save' : 'Lưu'),
+            findsNothing,
           );
           await tester.ensureVisible(save);
           await tester.tap(save);
@@ -124,10 +208,12 @@ void main() {
           expected = entry.key.update(expected, entry.value);
           expect(submitted, expected);
           expect(find.byType(AssistantPersonalityFieldEditor), findsNothing);
-          expectChrome();
+          expectChrome(backLabel: language == 'en' ? 'Back' : 'Quay lại');
         }
         expect(repository.writes, 5);
-        await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
+        await tester.tap(
+          find.byTooltip(language == 'en' ? 'Back' : 'Quay lại'),
+        );
         await tester.pumpAndSettle();
         expect(find.text('Nova'), findsOneWidget);
         // Re-entry shows confirmed settings.
@@ -142,8 +228,8 @@ void main() {
   }
 
   for (final editor in ['name', 'memory']) {
-    for (final back in ['close', 'system']) {
-      testWidgets('$editor sheet has keyboard-safe content and $back back '
+    for (final back in ['dock', 'system']) {
+      testWidgets('$editor route has keyboard-safe content and $back back '
           'at 320px/2x', (tester) async {
         tester.view.physicalSize = const Size(320, 640);
         tester.view.devicePixelRatio = 1;
@@ -158,7 +244,7 @@ void main() {
             find.byKey(const ValueKey('assistant-personality-name')),
           );
         } else {
-          await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
+          await tester.tap(find.byTooltip('Back'));
           await tester.pumpAndSettle();
           await tester.tap(find.text('Memory'));
           await tester.pumpAndSettle();
@@ -170,25 +256,24 @@ void main() {
         tester.view.viewInsets = const FakeViewPadding(bottom: 240);
         addTearDown(tester.view.resetViewInsets);
         await tester.pumpAndSettle();
-        final save = find.widgetWithText(AppButton, 'Save');
-        await tester.ensureVisible(save);
-        await tester.pumpAndSettle();
+        final save = find.byTooltip('Save');
         expectChrome();
-        final dock = tester.getRect(
-          find.byKey(const ValueKey('app-sheet-close')).last,
-        );
-        expect(
-          find.byKey(const ValueKey('app-sheet-close')).last.hitTestable(),
-          findsOneWidget,
-        );
+        expect(save.hitTestable(), findsOneWidget);
+        final dock = tester.getRect(find.byTooltip('Back'));
+        expect(find.byTooltip('Back').hitTestable(), findsOneWidget);
         expect(dock.size.height, greaterThanOrEqualTo(48));
-        expect(tester.getRect(save).top, greaterThanOrEqualTo(dock.bottom));
+        expect(
+          tester.getRect(save).top,
+          greaterThanOrEqualTo(
+            tester.getBottomLeft(find.byType(MobileSectionAppBar)).dy,
+          ),
+        );
         expect(tester.getRect(save).bottom, lessThanOrEqualTo(400));
         expect(tester.getRect(save).overlaps(dock), isFalse);
         expect(save.hitTestable(), findsOneWidget);
         expect(tester.takeException(), isNull);
-        if (back == 'close') {
-          await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
+        if (back == 'dock') {
+          await tester.tap(find.byTooltip('Back'));
         } else {
           await tester.binding.handlePopRoute();
         }
@@ -212,7 +297,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(AppTextFormField), 'Unsaved Nova');
-      await tester.tap(find.widgetWithText(AppButton, 'Save'));
+      await tester.tap(find.byTooltip('Save'));
       await tester.pumpAndSettle();
       expect(
         tester
@@ -226,7 +311,7 @@ void main() {
         findsOneWidget,
       );
       repository.write = (soul) async => soul;
-      await tester.tap(find.widgetWithText(AppButton, 'Save'));
+      await tester.tap(find.byTooltip('Save'));
       await tester.pumpAndSettle();
       expect(find.text('Unsaved Nova').hitTestable(), findsOneWidget);
       expect(repository.writes, 2);
@@ -241,7 +326,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('assistant-personality-name')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(AppTextFormField), 'Confirmed Nova');
-    await tester.tap(find.widgetWithText(AppButton, 'Save'));
+    await tester.tap(find.byTooltip('Save'));
     await tester.pump();
     final navigator = Navigator.of(
       tester.element(find.byType(AssistantPersonalityFieldEditor)),
@@ -260,8 +345,8 @@ void main() {
     expect(find.text('Unrelated covering route'), findsOneWidget);
     navigator.pop();
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(AppButton, 'Done'), findsOneWidget);
-    await tester.tap(find.widgetWithText(AppButton, 'Done'));
+    expect(find.byTooltip('Done'), findsOneWidget);
+    await tester.tap(find.byTooltip('Done'));
     await tester.pumpAndSettle();
     expect(find.text('Confirmed Nova').hitTestable(), findsOneWidget);
     expect(repository.writes, 1);

@@ -136,25 +136,48 @@ export async function resolveNovaChallengeCatalogAccess({
 
 export async function hasActiveNovaChallengeSession({
   challengeId,
+  now = new Date(),
   sbAdmin,
   userId,
 }: {
   challengeId: string;
+  now?: Date;
   sbAdmin: TypedSupabaseClient;
   userId: string;
 }) {
   const { data, error } = await sbAdmin
     .schema('private')
     .from('nova_sessions')
-    .select('id')
+    .select('start_time')
     .eq('challenge_id', challengeId)
     .eq('user_id', userId)
     .eq('status', 'IN_PROGRESS')
+    .order('start_time', { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) throw error;
-  return Boolean(data);
+  if (!data) return false;
+
+  const { data: challenge, error: challengeError } = await sbAdmin
+    .schema('private')
+    .from('nova_challenges')
+    .select('duration, close_at')
+    .eq('id', challengeId)
+    .maybeSingle();
+
+  if (challengeError) throw challengeError;
+  if (!challenge || typeof challenge.duration !== 'number') return false;
+
+  const startTime = new Date(data.start_time).getTime();
+  if (!Number.isFinite(startTime) || startTime > now.getTime()) return false;
+
+  const durationEnd = startTime + challenge.duration * 1000;
+  const closeTime = challenge.close_at
+    ? new Date(challenge.close_at).getTime()
+    : Number.POSITIVE_INFINITY;
+
+  return now.getTime() < Math.min(durationEnd, closeTime);
 }
 
 export function isManagerCatalogAccess(access: NovaChallengeCatalogAccess) {

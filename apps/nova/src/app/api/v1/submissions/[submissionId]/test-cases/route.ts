@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { requireNovaSubmissionManager } from '@/lib/submission-access';
 
 interface Params {
   params: Promise<{
@@ -87,10 +88,20 @@ export async function PUT(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
+    // Grades feed scores and leaderboards, so only challenge managers write them.
+    const { response, submission } = await requireNovaSubmissionManager(
+      user,
+      submissionId,
+      sbAdmin
+    );
+
+    if (response) return response;
+
     const body = await request.json();
     const { testCaseId, output, matched } = body;
 
     if (
+      typeof testCaseId !== 'string' ||
       !testCaseId ||
       typeof output !== 'string' ||
       typeof matched !== 'boolean'
@@ -101,20 +112,25 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    // Check if submission belongs to user
-    const { error: submissionError } = await sbAdmin
+    const { data: testCase, error: testCaseError } = await sbAdmin
       .schema('private')
-      .from('nova_submissions')
-      .select('*')
-      .eq('id', submissionId)
-      .eq('user_id', user.id)
-      .single();
+      .from('nova_problem_test_cases')
+      .select('problem_id')
+      .eq('id', testCaseId)
+      .maybeSingle();
 
-    if (submissionError) {
-      console.error('Database Error:', submissionError);
+    if (testCaseError) {
+      console.error('Database Error:', testCaseError);
       return NextResponse.json(
-        { message: 'Error fetching submission' },
+        { message: 'Error fetching test case' },
         { status: 500 }
+      );
+    }
+
+    if (testCase?.problem_id !== submission.problemId) {
+      return NextResponse.json(
+        { message: 'Test case does not belong to the submission problem' },
+        { status: 400 }
       );
     }
 
@@ -122,7 +138,7 @@ export async function PUT(request: Request, { params }: Params) {
       .schema('private')
       .from('nova_submission_test_cases')
       .upsert({
-        submission_id: submissionId,
+        submission_id: submission.id,
         test_case_id: testCaseId,
         output: output,
         matched: matched,
@@ -153,19 +169,28 @@ export async function DELETE(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createAdminClient({ noCookie: true });
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   try {
-    let query = supabase
+    const { response, submission } = await requireNovaSubmissionManager(
+      user,
+      submissionId,
+      sbAdmin
+    );
+
+    if (response) return response;
+
+    let query = sbAdmin
       .schema('private')
       .from('nova_submission_test_cases')
       .delete()
-      .eq('submission_id', submissionId);
+      .eq('submission_id', submission.id);
 
     if (testCaseId) {
       query = query.eq('test_case_id', testCaseId);

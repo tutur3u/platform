@@ -118,6 +118,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
               messageId: payload['messageId'],
               text: turn.text,
               attachments: turn.attachments,
+              replyToMessageId: turn.optimisticMessage?.replyToMessageId,
             ),
       );
     }
@@ -197,6 +198,20 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       );
       return false;
     }
+    final replyToMessageId = retryMessageId == null
+        ? state.replyTarget?.id
+        : state.messages
+              .where((m) => m.id == retryMessageId)
+              .firstOrNull
+              ?.replyToMessageId;
+    if (retryMessageId == null &&
+        replyToMessageId != null &&
+        !canPersistMessage(replyToMessageId)) {
+      return false;
+    }
+    if (_queue.any((item) => item.replyToMessageId != replyToMessageId)) {
+      return false;
+    }
     final predecessor = _queuedSubmissionRequestId;
     if (predecessor != null && predecessor != clientRequestId) {
       _unknownSubmission(predecessor, denied: true);
@@ -209,6 +224,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
     final queued = AssistantQueuedSubmission(
       message: queueMessage,
       attachments: uploadedAttachments,
+      replyToMessageId: replyToMessageId,
     );
 
     final isDuplicate = _queue.any((item) => item.message == queued.message);
@@ -233,6 +249,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         role: 'user',
         parts: [AssistantMessagePart(type: 'text', text: queueMessage)],
         createdAt: DateTime.now(),
+        replyToMessageId: replyToMessageId,
       );
       final nextAttachments = Map<String, List<AssistantAttachment>>.from(
         state.attachmentsByMessageId,
@@ -267,6 +284,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       );
     }
 
+    if (retryMessageId == null) clearReplyTarget();
     if (state.isBusy) {
       await stopStreaming();
     }
@@ -352,6 +370,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         }
       }
       final attachments = _queue.expand((item) => item.attachments).toList();
+      final replyToMessageId = _queue.first.replyToMessageId;
       _queue.clear();
 
       final combined = unique.join('\n\n');
@@ -423,7 +442,12 @@ extension _AssistantChatSubmission on AssistantChatCubit {
                 clientRequestId != null &&
                 m.clientRequestId == clientRequestId,
           ) &&
-          (!_matchesLatestQueuedMessage(state, combined, attachments) ||
+          (!_matchesLatestQueuedMessage(
+                state,
+                combined,
+                attachments,
+                replyToMessageId: replyToMessageId,
+              ) ||
               (clientRequestId != null &&
                   state.messages
                           .lastWhere(
@@ -440,13 +464,16 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             state.attachmentsByMessageId,
           );
 
-      var optimisticUserMessage = primedOptimisticMessage;
+      var optimisticUserMessage =
+          primedOptimisticMessage ??
+          state.messages.where((m) => m.id == retryMessageId).firstOrNull;
       if (shouldAppendUserMessage) {
         final userMessage = AssistantMessage(
           id: clientRequestId ?? _repository.generateUuid(),
           role: 'user',
           parts: [AssistantMessagePart(type: 'text', text: combined)],
           createdAt: DateTime.now(),
+          replyToMessageId: replyToMessageId,
         );
 
         if (attachments.isNotEmpty) {

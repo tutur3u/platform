@@ -74,127 +74,133 @@ class _NotificationsListState extends State<_NotificationsList> {
         unawaited(widget.onLoadMore());
       });
     }
-    Widget child;
-    final pageTopInset = widget.pageMode
-        ? floatingShellHeaderInset(context) + 10
-        : 0.0;
-    if (feed.status == NotificationFeedStatus.loading && !feed.hasLoadedOnce) {
-      child = ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(top: pageTopInset),
-        children: const [
-          SizedBox(
-            height: 320,
-            child: Center(child: NovaLoadingIndicator(size: 42)),
-          ),
-        ],
-      );
-    } else if (feed.status == NotificationFeedStatus.error &&
-        !feed.hasLoadedOnce) {
-      child = ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(top: pageTopInset),
-        children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 320),
-            child: StaggeredEntrance(
-              replayKey: '${widget.tab.name}-notifications-error',
-              delay: const Duration(milliseconds: 40),
-              child: _NotificationsEmptyState(
-                title: context.l10n.notificationsLoadErrorTitle,
-                message: context.l10n.notificationsLoadErrorMessage,
-                actionLabel: context.l10n.commonRetry,
-                onAction: widget.onRefresh,
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (feed.items.isEmpty) {
-      child = ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(top: pageTopInset),
-        children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 320),
-            child: StaggeredEntrance(
-              replayKey: '${widget.tab.name}-notifications-empty',
-              delay: const Duration(milliseconds: 40),
-              child: _NotificationsEmptyState(
-                title: widget.tab == NotificationsTab.inbox
-                    ? context.l10n.notificationsInboxEmptyTitle
-                    : context.l10n.notificationsArchiveEmptyTitle,
-                message: widget.tab == NotificationsTab.inbox
-                    ? context.l10n.notificationsInboxEmptyMessage
-                    : context.l10n.notificationsArchiveEmptyMessage,
-              ),
-            ),
-          ),
-        ],
-      );
-    } else {
-      child = LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = widget.pageMode
-              ? (constraints.maxWidth / 280).floor().clamp(1, 3)
-              : 1;
-          final rows = (feed.items.length / columns).ceil();
-          return ListView.separated(
-            controller: _scrollController,
-            padding: widget.pageMode
-                ? EdgeInsets.fromLTRB(
-                    0,
-                    pageTopInset,
-                    0,
-                    14 + MediaQuery.paddingOf(context).bottom,
-                  )
-                : const EdgeInsets.fromLTRB(0, 8, 0, 14),
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemBuilder: (context, row) {
-              if (row >= rows) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 4),
-                  child: Center(
-                    child: Text(
-                      context.l10n.notificationsLoadingMore,
-                      style: shad.Theme.of(context).typography.small.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                );
-              }
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var column = 0; column < columns; column++) ...[
-                    if (column > 0) const SizedBox(width: 12),
-                    Expanded(
-                      child: row * columns + column < feed.items.length
-                          ? _buildNotificationItem(row * columns + column)
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ],
-              );
-            },
-            separatorBuilder: (context, index) =>
-                SizedBox(height: widget.pageMode ? 12 : 10),
-            itemCount: rows + (feed.isLoadingMore ? 1 : 0),
-          );
-        },
+    final child = LayoutBuilder(
+      builder: (context, constraints) {
+        final padding = widget.pageMode
+            ? AppPageInsets.of(
+                context,
+                width: constraints.maxWidth,
+                topInset: floatingShellHeaderInset(context),
+              )
+            : const EdgeInsets.only(bottom: AppSpacing.lg);
+        return MediaQuery.removePadding(
+          context: context,
+          removeLeft: widget.pageMode,
+          removeRight: widget.pageMode,
+          removeBottom: widget.pageMode,
+          child: _buildList(context, feed, padding),
+        );
+      },
+    );
+
+    return NovaRefreshIndicator(onRefresh: widget.onRefresh, child: child);
+  }
+
+  Widget _buildList(
+    BuildContext context,
+    NotificationFeedState feed,
+    EdgeInsets padding,
+  ) {
+    if (feed.status == NotificationFeedStatus.loading && !feed.hasLoadedOnce) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: padding,
+        children: const [
+          AppGroupedCard(
+            dividerInset: notificationDividerInset,
+            children: [
+              AppSkeletonRows(count: 4, leadingSize: notificationLeadingSize),
+            ],
+          ),
+        ],
+      );
+    }
+    if (feed.status == NotificationFeedStatus.error && !feed.hasLoadedOnce) {
+      return _messageList(
+        padding,
+        AppStateMessage(
+          icon: LucideIcons.cloudOff,
+          tone: AppTone.destructive,
+          title: context.l10n.notificationsLoadErrorTitle,
+          message: context.l10n.notificationsLoadErrorMessage,
+          actionLabel: context.l10n.commonRetry,
+          onAction: widget.onRefresh,
+        ),
+        'error',
+      );
+    }
+    if (feed.items.isEmpty) {
+      final inbox = widget.tab == NotificationsTab.inbox;
+      return _messageList(
+        padding,
+        AppStateMessage(
+          icon: inbox ? LucideIcons.bellOff : LucideIcons.archive,
+          title: inbox
+              ? context.l10n.notificationsInboxEmptyTitle
+              : context.l10n.notificationsArchiveEmptyTitle,
+          message: inbox
+              ? context.l10n.notificationsInboxEmptyMessage
+              : context.l10n.notificationsArchiveEmptyMessage,
+        ),
+        'empty',
       );
     }
 
-    return NovaRefreshIndicator(
-      onRefresh: widget.onRefresh,
-      child: widget.pageMode ? child : _NotificationsSurface(child: child),
+    final groups = groupNotificationsByDay(feed.items, DateTime.now());
+    final itemCount = groups.length + (feed.isLoadingMore ? 1 : 0);
+    return ListView.builder(
+      controller: _scrollController,
+      padding: padding,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        if (index >= groups.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+            child: Center(
+              child: Text(
+                context.l10n.notificationsLoadingMore,
+                style: AppTokens.of(context).typography.small.copyWith(
+                  color: AppTokens.of(context).colorScheme.mutedForeground,
+                ),
+              ),
+            ),
+          );
+        }
+        final group = groups[index];
+        return AppGroupedSection(
+          key: ValueKey('notifications-group-${group.bucket.name}-$index'),
+          caption: group.bucket.label(context.l10n),
+          dividerInset: notificationDividerInset,
+          bottomGap: index == itemCount - 1 ? 0 : AppLayout.sectionGap,
+          children: [
+            for (final notification in group.items)
+              _buildNotificationItem(notification),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildNotificationItem(int index) {
-    final notification = widget.feed.items[index];
+  Widget _messageList(EdgeInsets padding, Widget message, String kind) =>
+      ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: padding,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 320),
+            child: StaggeredEntrance(
+              replayKey: '${widget.tab.name}-notifications-$kind',
+              delay: const Duration(milliseconds: 40),
+              child: message,
+            ),
+          ),
+        ],
+      );
+
+  Widget _buildNotificationItem(AppNotification notification) {
+    final index = widget.feed.items.indexOf(notification);
     return StaggeredEntrance(
       replayKey: '${widget.tab.name}-${notification.id}',
       delay: Duration(milliseconds: index.clamp(0, 6) * 40),
@@ -206,180 +212,6 @@ class _NotificationsListState extends State<_NotificationsList> {
           if (notification.entityId != null) notification.entityId!,
         ],
         child: widget.itemBuilder(notification),
-      ),
-    );
-  }
-}
-
-class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({
-    required this.notification,
-    required this.isPending,
-    required this.openLabel,
-    required this.onToggleRead,
-    this.onAcceptInvite,
-    this.onDeclineInvite,
-    this.onOpen,
-  });
-
-  final AppNotification notification;
-  final bool isPending;
-  final String? openLabel;
-  final VoidCallback onToggleRead;
-  final VoidCallback? onAcceptInvite;
-  final VoidCallback? onDeclineInvite;
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-    final hasPrimaryAction = onAcceptInvite != null || onDeclineInvite != null;
-    final display = notificationDisplayCopy(notification, context.l10n);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: isPending || hasPrimaryAction ? null : onOpen,
-        child: Ink(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: notification.isUnread
-                ? colorScheme.primary.withValues(alpha: 0.06)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _accentColor(
-                    context,
-                    notification.type,
-                  ).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  _iconForType(notification.type),
-                  size: 19,
-                  color: _accentColor(context, notification.type),
-                ),
-              ),
-              const shad.Gap(10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        if (notification.workspaceName?.isNotEmpty ?? false)
-                          Text(
-                            notification.workspaceName!,
-                            style: theme.typography.xSmall.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        Text(
-                          _formatRelativeTime(context, notification.createdAt),
-                          style: theme.typography.xSmall.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const shad.Gap(3),
-                    Text(
-                      display.title,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (display.body case final String body) ...[
-                      const shad.Gap(4),
-                      Text(
-                        body,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    if (notification.type == 'workspace_invite' &&
-                        notification.actionTaken != null) ...[
-                      const shad.Gap(8),
-                      _InviteStatusChip(actionTaken: notification.actionTaken!),
-                    ] else if (hasPrimaryAction) ...[
-                      const shad.Gap(10),
-                      Row(
-                        children: [
-                          OutlinedButton(
-                            onPressed: isPending ? null : onDeclineInvite,
-                            child: Text(
-                              context.l10n.notificationsDeclineInvite,
-                            ),
-                          ),
-                          const shad.Gap(8),
-                          FilledButton(
-                            onPressed: isPending ? null : onAcceptInvite,
-                            child: Text(context.l10n.notificationsAcceptInvite),
-                          ),
-                        ],
-                      ),
-                    ] else if (onOpen != null && openLabel != null) ...[
-                      const shad.Gap(8),
-                      Text(
-                        openLabel!,
-                        style: theme.typography.xSmall.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const shad.Gap(8),
-              Column(
-                children: [
-                  IconButton(
-                    onPressed: isPending ? null : onToggleRead,
-                    icon: isPending
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: NovaLoadingIndicator(size: 20),
-                          )
-                        : Icon(
-                            notification.isUnread
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            size: 18,
-                          ),
-                    tooltip: notification.isUnread
-                        ? context.l10n.notificationsMarkRead
-                        : context.l10n.notificationsMarkUnread,
-                  ),
-                  if (onOpen != null && !hasPrimaryAction)
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

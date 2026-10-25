@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/personal_agenda.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
+import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Home's Agenda owns a personal scope, independent of the global workspace.
 class HomePage extends StatefulWidget {
-  const HomePage({this.replayToken = 0, super.key});
+  const HomePage({
+    this.replayToken = 0,
+    this.taskListCubit,
+    this.calendarCubit,
+    super.key,
+  });
   final int replayToken;
+
+  /// Pre-built Home data sources for render tests; see [DashboardPage].
+  @visibleForTesting
+  final TaskListCubit? taskListCubit;
+  @visibleForTesting
+  final CalendarCubit? calendarCubit;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -31,6 +44,8 @@ class _HomePageState extends State<HomePage> {
           child: DashboardPage(
             replayToken: widget.replayToken,
             active: !_agenda,
+            taskListCubit: widget.taskListCubit,
+            calendarCubit: widget.calendarCubit,
           ),
         ),
       ),
