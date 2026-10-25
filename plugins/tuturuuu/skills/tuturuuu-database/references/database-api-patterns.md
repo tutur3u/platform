@@ -23,6 +23,18 @@ review prove baseline equivalence. Existing migration history stays immutable.
   only statement in its file so it executes outside the transaction batch. See
   the [habit migration sequence](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#idempotent-writes)
   for the schema-preserving split and regression coverage.
+- A failed concurrent index build can leave an invalid index that `IF NOT EXISTS`
+  silently skips. Add a following catalog guard that raises on a missing or
+  invalid required index. Do not conditionally drop concurrently inside `DO`
+  (unsupported), or unconditionally drop a healthy index in a preceding retry.
+  Recovery: inspect `pg_index`, find and resolve conflicting duplicate keys
+  without deleting history, then run `DROP INDEX CONCURRENTLY` on the invalid
+  index outside a transaction and retry the authorized migration workflow. If
+  the create migration was already recorded, rebuild with its exact standalone
+  concurrent-create statement before retrying the guard; never bypass the guard
+  by editing its ledger entry. See the
+  [creation-key recovery runbook](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#recover-a-failed-concurrent-creation-key-index)
+  for SQL, missing-index handling and release authority.
 - Apply local migrations before `bun sb:typegen` when possible. Typegen reads
   the live local schema, not unapplied SQL.
 - Never hand-edit generated type files. Prefer shared DB row aliases from

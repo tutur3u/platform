@@ -110,7 +110,10 @@ transaction:
 3. `20261025125700` contains only `CREATE UNIQUE INDEX CONCURRENTLY`. The pinned
    Supabase CLI 2.117.0 executes this lone statement outside a transaction batch.
    Keep it alone; adding transaction-scoped setup statements breaks that path.
-4. `20261025125800` creates the empty receipt table, its indexes and the RPC.
+4. `20261025125750` checks `pg_index` and fails if the named unique index is
+   missing or invalid. `IF NOT EXISTS` alone cannot distinguish an invalid
+   leftover from a usable index.
+5. `20261025125800` creates the empty receipt table, its indexes and the RPC.
    Foreign-key setup briefly locks referenced tables; it does not scan existing
    tracker or entry rows.
 
@@ -120,6 +123,61 @@ held. No index is built on the entries table. The schema and idempotency
 contracts remain identical to the original combined migration. Regression
 coverage is in `supabase/tests/habit-tracker-idempotency.sql` and the Tasks
 habit writer and Mira habit executor tests.
+
+### Recover a failed concurrent creation-key index
+
+A failed or cancelled concurrent build can leave an `INVALID` index. Retrying
+`20261025125700` can then skip that index because of `IF NOT EXISTS`; the
+`20261025125750` guard stops the chain instead of treating uniqueness as ready.
+The writer already checks for an existing key before inserting, but concurrent
+first writes can still race between column creation and a valid unique index.
+Coordinate recovery and any necessary pause of keyed writes with the release
+owner. Do not delete tracker history or bypass the guard.
+
+1. Inspect the index on the affected database:
+
+   ```sql
+   select indexrelid::regclass, indisvalid, indisunique
+   from pg_catalog.pg_index
+   where indexrelid = to_regclass(
+     'public.idx_workspace_habit_trackers_creation_key_active'
+   );
+   ```
+
+2. Find conflicting active keys. Resolve each group through the supported
+   tracker archive/deactivation flow, retaining the intended active tracker
+   and its history. Do not choose winners automatically.
+
+   ```sql
+   select ws_id, created_by, creation_key, count(*)
+   from public.workspace_habit_trackers
+   where creation_key is not null and created_by is not null
+     and archived_at is null and is_active
+   group by ws_id, created_by, creation_key
+   having count(*) > 1;
+   ```
+
+3. After confirming the index is invalid, run this as a standalone statement
+   outside a transaction. Do not drop a valid index merely to retry a migration.
+
+   ```sql
+   drop index concurrently if exists
+     public.idx_workspace_habit_trackers_creation_key_active;
+   ```
+
+4. If `20261025125700` is still pending, rerun the authorized migration workflow.
+   If an earlier retry already recorded it as applied, execute that file's
+   exact lone `CREATE UNIQUE INDEX CONCURRENTLY` statement through the authorized
+   database operator, outside a transaction, before rerunning pending migrations.
+   For a missing index, skip the drop and use the same rebuild path. Verify
+   `indisvalid` and `indisunique` are both true, then rerun the pending guard and
+   remaining migrations. Do not mark the guard applied or edit the migration
+   ledger to bypass a failure. Production recovery requires release-owner
+   authorization; agent checkouts must not run `sb:push` or `sb:linkpush`.
+
+No automatic preceding drop is included: PostgreSQL cannot conditionally run
+`DROP INDEX CONCURRENTLY` inside a `DO` block, and an unconditional drop could
+remove an already-valid uniqueness fence on a retry.
 
 ## Units, bounds and dates
 
