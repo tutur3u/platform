@@ -11,8 +11,12 @@ export interface RegistryConfig {
   appDir?: string;
   /** Segments removed from patterns, with the params they imply. */
   stripSegments?: Record<string, Record<string, string>>;
-  /** Generated endpoint registry; `null` means no route may be unowned. */
-  api?: { out: string } | null;
+  /**
+   * Generated endpoint registry; `null` means no route may be unowned.
+   * `patternsOut` also emits a client-safe `appApiPatterns` list for
+   * `createApiPath` (no route modules imported).
+   */
+  api?: { out: string; patternsOut?: string } | null;
   /** Generated page manifest; `null` means no page may be unowned. */
   pages?: { out: string } | null;
   /** Route file (relative to appDir) to the native file that owns it. */
@@ -106,6 +110,14 @@ ${entries.join('\n')}
 `;
 }
 
+export function renderApiPatterns(routes: RouteFile[]) {
+  const patterns = [...new Set(routes.map((route) => route.pattern))].sort();
+  return `${HEADER}export const appApiPatterns = [
+${patterns.map((pattern) => `  ${JSON.stringify(pattern)},`).join('\n')}
+] as const;
+`;
+}
+
 export function renderPageManifest(appDir: string, pages: RouteFile[]) {
   const sorted = pages.toSorted((a, b) => a.file.localeCompare(b.file));
   const entries = sorted.map(
@@ -186,6 +198,13 @@ export function planRegistries(
       content: renderApiRegistry(
         config.api.out,
         appDir,
+        routes.filter((route) => route.kind === 'route')
+      ),
+    });
+  if (config.api?.patternsOut)
+    generated.push({
+      path: config.api.patternsOut,
+      content: renderApiPatterns(
         routes.filter((route) => route.kind === 'route')
       ),
     });

@@ -44,14 +44,20 @@ describe('registry planning', () => {
     const plan = planRegistries(
       {
         stripSegments: strip,
-        api: { out: 'src/runtime/api-registry.bridge.gen.ts' },
+        api: {
+          out: 'src/runtime/api-registry.bridge.gen.ts',
+          patternsOut: 'src/runtime/api-patterns.bridge.gen.ts',
+        },
         pages: { out: 'src/runtime/page-registry.bridge.gen.ts' },
       },
       meetFiles,
       () => true
     );
     expect(plan.errors).toEqual([]);
-    const [api, pages] = plan.generated;
+    const [api, patterns, pages] = plan.generated;
+    expect(patterns?.content).toContain('export const appApiPatterns = [');
+    expect(patterns?.content).toContain('  "/r/[code]/preview",');
+    expect(patterns?.content).not.toContain('import');
     expect(api?.content).toContain(
       "import * as route0 from '../app/[locale]/r/[code]/preview/route';"
     );

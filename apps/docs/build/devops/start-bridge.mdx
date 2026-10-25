@@ -20,10 +20,10 @@ signature needs a new subpath and a coordinated migration.
 
 | Subpath | Exports | Notes |
 | --- | --- | --- |
-| `route-match` | `matchRoute`, `compareRoutePatterns`, `routeParam`, `routeSegments`, `RouteParams` | `[x]`, `[...x]` (one or more), `[[...x]]` (zero or more); malformed encoding throws `URIError` |
+| `route-match` | `matchRoute`, `compareRoutePatterns`, `fromNextSourcePattern`, `routeParam`, `routeSegments`, `RouteParams` | `[x]`, `[...x]` (one or more), `[[...x]]` (zero or more); malformed encoding throws `URIError` |
 | `base-path` | `createBasePath`, `normalizeBasePath`, `prefixBase`, `retarget`, `BasePath`, `BasePathOptions` | Rules for one resolved base |
 | `mounts` | `resolveAppBase`, `APP_BASE_HEADER`, `AppMountConfig`, `ResolvedMount` | Per-request base from host + path |
-| `app-url` | `runtimeAppBase`, `withAppBase`, `appPath`, `appUrl`, `installAppBaseResolver`, `APP_BASE_GLOBAL` | Base-aware URLs for app code, SSR and packages; no Node/framework imports |
+| `app-url` | `runtimeAppBase`, `withAppBase`, `appPath`, `appUrl`, `createApiPath`, `installAppBaseResolver`, `APP_BASE_GLOBAL` | Base-aware URLs for app code, SSR and packages; no Node/framework imports |
 | `request-context` | `withBridgeRequest`, `bridgeRequest`, `maybeBridgeRequest`, `createRequestLocal`, `headers`, `cookies`, `draftMode`, `connection`, `after`, `appendContextCookies` | One AsyncLocalStorage store for every alias; carries `appBase` |
 | `endpoints` | `dispatchEndpoint`, `sortEndpoints`, `BridgeEndpoint`, `RouteModule`, `HTTP_METHODS` | Next route-handler semantics (HEAD→GET, OPTIONS 204, 405 with `Allow`, 400 on bad encoding) |
 | `pages` | `matchPage`, `BridgePage` | Matches a generated page manifest |
@@ -31,7 +31,9 @@ signature needs a new subpath and a coordinated migration.
 | `canary` | `decideCohort`, `tagResponse`, `parseCanaryPercent`, `CANARY_PERCENT_VARIABLE`, `RUNTIME_HEADER`, `COHORT_COOKIE` | Interface frozen now, router behaviour in v0.2 |
 | `next/headers`, `next/server`, `next/cache` | Next server APIs over the bridge request | `after()` needs a `waitUntil` binding |
 | `next/navigation`, `next/link` | Router-mode navigation; `BridgeParamsContext` | Client navigation on the TanStack router |
-| Aliases without a module | `server-only` → Start's marker; `@tuturuuu/satellite/i18n` → `intl/localized-navigation`; `next-intl/server` → the app's `createIntlServer` module (`intlServer`); `next/og` → `og`; `next/<module>.js` | Set by the Vite preset |
+| `next/root-params` (alias) | `locale`, `getRootParam` | Explicit `rootParams` in the request context, then the app-relative first segment of the request the app sees (the next-intl rewrite), then `x-next-intl-locale` |
+| `next-intl/routing`, `next-intl/navigation`, `next-intl/server` (aliases) | `defineRouting`, `hasLocale`; `createNavigation(routing)` honouring `localePrefix` `never`/`as-needed`/`always`; `getRequestConfig`, `setRequestLocale`, `getLocale`, `getMessages`, `getTranslations`, `getFormatter`, `getNow`, `getTimeZone` | The server shim evaluates the app's `i18n/request.ts` once per request through the `next-intl/config` alias (as next-intl's plugin does). The real `next-intl/middleware` runs unchanged |
+| Other aliases | `server-only` → Start's marker; `@tuturuuu/satellite/i18n` → `intl/localized-navigation`; `nuqs/adapters/next/app` → `nuqs/adapters/tanstack-router`; `next/og` → `og`; `next/<module>.js`; `intlServer` replaces the generic `next-intl/server` | Set by the Vite preset |
 | `next/navigation-document` | Document-mode `useRouter`/`NativeLink` | Full page loads (Apps gateway) |
 | `next/image`, `next/dynamic`, `next/cloudflare-context` | Optimizer-free image, lazy component, `getCloudflareContext` | |
 | `proxy-bridge` | `dispatchThroughProxy`, `defaultProxyMatches`, `toNextRequest`, `forwardedRequestInit` | Runs `proxy.ts` with Next's middleware protocol |
@@ -75,10 +77,15 @@ export default {
 
 Order: base resolution from `mounts` (a mount host outside the mount is 404),
 `/assets/*` and declared public files from `ASSETS` (base-stripped), then the
-app's `proxy.ts`, the generated endpoint registry, unowned `/api/*` to the
-central API (base-stripped), server functions to Start (base-stripped), and
+app's `proxy.ts`, `centralFirst` paths to the central API (Next `beforeFiles`
+rewrites such as `TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS`; Next sources
+like `/api/v1/:wsId/x` or bracket patterns), the generated endpoint registry,
+unowned `/api/*` to the central API (base-stripped), server functions to Start (base-stripped), and
 finally pages to Start at the browser-visible URL. The response then gets
-Location rewriting. Cookies pass through unchanged.
+Location rewriting. Cookies pass through unchanged. A `proxy.ts` rewrite to
+another origin throws unless that origin is the configured central API origin
+(`rewriteOrigins`), which is then fetched with manual redirects and hop-by-hop
+headers removed.
 
 In the app: `start.ts` passes `serverFns: { fetch: bridgeServerFnFetch }` to
 `createStart`, `getRouter()` sets `basepath: routerBasepath()`, and the root
@@ -128,11 +135,12 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 | Server functions | Compiled against the root (`/_serverFn`); `bridgeServerFnFetch` sends them to `/<app>/_serverFn` in the browser, and the Worker strips the base before Start |
 | Next middleware | `NextRequest` carries Next's `basePath`; `nextUrl.pathname` is app-relative and `nextUrl.clone()` redirects keep the base |
 | Links and navigation | `next/link`, `useRouter().push/replace`, `redirect()` prefix path-absolute hrefs with the runtime base |
-| URLs in app code | `appPath('/api/...')` and `appUrl('/share/...', origin?)` from `app-url` (worklets, Live, preview, download, share, `@tuturuuu/internal-api` app endpoints) |
+| URLs in app code | `appPath('/...')` and `appUrl('/share/...', origin?)` from `app-url` (worklets, Live, preview, download, share) |
+| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` keeps calling Web relatively |
 | Location headers | Path-relative `Location` not already under the base gains it. Absolute URLs are never rewritten, so `new URL('/login', request.url)` behaves as in Next (it leaves the app) |
 | Central API | Unowned `/<app>/api/*` is forwarded as `/api/*` |
 | Auth return URLs | `appUrl(path, origin)` so the central login returns into the app |
-| Cookies | Never renamed or path-scoped; see the shared session below |
+| Cookies | Never renamed or path-scoped. The canonical session cookie is `tuturuuu_app_session` (+ `tuturuuu_app_session_refresh`) everywhere; there is no per-app name. Subdomains keep today's behaviour until cutover; the apex uses the shared session below |
 
 `tuturuuu.com/meet` is the Meet app root; product marketing moves to
 `/products/<app>`.

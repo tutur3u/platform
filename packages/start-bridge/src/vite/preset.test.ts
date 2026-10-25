@@ -57,7 +57,9 @@ describe('Vite preset', () => {
       '"/meet"'
     );
     expect(preset.alias.at(-1)?.find).toBe('@/');
-    expect(preset.alias).toHaveLength(12);
+    // 14 shims, server-only, the nuqs adapter swap and '@/'; no request
+    // config exists under the fixture root.
+    expect(preset.alias).toHaveLength(17);
   });
 
   it('adds the remaining shims and runtime asset URLs', () => {
@@ -79,6 +81,12 @@ describe('Vite preset', () => {
       '/repo/apps/apps/src/runtime/intl-server.ts'
     );
     expect(byFind('/^next\\/og$/u')).toBe('/og.js');
+    expect(byFind('/^nuqs\\/adapters\\/next\\/app$/u')).toBe(
+      'nuqs/adapters/tanstack-router'
+    );
+    expect(
+      finds.filter((find) => find.startsWith('/^next-intl\\/server'))
+    ).toHaveLength(1);
     expect(
       new RegExp(String(finds[0]).slice(1, -2), 'u').test('next/headers.js')
     ).toBe(true);
@@ -128,5 +136,23 @@ describe('Vite preset', () => {
       'utf8'
     );
     expect(source.match(/^import .* from '(?!node:)[^']*';$/gmu)).toBeNull();
+  });
+
+  it('aliases next-intl/config to the app request config for the generic server shim', () => {
+    const preset = startBridgePreset(
+      { appRoot, app: 'contacts', intlRequestConfig: './src/i18n/request.ts' },
+      {}
+    );
+    const byFind = (find: string) =>
+      preset.alias.find((alias) => String(alias.find) === find)?.replacement;
+    expect(byFind('/^next-intl\\/config$/u')).toBe(
+      '/repo/apps/apps/src/i18n/request.ts'
+    );
+    expect(byFind('/^next-intl\\/server$/u')).toMatch(
+      /src\/intl\/next-intl-server\.ts$/u
+    );
+    expect(byFind('/^next\\/root-params(?:\\.js)?$/u')).toMatch(
+      /src\/next\/root-params\.ts$/u
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   bridgeRequest,
   cookies,
@@ -258,4 +258,47 @@ it('presents an app-relative nextUrl under a basePath', async () => {
   expect(response.headers.get('location')).toBe(
     'https://tuturuuu.com/meet/login?x=1'
   );
+});
+
+it('forwards a middleware rewrite to an allowed central origin only', async () => {
+  const fetchSpy = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (input) => {
+      const request = input as Request;
+      expect(request.redirect).toBe('manual');
+      expect(request.headers.get('host')).toBeNull();
+      expect(await request.text()).toBe('{"a":1}');
+      return new Response(`central ${request.method} ${request.url}`, {
+        headers: { 'set-cookie': 'c=1; Path=/', connection: 'keep-alive' },
+      });
+    });
+  const response = await dispatchThroughProxy({
+    request: new Request('https://contacts.tuturuuu.com/api/topics/x', {
+      method: 'POST',
+      body: '{"a":1}',
+      headers: { host: 'contacts.tuturuuu.com' },
+    }),
+    waitUntil,
+    rewriteOrigins: ['https://tuturuuu.com'],
+    proxy: async () =>
+      NextResponse.rewrite('https://tuturuuu.com/api/v1/topics/x'),
+    dispatch: async () => {
+      throw new Error('Central rewrites must not dispatch locally');
+    },
+  });
+  expect(await response.text()).toBe(
+    'central POST https://tuturuuu.com/api/v1/topics/x'
+  );
+  expect(response.headers.getSetCookie()).toEqual(['c=1; Path=/']);
+  expect(response.headers.get('connection')).toBeNull();
+  fetchSpy.mockRestore();
+  await expect(
+    dispatchThroughProxy({
+      request: new Request('https://contacts.tuturuuu.com/'),
+      waitUntil,
+      rewriteOrigins: ['https://tuturuuu.com'],
+      proxy: async () => NextResponse.rewrite('https://evil.example/'),
+      dispatch: async () => new Response('no'),
+    })
+  ).rejects.toThrow('Unexpected external middleware rewrite');
 });

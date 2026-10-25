@@ -40,6 +40,14 @@ const handle = createBridgeHandler<Env, typeof ctx>({
   },
   endpoints: [
     {
+      pattern: '/api/workspaces/[wsId]',
+      module: { GET: async () => new Response('local workspace') },
+    },
+    {
+      pattern: '/api/v1/[wsId]/settings/[configId]',
+      module: { GET: async () => new Response('local setting') },
+    },
+    {
       pattern: '/api/own',
       module: {
         GET: async (request: Request) =>
@@ -48,6 +56,10 @@ const handle = createBridgeHandler<Env, typeof ctx>({
     },
   ],
   serverFnBase: '/_serverFn',
+  centralFirst: [
+    '/api/workspaces/invitations',
+    '/api/v1/:wsId/settings/permissions',
+  ],
   publicAssets: new Set(['/robots.txt']),
   assets: (env) => env.ASSETS,
   centralApiOrigin: () => 'https://central.example',
@@ -128,5 +140,31 @@ describe('the same artifact mounted at tuturuuu.com/meet', () => {
     );
     const response = await get('https://tuturuuu.com/meet/api/v1/x?y=1');
     expect(await response.text()).toBe('https://central.example/api/v1/x?y=1');
+  });
+});
+
+describe('Web-first API precedence', () => {
+  it('sends centralFirst paths to Web before local endpoints, in both mounts', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => new Response(`central ${(input as Request).url}`)
+    );
+    expect(
+      await (
+        await get('https://meet.tuturuuu.com/api/workspaces/invitations')
+      ).text()
+    ).toBe('central https://central.example/api/workspaces/invitations');
+    expect(
+      await (
+        await get('https://tuturuuu.com/meet/api/v1/ws1/settings/permissions')
+      ).text()
+    ).toBe('central https://central.example/api/v1/ws1/settings/permissions');
+    expect(
+      await (await get('https://meet.tuturuuu.com/api/workspaces/ws1')).text()
+    ).toBe('local workspace');
+    expect(
+      await (
+        await get('https://meet.tuturuuu.com/api/v1/ws1/settings/theme')
+      ).text()
+    ).toBe('local setting');
   });
 });

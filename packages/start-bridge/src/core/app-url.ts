@@ -1,4 +1,5 @@
 import { prefixBase } from './base-path';
+import { fromNextSourcePattern, matchRoute } from './route-match';
 
 /**
  * The runtime app base for app code, SSR and the browser alike. On the
@@ -49,4 +50,33 @@ export function appUrl(path: string, origin?: string | URL): string {
     origin ?? (typeof location === 'undefined' ? undefined : location.origin);
   if (!base) throw new Error('appUrl needs an origin outside the browser');
   return new URL(appPath(path), base).toString();
+}
+
+/**
+ * Browser and server `/api` routing for an app mounted under a base. App-owned
+ * endpoints (the generated `appApiPatterns`) gain the app base; everything
+ * else, and anything in `centralFirst`, stays a relative Web `/api` path —
+ * on the apex that already reaches Web, and on a subdomain the app Worker
+ * forwards it to the central API.
+ */
+export function createApiPath(
+  appPatterns: readonly string[],
+  centralFirst: readonly string[] = []
+) {
+  const central = centralFirst.map(fromNextSourcePattern);
+  const matches = (patterns: readonly string[], path: string) =>
+    patterns.some((pattern) => {
+      try {
+        return matchRoute(pattern, path) !== null;
+      } catch {
+        return false;
+      }
+    });
+  return function apiPath(path: string): string {
+    const end = path.search(/[?#]/u);
+    const pathname = end === -1 ? path : path.slice(0, end);
+    if (matches(central, pathname) || !matches(appPatterns, pathname))
+      return path;
+    return appPath(path);
+  };
 }

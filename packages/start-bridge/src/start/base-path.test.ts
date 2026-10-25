@@ -84,3 +84,21 @@ describe('runtime app base', () => {
     ]);
   });
 });
+
+describe('createApiPath', () => {
+  it('bases app-owned endpoints only; Web-owned and centralFirst stay relative', async () => {
+    const { createApiPath } = await import('../core/app-url');
+    const apiPath = createApiPath(
+      ['/api/workspaces/[wsId]', '/api/contacts/[id]'],
+      ['/api/workspaces/invitations']
+    );
+    (globalThis as Record<string, unknown>)[APP_BASE_GLOBAL] = '/contacts';
+    expect(apiPath('/api/contacts/1?x=1')).toBe('/contacts/api/contacts/1?x=1');
+    expect(apiPath('/api/workspaces/invitations')).toBe(
+      '/api/workspaces/invitations'
+    );
+    expect(apiPath('/api/v1/users/me')).toBe('/api/v1/users/me');
+    (globalThis as Record<string, unknown>)[APP_BASE_GLOBAL] = '';
+    expect(apiPath('/api/contacts/1')).toBe('/api/contacts/1');
+  });
+});

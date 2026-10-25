@@ -66,6 +66,43 @@ export interface ProxyBridgeOptions {
   basePath?: string;
   /** Builds the forwarded request init (headers already merged). */
   requestInit?: (initial: Request, headers: Headers) => RequestInit;
+  /**
+   * Origins a middleware may rewrite to (the configured central Web API).
+   * Such rewrites are fetched with manual redirects; any other external
+   * rewrite still throws.
+   */
+  rewriteOrigins?: readonly string[];
+}
+
+const HOP_BY_HOP = [
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+];
+
+async function fetchExternalRewrite(destination: URL, init: RequestInit) {
+  const headers = new Headers(init.headers);
+  for (const name of [...HOP_BY_HOP, 'host', 'content-length'])
+    headers.delete(name);
+  const upstream = await fetch(
+    new Request(destination, {
+      ...init,
+      headers,
+      redirect: 'manual',
+    } as RequestInit)
+  );
+  const output = new Headers(upstream.headers);
+  for (const name of HOP_BY_HOP) output.delete(name);
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: output,
+  });
 }
 
 /**
@@ -87,7 +124,11 @@ export async function dispatchThroughProxy({
   matches = defaultProxyMatches,
   basePath = '',
   requestInit = forwardedRequestInit,
+  rewriteOrigins = [],
 }: ProxyBridgeOptions) {
+  const allowedOrigins = new Set(
+    rewriteOrigins.map((origin) => new URL(origin).origin)
+  );
   const initial = toNextRequest(request, undefined, basePath);
   const responseHeaders = new Headers();
   const context = {
@@ -133,17 +174,25 @@ export async function dispatchThroughProxy({
       const destination = rewrite
         ? new URL(rewrite, initial.url)
         : new URL(initial.url);
-      if (destination.origin !== initial.nextUrl.origin)
-        throw new Error('Unexpected external middleware rewrite');
-      const next = toNextRequest(
-        destination,
-        requestInit(initial, forwarded),
-        basePath
-      );
-      const result = await withBridgeRequest(
-        { ...context, request: next, cookieSource: next.headers },
-        () => dispatch(next)
-      );
+      let result: Response;
+      if (destination.origin !== initial.nextUrl.origin) {
+        if (!allowedOrigins.has(destination.origin))
+          throw new Error('Unexpected external middleware rewrite');
+        result = await fetchExternalRewrite(
+          destination,
+          requestInit(initial, forwarded)
+        );
+      } else {
+        const next = toNextRequest(
+          destination,
+          requestInit(initial, forwarded),
+          basePath
+        );
+        result = await withBridgeRequest(
+          { ...context, request: next, cookieSource: next.headers },
+          () => dispatch(next)
+        );
+      }
       const merged = new Headers(result.headers);
       if (middleware) {
         for (const [name, value] of middleware.headers) {

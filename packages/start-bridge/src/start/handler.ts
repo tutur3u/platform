@@ -8,6 +8,7 @@ import {
   resolveAppBase,
 } from '../core/mounts';
 import type { BridgeRequestContext } from '../core/request-context';
+import { fromNextSourcePattern, matchRoute } from '../core/route-match';
 import {
   type BridgeDispatch,
   dispatchThroughProxy,
@@ -39,6 +40,12 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   assets: (env: Env) => AssetsBinding | undefined;
   /** Central Web API origin for unowned `/api/*` paths. */
   centralApiOrigin: (env: Env) => string;
+  /**
+   * Paths the central Web API owns ahead of the app's own routes (Next
+   * `beforeFiles` rewrites). Accepts Next sources (`/api/v1/:wsId/x`) or
+   * bracket patterns; matched against the app-relative path.
+   */
+  centralFirst?: readonly string[];
   /** Overrides the unowned `/api/*` forwarder. */
   forwardApi?: (request: NextRequest, origin: string) => Promise<Response>;
   matches?: (pathname: string) => boolean;
@@ -57,6 +64,15 @@ export function createBridgeHandler<
   Ctx extends { waitUntil(work: Promise<unknown>): void },
 >(options: BridgeHandlerOptions<Env, Ctx>) {
   const fixed = options.basePath ?? createBasePath({ app: 'root' });
+  const centralFirst = (options.centralFirst ?? []).map(fromNextSourcePattern);
+  const isCentralFirst = (path: string) =>
+    centralFirst.some((pattern) => {
+      try {
+        return matchRoute(pattern, path) !== null;
+      } catch {
+        return false;
+      }
+    });
   const publicAssets = options.publicAssets ?? new Set<string>();
   const inBase = (path: string, prefix: string) =>
     path === prefix || path.startsWith(`${prefix}/`);
@@ -96,11 +112,15 @@ export function createBridgeHandler<
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
-        const endpoint = options.endpoints
-          ? await dispatchEndpoint(options.endpoints, forwarded, { pathname })
-          : null;
+        const central = isCentralFirst(pathname);
+        const endpoint =
+          options.endpoints && !central
+            ? await dispatchEndpoint(options.endpoints, forwarded, {
+                pathname,
+              })
+            : null;
         if (endpoint) return endpoint;
-        if (pathname === '/api' || pathname.startsWith('/api/')) {
+        if (central || pathname === '/api' || pathname.startsWith('/api/')) {
           const origin = options.centralApiOrigin(env);
           if (options.forwardApi) return options.forwardApi(forwarded, origin);
           // The central API sees the app-relative path, never the base.
@@ -130,6 +150,7 @@ export function createBridgeHandler<
         observeNavigation: options.observeNavigation,
         matches: options.matches,
         requestInit: options.requestInit,
+        rewriteOrigins: [options.centralApiOrigin(env)],
       });
     }
     return base.finalizeResponse(response);

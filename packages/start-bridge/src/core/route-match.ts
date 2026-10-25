@@ -68,3 +68,21 @@ export function routeSegments(params: RouteParams, name: string): string[] {
   if (!Array.isArray(value)) throw new Error(`Missing route segments: ${name}`);
   return value;
 }
+
+/**
+ * Converts a Next rewrite `source` (`/api/:wsId/x`, `:path*`, `:path+`) to a
+ * bracket pattern (`/api/[wsId]/x`, `[[...path]]`, `[...path]`). Bracket
+ * patterns pass through unchanged.
+ */
+export function fromNextSourcePattern(source: string): string {
+  return source
+    .split('/')
+    .map((segment) => {
+      const param = /^:(\w+)([*+])?$/u.exec(segment);
+      if (!param?.[1]) return segment;
+      if (param[2] === '*') return `[[...${param[1]}]]`;
+      if (param[2] === '+') return `[...${param[1]}]`;
+      return `[${param[1]}]`;
+    })
+    .join('/');
+}

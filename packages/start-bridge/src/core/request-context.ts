@@ -22,6 +22,8 @@ export interface BridgeRequestContext {
   observeNavigation?: (href: string, result: unknown) => void;
   /** This request's resolved app base (`''` at a host root, `/meet`). */
   appBase?: string;
+  /** Root-layout params (e.g. `locale`) for `next/root-params`. */
+  rootParams?: Record<string, string>;
   /** App-owned per-request values; see `createRequestLocal`. */
   locals: Map<symbol, unknown>;
 }
@@ -39,6 +41,7 @@ export interface BridgeRequestInit {
   cloudflare?: { env: unknown; ctx: unknown };
   observeNavigation?: (href: string, result: unknown) => void;
   appBase?: string;
+  rootParams?: Record<string, string>;
   locals?: Map<symbol, unknown>;
 }
 
@@ -63,6 +66,7 @@ export function withBridgeRequest<T>(
       cloudflare: options.cloudflare,
       observeNavigation: options.observeNavigation,
       appBase: options.appBase,
+      rootParams: options.rootParams,
       locals: options.locals ?? new Map(),
     },
     run

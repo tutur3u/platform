@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareRoutePatterns,
+  fromNextSourcePattern,
   matchRoute,
   routeParam,
   routeSegments,
@@ -76,5 +77,14 @@ describe('route matching', () => {
       '/api/[...rest]',
       '/api/[[...all]]',
     ]);
+  });
+
+  it('converts Next rewrite sources to bracket patterns', () => {
+    expect(fromNextSourcePattern('/api/v1/:wsId/settings/permissions')).toBe(
+      '/api/v1/[wsId]/settings/permissions'
+    );
+    expect(fromNextSourcePattern('/api/:path*')).toBe('/api/[[...path]]');
+    expect(fromNextSourcePattern('/api/:path+')).toBe('/api/[...path]');
+    expect(fromNextSourcePattern('/api/[wsId]')).toBe('/api/[wsId]');
   });
 });

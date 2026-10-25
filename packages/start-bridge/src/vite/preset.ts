@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -14,7 +15,11 @@ export const NEXT_SHIMS = {
   'next/link': 'next/link.tsx',
   'next/image': 'next/image.tsx',
   'next/dynamic': 'next/dynamic.tsx',
+  'next/root-params': 'next/root-params.ts',
   'next-intl': 'intl/use-intl.tsx',
+  'next-intl/server': 'intl/next-intl-server.ts',
+  'next-intl/routing': 'intl/routing.ts',
+  'next-intl/navigation': 'intl/navigation.tsx',
   '@opennextjs/cloudflare': 'next/cloudflare-context.ts',
   '@tuturuuu/satellite/i18n': 'intl/localized-navigation.tsx',
 } as const;
@@ -39,8 +44,15 @@ export interface StartBridgePresetOptions {
   serverFnBase?: string;
   /** Specifiers that must never reach the client bundle. */
   serverOnlySpecifiers?: readonly string[];
-  /** App module implementing `next-intl/server` (see `createIntlServer`). */
+  /** App module replacing the generic `next-intl/server` shim. */
   intlServer?: string;
+  /**
+   * The app's next-intl request config (aliased as `next-intl/config`, as
+   * next-intl's plugin does). Defaults to `./src/i18n/request.ts` when present.
+   */
+  intlRequestConfig?: string | false;
+  /** Swap nuqs' Next App Router adapter for its TanStack Router one (default `true`). */
+  nuqsAdapter?: boolean;
   /** Resolved `next/og` replacement, e.g. `@cloudflare/pages-plugin-vercel-og/api`. */
   og?: string;
   /** Alias `server-only` to Start's server-only marker (default `true`). */
@@ -68,6 +80,8 @@ export function startBridgeAliases(
     | 'aliases'
     | 'srcAlias'
     | 'intlServer'
+    | 'intlRequestConfig'
+    | 'nuqsAdapter'
     | 'og'
     | 'serverOnly'
   >
@@ -81,6 +95,7 @@ export function startBridgeAliases(
     })
   );
   for (const shim of shims) {
+    if (shim === 'next-intl/server' && options.intlServer) continue;
     const target =
       document && (shim === 'next/navigation' || shim === 'next/link')
         ? 'next/navigation-document.tsx'
@@ -102,6 +117,21 @@ export function startBridgeAliases(
       'next-intl/server',
       fileURLToPath(new URL(options.intlServer, options.appRoot))
     );
+  const genericIntlServer =
+    shims.includes('next-intl/server') && !options.intlServer;
+  const requestConfig =
+    options.intlRequestConfig === false || !genericIntlServer
+      ? null
+      : fileURLToPath(
+          new URL(
+            options.intlRequestConfig ?? './src/i18n/request.ts',
+            options.appRoot
+          )
+        );
+  if (requestConfig && (options.intlRequestConfig || existsSync(requestConfig)))
+    exact('next-intl/config', requestConfig);
+  if (options.nuqsAdapter ?? !options.shims)
+    exact('nuqs/adapters/next/app', 'nuqs/adapters/tanstack-router');
   if (options.og) exact('next/og', options.og);
   if (options.serverOnly ?? !options.shims)
     exact('server-only', '@tanstack/react-start/server-only');
