@@ -11,12 +11,17 @@ import {
   WEB_APP_SESSION_COOKIE_NAME,
   WEB_APP_SESSION_REFRESH_COOKIE_NAME,
 } from './app-session-core';
+import { isMountedAppSessionRequest } from './app-session-mount';
 import {
   createAppSessionUser,
   getSupabaseAuthClaimsForUser,
 } from './app-session-user';
 
 export * from './app-session-core';
+export {
+  installMountedAppSessionResolver,
+  isMountedAppSessionRequest,
+} from './app-session-mount';
 export { createAppSessionUser } from './app-session-user';
 
 type RequestLike = AppSessionRequest;
@@ -43,6 +48,14 @@ export function getAppSessionCookieOptions(
   };
 }
 
+/**
+ * Under an apex mount the root session is the only session: every app-session
+ * setter and clearer below is a no-op there (see `app-session-mount.ts`).
+ */
+function writesAppSessionCookies() {
+  return !isMountedAppSessionRequest();
+}
+
 export function setAppSessionCookie(
   response: NextResponse,
   token: string,
@@ -50,6 +63,7 @@ export function setAppSessionCookie(
     expires?: Date;
   } = {}
 ) {
+  if (!writesAppSessionCookies()) return;
   response.cookies.set(
     APP_SESSION_COOKIE_NAME,
     token,
@@ -64,6 +78,7 @@ export function setWebAppSessionCookie(
     expires?: Date;
   } = {}
 ) {
+  if (!writesAppSessionCookies()) return;
   response.cookies.set(
     WEB_APP_SESSION_COOKIE_NAME,
     token,
@@ -78,6 +93,7 @@ export function setAppSessionRefreshCookie(
     expires?: Date;
   } = {}
 ) {
+  if (!writesAppSessionCookies()) return;
   response.cookies.set(
     APP_SESSION_REFRESH_COOKIE_NAME,
     token,
@@ -92,6 +108,7 @@ export function setWebAppSessionRefreshCookie(
     expires?: Date;
   } = {}
 ) {
+  if (!writesAppSessionCookies()) return;
   response.cookies.set(
     WEB_APP_SESSION_REFRESH_COOKIE_NAME,
     token,
@@ -100,6 +117,7 @@ export function setWebAppSessionRefreshCookie(
 }
 
 export function clearAppSessionCookie(response: NextResponse) {
+  if (!writesAppSessionCookies()) return;
   response.cookies.set(APP_SESSION_COOKIE_NAME, '', {
     ...getAppSessionCookieOptions({ expires: new Date(0) }),
     maxAge: 0,
@@ -128,6 +146,8 @@ function wantsJsonLogoutResponse(request: RequestLike) {
   return accept.includes('application/json') && !accept.includes('text/html');
 }
 
+// TODO(apex-session, both models): mounted logout must become a protected
+// POST to Web sign-out; under a mount this clears no app-session cookie.
 export function createAppSessionLogoutResponse(
   request: RequestLike,
   options: {

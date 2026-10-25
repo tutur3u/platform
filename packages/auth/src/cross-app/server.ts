@@ -19,6 +19,10 @@ import {
   setWebAppSessionCookie,
   setWebAppSessionRefreshCookie,
 } from '../app-session';
+import {
+  isMountedAppSessionRequest,
+  mountedAppSessionRefusal,
+} from '../app-session-mount';
 import type { ResolvedInternalAppSessionPolicy } from '../app-session-policy';
 import {
   CLI_APP_TARGET_APP,
@@ -378,6 +382,8 @@ export function createRefreshPOST(
   options: CreatePostOptions = {}
 ) {
   return async function POST(request: NextRequest) {
+    // Mounted: refuse before reading credentials or calling the verifier.
+    if (isMountedAppSessionRequest()) return mountedAppSessionRefusal();
     if (!options.verificationBaseUrl) {
       return jsonNoStore(
         { error: 'Central verification URL is not configured' },
@@ -447,6 +453,8 @@ export function createRefreshPOST(
  */
 export function createPOST(appName: AppName, options: CreatePostOptions = {}) {
   return async function POST(request: NextRequest) {
+    // Mounted: refuse before consuming the one-time token.
+    if (isMountedAppSessionRequest()) return mountedAppSessionRefusal();
     try {
       const body = (await request.json()) as { token?: unknown };
       const token = typeof body.token === 'string' ? body.token : null;

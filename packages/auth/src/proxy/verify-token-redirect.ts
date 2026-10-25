@@ -35,3 +35,27 @@ export function redirectToVerifyFallback(
       )
   );
 }
+
+export function matchesVerifyTokenPath(
+  pathname: string,
+  options: { locales?: readonly string[]; verifyPath?: string }
+) {
+  const verifyPath = options.verifyPath ?? '/verify-token';
+
+  if (pathname === verifyPath) {
+    return true;
+  }
+
+  const locales = options.locales ?? [];
+  if (locales.length === 0) {
+    return false;
+  }
+
+  const segments = pathname.split('/').filter(Boolean);
+  const verifySegment = verifyPath.replace(/^\/+/u, '');
+  return (
+    segments.length === 2 &&
+    segments[1] === verifySegment &&
+    locales.includes(segments[0] ?? '')
+  );
+}
