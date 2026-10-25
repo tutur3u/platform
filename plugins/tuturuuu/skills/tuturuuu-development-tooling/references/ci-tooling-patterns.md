@@ -229,7 +229,8 @@ exact-head hosted improvement; never weaken a gate to improve a timing figure.
 
 Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
 switchboard after explicit disable handling. Android remains the portable smoke;
-other platforms retain native-directory checks and all builds on main pushes.
+other platforms retain native-directory PR checks. Android/Linux keep matching
+main pushes; iOS/macOS/Windows development builds use nightly/release/manual.
 Only known portable/other-native paths may omit a platform. Unknown/empty inputs,
 dependency manifests and tooling changes run all. Preserve PR triggers/check names
 and include the helper in the reusable switchboard sparse checkout. Verify
@@ -654,6 +655,21 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never
   combine `queue: max` with cancellation enabled.
+- Defer heavy PR validation on drafts before runner allocation, while keeping
+  light lint/type checks. Security jobs, including CodeQL analysis and the
+  security-egress contract/preflight, remain eligible on drafts. Heavy-only
+  non-security workflows can gate `check-ci`;
+  mixed workflows gate only heavy jobs and dependent summaries. Include
+  `ready_for_review` and `converted_to_draft`, preserve existing aggregate failure
+  assertions, and verify merge-eligible required checks still report. Keep path
+  selection in the existing switchboard or trusted security selectors. Run
+  `pr-verification-scheduling.test.js` with the concurrency policy suite.
+  Apple/Windows mobile development builds run nightly, on published releases and
+  on manual dispatch. This coverage exception validates selected snapshots, not
+  every merged SHA; nightly selects the default-branch head. Android/Linux retain
+  matching main pushes. Store and production publication retain their triggers,
+  locks and gates. See the
+  [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#draft-pr-runner-admission).
 - Only the exact SHA selected for promotion needs complete CI. Superseded `main`
   validation may be cancelled, but cancellation is never passing evidence. If a
   pinned candidate lost a required check to supersession, restore that exact-SHA

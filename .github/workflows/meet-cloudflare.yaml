@@ -2,6 +2,7 @@ name: Meet Cloudflare
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
       - 'apps/meet/**'
@@ -97,6 +98,7 @@ env:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read

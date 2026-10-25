@@ -2,6 +2,7 @@ name: SDK package qualification
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "packages/**"
       - "bun.lock"
@@ -29,6 +30,7 @@ concurrency:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
