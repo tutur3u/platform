@@ -43,12 +43,37 @@ export function trackMounts(env: TrackPolicyEnv) {
 // `mounts`) and cannot resolve an extensionless TypeScript module.
 let publicAssets: Promise<ReadonlySet<string>> | undefined;
 
-async function isStaticAsset(path: string) {
+/** Only a read of a hashed asset or a public file keeps its own caching. */
+async function isStaticAssetRead(method: string, path: string) {
+  if (method !== 'GET' && method !== 'HEAD') return false;
   if (path.startsWith('/assets/')) return true;
   publicAssets ??= import('./src/start-bridge/public-assets.bridge.gen').then(
     (module) => module.publicAssets
   );
   return (await publicAssets).has(path);
+}
+
+const FRAME_ANCESTORS = /^frame-ancestors(?:\s|$)/iu;
+
+/**
+ * Keeps the response's own CSP but enforces `frame-ancestors 'none'` in every
+ * policy it carries (a comma separates policies), replacing any ancestor
+ * directive already there.
+ */
+export function denyFraming(csp: string | null) {
+  const policies = (csp ?? '')
+    .split(',')
+    .map((policy) =>
+      policy
+        .split(';')
+        .map((directive) => directive.trim())
+        .filter((directive) => directive && !FRAME_ANCESTORS.test(directive))
+    )
+    .filter((directives) => directives.length > 0);
+  if (policies.length === 0) return "frame-ancestors 'none'";
+  return policies
+    .map((directives) => [...directives, "frame-ancestors 'none'"].join('; '))
+    .join(', ');
 }
 
 /**
@@ -66,14 +91,16 @@ export async function decorateTrackResponse(
   const path = new URL(request.url).pathname;
   headers.set('X-Robots-Tag', ROBOTS);
   if (!FRAMABLE.test(path)) {
-    if (!headers.has('Content-Security-Policy'))
-      headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+    headers.set(
+      'Content-Security-Policy',
+      denyFraming(headers.get('Content-Security-Policy'))
+    );
     headers.set('X-Frame-Options', 'DENY');
   }
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Strict-Transport-Security', 'max-age=63072000');
-  if (!(await isStaticAsset(path)))
+  if (!(await isStaticAssetRead(request.method, path)))
     headers.set('Cache-Control', 'private, no-store, max-age=0');
   return decorated;
 }

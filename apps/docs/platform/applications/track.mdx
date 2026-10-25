@@ -59,10 +59,12 @@ access run. A staging Worker admits extra hostnames through the
 
 Every response carries the Next build's production headers (`X-Robots-Tag`
 from Track's SEO policy, `frame-ancestors 'none'` and `X-Frame-Options: DENY`
-except on the framable WebGL asset path, HSTS) plus `nosniff` and
+except on the framable WebGL asset path, HSTS). A response's own CSP is kept,
+but `frame-ancestors 'none'` replaces any ancestor directive in each of its
+policies. It also sends `nosniff` and
 `Referrer-Policy: strict-origin-when-cross-origin`. Every dynamic response is
 `Cache-Control: private, no-store, max-age=0`, replacing any policy a handler
-set; hashed assets and public files keep their caching. `GET`/`HEAD
+set; only `GET`/`HEAD` of hashed assets and public files keep their caching. `GET`/`HEAD
 /api/build-info` is public on both builds: the proxy skips session work and
 removes cookies and `Authorization` before the handler runs. The Worker uses
 `global_fetch_strictly_public`. Covered by
