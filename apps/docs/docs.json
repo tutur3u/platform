@@ -538,6 +538,7 @@
                     "group": "Routes by app",
                     "pages": [
                       "reference/repository/routes/ai",
+                      "reference/repository/routes/api",
                       "reference/repository/routes/apps",
                       "reference/repository/routes/calendar",
                       "reference/repository/routes/chat",

@@ -10,7 +10,7 @@ import type {
 } from './contracts';
 import { ApiError, encodeError } from './errors';
 import { forwardToRetainedOrigin } from './forward';
-import { matchPath, validateRegistry } from './registry';
+import { comparePathPatterns, matchPath, validateRegistry } from './registry';
 
 export interface PipelineOptions {
   endpoints: readonly Endpoint[];
@@ -116,16 +116,30 @@ export function createApi(options: PipelineOptions) {
         )
       )
         throw new ApiError('unavailable', 503, 'Unknown enabled operation');
-      const matches = options.endpoints.flatMap((endpoint) =>
+      const allMatches = options.endpoints.flatMap((endpoint) =>
         [
           { path: endpoint.path, errorEncoding: 'canonical' as const },
           ...endpoint.aliases,
         ].flatMap((alias) => {
           const params = matchPath(alias.path, pathname);
           return params
-            ? [{ endpoint, params, encoding: alias.errorEncoding }]
+            ? [
+                {
+                  endpoint,
+                  params,
+                  encoding: alias.errorEncoding,
+                  pattern: alias.path,
+                },
+              ]
             : [];
         })
+      );
+      allMatches.sort((left, right) =>
+        comparePathPatterns(left.pattern, right.pattern)
+      );
+      const bestPattern = allMatches[0]?.pattern.replace(/\{[^}]+\}/g, '{}');
+      const matches = allMatches.filter(
+        (match) => match.pattern.replace(/\{[^}]+\}/g, '{}') === bestPattern
       );
       const method = request.method === 'HEAD' ? 'GET' : request.method;
       const match = matches.find(({ endpoint }) => endpoint.method === method);

@@ -133,3 +133,20 @@ export function matchPath(
   }
   return params;
 }
+
+export function comparePathPatterns(left: string, right: string): number {
+  const a = left.split('/');
+  const b = right.split('/');
+  for (let index = 0; index < Math.max(a.length, b.length); index++) {
+    const x = a[index];
+    const y = b[index];
+    if (x === y) continue;
+    if (x === undefined) return -1;
+    if (y === undefined) return 1;
+    const rank = (segment: string) =>
+      segment.startsWith('{...') ? 2 : segment.startsWith('{') ? 1 : 0;
+    const difference = rank(x) - rank(y);
+    if (difference) return difference;
+  }
+  return 0;
+}
