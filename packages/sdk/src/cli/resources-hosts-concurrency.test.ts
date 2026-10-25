@@ -64,8 +64,11 @@ const fleet = async (): Promise<DevboxFleetSnapshot> => ({
         executionMode: 'trusted',
         protocols: { commitRun: [1] },
         os: { platform: 'darwin' },
-        disk: { freeGiB: 100 },
-        resources: { loadAverage: [0], cpu: { cores: 8 } },
+        resources: {
+          loadAverage: [0],
+          cpu: { cores: 8 },
+          disk: { freeGiB: 100, freePct: 50 },
+        },
       },
       activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
     },

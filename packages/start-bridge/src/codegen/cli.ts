@@ -40,7 +40,8 @@ export function runRegistries(appRoot: string, mode: 'generate' | 'check') {
   const plan = planRegistries(
     { ...config, appDir: config.appDir ?? 'src/app' },
     files,
-    (path) => existsSync(join(appRoot, path))
+    (path) => existsSync(join(appRoot, path)),
+    (path) => readFileSync(join(appRoot, path), 'utf8')
   );
   errors.push(...plan.errors);
   for (const output of plan.generated) {

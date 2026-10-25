@@ -161,6 +161,7 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
                 controller: _searchController,
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderStorefrontSearch,
                   labelText: l10n.storefrontSearch,
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: _searchController.text.isEmpty

@@ -35,7 +35,17 @@
     "./start/server-entry": "./src/start/server-entry.ts",
     "./vite": "./src/vite/preset.ts",
     "./codegen": "./src/codegen/registry.ts",
-    "./pages": "./src/core/pages.ts"
+    "./pages": "./src/core/pages.ts",
+    "./vite/rsc": "./src/vite/rsc.ts",
+    "./start/page-route": "./src/start/page-route.tsx",
+    "./start/page-render": "./src/start/page-render.tsx",
+    "./start/page-params": "./src/start/page-params.ts",
+    "./start/page-location": "./src/start/page-location.ts",
+    "./start/app-base": "./src/start/app-base.ts",
+    "./start/app-config": "./src/start/app-config.ts",
+    "./proxy-matcher": "./src/next/proxy-matcher.ts",
+    "./start/metadata": "./src/start/metadata.ts",
+    "./start/server-actions": "./src/start/server-actions.ts"
   },
   "bin": {
     "start-bridge-routes": "./src/codegen/cli.ts"
@@ -71,5 +81,9 @@
     "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "@tanstack/router-core": "1.171.38",
+    "@vitejs/plugin-rsc": "0.5.38"
   }
 }

@@ -126,6 +126,7 @@ class _QuizSheetState extends State<_QuizSheet> {
             minLines: 2,
             maxLines: 4,
             decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderQuizQuestion,
               labelText: context.l10n.educationQuizQuestionLabel,
             ),
           ),
@@ -160,6 +161,7 @@ class _QuizSheetState extends State<_QuizSheet> {
                     TextField(
                       controller: option.controller,
                       decoration: InputDecoration(
+                        hintText: context.l10n.inputPlaceholderQuizOption,
                         labelText: context.l10n.educationQuizOptionValueLabel,
                       ),
                     ),
@@ -167,6 +169,7 @@ class _QuizSheetState extends State<_QuizSheet> {
                     TextField(
                       controller: option.explanationController,
                       decoration: InputDecoration(
+                        hintText: context.l10n.inputPlaceholderQuizExplanation,
                         labelText:
                             context.l10n.educationQuizOptionExplanationLabel,
                       ),
