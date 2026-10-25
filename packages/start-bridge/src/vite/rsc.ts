@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
+import { builtinModules } from 'node:module';
+import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { esmExternalRequirePlugin } from 'vite';
 
 /**
  * Environment-aware resolution for RSC mode. Vite aliases are global, so the
@@ -16,6 +19,11 @@ const FONT_PREFIX = '\0tuturuuu-start-bridge-font:';
 
 /** Export conditions and built-ins of a Cloudflare Worker environment. */
 const WORKER_CONDITIONS = ['workerd', 'worker', 'module', 'browser'];
+// Node built-ins, bare or `node:`-prefixed, served by workerd's nodejs_compat.
+const NODE_BUILTIN = new RegExp(
+  `^(?:node:)?(?:${builtinModules.map((name) => name.replace(/\//gu, '\\/')).join('|')})$`,
+  'u'
+);
 const CLOUDFLARE_BUILTINS = [
   'cloudflare:email',
   'cloudflare:node',
@@ -76,7 +84,42 @@ export interface StartBridgeRscPluginOptions {
 
 interface ResolveContext {
   environment?: { name: string };
+  resolve?: (
+    source: string,
+    importer?: string,
+    options?: { skipSelf?: boolean }
+  ) => Promise<{ id: string } | null>;
 }
+
+interface RenderContext {
+  environment?: { name: string };
+  emitFile(file: {
+    type: 'asset';
+    name: string;
+    originalFileName: string;
+    source: Uint8Array;
+  }): string;
+  getFileName(referenceId: string): string;
+}
+
+/**
+ * Wasm and binary data imported as modules, as Wrangler's CompiledWasm and
+ * Data rules load them (`next/og`'s Workers port imports `resvg.wasm`,
+ * `yoga.wasm` and its fallback font as `*.ttf.bin` and awaits their
+ * contents). The rsc build is not a Cloudflare environment, so it mirrors
+ * @cloudflare/vite-plugin's additional modules: the import stays external,
+ * the file is emitted beside the chunk, and Wrangler's default module rules
+ * type it at runtime.
+ */
+const BINARY_MODULE = /\.(?:wasm(?:\?module)?|bin)$/u;
+const BINARY_MARKER = '__TUTURUUU_BRIDGE_BINARY_MODULE__';
+const BINARY_REFERENCE = new RegExp(
+  `${BINARY_MARKER}(.+?)${BINARY_MARKER}`,
+  'gu'
+);
+
+const binaryReference = (file: string) =>
+  `${BINARY_MARKER}${file}${BINARY_MARKER}`;
 
 export function startBridgeRscPlugin(
   options: StartBridgeRscPluginOptions = {}
@@ -101,17 +144,26 @@ export function startBridgeRscPlugin(
       // runtime), resolve Worker export conditions, keep `cloudflare:*`
       // external, and use the neutral platform so no Node `createRequire`
       // runtime is emitted.
+      // Bundled CommonJS `require('child_process')` (e.g. googleapis) becomes
+      // an ESM import of the built-in instead of a neutral-platform `require`
+      // stub that throws at module load.
       return {
         resolve: {
           noExternal: true as const,
           conditions: WORKER_CONDITIONS,
-          builtins: CLOUDFLARE_BUILTINS,
+          builtins: [...CLOUDFLARE_BUILTINS, NODE_BUILTIN],
         },
         build: {
           target: 'es2026',
           rollupOptions: {
             ...(Object.keys(input).length > 0 ? { input } : {}),
             platform: 'neutral' as const,
+            plugins: [
+              esmExternalRequirePlugin({
+                external: [NODE_BUILTIN],
+                skipDuplicateCheck: true,
+              }),
+            ],
             output: { entryFileNames: '[name].js' },
           },
         },
@@ -119,6 +171,27 @@ export function startBridgeRscPlugin(
     },
     resolveId(this: ResolveContext, source: string, importer?: string) {
       const rsc = this.environment?.name === 'rsc';
+      if (rsc && importer && BINARY_MODULE.test(source)) {
+        const clean = source.replace(/\?module$/u, '');
+        if (clean.startsWith('.'))
+          return {
+            id: binaryReference(
+              resolve(dirname(importer.split('?')[0] ?? importer), clean)
+            ),
+            external: true,
+          };
+        return (
+          this.resolve?.(clean, importer, { skipSelf: true }) ??
+          Promise.resolve(null)
+        ).then((resolved) =>
+          resolved
+            ? {
+                id: binaryReference(resolved.id.split('?')[0] ?? ''),
+                external: true,
+              }
+            : null
+        );
+      }
       // Compiled packages also import `next/<module>.js`.
       const id = source.replace(/^(next\/[a-z-]+)\.js$/u, '$1');
       if (id === 'next/navigation')
@@ -141,6 +214,26 @@ export function startBridgeRscPlugin(
         return `${FONT_PREFIX}${names.join(',')}`;
       }
       return null;
+    },
+    renderChunk(
+      this: RenderContext,
+      code: string,
+      chunk: { fileName: string }
+    ) {
+      if (this.environment?.name !== 'rsc' || !code.includes(BINARY_MARKER))
+        return null;
+      return code.replace(BINARY_REFERENCE, (_, file: string) => {
+        const emitted = this.getFileName(
+          this.emitFile({
+            type: 'asset',
+            name: basename(file),
+            originalFileName: file,
+            source: readFileSync(file),
+          })
+        );
+        const path = relative(dirname(chunk.fileName), emitted);
+        return path.startsWith('.') ? path : `./${path}`;
+      });
     },
     load(id: string) {
       if (!id.startsWith(FONT_PREFIX)) return null;
