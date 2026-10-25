@@ -108,6 +108,31 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
       }
     );
 
+    await t.test(`wildcard Accept-Language at ${origin}${base}`, async () => {
+      for (const [language, supported] of [
+        ['*', 'en'],
+        ['en-US,en;q=0.9,*;q=0.1', 'en'],
+        ['vi,*;q=0.5', 'vi'],
+      ]) {
+        const control = await runtime.fetch(`${origin}${base}/`, {
+          headers: { 'accept-language': supported },
+        });
+        assert.ok([200, 307, 308].includes(control.status));
+        const expectedLocation = control.headers.get('location');
+        await control.text();
+        const response = await runtime.fetch(`${origin}${base}/`, {
+          headers: { 'accept-language': language },
+        });
+        assert.equal(
+          response.status,
+          control.status,
+          `Wildcard header ${language} must preserve supported-locale behavior`
+        );
+        assert.equal(response.headers.get('location'), expectedLocation);
+        await response.text();
+      }
+    });
+
     await t.test(`emitted static assets at ${origin}${base}`, async () => {
       const files = await readdir(join(app, 'dist/client/assets'));
       const javascript = files.find((file) => file.endsWith('.js'));

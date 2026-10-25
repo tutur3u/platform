@@ -126,6 +126,12 @@ for sealed original/restored artifact and browser acceptance.
 
 ## Prepare direct cutover and instant rollback
 
+The first Finance release targets `finance.tuturuuu.com` in root mode; Pay
+likewise targets `pay.tuturuuu.com`. Root-mode staging acceptance gates go-live.
+Apex-mounted cutover stays held until the shared auth-boundary guard ships and
+the user decides the shared-session model. Mounted evidence remains useful
+compatibility coverage.
+
 Finance and Pay cut over directly after their gates pass. There is no cohort
 selector, staged percentage, minimum session count, or canary operator.
 
@@ -174,7 +180,7 @@ The workflow repeats runtime acceptance after restoring the sealed bytes.
 
 The emitted suite covers exact build identity, anonymous API denial, function
 method/content-type admission, reserved Web routing and separate response
-cookies, bilingual auth and verification redirects, mounted assets and browser
+cookies, bilingual auth and verification redirects, wildcard `Accept-Language`, mounted assets and browser
 navigation. Browser redirects use the existing CDP fence because Playwright
 page routing does not intercept every redirect hop. Every Worker and browser request is bounded and fixture-fenced; the
 suite never authenticates to Cloudflare or a real provider. Production token
