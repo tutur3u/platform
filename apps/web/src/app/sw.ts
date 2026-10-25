@@ -11,6 +11,8 @@ import { createOfflineWorker } from '../../../../packages/offline/src/worker';
 const ONE_ORIGIN_APP_PREFIXES = ['/meet', '/mail'] as const;
 
 const worker = createOfflineWorker({
+  // Web's original cache names; changing this orphans installed caches.
+  cacheNamespace: 'tuturuuu-offline',
   bypassPathPrefixes: ONE_ORIGIN_APP_PREFIXES,
 });
 worker.addEventListeners();

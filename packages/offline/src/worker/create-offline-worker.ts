@@ -21,8 +21,9 @@ declare interface ServiceWorkerGlobalScope extends WorkerGlobalScope {
 
 declare const self: ServiceWorkerGlobalScope;
 
-const CACHE_PREFIX = 'tuturuuu-offline';
-const RUNTIME_CACHE = `${CACHE_PREFIX}-runtime-v1`;
+/** Web's original cache prefix; keeping it as the default preserves installed caches. */
+const DEFAULT_CACHE_NAMESPACE = 'tuturuuu-offline';
+const CACHE_NAMESPACE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const cacheWrites = new Map<string, Promise<void>>();
 const cacheRecency = new Map<string, Map<string, number>>();
 let accessOrder = 0;
@@ -32,7 +33,10 @@ function touchCache(cacheName: string, url: string) {
   cacheRecency.set(cacheName, recency);
 }
 
-function createPrecacheName(entries: readonly (PrecacheEntry | string)[]) {
+function createPrecacheName(
+  namespace: string,
+  entries: readonly (PrecacheEntry | string)[]
+) {
   const input = JSON.stringify(entries);
   let hash = 2166136261;
 
@@ -41,7 +45,7 @@ function createPrecacheName(entries: readonly (PrecacheEntry | string)[]) {
     hash = Math.imul(hash, 16777619);
   }
 
-  return `${CACHE_PREFIX}-precache-${(hash >>> 0).toString(36)}`;
+  return `${namespace}-precache-${(hash >>> 0).toString(36)}`;
 }
 
 function resolveEntryUrl(entry: PrecacheEntry | string) {
@@ -200,6 +204,8 @@ export class TuturuuuServiceWorker {
   private readonly offlineFallbackUrl: string;
   private readonly precacheEntries: (PrecacheEntry | string)[];
   private readonly precacheName: string;
+  private readonly ownPrecachePattern: RegExp;
+  private readonly runtimeCacheName: string;
   private readonly precacheUrls: Set<string>;
   private readonly skipWaiting: boolean;
 
@@ -229,8 +235,20 @@ export class TuturuuuServiceWorker {
         );
       }
     }
+    const namespace = config.cacheNamespace ?? DEFAULT_CACHE_NAMESPACE;
+    if (!CACHE_NAMESPACE_PATTERN.test(namespace)) {
+      throw new RangeError(
+        'cacheNamespace must be lowercase letters and digits joined by single hyphens'
+      );
+    }
+    this.runtimeCacheName = `${namespace}-runtime-v1`;
+    // Hashes are hyphen-free, so this never matches another namespace's precache.
+    this.ownPrecachePattern = new RegExp(
+      `^${namespace}-precache-[0-9a-z]+$`,
+      'u'
+    );
     this.precacheEntries = self.__TUTURUUU_PRECACHE_MANIFEST ?? [];
-    this.precacheName = createPrecacheName(this.precacheEntries);
+    this.precacheName = createPrecacheName(namespace, this.precacheEntries);
     this.precacheUrls = new Set(
       this.precacheEntries.map(
         (entry) => new URL(resolveEntryUrl(entry), self.location.origin).href
@@ -280,14 +298,15 @@ export class TuturuuuServiceWorker {
   }
 
   private async activate() {
-    if (this.maxRuntimeCacheEntries === 0) await caches.delete(RUNTIME_CACHE);
+    if (this.maxRuntimeCacheEntries === 0)
+      await caches.delete(this.runtimeCacheName);
+    // Other apps on the same origin keep their caches; only this namespace is pruned.
     const names = await caches.keys();
     await Promise.all(
       names
         .filter(
           (name) =>
-            name.startsWith(`${CACHE_PREFIX}-precache-`) &&
-            name !== this.precacheName
+            this.ownPrecachePattern.test(name) && name !== this.precacheName
         )
         .map((name) => caches.delete(name))
     );
@@ -327,7 +346,7 @@ export class TuturuuuServiceWorker {
       return runStrategy(
         rule.strategy,
         request,
-        rule.cacheName ?? RUNTIME_CACHE,
+        rule.cacheName ?? this.runtimeCacheName,
         event.preloadResponse,
         (promise) => event.waitUntil(promise),
         this.maxRuntimeCacheEntries
@@ -353,7 +372,7 @@ export class TuturuuuServiceWorker {
       return runStrategy(
         this.staticAssetsOnly ? 'cache-first' : 'stale-while-revalidate',
         request,
-        RUNTIME_CACHE,
+        this.runtimeCacheName,
         undefined,
         (promise) => event.waitUntil(promise),
         this.maxRuntimeCacheEntries
@@ -378,7 +397,7 @@ export class TuturuuuServiceWorker {
       ? await runStrategy(
           'network-first',
           event.request,
-          RUNTIME_CACHE,
+          this.runtimeCacheName,
           event.preloadResponse
         )
       : await (async () =>
