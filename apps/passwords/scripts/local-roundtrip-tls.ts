@@ -152,7 +152,6 @@ export async function tlsBridge(
       void job.finally(() => jobs.delete(job));
     }
   );
-  key.fill(0);
   server.on('tlsClientError', () => {
     failed = true;
   });
@@ -176,6 +175,7 @@ export async function tlsBridge(
     signal.removeEventListener('abort', abort);
     abort();
     server.close();
+    key.fill(0);
     cert.fill(0);
     pinned.fill(0);
     throw new Error('TLS_LISTEN');
@@ -291,6 +291,7 @@ export async function tlsBridge(
       abort();
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await Promise.allSettled(jobs);
+      key.fill(0);
       cert.fill(0);
       pinned.fill(0);
     },
