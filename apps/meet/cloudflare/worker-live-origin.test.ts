@@ -136,4 +136,19 @@ describe('Live Worker to Durable Object document-origin admission', () => {
     expect(response.status).toBe(403);
     expect(boundary.context).not.toHaveBeenCalled();
   });
+
+  it.each([
+    'https://untrusted.invalid',
+    'https://tuturuuu.com.untrusted.invalid',
+    'https://tuturuuu.com/meet',
+  ])('independently rejects %s at the DO boundary', async (origin) => {
+    const f = await fixture();
+    const response = await f.object.fetch(
+      new Request('https://tuturuuu.com/meet/live-connect', {
+        headers: f.headers(origin),
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(boundary.context).not.toHaveBeenCalled();
+  });
 });

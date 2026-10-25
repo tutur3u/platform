@@ -33,10 +33,12 @@ export function isMeetStagingCanonical(
   request: Request,
   env: MeetPublicOrigins
 ) {
+  const canonical = meetMounts();
+  const host = new URL(request.url).host;
   return (
     env.TUTURUUU_NOINDEX === '1' &&
-    [...meetMounts().rootHosts, ...meetMounts().mountHosts].some((host) =>
-      [host, `www.${host}`].includes(new URL(request.url).host)
+    [...canonical.rootHosts, ...(canonical.mountHosts ?? [])].some(
+      (canonicalHost) => [canonicalHost, `www.${canonicalHost}`].includes(host)
     )
   );
 }
