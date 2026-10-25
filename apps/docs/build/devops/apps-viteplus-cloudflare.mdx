@@ -225,8 +225,17 @@ keeps an identity default rather than importing the private bridge package.
 Explicit API destinations remain authoritative.
 
 The staging candidate rejects canonical hosts and returns noindex headers.
-Cookies pass through unchanged under the user's shared-session decision. The
-bridge doc's mounted-auth and shared logout proposal must be implemented by the
-auth owner and independently reviewed before any cutover. The temporary
+Cookies pass through unchanged under the user's shared-session decision.
+App-owned refresh and verification use the resolved mount; logout uses Web's
+root endpoints and ends the shared session globally. Shared-session security
+acceptance remains a cutover requirement. The temporary
 `vp build --configLoader runner` command does not waive real build or artifact
 acceptance.
+
+The finite Meet SDK fixture leaves the app's `dev.origin.hostname` unset and
+sets only `secure: true`. A fixed hostname rewrites every public `Worker.fetch`
+URL to that host, so sending an apex URL alone does not exercise a mounted
+request. Keep the probe's fixed origin and all HTTP denial controls. Both fresh
+graphs must render root and mounted bilingual callbacks, fetch their emitted
+assets and check the app/API ownership boundaries. Do not repair sealed output
+to resolve a fixture or runtime failure.

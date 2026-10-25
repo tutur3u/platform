@@ -108,6 +108,11 @@ does not authorize promotion.
 
 ## Meet Dry-Run Artifact Scratch
 
+For dual-host emitted acceptance, follow the Meet fixture's public SDK origin
+setup in `apps/docs/build/devops/apps-viteplus-cloudflare.mdx`: a fixed app
+`dev.origin.hostname` replaces request hosts and invalidates mount coverage.
+Preserve the pinned supplier, probe origin, negative controls and artifact seal.
+
 Keep both frontend dry-runs in `meet-cloudflare.yaml` routed through
 `scripts/ci/meet-dry-run-scratch.mjs`, run from `apps/meet` with `"$SOURCE_SHA"`.
 It derives config from `verify-meet-start-output.js`, requires the manifest and
