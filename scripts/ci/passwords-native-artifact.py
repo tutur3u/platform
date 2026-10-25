@@ -65,7 +65,10 @@ def prepare(directory):
         if not separator or key not in expected or key in found:
             raise ValueError("unreviewed build environment key")
         try:
-            found[key] = json.loads(value) if value.startswith('"') else value
+            if value.startswith("'") and value.endswith("'"):
+                found[key] = value[1:-1]
+            else:
+                found[key] = json.loads(value) if value.startswith('"') else value
         except (ValueError, TypeError):
             raise ValueError("invalid build environment encoding") from None
     if found != expected:
