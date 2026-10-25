@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   APP_BASE_GLOBAL,
@@ -5,7 +6,9 @@ import {
   appUrl,
 } from '../../start-bridge/src/core/app-url';
 import {
+  type BridgeRequestContext,
   bridgeRequest,
+  installRequestStore,
   withBridgeRequest,
 } from '../../start-bridge/src/core/request-context';
 import {
@@ -24,6 +27,8 @@ import {
 } from './client';
 import { listMailMessages } from './mail';
 import { getMeetPlanSnapshot } from './meet';
+
+installRequestStore(new AsyncLocalStorage<BridgeRequestContext>());
 
 const unregisterCallbacks: Array<() => void> = [];
 function register(
