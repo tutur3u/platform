@@ -23,7 +23,7 @@ it.each([
   ['/vi/ai', '/vi/products/ai'],
 ])('temporarily redirects %s to its product page', async (source, target) => {
   const response = await unstable_getResponseFromNextConfig({
-    url: `https://tuturuuu.com${source}?tag=one%2Ftwo&tag=three+four&empty=`,
+    url: `https://tuturuuu.com${source}?tag=one%2Ftwo&phrase=three+four&empty=`,
     nextConfig,
   });
   expect(response.status).toBe(307);
@@ -32,10 +32,8 @@ it.each([
   const location = new URL(redirectUrl);
   expect(location.origin).toBe('https://tuturuuu.com');
   expect(location.pathname).toBe(target);
-  expect(location.searchParams.getAll('tag')).toEqual([
-    'one/two',
-    'three four',
-  ]);
+  expect(location.searchParams.get('tag')).toBe('one/two');
+  expect(location.searchParams.get('phrase')).toBe('three four');
   expect(location.searchParams.get('empty')).toBe('');
 });
 

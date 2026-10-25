@@ -328,3 +328,5 @@ browser hydration need independent acceptance. Preserve
 an observed hosted configuration and recoverable prior Worker version before
 traffic changes. Local workerd probes do not qualify hosted SFU/TURN, devices,
 recording or assistant stop behavior.
+
+The Web build gate runs `node scripts/ci/web-product-marketing.runtime.mjs` against the built Next server. It verifies all eight temporary redirects, including repeated query parameters; the focused route tests cover the excluded application and Meet Together paths.

@@ -224,6 +224,9 @@ jobs:
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
+      - name: Verify built Web product marketing redirects
+        run: node scripts/ci/web-product-marketing.runtime.mjs
+
   calendar-native:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').calendar) != 'false'
