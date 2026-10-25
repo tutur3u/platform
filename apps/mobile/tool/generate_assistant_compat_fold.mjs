@@ -41,6 +41,72 @@ const dartString = (text) =>
     })
     .join('')}'`;
 
+// Latin letters drawn as a base letter with a stroke, bar, hook, curl or tail
+// (and eth), which have no canonical decomposition. Unicode exposes this only
+// through character names, which the runtime lacks, so the class is listed
+// here and validated below: each must be supported and must not decompose.
+const undecomposedBases = {
+  A: [0x23a],
+  B: [0x181, 0x182, 0x243],
+  b: [0x180, 0x183],
+  C: [0x187, 0x23b],
+  c: [0x188, 0x23c],
+  D: [0xd0, 0x110, 0x189, 0x18a, 0x18b],
+  d: [0xf0, 0x111, 0x18c, 0x221],
+  E: [0x246],
+  e: [0x247],
+  F: [0x191],
+  f: [0x192],
+  G: [0x193, 0x1e4],
+  g: [0x1e5],
+  H: [0x126],
+  h: [0x127],
+  I: [0x197],
+  J: [0x248],
+  j: [0x249],
+  K: [0x198],
+  k: [0x199],
+  L: [0x141, 0x23d],
+  l: [0x142, 0x19a, 0x234],
+  N: [0x19d, 0x220],
+  n: [0x19e, 0x235],
+  O: [0xd8, 0x19f],
+  o: [0xf8],
+  P: [0x1a4],
+  p: [0x1a5],
+  Q: [0x24a],
+  q: [0x24b],
+  R: [0x24c],
+  r: [0x24d],
+  s: [0x23f, 0x1e9c, 0x1e9d],
+  T: [0x166, 0x1ac, 0x1ae, 0x23e],
+  t: [0x167, 0x1ab, 0x1ad, 0x236],
+  U: [0x244],
+  V: [0x1b2],
+  Y: [0x1b3, 0x24e],
+  y: [0x1b4, 0x24f],
+  Z: [0x1b5, 0x224],
+  z: [0x1b6, 0x225, 0x240],
+};
+
+const isSupported = (codePoint) =>
+  ranges.some(([start, end]) => codePoint >= start && codePoint <= end);
+const undecomposed = new Map();
+for (const [base, codePoints] of Object.entries(undecomposedBases)) {
+  for (const codePoint of codePoints) {
+    const character = String.fromCodePoint(codePoint);
+    if (
+      !isSupported(codePoint) ||
+      character.normalize('NFD') !== character ||
+      character.normalize('NFKC') !== character ||
+      undecomposed.has(codePoint)
+    ) {
+      throw new Error(`Invalid undecomposed base U+${hex(codePoint)}.`);
+    }
+    undecomposed.set(codePoint, base);
+  }
+}
+
 const entries = [];
 const bases = [];
 for (const [start, end] of ranges) {
@@ -52,7 +118,9 @@ for (const [start, end] of ranges) {
     }
     // Lone marks are removed by the scanner itself; only precomposed
     // characters need a table entry.
-    const base = character.normalize('NFD').replace(/\p{Mn}/gu, '');
+    const base =
+      undecomposed.get(codePoint) ??
+      character.normalize('NFD').replace(/\p{Mn}/gu, '');
     if (base !== character && base !== '') bases.push([codePoint, base]);
   }
 }
@@ -73,8 +141,9 @@ ${table(entries)}
 };
 
 // Every precomposed character in the supported ranges mapped to its NFD
-// decomposition without nonspacing marks, so the mark-stripped reading sees
-// the base letters a reader would.
+// decomposition without nonspacing marks, and every stroked, barred or hooked
+// Latin letter without a decomposition mapped to its base letter, so the
+// mark-stripped reading sees the base letters a reader would.
 
 const assistantMarkStrippedBases = <int, String>{
 ${table(bases)}

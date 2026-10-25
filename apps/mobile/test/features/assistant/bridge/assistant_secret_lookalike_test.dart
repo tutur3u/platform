@@ -88,6 +88,47 @@ void main() {
     );
   }
 
+  // Stroked, barred and hooked letters (and eth) have no canonical
+  // decomposition but read as their base letter.
+  for (final letter in [
+    'Đ', 'đ', 'Ð', 'ð', 'Ł', 'ł', 'Ø', 'ø', 'Ħ', 'ħ', 'Ŧ', 'ŧ', //
+    'Ƀ', 'ƀ', 'Ɨ', 'Ƶ', 'ƶ', 'Ǥ', 'ǥ', 'Ɍ', 'ɍ', 'Ƒ', 'ƒ', 'Ȼ', //
+  ]) {
+    for (final reversed in [false, true]) {
+      test('Bearer split by $letter, reversed=$reversed, is redacted', () {
+        final parts = reversed
+            ? ['Lm9nOp1qRs3', 'Ab3dEf5hIj7k']
+            : ['Ab3dEf5hIj7k', 'Lm9nOp1qRs3'];
+        final secret = 'Bearer ${parts.join(letter)}';
+        for (final input in [secret, 'Đà Nẵng; $secret', '$secret; đường']) {
+          expect(assistantTextContainsSecret(input), isTrue, reason: input);
+          expect(redactAssistantSecrets(input), r, reason: input);
+        }
+      });
+    }
+  }
+
+  test('a key spelled with stroked letters is redacted', () {
+    for (final input in [
+      'key sk-proj-Ab3dEf5hIj7kLm9n\u00D8p1qRs3Tu',
+      'gh ghp_\u0110\u0141\u0126\u0166Ab3dEf5hIj7kLm9nOp1q',
+    ]) {
+      expect(assistantTextContainsSecret(input), isTrue, reason: input);
+    }
+  });
+
+  test('Vietnamese and other text with stroked letters stays shareable', () {
+    for (final ordinary in [
+      'Đà Nẵng',
+      'đường',
+      'Họp ở Đường Điện Biên Phủ, Đà Nẵng lúc 9:30',
+      'Łódź, Øresund and Ħamrun',
+    ]) {
+      expect(assistantTextContainsSecret(ordinary), isFalse, reason: ordinary);
+      expect(redactAssistantSecrets(ordinary), ordinary, reason: ordinary);
+    }
+  });
+
   test('ordinary text with marks, fractions and shapes stays shareable', () {
     const vietnamese = 'Họp nhóm lúc 9:30 sáng mai ở phòng Trường Sơn';
     final decomposedVietnamese = String.fromCharCodes([

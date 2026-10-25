@@ -143,7 +143,8 @@ The rules for that content:
   indicators and fractions) is folded to that reading first. The fold table
   is generated from the supported ranges by
   `apps/mobile/tool/generate_assistant_compat_fold.mjs`, together with the
-  NFD base letter of every supported precomposed character; rerun it after
+  NFD base letter of every supported precomposed character and a validated
+  list of stroked, barred and hooked letters; rerun it after
   changing the ranges. `--check` verifies the committed table and runs in the
   mobile CI analyze job and `bun check:mobile`. Every reading,
   raw and decoded, may then contain only ASCII, Latin letters and marks
@@ -156,7 +157,10 @@ The rules for that content:
   every reading is also scanned without them: NFD with every nonspacing mark
   removed. Marks inserted between a secret's characters (accents, or overlays
   such as U+0337 and U+0338) and precomposed accented letters therefore
-  cannot hide it. The shared value keeps its marks.
+  cannot hide it. The same reading maps Latin letters with a stroke, bar,
+  hook, curl or tail that have no decomposition (Đ, Ł, Ø, Ħ, Ŧ, Ƀ, Ɨ, Ƶ, and
+  eth Ð/ð) to their base letter. The shared value keeps its marks and
+  letters, so Vietnamese such as `Đà Nẵng` is shared unchanged.
 - **Punctuation look-alikes.** Supported characters drawn like the punctuation
   credentials are spelled with (`+ - _ = . /`) become that ASCII character in
   scan readings: heavy plus and Greek crosses; dashes, minus signs, heavy minus
@@ -226,10 +230,10 @@ separate follow-ups.
   controller; structured closure fields; misleading field names; real-control
   obscuring and `visiblePassword`.
 - `apps/mobile/test/features/assistant/bridge/assistant_secret_lookalike_test.dart`:
-  keys with combining marks inserted or precomposed accented letters, raw and
-  base64; Bearer and GitHub tokens split by each punctuation look-alike or
-  solidus overlay, in both fragment orders; ordinary decomposed Vietnamese,
-  fractions, fraction-slash dates, diagonals, paths, URLs and bullet lists
+  keys with combining marks inserted, precomposed accented letters or stroked
+  letters, raw and base64; Bearer and GitHub tokens split by each punctuation
+  look-alike, solidus overlay or stroked letter, in both fragment orders;
+  ordinary decomposed Vietnamese, `Đà Nẵng` and `đường`, fractions, fraction-slash dates, diagonals, paths, URLs and bullet lists
   stay shareable while unsupported characters still redact the field.
 - `apps/mobile/test/features/calendar/widgets/event_form_assistant_context_test.dart`:
   read-time scope checks and mounted create/edit forms across a
