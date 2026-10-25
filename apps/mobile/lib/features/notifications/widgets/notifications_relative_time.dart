@@ -1,6 +1,12 @@
-part of 'notifications_sheet.dart';
+import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/l10n/l10n.dart';
 
-String _formatRelativeTime(BuildContext context, DateTime timestamp) {
+/// Short relative age of a notification ("5m ago"), or a date after a week.
+String formatNotificationRelativeTime(
+  BuildContext context,
+  DateTime timestamp,
+) {
   final difference = DateTime.now().difference(timestamp);
   if (difference.inSeconds < 45) {
     return context.l10n.notificationsJustNow;

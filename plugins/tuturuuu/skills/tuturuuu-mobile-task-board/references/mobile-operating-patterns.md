@@ -7,6 +7,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Localization Generation**: Run `flutter gen-l10n` after ARB changes.
 - **Clean Pass**: `bun check:mobile` is mandatory for mobile changes. It runs format, analyze, and test.
 - **Analyze Info = CI Failure**: Treat `flutter analyze` info-level lints as blocking in this workspace; fix them in touched files before finishing.
+- **Widget Fixture Cleanup**: Dispose `tester.ensureSemantics()` handles and restore debug platform overrides in `try/finally` before the test body returns; Flutter checks these invariants before `addTearDown`. When a transport contract changes, migrate widget fixtures as well as repository tests, preserving held-response and duplicate-write assertions. See [fixture lifecycle guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-widget-fixtures-current).
 - **Flutter L10n Asset Formatting**: Do not send `.arb` files through `dart format`; format only Dart sources and regenerate `flutter gen-l10n` after ARB edits.
 - **Flutter Analyze Ignore Hygiene**: Avoid speculative `ignore_for_file` directives. `flutter analyze` reports `unnecessary_ignore` as a failing issue during `bun check:mobile`.
 - **Import Order Lints Can Still Block Delivery**: For new large mobile screens, expect `flutter analyze` style infos such as `directives_ordering`, deprecated form-field APIs, and constructor parameter-order lints to fail `bun check:mobile`. Do not stop at “no errors”; keep touched files info-clean.
@@ -102,6 +103,8 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Stable Shell Top Bars Across Tabs**: Keep shell navbar layout stable across Home, Assistant, and Apps; place assistant-only actions in the assistant surface.
 - **Opt-In Mobile Fullscreen Chat**: Do not auto-enter fullscreen because the assistant tab opened or workspace reloaded.
 - **Inline Mobile Streaming State**: Create/update the pending assistant message as soon as stream starts and keep streaming/thinking indicators inline with transcript.
+- **Assistant transport fixtures**: Establish the controlled socket after Page workspace bootstrap, assert its setup before sink admission, and create real cache/file or cancellation work in its owning asynchronous zone. Byte-backed IO file fixtures need a nonempty path to retain their filename. Claim preparation ownership before the first await, control reconnect/watchdog timers in one fixture zone, and preserve dispatch, terminal-state and receipt assertions; see `apps/docs/build/development-tools/mobile-state-regressions.mdx`.
+- **Live recorder cancellation**: The pinned recorder serializes permission and native capture calls. Track requested capture ownership so permission-only Stop avoids native queries; generation-fence late grants and serialize actual start/stop cleanup. Keep pending/partial capture ownership until native Stop completes. `assistant_live_recorder_lifecycle_test.dart` covers these races; device audio routes remain a separate gate.
 - **Explicit Mobile Live Entry**: Do not auto-create Gemini Live sessions on workspace/chat load. Keep normal text chat on the standard `AssistantChatCubit` path, and only route text/audio through `AssistantLiveCubit` after the user explicitly enters live mode for the current chat.
 - **Dedicated Mobile Live Presentation State**: Drive fullscreen live UI from explicit page/chrome presentation state, not from inferred transport signals such as bound live `chatId`, socket status, or restored model ids. Reconnects and restored live transcripts must not silently force the user back into live mode or overwrite the normal text-model selection.
 - **Fullscreen Live Status Must Expose Detail Inline**: Do not rely on a generic live status badge or a secondary info sheet for failure diagnosis. Fullscreen live mode must render the current status detail inline, provide a primary recovery action for reconnecting/error states, and keep reconnecting states labeled as reconnecting even when a transport error reason is present.
@@ -145,7 +148,9 @@ Read only the section relevant to the current feature; paths are repository-rela
 After extracting Cubit code, keep protected `emit` access in the subclass or use
 its existing publication helper; extensions do not inherit subclass access.
 Recheck suppressions in both files, search callers of retired APIs, and inspect
-the declared constructor before correcting test fixtures. Qualify the final
+the declared constructor and extension visibility before correcting fixtures. A
+public-looking method in a private extension is not an exported Cubit API; test
+through the existing public entrypoint rather than exposing an internal helper. Qualify the final
 composed source; earlier parent snapshots remain diagnostic evidence. See the
 [formatter context guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx)
 when the local checkout lacks package configuration.
@@ -155,6 +160,7 @@ when the local checkout lacks package configuration.
 - **Mira Screen Context Scope**: Workspace-scoped `AssistantScreenContextScope` adopters must supply `isCurrentScope` for the captured actor and workspace. The registry evaluates it on every snapshot before reading fields; mounted and TickerMode checks alone do not fence a modal across workspace switches. Cover both create and edit paths with a mounted-form switch regression (`event_form_assistant_context_test.dart`).
 - **Assistant Send Recovery**: Distinguish an untouched actor/workspace scope from uncertain creation. Bootstrap a clear envelope under the scope lock only when the envelope, legacy selection/context, creation marker and process authority are all absent; require host acknowledgement before creation. Preserve informed recovery for legacy/pending/held state and retain drafts until a real USER receipt. Exercise first Send, rapid Sends, held ACKs and the first navbar frame (`assistant_send_recovery_test.dart`, `assistant_fresh_scope_test.dart`).
 - **Assistant Reaction Operations**: Use idempotent desired-state PUT with a stable persisted operation ID; never fall back to the legacy POST toggle. Clean exact unsent/acknowledged markers independently of page scope. Logout clears journal metadata but retains operation IDs until server retirement prevents delayed writes; scope admission captures the retirement epoch. Exact-message refresh safely replays the retained intent, then reads its target. See [native reaction decisions](../../../../../apps/docs/platform/features/assistant-live.mdx#native-mobile-reaction-operations) and lifecycle/transport regression suites.
+- **Assistant Message Actions**: Private Chat reactions/replies require a native conversation and an authoritative saved-message receipt; a UUID-shaped optimistic row is insufficient. Use the native reaction operation contract for uncertainty recovery and preserve message content when applying receipts. Reply jumps suspend bottom-follow and retain bubble keys through acknowledgment ID relocation. See [mobile message actions and appearance](../../../../../apps/docs/platform/features/assistant-live.mdx#mobile-message-actions-and-appearance) for supported scopes and regression targets.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
 ### Offline downloads
@@ -203,6 +209,11 @@ For the source-linked diagnosis guide, read
   Default settle-all `Future.wait` handles a sibling failure while another task
   remains pending; connect only after all prerequisites succeed and scope is
   still current. Test pending and failing tasks with controlled completers.
+- Keep shell provider mocks faithful to consumed getters, including an explicit
+  `AuthCubit.isClosed` value. Preserve page-build, navigation and geometry
+  assertions. Auth transition fixtures assert immediate revocation and await the
+  source notification before expecting restored actor identity; see the
+  [async fixture guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
 
 - Separate foreground interaction admission from the lease of an already admitted
   remote operation. A transient local runtime invalidation on pause must not drop

@@ -8,6 +8,7 @@ import 'package:mobile/features/assistant/data/assistant_live_camera_service.dar
 import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -66,6 +67,9 @@ void main() {
     final unregister = AssistantClientActions.register(bridge);
     addTearDown(unregister);
     when(() => socket.events).thenAnswer((_) => events.stream);
+    when(
+      () => socket.sendText(any()),
+    ).thenReturn(AssistantLiveSinkAdmission.admitted);
     when(recorder.stop).thenAnswer((_) async {});
     when(recorder.dispose).thenAnswer((_) async {});
     when(player.initialize).thenAnswer((_) async {});

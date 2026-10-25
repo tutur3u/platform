@@ -10,114 +10,122 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
-import 'package:mobile/l10n/gen/app_localizations.dart';
+import 'package:mobile/features/shell/view/shell_dock_control_item.dart';
+import 'package:mobile/l10n/l10n.dart';
+
+import 'assistant_live_shell_harness.dart';
 
 void main() {
-  testWidgets('shared navbar controls preserve geometry, toggles, busy '
-      'and haptic preference', (tester) async {
-    tester.view
-      ..physicalSize = const Size(320, 720)
-      ..devicePixelRatio = 1;
-    final semanticsHandle = tester.ensureSemantics();
+  testWidgets('stable toggle slots exclude duplicate taps and honor haptics', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    final enabled = AppHaptics.enabled;
+    AppHaptics.enabled = false;
+    final platformCalls = <MethodCall>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            platformCalls.add(call);
+            return null;
+          });
     try {
-      final wasEnabled = AppHaptics.enabled;
-      AppHaptics.enabled = false;
-      final platformCalls = <MethodCall>[];
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            ..setMockMethodCallHandler(SystemChannels.platform, (call) async {
-              platformCalls.add(call);
-              return null;
-            });
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-        AppHaptics.enabled = wasEnabled;
-        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
-      });
-      final toggling = Completer<void>();
-      var taps = 0;
+      final pending = Completer<void>();
+      var calls = 0;
+      var active = true;
+      late StateSetter update;
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: 264,
-                child: AssistantLiveCallControls(
-                  state: const AssistantLiveState(
-                    status: AssistantLiveConnectionStatus.connected,
-                    isMicrophoneActive: true,
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return Center(
+                  child: SizedBox(
+                    width: 236,
+                    child: AssistantLiveCallControls(
+                      state: AssistantLiveState(
+                        status: AssistantLiveConnectionStatus.connected,
+                        isMicrophoneActive: active,
+                      ),
+                      onMicrophone: () async {
+                        calls++;
+                        await pending.future;
+                      },
+                      onCamera: () async {},
+                      onText: () async {},
+                      onDisconnect: () async {},
+                    ),
                   ),
-                  onMicrophone: () async {
-                    taps++;
-                    await toggling.future;
-                  },
-                  onCamera: () async {},
-                  onText: () async {},
-                  onDisconnect: () async {},
-                ),
-              ),
+                );
+              },
             ),
           ),
         ),
       );
-      await tester.pumpAndSettle();
-      expect(find.byType(ShellDockActionButton), findsNWidgets(4));
-      expect(find.byType(AppIconButton), findsNothing);
-      for (final button in find.byType(AppButton).evaluate()) {
-        expect(
-          tester.getSize(
-            find.byElementPredicate((element) => element == button),
-          ),
-          const Size(48, 48),
-        );
+      final mic = find.byKey(const ValueKey('live-control-microphone'));
+      final identity = tester.element(mic);
+      final center = tester.getCenter(mic);
+      expect(find.byType(ShellDockControlItem), findsNWidgets(4));
+      expect(find.byType(AppIconButton), findsNWidgets(4));
+      expect(find.byType(ShellDockActionButton), findsNothing);
+      for (final id in liveControlIds) {
+        final rect = tester.getRect(find.byKey(ValueKey('live-control-$id')));
+        expect(rect.width, greaterThanOrEqualTo(48));
+        expect(rect.height, greaterThanOrEqualTo(48));
       }
-      final semantics = tester.getSemantics(find.byTooltip('Mute mic'));
-      expect(semantics.flagsCollection.isToggled != Tristate.none, isTrue);
-      expect(semantics.flagsCollection.isToggled == Tristate.isTrue, isTrue);
+      expect(
+        tester.getSemantics(mic).flagsCollection.isToggled,
+        Tristate.isTrue,
+      );
       expect(
         tester
-                .getSemantics(find.byIcon(LucideIcons.phoneOff))
-                .flagsCollection
-                .isToggled !=
-            Tristate.none,
-        isFalse,
+            .getSemantics(find.byKey(const ValueKey('live-control-exit')))
+            .flagsCollection
+            .isToggled,
+        Tristate.none,
       );
-      await tester.tap(find.byTooltip('Mute mic'));
+      await tester.tap(mic);
       await tester.pump();
-      expect(taps, 1);
-      final busy = tester.widget<ShellDockActionButton>(
-        find.byType(ShellDockActionButton).first,
+      await tester.tap(mic);
+      expect(calls, 1);
+      final button = tester.widget<AppIconButton>(
+        find.descendant(of: mic, matching: find.byType(AppIconButton)),
       );
-      expect(busy.action.enabled, isFalse);
+      expect(button.onPressed, isNull);
+      pending.complete();
+      await tester.pump();
+      update(() => active = false);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.element(mic), same(identity));
+      expect(tester.getCenter(mic), center);
+      expect(find.byTooltip('Open mic'), findsOneWidget);
+      expect(
+        tester.getSemantics(mic).flagsCollection.isToggled,
+        Tristate.isFalse,
+      );
       expect(
         platformCalls.where((call) => call.method == 'HapticFeedback.vibrate'),
         isEmpty,
       );
-      toggling.complete();
-      await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<ShellDockActionButton>(
-              find.byType(ShellDockActionButton).first,
-            )
-            .action
-            .enabled,
-        isTrue,
-      );
       expect(tester.takeException(), isNull);
     } finally {
-      semanticsHandle.dispose();
+      handle.dispose();
+      AppHaptics.enabled = enabled;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     }
   });
 
   for (final status in AssistantLiveConnectionStatus.values) {
-    testWidgets('dock actions reflect actual $status state', (tester) async {
+    testWidgets('four real controls map $status callbacks without new media', (
+      tester,
+    ) async {
       var microphone = 0;
       var camera = 0;
-      var end = 0;
+      var keyboard = 0;
+      var exit = 0;
       final state = AssistantLiveState(status: status);
       await tester.pumpWidget(
         MaterialApp(
@@ -132,26 +140,65 @@ void main() {
               onCamera: () async {
                 camera++;
               },
-              onText: () async {},
+              onText: () async {
+                keyboard++;
+              },
               onDisconnect: () async {
-                end++;
+                exit++;
               },
             ),
           ),
         ),
       );
-      if (status == AssistantLiveConnectionStatus.connected) {
-        await tester.tap(find.byIcon(LucideIcons.micOff));
-        await tester.tap(find.byIcon(LucideIcons.videoOff));
-        await tester.tap(find.byIcon(LucideIcons.phoneOff));
-        expect(microphone, 1);
-        expect(camera, 1);
-        expect(end, 1);
-      } else {
-        expect(find.byType(AppIconButton), findsNothing);
-        expect(microphone + camera + end, 0);
+      expect(find.byType(AppIconButton), findsNWidgets(4));
+      for (final id in liveControlIds) {
+        await tester.tap(find.byKey(ValueKey('live-control-$id')));
+        await tester.pump();
       }
+      expect(microphone, state.isBusy ? 0 : 1);
+      expect(camera, status == AssistantLiveConnectionStatus.connected ? 1 : 0);
+      expect(keyboard, 1);
+      expect(exit, 1);
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets(
+    'reconnecting permits stopping active media without starting it',
+    (tester) async {
+      var microphoneStops = 0;
+      var cameraStops = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: AssistantLiveCallControls(
+              state: const AssistantLiveState(
+                status: AssistantLiveConnectionStatus.reconnecting,
+                isMicrophoneActive: true,
+                isCameraActive: true,
+              ),
+              onMicrophone: () async {
+                microphoneStops++;
+              },
+              onCamera: () async {
+                cameraStops++;
+              },
+              onText: () async {},
+              onDisconnect: () async {},
+            ),
+          ),
+        ),
+      );
+      expect(find.byTooltip('Mute mic'), findsOneWidget);
+      expect(find.byTooltip('Hide camera'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+      await tester.tap(find.byKey(const ValueKey('live-control-camera')));
+      await tester.pump();
+      expect(microphoneStops, 1);
+      expect(cameraStops, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

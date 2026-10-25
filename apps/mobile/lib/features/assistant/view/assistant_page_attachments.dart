@@ -52,12 +52,7 @@ extension _AssistantAttachments on _AssistantPageState {
       isCurrentActor: isCurrent,
     );
     if (sendNow && isCurrent()) {
-      await _handleSend(
-        wsId,
-        _shellCubit.state,
-        _chatCubit.state,
-        _liveCubit.state,
-      );
+      await _handleSend(wsId);
     }
   }
 

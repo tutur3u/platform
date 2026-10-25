@@ -1036,7 +1036,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionConnecting.
   ///
   /// In en, this message translates to:
-  /// **'Creating a direct Gemini Live session for text, audio, and camera input.'**
+  /// **'Connecting your live conversation.'**
   String get assistantLiveDescriptionConnecting;
 
   /// No description provided for @assistantLiveDescriptionError.
@@ -1048,7 +1048,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionIdle.
   ///
   /// In en, this message translates to:
-  /// **'Start a live session to talk, type, or stream camera context into the same assistant chat.'**
+  /// **'Tap the microphone to start talking. Your conversation stays here.'**
   String get assistantLiveDescriptionIdle;
 
   /// No description provided for @assistantLiveDescriptionListening.
@@ -1060,7 +1060,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionPreparing.
   ///
   /// In en, this message translates to:
-  /// **'Minting an ephemeral token and restoring the last resumable live session.'**
+  /// **'Getting your live conversation ready.'**
   String get assistantLiveDescriptionPreparing;
 
   /// No description provided for @assistantLiveDescriptionReady.
@@ -1072,7 +1072,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionReconnecting.
   ///
   /// In en, this message translates to:
-  /// **'The session is reconnecting with the latest resumable handle and restored history.'**
+  /// **'Reconnecting your conversation. Your transcript is still here.'**
   String get assistantLiveDescriptionReconnecting;
 
   /// No description provided for @assistantLiveDisconnect.
@@ -1102,7 +1102,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveIdleHeading.
   ///
   /// In en, this message translates to:
-  /// **'Talk with Mira'**
+  /// **'Ready to talk'**
   String get assistantLiveIdleHeading;
 
   /// No description provided for @assistantLiveInfoAccessHeading.
@@ -4320,6 +4320,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today at a glance'**
   String get dashboardTodayTitle;
+
+  /// No description provided for @dashboardUntitledEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled event'**
+  String get dashboardUntitledEvent;
 
   /// No description provided for @dashboardUpcomingEvents.
   ///
@@ -7669,6 +7675,42 @@ abstract class AppLocalizations {
   /// **'Customize Home'**
   String get homeCustomize;
 
+  /// No description provided for @homeGreetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGreetingAfternoon;
+
+  /// No description provided for @homeGreetingAfternoonNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String homeGreetingAfternoonNamed(String name);
+
+  /// No description provided for @homeGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGreetingEvening;
+
+  /// No description provided for @homeGreetingEveningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String homeGreetingEveningNamed(String name);
+
+  /// No description provided for @homeGreetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGreetingMorning;
+
+  /// No description provided for @homeGreetingMorningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String homeGreetingMorningNamed(String name);
+
   /// No description provided for @homeHiddenWidgets.
   ///
   /// In en, this message translates to:
@@ -7692,6 +7734,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Personal calendar is unavailable.'**
   String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @homeSectionLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to try again.'**
+  String get homeSectionLoadFailed;
 
   /// No description provided for @homeShowWidget.
   ///
@@ -11695,6 +11743,30 @@ abstract class AppLocalizations {
   /// **'Decline'**
   String get notificationsDeclineInvite;
 
+  /// No description provided for @notificationsGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get notificationsGroupEarlier;
+
+  /// No description provided for @notificationsGroupLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get notificationsGroupLastWeek;
+
+  /// No description provided for @notificationsGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsGroupToday;
+
+  /// No description provided for @notificationsGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsGroupYesterday;
+
   /// No description provided for @notificationsHoursAgo.
   ///
   /// In en, this message translates to:
@@ -12348,6 +12420,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Display name cannot be empty'**
   String get profileDisplayNameRequired;
+
+  /// No description provided for @profileDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h'**
+  String profileDurationHours(int hours);
+
+  /// No description provided for @profileDurationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String profileDurationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @profileDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String profileDurationMinutes(int minutes);
 
   /// No description provided for @profileEmail.
   ///
@@ -21096,6 +21186,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load or save calendar preferences. Retry when online.'**
   String get calendarSettingsError;
+
+  /// No description provided for @assistantReactionCelebrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Celebrate'**
+  String get assistantReactionCelebrate;
+
+  /// No description provided for @assistantReactionInsightful.
+  ///
+  /// In en, this message translates to:
+  /// **'Insightful'**
+  String get assistantReactionInsightful;
+
+  /// No description provided for @assistantReactionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reaction'**
+  String get assistantReactionLabel;
+
+  /// No description provided for @assistantReactionLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get assistantReactionLike;
+
+  /// No description provided for @assistantReactionLove.
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get assistantReactionLove;
+
+  /// No description provided for @assistantReactionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The reaction could not be confirmed. Refresh reactions to reconcile it safely.'**
+  String get assistantReactionUnconfirmed;
+
+  /// No description provided for @assistantReactionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactions are unavailable right now. Try again.'**
+  String get assistantReactionUnavailable;
+
+  /// No description provided for @assistantRefreshReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh reactions'**
+  String get assistantRefreshReactions;
+
+  /// No description provided for @assistantReplyMessageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get assistantReplyMessageAction;
+
+  /// No description provided for @assistantReplyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Original message unavailable'**
+  String get assistantReplyUnavailable;
+
+  /// No description provided for @assistantThemeAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get assistantThemeAdvanced;
+
+  /// No description provided for @assistantThemeBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background colors'**
+  String get assistantThemeBackground;
+
+  /// No description provided for @assistantThemeBackgroundStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background style'**
+  String get assistantThemeBackgroundStyle;
+
+  /// No description provided for @assistantThemeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get assistantThemeCustom;
+
+  /// No description provided for @assistantThemeDeviceScope.
+  ///
+  /// In en, this message translates to:
+  /// **'For your Assistant chats on this device, across workspaces.'**
+  String get assistantThemeDeviceScope;
+
+  /// No description provided for @assistantThemeIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Background intensity'**
+  String get assistantThemeIntensity;
+
+  /// No description provided for @assistantThemeLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading appearance…'**
+  String get assistantThemeLoading;
+
+  /// No description provided for @assistantThemeMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Message colors'**
+  String get assistantThemeMessages;
+
+  /// No description provided for @assistantThemeOmbre.
+  ///
+  /// In en, this message translates to:
+  /// **'Ombre'**
+  String get assistantThemeOmbre;
+
+  /// No description provided for @assistantThemePreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get assistantThemePreset;
+
+  /// No description provided for @assistantThemePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat appearance preview'**
+  String get assistantThemePreview;
+
+  /// No description provided for @assistantThemePreviewAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s make room for what matters.'**
+  String get assistantThemePreviewAssistant;
+
+  /// No description provided for @assistantThemePreviewUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me plan a focused day.'**
+  String get assistantThemePreviewUser;
+
+  /// No description provided for @assistantThemeReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset appearance'**
+  String get assistantThemeReset;
+
+  /// No description provided for @assistantThemeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantThemeRetry;
+
+  /// No description provided for @assistantThemeSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving appearance…'**
+  String get assistantThemeSaving;
+
+  /// No description provided for @assistantThemeStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance could not be saved or loaded on this device.'**
+  String get assistantThemeStorageError;
+
+  /// No description provided for @assistantThemeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text colors'**
+  String get assistantThemeText;
+
+  /// No description provided for @assistantThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat appearance'**
+  String get assistantThemeTitle;
+
+  /// No description provided for @assistantReplyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.'**
+  String get assistantReplyPending;
+
+  /// No description provided for @assistantReplyLiveUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.'**
+  String get assistantReplyLiveUnavailable;
+
+  /// No description provided for @assistantReplyChangedBeforeSend.
+  ///
+  /// In en, this message translates to:
+  /// **'The reply changed before sending. Your draft was kept. Review it and send again.'**
+  String get assistantReplyChangedBeforeSend;
+
+  /// No description provided for @assistantLiveSendRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Live did not accept this message. Your draft was kept. Check the connection before trying again.'**
+  String get assistantLiveSendRefused;
+
+  /// No description provided for @assistantLiveSendUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.'**
+  String get assistantLiveSendUnknown;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

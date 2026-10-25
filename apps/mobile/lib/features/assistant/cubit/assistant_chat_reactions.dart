@@ -86,8 +86,9 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
     String? emoji,
     bool Function()? isCurrent,
   }) async {
+    final canonicalEmoji = emoji?.trim();
     if (!canPersistMessage(messageId) ||
-        (emoji != null && emoji.trim().isEmpty)) {
+        (canonicalEmoji != null && canonicalEmoji.isEmpty)) {
       return AssistantReactionResult.unavailable;
     }
     final key = (
@@ -99,7 +100,7 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
     if (_reactionState.operations.containsKey(key)) {
       return AssistantReactionResult.busy;
     }
-    if (emoji != null && needsReactionRefresh(messageId)) {
+    if (canonicalEmoji != null && needsReactionRefresh(messageId)) {
       _emitIfOpen(
         state.copyWith(reactionResult: AssistantReactionResult.refreshRequired),
       );
@@ -142,13 +143,13 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
         isCurrent: current,
       );
       if (!current()) return AssistantReactionResult.stale;
-      if (emoji != null) {
+      if (canonicalEmoji != null) {
         final row = state.messages.firstWhere((m) => m.id == messageId);
         intent = AssistantReactionIntent(
           opId: _repository.generateUuid(),
-          emoji: emoji,
+          emoji: canonicalEmoji,
           present: !row.reactions.any(
-            (r) => r.emoji == emoji && r.userIds.contains(key.$1),
+            (r) => r.emoji == canonicalEmoji && r.userIds.contains(key.$1),
           ),
         );
         final begin = await _repository.beginMessageReaction(
@@ -204,7 +205,7 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
         confirmed = result.confirmed;
         if (confirmed) _reactionState.uncertain.remove(key);
         if (!current()) return AssistantReactionResult.stale;
-        if (emoji != null) {
+        if (canonicalEmoji != null) {
           _patchReactionSummary(
             messageId,
             reactions: result.message.reactions,
@@ -212,7 +213,7 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
           );
         }
       }
-      if (emoji == null) {
+      if (canonicalEmoji == null) {
         final receipt = await _repository.refreshMessageReactions(
           wsId: key.$2,
           chatId: key.$3,
@@ -247,9 +248,9 @@ extension AssistantChatPersistenceActions on AssistantChatCubit {
       }
       if (!current()) return AssistantReactionResult.stale;
       if (unsent) _patchReactionSummary(messageId, refreshRequired: false);
-      final result = (unsent || (!recorded && emoji != null))
+      final result = (unsent || (!recorded && canonicalEmoji != null))
           ? AssistantReactionResult.unavailable
-          : emoji == null
+          : canonicalEmoji == null
           ? AssistantReactionResult.refreshRequired
           : AssistantReactionResult.unknown;
       _emitIfOpen(state.copyWith(reactionResult: result));

@@ -10,7 +10,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 extension PumpApp on WidgetTester {
-  Future<void> pumpApp(Widget widget) {
+  Future<void> pumpApp(Widget widget, {ThemeMode? themeMode}) {
     final router = GoRouter(
       initialLocation: '/test',
       routes: [
@@ -28,6 +28,12 @@ extension PumpApp on WidgetTester {
 
     return pumpWidget(
       shad.ShadcnApp.router(
+        debugShowCheckedModeBanner: false,
+        themeMode: switch (themeMode) {
+          ThemeMode.light => shad.ThemeMode.light,
+          ThemeMode.dark => shad.ThemeMode.dark,
+          ThemeMode.system || null => shad.ThemeMode.system,
+        },
         theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
         darkTheme: const shad.ThemeData.dark(
           colorScheme: shad.ColorSchemes.darkZinc,
@@ -49,6 +55,7 @@ extension PumpApp on WidgetTester {
     Widget Function(Widget app)? wrap,
   }) {
     final app = shad.ShadcnApp.router(
+      debugShowCheckedModeBanner: false,
       theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
       localizationsDelegates: const [
         ...AppLocalizations.localizationsDelegates,
@@ -69,6 +76,7 @@ extension PumpApp on WidgetTester {
     Widget Function(Widget app)? wrap,
   }) {
     final app = shad.ShadcnApp(
+      debugShowCheckedModeBanner: false,
       theme: AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
       localizationsDelegates: const [
         ...AppLocalizations.localizationsDelegates,
@@ -92,6 +100,7 @@ Widget shellTestApp({
   required GoRouter router,
   Brightness brightness = Brightness.light,
 }) => shad.ShadcnApp.router(
+  debugShowCheckedModeBanner: false,
   theme: AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
   localizationsDelegates: const [
     ...AppLocalizations.localizationsDelegates,

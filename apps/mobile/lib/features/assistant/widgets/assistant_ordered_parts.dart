@@ -63,7 +63,10 @@ List<Widget> assistantOrderedPartWidgets(
         Padding(
           key: ValueKey('assistant-text-part-$index'),
           padding: const EdgeInsets.only(bottom: 8),
-          child: AssistantMarkdownBody(data: part.text!.trim()),
+          child: AssistantMarkdownBody(
+            data: part.text!.trim(),
+            selectable: false,
+          ),
         ),
       );
     }

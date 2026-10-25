@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Read-only profile summary. Shared days never link to private timer history.
+/// Read-only 12-week heatmap of tracked time; the enclosing panel titles it.
+/// Shared days never link to private timer history.
 class ProfileActivityChart extends StatelessWidget {
   const ProfileActivityChart({required this.activity, super.key});
   final List<DailyActivity> activity;
@@ -11,7 +14,8 @@ class ProfileActivityChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colors = Theme.of(context).colorScheme;
+    final colors = AppTokens.of(context).colorScheme;
+    final tone = AppTone.info.foreground(colors);
     final today = DateUtils.dateOnly(DateTime.now());
     final days = {
       for (final day in activity) DateUtils.dateOnly(day.date): day.duration,
@@ -20,11 +24,6 @@ class ProfileActivityChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.profileRecentActivity,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth.clamp(0.0, 600.0);
@@ -59,12 +58,12 @@ class ProfileActivityChart extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: seconds == 0
-                              ? colors.surfaceContainerHighest
-                              : colors.primary.withValues(
+                              ? colors.muted
+                              : tone.withValues(
                                   alpha:
                                       .3 + .7 * (seconds / 14400).clamp(0, 1),
                                 ),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(AppSpacing.xs),
                         ),
                       ),
                     ),
