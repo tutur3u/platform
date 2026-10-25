@@ -24,12 +24,15 @@ export function createAppBaseResolver(
         return false;
       }
     });
-  return (path: string): string => {
+  // Ownership is explicit: at a root mount an owned path resolves to itself.
+  const owns = (pathname: string) =>
+    !matchesAny(central, pathname) && matchesAny(appApiPatterns, pathname);
+  const resolve = (path: string): string => {
     const end = path.search(/[?#]/u);
     const pathname = end === -1 ? path : path.slice(0, end);
-    if (matchesAny(central, pathname) || !matchesAny(appApiPatterns, pathname))
-      return path;
+    if (!owns(pathname)) return path;
     const context = maybeBridgeRequest();
     return context ? appUrl(path, context.request.url) : appPath(path);
   };
+  return Object.assign(resolve, { owns });
 }

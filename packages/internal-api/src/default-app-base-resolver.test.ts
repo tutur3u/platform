@@ -32,9 +32,10 @@ installRequestStore(new AsyncLocalStorage<BridgeRequestContext>());
 
 const unregisterCallbacks: Array<() => void> = [];
 function register(
-  resolver: Parameters<typeof registerDefaultAppBaseResolver>[0]
+  resolver: Parameters<typeof registerDefaultAppBaseResolver>[0],
+  app?: string
 ) {
-  const unregister = registerDefaultAppBaseResolver(resolver);
+  const unregister = registerDefaultAppBaseResolver(resolver, { app });
   unregisterCallbacks.push(unregister);
   return unregister;
 }
@@ -45,8 +46,13 @@ function mockFetch() {
   return fetch;
 }
 
+// Owns every path it resolves (ownership is explicit, never inferred).
 function registerServerResolver() {
-  register((path) => appUrl(path, bridgeRequest().request.url));
+  register(
+    Object.assign((path: string) => appUrl(path, bridgeRequest().request.url), {
+      owns: () => true,
+    })
+  );
 }
 
 describe('default app base resolver', () => {
@@ -108,13 +114,18 @@ describe('default app base resolver', () => {
     vi.stubGlobal(APP_BASE_GLOBAL, '/mail');
     vi.stubEnv('MAIL_APP_URL', 'https://mail.example.com');
     const fetch = mockFetch();
-    register(appPath);
+    // Tagged like the generated registration: Mail's own helper defers to it.
+    const removeMail = register(appPath, 'mail');
     await listMailMessages('ws-1', 'mailbox-1');
     expect(fetch).toHaveBeenCalledWith(
       '/mail/api/v1/workspaces/ws-1/mail/mailboxes/mailbox-1/messages',
       expect.anything()
     );
 
+    removeMail();
+    // An untagged resolver no longer drops the owning app's origin: helpers
+    // keep it as crossAppBaseUrl, used unless the resolver owns the path.
+    register(appPath);
     for (const withBase of [
       withTaskApiBaseUrl,
       withMailApiBaseUrl,
@@ -125,7 +136,12 @@ describe('default app base resolver', () => {
       withEducationBootstrapBaseUrl,
       withFinanceApiBaseUrl,
     ]) {
-      expect(withBase()).toEqual({});
+      expect(withBase()).toEqual({ crossAppBaseUrl: expect.any(String) });
+    }
+    for (const withBase of [withMailApiBaseUrl, withTaskApiBaseUrl]) {
+      expect(withBase({ appBaseResolver: (path: string) => path })).toEqual({
+        appBaseResolver: expect.any(Function),
+      });
     }
   });
 
