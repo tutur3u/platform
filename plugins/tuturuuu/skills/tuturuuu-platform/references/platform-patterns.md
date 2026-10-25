@@ -91,6 +91,13 @@ shared-package changes.
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Mounted app adapters register `registerDefaultAppBaseResolver` from
+  `@tuturuuu/internal-api/client` once at startup for helpers without options.
+  Read request-local context inside the callback and return an absolute URL on
+  SSR; never capture an incoming request in the registered closure. Select
+  app-owned routes when the adapter also calls central APIs. See the
+  [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
+  for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
