@@ -141,7 +141,12 @@ describe('route shape conflicts and app directories', () => {
   it('rejects differently named dynamic segments and page/route clashes', () => {
     const plan = planRegistries(
       { api: { out: 'api.ts' }, pages: { out: 'pages.ts' } },
-      ['api/[id]/route.ts', 'api/[slug]/route.ts', 'p/[id]/page.tsx', 'p/[x]/route.ts'],
+      [
+        'api/[id]/route.ts',
+        'api/[slug]/route.ts',
+        'p/[id]/page.tsx',
+        'p/[x]/route.ts',
+      ],
       () => true
     );
     expect(plan.errors).toEqual([
@@ -172,4 +177,3 @@ describe('route shape conflicts and app directories', () => {
     expect(runRegistries(root, 'check')).toEqual([]);
   });
 });
-

@@ -1,14 +1,13 @@
 import { APP_BASE_GLOBAL, runtimeAppBase, withAppBase } from '../core/app-url';
 import { requestNonce } from '../core/csp';
 
-export { createNonce, requestNonce } from '../core/csp';
-
 export {
   appPath,
   appUrl,
   runtimeAppBase,
   withAppBase,
 } from '../core/app-url';
+export { createNonce, requestNonce } from '../core/csp';
 
 /** @deprecated Use `runtimeAppBase`; kept for the v0 export surface. */
 export const appBasePath = runtimeAppBase;

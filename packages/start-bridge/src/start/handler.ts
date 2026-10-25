@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
-import { createNonce } from '../core/csp';
 import { type BasePath, createBasePath } from '../core/base-path';
+import { createNonce } from '../core/csp';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
 import {
   APP_BASE_HEADER,

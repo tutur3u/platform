@@ -17,7 +17,9 @@ export const BridgeParamsContext = createContext<Record<string, string>>({});
 // module never imports node:async_hooks.
 const REQUEST_STORE = Symbol.for('tuturuuu.start-bridge.request-context');
 type ObservedStore = {
-  getStore(): { observeNavigation?: (href: string, r: unknown) => void } | undefined;
+  getStore():
+    | { observeNavigation?: (href: string, r: unknown) => void }
+    | undefined;
 };
 
 const observeRedirect = createServerOnlyFn(

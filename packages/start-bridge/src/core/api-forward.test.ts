@@ -75,7 +75,9 @@ describe('central API forwarding', () => {
 
 describe('loop prevention by ownership', () => {
   it('allows a same-origin central API for paths the app does not own', async () => {
-    const fetcher = vi.fn(async (request: Request) => new Response(request.url));
+    const fetcher = vi.fn(
+      async (request: Request) => new Response(request.url)
+    );
     const mounted = await forwardToCentralApi(
       new Request('https://tuturuuu.com/api/v1/x'),
       'https://tuturuuu.com',

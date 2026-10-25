@@ -20,9 +20,7 @@ export function createNonce(): string {
 
 /** The current response's nonce on the server; `undefined` in the browser. */
 export function requestNonce(): string | undefined {
-  const store = (globalThis as { [REQUEST_STORE]?: NonceStore })[
-    REQUEST_STORE
-  ];
+  const store = (globalThis as { [REQUEST_STORE]?: NonceStore })[REQUEST_STORE];
   return store?.getStore()?.nonce;
 }
 

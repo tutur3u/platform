@@ -57,7 +57,6 @@ export interface StartBridgePresetOptions {
   og?: string;
   /** Alias `server-only` to Start's server-only marker (default `true`). */
   serverOnly?: boolean;
-
 }
 
 export interface StartBridgeAlias {

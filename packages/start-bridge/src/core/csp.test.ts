@@ -32,7 +32,11 @@ async function page() {
   const response = await handle(new Request('https://x.test/'), {}, ctx);
   const policy = response.headers.get('content-security-policy') ?? '';
   const nonce = /'nonce-([^']+)'/u.exec(policy)?.[1];
-  return { policy, nonce, body: (await response.json()) as Record<string, string> };
+  return {
+    policy,
+    nonce,
+    body: (await response.json()) as Record<string, string>,
+  };
 }
 
 describe('per-response CSP nonce', () => {
@@ -41,7 +45,10 @@ describe('per-response CSP nonce', () => {
     expect(first.policy).toContain("script-src 'nonce-");
     expect(first.policy).toContain("object-src 'none'");
     expect(first.nonce).toBeTruthy();
-    expect(first.body).toEqual({ router: first.nonce, headScript: first.nonce });
+    expect(first.body).toEqual({
+      router: first.nonce,
+      headScript: first.nonce,
+    });
   });
 
   it('is fresh for every response and absent outside a request', async () => {
