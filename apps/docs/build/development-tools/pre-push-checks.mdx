@@ -37,7 +37,7 @@ alias still fails closed; a workspace binary is never used as a fallback. A dang
 | JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
 | `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
 | A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
-| A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest. Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
+| A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory (the Meet realtime Durable Object suites, which Node cannot load). Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
 | `scripts/`, `.github/actions/`, `plugins/` | Changed and sibling `node --test` files |
 | `.github/workflows/` or `.github/actions/` | Workflow concurrency, Bun pin and workflow-config policy tests |
 | `apps/mobile/` | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it |
@@ -148,4 +148,4 @@ and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's pa
 ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
 
-Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. An explicit Vitest import selects Vitest when a file also imports Node test helpers or types. This runner partition avoids false “No test suite found” failures.
+Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. The classifier parses actual runtime imports, including CommonJS `require` and dynamic imports. Fixture strings, template text, comments, regular expressions and type-only imports cannot choose a runner. An explicit runtime Vitest import still takes precedence when a file also imports Node test helpers. Without a runner import, the owning package test script supplies the existing fallback. This runner partition avoids false “No test suite found” failures. `scripts/check-changed-runners.test.js` covers the SDK portable-build fixture and both runner directions.

@@ -52,6 +52,16 @@ Dart constraints and mobile package version from `pubspec.yaml`. Distribution
 artifacts and build metadata establish what a device is running. The browser
 bootstrap for Flutter is noindex; it is not a duplicate public marketing site.
 
+The standalone API migration uses a build-number gate at
+`/api/v1/mobile/version` for iOS and Android. The configured minimum supported
+build is inclusive; older builds require an update. Missing policy fails closed
+with 503. Mobile switches to consolidated contracts during this migration; the
+program accepts a temporary compatibility break followed by a forced update.
+External non-mobile consumers retain compatibility. The old semantic-version
+endpoint remains on the retained Next origin until separately reviewed. See the
+[API contract and regression coverage](/build/devops/standalone-api#mobile-version-contract).
+The API foundation does not itself activate the client screen or production gate.
+
 Developers changing translations regenerate localization before analysis/tests.
 Native app work does not require the paused Rust/TanStack Start runtime or the
 retired Docker cron runner. Database-dependent test fixtures still need an

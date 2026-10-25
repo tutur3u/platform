@@ -14,6 +14,9 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Schema And Typegen
 
+- Remote `db reset --linked` retains managed storage tables. Bucket creation
+  defaults must tolerate existing IDs; preserve intentional configuration upserts.
+  See [storage replay verification](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#replaying-migrations-with-existing-storage-buckets).
 - Prepare migrations; do not push production Supabase changes from Codex.
 - Prefer additive migrations and runtime fallbacks when rollout order can vary.
 - Separate short existing-table DDL, `VALIDATE CONSTRAINT`, and concurrent index
@@ -427,3 +430,13 @@ as checking effective privileges. The regression is
 `apps/database/supabase/tests/security-meet-guest-grants.sql`; a socket-only PG14
 fixture can apply the relevant historical view definition and later grant
 migrations against synthetic prerequisite tables without a shared Docker stack.
+
+### Historical NOT VALID checks during backfills
+
+Unchanged payloads are still checked on UPDATE. Audit pending backfills for
+legacy size/length violations before deployment. Notification email-copy cleanup
+uses the catalog expression for safe batches, then temporarily drops/restores
+the exact check only for the oversized tail in one transaction. The table lock
+lasts through commit; do not drop the check before the regular scan. Preserve
+payload bytes and verify the safe-only path retains the constraint OID. See
+[disposable proof requirements](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#backfills-with-historical-payload-violations).

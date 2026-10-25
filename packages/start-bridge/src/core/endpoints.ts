@@ -97,3 +97,25 @@ export async function dispatchEndpoint(
   }
   return null;
 }
+
+/**
+ * A route module imported on its first request. `methods` are the exports
+ * the codegen read statically, so `OPTIONS`/`405` answers need no import;
+ * a route's dependencies (e.g. Node-only SDKs) load only when it is hit.
+ */
+export function lazyRouteModule(
+  load: () => Promise<RouteModule>,
+  methods: readonly HttpMethod[]
+): RouteModule {
+  let loaded: Promise<RouteModule> | undefined;
+  const module: RouteModule = {};
+  for (const method of methods)
+    module[method] = async (...args: unknown[]) => {
+      loaded ??= load();
+      const handler = (await loaded)[method];
+      if (typeof handler !== 'function')
+        throw new Error(`Route module has no ${method} export`);
+      return handler(...args);
+    };
+  return module;
+}

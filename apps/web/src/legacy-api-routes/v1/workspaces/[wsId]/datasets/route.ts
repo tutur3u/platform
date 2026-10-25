@@ -1,10 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { headers } from 'next/headers';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
+import { withWorkspaceDatasetsAccess } from './dataset-access';
 
 interface Params {
   params: Promise<{
@@ -15,67 +11,28 @@ interface Params {
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
 
-  const apiKey = (await headers()).get('API_KEY');
-  return apiKey
-    ? getDataWithApiKey(req, { wsId, apiKey })
-    : getDataFromSession(req, { wsId });
-}
-
-async function getDataWithApiKey(
-  _: NextRequest,
-  {
+  return withWorkspaceDatasetsAccess(
+    req,
     wsId,
-    apiKey,
-  }: {
-    wsId: string;
-    apiKey: string;
-  }
-) {
-  const sbAdmin = await createAdminClient();
+    async (supabase, apiKeyContext) => {
+      const { data, count, error } = await supabase
+        .from('workspace_datasets')
+        .select('*', { count: 'exact' })
+        .eq('ws_id', wsId);
 
-  const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
+      if (error) {
+        console.log(error);
+        return NextResponse.json(
+          { message: 'Error fetching workspace datasets' },
+          { status: 500 }
+        );
+      }
 
-  const mainQuery = sbAdmin
-    .from('workspace_datasets')
-    .select('*', { count: 'exact' })
-    .eq('ws_id', wsId);
-
-  const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
-
-  if (!apiCheck) {
-    return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
-  }
-
-  const { data, count, error } = response;
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching workspace datasets' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ data, count });
-}
-
-async function getDataFromSession(_: NextRequest, { wsId }: { wsId: string }) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('workspace_datasets')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching workspace datasets' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json(data || []);
+      return apiKeyContext
+        ? NextResponse.json({ data, count })
+        : NextResponse.json(data || []);
+    }
+  );
 }
 
 export async function POST(req: Request, { params }: Params) {

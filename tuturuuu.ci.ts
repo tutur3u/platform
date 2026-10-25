@@ -32,6 +32,7 @@ export const ci = {
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
+  'native-start-app.yaml': true,
   'wave1-native-publish.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
