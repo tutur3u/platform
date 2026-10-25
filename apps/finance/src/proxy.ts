@@ -158,8 +158,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
-      redirectUrl.search = req.nextUrl.search;
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = `/${newPathSegments.join('/')}`;
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
@@ -179,12 +179,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           const wsIdIndex = hasLocaleInPath ? 1 : 0;
           newPathSegments[wsIdIndex] = 'personal';
 
-          const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
-            req.nextUrl
-          );
-          // Preserve query parameters
-          redirectUrl.search = req.nextUrl.search;
+          const redirectUrl = req.nextUrl.clone();
+          redirectUrl.pathname = `/${newPathSegments.join('/')}`;
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
@@ -226,14 +222,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           : defaultWorkspace.id === ROOT_WORKSPACE_ID
             ? 'internal'
             : defaultWorkspace.id;
-        const redirectUrl = new URL(`/${target}`, req.nextUrl);
+        const redirectUrl = req.nextUrl.clone();
+        redirectUrl.pathname = `/${target}`;
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
         return finish(wsRedirect);
       }
 
       // Fallback to personal workspace if no default workspace found
-      const redirectUrl = new URL('/personal', req.nextUrl);
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/personal';
       const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
       return finish(fallbackRedirect);
