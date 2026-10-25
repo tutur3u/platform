@@ -45,8 +45,15 @@ export interface BasePath {
 
 const BASE_PATTERN = /^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u;
 
+/** Removes trailing `/` in linear time (no backtracking regex on input). */
+export function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end--;
+  return value.slice(0, end);
+}
+
 export function normalizeBasePath(input: string | undefined): string {
-  const trimmed = (input ?? '').trim().replace(/\/+$/u, '');
+  const trimmed = trimTrailingSlashes((input ?? '').trim());
   if (!trimmed) return '';
   if (!BASE_PATTERN.test(trimmed))
     throw new Error(`Invalid basePath: ${input}`);

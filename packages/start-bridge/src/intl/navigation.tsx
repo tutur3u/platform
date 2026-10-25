@@ -11,6 +11,11 @@ import {
 } from '../next/navigation';
 import { type BridgeRouting, localePrefixMode } from './routing';
 
+/** Escapes every RegExp syntax character, including backslashes. */
+function escapeRegExp(value: string) {
+  return value.replace(/[\\^$.*+?()[\]{}|/]/gu, '\\$&');
+}
+
 type Href = string | { pathname: string; query?: Record<string, string> };
 
 function toPath(href: Href) {
@@ -30,7 +35,7 @@ export function createNavigation<const Locales extends readonly string[]>(
 ) {
   const mode = localePrefixMode(routing);
   const prefixPattern = new RegExp(
-    `^/(?:${routing.locales.map((l) => l.replace(/[-]/gu, '\\-')).join('|')})(?=/|$)`,
+    `^/(?:${routing.locales.map(escapeRegExp).join('|')})(?=/|$)`,
     'u'
   );
   const strip = (path: string) => path.replace(prefixPattern, '') || '/';

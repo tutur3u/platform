@@ -118,7 +118,7 @@ describe('Vite preset', () => {
       'serverFnBase',
       'routerBasepath',
     ] as const;
-    for (const input of [undefined, '', '/', '/meet', '/meet/', '/a/b-c']) {
+    for (const input of [undefined, '', '/', '/meet', '/meet/', '/meet///', '/a/b-c']) {
       const full = createBasePath({ app: 'meet', basePath: input });
       expect(presetBasePath('meet', input)).toEqual(
         Object.fromEntries(keys.map((key) => [key, full[key]]))

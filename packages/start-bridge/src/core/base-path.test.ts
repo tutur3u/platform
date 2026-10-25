@@ -114,3 +114,17 @@ describe('under /meet', () => {
     expect(meet.finalizeResponse(external)).toBe(external);
   });
 });
+
+describe('trailing slash trimming', () => {
+  it('trims any number of trailing slashes in linear time', async () => {
+    const { trimTrailingSlashes } = await import('./base-path');
+    expect(trimTrailingSlashes('/meet///')).toBe('/meet');
+    expect(trimTrailingSlashes('////')).toBe('');
+    const hostile = `/a${'/'.repeat(200_000)}x`;
+    const started = performance.now();
+    expect(trimTrailingSlashes(hostile)).toBe(hostile);
+    expect(() => normalizeBasePath(hostile)).toThrow('Invalid basePath');
+    expect(performance.now() - started).toBeLessThan(250);
+    expect(normalizeBasePath('/meet/////')).toBe('/meet');
+  });
+});

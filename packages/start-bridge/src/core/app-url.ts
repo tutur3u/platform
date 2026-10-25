@@ -1,4 +1,4 @@
-import { prefixBase } from './base-path';
+import { prefixBase, trimTrailingSlashes } from './base-path';
 import { fromNextSourcePattern, matchRoute } from './route-match';
 
 /**
@@ -22,7 +22,7 @@ export function installAppBaseResolver(resolver: Resolver) {
 
 function buildTimeBase(): string {
   const value = import.meta.env?.VITE_TUTURUUU_BASE_PATH;
-  return typeof value === 'string' ? value.replace(/\/+$/u, '') : '';
+  return typeof value === 'string' ? trimTrailingSlashes(value) : '';
 }
 
 export function runtimeAppBase(): string {

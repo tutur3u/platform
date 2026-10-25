@@ -159,7 +159,9 @@ export function presetBasePath(
 ): PresetBasePath {
   if (!/^[a-z0-9][a-z0-9-]*$/u.test(app))
     throw new Error(`Invalid app id: ${app}`);
-  const basePath = (input ?? '').trim().replace(/\/+$/u, '');
+  // Linear trailing-slash trim (this module imports only Node built-ins).
+  let basePath = (input ?? '').trim();
+  while (basePath.endsWith('/')) basePath = basePath.slice(0, -1);
   if (
     basePath &&
     !/^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u.test(basePath)
