@@ -1,119 +1,163 @@
 part of 'dashboard_page.dart';
 
-class _DashboardWorkspacePickerCard extends StatelessWidget {
-  const _DashboardWorkspacePickerCard();
+/// Greeting, today's date and the workspace switcher at the top of Home.
+///
+/// The shell navbar already carries the "Home" title, so this is a greeting
+/// rather than a second page title.
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader();
+
+  /// Below this content width the switcher moves under the greeting.
+  static const double _headerRowMinWidth = 560;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final palette = _dashboardPalette(context, 0);
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final now = DateTime.now();
+    final name = context.select<ShellProfileCubit?, String?>((cubit) {
+      final profile = cubit?.state.profile;
+      final value = profile?.displayName ?? profile?.fullName;
+      return value == null || value.trim().isEmpty ? null : value.trim();
+    });
+    final greeting = switch (now.hour) {
+      < 12 when name != null => l10n.homeGreetingMorningNamed(name),
+      < 12 => l10n.homeGreetingMorning,
+      < 18 when name != null => l10n.homeGreetingAfternoonNamed(name),
+      < 18 => l10n.homeGreetingAfternoon,
+      _ when name != null => l10n.homeGreetingEveningNamed(name),
+      _ => l10n.homeGreetingEvening,
+    };
+    final greetingBlock = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            DateFormat.MMMMEEEEd(locale).format(now),
+            style: tokens.typography.small.copyWith(
+              color: c.mutedForeground,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Semantics(
+            header: true,
+            child: Text(
+              greeting,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: tokens.typography.x2Large.copyWith(
+                color: c.foreground,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < _headerRowMinWidth) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              greetingBlock,
+              const SizedBox(height: AppSpacing.md),
+              const _WorkspaceSwitcher(),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: greetingBlock),
+            const SizedBox(width: AppSpacing.lg),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth * 0.45,
+              ),
+              child: const _WorkspaceSwitcher(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Pill that names the current workspace and opens the workspace picker.
+class _WorkspaceSwitcher extends StatelessWidget {
+  const _WorkspaceSwitcher();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     return BlocBuilder<WorkspaceCubit, WorkspaceState>(
       buildWhen: (previous, current) =>
           previous.currentWorkspace != current.currentWorkspace,
       builder: (context, state) {
-        final currentWorkspace = state.currentWorkspace;
-        final workspaceName = displayWorkspaceNameOrFallback(
-          context,
-          currentWorkspace,
-        );
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: () => showWorkspacePickerSheet(context),
-            child: Ink(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: palette.background,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color.alphaBlend(
-                      palette.iconBackground.withValues(alpha: 0.36),
-                      palette.background,
-                    ),
-                    palette.background,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: palette.border.withValues(alpha: 0.86),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: palette.shadow.withValues(alpha: 0.72),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
+        final workspace = state.currentWorkspace;
+        final name = displayWorkspaceNameOrFallback(context, workspace);
+        final radius = BorderRadius.circular(AppRadius.pill);
+        return Semantics(
+          button: true,
+          label: '${context.l10n.settingsCurrentWorkspace}: $name',
+          excludeSemantics: true,
+          child: Material(
+            color: AppearanceScope.surfaceColor(context, c.card),
+            shape: RoundedRectangleBorder(
+              borderRadius: radius,
+              side: BorderSide(color: c.border.withValues(alpha: 0.7)),
+            ),
+            child: InkWell(
+              key: const ValueKey('home-workspace-switcher'),
+              borderRadius: radius,
+              onTap: () => showWorkspacePickerSheet(context),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    AppSpacing.sm,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    AppSpacing.xs,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  if (currentWorkspace != null)
-                    WorkspaceAvatar(workspace: currentWorkspace, radius: 20)
-                  else
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.14),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.workspaces_outlined,
-                        size: 21,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.l10n.settingsCurrentWorkspace,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: palette.textColor.withValues(alpha: 0.72),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          workspaceName,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (workspace != null)
+                        WorkspaceAvatar(workspace: workspace, radius: 14)
+                      else
+                        const AppIconTile(icon: LucideIcons.layers, size: 28),
+                      const SizedBox(width: AppSpacing.sm),
+                      Flexible(
+                        child: Text(
+                          name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: palette.textColor,
-                            fontWeight: FontWeight.w800,
+                          style: tokens.typography.small.copyWith(
+                            color: c.foreground,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: palette.iconBackground.withValues(alpha: 0.82),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: palette.border.withValues(alpha: 0.44),
                       ),
-                    ),
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 20,
-                      color: palette.iconColor,
-                    ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Icon(
+                        LucideIcons.chevronsUpDown,
+                        size: 16,
+                        color: c.mutedForeground,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -123,6 +167,7 @@ class _DashboardWorkspacePickerCard extends StatelessWidget {
   }
 }
 
+/// Today's counts: active tasks, overdue tasks and upcoming events.
 class _TodaySummaryCard extends StatelessWidget {
   const _TodaySummaryCard({
     required this.activeTasks,
@@ -136,228 +181,108 @@ class _TodaySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dateLabel = DateFormat('EEE, d MMM').format(DateTime.now());
-    final summaryPalette = _dashboardPalette(context, 1);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: summaryPalette.background,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.alphaBlend(
-              summaryPalette.iconBackground.withValues(alpha: 0.26),
-              summaryPalette.background,
-            ),
-            Color.alphaBlend(
-              summaryPalette.iconColor.withValues(alpha: 0.12),
-              summaryPalette.background,
-            ),
-            summaryPalette.background,
-          ],
+    final l10n = context.l10n;
+    final c = AppTokens.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppSectionCaption(
+          l10n.dashboardTodayTitle,
+          trailing: const SizedBox(height: 44),
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: summaryPalette.border.withValues(alpha: 0.9)),
-        boxShadow: [
-          BoxShadow(
-            color: summaryPalette.shadow.withValues(alpha: 0.78),
-            blurRadius: 18,
-            offset: const Offset(0, 9),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.dashboardTodayTitle,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: summaryPalette.textColor,
-                    fontWeight: FontWeight.w900,
-                    height: 1.08,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: summaryPalette.iconBackground.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: summaryPalette.border.withValues(alpha: 0.42),
-                  ),
-                ),
-                child: Text(
-                  dateLabel,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: summaryPalette.textColor,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final compactWidth = (constraints.maxWidth - 10) / 2;
-              return Wrap(
-                spacing: 10,
-                runSpacing: 10,
+        const SizedBox(height: AppSpacing.xs),
+        AppGroupedCard(
+          children: [
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    width: compactWidth,
-                    child: _MetricTile(
-                      value: '$activeTasks',
-                      label: context.l10n.dashboardActiveTasksLabel,
-                      icon: Icons.task_alt_rounded,
-                      palette: summaryPalette,
-                    ),
+                  _Metric(
+                    value: activeTasks,
+                    label: l10n.dashboardActiveTasksLabel,
                   ),
-                  SizedBox(
-                    width: compactWidth,
-                    child: _MetricTile(
-                      value: '$overdueTasks',
-                      label: context.l10n.dashboardTaskOverdue,
-                      icon: Icons.warning_amber_rounded,
-                      palette: summaryPalette,
-                    ),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 0.5,
+                    indent: AppSpacing.lg,
+                    endIndent: AppSpacing.lg,
+                    color: c.border,
                   ),
-                  SizedBox(
-                    width: constraints.maxWidth,
-                    child: _MetricTile(
-                      value: '$nextEvents',
-                      label: context.l10n.dashboardUpcomingEvents,
-                      icon: Icons.calendar_month_rounded,
-                      palette: summaryPalette,
-                      fullWidth: true,
-                    ),
+                  _Metric(
+                    value: overdueTasks,
+                    label: l10n.dashboardTaskOverdue,
+                    tone: overdueTasks > 0 ? AppTone.destructive : null,
+                  ),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 0.5,
+                    indent: AppSpacing.lg,
+                    endIndent: AppSpacing.lg,
+                    color: c.border,
+                  ),
+                  _Metric(
+                    value: nextEvents,
+                    label: l10n.dashboardUpcomingEvents,
                   ),
                 ],
-              );
-            },
-          ),
-          if (activeTasks > 0) ...[
-            const SizedBox(height: 12),
-            Semantics(
-              label:
-                  '${context.l10n.dashboardTaskOverdue}: $overdueTasks / $activeTasks',
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  minHeight: 7,
-                  value: (overdueTasks / activeTasks).clamp(0.0, 1.0),
-                  backgroundColor: summaryPalette.iconBackground,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    theme.colorScheme.error,
-                  ),
-                ),
               ),
             ),
           ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.palette,
-    this.fullWidth = false,
-  });
+class _Metric extends StatelessWidget {
+  const _Metric({required this.value, required this.label, this.tone});
 
-  final String value;
+  final int value;
   final String label;
-  final IconData icon;
-  final AppCardPalette palette;
-  final bool fullWidth;
+  final AppTone? tone;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: fullWidth ? 14 : 12,
-        vertical: fullWidth ? 14 : 12,
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    return Expanded(
+      child: Semantics(
+        container: true,
+        label: '$label: $value',
+        excludeSemantics: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.lg,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$value',
+                style: tokens.typography.x3Large.copyWith(
+                  color: tone?.foreground(c) ?? c.foreground,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: tokens.typography.xSmall.copyWith(
+                  color: c.mutedForeground,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      decoration: BoxDecoration(
-        color: palette.iconBackground.withValues(alpha: fullWidth ? 0.86 : 0.9),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: palette.border.withValues(alpha: 0.5)),
-      ),
-      child: fullWidth
-          ? Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: palette.background.withValues(alpha: 0.74),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(icon, size: 18, color: palette.iconColor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: palette.textColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  value,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: palette.textColor,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, size: 16, color: palette.iconColor),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: palette.textColor,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: palette.textColor.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w600,
-                    height: 1.15,
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }

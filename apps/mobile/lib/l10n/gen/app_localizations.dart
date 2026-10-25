@@ -4237,6 +4237,12 @@ abstract class AppLocalizations {
   /// **'Today at a glance'**
   String get dashboardTodayTitle;
 
+  /// No description provided for @dashboardUntitledEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled event'**
+  String get dashboardUntitledEvent;
+
   /// No description provided for @dashboardUpcomingEvents.
   ///
   /// In en, this message translates to:
@@ -7585,6 +7591,42 @@ abstract class AppLocalizations {
   /// **'Customize Home'**
   String get homeCustomize;
 
+  /// No description provided for @homeGreetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGreetingAfternoon;
+
+  /// No description provided for @homeGreetingAfternoonNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String homeGreetingAfternoonNamed(String name);
+
+  /// No description provided for @homeGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGreetingEvening;
+
+  /// No description provided for @homeGreetingEveningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String homeGreetingEveningNamed(String name);
+
+  /// No description provided for @homeGreetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGreetingMorning;
+
+  /// No description provided for @homeGreetingMorningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String homeGreetingMorningNamed(String name);
+
   /// No description provided for @homeHiddenWidgets.
   ///
   /// In en, this message translates to:
@@ -7608,6 +7650,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Personal calendar is unavailable.'**
   String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @homeSectionLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to try again.'**
+  String get homeSectionLoadFailed;
 
   /// No description provided for @homeShowWidget.
   ///
@@ -11610,6 +11658,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Decline'**
   String get notificationsDeclineInvite;
+
+  /// No description provided for @notificationsGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get notificationsGroupEarlier;
+
+  /// No description provided for @notificationsGroupLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get notificationsGroupLastWeek;
+
+  /// No description provided for @notificationsGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsGroupToday;
+
+  /// No description provided for @notificationsGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsGroupYesterday;
 
   /// No description provided for @notificationsHoursAgo.
   ///

@@ -31,34 +31,14 @@ extension _DashboardCustomization on _DashboardViewState {
     final cards = <String, Widget>{
       'tasks': StaggeredEntrance(
         replayKey: widget.replayToken,
-        child: _SectionCard(
-          accentModuleId: _dashboardModuleId(3),
-          title: context.l10n.dashboardAssignedToMe,
-          icon: Icons.checklist_rounded,
-          actionLabel: context.l10n.dashboardOpenTasks,
-          onTap: () => context.go(Routes.tasks),
-          child: _AssignedTasksBlock(
-            state: taskState,
-            tasks: focusTasks,
-            paletteModuleId: _dashboardModuleId(3),
-          ),
-        ),
+        child: _AssignedTasksBlock(state: taskState, tasks: focusTasks),
       ),
       'calendar': StaggeredEntrance(
         replayKey: widget.replayToken,
-        child: _SectionCard(
-          accentModuleId: _dashboardModuleId(4),
-          title: context.l10n.dashboardUpcomingEvents,
-          icon: Icons.event_rounded,
-          actionLabel: context.l10n.dashboardOpenCalendar,
-          onTap: () => context.go(Routes.calendar),
-          child: _UpcomingEventsBlock(
-            status: calendarState.status,
-            hasLoadedOnce: calendarState.hasLoadedOnce,
-            error: calendarState.error,
-            events: upcomingEvents,
-            paletteModuleId: _dashboardModuleId(4),
-          ),
+        child: _UpcomingEventsBlock(
+          status: calendarState.status,
+          hasLoadedOnce: calendarState.hasLoadedOnce,
+          events: upcomingEvents,
         ),
       ),
       'mail': _DashboardMailCard(

@@ -2138,6 +2138,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardTodayTitle => 'Tổng quan hôm nay';
 
   @override
+  String get dashboardUntitledEvent => 'Sự kiện chưa đặt tên';
+
+  @override
   String get dashboardUpcomingEvents => 'Sự kiện sắp tới';
 
   @override
@@ -3912,6 +3915,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeCustomize => 'Tùy chỉnh Trang chủ';
 
   @override
+  String get homeGreetingAfternoon => 'Chào buổi chiều';
+
+  @override
+  String homeGreetingAfternoonNamed(String name) {
+    return 'Chào buổi chiều, $name';
+  }
+
+  @override
+  String get homeGreetingEvening => 'Chào buổi tối';
+
+  @override
+  String homeGreetingEveningNamed(String name) {
+    return 'Chào buổi tối, $name';
+  }
+
+  @override
+  String get homeGreetingMorning => 'Chào buổi sáng';
+
+  @override
+  String homeGreetingMorningNamed(String name) {
+    return 'Chào buổi sáng, $name';
+  }
+
+  @override
   String get homeHiddenWidgets => 'Tiện ích đã ẩn';
 
   @override
@@ -3922,6 +3949,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
+
+  @override
+  String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
 
   @override
   String get homeShowWidget => 'Hiện tiện ích';
@@ -5988,6 +6018,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsDeclineInvite => 'Từ chối';
+
+  @override
+  String get notificationsGroupEarlier => 'Trước đó';
+
+  @override
+  String get notificationsGroupLastWeek => '7 ngày qua';
+
+  @override
+  String get notificationsGroupToday => 'Hôm nay';
+
+  @override
+  String get notificationsGroupYesterday => 'Hôm qua';
 
   @override
   String notificationsHoursAgo(int count) {
