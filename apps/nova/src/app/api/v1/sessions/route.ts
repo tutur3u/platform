@@ -203,6 +203,12 @@ export async function POST(request: Request) {
 
     if (sessionError) {
       console.error('Database Error: ', sessionError);
+      if (sessionError.code === '23505') {
+        return NextResponse.json(
+          { message: 'An active challenge session already exists' },
+          { status: 409 }
+        );
+      }
       if (
         sessionError.code === 'P0001' &&
         /attempt/i.test(sessionError.message)

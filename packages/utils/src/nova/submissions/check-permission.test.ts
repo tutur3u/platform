@@ -1,0 +1,57 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { checkPermission } from './check-permission';
+import {
+  deniedSessionCases,
+  denySession,
+  permissionFixture,
+} from './permission-test-fixture';
+
+const mocks = vi.hoisted(() => ({ createAdminClient: vi.fn() }));
+vi.mock('@tuturuuu/supabase/next/server', () => mocks);
+let fixture: ReturnType<typeof permissionFixture>;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-10-25T03:30:00.000Z'));
+  fixture = permissionFixture();
+  mocks.createAdminClient.mockResolvedValue(fixture.client);
+});
+afterEach(() => vi.useRealTimers());
+const submit = () =>
+  checkPermission({
+    problemId: 'problem-1',
+    sessionId: 'session-1',
+    userId: 'user-1',
+  });
+
+describe('Nova submission session permission', () => {
+  it.each(deniedSessionCases)('denies %s', async (scenario) => {
+    denySession(fixture, scenario);
+    expect(await submit()).toMatchObject({
+      canSubmit: false,
+      remainingAttempts: 0,
+    });
+  });
+  it('preserves manager submissions without a session', async () => {
+    fixture.state.manager = true;
+    expect(
+      await checkPermission({
+        problemId: 'problem-1',
+        sessionId: null,
+        userId: 'user-1',
+      })
+    ).toMatchObject({ canSubmit: true, remainingAttempts: -1 });
+  });
+  it('validates supplied sessions for managers too', async () => {
+    fixture.state.manager = true;
+    fixture.state.session.user_id = 'user-2';
+    expect(await submit()).toMatchObject({ canSubmit: false });
+  });
+  it('accepts an owned in-progress session for the problem challenge', async () => {
+    expect(await submit()).toEqual({
+      canSubmit: true,
+      remainingAttempts: 3,
+      message: null,
+    });
+  });
+});

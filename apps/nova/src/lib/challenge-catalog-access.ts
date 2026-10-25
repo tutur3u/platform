@@ -152,6 +152,7 @@ export async function hasActiveNovaChallengeSession({
     .eq('challenge_id', challengeId)
     .eq('user_id', userId)
     .eq('status', 'IN_PROGRESS')
+    .order('start_time', { ascending: false })
     .limit(1)
     .maybeSingle();
 

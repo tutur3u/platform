@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   inserts: [] as unknown[],
   totalAttempts: 0,
+  insertError: null as { code: string; message: string } | null,
 }));
 
 vi.mock('@/lib/app-session', () => ({
@@ -40,6 +41,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             return builder;
           },
           limit: () => builder,
+          order: () => builder,
           lt: () => builder,
           maybeSingle: async () =>
             table === 'nova_challenges'
@@ -47,8 +49,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
               : { data: null, error: null },
           select: (_columns?: unknown, _options?: unknown) => builder,
           single: async () => ({
-            data: { id: 'session-1', ...(mocks.inserts.at(-1) as object) },
-            error: null,
+            data: mocks.insertError
+              ? null
+              : { id: 'session-1', ...(mocks.inserts.at(-1) as object) },
+            error: mocks.insertError,
           }),
           // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
           then: (resolve: (value: unknown) => unknown) =>
@@ -120,6 +124,7 @@ describe('Nova session creation for password-protected challenges', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.inserts.length = 0;
+    mocks.insertError = null;
     mocks.totalAttempts = 0;
     mocks.dailyAttempts = 0;
     mocks.challenge = protectedChallenge();
@@ -172,6 +177,20 @@ describe('Nova session creation for password-protected challenges', () => {
     mocks.challenge = protectedChallenge({ password_hash: null });
 
     expect((await startSession()).status).toBe(201);
+  });
+
+  it('returns 409 when a concurrent start wins the database guard', async () => {
+    mocks.challenge = protectedChallenge({ password_hash: null });
+    mocks.insertError = {
+      code: '23505',
+      message: 'An active challenge session already exists',
+    };
+    const response = await startSession();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      message: 'An active challenge session already exists',
+    });
+    expect(mocks.inserts).toHaveLength(1);
   });
 
   it('rejects challenges outside the participant catalog', async () => {

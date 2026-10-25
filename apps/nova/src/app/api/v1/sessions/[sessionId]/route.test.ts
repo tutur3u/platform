@@ -41,6 +41,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             return builder;
           },
           limit: () => builder,
+          order: () => builder,
           select: () => builder,
           maybeSingle: async () => ({
             data: table === 'nova_challenges' ? mocks.challenge : mocks.session,

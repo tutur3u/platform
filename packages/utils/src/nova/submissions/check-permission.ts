@@ -30,8 +30,7 @@ export async function checkPermission({
 
   const isAdmin = roleData?.allow_challenge_management;
 
-  // Admin users can always submit without restrictions
-  if (isAdmin) {
+  if (isAdmin && !sessionId) {
     return { canSubmit: true, remainingAttempts: -1, message: null };
   }
 
@@ -50,14 +49,32 @@ export async function checkPermission({
     .from('nova_sessions')
     .select('*')
     .eq('id', sessionId)
+    .eq('user_id', userId)
+    .eq('status', 'IN_PROGRESS')
     .single();
 
-  if (sessionError) {
+  if (sessionError || !sessionData) {
     console.error('Database Error when checking session:', sessionError);
     return {
       canSubmit: false,
       remainingAttempts: 0,
       message: 'Error fetching session data',
+    };
+  }
+
+  const { data: problem, error: problemError } = await sbAdmin
+    .schema('private')
+    .from('nova_problems')
+    .select('challenge_id')
+    .eq('id', problemId)
+    .eq('challenge_id', sessionData.challenge_id)
+    .single();
+
+  if (problemError || !problem) {
+    return {
+      canSubmit: false,
+      remainingAttempts: 0,
+      message: 'Problem does not belong to the session challenge',
     };
   }
 
@@ -77,21 +94,30 @@ export async function checkPermission({
     };
   }
 
+  const startTime = new Date(sessionData.start_time).getTime();
   const sessionEndTime = Math.min(
     challengeData.close_at
       ? new Date(challengeData.close_at).getTime()
       : Infinity,
-    new Date(sessionData.start_time).getTime() + challengeData.duration * 1000
+    startTime + challengeData.duration * 1000
   );
 
   const currentTime = Date.now();
 
-  if (currentTime > sessionEndTime) {
+  if (
+    !Number.isFinite(startTime) ||
+    startTime > currentTime ||
+    !(currentTime < sessionEndTime)
+  ) {
     return {
       canSubmit: false,
       remainingAttempts: 0,
       message: 'Session has ended',
     };
+  }
+
+  if (isAdmin) {
+    return { canSubmit: true, remainingAttempts: -1, message: null };
   }
 
   // Check submission count
