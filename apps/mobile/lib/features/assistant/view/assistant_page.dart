@@ -47,7 +47,6 @@ import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart'
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
-import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
