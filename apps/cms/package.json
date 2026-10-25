@@ -69,6 +69,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20261022.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/vite": "4.3.3",
     "@tanstack/react-query-devtools": "^5.104.5",
