@@ -207,8 +207,11 @@ describe('multi-host dispatch', { timeout: 30_000 }, () => {
           capabilities: {
             executionMode: 'trusted',
             protocols: { commitRun: [1] },
-            disk: { freeGiB: 400 },
-            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+            resources: {
+              loadAverage: [4, 4, 4],
+              cpu: { cores: 20 },
+              disk: { freeGiB: 400, freePct: 85 },
+            },
           },
           drain_requested_at: null,
           activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
