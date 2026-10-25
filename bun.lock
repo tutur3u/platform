@@ -878,6 +878,7 @@
         "zod": "^4.6.7",
       },
       "devDependencies": {
+        "@cloudflare/workers-types": "5.20261022.1",
         "@next/playwright": "^16.4.2",
         "@playwright/test": "^1.64.1",
         "@supabase/supabase-js": "2.117.1",
@@ -1254,6 +1255,7 @@
         "zod": "^4.6.7",
       },
       "devDependencies": {
+        "@cloudflare/workers-types": "5.20261022.1",
         "@next/bundle-analyzer": "^16.4.2",
         "@tailwindcss/postcss": "^4.3.3",
         "@tailwindcss/vite": "4.3.3",

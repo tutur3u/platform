@@ -43,6 +43,14 @@ the configured app URL. Inventory builds local login and locale redirects from
 and proxy regressions cover both root and apex callbacks; central Web login
 return-app classification must also recognize mounted callbacks before acceptance.
 
+The exact `GET` and `HEAD` `/api/build-info` endpoint is public deployment
+metadata. Both app proxies follow CMS: remove ambient cookies and authorization,
+skip app-session refresh for that read, and retain the API guard. Mutation
+methods and path lookalikes keep their existing session and guard boundaries.
+The app-owned `proxy-build-info.test.ts` suites cover these boundaries; the
+generated emitted-runtime assertion must still verify the compiled source SHA
+through an anonymous request.
+
 ## Nova server actions
 
 The generated page adapter sends existing React `use server` calls through the

@@ -182,11 +182,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isRouteAuthCronApi = request.nextUrl.pathname.startsWith(
       ROUTE_AUTH_CRON_API_PREFIX
     );
+    const isBuildInfoRead =
+      request.nextUrl.pathname === '/api/build-info' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of request.cookies.getAll())
+        request.cookies.delete(cookie.name);
+      request.headers.delete('cookie');
+      request.headers.delete('authorization');
+    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
     const isPublicStorefrontApi = isPublicStorefrontApiRequest(request);
     const shouldRefreshAppSession =
       !isLocalAuthApi &&
       !isRouteAuthCronApi &&
+      !isBuildInfoRead &&
       !hasBearerApiSession &&
       (!isPublicStorefrontApi || hasApiSessionCredentials(request));
     const appSessionRefresh = shouldRefreshAppSession
@@ -220,6 +230,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(request, guardResponse);
     }
+
+    if (isBuildInfoRead)
+      return NextResponse.next({ request: { headers: request.headers } });
 
     return appSessionRefresh?.ok
       ? appSessionRefresh.response

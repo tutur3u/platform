@@ -1,3 +1,4 @@
+import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import type { BridgeEndpoint } from '@tuturuuu/start-bridge/endpoints';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
@@ -6,7 +7,7 @@ import { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS } from '@tuturuuu/utils/next-
 import { proxy } from '../proxy';
 
 export interface InventoryBridgeEnvironment {
-  ASSETS: { fetch(request: Request): Promise<Response> };
+  ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
