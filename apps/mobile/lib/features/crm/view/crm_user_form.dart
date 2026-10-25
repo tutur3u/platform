@@ -211,34 +211,52 @@ class _UserFormSheetState extends State<_UserFormSheet> {
               const SizedBox(height: 16),
               TextField(
                 controller: _fullNameController,
-                decoration: InputDecoration(labelText: l10n.crmFullName),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderFullName,
+                  labelText: l10n.crmFullName,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _displayNameController,
-                decoration: InputDecoration(labelText: l10n.crmDisplayName),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderDisplayName,
+                  labelText: l10n.crmDisplayName,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _emailController,
-                decoration: InputDecoration(labelText: l10n.emailLabel),
+                decoration: InputDecoration(
+                  hintText: context.l10n.profileEmailHint,
+                  labelText: l10n.emailLabel,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _phoneController,
-                decoration: InputDecoration(labelText: l10n.crmPhone),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderPhone,
+                  labelText: l10n.crmPhone,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _addressController,
-                decoration: InputDecoration(labelText: l10n.crmAddress),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderAddress,
+                  labelText: l10n.crmAddress,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _noteController,
                 minLines: 3,
                 maxLines: 5,
-                decoration: InputDecoration(labelText: l10n.crmNote),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderNote,
+                  labelText: l10n.crmNote,
+                ),
               ),
               const SizedBox(height: 12),
               SwitchListTile(

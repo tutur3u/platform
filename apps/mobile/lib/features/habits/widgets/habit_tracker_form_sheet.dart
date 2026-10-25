@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
@@ -270,22 +271,20 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                 : l10n.habitsEditTrackerDescription,
             child: Column(
               children: [
-                _LabeledField(
+                AppTextField(
                   label: l10n.habitsNameLabel,
-                  child: TextField(
-                    controller: _nameController,
-                    onChanged: (_) => setState(() {}),
-                  ),
+                  placeholder: context.l10n.inputPlaceholderHabitName,
+                  controller: _nameController,
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 14),
-                _LabeledField(
+                AppTextField(
                   label: l10n.habitsDescriptionLabel,
-                  child: TextField(
-                    controller: _descriptionController,
-                    minLines: 2,
-                    maxLines: 4,
-                    onChanged: (_) => setState(() {}),
-                  ),
+                  placeholder: context.l10n.inputPlaceholderHabitDescription,
+                  controller: _descriptionController,
+                  minLines: 2,
+                  maxLines: 4,
+                  onChanged: (_) => setState(() {}),
                 ),
               ],
             ),
@@ -299,29 +298,25 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                 Row(
                   children: [
                     Expanded(
-                      child: _LabeledField(
+                      child: AppTextField(
                         label: l10n.habitsTargetValueLabel,
-                        child: TextField(
-                          controller: _targetValueController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          onChanged: (_) => setState(() {}),
+                        placeholder: context.l10n.inputPlaceholderTargetValue,
+                        controller: _targetValueController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
                         ),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _LabeledField(
+                      child: AppTextField(
                         label: l10n.habitsStartDateLabel,
-                        child: TextField(
-                          controller: _startDateController,
-                          readOnly: true,
-                          onTap: _pickDate,
-                          decoration: const InputDecoration(
-                            suffixIcon: Icon(Icons.calendar_today_outlined),
-                          ),
-                        ),
+                        controller: _startDateController,
+                        readOnly: true,
+                        onTap: _pickDate,
+                        placeholder: context.l10n.inputPlaceholderDate,
+                        trailing: const Icon(Icons.calendar_today_outlined),
                       ),
                     ),
                   ],
@@ -491,22 +486,20 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                 Row(
                   children: [
                     Expanded(
-                      child: _LabeledField(
+                      child: AppTextField(
                         label: l10n.habitsFreezeAllowanceLabel,
-                        child: TextField(
-                          controller: _freezeAllowanceController,
-                          keyboardType: TextInputType.number,
-                        ),
+                        placeholder: context.l10n.inputPlaceholderDays,
+                        controller: _freezeAllowanceController,
+                        keyboardType: TextInputType.number,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _LabeledField(
+                      child: AppTextField(
                         label: l10n.habitsRecoveryWindowLabel,
-                        child: TextField(
-                          controller: _recoveryWindowController,
-                          keyboardType: TextInputType.number,
-                        ),
+                        placeholder: context.l10n.inputPlaceholderDays,
+                        controller: _recoveryWindowController,
+                        keyboardType: TextInputType.number,
                       ),
                     ),
                   ],
@@ -1199,7 +1192,7 @@ class _FieldDraftCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          TextFormField(
+          AppTextFormField(
             initialValue: draft.label,
             onChanged: (value) {
               onChanged(
@@ -1211,9 +1204,8 @@ class _FieldDraftCard extends StatelessWidget {
                 ),
               );
             },
-            decoration: InputDecoration(
-              labelText: context.l10n.habitsFieldLabel,
-            ),
+            placeholder: context.l10n.inputPlaceholderFieldLabel,
+            label: context.l10n.habitsFieldLabel,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<HabitTrackerFieldType>(
@@ -1236,7 +1228,7 @@ class _FieldDraftCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          AppTextFormField(
             initialValue: draft.key,
             onChanged: (value) {
               onChanged(
@@ -1246,15 +1238,15 @@ class _FieldDraftCard extends StatelessWidget {
                 ),
               );
             },
-            decoration: InputDecoration(labelText: context.l10n.habitsFieldKey),
+            placeholder: context.l10n.inputPlaceholderFieldKey,
+            label: context.l10n.habitsFieldKey,
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          AppTextFormField(
             initialValue: draft.unit,
             onChanged: (value) => onChanged(draft.copyWith(unit: value)),
-            decoration: InputDecoration(
-              labelText: context.l10n.habitsFieldUnit,
-            ),
+            placeholder: context.l10n.inputPlaceholderFieldUnit,
+            label: context.l10n.habitsFieldUnit,
           ),
           const SizedBox(height: 12),
           TextFormField(

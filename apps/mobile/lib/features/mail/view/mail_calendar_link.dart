@@ -196,7 +196,10 @@ class _MailCalendarLinkState extends State<MailCalendarLink> {
         TextField(
           controller: _url,
           enabled: !_busy,
-          decoration: InputDecoration(labelText: l.mailCalendarLinkUrl),
+          decoration: InputDecoration(
+            hintText: context.l10n.inputPlaceholderMailCalendarUrl,
+            labelText: l.mailCalendarLinkUrl,
+          ),
           onChanged: (_) => setState(() {
             _preview = null;
             _notice = '';

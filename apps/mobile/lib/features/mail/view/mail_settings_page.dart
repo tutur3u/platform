@@ -422,6 +422,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                             enabled: _canChangeSettings,
                             maxLength: 160,
                             label: l10n.mailSenderName,
+                            placeholder: l10n.mailSenderNamePlaceholder,
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           AppTextField(
@@ -430,6 +431,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                             minLines: 3,
                             maxLines: 8,
                             label: l10n.mailSignature,
+                            placeholder: l10n.mailSignaturePlaceholder,
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           AppTextField(
@@ -438,6 +440,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                             minLines: 3,
                             maxLines: 8,
                             label: l10n.mailAiInstructions,
+                            placeholder: l10n.mailDraftInstructionsPlaceholder,
                           ),
                           AppToggleRow(
                             padding: const EdgeInsets.symmetric(
@@ -495,6 +498,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                                 enabled: _canChangeSettings,
                                 keyboardType: TextInputType.emailAddress,
                                 label: l10n.mailForwardTo,
+                                placeholder: l10n.mailForwardToPlaceholder,
                               ),
                           ],
                           if (_group != null) ...[

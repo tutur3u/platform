@@ -125,7 +125,10 @@ class _StorefrontEditorState extends State<_StorefrontEditor> {
           TextField(
             controller: _name,
             textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: l10n.storefrontName),
+            decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderStorefrontName,
+              labelText: l10n.storefrontName,
+            ),
             onChanged: (value) {
               if (!_slugEdited) _slug.text = _slugify(value);
             },
@@ -136,6 +139,7 @@ class _StorefrontEditorState extends State<_StorefrontEditor> {
             textInputAction: TextInputAction.next,
             autocorrect: false,
             decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderStorefrontSlug,
               labelText: l10n.storefrontSlug,
               prefixText: 'storefront.tuturuuu.com/',
             ),
@@ -145,14 +149,20 @@ class _StorefrontEditorState extends State<_StorefrontEditor> {
           TextField(
             controller: _description,
             maxLines: 3,
-            decoration: InputDecoration(labelText: l10n.storefrontDescription),
+            decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderStorefrontDescription,
+              labelText: l10n.storefrontDescription,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _currency,
             textCapitalization: TextCapitalization.characters,
             maxLength: 3,
-            decoration: InputDecoration(labelText: l10n.storefrontCurrency),
+            decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderStorefrontCurrency,
+              labelText: l10n.storefrontCurrency,
+            ),
           ),
           const SizedBox(height: 4),
           _ChoiceField(
