@@ -129,15 +129,9 @@ type Publish = (runs: BalancerRun[]) => Promise<unknown>;
 // safe because only newer revisions apply.
 async function createPublisher(): Promise<Publish | undefined> {
   try {
-    const [{ createSessionClient }, { publishBalancerRuns }] =
-      await Promise.all([
-        import('./resources-box-offload.js'),
-        import('../platform-balancer.js'),
-      ]);
-    const options = (
-      await createSessionClient()
-    ).getInfrastructureClientOptions();
-    return (runs) => publishBalancerRuns(options, runs);
+    const { createSessionClient } = await import('./resources-box-offload.js');
+    const client = await createSessionClient();
+    return (runs) => client.devboxes.balancer.publish(runs);
   } catch (error) {
     process.stderr.write(
       `[ttr balancer] not publishing to Infrastructure: ${error instanceof Error ? error.message : 'no session'}\n`
