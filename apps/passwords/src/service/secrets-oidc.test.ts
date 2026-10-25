@@ -108,8 +108,9 @@ describe('GitHub OIDC', () => {
     { event_name: undefined },
     { ref: 'refs/pull/42/merge' },
   ])('rejects pull-request and missing event contexts', async (claims) => {
-    await expect(verifyGitHubPolicy(await sign(claims), [policy], deps()))
-      .rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    await expect(
+      verifyGitHubPolicy(await sign(claims), [policy], deps())
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
   it.each([
     { exp: seconds - 1 },

@@ -181,20 +181,43 @@ describe('Passwords service with signed claims and real crypto', () => {
     expect(database.resolveWorkspace).not.toHaveBeenCalled();
   });
 
-  it.each([undefined, env.NEXT_PUBLIC_APP_URL])('denies browser bearer writes regardless of Origin %s', async (origin) => {
-    const { database } = service();
-    const signed = createAppSessionToken({ userId: actor, targetApp: 'passwords',
-      mfa: { sessionId: 'synthetic-proof', verifiedAt: Math.floor(Date.now() / 1000) },
-    }, { secret: env.TUTURUUU_APP_COORDINATION_SECRET });
-    const headers = new Headers({ authorization: `Bearer ${signed.token}`,
-      'sec-fetch-site': 'same-origin', referer: env.NEXT_PUBLIC_APP_URL });
-    if (origin) headers.set('origin', origin);
-    const port = createPasswordsService(new Request(`${env.NEXT_PUBLIC_APP_URL}/_passwords/functions/put`,
-      { method: 'POST', headers }), env, database);
-    expect(await port.putItem(input())).toEqual({ ok: false, code: 'FORBIDDEN' });
-    expect(database.resolveWorkspace).not.toHaveBeenCalled();
-    expect(f.files.size).toBe(0);
-  });
+  it.each([undefined, env.NEXT_PUBLIC_APP_URL])(
+    'denies browser bearer writes regardless of Origin %s',
+    async (origin) => {
+      const { database } = service();
+      const signed = createAppSessionToken(
+        {
+          userId: actor,
+          targetApp: 'passwords',
+          mfa: {
+            sessionId: 'synthetic-proof',
+            verifiedAt: Math.floor(Date.now() / 1000),
+          },
+        },
+        { secret: env.TUTURUUU_APP_COORDINATION_SECRET }
+      );
+      const headers = new Headers({
+        authorization: `Bearer ${signed.token}`,
+        'sec-fetch-site': 'same-origin',
+        referer: env.NEXT_PUBLIC_APP_URL,
+      });
+      if (origin) headers.set('origin', origin);
+      const port = createPasswordsService(
+        new Request(`${env.NEXT_PUBLIC_APP_URL}/_passwords/functions/put`, {
+          method: 'POST',
+          headers,
+        }),
+        env,
+        database
+      );
+      expect(await port.putItem(input())).toEqual({
+        ok: false,
+        code: 'FORBIDDEN',
+      });
+      expect(database.resolveWorkspace).not.toHaveBeenCalled();
+      expect(f.files.size).toBe(0);
+    }
+  );
   it('rejects cross-origin mutation and stops before workspace proof', async () => {
     const { port, database } = service(30, 'https://attacker.example.test');
     expect(await port.putItem(input())).toEqual({

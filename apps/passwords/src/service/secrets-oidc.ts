@@ -66,7 +66,8 @@ export function parsePolicies(source: string | undefined): GitHubPolicy[] {
       if (
         !/^[1-9][0-9]*$/.test(value.repository_id) ||
         !/^[^/]+\/[^/]+$/.test(value.repository) ||
-        (!value.ref.startsWith('refs/heads/') && !value.ref.startsWith('refs/tags/')) ||
+        (!value.ref.startsWith('refs/heads/') &&
+          !value.ref.startsWith('refs/tags/')) ||
         value.sub.includes(':pull_request') ||
         !value.workflow_ref.startsWith(
           `${value.repository}/.github/workflows/`

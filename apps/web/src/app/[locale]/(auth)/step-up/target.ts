@@ -13,7 +13,9 @@ export function passwordsStepUpTarget(
     const url = new URL(next);
     const origins = [
       ...PRODUCTION_INTERNAL_APP_DOMAINS,
-      ...(process.env.NODE_ENV !== 'production' ? PORTLESS_INTERNAL_APP_DOMAINS : []),
+      ...(process.env.NODE_ENV !== 'production'
+        ? PORTLESS_INTERNAL_APP_DOMAINS
+        : []),
     ]
       .filter((entry) => entry.name === 'passwords')
       .map((entry) => new URL(entry.url).origin);

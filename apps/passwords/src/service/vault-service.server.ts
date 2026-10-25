@@ -128,7 +128,10 @@ export function createPasswordsService(
     const app = new URL(env.NEXT_PUBLIC_APP_URL);
     if (new URL(request.url).origin !== app.origin)
       throw new PasswordsError('FORBIDDEN');
-    if (request.headers.get('origin') !== app.origin || request.headers.has('authorization'))
+    if (
+      request.headers.get('origin') !== app.origin ||
+      request.headers.has('authorization')
+    )
       throw new PasswordsError('FORBIDDEN');
   }
 

@@ -200,10 +200,12 @@ export function createPasswordsAuthEdge(
           if (!next || !subject)
             return response({ code: 'AUTH_REQUIRED' }, 401);
           const site = request.headers.get('sec-fetch-site');
-          const initiator = request.headers.get('origin') ?? request.headers.get('referer');
+          const initiator =
+            request.headers.get('origin') ?? request.headers.get('referer');
           let initiatorMatches = false;
           try {
-            initiatorMatches = initiator !== null && new URL(initiator).origin === origin;
+            initiatorMatches =
+              initiator !== null && new URL(initiator).origin === origin;
           } catch {}
           if (
             (site !== null && site !== 'same-origin') ||
