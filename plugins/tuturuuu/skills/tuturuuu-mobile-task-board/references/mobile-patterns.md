@@ -65,14 +65,35 @@ localization changes.
   window width, and drop widget-level 16dp side margins once the page pads.
   Sheets and dialogs keep their own padding. For `ListView.separated` or grids,
   pass `AppPageInsets.of(context, width: constraints.maxWidth)` as padding.
-- Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
-  the owning feature. Expanded tablet/desktop windows use the leading
+- Group rows with `AppGroupedSection`/`AppGroupedCard`. Build rows from
+  `AppGroupedRow` + `AppIconTile` with an `AppTone`, loading from
+  `AppSkeletonRows`, and empty/error states from `AppStateMessage` (`.inline`
+  inside a card); feature-specific row widgets compose these. Expanded tablet/desktop windows use the leading
   `ShellNavigationRail`, which must keep the mini-app Back item. Switching
   dock and rail must not change the shell body's tree shape; regressions
   assert a visited root tab is not remounted, because routed pages survive
   through the navigator key.
+- List/detail screens use `AppMasterDetail`, which splits at a body width of
+  720dp or more. Keep the selection in feature state. Fold a pushed detail
+  route back into the pane through `AppMasterDetailRouteBody`, because covered
+  routes are not laid out. On split layouts, the first Back closes the pane.
+  Suites that cover the compact push flow call `usePhoneSurface()`: the
+  default 800x600 test view is a split layout.
+- Open details from the row summary in the same frame and hydrate the body
+  afterwards; never await the network before navigating. Keep prefetching
+  bounded and replaceable (Mail: two concurrent requests, eight queued, one
+  attempt, cancelled when the visible rows change).
 - See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
   and its layout/rail regression tests.
+- Redesigned mini apps compose `package:mobile/core/ui/kit/kit.dart`
+  (`AppSummaryHero`, `AppSectionHeader`, `AppStatTile`, `AppPanel`,
+  `AppRichRow`, `AppFilterBar`, `AppSegmentedControl`, `AppAdaptiveGrid`,
+  `AppGroupedSlice` for lazy grouped lists) and follow the
+  [mobile design language](../../../../../apps/docs/build/development-tools/mobile-design-language.mdx):
+  one hero per root, one `AppTone` per app, no shadows or blur on list
+  content, and render evidence from `test/helpers/design_render_harness.dart`.
+  CMS (`features/cms`) is the reference migration; retire `finance_ui.dart`
+  widgets per app using the mapping table there.
 
 ## Design System And shadcn Removal
 

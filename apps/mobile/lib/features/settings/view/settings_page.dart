@@ -26,6 +26,7 @@ import 'package:mobile/features/settings/view/appearance/appearance_labels.dart'
 import 'package:mobile/features/settings/view/link_browser_settings_tile.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
+import 'package:mobile/features/settings/view/settings_dock_search.dart';
 import 'package:mobile/features/settings/view/settings_profile_header.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_search.dart';
@@ -217,13 +218,30 @@ class _SettingsViewState extends State<_SettingsView>
       case SettingsSectionDestination.overview:
         final searching = _searchQuery.trim().isNotEmpty;
         return [
-          const SettingsProfileHeader(),
-          const SizedBox(height: SettingsRowLayout.groupGap),
-          SettingsSearchField(
+          // Results replace the page, header included, so they sit directly
+          // under the search field.
+          if (!searching) ...[
+            const SettingsProfileHeader(),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+          ],
+          SettingsDockSearch(
+            ownerId: 'settings-root-search',
+            location: Routes.settings,
             controller: _searchController,
+            hint: context.l10n.settingsSearchPlaceholder,
+            active: _searchActive,
+            onActiveChanged: (active) => setState(() => _searchActive = active),
             onChanged: _onSearchChanged,
+            fallback: Padding(
+              padding: const EdgeInsets.only(
+                bottom: SettingsRowLayout.groupGap,
+              ),
+              child: SettingsSearchField(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+              ),
+            ),
           ),
-          const SizedBox(height: SettingsRowLayout.groupGap),
           if (searching)
             SettingsSearchResults(
               query: _searchQuery,

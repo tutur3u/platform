@@ -6,14 +6,19 @@ vi.mock('./security-budget', () => ({ reserveSecurityBudget: f.reserve }));
 
 import {
   ProfileUploadError as BudgetProfileUploadError,
+  PROFILE_MEDIA_MAX_BYTES as budgetLimits,
   reserveProfileUploadBudget,
 } from './profile-upload-budget';
 import { ProfileUploadError } from './profile-upload-error';
+import { PROFILE_MEDIA_MAX_BYTES } from './profile-upload-limits';
 
 const now = new Date('2026-10-03T12:30:00Z');
 beforeEach(() => {
   vi.clearAllMocks();
   f.reserve.mockResolvedValue([1, 0]);
+});
+it('preserves the pure limits export for existing budget callers', () => {
+  expect(budgetLimits).toBe(PROFILE_MEDIA_MAX_BYTES);
 });
 it('reserves all account and global limits in one atomic call, without raw actor identifiers', async () => {
   await reserveProfileUploadBudget('synthetic-actor', 'avatar', now);

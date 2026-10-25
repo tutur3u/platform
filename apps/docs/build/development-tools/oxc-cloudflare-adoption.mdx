@@ -144,6 +144,13 @@ Do not replace `wrangler types --config <emitted-config>` with a bare cf command
 type generation must read the same Worker identity and preserve the declarations
 consumed by the app. Retain legacy local dev, D1 migration and tail commands until
 their exact configuration, persistence and output contracts pass independently.
+Calendar is the first emitted-config type-generation profile: its existing
+validator admits only ASSETS, and the adapter runs the pinned cf CLI on a
+supported Node executor. CI compares exact binding keys/requiredness/types against
+the existing producer, verifies unchanged artifact bytes and retains a receipt.
+Its self-contained declaration does not require shipping a generated config.
+Other resource and framework profiles still require separate qualification.
+
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
 

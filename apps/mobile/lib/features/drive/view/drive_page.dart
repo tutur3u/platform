@@ -849,7 +849,7 @@ class _DrivePageState extends State<DrivePage> {
               NovaRefreshIndicator(
                 onRefresh: _reload,
                 child: AppPageListView(
-                  kind: AppPageKind.root,
+                  kind: _showGrid ? AppPageKind.root : AppPageKind.detail,
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [

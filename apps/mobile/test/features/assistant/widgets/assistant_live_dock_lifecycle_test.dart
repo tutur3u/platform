@@ -1,147 +1,135 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
-import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
-import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
-import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/features/shell/view/shell_dock_control_item.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
-import 'package:mobile/l10n/gen/app_localizations.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
+
+import 'assistant_live_shell_harness.dart';
+
+Future<void> _settle(WidgetTester tester) async {
+  for (var i = 0; i < 10; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
 
 void main() {
   for (final width in [320.0, 390.0]) {
-    testWidgets('one shell material and navbar width through calls at $width', (
-      tester,
-    ) async {
-      tester.view
-        ..physicalSize = Size(width, 720)
-        ..devicePixelRatio = 1;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-      final controller = ShellDockSlotController();
-      addTearDown(controller.dispose);
-      final owner = Object();
-      var calls = 0;
-      var cancellations = 0;
-      var navigation = 0;
-      void publish(
-        AssistantLiveConnectionStatus status, {
-        bool expanded = false,
-      }) {
-        final state = AssistantLiveState(status: status);
-        controller.publish(
-          owner,
-          ShellDockSlot(
-            location: '/assistant',
-            composing:
-                status == AssistantLiveConnectionStatus.connected && !expanded,
-            expandContent: false,
-            primary: AssistantLivePrimaryAction(
-              state: state,
-              assistantName: 'Mira',
-              onCall: () async {
-                calls++;
-              },
-              onCancel: () async {
-                cancellations++;
-              },
-              onNavigation: () {
-                navigation++;
-              },
-            ),
-            content: AssistantLiveCallControls(
-              state: state,
-              onMicrophone: () async {},
-              onCamera: () async {},
-              onText: () async {},
-              onDisconnect: () async {},
-            ),
-          ),
-        );
-      }
-
-      publish(AssistantLiveConnectionStatus.disconnected);
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: MediaQuery(
-            data: MediaQueryData(
-              size: Size(width, 720),
-              textScaler: const TextScaler.linear(2),
-            ),
-            child: ShellDockScope(
-              controller: controller,
-              child: const FloatingShellDock(
-                location: '/assistant',
-                bottomInset: 68,
-                navigation: SizedBox(height: 52, child: Text('Navigation')),
-                child: SizedBox.expand(),
+    for (final locale in ['en', 'vi']) {
+      for (final ime in [0.0, 280.0]) {
+        for (final reduced in [false, true]) {
+          testWidgets('retains chat/Live bounds, centers and material '
+              '$width $locale IME=$ime reduced=$reduced', (tester) async {
+            tester.view
+              ..physicalSize = Size(width, 844)
+              ..devicePixelRatio = 1;
+            addTearDown(() {
+              tester.view.resetPhysicalSize();
+              tester.view.resetDevicePixelRatio();
+            });
+            final controller = LiveShellTestController(
+              LiveShellFrame(
+                live: false,
+                state: liveShellState(
+                  AssistantLiveConnectionStatus.disconnected,
+                ),
               ),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final material = find.byKey(
-        const ValueKey('persistent-shell-dock-material'),
-      );
-      final element = tester.element(material);
-      final state = tester.state(find.byType(PersistentShellDock));
-      final originalWidth = tester.getSize(material).width;
-      await tester.tap(find.byTooltip('Call Mira'));
-      expect(calls, 1);
-      for (final status in [
-        AssistantLiveConnectionStatus.preparing,
-        AssistantLiveConnectionStatus.connecting,
-        AssistantLiveConnectionStatus.reconnecting,
-      ]) {
-        publish(status);
-        await tester.pumpAndSettle();
-        expect(find.text('Navigation'), findsOneWidget);
-        expect(find.byIcon(LucideIcons.videoOff), findsNothing);
-        await tester.tap(find.byTooltip('Cancel call'));
-        expect(tester.getSize(material).width, originalWidth);
-        expect(tester.element(material), same(element));
+            );
+            addTearDown(controller.dispose);
+            await tester.pumpWidget(
+              AssistantLiveShellHarness(
+                controller: controller,
+                width: width,
+                locale: locale,
+                scale: 2,
+                ime: ime,
+                reducedMotion: reduced,
+              ),
+            );
+            await _settle(tester);
+            final surface = find.byKey(
+              const ValueKey('persistent-shell-dock-material'),
+            );
+            final primary = find.byKey(
+              const ValueKey('floating-dock-primary-slot'),
+            );
+            final materialElement = tester.element(surface);
+            final dockState = tester.state(find.byType(PersistentShellDock));
+            final bounds = tester.getRect(surface);
+            final primaryBounds = tester.getRect(primary);
+            expect(find.byType(ShellDockPublisher), findsOneWidget);
+            expect(find.byType(TextField), findsOneWidget);
+            Map<String, Offset>? centers;
+            for (final status in [
+              AssistantLiveConnectionStatus.disconnected,
+              AssistantLiveConnectionStatus.preparing,
+              AssistantLiveConnectionStatus.connecting,
+              AssistantLiveConnectionStatus.connected,
+              AssistantLiveConnectionStatus.reconnecting,
+              AssistantLiveConnectionStatus.error,
+              AssistantLiveConnectionStatus.disconnected,
+            ]) {
+              controller.value = LiveShellFrame(
+                state: liveShellState(
+                  status,
+                  ended:
+                      centers != null &&
+                      status == AssistantLiveConnectionStatus.disconnected,
+                ),
+              );
+              // The page publisher updates after layout. Check its first
+              // listener frame and every intermediate transition frame.
+              await tester.pump();
+              await tester.pump();
+              for (final milliseconds in [0, 16, 80, 180, 320]) {
+                await tester.pump(Duration(milliseconds: milliseconds));
+                expect(tester.getRect(surface), bounds);
+                expect(tester.getRect(primary), primaryBounds);
+                expect(tester.element(surface), same(materialElement));
+                expect(
+                  tester.state(find.byType(PersistentShellDock)),
+                  same(dockState),
+                );
+                expect(find.byType(ShellDockSurface), findsOneWidget);
+                expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+                expect(find.byType(ShellDockControlItem), findsNWidgets(4));
+                expect(find.byType(TextField), findsNothing);
+                final current = {
+                  for (final id in liveControlIds)
+                    id: tester.getCenter(
+                      find.byKey(ValueKey('live-control-$id')),
+                    ),
+                };
+                centers ??= current;
+                expect(current, centers);
+                expect(tester.takeException(), isNull);
+              }
+            }
+            // Navigation expansion is deliberate and reversible in every
+            // state. It never changes a selected destination as a toggle.
+            await tester.tap(find.byIcon(LucideIcons.menu));
+            await _settle(tester);
+            expect(find.text('Shell navigation'), findsOneWidget);
+            expect(find.byType(AssistantLiveCallControls), findsNothing);
+            await tester.tap(find.byIcon(LucideIcons.menu));
+            await _settle(tester);
+            expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+            expect(tester.element(surface), same(materialElement));
+            controller.value = LiveShellFrame(
+              live: false,
+              state: controller.value.state,
+            );
+            await _settle(tester);
+            expect(find.byType(TextField), findsOneWidget);
+            expect(tester.getRect(surface), bounds);
+            expect(tester.getRect(primary), primaryBounds);
+            expect(tester.takeException(), isNull);
+          });
+        }
       }
-      expect(cancellations, 3);
-      publish(AssistantLiveConnectionStatus.connected);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(material).width, originalWidth);
-      expect(tester.element(material), same(element));
-      await tester.pumpAndSettle();
-      expect(find.text('Navigation'), findsNothing);
-      expect(
-        find.descendant(
-          of: find.byType(AssistantLiveCallControls),
-          matching: find.byType(ShellDockActionButton),
-        ),
-        findsNWidgets(4),
-      );
-      for (final button in tester.widgetList<AppIconButton>(
-        find.byType(AppIconButton),
-      )) {
-        expect(button.onPressed, isNotNull);
-      }
-      await tester.tap(find.byIcon(LucideIcons.menu));
-      expect(navigation, 1);
-      publish(AssistantLiveConnectionStatus.connected, expanded: true);
-      await tester.pumpAndSettle();
-      expect(find.text('Navigation'), findsOneWidget);
-      publish(AssistantLiveConnectionStatus.disconnected);
-      await tester.pumpAndSettle();
-      expect(tester.getSize(material).width, originalWidth);
-      expect(tester.element(material), same(element));
-      expect(tester.state(find.byType(PersistentShellDock)), same(state));
-      expect(find.byType(BackdropFilter), findsOneWidget);
-      expect(find.byType(AppIconButton), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+    }
   }
 }

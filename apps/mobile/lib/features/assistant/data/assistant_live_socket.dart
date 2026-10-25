@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -91,10 +92,13 @@ class AssistantLiveSocketClient {
     : _connectChannel = connectChannel ?? _defaultConnect;
 
   final WebSocketChannel Function(Uri) _connectChannel;
+  // Bound the handshake: an unanswered one would otherwise hold a disconnect
+  // (and the next connect, which waits for that close) until the OS gives up.
   static WebSocketChannel _defaultConnect(Uri uri) =>
       IOWebSocketChannel.connect(
         uri,
         pingInterval: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 10),
       );
   final _events =
       StreamController<
@@ -114,6 +118,7 @@ class AssistantLiveSocketClient {
   }
 
   WebSocketChannel? _channel;
+  bool _sinkOpen = false;
   StreamSubscription<dynamic>? _subscription;
   bool _seedHistoryPending = false;
   List<AssistantLiveSeedContent> _pendingSeedHistory = const [];
@@ -137,6 +142,7 @@ class AssistantLiveSocketClient {
     _pendingSeedHistory = seedHistory;
 
     _channel = _connectChannel(uri);
+    _sinkOpen = true;
 
     _subscription = _channel!.stream.listen(
       (raw) {
@@ -146,11 +152,13 @@ class AssistantLiveSocketClient {
       },
       onDone: () {
         if (generation == _connectionGeneration) {
+          _sinkOpen = false;
           _emit(const AssistantLiveSocketClosed('socket closed'));
         }
       },
       onError: (Object error, StackTrace stackTrace) {
         if (generation == _connectionGeneration) {
+          _sinkOpen = false;
           _emit(AssistantLiveSocketError(error.toString()));
         }
       },
@@ -170,16 +178,18 @@ class AssistantLiveSocketClient {
     });
   }
 
-  void sendText(String text) {
-    if (text.trim().isEmpty) return;
-    _send({
+  AssistantLiveSinkAdmission sendText(String text) {
+    if (text.trim().isEmpty) return AssistantLiveSinkAdmission.refused;
+    return _send({
       'realtimeInput': {'text': text},
-    });
+    }, captureFailure: true);
   }
 
-  void endAudioStream() => _send({
-    'realtimeInput': {'audioStreamEnd': true},
-  });
+  void endAudioStream() {
+    _send({
+      'realtimeInput': {'audioStreamEnd': true},
+    });
+  }
 
   void sendAudioChunk(Uint8List bytes) {
     if (bytes.isEmpty) return;
@@ -193,13 +203,13 @@ class AssistantLiveSocketClient {
     });
   }
 
-  void sendVideoFrame(Uint8List jpegBytes) {
-    if (jpegBytes.isEmpty) return;
-    _send({
+  AssistantLiveSinkAdmission sendVideoFrame(Uint8List jpegBytes) {
+    if (jpegBytes.isEmpty) return AssistantLiveSinkAdmission.refused;
+    return _send({
       'realtimeInput': {
         'video': {'data': base64Encode(jpegBytes), 'mimeType': 'image/jpeg'},
       },
-    });
+    }, captureFailure: true);
   }
 
   void sendToolResponses(List<Map<String, dynamic>> functionResponses) {
@@ -214,6 +224,7 @@ class AssistantLiveSocketClient {
     final channel = _channel;
     _subscription = null;
     _channel = null;
+    _sinkOpen = false;
     _seedHistoryPending = false;
     _pendingSeedHistory = const [];
     await cancelling;
@@ -333,8 +344,23 @@ class AssistantLiveSocketClient {
     }
   }
 
-  void _send(Map<String, dynamic> payload) {
-    _channel?.sink.add(jsonEncode(payload));
+  AssistantLiveSinkAdmission _send(
+    Map<String, dynamic> payload, {
+    bool captureFailure = false,
+  }) {
+    final channel = _channel;
+    if (channel == null || !_sinkOpen || channel.closeCode != null) {
+      return AssistantLiveSinkAdmission.refused;
+    }
+    final frame = jsonEncode(payload);
+    try {
+      channel.sink.add(frame);
+      return AssistantLiveSinkAdmission.admitted;
+    } on Object {
+      _sinkOpen = false;
+      if (!captureFailure) rethrow;
+      return AssistantLiveSinkAdmission.unknown;
+    }
   }
 
   dynamic _decodePayload(dynamic raw) {

@@ -70,9 +70,8 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
             return const Center(child: NovaLoadingIndicator());
           }
           if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+            return AppPageBody(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -425,9 +424,8 @@ class _ErrorView extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -470,9 +468,8 @@ class _EmptyView extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

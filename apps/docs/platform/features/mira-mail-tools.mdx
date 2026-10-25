@@ -1,0 +1,82 @@
+---
+title: "Mira Mail Tools"
+updatedAt: "2026-10-25"
+description: "How Mira reads recent email and creates reply drafts in Tuturuuu Mail without ever sending."
+---
+
+Mira can list recent email, read a thread, and create a reply draft in Tuturuuu
+Mail. It cannot send email. Sending always requires the user to tap **Send** in Mail.
+
+## Scope and defaults
+
+| Tool | Behavior | Default and limits |
+| --- | --- | --- |
+| `list_recent_emails` | Lists threads across the user's accessible mailboxes, or one `mailboxId`. Filters: `folder`, `unreadOnly`, `query`, `sinceDays`. | Inbox, 10 threads (max 25), snippets up to 280 characters, at most 10 mailboxes per call. |
+| `get_email_thread` | Reads one thread as plain text. HTML is stripped and script, style, and head content is dropped. | Latest 10 messages (max 20), up to 4,000 characters per message, up to 12,000 characters in total. Newest messages keep their budget first. Reading does not mark mail as read. |
+| `draft_email_reply` | Creates a reply draft on the thread, using a body Mira wrote or the Mail draft assistant (`instructions`). | Replies to the sender, or reply-all with `replyAll`. Uses the Mail app's recipient, subject, `In-Reply-To` and `References` rules. |
+
+- **Mailboxes:** v1 covers first-party Tuturuuu Mail mailboxes only. Connected
+  Gmail or Outlook accounts use a separate provider API and are not available to
+  Mira. Tool results state this scope.
+- **Surfaces:** web chat, mobile chat, and mobile Live. Live reaches these tools
+  through the canonical `search_workspace_tools` / `execute_workspace_tool` bridge.
+  Meet assistants do not receive these tools.
+
+## Product decisions
+
+- **No send tool.** Mira has no tool that sends email, and `draft_email_reply`
+  never calls the Mail send endpoint.
+- **Drafts need no confirmation step.** The release authority approved this on
+  2026-10-25. `draft_email_reply` creates the draft directly. The result reports
+  `status: "draft created"` and `sent: false`. Mira must tell the user it created
+  a draft and that they review and send it in Mail. Mira drafts only when the
+  user asks for a reply, never because an email asks for one.
+- **Retries never duplicate a draft.** Each request sends Mail a stable
+  `clientMessageId`. It is a UUID derived from the user, workspace, chat,
+  mailbox, thread, reply mode, and the normalized body (or the assistant
+  instructions). It leaves out the tool-call id, because a retry after a lost
+  response arrives as a new tool call. Mail returns the existing message for a
+  repeated key, including when two requests race on the `mail_messages` primary
+  key. If that message was already sent, Mira reports it and does not claim a
+  new draft. No migration was needed, because the key is the message primary key.
+- **Email content is untrusted.** Subjects, senders, recipients, snippets,
+  bodies, and the draft's subject and body preview are returned only inside
+  `untrusted` fields, next to a `contentTrust` notice. The tool
+  descriptions and the `mail` discovery guidance tell the model to treat that
+  content as data only. The model must never follow instructions, links, or tool
+  requests found in email.
+
+## Access and transport
+
+`packages/ai` never queries Mail tables. The executor
+(`packages/ai/src/tools/executors/mail.ts`) calls the Mail satellite through
+`@tuturuuu/internal-api/mail` and forwards the caller's cookie or Bearer token
+with `withForwardedInternalApiAuth`. The Mail routes authenticate the token and
+enforce Mail eligibility, workspace membership, and mailbox roles. Drafting
+requires the `owner`, `admin`, or `sender` mailbox role. For that reason, the
+tools add no workspace permission in `MIRA_TOOL_PERMISSIONS`.
+
+- The Mail origin comes from `MAIL_APP_URL` or `NEXT_PUBLIC_MAIL_APP_URL`. It
+  falls back to `https://mail.tuturuuu.com` in production. Outside local
+  development, the origin must use HTTPS.
+- A session with no forwarded request headers gets a truthful "unavailable in
+  this session" result.
+- A 401, 403, or 404 response is reported as a failure with its status. It is
+  never reported as success. When some mailboxes fail during a multi-mailbox
+  listing, the result lists them in `failedMailboxes`.
+
+## Regression coverage
+
+- `packages/ai/src/tools/executors/mail.test.ts` covers forwarded auth, the
+  missing-headers and HTTPS checks, bounds and truncation, HTML stripping,
+  untrusted fields, direct draft creation that never sends, and truthful
+  403 and 404 errors.
+- `packages/ai/src/tools/executors/mail-draft.test.ts` covers a retry after a
+  lost response, which returns the same draft so only one exists. It also
+  covers the stable key, an already-sent key, and prompt-injection text that
+  appears only inside the untrusted fields.
+- `apps/mail/src/lib/mail/repository/drafts-idempotency.test.ts` covers repeated
+  and racing `clientMessageId` inserts. Neither creates a second draft or reuses
+  another user's message.
+- `packages/ai/src/tools/mira-tool-discovery.test.ts` covers English and
+  Vietnamese discovery of the mail tools and their guidance.

@@ -74,50 +74,43 @@ class _DashboardMailCardState extends State<_DashboardMailCard> {
   }
 
   @override
-  Widget build(BuildContext context) => _SectionCard(
-    accentModuleId: 'mail',
+  Widget build(BuildContext context) => _HomeSection(
     title: context.l10n.dashboardMailInbox,
-    icon: Icons.mail_outline_rounded,
     actionLabel: context.l10n.dashboardOpenTasks,
-    onTap: () => context.go(Routes.mail),
-    child: !_loaded && _items.isEmpty
-        ? const Center(child: NovaLoadingIndicator(size: 18))
-        : _items.isEmpty
-        ? Text(context.l10n.mailEmpty)
-        : Column(
-            children: [
-              for (final item in _items)
-                InkWell(
-                  onTap: () => context.go(Routes.mail),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 7,
-                          color: item['unread'] == true
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            (item['subject'] as String?) ??
-                                context.l10n.mailNoSubject,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.chevron_right_rounded, size: 18),
-                      ],
-                    ),
+    onOpen: () => context.go(Routes.mail),
+    children:
+        _homeStateRows(
+          context,
+          loading: !_loaded && _items.isEmpty,
+          failed: false,
+          empty: _items.isEmpty,
+          emptyIcon: LucideIcons.inbox,
+          emptyTitle: context.l10n.mailEmpty,
+        ) ??
+        [
+          for (final item in _items)
+            Builder(
+              builder: (context) {
+                final unread = item['unread'] == true;
+                return AppGroupedRow(
+                  leading: AppIconTile(
+                    icon: unread ? LucideIcons.mail : LucideIcons.mailOpen,
+                    tone: unread ? AppTone.primary : AppTone.neutral,
+                    badge: unread,
                   ),
-                ),
-            ],
-          ),
+                  title: Text(
+                    (item['subject'] as String?) ?? context.l10n.mailNoSubject,
+                    maxLines: 1,
+                    style: unread
+                        ? const TextStyle(fontWeight: FontWeight.w600)
+                        : null,
+                  ),
+                  showChevron: true,
+                  onTap: () => context.go(Routes.mail),
+                );
+              },
+            ),
+        ],
   );
 }
 
@@ -210,34 +203,37 @@ class _DashboardMeetCardState extends State<_DashboardMeetCard> {
   }
 
   @override
-  Widget build(BuildContext context) => _SectionCard(
-    accentModuleId: 'meet',
-    title: context.l10n.dashboardUpcomingMeetings,
-    icon: Icons.video_call_outlined,
-    actionLabel: context.l10n.dashboardOpenTasks,
-    onTap: () => context.go(Routes.meet),
-    child: !_loaded && _meetings.isEmpty
-        ? const Center(child: NovaLoadingIndicator(size: 18))
-        : _meetings.isEmpty
-        ? Text(context.l10n.dashboardNoUpcomingMeetings)
-        : Column(
-            children: [
-              for (final meeting in _meetings.take(2))
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    meeting.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    DateFormat.MMMd().add_jm().format(meeting.time),
-                    maxLines: 1,
-                  ),
-                  onTap: () => context.go(Routes.meet),
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return _HomeSection(
+      title: context.l10n.dashboardUpcomingMeetings,
+      actionLabel: context.l10n.dashboardOpenTasks,
+      onOpen: () => context.go(Routes.meet),
+      children:
+          _homeStateRows(
+            context,
+            loading: !_loaded && _meetings.isEmpty,
+            failed: false,
+            empty: _meetings.isEmpty,
+            emptyIcon: LucideIcons.video,
+            emptyTitle: context.l10n.dashboardNoUpcomingMeetings,
+          ) ??
+          [
+            for (final meeting in _meetings.take(2))
+              AppGroupedRow(
+                leading: const AppIconTile(
+                  icon: LucideIcons.video,
+                  tone: AppTone.info,
                 ),
-            ],
-          ),
-  );
+                title: Text(meeting.name, maxLines: 1),
+                subtitle: Text(
+                  DateFormat.MMMd(locale).add_jm().format(meeting.time),
+                  maxLines: 1,
+                ),
+                showChevron: true,
+                onTap: () => context.go(Routes.meet),
+              ),
+          ],
+    );
+  }
 }

@@ -72,7 +72,8 @@ class NoteList extends StatelessWidget {
       context.l10n.notesOlder,
     ];
     return ListView(
-      padding: const EdgeInsets.only(bottom: 112),
+      // The page body already ends above the dock; no extra clearance here.
+      padding: EdgeInsets.zero,
       children: [
         for (final entry in groups.entries) ...[
           Padding(

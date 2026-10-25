@@ -74,6 +74,9 @@ jobs:
         working-directory: apps/colab
       - run: bun run build
         working-directory: apps/colab
+      - name: Verify local Vite Worker preview boundaries
+        run: node --test scripts/verify-preview-runtime.mjs
+        working-directory: apps/colab
       - run: bun x --no-install wrangler deploy --dry-run
         working-directory: apps/colab
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

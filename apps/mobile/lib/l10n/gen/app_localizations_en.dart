@@ -486,31 +486,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Live camera';
 
   @override
+  String get assistantLiveCallCamera => 'Camera';
+
+  @override
+  String get assistantLiveCallCaptions => 'Captions';
+
+  @override
+  String get assistantLiveCallCaptionsEmpty => 'Captions appear here as you talk.';
+
+  @override
+  String get assistantLiveCallClose => 'Close';
+
+  @override
+  String get assistantLiveCallConnected => 'Connected';
+
+  @override
+  String get assistantLiveCallConnecting => 'Connecting…';
+
+  @override
+  String get assistantLiveCallDuration => 'Call duration';
+
+  @override
+  String get assistantLiveCallEnd => 'End';
+
+  @override
+  String assistantLiveCallEndedWithDuration(String duration) {
+    return 'Call ended · $duration';
+  }
+
+  @override
+  String get assistantLiveCallFailed => 'Couldn\'t connect';
+
+  @override
+  String get assistantLiveCallKeyboard => 'Keyboard';
+
+  @override
+  String get assistantLiveCallMinimize => 'Minimize';
+
+  @override
+  String get assistantLiveCallMute => 'Mute';
+
+  @override
+  String get assistantLiveCallMuted => 'Muted';
+
+  @override
+  String get assistantLiveCallReconnecting => 'Reconnecting…';
+
+  @override
+  String get assistantLiveCallRetry => 'Retry';
+
+  @override
+  String get assistantLiveCallReturn => 'Return to call';
+
+  @override
+  String get assistantLiveCallYou => 'You';
+
+  @override
   String get assistantLiveCancelCall => 'Cancel call';
 
   @override
   String get assistantLiveConnect => 'Start live session';
 
   @override
-  String get assistantLiveDescriptionConnecting => 'Creating a direct Gemini Live session for text, audio, and camera input.';
+  String get assistantLiveDescriptionConnecting => 'Connecting your live conversation.';
 
   @override
   String get assistantLiveDescriptionError => 'The live session hit an error. Retry or start a fresh session.';
 
   @override
-  String get assistantLiveDescriptionIdle => 'Start a live session to talk, type, or stream camera context into the same assistant chat.';
+  String get assistantLiveDescriptionIdle => 'Tap the microphone to start talking. Your conversation stays here.';
 
   @override
   String get assistantLiveDescriptionListening => 'Microphone streaming is active. Mira will keep listening for new audio input.';
 
   @override
-  String get assistantLiveDescriptionPreparing => 'Minting an ephemeral token and restoring the last resumable live session.';
+  String get assistantLiveDescriptionPreparing => 'Getting your live conversation ready.';
 
   @override
   String get assistantLiveDescriptionReady => 'Live text and audio are ready. Type a turn, talk, or share your camera feed.';
 
   @override
-  String get assistantLiveDescriptionReconnecting => 'The session is reconnecting with the latest resumable handle and restored history.';
+  String get assistantLiveDescriptionReconnecting => 'Reconnecting your conversation. Your transcript is still here.';
 
   @override
   String get assistantLiveDisconnect => 'End live session';
@@ -525,7 +581,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveHideCamera => 'Hide camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Talk with Mira';
+  String get assistantLiveIdleHeading => 'Ready to talk';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Current access';
@@ -1696,6 +1752,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmsTitleApp => 'CMS';
 
   @override
+  String get cmsPipelineEyebrow => 'Publishing pipeline';
+
+  @override
+  String cmsPublishedOfTotal(int published, int total) {
+    return '$published of $total published';
+  }
+
+  @override
+  String cmsPipelineSupporting(int drafts, int scheduled) {
+    return '$drafts in draft · $scheduled scheduled';
+  }
+
+  @override
+  String cmsEntryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entries',
+      one: '1 entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cmsCollectionDisabled => 'Disabled';
+
+  @override
+  String get cmsCollectionsProgress => 'Publishing by collection';
+
+  @override
+  String get cmsNoCollectionsMessage => 'Collections group one kind of content, such as articles or events. Create one to start writing entries.';
+
+  @override
+  String get cmsNoEntriesMatch => 'No entries match these filters.';
+
+  @override
+  String get cmsNoEntriesMatchMessage => 'Try another status or collection, or clear the search.';
+
+  @override
+  String get cmsFilterByCollection => 'Filter by collection';
+
+  @override
+  String get cmsDetailsSection => 'Details';
+
+  @override
+  String get cmsPublishingSection => 'Publishing';
+
+  @override
+  String get cmsLoadFailed => 'Could not load content';
+
+  @override
+  String get cmsRefreshFailed => 'Could not refresh. Showing the last loaded content.';
+
+  @override
   String get commonActive => 'Active';
 
   @override
@@ -2136,6 +2246,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardTodayTitle => 'Today at a glance';
+
+  @override
+  String get dashboardUntitledEvent => 'Untitled event';
 
   @override
   String get dashboardUpcomingEvents => 'Upcoming events';
@@ -3924,6 +4037,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeCustomize => 'Customize Home';
 
   @override
+  String get homeGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String homeGreetingAfternoonNamed(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String get homeGreetingEvening => 'Good evening';
+
+  @override
+  String homeGreetingEveningNamed(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String get homeGreetingMorning => 'Good morning';
+
+  @override
+  String homeGreetingMorningNamed(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
   String get homeHiddenWidgets => 'Hidden widgets';
 
   @override
@@ -3934,6 +4071,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override
   String get homeShowWidget => 'Show widget';
@@ -5004,6 +5144,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailOwner => 'Owner';
 
   @override
+  String get mailPreviewEmptyMessage => 'Pick a conversation from the list to read it here.';
+
+  @override
+  String get mailPreviewEmptyTitle => 'Select a conversation';
+
+  @override
   String get mailRemoveAttachment => 'Remove attachment';
 
   @override
@@ -6033,6 +6179,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsDeclineInvite => 'Decline';
 
   @override
+  String get notificationsGroupEarlier => 'Earlier';
+
+  @override
+  String get notificationsGroupLastWeek => 'Last 7 days';
+
+  @override
+  String get notificationsGroupToday => 'Today';
+
+  @override
+  String get notificationsGroupYesterday => 'Yesterday';
+
+  @override
   String notificationsHoursAgo(int count) {
     return '${count}h ago';
   }
@@ -6414,6 +6572,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameRequired => 'Display name cannot be empty';
 
   @override
+  String profileDurationHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String profileDurationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String profileDurationMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
   String get profileEmail => 'Email';
 
   @override
@@ -6773,8 +6946,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
+  String remindersOccurrenceDetails(String leadTime, String occurrence) {
+    return '$leadTime · $occurrence';
   }
 
   @override
@@ -10847,9 +11020,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSettingsSelectionUnconfirmed => 'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.';
 
   @override
-  String get assistantExpandPrompt => 'Expand prompt';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'About $setting';
   }
@@ -11095,4 +11265,118 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantSubmitSuccess => 'Submitted successfully';
+
+  @override
+  String get offlineDownloadsPaused => 'Downloads paused. Saved data is still available. We will retry in the background.';
+
+  @override
+  String get offlineDownloadsRetryLimit => 'Downloads are still unavailable. Try again later; saved data is still available.';
+
+  @override
+  String get mailSettingsReadOnly => 'Saved settings are read-only until access can be verified.';
+
+  @override
+  String get calendarSettingsError => 'Could not load or save calendar preferences. Retry when online.';
+
+  @override
+  String get assistantReactionCelebrate => 'Celebrate';
+
+  @override
+  String get assistantReactionInsightful => 'Insightful';
+
+  @override
+  String get assistantReactionLabel => 'Reaction';
+
+  @override
+  String get assistantReactionLike => 'Like';
+
+  @override
+  String get assistantReactionLove => 'Love';
+
+  @override
+  String get assistantReactionUnconfirmed => 'The reaction could not be confirmed. Refresh reactions to reconcile it safely.';
+
+  @override
+  String get assistantReactionUnavailable => 'Reactions are unavailable right now. Try again.';
+
+  @override
+  String get assistantRefreshReactions => 'Refresh reactions';
+
+  @override
+  String get assistantReplyMessageAction => 'Reply';
+
+  @override
+  String get assistantReplyUnavailable => 'Original message unavailable';
+
+  @override
+  String get assistantThemeAdvanced => 'Advanced';
+
+  @override
+  String get assistantThemeBackground => 'Background colors';
+
+  @override
+  String get assistantThemeBackgroundStyle => 'Background style';
+
+  @override
+  String get assistantThemeCustom => 'Custom';
+
+  @override
+  String get assistantThemeDeviceScope => 'For your Assistant chats on this device, across workspaces.';
+
+  @override
+  String get assistantThemeIntensity => 'Background intensity';
+
+  @override
+  String get assistantThemeLoading => 'Loading appearance…';
+
+  @override
+  String get assistantThemeMessages => 'Message colors';
+
+  @override
+  String get assistantThemeOmbre => 'Ombre';
+
+  @override
+  String get assistantThemePreset => 'Preset';
+
+  @override
+  String get assistantThemePreview => 'Chat appearance preview';
+
+  @override
+  String get assistantThemePreviewAssistant => 'Let’s make room for what matters.';
+
+  @override
+  String get assistantThemePreviewUser => 'Help me plan a focused day.';
+
+  @override
+  String get assistantThemeReset => 'Reset appearance';
+
+  @override
+  String get assistantThemeRetry => 'Retry';
+
+  @override
+  String get assistantThemeSaving => 'Saving appearance…';
+
+  @override
+  String get assistantThemeStorageError => 'Appearance could not be saved or loaded on this device.';
+
+  @override
+  String get assistantThemeText => 'Text colors';
+
+  @override
+  String get assistantThemeTitle => 'Chat appearance';
+
+  @override
+  String get assistantReplyPending => 'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.';
+
+  @override
+  String get assistantReplyChangedBeforeSend => 'The reply changed before sending. Your draft was kept. Review it and send again.';
+
+  @override
+  String get assistantLiveSendRefused => 'Live did not accept this message. Your draft was kept. Check the connection before trying again.';
+
+  @override
+  String get assistantLiveSendUnknown => 'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.';
 }

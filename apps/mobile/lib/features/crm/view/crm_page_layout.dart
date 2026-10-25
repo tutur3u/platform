@@ -168,8 +168,9 @@ extension _CrmPageLayout on _CrmPageState {
                       return const _CrmLoadingRows();
                     }
                     if (_isLoading || _isLoadingMore) {
+                      // The list already applies the page gutters.
                       return const Padding(
-                        padding: EdgeInsets.all(24),
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
                         child: Center(child: NovaLoadingIndicator()),
                       );
                     }

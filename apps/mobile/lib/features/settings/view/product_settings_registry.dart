@@ -5,7 +5,6 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
-import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
@@ -167,14 +166,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
           .currentWorkspace
           ?.id;
       if (workspaceId == null) return;
-      await pushScopedSettingsPage(
-        context,
-        asSheet: true,
-        builder: (_, isCurrent) => AssistantSettingsHub(
-          workspaceId: workspaceId,
-          isScopeCurrent: isCurrent,
-        ),
-      );
+      await context.push(Routes.settingsAppPath('assistant'));
     },
   ),
 ];
