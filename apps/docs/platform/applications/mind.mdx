@@ -100,6 +100,19 @@ therefore forwarded to `apps/web`:
 - `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
   `/api/ai/chat/file-urls`, which provide shared Mind chat attachments
 
+These routes share `{wsId}/chats/ai/resources/{id}/` between Mira chats and
+Mind threads, so the folder id must resolve to an owning record: an `ai_chats`
+row the actor created, or a `private.mind_ai_threads` row the actor created in
+that same workspace. Workspace membership alone never grants another member's
+folder. Ids with no owning record are denied for listing, reading and deleting;
+uploads for them (a thread not yet persisted) go to the actor's
+`temp/{actorId}/` folder instead. Signed upload URLs cannot bound size or type,
+so an uploaded object is readable through these routes, and eligible for the
+model, only after its stored size (32 MiB cap) and leading bytes match its
+extension; failing objects are deleted. Coverage:
+`apps/web/src/legacy-api-routes/ai/chat/_lib/resource-routes-access.test.ts`
+and `packages/ai/src/chat/attachment-content-guard.test.ts`.
+
 The separate `/api/v1/hive/servers/:serverId/mind-simulations` integration is
 Hive-owned in `apps/hive`, not a Mind product handler. It imports a Mind board
 as Hive agents plus a saved interaction workflow.

@@ -151,34 +151,47 @@ void main() {
     },
   );
 
-  test(
-    'a native preparation failure never falls back to another store',
-    () async {
-      final api = _UploadApi(
-        (_, _) => throw const ApiException(
-          message: 'Failed to prepare chat attachment',
-          statusCode: 500,
-        ),
-      );
-      final client = MockClient((_) async => http.Response('', 200));
+  for (final (status, failure) in const [
+    (401, AssistantAttachmentFailure.forbidden),
+    (403, AssistantAttachmentFailure.forbidden),
+    (404, AssistantAttachmentFailure.forbidden),
+    (500, AssistantAttachmentFailure.server),
+  ]) {
+    for (final (label, chatId) in const [
+      ('native', _native),
+      ('legacy', 'ai-chat-$_native'),
+    ]) {
+      test(
+        'a $status from the $label route never falls back to another store',
+        () async {
+          final api = _UploadApi(
+            (_, _) => throw ApiException(
+              message: 'Failed to prepare chat attachment',
+              statusCode: status,
+            ),
+          );
+          final client = MockClient((_) async => http.Response('', 200));
 
-      await expectLater(
-        AssistantAttachmentUploader(apiClient: api, httpClient: client).upload(
-          wsId: 'ws',
-          chatId: _native,
-          file: _file('voice.m4a', 'audio/mp4', 10),
-        ),
-        throwsA(
-          isA<AssistantAttachmentUploadException>().having(
-            (error) => error.failure,
-            'failure',
-            AssistantAttachmentFailure.server,
-          ),
-        ),
+          await expectLater(
+            AssistantAttachmentUploader(
+              apiClient: api,
+              httpClient: client,
+            ).upload(
+              wsId: 'ws',
+              chatId: chatId,
+              file: _file('voice.m4a', 'audio/mp4', 10),
+            ),
+            throwsA(
+              isA<AssistantAttachmentUploadException>()
+                  .having((error) => error.failure, 'failure', failure)
+                  .having((error) => error.statusCode, 'statusCode', status),
+            ),
+          );
+          expect(api.calls, hasLength(1));
+        },
       );
-      expect(api.calls, hasLength(1));
-    },
-  );
+    }
+  }
 
   test('maps storage and transport failures to actionable reasons', () async {
     final cases = <ApiException, AssistantAttachmentFailure>{

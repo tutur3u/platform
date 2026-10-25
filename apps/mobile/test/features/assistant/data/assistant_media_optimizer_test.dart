@@ -159,6 +159,67 @@ void main() {
     expect(result.optimized, isFalse);
   });
 
+  test('transparent PNGs upload without EXIF/GPS or text chunks', () async {
+    final image = img.Image(width: 32, height: 32, numChannels: 4)
+      ..clear(img.ColorRgba8(10, 20, 30, 128));
+    final png = _withPngChunks(img.encodePng(image), {
+      'eXIf': _pngExifWithGps(),
+      'tEXt': Uint8List.fromList('Comment\x00home address'.codeUnits),
+      'iTXt': Uint8List.fromList('Author\x00\x00\x00\x00\x00me'.codeUnits),
+    });
+    expect(_pngChunkTypes(png), containsAll(['eXIf', 'tEXt', 'iTXt']));
+
+    final result = await optimizer.optimize(
+      _picked('icon.png', 'image/png', png),
+    );
+
+    final uploaded = await result.result.file.readAsBytes();
+    expect(result.result.mimeType, 'image/png');
+    expect(result.result.size, uploaded.length);
+    expect(
+      _pngChunkTypes(uploaded),
+      isNot(anyOf(contains('eXIf'), contains('tEXt'), contains('iTXt'))),
+    );
+    final decoded = img.decodePng(uploaded)!;
+    expect(decoded.hasAlpha, isTrue);
+    expect(decoded.getPixel(0, 0).a, 128);
+  });
+
+  test('a malformed transparent PNG fails instead of uploading', () async {
+    final image = img.Image(width: 8, height: 8, numChannels: 4);
+    final png = img.encodePng(image);
+    final truncated = Uint8List.sublistView(png, 0, png.length - 6);
+    await expectLater(
+      optimizer.optimize(_picked('icon.png', 'image/png', truncated)),
+      throwsA(
+        isA<AssistantAttachmentUploadException>().having(
+          (error) => error.failure,
+          'failure',
+          AssistantAttachmentFailure.unsupported,
+        ),
+      ),
+    );
+  });
+
+  test(
+    'an encoder failure never uploads the original with its metadata',
+    () async {
+      const failing = AssistantMediaOptimizer(encoder: _NullEncoder());
+      // Rotated, so lossless stripping cannot apply either.
+      final rotated = _photo(width: 64, height: 48, orientation: 6);
+      await expectLater(
+        failing.optimize(_picked('photo.jpg', 'image/jpeg', rotated)),
+        throwsA(
+          isA<AssistantAttachmentUploadException>().having(
+            (error) => error.failure,
+            'failure',
+            AssistantAttachmentFailure.unsupported,
+          ),
+        ),
+      );
+    },
+  );
+
   test('a small JPEG keeps its pixels but loses its metadata', () async {
     final original = _photo(width: 64, height: 48, quality: 40);
     final result = await optimizer.optimize(
@@ -218,4 +279,55 @@ void main() {
     expect(120 * 32000 ~/ 8, lessThan(assistantMaxAttachmentBytes ~/ 50));
     expect(assistantMimeTypeFromExtension('m4a'), 'audio/mp4');
   });
+}
+
+/// Inserts well-formed ancillary chunks right after IHDR.
+Uint8List _withPngChunks(Uint8List png, Map<String, Uint8List> chunks) {
+  const ihdrEnd = 8 + 12 + 13;
+  final out = BytesBuilder()..add(Uint8List.sublistView(png, 0, ihdrEnd));
+  for (final MapEntry(key: type, value: data) in chunks.entries) {
+    final header = ByteData(8)..setUint32(0, data.length);
+    for (var i = 0; i < 4; i++) {
+      header.setUint8(4 + i, type.codeUnitAt(i));
+    }
+    final crcInput = Uint8List.fromList([...type.codeUnits, ...data]);
+    final crc = ByteData(4)..setUint32(0, _crc32(crcInput));
+    out
+      ..add(header.buffer.asUint8List())
+      ..add(data)
+      ..add(crc.buffer.asUint8List());
+  }
+  out.add(Uint8List.sublistView(png, ihdrEnd));
+  return out.takeBytes();
+}
+
+/// A big-endian TIFF block whose GPS IFD records a latitude.
+Uint8List _pngExifWithGps() {
+  final exif = img.ExifData();
+  exif.gpsIfd['GPSLatitude'] = img.IfdValueRational(10, 1);
+  final out = img.OutputBuffer(bigEndian: true);
+  exif.write(out);
+  return out.getBytes();
+}
+
+List<String> _pngChunkTypes(Uint8List png) {
+  final types = <String>[];
+  var offset = 8;
+  while (offset + 8 <= png.length) {
+    final length = ByteData.sublistView(png, offset, offset + 4).getUint32(0);
+    types.add(String.fromCharCodes(png.sublist(offset + 4, offset + 8)));
+    offset += 12 + length;
+  }
+  return types;
+}
+
+int _crc32(List<int> bytes) {
+  var crc = 0xffffffff;
+  for (final byte in bytes) {
+    crc ^= byte;
+    for (var bit = 0; bit < 8; bit++) {
+      crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xedb88320 : crc >> 1;
+    }
+  }
+  return crc ^ 0xffffffff;
 }

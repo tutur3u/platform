@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const OWN_CHAT = '11111111-1111-4111-8111-111111111111';
-const OTHER_CHAT = '22222222-2222-4222-8222-222222222222';
+import {
+  createResourceAdmin,
+  OTHER_CHAT,
+  OTHER_THREAD,
+  OWN_CHAT,
+  OWN_THREAD,
+  type ResourceAdminState,
+  seedResourceAdminState,
+  UNKNOWN_ID,
+} from '../_lib/resource-admin.test-fixture';
 
 const mocks = vi.hoisted(() => ({
-  chats: [] as { id: string; creator_id: string }[],
-  createSignedUploadUrl: vi.fn(),
+  admin: null as unknown as ReturnType<typeof createResourceAdmin>,
+  state: {} as ResourceAdminState,
   verifyMembership: vi.fn(),
 }));
 
@@ -26,28 +33,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => ({
-    from: () => {
-      let id: unknown;
-      const query = {
-        select: () => query,
-        eq: (_key: string, value: unknown) => {
-          id = value;
-          return query;
-        },
-        maybeSingle: async () => ({
-          data: mocks.chats.find((chat) => chat.id === id) ?? null,
-          error: null,
-        }),
-      };
-      return query;
-    },
-  }),
-  createDynamicAdminClient: async () => ({
-    storage: {
-      from: () => ({ createSignedUploadUrl: mocks.createSignedUploadUrl }),
-    },
-  }),
+  createAdminClient: async () => mocks.admin.client,
+  createDynamicAdminClient: async () => mocks.admin.client,
 }));
 
 import { POST } from './route';
@@ -60,38 +47,54 @@ function request(body: Record<string, unknown>) {
   });
 }
 
+async function uploadPath(chatId: string) {
+  const response = await POST(
+    request({ chatId, filename: 'photo.jpg' }) as never
+  );
+  expect(response.status).toBe(200);
+  return (await response.json()).path as string;
+}
+
 describe('AI chat upload URL route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.chats = [
-      { id: OWN_CHAT, creator_id: 'actor' },
-      { id: OTHER_CHAT, creator_id: 'other-member' },
-    ];
+    seedResourceAdminState(mocks.state);
+    mocks.admin = createResourceAdmin(mocks.state);
     mocks.verifyMembership.mockResolvedValue({ ok: true });
-    mocks.createSignedUploadUrl.mockResolvedValue({
-      data: { signedUrl: 'https://storage.test/upload', token: 'token' },
-      error: null,
-    });
   });
 
-  it("refuses another member's chat in the same workspace", async () => {
+  it.each([
+    ['chat', OTHER_CHAT],
+    ['Mind thread', OTHER_THREAD],
+  ])("refuses another member's %s in the same workspace", async (_, id) => {
     const response = await POST(
-      request({ chatId: OTHER_CHAT, filename: 'photo.jpg' }) as never
+      request({ chatId: id, filename: 'photo.jpg' }) as never
     );
 
     expect(response.status).toBe(404);
-    expect(mocks.createSignedUploadUrl).not.toHaveBeenCalled();
+    expect(mocks.admin.bucket.createSignedUploadUrl).not.toHaveBeenCalled();
   });
 
-  it("issues a URL inside the actor's own chat folder", async () => {
+  it("refuses the actor's Mind thread from another workspace", async () => {
+    mocks.state.threads[0]!.ws_id = 'ws-2';
     const response = await POST(
-      request({ chatId: OWN_CHAT, filename: 'photo.jpg' }) as never
+      request({ chatId: OWN_THREAD, filename: 'photo.jpg' }) as never
     );
+    expect(response.status).toBe(404);
+  });
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.path).toMatch(
-      new RegExp(`^ws-1/chats/ai/resources/${OWN_CHAT}/\\d+_photo\\.jpg$`)
+  it.each([
+    ['chat', OWN_CHAT],
+    ['Mind thread', OWN_THREAD],
+  ])("issues a URL inside the actor's own %s folder", async (_, id) => {
+    expect(await uploadPath(id)).toMatch(
+      new RegExp(`^ws-1/chats/ai/resources/${id}/\\d+_photo\\.jpg$`)
+    );
+  });
+
+  it("sends uploads for a not-yet-created chat to the actor's temp folder", async () => {
+    expect(await uploadPath(UNKNOWN_ID)).toMatch(
+      /^ws-1\/chats\/ai\/resources\/temp\/actor\/\d+_photo\.jpg$/
     );
   });
 
@@ -113,7 +116,7 @@ describe('AI chat upload URL route', () => {
       request({ filename: 'clip.m4a', sizeBytes: 33 * 1024 * 1024 }) as never
     );
     expect(oversized.status).toBe(413);
-    expect(mocks.createSignedUploadUrl).not.toHaveBeenCalled();
+    expect(mocks.admin.bucket.createSignedUploadUrl).not.toHaveBeenCalled();
   });
 
   it('refuses non-members before checking chats', async () => {
@@ -122,6 +125,6 @@ describe('AI chat upload URL route', () => {
       request({ chatId: OWN_CHAT, filename: 'photo.jpg' }) as never
     );
     expect(response.status).toBe(403);
-    expect(mocks.createSignedUploadUrl).not.toHaveBeenCalled();
+    expect(mocks.admin.bucket.createSignedUploadUrl).not.toHaveBeenCalled();
   });
 });

@@ -22,6 +22,7 @@ enum AssistantAttachmentFailure {
       return tooLarge;
     }
     if (code == 'unsupported_file_type' ||
+        code == 'invalid_upload' ||
         message.contains('unsupported') ||
         message.contains('mime')) {
       return unsupported;

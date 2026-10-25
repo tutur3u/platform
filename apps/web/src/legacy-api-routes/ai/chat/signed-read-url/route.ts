@@ -1,3 +1,4 @@
+import { MAX_AI_CHAT_UPLOAD_BYTES } from '@tuturuuu/ai/chat/attachment-content-guard';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -8,6 +9,7 @@ import {
   parseAiChatResourcePath,
   verifyAiChatResourceScopes,
 } from '../_lib/chat-resource-access';
+import { verifyAiChatStoredObjects } from '../_lib/chat-resource-object-guard';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const SignedReadUrlRequestSchema = z.object({
@@ -93,6 +95,28 @@ export const POST = withSessionAuth(
       }
 
       const storageAdmin = await createDynamicAdminClient();
+
+      const verdicts = await verifyAiChatStoredObjects({
+        admin: storageAdmin,
+        objects: paths.map((path) => ({ path })),
+      });
+      const verdictList = [...verdicts.values()];
+      if (verdictList.includes('rejected')) {
+        return NextResponse.json(
+          {
+            code: 'invalid_upload',
+            maxSizeBytes: MAX_AI_CHAT_UPLOAD_BYTES,
+            message: 'Uploaded file failed size or content verification',
+          },
+          { status: 422 }
+        );
+      }
+      if (verdictList.includes('unavailable')) {
+        return NextResponse.json(
+          { message: 'File not found' },
+          { status: 404 }
+        );
+      }
 
       const { data: signedUrls, error } = await storageAdmin.storage
         .from('workspaces')

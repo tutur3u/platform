@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { verifyAiChatOwner } from '../_lib/chat-resource-access';
+import { verifyAiChatStoredObjects } from '../_lib/chat-resource-object-guard';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const FileUrlsRequestSchema = z.object({
@@ -64,8 +65,8 @@ export const POST = withSessionAuth(
 
       const access = await verifyAiChatOwner({
         chatId,
-
         userId: user.id,
+        wsId,
       });
       if (access === 'lookup_failed') {
         return NextResponse.json(
@@ -107,8 +108,21 @@ export const POST = withSessionAuth(
       }
 
       // Filter out directory placeholders (items with no metadata / id is null)
-      const realFiles = fileList.filter(
+      const listedFiles = fileList.filter(
         (f) => f.id != null && f.name !== '.emptyFolderPlaceholder'
+      );
+      const verdicts = await verifyAiChatStoredObjects({
+        admin: sbAdmin,
+        objects: listedFiles.map((file) => ({
+          path: `${storagePath}/${file.name}`,
+          sizeBytes:
+            typeof file.metadata?.size === 'number'
+              ? file.metadata.size
+              : undefined,
+        })),
+      });
+      const realFiles = listedFiles.filter(
+        (file) => verdicts.get(`${storagePath}/${file.name}`) === 'valid'
       );
 
       if (realFiles.length === 0) {

@@ -75,12 +75,12 @@ class AssistantMediaOptimizer {
         originalBytes: picked.size,
       );
     }
-    // Screenshots with transparency would lose it as JPEG.
+    // Screenshots with transparency would lose it as JPEG; keep the PNG, but
+    // never its EXIF/GPS, text or timestamp chunks.
     if (mime == 'image/png' && pngHasAlpha(original)) {
-      return AssistantMediaOptimization(
-        result: picked,
-        originalBytes: picked.size,
-      );
+      final stripped = stripPngMetadata(original);
+      if (stripped == null) throw _unsupported;
+      return _inMemory(picked, stripped, picked.name, mime);
     }
     Uint8List? encoded;
     try {
@@ -98,17 +98,7 @@ class AssistantMediaOptimizer {
       // Flat screenshots compress better as PNG; keep it, minus metadata.
       final stripped = stripPngMetadata(original);
       if (stripped != null) {
-        return AssistantMediaOptimization(
-          originalBytes: picked.size,
-          result: AssistantFilePickerResult(
-            id: picked.id,
-            file: AssistantMemoryFile(name: picked.name, bytes: stripped),
-            name: picked.name,
-            size: stripped.length,
-            path: picked.path,
-            mimeType: mime,
-          ),
-        );
+        return _inMemory(picked, stripped, picked.name, mime);
       }
     }
     if (mime == 'image/jpeg' &&
@@ -117,30 +107,32 @@ class AssistantMediaOptimizer {
       // and camera metadata when that keeps the pixels upright.
       bytes = stripJpegMetadataIfUpright(original) ?? bytes;
     }
-    if (bytes == null || bytes.isEmpty) {
-      if (heif) {
-        throw const AssistantAttachmentUploadException(
-          AssistantAttachmentFailure.unsupported,
-        );
-      }
-      return AssistantMediaOptimization(
-        result: picked,
-        originalBytes: picked.size,
-      );
-    }
-    final name = _jpegName(picked.name);
-    return AssistantMediaOptimization(
-      originalBytes: picked.size,
-      result: AssistantFilePickerResult(
-        id: picked.id,
-        file: AssistantMemoryFile(name: name, bytes: bytes),
-        name: name,
-        size: bytes.length,
-        path: picked.path,
-        mimeType: 'image/jpeg',
-      ),
-    );
+    // Fail safe: the original may carry location and camera metadata, so an
+    // image that could be neither re-encoded nor stripped never uploads.
+    if (bytes == null || bytes.isEmpty) throw _unsupported;
+    return _inMemory(picked, bytes, _jpegName(picked.name), 'image/jpeg');
   }
+
+  static const _unsupported = AssistantAttachmentUploadException(
+    AssistantAttachmentFailure.unsupported,
+  );
+
+  static AssistantMediaOptimization _inMemory(
+    AssistantFilePickerResult picked,
+    Uint8List bytes,
+    String name,
+    String mimeType,
+  ) => AssistantMediaOptimization(
+    originalBytes: picked.size,
+    result: AssistantFilePickerResult(
+      id: picked.id,
+      file: AssistantMemoryFile(name: name, bytes: bytes),
+      name: name,
+      size: bytes.length,
+      path: picked.path,
+      mimeType: mimeType,
+    ),
+  );
 
   static String _jpegName(String name) {
     final dot = name.lastIndexOf('.');

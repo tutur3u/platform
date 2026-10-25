@@ -1,51 +1,17 @@
+import {
+  AI_CHAT_ATTACHMENT_EXTENSIONS,
+  MAX_AI_CHAT_UPLOAD_BYTES,
+} from '@tuturuuu/ai/chat/attachment-content-guard';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-import { verifyAiChatOwner } from '../_lib/chat-resource-access';
+import { resolveAiChatResourceOwner } from '../_lib/chat-resource-access';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
-const AUDIO_EXTENSIONS = new Set([
-  'aac',
-  'flac',
-  'm4a',
-  'mp3',
-  'ogg',
-  'opus',
-  'wav',
-]);
-
-const ALLOWED_EXTENSIONS = new Set([
-  'png',
-  'jpg',
-  'jpeg',
-  'webp',
-  'gif',
-  'heic',
-  'heif',
-  'pdf',
-  ...AUDIO_EXTENSIONS,
-  'mp4',
-  'webm',
-  'mov',
-  'txt',
-  'csv',
-  'xls',
-  'xlsx',
-  'ppt',
-  'pptx',
-  'doc',
-  'docx',
-  'json',
-  'md',
-]);
-
 const MAX_FILENAME_LENGTH = 255;
-// Every model request injects the chat's attachments within a 32 MiB budget,
-// so a larger single file could upload yet never reach the model.
-const MAX_AI_CHAT_UPLOAD_BYTES = 32 * 1024 * 1024;
 
 const UploadUrlRequestSchema = z.object({
   filename: z.string().min(1).max(MAX_FILENAME_LENGTH),
@@ -59,8 +25,11 @@ const UploadUrlRequestSchema = z.object({
  *
  * Generates a signed upload URL for direct file upload to Supabase Storage.
  * - Authenticated users only (session auth)
- * - Files go to temp path when no chatId, or directly to the chat path
+ * - Files go to the chat path only when the actor owns that chat or Mind
+ *   thread; otherwise (no chatId, or no record yet) to `temp/{actorId}`
  * - The AI route automatically moves temp files on first message
+ * - The signed URL cannot bound size or content, so readers and the model
+ *   path verify the stored object (see `chat-resource-object-guard`)
  */
 export const POST = withSessionAuth(
   async (req, { user, supabase }) => {
@@ -110,7 +79,7 @@ export const POST = withSessionAuth(
       const fileExt =
         dotIndex !== -1 ? filename.slice(dotIndex + 1).toLowerCase() : '';
 
-      if (!fileExt || !ALLOWED_EXTENSIONS.has(fileExt)) {
+      if (!fileExt || !AI_CHAT_ATTACHMENT_EXTENSIONS.has(fileExt)) {
         return NextResponse.json(
           { code: 'unsupported_file_type', message: 'Unsupported file type' },
           { status: 400 }
@@ -128,24 +97,26 @@ export const POST = withSessionAuth(
         );
       }
 
+      let ownsChatFolder = false;
       if (chatId) {
-        const access = await verifyAiChatOwner({
+        const resolved = await resolveAiChatResourceOwner({
           chatId,
-
           userId: user.id,
+          wsId,
         });
-        if (access === 'lookup_failed') {
+        if (resolved.access === 'lookup_failed') {
           return NextResponse.json(
             { message: 'Failed to verify chat access' },
             { status: 500 }
           );
         }
-        if (access !== 'allowed') {
+        if (resolved.access !== 'allowed') {
           return NextResponse.json(
             { message: 'Chat not found' },
             { status: 404 }
           );
         }
+        ownsChatFolder = resolved.owner.kind !== 'unknown';
       }
 
       // Sanitize filename: keep alphanumeric, dots, hyphens, underscores
@@ -158,17 +129,17 @@ export const POST = withSessionAuth(
       }
 
       // Construct storage path:
-      //   With chatId  → {wsId}/chats/ai/resources/{chatId}/{timestamp}_{filename}
-      //   Without       → {wsId}/chats/ai/resources/temp/{userId}/{timestamp}_{filename}
+      //   Owned chat/thread → {wsId}/chats/ai/resources/{chatId}/{timestamp}_{filename}
+      //   Otherwise         → {wsId}/chats/ai/resources/temp/{userId}/{timestamp}_{filename}
       const timestampedName = `${Date.now()}_${sanitized}`;
-      const storagePath = chatId
+      const storagePath = ownsChatFolder
         ? `${wsId}/chats/ai/resources/${chatId}/${timestampedName}`
         : `${wsId}/chats/ai/resources/temp/${user.id}/${timestampedName}`;
 
       // Membership checks stay request-scoped; storage signed-upload creation uses admin.
       const storageAdmin = await createDynamicAdminClient();
 
-      // Generate signed upload URL (valid for 120 seconds)
+      // Supabase signs upload URLs for its fixed default (2 hours).
       const { data, error } = await storageAdmin.storage
         .from('workspaces')
         .createSignedUploadUrl(storagePath, { upsert: true });
