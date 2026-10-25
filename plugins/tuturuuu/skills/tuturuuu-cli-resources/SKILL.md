@@ -384,3 +384,11 @@ Dart/Melos wrappers infer Flutter, with Apple build requirements preserved.
 Ambiguous heavy scripts need explicit `--requires` for automatic placement.
 Invalid disk-floor configuration appears in status/probe explanations. Admission
 below the byte floor runs reclaim and blocker reporting before refusal.
+
+Slot observers tolerate a concurrently released directory without retries.
+`ENOENT`/`ENOTDIR` for the disappearing slot or owner means absent; recent
+ownerless directories remain occupied during initialization. Invalid directory
+types, malformed/unreadable owners and persistent budget-fence loss still fail
+closed. `resources-slots-observation.test.ts` deterministically removes a slot
+between observer reads; this is a release/observation race, not a reason to
+retry a failed workload or remove fixture-isolation assertions.
