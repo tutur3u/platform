@@ -57,9 +57,11 @@ export const buildInfo = defineRoute({
     .strict(),
   body: 'none',
   status: 200,
-  handle: (_input, { env }) =>
+  handle: () =>
     getPlatformReleaseInfo('api', {
-      PLATFORM_BUILD_COMMIT_HASH: env.BUILD_SHA ?? buildSha,
+      PLATFORM_BUILD_COMMIT_HASH: buildSha,
       PLATFORM_BUILD_ENVIRONMENT: 'cloudflare-worker',
+      PLATFORM_BUILD_COMMIT_SHORT_HASH:
+        buildSha === 'local' ? 'local' : buildSha.slice(0, 7),
     }),
 });

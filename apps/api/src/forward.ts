@@ -17,7 +17,7 @@ export async function forwardToRetainedOrigin(
   request: Request,
   env: ApiEnv,
   signal: AbortSignal,
-  fetcher: typeof fetch
+  fetcher: (request: Request) => Promise<Response>
 ): Promise<Response> {
   if (request.headers.has(FORWARD_HOP))
     throw new ApiError('unavailable', 503, 'Forwarding loop');
@@ -66,14 +66,13 @@ export async function forwardToRetainedOrigin(
   }
   headers.set(FORWARD_HOP, '1');
   // Manual redirects preserve the legacy Location and never replay a write.
-  return fetcher(
-    new Request(target, {
-      method: request.method,
-      headers,
-      body: request.body,
-      redirect: 'manual',
-      signal,
-      duplex: 'half',
-    })
-  );
+  const init: RequestInit & { duplex: 'half' } = {
+    method: request.method,
+    headers,
+    body: request.body,
+    redirect: 'manual',
+    signal,
+    duplex: 'half',
+  };
+  return fetcher(new Request(target, init));
 }

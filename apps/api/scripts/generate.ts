@@ -60,8 +60,9 @@ for (const endpoint of endpoints) {
     'x-limits': endpoint.limits,
     'x-guard': endpoint.guard,
   };
-  paths[endpoint.path] ??= {};
-  paths[endpoint.path][endpoint.method.toLowerCase()] = operation;
+  const methods = paths[endpoint.path] ?? {};
+  methods[endpoint.method.toLowerCase()] = operation;
+  paths[endpoint.path] = methods;
 }
 const spec = {
   openapi: '3.1.0',

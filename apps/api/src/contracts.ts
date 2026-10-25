@@ -55,10 +55,9 @@ export interface RouteLimits {
 
 export interface ApiEnv {
   RETAINED_API_ORIGIN?: string;
+  API_WORKER_OPERATIONS?: string;
   ALLOWED_ORIGINS?: string;
   MOBILE_VERSION_POLICY?: string;
-  BUILD_SHA?: string;
-  BUILD_VERSION?: string;
 }
 
 export interface ExecutionContext {

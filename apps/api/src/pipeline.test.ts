@@ -3,7 +3,27 @@ import { z } from 'zod';
 import type { ApiEnv, Principal, SecurityAdapter } from './contracts';
 import { ApiError } from './errors';
 import { FORWARD_HOP } from './forward';
-import { createApi } from './pipeline';
+import { createApi as createPipeline, type PipelineOptions } from './pipeline';
+
+function createApi(options: PipelineOptions) {
+  const run = createPipeline(options);
+  return (
+    request: Request,
+    env: ApiEnv,
+    execution: Parameters<typeof run>[2]
+  ) =>
+    run(
+      request,
+      {
+        API_WORKER_OPERATIONS: options.endpoints
+          .map((endpoint) => endpoint.operationId)
+          .join(','),
+        ...env,
+      },
+      execution
+    );
+}
+
 import { defineRoute, validateRegistry } from './registry';
 import { endpoints } from './routes';
 
@@ -103,15 +123,11 @@ describe('foundation public contracts', () => {
     );
     expect(denied.status).toBe(405);
     expect(denied.headers.get('allow')).toContain('GET');
-    const build = await fetch(
-      request('/api/build-info'),
-      { ...env, BUILD_SHA: 'a'.repeat(40) },
-      execution
-    );
+    const build = await fetch(request('/api/build-info'), env, execution);
     expect(await build.json()).toMatchObject({
       appName: 'api',
-      commitHash: 'a'.repeat(40),
-      shortCommitHash: 'aaaaaaa',
+      commitHash: 'local',
+      shortCommitHash: 'local',
       environment: 'cloudflare-worker',
     });
   });
@@ -336,7 +352,7 @@ describe('one security pipeline', () => {
 
 test('retained origin forwards a write exactly once without redirects or body reserialization', async () => {
   let calls = 0;
-  const fetcher: typeof fetch = async (input) => {
+  const fetcher = async (input: Request) => {
     calls++;
     const outgoing = input instanceof Request ? input : new Request(input);
     expect(outgoing.url).toBe(
@@ -400,4 +416,51 @@ test('retained origin forwards a write exactly once without redirects or body re
     ).toBe(503);
   }
   expect(calls).toBe(1);
+});
+
+test('registration stays held until its operation ID is explicitly selected, and removing it rolls back', async () => {
+  let forwards = 0;
+  const run = createPipeline({
+    endpoints,
+    retained: [{ path: '/api/health' }],
+    fetcher: async () => {
+      forwards++;
+      return new Response('retained', { status: 202 });
+    },
+  });
+  const retainedEnv = {
+    RETAINED_API_ORIGIN: 'https://retained-fixture.vercel.app',
+  };
+  expect(
+    (await run(request('/api/health'), retainedEnv, execution)).status
+  ).toBe(202);
+  expect(
+    (
+      await run(
+        request('/api/health'),
+        { ...retainedEnv, API_WORKER_OPERATIONS: 'getHealth' },
+        execution
+      )
+    ).status
+  ).toBe(200);
+  expect(
+    (
+      await run(
+        request('/api/health'),
+        { ...retainedEnv, API_WORKER_OPERATIONS: '' },
+        execution
+      )
+    ).status
+  ).toBe(202);
+  expect(forwards).toBe(2);
+  expect(
+    (
+      await run(
+        request('/api/health'),
+        { ...retainedEnv, API_WORKER_OPERATIONS: 'typo' },
+        execution
+      )
+    ).status
+  ).toBe(503);
+  expect(forwards).toBe(2);
 });

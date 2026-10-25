@@ -1,6 +1,6 @@
 // Generated from openapi.json. Run bun run --cwd apps/api generate.
 export class ApiClient {
-  constructor(private readonly origin: string, private readonly request: typeof fetch = fetch) {}
+  constructor(private readonly origin: string, private readonly request: (input: URL, init: RequestInit) => Promise<Response> = fetch) {}
   async getHealth(query: Record<string, never> = {}): Promise<{ "status": "ok" }> {
     const url = new URL("/api/health", this.origin);
     for (const [key, value] of Object.entries(query)) url.searchParams.set(key, String(value));

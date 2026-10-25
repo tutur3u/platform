@@ -2,7 +2,28 @@ import { expect, test } from 'bun:test';
 import { z } from 'zod';
 import { readJsonBody } from './body';
 import type { SecurityAdapter } from './contracts';
-import { createApi } from './pipeline';
+import type { PipelineOptions } from './pipeline';
+import { createApi as createPipeline } from './pipeline';
+
+function createApi(options: PipelineOptions) {
+  const run = createPipeline(options);
+  return (
+    request: Request,
+    env: Parameters<typeof run>[1],
+    execution: Parameters<typeof run>[2]
+  ) =>
+    run(
+      request,
+      {
+        API_WORKER_OPERATIONS: options.endpoints
+          .map((endpoint) => endpoint.operationId)
+          .join(','),
+        ...env,
+      },
+      execution
+    );
+}
+
 import { defineRoute } from './registry';
 
 const execution = { waitUntil: (_promise: Promise<unknown>) => {} };

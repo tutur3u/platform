@@ -21,6 +21,7 @@ const server = createTestHarness({
     {
       configPath,
       secrets: {
+        API_WORKER_OPERATIONS: 'getHealth,getBuildInfo,getMobileVersion',
         MOBILE_VERSION_POLICY: JSON.stringify({
           ios: {
             minimumSupportedBuild: 42,

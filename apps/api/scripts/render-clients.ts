@@ -96,7 +96,7 @@ export function clients(input: unknown) {
   const ts = [
     '// Generated from openapi.json. Run bun run --cwd apps/api generate.',
     'export class ApiClient {',
-    '  constructor(private readonly origin: string, private readonly request: typeof fetch = fetch) {}',
+    '  constructor(private readonly origin: string, private readonly request: (input: URL, init: RequestInit) => Promise<Response> = fetch) {}',
   ];
   const dart = [
     '// Generated from openapi.json. Run bun run --cwd apps/api generate.',

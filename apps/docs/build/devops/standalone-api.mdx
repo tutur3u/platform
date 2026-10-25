@@ -48,7 +48,11 @@ payloads `z.unknown()` or consume signed bytes in JSON middleware.
 
 ## Dispatch and retained origin
 
-The Worker manifest wins over the retained inventory for the same path.
+`API_WORKER_OPERATIONS` is a comma-separated allowlist of accepted operationIds.
+Its default is empty: registering or merging code does not activate an operation.
+Only an explicitly enabled operation wins over the retained inventory for its
+method/path. Removing its ID restores retained dispatch; an unenabled new path
+without a retained owner fails closed. Ops owns this per-operation flip and rollback.
 `generated/retained-routes.json` records every live Web route source and its
 SHA-256. These are retained Next operations, not completed Worker ports.
 Unregistered paths return 404. Retained requests require `RETAINED_API_ORIGIN`:

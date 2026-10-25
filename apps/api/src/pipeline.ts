@@ -16,7 +16,7 @@ export interface PipelineOptions {
   endpoints: readonly Endpoint[];
   retained: readonly { path: string }[];
   security?: SecurityAdapter;
-  fetcher?: typeof fetch;
+  fetcher?: (request: Request) => Promise<Response>;
   metric?: (metric: RequestMetric) => void;
 }
 
@@ -106,6 +106,16 @@ export function createApi(options: PipelineOptions) {
     let response: Response;
     try {
       const pathname = canonicalPath(request);
+      const enabled = new Set(
+        (env.API_WORKER_OPERATIONS ?? '').split(',').filter(Boolean)
+      );
+      if (
+        [...enabled].some(
+          (id) =>
+            !options.endpoints.some((endpoint) => endpoint.operationId === id)
+        )
+      )
+        throw new ApiError('unavailable', 503, 'Unknown enabled operation');
       const matches = options.endpoints.flatMap((endpoint) =>
         [
           { path: endpoint.path, errorEncoding: 'canonical' as const },
@@ -119,7 +129,10 @@ export function createApi(options: PipelineOptions) {
       );
       const method = request.method === 'HEAD' ? 'GET' : request.method;
       const match = matches.find(({ endpoint }) => endpoint.method === method);
-      if (!matches.length) {
+      const selected = match
+        ? enabled.has(match.endpoint.operationId)
+        : matches.some(({ endpoint }) => enabled.has(endpoint.operationId));
+      if (!matches.length || !selected) {
         if (!options.retained.some((route) => matchPath(route.path, pathname)))
           throw new ApiError('not_found', 404, 'Route not found');
         runtime = 'retained-next';
