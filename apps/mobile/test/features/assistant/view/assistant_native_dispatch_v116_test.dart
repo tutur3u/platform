@@ -366,6 +366,17 @@ void main() {
     await h.pageSend(tester, 'First new conversation turn');
     stage('first-send-after');
     stage('credentials-entered-before');
+    expect(
+      h.chat.state.composerAttachments.every((a) => a.isUploaded),
+      isTrue,
+      reason: h.chat.state.error,
+    );
+    expect(
+      h.port.credentialsEntered.isCompleted,
+      isTrue,
+      reason:
+          'create=${h.port.creates.length} settings=${h.port.settingsReads.length} state=${h.chat.state.status} error=${h.chat.state.error}',
+    );
     await tester.runAsync(() => h.port.credentialsEntered.future);
     stage('credentials-entered-after');
     expect(h.port.creates, hasLength(1));
