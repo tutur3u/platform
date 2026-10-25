@@ -57,11 +57,11 @@ cannot toss, once every app is on the apex.
 2. **Strict CSP, enforced.** Use nonce-based `script-src 'nonce-…' 'strict-dynamic'`
    with no `unsafe-inline` or `unsafe-eval` for scripts. Set `object-src 'none'`,
    `base-uri 'none'` and `frame-ancestors 'none'` (or a path-specific `'self'` where
-   framing is required). Ship it report-only first, then enforce before the flag
-   reaches `on`.
-3. **Trusted Types.** Set `require-trusted-types-for 'script'` report-only, and
-   enforce it once violations reach zero. Rich-text editors (Mail's Tiptap) get a
-   named policy.
+   framing is required). Report-only is for burn-in on the subdomain; the policy is
+   enforced before the app is routed onto the apex in any mode.
+3. **Trusted Types, enforced.** Burn in `require-trusted-types-for 'script'`
+   report-only, then enforce it before the app is routed onto the apex. Rich-text
+   editors (Mail's Tiptap) get a named policy.
 4. **Path-scoped `connect-src`/`frame-src`.** Defense in depth: list
    `https://tuturuuu.com/<app>/` and `https://tuturuuu.com/api/` plus the app's
    external hosts, never `'self'`. Meet's CSP then forbids `fetch('/mail/api/...')`.
@@ -102,9 +102,13 @@ requirements it must meet.
   not invalidate each other.
 - Logout from any app ends the session for all of them. `Clear-Site-Data` on logout
   is acceptable for that reason.
-- There is no cross-host handoff: users sign in once on the apex at cutover
-  (recorded decision). Subdomains keep their current cookies until they only
-  redirect.
+- Mounted apps never write or clear per-app session cookies on the apex.
+- There is no cross-host handoff. Users who already hold the root session stay
+  signed in; only users without one sign in once on the apex at cutover (recorded
+  decision). Subdomains keep their current cookies until they only redirect.
+- The decision is conditional on a clean independent security review of refresh
+  rotation, CSRF and the XSS blast radius below. Anything beyond that scope goes
+  back to the user.
 
 ### What the shared session changes in the threat model
 
