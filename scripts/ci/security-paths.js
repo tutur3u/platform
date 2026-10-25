@@ -26,7 +26,7 @@ const reviewCategories = [
     category: 'auth',
     owner: 'platform-auth',
     patterns: [
-      /^packages\/(?:auth|sso|satellite|turnstile)\//u,
+      /^packages\/(?:auth|sso|satellite|turnstile|start-bridge)\//u,
       /(?:^|\/)(?:auth|sso|oauth2?|sessions?|login|logout|sign-?in|sign-?up|mfa|otp|2fa|passkeys?|webauthn)(?:\/|[._-][^/]*$|$)/iu,
       /(?:^|\/)(?:proxy|middleware|api-middleware|authorization)\.(?:c|m)?[jt]s$/u,
       /(?:^|\/)(?:oidc|external-apps)[^/]*\.(?:c|m)?[jt]sx?$/iu,

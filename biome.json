@@ -24,6 +24,7 @@
       "!apps/mail/src/routeTree.gen.ts",
       "!apps/apps/src/routeTree.gen.ts",
       "!apps/shortener/src/routeTree.gen.ts",
+      "!**/*.bridge.gen.ts",
       "!apps/mobile",
       "!.worktrees",
       "!.agents/skills/security-audit"
