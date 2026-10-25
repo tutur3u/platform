@@ -13,7 +13,7 @@ active assignments, data freshness, reset time, and account reserves.
 | Source | Signals | Authority and freshness |
 | --- | --- | --- |
 | T3 Code `~/.t3/userdata/statev2.sqlite` | Provider instance IDs, latest session timestamps, active subagent counts | Authoritative for T3's locally persisted orchestration metadata. It does not contain provider quota snapshots. Read through a read-only SQLite connection and only query non-content columns. |
-| T3 provider status cache `~/.t3/caches/<providerInstanceId>.json` | `usageLimits` windows with provider-reported utilization and resets | Authoritative only for each reported window and its model scope at `checkedAt`. A model with no covering window is UNKNOWN; no percentage is inferred. |
+| T3 provider status cache `~/.t3/caches/<providerInstanceId>.json` | `usageLimits` windows with provider-reported utilization and resets | Authoritative only for each reported window and its model scope at `checkedAt`. A model with no covering window is UNKNOWN; no percentage is inferred. Codex monthly buckets are retained, but their model-gating scope is UNKNOWN. |
 | Antigravity live catalog | Provider instance ID, supported models and delegation availability | Identifies routable models, not quota. Gemini models without a covering provider-reported usage/reset window remain UNKNOWN. |
 | Codex local `codex app-server` snapshot (primary), with `~/.codex/sessions` and `~/.codex-t3/sessions` JSONL fallback | Local JSON-RPC `account/rateLimits/read` primary/secondary `usedPercent`, window length and reset time; JSONL token increments | Codex owns authentication and provider communication. The app-server snapshot and provider-reported windows are authoritative at their observation timestamp. Token totals are estimates, limited to recent local rollouts. |
 | Claude JSONL with an explicit root | Recent input/output token usage; structured `rate_limit_event` utilization and numeric `resetsAt` values | Default root discovery is disabled. Explicit-root callers receive token estimates and provider event windows, never percentages inferred from token totals. |
@@ -90,6 +90,26 @@ when a provider omits it. Missing or unavailable cached usage produces
 Limits tab remains T3's responsibility. If a normal live collector has windows
 but the cache is missing, malformed, or unavailable, those windows are retained
 with zero freshness TTL so the cache failure cannot erase usage evidence.
+
+The 2026-10-25 Codex `codex` registry row reported 0% remaining in a monthly
+window while two `gpt-6-luna` child runs on that instance continued normally for
+over an hour. This conflicts with treating the monthly bucket as the model's
+execution gate. The router keeps its percentage, label, duration, and reset
+visible, but marks model scope UNKNOWN; it cannot establish healthy headroom or
+model exhaustion. With no separate covering Codex window, the pool remains
+UNKNOWN and subject to bounded unknown admission. A model-scoped usage-limit
+receipt still blocks the matching model.
+
+Claude's supported provider usage source can publish model-scoped weekly rows,
+but the five observed account snapshots expose only `seven_day_fable`. Those
+rows do not cover Opus. Opus weekly status therefore remains UNKNOWN until T3
+reports a covering Opus row; Fable usage is never used as Opus headroom.
+
+Antigravity's `3p-5h` and `3p-weekly` rows are scoped to Claude/GPT and do not
+cover Gemini. A completed Gemini run reporting `Usage Limit Reached` with a
+reset is recorded as a model-scoped receipt. The observed Argon failure with a
+four-day, 22-hour reset blocks Argon until that reset; it does not establish
+that Gemini Flash shares the same exhausted scope.
 
 An unrecognized provider window kind keeps its reported percentage but is marked
 non-authoritative. It cannot establish headroom. If it reports a near-limit or
@@ -688,10 +708,13 @@ not a newly invoked provider probe. Drift after the 05:33Z screenshot is expecte
 | claude_dd | 97% | 93% | 09:20:00 |
 | claude_mira | 100% | 94% | 10:30:00 |
 
-All five had session and Fable weekly windows. Codex `codex` reported 0% remaining
-in its primary Monthly window; `codex_ai4ed` reported 75% in primary Weekly.
-Antigravity exposed only third-party `3p-5h` and `3p-weekly` windows; those do not
-prove Gemini headroom. These dated observations are not configuration and expire
+All five had session and Fable weekly windows, with no Opus weekly row. Codex
+`codex` reported 0% remaining in its primary Monthly window; `codex_ai4ed`
+reported 75% in primary Weekly. The monthly Codex value is retained as an
+unverified model-gating scope, not treated as account-wide exhaustion.
+Antigravity exposed only third-party `3p-5h` and `3p-weekly` windows; those do
+not prove Gemini headroom. Subsequent Argon usage-limit receipts do block the
+matching Argon scope. These dated observations are not configuration and expire
 normally. The native gaps remain a narrow read-only usage/home-path export and a
 veto-capable pre-admission callback on `delegate_task`. No native automatic
 account transition or failover is implemented.

@@ -22,6 +22,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         );
         unawaited(_drainStartupAudio());
       case AssistantLiveSocketClosed(:final reason):
+        if (!_manualDisconnect) _transportFailureVersion++;
         unawaited(stopScreenSharing());
         if (_manualDisconnect) {
           _emitMicrophoneState(
@@ -40,6 +41,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         );
         _scheduleReconnect();
       case AssistantLiveSocketError(:final message):
+        _transportFailureVersion++;
         unawaited(stopScreenSharing());
         _emitMicrophoneState(
           state.copyWith(
@@ -98,6 +100,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         }
         await _audioPlayer.play(bytes);
       case AssistantLiveSocketInterrupted():
+        _turnGeneration++;
         final interruptedTurn = _finalizeTurn();
         await _audioPlayer.clear();
         _clearAssistantActivity();

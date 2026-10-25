@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
@@ -38,7 +39,8 @@ AppToastHandle? _current;
 ///
 /// Only one toast is visible at a time; a new toast replaces the previous one.
 /// The bottom offset reads the caller's `MediaQuery.padding.bottom`, which the
-/// shell publishes as dock clearance.
+/// shell publishes as dock clearance. Taller page content may supply an
+/// additional clearance without reducing the shell minimum.
 AppToastHandle showAppToast(
   BuildContext context, {
   required String message,
@@ -47,10 +49,13 @@ AppToastHandle showAppToast(
   String? actionLabel,
   VoidCallback? onAction,
   Duration duration = const Duration(seconds: 4),
+  double? bottomClearance,
 }) {
   _current?.close();
   final overlay = Overlay.of(context, rootOverlay: true);
-  final bottom = MediaQuery.paddingOf(context).bottom + AppSpacing.md;
+  final clearance = MediaQuery.paddingOf(context).bottom;
+  final bottom =
+      math.max(clearance, bottomClearance ?? clearance) + AppSpacing.md;
   late final AppToastHandle handle;
   final entry = OverlayEntry(
     builder: (overlayContext) => Positioned(

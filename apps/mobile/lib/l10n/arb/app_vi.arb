@@ -673,6 +673,30 @@
       }
     }
   },
+  "@profileDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "@profileEmailPendingChange": {
     "placeholders": {
       "email": {
@@ -769,9 +793,6 @@
         "type": "String"
       },
       "occurrence": {
-        "type": "String"
-      },
-      "timezone": {
         "type": "String"
       }
     }
@@ -1347,20 +1368,45 @@
   "assistantLiveCallAssistant": "Gọi {assistantName}",
   "assistantLiveCallingAssistant": "Đang gọi {assistantName}",
   "assistantLiveCameraPreview": "Camera trực tiếp",
+  "assistantLiveCallCamera": "Camera",
+  "assistantLiveCallCaptions": "Phụ đề",
+  "assistantLiveCallCaptionsEmpty": "Phụ đề sẽ hiện ở đây khi bạn nói.",
+  "assistantLiveCallClose": "Đóng",
+  "assistantLiveCallConnected": "Đã kết nối",
+  "assistantLiveCallConnecting": "Đang kết nối…",
+  "assistantLiveCallDuration": "Thời lượng cuộc gọi",
+  "assistantLiveCallEnd": "Kết thúc",
+  "assistantLiveCallEndedWithDuration": "Đã kết thúc · {duration}",
+  "@assistantLiveCallEndedWithDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallFailed": "Không thể kết nối",
+  "assistantLiveCallKeyboard": "Bàn phím",
+  "assistantLiveCallMinimize": "Thu nhỏ",
+  "assistantLiveCallMute": "Tắt tiếng",
+  "assistantLiveCallMuted": "Đã tắt tiếng",
+  "assistantLiveCallReconnecting": "Đang kết nối lại…",
+  "assistantLiveCallRetry": "Thử lại",
+  "assistantLiveCallReturn": "Quay lại cuộc gọi",
+  "assistantLiveCallYou": "Bạn",
   "assistantLiveCancelCall": "Hủy cuộc gọi",
   "assistantLiveConnect": "Bắt đầu phiên trực tiếp",
-  "assistantLiveDescriptionConnecting": "Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.",
+  "assistantLiveDescriptionConnecting": "Đang kết nối cuộc trò chuyện trực tiếp.",
   "assistantLiveDescriptionError": "Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.",
-  "assistantLiveDescriptionIdle": "Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.",
+  "assistantLiveDescriptionIdle": "Nhấn micrô để bắt đầu nói. Cuộc trò chuyện của bạn được giữ tại đây.",
   "assistantLiveDescriptionListening": "Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.",
-  "assistantLiveDescriptionPreparing": "Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.",
+  "assistantLiveDescriptionPreparing": "Đang chuẩn bị cuộc trò chuyện trực tiếp của bạn.",
   "assistantLiveDescriptionReady": "Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.",
-  "assistantLiveDescriptionReconnecting": "Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.",
+  "assistantLiveDescriptionReconnecting": "Đang kết nối lại cuộc trò chuyện. Bản ghi của bạn vẫn ở đây.",
   "assistantLiveDisconnect": "Kết thúc phiên trực tiếp",
   "assistantLiveDraftAssistant": "Mira đang trả lời",
   "assistantLiveDraftUser": "Bạn đang nói",
   "assistantLiveHideCamera": "Ẩn camera",
-  "assistantLiveIdleHeading": "Trò chuyện với Mira",
+  "assistantLiveIdleHeading": "Sẵn sàng trò chuyện",
   "assistantLiveInfoAccessHeading": "Quyền truy cập hiện tại",
   "assistantLiveInfoDismiss": "Đã hiểu",
   "assistantLiveInfoTitle": "Thông tin Live",
@@ -2799,6 +2845,8 @@
   "mailOpenFailed": "Không thể mở thư này. Vui lòng thử lại.",
   "mailOrganization": "Thành viên tổ chức",
   "mailOwner": "Chủ sở hữu",
+  "mailPreviewEmptyMessage": "Chọn một cuộc hội thoại trong danh sách để đọc tại đây.",
+  "mailPreviewEmptyTitle": "Chọn một cuộc hội thoại",
   "mailRemoveAttachment": "Xóa tệp đính kèm",
   "mailReply": "Trả lời",
   "mailReplyAll": "Trả lời tất cả",
@@ -3247,6 +3295,9 @@
   "profileDisplayNameDescription": "Tên này xuất hiện ở các bề mặt cộng tác trong ứng dụng.",
   "profileDisplayNameHint": "Tên hiển thị của bạn",
   "profileDisplayNameRequired": "Tên hiển thị không được để trống",
+  "profileDurationHours": "{hours} giờ",
+  "profileDurationHoursMinutes": "{hours} giờ {minutes} phút",
+  "profileDurationMinutes": "{minutes} phút",
   "profileEmail": "Email",
   "profileEmailDescription": "Khi cập nhật email, thư xác nhận sẽ được gửi đến cả địa chỉ cũ và mới.",
   "profileEmailHint": "example@tuturuuu.com",
@@ -3350,7 +3401,7 @@
   "remindersLastChecked": "Kiểm tra lần cuối: {time}",
   "remindersNeverChecked": "Đang chờ cập nhật lần đầu",
   "remindersNext": "Lời nhắc tiếp theo: {time}",
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence}",
   "remindersPermissionOff": "Đã tắt thông báo trên thiết bị",
   "remindersPermissionOn": "Đã bật thông báo trên thiết bị",
   "remindersRefresh": "Cập nhật ngay",
@@ -4718,5 +4769,39 @@
   "offlineDownloadsPaused": "Đã tạm dừng tải xuống. Bạn vẫn có thể dùng dữ liệu đã lưu. Ứng dụng sẽ thử lại trong nền.",
   "offlineDownloadsRetryLimit": "Hiện vẫn chưa thể tải xuống. Hãy thử lại sau; bạn vẫn có thể dùng dữ liệu đã lưu.",
   "mailSettingsReadOnly": "Cài đặt đã lưu ở chế độ chỉ đọc cho đến khi xác minh được quyền truy cập.",
-  "calendarSettingsError": "Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng."
+  "calendarSettingsError": "Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng.",
+  "assistantReactionCelebrate": "Chúc mừng",
+  "assistantReactionInsightful": "Hữu ích",
+  "assistantReactionLabel": "Cảm xúc",
+  "assistantReactionLike": "Thích",
+  "assistantReactionLove": "Yêu thích",
+  "assistantReactionUnconfirmed": "Chưa thể xác nhận cảm xúc. Hãy làm mới cảm xúc để đối soát an toàn.",
+  "assistantReactionUnavailable": "Hiện chưa thể cập nhật cảm xúc. Vui lòng thử lại.",
+  "assistantRefreshReactions": "Làm mới cảm xúc",
+  "assistantReplyMessageAction": "Trả lời",
+  "assistantReplyUnavailable": "Không tìm thấy tin nhắn gốc",
+  "assistantThemeAdvanced": "Nâng cao",
+  "assistantThemeBackground": "Màu nền",
+  "assistantThemeBackgroundStyle": "Kiểu nền",
+  "assistantThemeCustom": "Tùy chỉnh",
+  "assistantThemeDeviceScope": "Áp dụng cho các cuộc trò chuyện Trợ lý của bạn trên thiết bị này, trong mọi không gian làm việc.",
+  "assistantThemeIntensity": "Cường độ màu nền",
+  "assistantThemeLoading": "Đang tải giao diện…",
+  "assistantThemeMessages": "Màu tin nhắn",
+  "assistantThemeOmbre": "Chuyển màu mềm",
+  "assistantThemePreset": "Mẫu giao diện",
+  "assistantThemePreview": "Xem trước giao diện trò chuyện",
+  "assistantThemePreviewAssistant": "Hãy dành thời gian cho những điều quan trọng.",
+  "assistantThemePreviewUser": "Giúp tôi lên kế hoạch cho một ngày tập trung.",
+  "assistantThemeReset": "Đặt lại giao diện",
+  "assistantThemeRetry": "Thử lại",
+  "assistantThemeSaving": "Đang lưu giao diện…",
+  "assistantThemeStorageError": "Không thể lưu hoặc tải giao diện trên thiết bị này.",
+  "assistantThemeText": "Màu chữ",
+  "assistantThemeTitle": "Giao diện trò chuyện",
+  "assistantReplyPending": "Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước.",
+  "assistantReplyLiveUnavailable": "Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi.",
+  "assistantReplyChangedBeforeSend": "Trích dẫn đã thay đổi trước khi gửi. Bản nháp vẫn được giữ lại. Hãy kiểm tra rồi gửi lại.",
+  "assistantLiveSendRefused": "Live chưa tiếp nhận tin nhắn này. Bản nháp vẫn được giữ lại. Hãy kiểm tra kết nối trước khi thử lại.",
+  "assistantLiveSendUnknown": "Chưa rõ tin nhắn Live đã được gửi hay chưa. Bản nháp vẫn được giữ lại. Hãy kiểm tra cuộc trò chuyện trước khi gửi lại để tránh trùng lặp."
 }

@@ -1,252 +1,159 @@
 part of 'assistant_live_mode_view.dart';
 
-class _LiveIdleState extends StatelessWidget {
-  const _LiveIdleState();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                child: Icon(
-                  LucideIcons.audioLines,
-                  size: 28,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                context.l10n.assistantLiveIdleHeading,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.l10n.assistantLiveDescriptionIdle,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LiveConnectingState extends StatelessWidget {
-  const _LiveConnectingState({
-    required this.assistantName,
-    required this.liveUiState,
-    required this.liveState,
-  });
-  final AssistantLiveState liveState;
-  final String assistantName;
-  final AssistantLiveUiState liveUiState;
-  @override
-  Widget build(BuildContext context) => Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const NovaLoadingIndicator(size: 96),
-          const SizedBox(height: 24),
-          Text(
-            context.l10n.assistantLiveCallingAssistant(assistantName),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 12),
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              liveUiState.statusLabel(context.l10n),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          if (liveUiState.kind == AssistantLiveUiKind.reconnecting) ...[
-            const SizedBox(height: 8),
-            Text(
-              liveUiState.detailLabel(context.l10n, liveState),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
-      ),
-    ),
-  );
-}
-
-class _LiveModeHeader extends StatelessWidget {
-  const _LiveModeHeader({
-    required this.liveState,
-    required this.liveUiState,
-    required this.onRetry,
-  });
-
-  final AssistantLiveState liveState;
-  final AssistantLiveUiState liveUiState;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final needsRecovery =
-        liveUiState.kind == AssistantLiveUiKind.error ||
-        liveUiState.kind == AssistantLiveUiKind.reconnecting;
-    return Row(
-      children: [
-        Icon(
-          liveState.isBusy ? LucideIcons.refreshCw : LucideIcons.audioLines,
-          size: 20,
-          color: _toneColor(theme, liveUiState.tone),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                liveUiState.statusLabel(context.l10n),
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (needsRecovery ||
-                  liveUiState.kind == AssistantLiveUiKind.permissionDenied) ...[
-                const SizedBox(height: 2),
-                Text(
-                  liveUiState.detailLabel(context.l10n, liveState),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        if (needsRecovery)
-          AppButton.ghost(
-            onPressed: onRetry,
-            child: Text(context.l10n.assistantLiveRetryAction),
-          ),
-      ],
-    );
-  }
-}
-
 class _LiveCallStage extends StatelessWidget {
   const _LiveCallStage({
     required this.liveState,
     required this.liveUiState,
     required this.assistantName,
-    required this.userBlobCaption,
-    required this.assistantBlobCaption,
     required this.cameraController,
+    required this.onRetry,
+    required this.compact,
+    super.key,
   });
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final String assistantName;
-  final String userBlobCaption;
-  final String assistantBlobCaption;
   final CameraController? cameraController;
+  final Future<void> Function() onRetry;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final speakingLevel = liveState.assistantAudioLevel.isFinite
-        ? liveState.assistantAudioLevel.clamp(0.0, 1.0)
-        : 0.0;
-    final recovering =
-        liveUiState.kind == AssistantLiveUiKind.error ||
-        liveUiState.kind == AssistantLiveUiKind.reconnecting ||
-        liveUiState.kind == AssistantLiveUiKind.permissionDenied;
-    final caption = recovering
-        ? null
-        : liveUiState.kind == AssistantLiveUiKind.live
-        ? assistantBlobCaption
-        : liveUiState.statusLabel(context.l10n);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
+    final l10n = context.l10n;
+    final connected =
+        liveState.status == AssistantLiveConnectionStatus.connected;
+    final idle = liveState.status == AssistantLiveConnectionStatus.disconnected;
+    final recovery = switch (liveUiState.kind) {
+      AssistantLiveUiKind.error ||
+      AssistantLiveUiKind.reconnecting ||
+      AssistantLiveUiKind.permissionDenied => true,
+      _ => false,
+    };
+    final speaking = connected && liveState.isAssistantSpeaking;
+    final status = recovery
+        ? liveUiState.statusLabel(l10n)
+        : liveState.hasEnded && idle
+        ? l10n.assistantLiveCallEnded
+        : idle
+        ? l10n.assistantLiveIdleHeading
+        : connected
+        ? speaking
+              ? l10n.assistantLiveStageAssistantSpeaking
+              : l10n.assistantLiveStageAssistantReady
+        : liveUiState.statusLabel(l10n);
+    final detail = recovery || liveState.isBusy
+        ? liveUiState.detailLabel(l10n, liveState)
+        : idle && !liveState.hasEnded
+        ? l10n.assistantLiveDescriptionIdle
+        : null;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              AssistantLivePlaybackBlob(
-                energy: speakingLevel,
-                bands: liveState.assistantSpectrum,
-                active: liveState.isAssistantSpeaking,
+              SizedBox(
+                height: compact ? 120 : 184,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: AssistantLivePlaybackBlob(
+                    energy: liveState.assistantAudioLevel,
+                    bands: liveState.assistantSpectrum,
+                    active: speaking,
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-              Text(
-                assistantName,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              if (caption != null)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    caption,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+              if (connected &&
+                  liveState.isCameraActive &&
+                  cameraController?.value.isInitialized == true)
+                PositionedDirectional(
+                  end: 0,
+                  top: 0,
+                  child: Semantics(
+                    label: l10n.assistantLiveCameraPreview,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        width: 64,
+                        height: 80,
+                        child: CameraPreview(cameraController!),
+                      ),
                     ),
                   ),
                 ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    liveState.isMicrophoneActive
-                        ? LucideIcons.mic
-                        : LucideIcons.micOff,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(userBlobCaption, textAlign: TextAlign.center),
-                  ),
-                ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          liveState.isBusy
+              ? l10n.assistantLiveCallingAssistant(assistantName)
+              : assistantName,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            status,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: recovery
+                  ? _toneColor(theme, liveUiState.tone)
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        if (detail != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            detail,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+        ],
+        if (recovery)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: AppButton.outline(
+              onPressed: onRetry,
+              child: Text(l10n.assistantLiveRetryAction),
+            ),
+          ),
+        if (connected && !recovery) ...[
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                liveState.isMicrophoneActive
+                    ? LucideIcons.mic
+                    : LucideIcons.micOff,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  liveState.isMicrophoneActive
+                      ? l10n.assistantLiveStageYouListening
+                      : l10n.assistantLiveStageYouMuted,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           ),
-          if (liveState.isCameraActive &&
-              cameraController?.value.isInitialized == true)
-            Positioned(
-              right: 0,
-              top: 0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 64,
-                  height: 76,
-                  child: CameraPreview(cameraController!),
-                ),
-              ),
-            ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -256,66 +163,56 @@ class _LiveTranscript extends StatelessWidget {
     required this.chatState,
     required this.liveState,
     required this.assistantName,
-    required this.scrollController,
+    super.key,
   });
-
   final AssistantChatState chatState;
   final AssistantLiveState liveState;
   final String assistantName;
-  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasTranscript = chatState.messages.isNotEmpty || liveState.hasDraft;
-
+    final hasHistory =
+        chatState.workspaceId == liveState.workspaceId &&
+        (chatState.chat?.id ?? chatState.fallbackChatId) == liveState.chatId &&
+        chatState.messages.isNotEmpty;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const Divider(height: 1),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+          padding: const EdgeInsets.symmetric(vertical: 18),
           child: Text(
             context.l10n.assistantLiveTranscriptTitle,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        Expanded(
-          child: hasTranscript
-              ? SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                  child: AssistantLiveTranscriptSection(
-                    chatState: chatState,
-                    liveState: liveState,
-                    assistantName: assistantName,
-                  ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                  child: Center(
-                    child: Text(
-                      context.l10n.assistantLiveTranscriptEmpty,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.45,
-                      ),
-                    ),
-                  ),
-                ),
+        AssistantLiveTranscriptSection(
+          chatState: chatState,
+          liveState: liveState,
+          assistantName: assistantName,
         ),
+        if (!hasHistory &&
+            !liveState.hasDraft &&
+            liveState.completedTurns.isEmpty)
+          Text(
+            context.l10n.assistantLiveTranscriptEmpty,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
       ],
     );
   }
 }
 
-Color _toneColor(ThemeData theme, AssistantLiveUiTone tone) {
-  return switch (tone) {
-    AssistantLiveUiTone.neutral => theme.colorScheme.onSurfaceVariant,
-    AssistantLiveUiTone.positive => theme.colorScheme.primary,
-    AssistantLiveUiTone.warning => theme.colorScheme.tertiary,
-    AssistantLiveUiTone.error => theme.colorScheme.error,
-  };
-}
+Color _toneColor(ThemeData theme, AssistantLiveUiTone tone) => switch (tone) {
+  AssistantLiveUiTone.neutral => theme.colorScheme.onSurfaceVariant,
+  AssistantLiveUiTone.positive => theme.colorScheme.primary,
+  AssistantLiveUiTone.warning => theme.colorScheme.tertiary,
+  AssistantLiveUiTone.error => theme.colorScheme.error,
+};

@@ -105,10 +105,8 @@ void registerSettingsAssistantEntrypointChecks() {
             l10n.assistantSettingsTitle,
           );
           // The nested sheet shares the bottom edge with the floating dock.
-          // Tap the visible leading edge of the real menu row.
-          await tester.tapAt(
-            tester.getTopLeft(settingsAction) + const Offset(16, 24),
-          );
+          // Tap a point of the real menu row that the dock leaves reachable.
+          await tester.tapAt(_reachablePointOf(tester, settingsAction));
         }
         await _settle(tester);
         final hub = find.byType(AssistantSettingsHub);
@@ -200,4 +198,22 @@ void registerSettingsAssistantEntrypointChecks() {
       });
     }
   }
+}
+
+/// Returns a point inside [finder] whose hit test reaches it, so taps follow
+/// what a user can touch rather than a fixed edge the floating dock may cover.
+Offset _reachablePointOf(WidgetTester tester, Finder finder) {
+  final target = tester.renderObject(finder);
+  final rect = tester.getRect(finder);
+  for (var y = rect.top + 4; y < rect.bottom; y += 4) {
+    for (var x = rect.left + 8; x < rect.right; x += 8) {
+      final point = Offset(x, y);
+      final result = HitTestResult();
+      tester.binding.hitTestInView(result, point, tester.view.viewId);
+      if (result.path.any((entry) => identical(entry.target, target))) {
+        return point;
+      }
+    }
+  }
+  fail('No reachable point on the menu row; the floating dock covers it.');
 }

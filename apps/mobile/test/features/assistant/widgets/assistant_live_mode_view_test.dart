@@ -193,10 +193,10 @@ void main() {
       ),
     );
 
-    expect(find.text('Talk with Mira'), findsOneWidget);
+    expect(find.text('Ready to talk'), findsOneWidget);
     expect(find.text('Start live session'), findsNothing);
     expect(find.text('Available'), findsNothing);
-    expect(find.text('Live transcript'), findsNothing);
+    expect(find.text('Live transcript'), findsOneWidget);
   });
 
   testWidgets('shows localized recovery without raw provider details', (
