@@ -18,9 +18,20 @@ Duration assistantLiveReconnectDelay(int attempt) {
 }
 
 extension _AssistantLiveReconnect on AssistantLiveCubit {
+  /// Retires a pending automatic reconnect (disconnect, close, or a newer
+  /// request taking over), so its slot never blocks a later call.
+  void _cancelReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+  }
+
   void _scheduleReconnect() {
-    if (_manualDisconnect || _reconnectScheduled || state.workspaceId == null) {
-      return;
+    if (_manualDisconnect || state.workspaceId == null) return;
+    // One pending reconnect per request; one left by an older request (a
+    // previous call, actor or workspace) is retired rather than trusted.
+    if (_reconnectTimer?.isActive ?? false) {
+      if (_reconnectTimerRequest == _requestVersion) return;
+      _cancelReconnect();
     }
     final readyAt = _readyAt;
     _readyAt = null;
@@ -34,31 +45,31 @@ extension _AssistantLiveReconnect on AssistantLiveCubit {
     }
 
     final attempt = _reconnectAttempts++;
-    _reconnectScheduled = true;
     final requestVersion = _requestVersion;
     final wsId = state.workspaceId!;
     final chatId = state.chatId;
     final model = state.model;
 
-    unawaited(
-      Future<void>.delayed(assistantLiveReconnectDelay(attempt), () async {
-        try {
-          if (_manualDisconnect || _isStale(requestVersion)) return;
-          // prepareSession reads this synchronously to keep the budget.
-          _automaticReconnect = true;
-          final preparing = prepareSession(
+    _reconnectTimerRequest = requestVersion;
+    // Nothing is held while the attempt prepares: a drop during its history
+    // binding schedules the next attempt instead of being ignored.
+    _reconnectTimer = Timer(assistantLiveReconnectDelay(attempt), () {
+      _reconnectTimer = null;
+      if (_manualDisconnect || _isStale(requestVersion)) return;
+      // prepareSession reads this synchronously to keep the budget.
+      _automaticReconnect = true;
+      try {
+        unawaited(
+          prepareSession(
             wsId: wsId,
             chatId: chatId,
             model: model,
             reconnect: true,
-          );
-          _automaticReconnect = false;
-          await preparing;
-        } finally {
-          _automaticReconnect = false;
-          _reconnectScheduled = false;
-        }
-      }),
-    );
+          ),
+        );
+      } finally {
+        _automaticReconnect = false;
+      }
+    });
   }
 }

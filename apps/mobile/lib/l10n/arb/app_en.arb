@@ -1419,6 +1419,7 @@
   "assistantLiveOpenMode": "Open live mode",
   "assistantLivePermissionDenied": "Camera or microphone access is blocked. Enable permissions to use the full live mode.",
   "assistantLiveReconnectBanner": "Session rotation detected. Reconnecting with about {timeLeft} remaining.",
+  "assistantLiveReconnectExhausted": "The connection kept dropping. Check your network, then retry the live session.",
   "assistantLiveRetryAction": "Retry live session",
   "assistantLiveReturnToChat": "Return to chat",
   "assistantLiveScreenActive": "Your screen is shared with Live",

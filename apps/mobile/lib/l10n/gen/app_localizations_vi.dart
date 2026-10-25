@@ -622,6 +622,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantLiveReconnectExhausted => 'Kết nối liên tục bị gián đoạn. Hãy kiểm tra mạng rồi thử lại phiên trực tiếp.';
+
+  @override
   String get assistantLiveRetryAction => 'Thử lại phiên trực tiếp';
 
   @override

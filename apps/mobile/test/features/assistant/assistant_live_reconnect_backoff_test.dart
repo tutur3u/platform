@@ -63,7 +63,7 @@ class _DroppingProvider {
     ).thenAnswer((_) async {
       scheduleMicrotask(() => events.add(const AssistantLiveSocketReady()));
       unawaited(
-        Future<void>.delayed(const Duration(seconds: 1), () {
+        Future<void>.delayed(dropAfter, () {
           if (!dropping || events.isClosed) return;
           now = now.add(uptime);
           events.add(const AssistantLiveSocketClosed('provider dropped'));
@@ -76,8 +76,9 @@ class _DroppingProvider {
       audioPlayer: player,
       recorder: recorder,
       cameraService: camera,
-      onChatBound: (_, _) async {},
+      onChatBound: (_, _) => heldBinding?.future ?? Future<void>.value(),
       onHistoryUpdated: (_, _) async {},
+      currentScopeToken: () => scope,
       now: () => now,
     );
   }
@@ -93,6 +94,17 @@ class _DroppingProvider {
   bool dropping = true;
   DateTime now = DateTime.utc(2026, 10, 25, 12);
   Duration uptime = const Duration(seconds: 10);
+  Duration dropAfter = const Duration(seconds: 1);
+  int scope = 0;
+  Completer<void>? heldBinding;
+
+  /// Stops drops and releases binding so pending fixture timers drain.
+  Future<void> settle(WidgetTester tester) async {
+    dropping = false;
+    heldBinding?.complete();
+    heldBinding = null;
+    await _advance(tester, const Duration(seconds: 20));
+  }
 
   Future<void> close() async {
     await cubit.close();
@@ -164,5 +176,60 @@ void main() {
     await _advance(tester, const Duration(minutes: 3));
     expect(p.tokens, 2 * (1 + assistantLiveMaxReconnectAttempts));
     expect(p.cubit.state.error, 'live_reconnect_exhausted');
+  });
+
+  testWidgets('a drop while the reconnect binds history still reconnects', (
+    tester,
+  ) async {
+    final p = _DroppingProvider()..heldBinding = Completer<void>();
+    addTearDown(p.close);
+    // Every attempt connects, then drops while its history binding is held.
+    unawaited(p.cubit.prepareSession(wsId: 'ws'));
+    await _advance(tester, const Duration(minutes: 3));
+    expect(p.tokens, 1 + assistantLiveMaxReconnectAttempts);
+    expect(p.cubit.state.error, 'live_reconnect_exhausted');
+    await p.settle(tester);
+  });
+
+  for (final retirement in ['disconnect', 'scope change']) {
+    testWidgets('a retired reconnect cannot swallow a new call drop after '
+        '$retirement', (tester) async {
+      final p = _DroppingProvider();
+      addTearDown(p.close);
+      unawaited(p.cubit.prepareSession(wsId: 'ws'));
+      // The first call drops; its reconnect waits 0.8 s.
+      await _advance(tester, const Duration(milliseconds: 1200));
+      expect(p.tokens, 1);
+      if (retirement == 'disconnect') {
+        await p.cubit.disconnect();
+      } else {
+        p.scope++;
+      }
+      // A new call drops before the retired delay would have expired.
+      p.dropAfter = const Duration(milliseconds: 100);
+      unawaited(p.cubit.prepareSession(wsId: 'ws'));
+      await _advance(tester, const Duration(seconds: 3));
+      expect(p.tokens, greaterThan(2), reason: 'the new call reconnects');
+      await p.settle(tester);
+    });
+  }
+
+  testWidgets('closing Live retires a pending reconnect timer', (tester) async {
+    final p = _DroppingProvider();
+    unawaited(p.cubit.prepareSession(wsId: 'ws'));
+    await _advance(tester, const Duration(milliseconds: 1200));
+    expect(p.tokens, 1);
+    // A reconnect is pending; closing must cancel it, not leave a timer.
+    // Native teardown needs real event-loop turns, but fake time must not
+    // reach the 0.8 s delay, so the pending-timer invariant can catch it.
+    var closed = false;
+    unawaited(p.cubit.close().whenComplete(() => closed = true));
+    for (var i = 0; i < 40 && !closed; i++) {
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(Duration.zero);
+    }
+    expect(closed, isTrue);
+    await p.events.close();
+    expect(p.tokens, 1);
   });
 }

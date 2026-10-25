@@ -1285,6 +1285,12 @@ abstract class AppLocalizations {
   /// **'Session rotation detected. Reconnecting with about {timeLeft} remaining.'**
   String assistantLiveReconnectBanner(String timeLeft);
 
+  /// No description provided for @assistantLiveReconnectExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection kept dropping. Check your network, then retry the live session.'**
+  String get assistantLiveReconnectExhausted;
+
   /// No description provided for @assistantLiveRetryAction.
   ///
   /// In en, this message translates to:

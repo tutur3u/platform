@@ -122,7 +122,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   bool _manualDisconnect = false;
   bool _isClosing = false;
   Future<void>? _closeFuture;
-  bool _reconnectScheduled = false;
+  Timer? _reconnectTimer;
+  int _reconnectTimerRequest = 0;
   int _reconnectAttempts = 0;
   bool _automaticReconnect = false;
   DateTime? _readyAt;
@@ -371,6 +372,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     final endingVersion = _requestVersion;
     final preparationVersion = _preparationVersion;
     if (finishTurn && _isStale(endingVersion)) return;
+    _cancelReconnect();
     _disconnectVersion++;
     if (finishTurn) {
       bool current() =>

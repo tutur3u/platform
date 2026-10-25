@@ -622,6 +622,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantLiveReconnectExhausted => 'The connection kept dropping. Check your network, then retry the live session.';
+
+  @override
   String get assistantLiveRetryAction => 'Retry live session';
 
   @override
