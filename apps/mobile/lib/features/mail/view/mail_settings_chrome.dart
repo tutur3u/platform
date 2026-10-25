@@ -1,15 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Color mailSettingsBackground(BuildContext context) =>
-    shad.Theme.of(context).colorScheme.background;
+    AppTokens.of(context).colorScheme.background;
 
 /// One settings implementation, reached from Mail or the central Settings hub.
 class MailSettingsChrome extends StatelessWidget {
@@ -18,6 +19,7 @@ class MailSettingsChrome extends StatelessWidget {
     required this.child,
     required this.canManage,
     this.onSave,
+    this.saving = false,
     this.onBack,
     this.backEnabled = true,
     super.key,
@@ -25,6 +27,7 @@ class MailSettingsChrome extends StatelessWidget {
   final Set<String> locations;
   final Widget child;
   final bool canManage;
+  final bool saving;
   final Future<void> Function()? onSave;
   final Future<void> Function()? onBack;
   final bool backEnabled;
@@ -33,7 +36,9 @@ class MailSettingsChrome extends StatelessWidget {
   Widget build(BuildContext context) {
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
     void back() {
-      if (!backEnabled) return;
+      if (!backEnabled) {
+        return;
+      }
       final exit = onBack;
       if (exit != null) {
         unawaited(exit());
@@ -43,7 +48,7 @@ class MailSettingsChrome extends StatelessWidget {
     }
 
     return ColoredBox(
-      color: shad.Theme.of(context).colorScheme.background,
+      color: AppTokens.of(context).colorScheme.background,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -80,11 +85,15 @@ class MailSettingsChrome extends StatelessWidget {
                     icon: Icons.save_outlined,
                     tooltip: context.l10n.commonSave,
                     inDock: true,
+                    keepVisibleWithKeyboard: true,
                     enabled: onSave != null,
+                    isLoading: saving,
                     callbackToken: onSave,
                     onPressed: () {
                       final save = onSave;
-                      if (save != null) unawaited(save());
+                      if (save != null) {
+                        unawaited(save());
+                      }
                     },
                   ),
               ],
@@ -98,14 +107,14 @@ class MailSettingsChrome extends StatelessWidget {
                 top: false,
                 child: Row(
                   children: [
-                    IconButton(
+                    AppIconButton(
                       onPressed: backEnabled ? back : null,
                       tooltip: context.l10n.navBack,
                       icon: const Icon(Icons.arrow_back),
                     ),
                     const Spacer(),
                     if (canManage)
-                      IconButton(
+                      AppIconButton(
                         onPressed: onSave,
                         tooltip: context.l10n.commonSave,
                         icon: const Icon(Icons.save_outlined),
@@ -118,4 +127,50 @@ class MailSettingsChrome extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Address text can wrap without widening the row or losing its full name.
+class MailSettingsAccountRow extends StatelessWidget {
+  const MailSettingsAccountRow({
+    required this.address,
+    required this.onTap,
+    super.key,
+  });
+  final String address;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: address,
+    child: AppListTile(
+      leading: const Icon(Icons.alternate_email),
+      title: Text(address, maxLines: 2, overflow: TextOverflow.ellipsis),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    ),
+  );
+}
+
+class MailSettingsSkeleton extends StatelessWidget {
+  const MailSettingsSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: AppPageListView(
+      kind: AppPageKind.form,
+      children: [
+        for (final height in [48.0, 48.0, 96.0, 96.0])
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppTokens.of(context).colorScheme.muted,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: SizedBox(height: height),
+            ),
+          ),
+      ],
+    ),
+  );
 }

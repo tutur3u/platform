@@ -9,6 +9,7 @@ void registerSettingsAssistantShellChecks() {
         'title',
         'back',
         'content',
+        'content dark',
         'account ABA',
         'workspace ABA',
         'account covered ABA',
@@ -17,7 +18,10 @@ void registerSettingsAssistantShellChecks() {
         testWidgets(
           'real Assistant settings shell $check $language scale $scale',
           (tester) async {
-            _viewport(tester, Size(scale == 1 ? 390 : 320, 568));
+            _viewport(
+              tester,
+              Size(scale == 1 ? 390 : 320, scale == 1 ? 844 : 568),
+            );
             final preferences = _AssistantPreferences();
             final held = Completer<bool>();
             final heldScope = check.endsWith('ABA');
@@ -42,7 +46,6 @@ void registerSettingsAssistantShellChecks() {
                   onPressed: () => unawaited(
                     pushScopedSettingsPage(
                       context,
-                      asSheet: true,
                       builder: (routeContext, isCurrent) {
                         expect(routeContext.read<AuthCubit>(), same(h.auth));
                         expect(
@@ -69,6 +72,9 @@ void registerSettingsAssistantShellChecks() {
               if (!models.isClosed) await models.close();
             });
             await h.locale.setLocale(Locale(language));
+            if (check.endsWith('dark')) {
+              await h.theme.setThemeMode(shad.ThemeMode.dark);
+            }
             await h.pump(tester, scale: scale, shellChrome: true);
             await tester.tap(
               find.byKey(const ValueKey('open-real-assistant-settings')),
@@ -147,11 +153,7 @@ void registerSettingsAssistantShellChecks() {
               expect(find.text(l10n.assistantSettingsTitle), findsOneWidget);
             } else if (check == 'back') {
               expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-              tester
-                  .widget<MorphingNavigationBar>(
-                    find.byType(MorphingNavigationBar),
-                  )
-                  .onSelected(const ValueKey('back-to-root'));
+              await tester.tap(find.bySemanticsLabel(l10n.navBack));
               await _settle(tester);
               expect(hub, findsNothing);
               expect(
@@ -159,6 +161,10 @@ void registerSettingsAssistantShellChecks() {
                 findsOneWidget,
               );
             } else {
+              if (language == 'en' && scale == 1) {
+                final mode = check.endsWith('dark') ? 'dark' : 'light';
+                await _capture(tester, 'assistant-settings-$mode');
+              }
               final scrollable = find
                   .descendant(of: hub, matching: find.byType(Scrollable))
                   .first;

@@ -93,7 +93,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text('60 min tracked'), findsOneWidget);
+        expect(find.text('1h'), findsOneWidget);
         expect(find.text('Last 12 weeks'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
@@ -148,12 +148,12 @@ void main() {
     await tester.pump();
     second.complete(const TimeTrackerStats(todayTime: 120));
     await tester.pumpAndSettle();
-    expect(find.text('2 min tracked'), findsOneWidget);
+    expect(find.text('2m'), findsOneWidget);
     first.complete(const TimeTrackerStats(todayTime: 3660));
     await tester.pumpAndSettle();
     expect(requestedUsers, ['first', 'second']);
-    expect(find.text('61 min tracked'), findsNothing);
-    expect(find.text('2 min tracked'), findsOneWidget);
+    expect(find.text('1h 1m'), findsNothing);
+    expect(find.text('2m'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await authChanges.close();

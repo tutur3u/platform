@@ -65,8 +65,10 @@ void main() {
       'calendar',
       'finance',
       'timer',
+      'assistant',
     });
     expect(Routes.appSettingsLocation('timer'), '/settings/apps/timer');
+    expect(Routes.appSettingsLocation('assistant'), '/settings/apps/assistant');
     expect(Routes.appSettingsLocation('mail'), isNull);
     expect(Routes.appSettingsLocation(null), isNull);
   });

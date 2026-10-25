@@ -1,12 +1,12 @@
 ---
 title: "Background work inventory"
 description: "Every schedule, pg_cron job, task runner and Next.js continuation, with its overlap safety and Cloudflare target."
-updatedAt: '2026-10-23'
+updatedAt: '2026-10-25'
 ---
 
 This inventory is the decision table for
 [Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership). It
-reflects checked-in source on 2026-10-23. A source definition is not proof that
+reflects checked-in source on 2026-10-25. A source definition is not proof that
 a hosted schedule runs or succeeds; confirm hosted state before a cutover.
 
 ## Summary
@@ -22,6 +22,7 @@ a hosted schedule runs or succeeds; confirm hosted state before a cutover.
 | Trigger.dev tasks | 0 | `packages/trigger` holds Calendar helpers only, no SDK |
 | `packages/workflows` | 0 | Empty SDK placeholder |
 | Supabase Edge Functions | 0 | None; the guard keeps it that way |
+| GitHub Actions schedules | 5 | CI/security, release automation, TestFlight queue and storage reporting; none is a product runtime job |
 
 Scheduled Vercel opportunities total 2,887 per day in this repository. Moving
 only the schedule does not reduce processor invocations; processor moves do.
@@ -56,6 +57,34 @@ not a concurrent Vercel tick.
 | `infrastructure-docker-recovery-alerts` | Infrastructure `/api/cron/infrastructure/docker-recovery-alerts` | `*/5 * * * *` | 288 | Docker watcher logs, operator email | Persisted watermark | Handover | Cron Trigger; retirement candidate (Docker runner retired) |
 | `infrastructure-sample-resources` | Infrastructure `/api/cron/infrastructure/sample-resources` | `* * * * *` | 1,440 | Docker monitoring snapshot, usage-event insert | Minimum-interval sample check | Idempotent | Cron Trigger; retirement candidate (reads the retired Docker host) |
 
+Declaration locations for these 13 current Vercel schedules:
+
+| Source | Jobs |
+| --- | --- |
+| `apps/web/vercel.json:14-31` | `web-notification-batches`, `web-post-email-queue`, `web-report-automation`, `web-topic-announcements`, `web-deadline-reminders` |
+| `apps/infrastructure/vercel.json:14-31` | `infrastructure-sample-resources`, `infrastructure-docker-recovery-alerts`, `infrastructure-sync-trust-cache`, `calendar-provider-sync`, `calendar-smart-schedule` |
+| `apps/inventory/vercel.json:8-9` | `inventory-checkout-expiry` |
+| `apps/pay/vercel.json:14-15` | `pay-products` |
+| `apps/tasks/vercel.json:8-9` | `tasks-cleanup-media` |
+
+Per-job Vercel declaration lines and current cadences:
+
+| Job | Source | Current trigger |
+| --- | --- | --- |
+| `tasks-cleanup-media` | `apps/tasks/vercel.json:8-9` | Vercel Cron, `17 3 * * *` |
+| `pay-products` | `apps/pay/vercel.json:14-15` | Vercel Cron, `0 */12 * * *` |
+| `calendar-smart-schedule` | `apps/infrastructure/vercel.json:30-31` | Vercel Cron, `0 */6 * * *` |
+| `infrastructure-sync-trust-cache` | `apps/infrastructure/vercel.json:22-23` | Vercel Cron, `*/10 * * * *` |
+| `web-notification-batches` | `apps/web/vercel.json:14-15` | Vercel Cron, `*/15 * * * *` |
+| `web-report-automation` | `apps/web/vercel.json:22-23` | Vercel Cron, `*/15 * * * *` |
+| `web-topic-announcements` | `apps/web/vercel.json:26-27` | Vercel Cron, `*/15 * * * *` |
+| `calendar-provider-sync` | `apps/infrastructure/vercel.json:26-27` | Vercel Cron gateway, `*/15 * * * *` |
+| `web-post-email-queue` | `apps/web/vercel.json:18-19` | Vercel Cron, `*/30 * * * *` |
+| `inventory-checkout-expiry` | `apps/inventory/vercel.json:8-9` | Vercel Cron, `*/5 * * * *` |
+| `web-deadline-reminders` | `apps/web/vercel.json:30-31` | Vercel Cron, `*/5 * * * *` |
+| `infrastructure-docker-recovery-alerts` | `apps/infrastructure/vercel.json:18-19` | Vercel Cron, `*/5 * * * *` |
+| `infrastructure-sample-resources` | `apps/infrastructure/vercel.json:14-15` | Vercel Cron, `* * * * *` |
+
 The Web cron catalog lists deadline reminders every four hours, but the deployed
 Vercel entry runs every five minutes. Preserve the live cadence; do not run
 `sync-web-crons`, which would also drop report automation from the schedule.
@@ -75,6 +104,24 @@ Live jobs after replaying every migration's schedule and unschedule calls.
 | `cleanup-rate-limits` | `*/15 * * * *` | DELETE expired rate-limit windows | Retain: pure SQL in the database |
 | `normalize-task-sort-keys` | `0 * * * *` | Renumber task sort keys | Retain: pure SQL in the database |
 | `hard-delete-soft-deleted-items` | `5 * * * *` | DELETE tasks and boards soft-deleted over 30 days ago | Retain: pure SQL; storage objects belong to `tasks-cleanup-media` |
+
+Schedule declaration locations for the live jobs:
+
+| Job | Source | Current trigger |
+| --- | --- | --- |
+| `fetch-exchange-rates` | `apps/database/supabase/migrations/20260205070000_add_exchange_rates_and_seed_currencies.sql:280` | pg_cron, `0 6 * * *`; `pg_net` HTTP POST |
+| `update_expired_sessions_job` | `apps/database/supabase/migrations/20250405124242_add_update_expired_sessions.sql:20` | pg_cron, every minute |
+| typing-indicator cleanup | `apps/database/supabase/migrations/20251003161231_create_typing_indicator_table.sql:72` | pg_cron, every minute |
+| `security-budget-cleanup` | `apps/database/supabase/migrations/20261002153000_security_egress_budgets.sql:86` | pg_cron, every minute |
+| `refresh-posts-dashboard` | `apps/database/supabase/migrations/20251122094820_create_posts_dashboard_materialized_view.sql:135` | pg_cron, `*/10 * * * *` |
+| `cleanup-rate-limits` | `apps/database/supabase/migrations/20260313110001_rate_limits.sql:517` | pg_cron, `*/15 * * * *` |
+| `normalize-task-sort-keys` | `apps/database/supabase/migrations/20251010032140_add_task_sort_key_normalization_cron.sql:52` | pg_cron, `0 * * * *` |
+| `hard-delete-soft-deleted-items` | `apps/database/supabase/migrations/20251029001747_add_hard_delete_cron_job.sql:75` | pg_cron, `5 * * * *` |
+
+`process-notification-batches` is excluded from the live count because
+`apps/database/supabase/migrations/20251111101347_update_notification_batch_processor_to_call_api.sql:13`
+unschedules it. The migration replay, rather than the initial schedule alone,
+defines the current PostgreSQL owner set.
 
 **Retained exceptions.** Each retained job runs a single statement against
 Postgres tables with no HTTP, storage or provider side effect. A Cloudflare
@@ -98,6 +145,21 @@ crashed or recycled function silently loses them.
 | Web AI-agent webhook route | Adapter `waitUntil` delivery | Queue consumer |
 | Web accept-invite and decline-invite routes | Invitation notification finalization | `ctx.waitUntil` (bounded, best effort) once Worker-hosted |
 
+The nine active `after()` call sites are request/webhook continuations, not
+durable schedules:
+
+| Work | Source | Current trigger |
+| --- | --- | --- |
+| Teach AI feedback generation | `apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/ai-feedback/route.ts:248` | After submission response |
+| Infrastructure Polar product sync | `apps/infrastructure/src/lib/inventory/commerce/polar-product-sync.ts:509` | Webhook/request continuation |
+| Zalo personal-channel phone sync | `apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts:346` | After request response |
+| Inventory-core Polar product sync | `packages/inventory-core/src/lib/inventory/commerce/polar-product-sync-webhooks.ts:128` | Product webhook continuation |
+| Workspace invitation acceptance | `apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts:107` | After invite response |
+| Workspace invitation decline | `apps/web/src/legacy-api-routes/workspaces/[wsId]/decline-invite/route.ts:95` | After invite response |
+| Voice transcription | `apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts:51` | After voice-job request |
+| AI-agent webhook delivery | `apps/web/src/legacy-api-routes/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts:157` | After webhook response |
+| Square catalog sync | `apps/inventory/src/app/api/v1/inventory/square/webhook/[wsId]/route.ts:28` | After Square webhook response |
+
 ## Processors without a hosted schedule
 
 These routes exist but no Vercel entry, pg_cron job or Worker trigger calls
@@ -112,6 +174,19 @@ owner before scheduling any of them.
 | Web `ai/sync-models`, `discord/daily-report`, `discord/wol/daily/remind` | Cron Control job when an owner confirms the need |
 | Hive `hive/simulate` | Retire: the catalog keeps it disabled |
 
+These eight processor routes have no current hosted schedule:
+
+| Route | Source | Current trigger |
+| --- | --- | --- |
+| Pay orders | `apps/pay/src/app/api/cron/payment/orders/route.ts:13` | None |
+| Pay subscriptions | `apps/pay/src/app/api/cron/payment/subscriptions/route.ts:13` | None |
+| Inventory Polar product sync | `apps/inventory/src/app/api/cron/inventory/polar-product-sync/route.ts:15` | None |
+| Task embedding generation | `apps/tasks/src/app/api/cron/tasks/generate-embeddings/route.ts:13` | None |
+| Web model sync | `apps/web/src/app/api/cron/ai/sync-models/route.ts:9` | None |
+| Web daily Discord report | `apps/web/src/app/api/cron/discord/daily-report/route.ts:9` | None |
+| Web daily Discord reminder | `apps/web/src/app/api/cron/discord/wol/daily/remind/route.ts:9` | None |
+| Hive simulation | `apps/hive/src/app/api/cron/hive/simulate/route.ts:8` | None; catalog entry is disabled |
+
 Workspace managed cron jobs (`workspace_cron_jobs`) have a due-job claim RPC
 but no live scheduler since the Docker runner retired; only run-now routes
 execute them. A Cron Control job draining that claim RPC is the target, gated on
@@ -123,20 +198,83 @@ a product decision because enabling it starts user-defined outbound requests.
 calls the Web immediate-delivery processor only when a pending immediate batch
 exists. See [Cloudflare Cron Control](/build/devops/cloudflare-cron-control).
 
+## Phase 1: `pay-products` scheduler qualification
+
+`pay-products` is the first scheduler move because it runs twice per day and the
+existing processor converges product rows with provider-ID upserts. Cron Control
+already declares the same `0 */12 * * *` schedule and the authenticated Pay
+processor route. The dispatch regression now pins its per-slot request bound,
+single transient retry, duplicate-slot behavior, and durable stop after five
+failed slots across ledger reconstruction.
+
+This phase qualifies source behavior only. `CRON_CONTROL_ENABLED_JOBS` remains
+empty in `apps/cron-control/cloudflare.config.ts`, and the Vercel declaration
+remains active in `apps/pay/vercel.json`. Do not change either until an authorized
+production rollout has installed the Pay origin and matching cron secret, shown
+one successful Cloudflare slot, and recorded the Vercel last-run boundary. The
+old Vercel schedule stays the owner until then. Roll back a later cutover by
+stopping/removing `pay-products` from Cron Control and restoring its Vercel entry.
+
+The five scheduled GitHub workflows are operational automation rather than
+product background work: `.github/workflows/mobile-testflight-review-queue.yaml`
+drains a release-review queue; `release-please-auto-merge.yaml` handles release
+branches; `actions-storage-report.yaml` reports CI artifact storage;
+`security-checks.yaml` runs security scans; and
+`security-review-sweep.yaml` handles security-review automation. They remain on
+GitHub Actions and are not part of the product scheduler migration.
+
+Exact GitHub schedule declarations:
+
+| Workflow | Source | Current trigger |
+| --- | --- | --- |
+| Mobile TestFlight review queue | `.github/workflows/mobile-testflight-review-queue.yaml:4-5` | GitHub Actions, `2-57/5 * * * *` |
+| Release Please auto merge | `.github/workflows/release-please-auto-merge.yaml:14-17` | GitHub Actions, `0 0 * * *` |
+| Actions storage report | `.github/workflows/actions-storage-report.yaml:4-5` | GitHub Actions, `17 6 * * 1` |
+| Security checks | `.github/workflows/security-checks.yaml:12-13` | GitHub Actions, `17 2 * * *` |
+| Security review sweep | `.github/workflows/security-review-sweep.yaml:19-20` | GitHub Actions, `23 * * * *` |
+
+## Schedule catalogs and empty owners
+
+`apps/web/cron.config.json:6-60` and
+`apps/infrastructure/cron.config.json:6-36` are source catalogs consumed by
+schedule generation and monitoring. They are not all current triggers: the Web
+deadline-reminder catalog says every four hours while Vercel runs every five
+minutes; Calendar gateway entries have `vercel: false`; the immediate-notification
+path is already on Cron Control; and the Hive catalog route is disabled. No
+`supabase/functions/` tree, Trigger.dev config/SDK/import, or active
+`packages/workflows` task runner exists in this checkout.
+
+`apps/cron-control/cloudflare.config.ts:21-31` declares nine Cron Trigger
+expressions. The checked-in active Cloudflare owner is immediate-notification
+recovery; the 14 legacy jobs in `apps/cron-control/src/jobs.ts:63-167` remain
+default-off in `cloudflare.config.ts:40`. A catalog entry is not evidence that a
+hosted trigger is enabled or healthy.
+
 ## Migration waves
 
-1. **Scheduler move, default off.** Add every Vercel job and the exchange-rate
-   pg_net job to Cron Control with flags off. Enable cheapest first: cleanup
-   media, products, smart schedule, trust cache; then claim-fenced Web jobs;
-   then handover jobs; the every-minute sampler last, after its retirement
-   decision.
-2. **Processor moves.** Start with checkout expiry (atomic RPC), then cleanup
-   media (durable cursor), products and trust cache as Worker processors.
-3. **Queues.** Move notification, email, announcement and report delivery, then
-   the `after()` sites, onto Queue consumers with attempt budgets aligned to
-   their existing claims.
-4. **Retirements.** Decide the Docker-era sampler and alerts and the Hive
-   simulation route with their owners.
+1. **Scheduler cutover.** Qualify and then move `pay-products` first, preserving
+   its 12-hour cadence, default-off behavior, auth contract and per-slot
+   operation envelope. Next move `tasks-cleanup-media`,
+   `infrastructure-sync-trust-cache`, `calendar-provider-sync`, and the
+   `finance-exchange-rates` pg_net call. Then move the claim-fenced jobs
+   `web-notification-batches`, `web-post-email-queue`,
+   `web-topic-announcements`, `web-report-automation`, and
+   `inventory-checkout-expiry`. Move `calendar-smart-schedule` and
+   `web-deadline-reminders` only after removing their old owner and confirming
+   its last run. Keep the seven pure-SQL jobs in Postgres under the existing
+   exception.
+2. **Worker processors.** Keep checkout expiry as the tested template, then
+   move cleanup media with a durable cursor, product sync with bounded
+   pagination/upserts, and trust-cache writes with their 32-write concurrency
+   cap. Keep the `pay-products` Worker processor default-off until the Worker
+   path has exact-artifact and runtime acceptance.
+3. **Queues and workflows.** Move notification, email, announcement and report
+   delivery, calendar provider sync, then the `after()` sites, with retry budgets
+   aligned to their existing claims and persisted progress.
+4. **Retirements.** Confirm with Infrastructure owners whether to retire
+   `infrastructure-docker-recovery-alerts` and `infrastructure-sample-resources`;
+   retire the disabled Hive simulation route only after its owner confirms there
+   is no remaining need.
 
 Per-job cutover steps live in the
 [Cron Control runbook](/build/devops/cloudflare-cron-control); processor targets

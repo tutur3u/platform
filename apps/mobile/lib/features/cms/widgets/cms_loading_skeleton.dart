@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
+/// Static first-load placeholder shaped like the CMS overview: the summary
+/// hero followed by queue rows.
 class CmsLoadingSkeleton extends StatelessWidget {
   const CmsLoadingSkeleton({super.key});
 
   @override
-  Widget build(BuildContext context) => const Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colorScheme;
+    final solid = MediaQuery.highContrastOf(context);
+    return ExcludeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: FinanceSkeletonBlock(height: 112, radius: 22)),
-          SizedBox(width: 12),
-          Expanded(child: FinanceSkeletonBlock(height: 112, radius: 22)),
+          Container(
+            height: 188,
+            decoration: BoxDecoration(
+              color: colors.muted.withValues(alpha: solid ? 1 : 0.6),
+              borderRadius: BorderRadius.circular(AppRadius.card),
+            ),
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
+          const AppGroupedCard(children: [AppSkeletonRows(count: 3)]),
         ],
       ),
-      SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(child: FinanceSkeletonBlock(height: 112, radius: 22)),
-          SizedBox(width: 12),
-          Expanded(child: FinanceSkeletonBlock(height: 112, radius: 22)),
-        ],
-      ),
-      SizedBox(height: 16),
-      FinanceSkeletonBlock(height: 180, radius: 24),
-      SizedBox(height: 12),
-      FinanceSkeletonBlock(height: 132, radius: 24),
-    ],
-  );
+    );
+  }
 }

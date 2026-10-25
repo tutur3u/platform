@@ -101,14 +101,16 @@ describe('encryption-service', () => {
       const plaintext = 'TOP SECRET MESSAGE';
       const ciphertext = encryptField(plaintext, workspaceKey);
 
-      // Plaintext should not appear in ciphertext
-      expect(ciphertext).not.toContain('TOP');
-      expect(ciphertext).not.toContain('SECRET');
-      expect(ciphertext).not.toContain('MESSAGE');
+      // Check whole-plaintext leaks only: random base64 output can contain a
+      // short word such as "TOP" by chance, which made this test flaky.
+      expect(ciphertext).not.toContain(plaintext);
+      expect(ciphertext).not.toContain(
+        Buffer.from(plaintext).toString('base64')
+      );
 
       // Also check the raw bytes
       const decoded = Buffer.from(ciphertext, 'base64');
-      expect(decoded.toString('utf8')).not.toContain('TOP');
+      expect(decoded.indexOf(Buffer.from(plaintext))).toBe(-1);
     });
   });
 });

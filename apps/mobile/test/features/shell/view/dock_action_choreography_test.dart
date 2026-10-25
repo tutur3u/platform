@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 
 const ValueKey<String> _materialKey = ValueKey(
   'persistent-shell-dock-material',
@@ -64,7 +65,7 @@ void _centered(WidgetTester tester) {
     tester.getCenter(find.byKey(_groupKey)).dx,
     closeTo(tester.getCenter(find.byType(PersistentShellDock)).dx, .01),
   );
-  expect(find.byType(BackdropFilter), findsOneWidget);
+  expect(find.byType(ShellDockSurface), findsOneWidget);
   expect(tester.takeException(), isNull);
 }
 

@@ -132,25 +132,23 @@ are unaffected.
 
 ### Password hash migration
 
-1. **Coexistence.** `verifyPassword` accepts both the scrypt encoding and the
-   legacy unprefixed salted SHA-256 hex digest, distinguished by the `scrypt$`
-   prefix. No schema change is needed; both fit the existing text columns.
-2. **Rollout order.** The server that verifies both formats and writes only
-   scrypt ships first. There is no separate migration step and no backfill:
-   legacy rows cannot be converted without the plaintext.
-3. **Transparent rehash.** When a legacy hash (or scrypt with older
-   parameters) verifies, the login request replaces it with a fresh scrypt hash
-   using an update filtered on the previous `password_hash` value, so a
-   concurrent upgrade is never overwritten. A failed upgrade is logged and the
-   login still succeeds.
+1. **Reset markers.** `verifyPassword` accepts only the `scrypt$` encoding.
+   Any other non-empty stored hash, including the legacy unprefixed salted
+   SHA-256 hex digest, returns `resetRequired: true` and never verifies or
+   upgrades from a submitted password. Guest sign-in returns
+   `PASSWORD_RESET_REQUIRED`, and the plan creator recovers the guest with
+   **Reset a guest password**. The full policy is in
+   [shared-secret password reset](/platform/features/shared-secret-password-reset).
+2. **No backfill.** Legacy rows cannot be converted without the plaintext, so
+   the existing hash format is the durable reset marker; there is no schema
+   change, migration step or bulk update.
+3. **Parameter rehash.** When a scrypt hash with older parameters verifies,
+   the login request replaces it with a fresh scrypt hash using an update
+   filtered on the previous `password_hash` value, so a concurrent upgrade is
+   never overwritten. A failed upgrade is logged and the login still succeeds.
 4. **In-flight clients.** Browsers holding a page from before this change send
    the retired hash field, which the server now rejects. Those guests see a
    failed save or vote and sign in again after reloading.
-5. **Removing legacy verification.** Legacy verification can be removed once a
-   query finds no Meet guest or Nova challenge rows whose `password_hash` lacks
-   the `scrypt$` prefix, or after an announced cutoff after which remaining
-   legacy guests must re-register. Removing it before then locks those guests
-   out.
 
 Regression coverage: `packages/utils/src/__tests__/crypto.test.ts`,
 `packages/utils/src/__tests__/meet-guest-session.test.ts`,
