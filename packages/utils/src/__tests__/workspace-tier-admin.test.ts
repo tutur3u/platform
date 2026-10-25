@@ -67,6 +67,36 @@ describe('getWorkspaceTier admin lookup', () => {
     expect(mockCreateClient).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['uppercase', 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11'],
+    ['mixed case', 'a0eebc99-9C0B-4ef8-BB6D-6bb9bd380a11'],
+    ['padded', ' a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 '],
+  ])(
+    'keeps a PRO tier for %s UUID input against canonical database rows',
+    async (_label, input) => {
+      const canonical = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+      const admin = adminClient(
+        [
+          {
+            ws_id: canonical,
+            created_at: '2026-10-01T00:00:00.000Z',
+            product_id: 'product-pro',
+            status: 'active',
+          },
+        ],
+        [{ id: 'product-pro', tier: 'PRO' }]
+      );
+      mockCreateAdminClient.mockResolvedValue(admin.client);
+
+      await expect(getWorkspaceTier(input, { useAdmin: true })).resolves.toBe(
+        'PRO'
+      );
+      expect(admin.subscriptionQuery.in).toHaveBeenCalledWith('ws_id', [
+        canonical,
+      ]);
+    }
+  );
+
   it('returns FREE for an unknown workspace without subscriptions', async () => {
     const admin = adminClient([], []);
     mockCreateAdminClient.mockResolvedValue(admin.client);

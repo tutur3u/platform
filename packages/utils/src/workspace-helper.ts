@@ -267,21 +267,22 @@ async function getWorkspaceTierMap(
 
   for (const subscription of (data ??
     []) as WorkspaceSubscriptionTierLookupRow[]) {
-    const current = subscriptionsByWorkspace.get(subscription.ws_id) ?? [];
+    const key = subscription.ws_id.toLowerCase();
+    const current = subscriptionsByWorkspace.get(key) ?? [];
     current.push({
       ...subscription,
       product_tier: subscription.product_id
         ? (productTiersById.get(subscription.product_id) ?? null)
         : null,
     });
-    subscriptionsByWorkspace.set(subscription.ws_id, current);
+    subscriptionsByWorkspace.set(key, current);
   }
 
   return new Map(
     workspaceIds.map((workspaceId) => [
       workspaceId,
       extractTierFromSubscriptions(
-        subscriptionsByWorkspace.get(workspaceId) ?? null
+        subscriptionsByWorkspace.get(workspaceId.trim().toLowerCase()) ?? null
       ),
     ])
   );
@@ -330,8 +331,8 @@ export async function getWorkspaceTier(
   options: { useAdmin?: boolean } = {}
 ): Promise<WorkspaceProductTier> {
   const resolvedId = resolveWorkspaceId(wsId);
-  // An admin existence read filters nothing (unknown workspaces have no
-  // subscriptions), so skip it; RLS visibility still gates request clients.
+  // Admin reads skip the existence query (unknown workspaces have no
+  // subscriptions) but keep its canonical UUID text; RLS still gates clients.
   const client = options.useAdmin ? null : await createClient();
   const workspaceId = client
     ? (
@@ -341,7 +342,7 @@ export async function getWorkspaceTier(
           .eq('id', resolvedId)
           .maybeSingle()
       ).data?.id
-    : isWorkspaceUuidLiteral(resolvedId) && resolvedId;
+    : isWorkspaceUuidLiteral(resolvedId) && resolvedId.trim().toLowerCase();
   if (!workspaceId) return 'FREE';
   return (await getWorkspaceTierMap([workspaceId])).get(workspaceId) || 'FREE';
 }

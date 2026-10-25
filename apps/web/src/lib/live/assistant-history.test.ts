@@ -90,7 +90,7 @@ describe('seed history budget', () => {
 
   it('keeps the tail of an oversized latest message', () => {
     const history = buildLiveSeedHistory(
-      [row('user', 'x'.repeat(5) + 'end')],
+      [row('user', `${'x'.repeat(5)}end`)],
       3
     );
     expect(history).toEqual([{ role: 'user', parts: [{ text: 'end' }] }]);

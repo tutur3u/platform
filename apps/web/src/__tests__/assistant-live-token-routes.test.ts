@@ -353,26 +353,51 @@ describe('assistant live token routes', () => {
   });
 
   it('overlaps independent startup stages instead of awaiting them serially', async () => {
-    const delay = <T>(value: T) =>
-      new Promise<T>((resolve) => setTimeout(() => resolve(value), 40));
-    mocks.verifyWorkspaceMembershipType.mockImplementationOnce(() =>
-      delay({ ok: true })
-    );
-    mocks.getWorkspaceTier.mockImplementationOnce(() => delay('PRO'));
-    mocks.buildLiveMiraPrompt.mockImplementationOnce(() => delay('prompt'));
-    mocks.ensureAssistantLiveChat.mockImplementationOnce(() =>
-      delay({ id: 'chat-1' })
-    );
-    const started = performance.now();
-    const response = await assistantLiveTokenPOST(
+    const deferred = <T>() => {
+      let resolve!: (value: T) => void;
+      const promise = new Promise<T>((done) => {
+        resolve = done;
+      });
+      return { promise, resolve };
+    };
+    const flush = () => new Promise((done) => setTimeout(done, 0));
+    const membership = deferred<{ ok: boolean }>();
+    const tier = deferred<string>();
+    const prompt = deferred<string>();
+    const chat = deferred<{ id: string }>();
+    mocks.verifyWorkspaceMembershipType.mockReturnValueOnce(membership.promise);
+    mocks.getWorkspaceTier.mockReturnValueOnce(tier.promise);
+    mocks.buildLiveMiraPrompt.mockReturnValueOnce(prompt.promise);
+    mocks.ensureAssistantLiveChat.mockReturnValueOnce(chat.promise);
+
+    const pending = assistantLiveTokenPOST(
       postRequest('/api/v1/assistant/live/token', {
         wsId: 'personal',
         forceFresh: true,
       })
     );
-    expect(response.status).toBe(200);
-    // Serial execution of the four delayed reads would take >= 160ms.
-    expect(performance.now() - started).toBeLessThan(140);
+    await flush();
+    // Both access gates start together; nothing past them runs yet.
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledOnce();
+    expect(mocks.getWorkspaceTier).toHaveBeenCalledOnce();
+    membership.resolve({ ok: true });
+    await flush();
+    expect(mocks.ensureAssistantLiveChat).not.toHaveBeenCalled();
+    expect(mocks.buildLiveMiraPrompt).not.toHaveBeenCalled();
+
+    tier.resolve('PRO');
+    await flush();
+    // Prompt and chat preparation both start before either is released.
+    expect(mocks.buildLiveMiraPrompt).toHaveBeenCalledOnce();
+    expect(mocks.ensureAssistantLiveChat).toHaveBeenCalledOnce();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+
+    chat.resolve({ id: 'chat-1' });
+    await flush();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+    prompt.resolve('prompt');
+    expect((await pending).status).toBe(200);
+    expect(mocks.createConstrainedLiveToken).toHaveBeenCalledOnce();
   });
 
   it('does not create a chat or build a prompt for non-members', async () => {
