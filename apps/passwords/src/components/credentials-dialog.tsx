@@ -164,7 +164,7 @@ export function CredentialsDialog({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {['read', 'write', 'both'].map((value) => (
+            {(['read', 'write', 'both'] as const).map((value) => (
               <SelectItem key={value} value={value}>
                 {t(`credentials.${value}`)}
               </SelectItem>

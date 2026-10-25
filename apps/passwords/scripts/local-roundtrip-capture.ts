@@ -15,12 +15,14 @@ export class Capture {
   logChunks = 0;
 
   add(value: Uint8Array | string) {
-    const size = typeof value === 'string' ? Buffer.byteLength(value) : value.byteLength;
+    const size =
+      typeof value === 'string' ? Buffer.byteLength(value) : value.byteLength;
     if (this.bytes + size > 32 * 1024 * 1024) {
       this.overflow = true;
       throw new Error('CAPTURE_LIMIT');
     }
-    const copy = typeof value === 'string' ? Buffer.from(value) : Buffer.from(value);
+    const copy =
+      typeof value === 'string' ? Buffer.from(value) : Buffer.from(value);
     this.records.push(copy);
     this.bytes += copy.length;
   }
@@ -36,7 +38,13 @@ export class Capture {
       this.forbidden.push(Buffer.from(prefix.toString('base64')));
       this.forbidden.push(Buffer.from(prefix.toString('base64url')));
       this.forbidden.push(Buffer.from(prefix.toString('hex')));
-      this.forbidden.push(Buffer.from([...prefix].map((byte) => byte.toString(16).padStart(2, '0')).join(' ')));
+      this.forbidden.push(
+        Buffer.from(
+          [...prefix]
+            .map((byte) => byte.toString(16).padStart(2, '0'))
+            .join(' ')
+        )
+      );
       this.forbidden.push(Buffer.from([...prefix].join(',')));
       this.forbidden.push(Buffer.from([...prefix].join(', ')));
     }
@@ -89,7 +97,9 @@ export function interceptLogs(capture: Capture) {
     saved.set(name, target[name]);
     target[name] = (...args: unknown[]) => {
       capture.logChunks++;
-      capture.add(formatWithOptions({ customInspect: false, getters: false }, ...args));
+      capture.add(
+        formatWithOptions({ customInspect: false, getters: false }, ...args)
+      );
     };
   }
   const stdout = process.stdout.write;
@@ -97,7 +107,8 @@ export function interceptLogs(capture: Capture) {
   const write = (...args: unknown[]) => {
     capture.logChunks++;
     const value = args[0];
-    if (typeof value === 'string' || value instanceof Uint8Array) capture.add(value);
+    if (typeof value === 'string' || value instanceof Uint8Array)
+      capture.add(value);
     else capture.add('UNSUPPORTED_LOG_VALUE');
     const callback = args.find((arg) => typeof arg === 'function');
     if (typeof callback === 'function') queueMicrotask(() => callback());
@@ -112,30 +123,56 @@ export function interceptLogs(capture: Capture) {
   };
 }
 
-export function interceptBackend(origin: string, capture: Capture, signal: AbortSignal) {
+export function interceptBackend(
+  origin: string,
+  capture: Capture,
+  signal: AbortSignal
+) {
   const original = globalThis.fetch;
   const replacement: typeof fetch = async (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
-    check(url.origin === origin && !url.username && !url.password, 'BACKEND_ENDPOINT');
+    check(
+      url.origin === origin && !url.username && !url.password,
+      'BACKEND_ENDPOINT'
+    );
     check(/^\/(rest|auth|storage)\/v1\//.test(url.pathname), 'BACKEND_PATH');
     check(++capture.requests <= 300, 'REQUEST_LIMIT');
     const body = await boundedBytes(request.clone().body);
-    try { capture.add(body); } finally { body.fill(0); }
-    if (request.method === 'POST' && url.pathname.startsWith('/storage/v1/object/'))
+    try {
+      capture.add(body);
+    } finally {
+      body.fill(0);
+    }
+    if (
+      request.method === 'POST' &&
+      url.pathname.startsWith('/storage/v1/object/')
+    )
       capture.uploads++;
     const response = await original(request, {
       redirect: 'error',
-      signal: AbortSignal.any([signal, request.signal, AbortSignal.timeout(15000)]),
+      signal: AbortSignal.any([
+        signal,
+        request.signal,
+        AbortSignal.timeout(15000),
+      ]),
     });
-    check(!response.redirected && (!response.url || new URL(response.url).origin === origin), 'BACKEND_REDIRECT');
+    check(
+      !response.redirected &&
+        (!response.url || new URL(response.url).origin === origin),
+      'BACKEND_REDIRECT'
+    );
     const bytes = await boundedBytes(response.clone().body);
     try {
       check(bytes.length <= 2 * 1024 * 1024, 'BACKEND_RESPONSE_LIMIT');
       capture.add(bytes);
-    } finally { bytes.fill(0); }
+    } finally {
+      bytes.fill(0);
+    }
     return response;
   };
   globalThis.fetch = replacement;
-  return () => { globalThis.fetch = original; };
+  return () => {
+    globalThis.fetch = original;
+  };
 }

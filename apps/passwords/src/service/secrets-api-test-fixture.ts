@@ -110,7 +110,7 @@ export async function fixture(
   function request(
     action: string,
     extra: PasswordsRecord = {},
-    id = randomUUID()
+    id: string = randomUUID()
   ) {
     return new Request(`${SECRETS_ORIGIN}${OPERATION_PATH}`, {
       method: 'POST',
