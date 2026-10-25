@@ -5,11 +5,16 @@ import {
   type JobClass,
   jobClasses,
 } from './resources-hosts-config';
+import {
+  capabilityBlocker,
+  type HostCapability,
+} from './resources-hosts-requirements';
 
 // Pure admission planning: no I/O, so every scheduling rule is testable and
 // the same function drives the live scheduler and the dry-run simulation.
 
 export interface HostState {
+  platform?: string;
   // Fresh, reachable and eligible for trusted work right now.
   healthy: boolean;
   reason?: string;
@@ -32,6 +37,7 @@ export interface Reservation {
   scope: 'host' | 'project';
 }
 export interface Waiter {
+  requires?: HostCapability[];
   token: string;
   jobClass: JobClass;
   project: string;
@@ -86,9 +92,13 @@ export function hostBlocker(
   host: HostSpec,
   state: HostState | undefined,
   usage: Usage,
-  waiter: Pick<Waiter, 'jobClass' | 'remoteOk'>
+  waiter: Pick<Waiter, 'jobClass' | 'remoteOk' | 'requires'>
 ) {
   const { jobClass } = waiter;
+  const capability = capabilityBlocker(host, waiter.requires);
+  if (capability) return `${host.id}: ${capability}`;
+  if (host.platform && state?.platform !== host.platform)
+    return `${host.id}: platform telemetry is unknown or differs from ${host.platform}`;
   if (!state?.healthy)
     return `${host.id}: ${state?.reason ?? 'no fresh telemetry'}`;
   if (host.kind === 'runner' && !waiter.remoteOk)
@@ -118,11 +128,12 @@ export function hostBlocker(
 // it. Runner hosts never hold a waiter that cannot run remotely.
 export function couldHold(
   host: HostSpec,
-  waiter: Pick<Waiter, 'jobClass' | 'remoteOk'>
+  waiter: Pick<Waiter, 'jobClass' | 'remoteOk' | 'requires'>
 ) {
   const budget = hostBudget(host);
   const weight = host.weights[waiter.jobClass];
   return (
+    !capabilityBlocker(host, waiter.requires) &&
     (host.kind === 'local' || waiter.remoteOk) &&
     host.slots[waiter.jobClass] > 0 &&
     weight.cpus <= budget.cpus &&
@@ -132,7 +143,7 @@ export function couldHold(
 // No registered host could ever run it: fail fast instead of queueing forever.
 export function canEverHold(
   registry: HostRegistry,
-  waiter: Pick<Waiter, 'jobClass' | 'remoteOk'>
+  waiter: Pick<Waiter, 'jobClass' | 'remoteOk' | 'requires'>
 ) {
   return registry.hosts.some((host) => couldHold(host, waiter));
 }

@@ -1,12 +1,31 @@
+import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 
 class AssistantLiveRepository {
-  AssistantLiveRepository({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AssistantLiveRepository({
+    ApiClient? apiClient,
+    Future<String> Function()? deviceTimezone,
+    List<String> Function()? clientCapabilities,
+  }) : _apiClient = apiClient ?? ApiClient(),
+       _deviceTimezone = deviceTimezone ?? getVerifiedDeviceTimezoneIdentifier,
+       _clientCapabilities =
+           clientCapabilities ?? AssistantClientActions.liveCapabilities;
 
   final ApiClient _apiClient;
+  final Future<String> Function() _deviceTimezone;
+  final List<String> Function() _clientCapabilities;
+
+  Future<String?> _verifiedTimezone() async {
+    try {
+      final timezone = (await _deviceTimezone()).trim();
+      return timezone.isEmpty ? null : timezone;
+    } on Object {
+      return null;
+    }
+  }
 
   Future<AssistantLiveTokenEnvelope> fetchLiveToken({
     required String wsId,
@@ -58,6 +77,7 @@ class AssistantLiveRepository {
     if (canonical && (toolCallId == null || toolCallId.isEmpty)) {
       throw ArgumentError('Canonical Live tools require a provider call ID');
     }
+    final timezone = canonical ? await _verifiedTimezone() : null;
     final response = await _apiClient.postJson(
       canonical
           ? '/api/v1/assistant/live/tools/execute'
@@ -66,6 +86,8 @@ class AssistantLiveRepository {
         'wsId': wsId,
         'functionName': functionName,
         if (canonical) 'toolCallId': toolCallId,
+        if (canonical) 'clientCapabilities': _clientCapabilities(),
+        if (timezone != null) 'timezone': timezone,
         'args': args,
       },
     );
