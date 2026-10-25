@@ -96,8 +96,9 @@ that cookie into cohort identity or copy it onto the shared origin.
 
 ## Qualify both Finance URL modes
 
-The candidate must work on both `finance.<host>` and `<host>/finance`.
-The bridge owns request-based mount resolution and the shared session model. Preserve the
+Root mode at `finance.<host>` is the first release gate. `<host>/finance` remains
+compatibility coverage and does not admit apex traffic. The bridge owns
+request-based mount resolution and the shared session model. Preserve the
 external prefix on redirects, ordinary links, assets, action requests, and API
 calls while matching the internal route once.
 
@@ -109,8 +110,9 @@ token copy.
 
 A mounted request must retain the shared session during refresh and failure
 handling. Signing out on the apex is global. Require independent security
-acceptance of the mounted-auth implementation before cutover. The bridge's
-proposal alone does not qualify authentication behavior.
+acceptance of the mounted-auth implementation before any apex cutover. Root-mode
+session acceptance remains a separate gate. The bridge's proposal alone does
+not qualify authentication behavior.
 
 Acceptance covers English and Vietnamese URLs, anonymous login, cross-app token
 verification, refresh and logout, MFA recovery, personal/internal workspace
@@ -139,6 +141,19 @@ Before the flip, capture the current Vercel deployment, source identity, and
 routing configuration. Prepare and verify a single-step command that restores
 that deployment and routing. Record who owns that command and the regression
 signal that invokes it. Do not flip traffic without a ready rollback.
+
+Finance's root rollout retains the Vercel CNAME, enables its proxy, and attaches
+only `finance.tuturuuu.com/*` to the admitted Worker. Capture the prior immutable
+Vercel deployment and DNS record ID, content, proxy state, and TTL. The rollback
+restores that deployment if necessary, removes only the new Finance Worker
+route, and restores the captured DNS payload. Keep apex and shared routes out
+of this transition; a Custom Domain requires a different rollback plan.
+
+Use the zone-scoped DNS credential for DNS reads/edits and the existing Workers
+deploy credential for Worker route reads/edits. Keep the two tokens separate in
+capture and rollback clients. Validate provider identities before any write,
+keep the original route and DNS record IDs, and reconcile ambiguous responses
+with reads before continuing.
 
 After cutover, run smoke checks and watch 5xx rates, authentication failures,
 and p95 latency for 30 to 60 minutes. Roll back immediately on regression and
