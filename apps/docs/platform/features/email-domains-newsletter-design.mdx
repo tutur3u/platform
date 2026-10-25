@@ -1,0 +1,575 @@
+---
+title: "Customer email domains and newsletters: design proposal"
+description: "Draft architecture for approved customer sending, workspace add-ons, Polar billing and a first-class Mail newsletter workspace."
+updatedAt: '2026-10-25'
+---
+
+## Status and intended outcome
+
+**Draft for decisions; no product implementation or launch authorization.** Add
+customer-owned sending domains and sender identities, independent workspace
+add-ons, and a complete newsletter workspace at `mail.tuturuuu.com`. Infrastructure
+owns platform approval and operations. Supabase remains authoritative; Cloudflare
+owns new schedules, queues and sending compute. Polar owns subscription payments.
+
+Default access is denied. A workspace request, its sending domain, and each sender
+address require separate platform-admin approval. Buying a subscription never
+bypasses approval, consent, suppression, abuse controls or provider limits.
+Existing personal/connected mail and transactional notifications retain their rules.
+
+Two launch gates need resolution before implementation can promise delivery:
+
+1. [Cloudflare Email Sending](https://developers.cloudflare.com/email-service/)
+   is a real beta product, but its current documentation describes **transactional**
+   email. Obtain written Cloudflare confirmation that permission-based marketing
+   newsletters and this multi-tenant resale model are supported. Do not relabel a
+   newsletter as transactional or silently switch to SES to bypass this gate.
+2. [Domain onboarding](https://developers.cloudflare.com/email-service/get-started/send-emails/)
+   requires Cloudflare DNS and selection of a domain in the sending account.
+   Arbitrary external DNS with copied TXT records is not established by these docs.
+   Prove the supported customer-zone/account delegation model before promising
+   universal self-service. Start with explicitly eligible domains only.
+
+Sources below were checked on 2026-10-25. Repository inventory is a source snapshot
+at `45fdcb32ca`, not a claim about live provider configuration or deployed health.
+No credentials, live catalog, production database or sandbox organization was read.
+
+## Existing inventory and reuse boundaries
+
+| Area | Checked-in foundation | Design implication |
+| --- | --- | --- |
+| Mail app | `apps/mail/src/lib/mail`, protected workspace/mailbox APIs, composer, folders, attachments, search, groups, AI drafts and app sessions; [Mail overview](/platform/applications/mail) | Add a Newsletter destination alongside inbox; do not turn a mailbox/group into an audience or assume inbox admission admits customer newsletter users. |
+| Private mail models | `20260527115441_create_private_mail_platform.sql`: mailboxes, members, raw messages, threads, messages, recipients, attachments, labels, user state, events, inbound/outbound jobs. `20260710024654_agentic_mail_foundation.sql`: domains, stored objects, folders, AI and MCP models | Preserve mailbox ownership and inbound routing. Campaign data has separate lifecycle and consent. |
+| Domains | `private.mail_domains` has globally unique normalized domain, status, inbound/outbound provider, Cloudflare account/zone/routing IDs, verification JSON and timestamps; mailbox links enforced by later migrations | Reuse canonical domain identity through a separate workspace sending claim. Existing active domain is not newsletter approval. Do not make global inbound domain rows writable by customers. |
+| Connected mail | `20261011002106_connected_mail_accounts.sql`; Google/Microsoft OAuth accounts, OAuth requests and send claims; `connected/send.ts` retains uncertain sends | OAuth mail remains separate. Preserve the existing unknown-outcome principle for campaigns. Never use customer Gmail/Graph credentials as bulk transport. |
+| Sending | `packages/email-service/src/providers/cloudflare.ts` and `ses.ts`, shared security, audit and workspace rate limits; Mail domain default and mailbox override | Extend portable first-party contracts; Cloudflare newsletter transport is explicitly selected and cannot inherit a mailbox SES override. |
+| Incoming mail Worker | `apps/mail/src/email-worker/index.ts`, `wrangler.email-routing.jsonc`: MIME ingestion, private R2 and authenticated Mail webhook | This is inbound Email Routing, not a newsletter queue or proof of outbound eligibility. Preserve replies and mailbox routing. |
+| Billing | `apps/pay/src/app/api/payment/webhooks/route.ts`, subscription checkout/change/preview/customer portal routes; `packages/payment`, `packages/payment-core` | Keep Pay as billing adapter; share domain logic rather than duplicate webhook processing in Mail. |
+| Products | Private `workspace_subscription_products`, `workspace_subscriptions` evolution; metadata supports FREE/PLUS/PRO/ENTERPRISE and AI credit packs, seat helpers and order classification | Newsletter is an independent add-on product kind, never a new workspace tier or an AI credit pack. Live product IDs/prices were not inspected. |
+| Inventory commerce | `packages/inventory-core/src/lib/inventory/commerce/polar-*`, storefront environment binding, workspace promotions and Polar discount linkage migrations | Reuse verified environment/tenant binding patterns. Storefront sales and workspace platform subscriptions are different merchant contexts. |
+| Limits and secrets | `workspace_secrets`, Infrastructure secrets controls, `packages/email-service/src/workspace-rate-limits.ts` minute/hour/day/user/recipient/IP policies | Preserve abuse ceilings; do not implement purchasable entitlements as arbitrary editable secret values. Provider secrets remain server-only. |
+| Email operations | Infrastructure email blacklist, audit, templates, post-email queue; `email_bounce_complaints`, `email_audit`, `sent_emails` and blacklist migrations | Reuse global safety checks; do not reuse report-recipient approval as newsletter consent or copy full bodies into analytics. |
+| Cloudflare control | `apps/cron-control` jobs/ledger/control/checkout-expiry processor; `apps/coordination` Worker and durable coordination service; native service configs | Register bounded jobs in Cron Control. Do not add a second controller, reuse unrelated coordination objects, or add Vercel/pg_cron work. |
+| Infrastructure authorization | Navigation platform-admin groups; satellite request actors; root-workspace admission in post-email queue auth; exact corporate suffix in AI whitelist authorization | Existing checks vary. Define one stronger newsletter approval guard; a visible navigation item is never authorization. |
+
+No general-purpose workspace add-on/entitlement model was identified in the
+examined billing/schema paths. Confirm schema drift before authoring migrations.
+The existing Polar client uses the installed SDK's `Polar` constructor and
+`server` option (`packages/payment/src/polar/server.ts`); current upstream examples
+use versioned APIs. Pin the installed API contract and test compatibility before
+adopting new SDK examples or upgrading dependencies.
+
+## Runtime and ownership
+
+Mail and Infrastructure use their authenticated satellite sessions. Resolve actors
+through `getSatelliteAppSessionUser` or the applicable satellite request actor;
+never use raw Supabase user helpers in satellites. Workspace aliases are normalized
+before all membership, preview and mutation checks. Browser requests use typed
+`packages/internal-api` helpers and TanStack Query; no raw app API fetching or
+`useEffect` fetching.
+
+New/substantially reworked Web handlers belong in `apps/web/src/app/api/**`.
+Existing app-owned Pay/Mail/Infrastructure adapters retain explicit ownership;
+choose their route placement with the owning platform maintainer before coding.
+Shared newsletter policy, entitlement and state machines have framework-free
+entrypoints with injected identity, storage, clock, locale and transport. Prefer
+`@tuturuuu/utils/effect` for orchestration with typed errors and bounded concurrency.
+No resumed Rust/TanStack runtime or broad framework migration is needed.
+
+Request flow: Mail authorizes a campaign and commits its immutable revision plus
+an outbox entry. A Cloudflare processor claims outbox pages and enqueues recipient
+IDs. Queue consumers reauthorize each recipient immediately before submission.
+Supabase is the transaction boundary; the queue is a wake-up hint, not permission.
+An outbox row survives publication failure; duplicate queue publication cannot
+create a second recipient claim. Provider events arrive on a separate trusted queue.
+
+Follow [Cloudflare ownership](/build/devops/cloudflare-backend-ownership) and
+[cost/stop acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance).
+Use current cf/Vite+ conventions where parity is qualified; retain Wrangler for
+unqualified operations. New Workers join the active service inventory and require
+exact-commit emitted-artifact CI and isolated Worker runtime acceptance.
+
+## Domain and sender onboarding
+
+Workspace owners submit business identity, intended content, audience provenance,
+expected volume, website, postal address and abuse contact. State is
+`not_requested → pending → approved | rejected`; approved can become `suspended`.
+Reapplication preserves prior decisions and reason history. Rejected or suspended
+workspaces cannot send even on a paid plan.
+
+A workspace sending-domain claim references the canonical domain row and tracks
+**independent** DNS state (`unverified`, `checking`, `verified`, `failed`, `expired`)
+and review state (`pending`, `approved`, `rejected`, `suspended`). Readiness requires
+both current DNS verification and approval. Store the exact account, zone,
+provider domain identifier, normalized IDNA domain, expected DNS records, revision
+and verified time. A domain cannot be concurrently claimed by unrelated workspaces;
+transfer requires revoke, ownership re-verification and a new approval. No automatic
+inheritance from parent-domain approval or a wildcard sender.
+
+The setup screen presents provider-returned records with host/type/value and
+observed status. Cloudflare documents SPF, DKIM, DMARC and MX records for the
+`cf-bounce` return-path subdomain in its
+[domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/).
+Use provider-issued DKIM selectors; verify aligned visible From, DKIM signing domain
+and envelope sender. Preserve existing root MX and DMARC policy; never create two
+SPF records or weaken an existing DMARC policy. Prefer a dedicated sending subdomain.
+The customer confirms DNS changes; do not request their account-wide API token.
+The approved zone-delegation model must provide narrowly scoped server credentials.
+
+Cron Control owns verification, default off. Proposed bounds: 25 due domains/tick,
+one provider-status lookup/domain/attempt, 12 total attempts over 48 hours, capped
+backoff with jitter, lease expiry and a durable cursor. A terminal/failing exhausted
+row stops polling. Manual Retry creates an audited new revision with a capped
+operator budget; it cannot reset a global spending limit. Recheck active domains
+under a renewable, budgeted verification lease, and fail closed on expired proof.
+Missing records or provider disablement suspend future sends, with clear recovery.
+
+Sender identity is an exact canonical address linked to the approved domain claim.
+Verify mailbox control with an expiring, single-use challenge where supported, then
+require platform-admin approval. Sending-subdomain control alone does not approve
+every local part. State includes `pending_verification`, `pending_review`, `approved`,
+`rejected`, `suspended`, `revoked`. Changing address/domain invalidates verification
+and approval; changing display name or reply-to is audited and re-reviewed if it
+changes represented identity. Reply-to must be verified or constrained by policy.
+Never create inbound mailboxes merely to approve newsletter senders.
+
+Approvers must have a fresh verified exact `@tuturuuu.com` identity **and** the
+explicit platform newsletter-management permission in the root workspace. Tenant
+admins cannot grant this permission. Decisions record actor, reason, evidence,
+resource revision and timestamp; stale concurrent decisions return conflict.
+Suspension increments the sending fence immediately. Approval never enables a
+provider action by itself when another gate remains closed.
+
+## Sending, idempotency and bounded cost
+
+Candidate transport: Cloudflare Email Service Email Sending REST
+`POST /accounts/{account_id}/email/sending/send`, or its native Workers binding.
+The [REST API](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/)
+exists and supports custom content; retain the repository provider adapter while
+qualifying a Worker-safe binding adapter. Neither implies newsletter eligibility.
+Cloudflare's [limits](https://developers.cloudflare.com/email-service/platform/limits/)
+include 50 total recipients, 5 MiB messages and 16 KB custom headers. Daily sending
+capacity is account/reputation-dependent; there is no documented universal numeric
+daily allowance to promise. Budget aggregate capacity across workspaces before sale.
+Use exactly **one recipient per send**, no CC/BCC; proposed newsletter content cap
+is 256 KiB with hosted images and no attachments for the initial release.
+
+A frozen campaign revision stores sender, content hash, audience snapshot cutoff,
+consent policy, schedule and maximum recipients. Key each recipient delivery by
+`(workspace_id, campaign_revision_id, subscriber_id)` with a unique constraint and
+payload hash. Claim, quota reservation and spending reservation occur atomically.
+Queue duplicates read the existing row. Changed payload requires a new campaign
+revision, never a reused key. Subscriber status and suppression are checked again
+at send time, even when the audience snapshot contains the address.
+
+States: `pending → reserved → submitting → accepted | rejected | unknown`, followed
+by monotonic delivery outcomes. A provider message ID is not inbox delivery proof.
+The inspected REST guide does not establish a provider idempotency key. Therefore
+**exactly-once external delivery is not promised**: timeout, process crash after
+submission, or receipt-write failure becomes `unknown`, retains quota/spend, and
+never auto-resubmits. Reconcile against provider message/event evidence; absent
+proof stays unknown. A known pre-submission failure or explicit API rejection may
+release reservation. Do not treat a later rejection as proof an earlier unknown
+attempt did not send.
+
+Proposed finite consumer limits: 25 recipient IDs/wake, concurrency 2, three durable
+attempts only for proven unsent failures, 24-hour retry age, bounded backoff and a
+DLQ. Configure Queue retries consistently with that budget; redrive preserves
+identity, attempts and deadlines. Provider delivery retries after acceptance are
+provider-owned and do not trigger a second application send. Campaigns larger than
+today's quota show a choice to reduce the audience or schedule explicit daily
+batches; they never silently spill over into later days.
+
+### Durable stop fence and total-spend envelope
+
+Store global, workspace, domain and campaign stop flags with monotonic generations,
+lease expiry and actor audit. Before each expensive operation, submission and
+reschedule, a fenced transaction checks all flags, approval, entitlement, quota,
+remaining operation credits and lease. Serialize final submission admission and
+stop on a per-workspace coordinator; one in-flight provider call may already have
+crossed the boundary. The stop UI reports that bounded uncertainty and waits for
+in-flight admission receipts. A generation invalidates queued stale work; stopped
+or terminal work is acknowledged without fan-out or self-rescheduling.
+
+A stop endpoint requires platform authority, persists before success and works
+independently of Mail UI/ingress. Also document an operator path to pause Queue
+consumers, disable the Cron Control job and revoke the sending credential/binding.
+Stop cannot recall accepted mail. Test stop racing claims, submissions, crashes,
+queue retries, lease renewal and rescheduling in the real isolated Worker runtime.
+
+The hard envelope is **not** just a dollar counter around sending. Atomically
+reserve conservative micro-dollar cost and finite operation credits before work:
+provider submissions, enqueue/read/delete/DLQ operations, Worker invocations,
+DB calls, R2 bytes/requests, verification polls and event ingestion. Account,
+workspace, campaign, UTC-day and billing-month budgets all apply; exhaustion fails
+closed. Do not discount included provider allowance when reserving. Concurrent
+leases reserve disjoint credits; no restart resets budgets. A bounded sweeper
+expires leases but never refunds unknown provider writes.
+
+Queue/event deliveries themselves can cost money before application code runs.
+Thus application counters alone cannot cap the entire Cloudflare invoice. Require
+finite admitted campaign volume, producer limits, finite Queue retention/retries,
+bounded provider-event amplification and a separate hosted control-plane stop
+procedure. Measure the worst-case residual cost of already admitted messages and
+in-flight work. Keep production default off until hosted pause/revocation receipts
+and that residual envelope are accepted; do not claim an absolute invoice cap
+against arbitrary hostile ingress. Reject unknown external ingress before expensive
+work and use provider/edge controls as additional defenses.
+
+[Email pricing](https://developers.cloudflare.com/email-service/platform/pricing/)
+currently includes 3,000 outbound messages/account/month on Workers Paid, then
+$0.35/1,000; accepted hard-bounces still count. Marginal reservation is therefore
+$0.00035/message, before compute, storage, queues, database and payment costs.
+For a 31-day month, full use is 15,500 messages at 500/day ($5.425 marginal email
+cost) and 62,000 at 2,000/day ($21.70). These are conservative calculations without
+the shared included allowance, **not measured costs or profitable plans**. Both
+requested price examples need an explicit subsidy/margin decision before sale.
+
+[Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/) bills
+operations, with payload billing in 64 KiB chunks and retries adding reads. Pin
+current rates in the implementation cost worksheet; count normal and persistent
+failure paths, fan-out, DLQ, event volume and storage retention. CPU caps and billing
+alerts are detection/containment aids, not total-spend caps. Numeric platform dollar
+caps, aggregate provider capacity and warm-up limits require owner approval.
+
+## Delivery feedback, consent and compliance
+
+[Cloudflare event subscriptions](https://developers.cloudflare.com/email-service/reference/event-subscriptions/)
+publish sending-domain lifecycle events to Queues, including delivered, deferred,
+bounced, rejected and complained. Configure a separate trusted event queue; validate
+account, zone, domain, subscription, schema and provider message-to-workspace binding.
+Deduplicate event IDs; tolerate replay, out-of-order and late events. Do not accept
+an unauthenticated HTTP JSON event as provider evidence. Store compact normalized
+facts, not subject/body copies. A delivered event means remote server acceptance.
+
+Hard bounces and complaints suppress immediately before further sends. Temporary
+failures stay provider-owned; a proposed three soft failures in seven days triggers
+review/suppression, subject to provider semantics. Reconcile provider-managed
+[suppressions](https://developers.cloudflare.com/email-service/configuration/suppressions/)
+with local decisions using bounded cursors. Provider account-wide policy suppression
+always wins. Workspace unsubscribe is tenant-scoped; platform abuse suppression
+is global and cannot reveal another tenant's address history. Operators cannot
+remove provider read-only suppression by changing local state. No automatic
+resubscription on import, plan change, refund or successful delivery.
+
+Double opt-in is the product default: signed-up contacts remain pending until a
+single-use expiring confirmation token is redeemed. Store consent purpose, source,
+policy/version, timestamps and evidence reference. Imports require consent mapping
+and an attestation plus evidence; imported unconfirmed contacts do not receive a
+campaign. Purchased/scraped lists are forbidden. Historical proven consent can use
+an explicit reviewed migration exception; do not blast confirmation emails at an
+unverified imported list. Confirmation/test sends need their own abuse and cost
+budgets, cannot be an open relay, and must respect suppression.
+
+Every campaign includes visible unsubscribe, business identity, postal address and
+accurate subject/From. Implement HTTPS `List-Unsubscribe` plus
+`List-Unsubscribe-Post: List-Unsubscribe=One-Click` under
+[RFC 8058](https://www.rfc-editor.org/rfc/rfc8058), and verify DKIM covers the required
+headers in received messages. The opaque high-entropy token is scoped to workspace,
+subscriber and purpose; store a hash, redact it from logs and avoid third-party
+assets/referrers. Unauthenticated POST unsubscribes idempotently without login or
+confirmation. GET shows the preference page and does not mutate (link scanners).
+Suppress immediately, including queued recipients. List-specific preferences may
+narrow subscription choices but must offer workspace-wide newsletter opt-out.
+
+The [FTC CAN-SPAM guide](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business)
+requires truthful headers/subjects, required commercial identification and postal
+address, a working opt-out and honoring it within ten business days. This design
+uses immediate suppression and does not charge for opting out. Keep suppression
+available even while billing/access is suspended.
+
+For [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj), record the lawful basis,
+withdrawal, access/export/erasure and retention process; double opt-in is a product
+policy, not a claim of automatic legal compliance. Confirm local ePrivacy/direct
+marketing requirements, processor agreements, transfer terms and controller roles
+with the legal owner before launch. Minimize IP/user-agent retention; consent
+evidence references must not become permanent raw tracking logs. Retain only the
+minimum suppression tombstone needed to prevent reimport, under an approved lawful
+basis and retention policy. Deletion fences prevent queued work resurrecting data.
+
+Open/click tracking defaults off, needs explicit privacy policy and consent review,
+and must be labeled approximate (proxies/scanners distort it). Initial analytics
+are accepted/delivered/deferred/bounced/complained/unsubscribed counts. Warm up each
+domain; proposed review triggers are any complaint among the first 100 accepted
+messages, or at least 0.1% complaints / 2% hard bounces over a defined 1,000-message
+window. These are conservative draft controls, not provider guarantees. Sparse
+samples need review; stale feedback or event ingestion failures pause expansion.
+
+## Proposed data model and authorization
+
+Names below are proposals, not migrations. Use `private` service-only tables with
+RLS enabled and no anon/authenticated grants by default; member-facing APIs expose
+minimal authorized projections. Every tenant row has `ws_id`, and composite foreign
+keys `(ws_id, resource_id)` prevent cross-workspace parent/child references.
+
+| Proposed table | Core fields and invariants |
+| --- | --- |
+| `newsletter_access_requests` | Workspace, revision, requested business/consent facts, state, decision/reason/actor/times; one current request/workspace with immutable decision history. |
+| `workspace_sending_domains` | Workspace + canonical `mail_domains` FK, ownership claim, provider identity, DNS/review states, proof expiry, poll attempts/deadline, revision. Exclusive active claim per normalized domain. |
+| `newsletter_senders` | Workspace/domain composite FK, exact normalized address, challenge hash/expiry, verification/review states, revision; unique address in active domain claim. |
+| `workspace_addon_catalog` | Add-on key, version, internal plan key, environment-bound Polar organization/product/price IDs, currency/minor units, quota and allowed discount mapping. Privileged writes only. |
+| `workspace_addon_subscriptions` | Workspace, add-on, environment, Polar customer/subscription IDs, status, effective/end times, current and next plan, event reconciliation version. One effective newsletter subscription; base subscription unaffected. |
+| `workspace_addon_promotions` | Validated discount-to-plan mapping, workspace eligibility, period, redemption/expiry and quota override version; no arbitrary client quota. |
+| `newsletter_audiences`, `newsletter_subscribers`, `newsletter_list_memberships` | Workspace/list membership; canonical recipient identity, pending/confirmed/unsubscribed state and consent evidence FK. Unique workspace/address; no Gmail-specific address rewriting. |
+| `newsletter_consent_events`, `newsletter_import_jobs` | Append-only purpose/version/evidence and withdrawal; import checksum, bounded cursor/attempts, retention expiry and deletion generation. |
+| `newsletter_templates`, `newsletter_campaigns`, `newsletter_campaign_revisions` | Draft/template versions; immutable send revision, recipient cutoff/count, timezone/scheduled UTC instant, sender, content reference/hash and state. |
+| `newsletter_deliveries`, `newsletter_outbox` | Unique revision/subscriber key, payload hash, attempt/lease, provider ID, unknown state; durable publication cursor and generation. |
+| `newsletter_usage_daily`, `newsletter_budget_ledger` | Unique workspace/add-on/UTC date counters for reserved/accepted/unknown; immutable reservation entries and account/workspace/campaign cost credits. |
+| `newsletter_suppressions`, `newsletter_provider_events` | Scope/reason/source and protected address hash; unique provider account/event ID; receipt binding and retention. |
+| `newsletter_control`, `newsletter_audit_events`, `billing_webhook_receipts` | Stop generations/leases; append-only actor/action/revision/reason; environment + merchant + webhook ID uniqueness and bounded payload digest/reference. |
+
+Member access requires live workspace membership plus granular permissions for
+viewing newsletters, managing audiences, editing campaigns, sending campaigns,
+managing domains and managing subscriptions. Reuse `manage_subscription` for
+billing where appropriate. Sending and subscriber export require explicit rights;
+mailbox membership alone is insufficient. Test permission removal during a job.
+
+Privileged Workers receive narrow RPC capability, not a general user-facing
+service-role query proxy. Each RPC validates workspace, resource, claim lease and
+generation. Prefer invoker functions. Necessary `SECURITY DEFINER` functions use
+`SET search_path = ''`, schema-qualified tables/functions, fixed SQL, explicit
+actor checks and narrow EXECUTE grants; revoke PUBLIC/anon/authenticated unless
+explicitly required. No caller-supplied actor ID substitutes for authentication.
+Audit decisions and provider/billing mutations append-only with redacted fields.
+A failed audit write aborts the associated approval or entitlement mutation.
+
+### Migration and rollout safety
+
+Create additive private tables and indexes first, RLS/grants in the same migration.
+Avoid rewriting hot Mail/subscription tables or backfilling customer approval from
+legacy active flags. Add nullable references, backfill bounded keyset batches, add
+FK/check constraints `NOT VALID` where supported, then validate separately under
+short lock/statement timeouts. Use concurrent index creation for populated tables
+only in a migration path verified to permit nontransactional DDL. Never place
+`CREATE INDEX CONCURRENTLY` inside a transaction blindly. Retry only bounded known
+lock failures; record unknown migration outcome before retrying.
+
+Rehearse full reset and upgrade from a production-shaped anonymized fixture in an
+isolated database, including lock contention, RLS negative controls, constraint
+validation and rollback-by-disabling flags. Generate types from applied schema.
+Keep schema and its consuming contracts in the same rollout unit when required.
+CI builds the exact app commits; staging migration must pass before authorized
+production promotion and the gated `supabase-production.yaml` result. No manual
+`sb:push`/`sb:linkpush`. This design PR executes no migration.
+
+## Add-ons, Polar and daily quota
+
+| Offer requested | Entitlement proposal | Billing proposal |
+| --- | --- | --- |
+| Free | 10 recipient sends/day for an approved workspace | No paid Polar subscription required. |
+| Newsletter 500 | 500/day | Independent $5 USD/month recurring product/price. |
+| Promotional 2000 | 2,000/day while qualified | Explicit 2,000/day plan plus a product-restricted discount yielding $2/month; duration and normal price require a decision. |
+
+A Polar discount changes price, **not entitlement**. Therefore a coupon on the
+500/day product cannot implicitly create 2,000/day. Use a separate 2,000/day
+catalog plan and validated promotion mapping (recommended), or an explicit
+server-side time-bounded grant linked to the subscription/discount. Do not infer
+quota from charged amount or a browser coupon string. Do not stack subscriptions
+or sum overlapping promotional limits. One deterministic effective plan wins;
+invalid/unknown mappings fail closed to the free entitlement if access is approved.
+
+Entitlement resolution is a pure versioned function: workspace approval + provider
+eligibility + current add-on state + valid promotion → daily plan limit, constrained
+by global/provider/domain/abuse ceilings. Free is not an extra 10 on top of paid.
+Workspace secrets may lower abuse limits but cannot mint a paid entitlement or
+raise approval/provider limits. Snapshot the decision/version on each reservation;
+re-evaluate immediately before send when approvals or plans change.
+
+Proposed quota clock is **UTC**, shared across plan changes. Use database time and
+`(ws_id, addon_key, utc_date)`; no reset cron or mutable counter reset. Reserve
+with one conditional atomic update under the same transaction as the delivery
+claim. Count accepted and unknown submissions, including accepted hard bounces;
+release only proven unsent attempts. No rollover; tests, confirmations and retries
+have explicit separate budgets and display semantics. A reservation cannot carry
+unused yesterday capacity into today: before submission, atomically transfer an
+unsent reservation to today's bucket or refuse it. Unknown/accepted stays charged
+to its original submission day. Upgrading does not reset usage; downgrading below
+already-used quota blocks remaining sends until the next day.
+
+### Checkout and lifecycle
+
+Use the platform merchant's independent recurring add-on product, fixed USD minor
+unit prices and environment-specific allowlisted IDs. Preserve existing seat/base
+subscription handling and classify `newsletter_addon` separately from tier and
+credit-pack products. Polar [subscriptions](https://polar.sh/docs/features/subscriptions/introduction)
+and [discounts](https://polar.sh/docs/features/discounts) support recurring offers
+and once, fixed-month or forever discount durations. Restrict codes to the intended
+product, dates and redemptions; record the advertised post-promotion price.
+
+1. A current member with billing rights requests an allowlisted plan. Server binds
+   workspace/customer/environment and validates approval and coupon eligibility.
+2. Persist a unique checkout intent before calling Polar. Bind server-owned
+   metadata and external customer identity to that intent; never trust workspace
+   metadata submitted by the browser. A duplicate request reuses the intent.
+3. Create checkout through the installed SDK's verified contract. Restrict success
+   and return URLs to approved Mail/Pay routes. Unknown create outcome reconciles
+   the same intent rather than blindly creating another subscription.
+4. Return from checkout shows payment pending until a verified webhook/readback
+   confirms entitlement. Client success parameters never grant access.
+
+Extend the existing Pay webhook adapter and
+[Polar signature verification](https://polar.sh/docs/integrate/webhooks/delivery).
+Verify the exact raw body with the official SDK, timestamp and signature headers
+before parsing/dispatch. Enforce body size, environment, organization, product,
+customer/workspace and checkout-intent binding. Unique webhook receipt and
+entitlement update commit atomically; duplicates acknowledge the durable receipt,
+not a half-finished side effect. Out-of-order events trigger a bounded authoritative
+subscription readback instead of reverting newer state. A durable inbox permits
+fast acknowledgement after persistence and bounded Cloudflare processing; failures
+before persistence return retryable errors. Do not log signatures or whole payloads.
+
+Active confirmed paid state grants quota. Canceled-at-period-end retains paid quota
+to the verified effective end; immediate revocation ends it immediately. Downgrades
+are scheduled for the next paid boundary by default; upgrades activate after the
+verified payment/state transition. Pending/unpaid/expired cannot grant paid quota.
+Proposed past-due behavior is free quota while preserving content; confirm this
+against Polar payment-recovery behavior before launch. Refunds/chargebacks require
+reconciliation and explicit revocation rules; no automatic subscription deletion
+or retroactive quota refund. Scheduled campaigns revalidate at execution; paused
+campaigns and subscriber exports remain visible within permissions.
+
+### Sandbox acceptance plan
+
+Phase 1 performs no provider writes. Later use a dedicated
+[Polar sandbox](https://polar.sh/docs/integrate/sandbox), sandbox API/token/webhook
+secret and sandbox catalog IDs. The environment is separate from production;
+assert endpoint/organization before each setup action. Never fall back to production
+when credentials are absent. Current sandbox confirmation emails have recipient
+restrictions; lack of an email is not payment failure evidence.
+
+Create 500/day and 2,000/day test products, recurring prices and once/fixed/forever
+restricted discounts only in that sandbox. Exercise successful/failed checkout,
+invalid/expired/exhausted coupon, duplicate click, abandoned checkout, renewal,
+upgrade/proration, downgrade, scheduled and immediate cancellation, recovery,
+refund/chargeback where supported and portal return. Use supported test payment
+methods. Test forged/stale signatures, raw-body mutation, duplicate and reordered
+events, processing crash after receipt, wrong workspace/product/merchant/environment,
+subscription duplication and unknown provider writes. Freeze clocks for day/month
+boundaries. Unsupported lifecycle simulations use labeled fixtures and remain a
+hosted acceptance gap. Keep a redacted evidence matrix with product IDs privately;
+never put keys or customer data in PRs.
+
+## UX specification
+
+### Infrastructure platform console
+
+Add **Newsletter approvals** under platform administration: workspace, domain and
+sender review tabs, pending counts, age, risk filters and detail panels. Detail
+shows submitted identity/consent evidence, exact DNS results and timestamps,
+provider eligibility, previous decisions and associated workspace. Approve/reject
+needs a reason and current revision; suspend/revoke is always available with
+appropriate authority. No one-click bulk approval in the first release. Access
+requesters see actionable rejection reasons without internal risk notes.
+
+**Sending health** shows queue lag, oldest unknown send, feedback freshness,
+delivery/bounce/complaint rates with sample sizes, suppression sync state,
+provider capacity, budget reserved/spent/remaining and stop status. Scoped and
+global Stop controls show persisted generation and in-flight uncertainty; resume
+requires review and a fresh bounded lease. Domain setup displays DNS instructions
+and state even while approval is pending. Existing Infrastructure global templates,
+blacklist and transactional queue remain distinct destinations.
+
+### Mail newsletter workspace
+
+Add Newsletter as a first-class workspace destination. Any eligible workspace
+member can discover the request/status screen without creating an internal Mail
+mailbox. Approved users reach Campaigns, Audiences, Templates, Domains & senders,
+and Plan & usage. Build the access bootstrap separately from inbox-only corporate
+admission so customers can use newsletters without access to staff mailboxes.
+
+- **Access request:** business/contact, expected content/volume and audience consent
+  inputs; submitted/pending/rejected/suspended states, timestamps and recovery.
+  Billing stays unavailable until required eligibility is established.
+- **Audiences and lists:** subscriber status/consent timeline, tags and segments,
+  search and permission-gated export; bounded CSV import with preview, field map,
+  duplicate/suppressed counts, consent evidence and resumable errors. Neutralize
+  spreadsheet formulas in exports. Lists do not override workspace opt-out.
+- **Composer and templates:** subject/preheader, approved sender, accessible rich
+  text and plain-text version, desktop/mobile preview, safe merge-field allowlist,
+  autosaved version history and test send. Mandatory identity/unsubscribe footer
+  cannot be removed. Sanitize HTML; no scripts, arbitrary template execution or
+  remote server-side URL fetches. Show missing fields before scheduling.
+- **Scheduling:** explicit timezone plus resolved send date/offset; persist UTC
+  instant and IANA zone, resolve DST ambiguity explicitly. Review audience count,
+  exclusions, quota, estimated cost and readiness, then confirm immutable revision.
+  Scheduling creates a durable Cloudflare-owned job, not a browser timer.
+- **Campaigns and analytics:** draft/scheduled/sending/paused/completed/canceled,
+  recipient-level authorized outcomes, unknown counts, progress and bounded retry
+  recovery. Accepted and delivered are separate. Do not promise inbox placement.
+- **Domain and sender setup:** step-by-step DNS rows, copy controls, last checked,
+  next check/expiry, independent verification and approval badges, denial reason
+  and bounded retry. Explain Cloudflare DNS eligibility before collecting payment.
+- **Plan and usage:** daily accepted/unknown/reserved and remaining quota, UTC reset
+  instant rendered locally, current price/discount duration/next price, payment
+  state, upgrade/coupon entry and manage/cancel link. Show both plan and safety
+  ceilings when the latter limits sends; avoid misleading unused-capacity claims.
+
+Every new label/error goes into EN and VI bundles in every shipping shared surface;
+run `bun i18n:sort`. Update each app's `navigation.tsx` aliases, children, icons and
+permissions. Use existing shell hierarchy and accessible status text/focus handling,
+not color-only states, native dialogs or hard-coded hue classes. Keep new files
+under 700 LOC and split components near 200 LOC. Browser verification uses admitted
+M4/other eligible hosts, never sonha for this task.
+
+## Security and threat model
+
+| Threat | Required prevention and regression |
+| --- | --- |
+| Domain/sender spoofing | Exact verified domain/address, proof expiry, independent review, aligned authentication, header injection rejection; test subdomain/lookalike/Unicode and domain-transfer cases. |
+| Open relay / stolen workspace | No public send API; fresh actor/permission/approval, recipient consent, immutable campaign, test-send limits, MFA/step-up for high-risk operations; test direct API bypass. |
+| Quota bypass / double spend | Atomic claim + quota + spend, stable IDs, environment binding, no resets on upgrade/restart, per-workspace aggregate concurrency; test parallel requests and midnight. |
+| Webhook forgery / replay | Polar raw-body verification and trusted Cloudflare event queue; receipt dedupe, merchant/resource binding, stale-event reconciliation; test mixed environments and replay. |
+| Tenant leakage | Composite tenant FKs, explicit API membership, narrow RPCs/RLS, storage authorization and cross-workspace negative tests for every resource/export. |
+| PII and content exposure | Private R2/DB, encryption/key rotation, minimal logs, redacted audit, bounded retention, expiring authorized downloads, delete/export workflows and queue deletion fences. |
+| Template/import attacks | HTML sanitization, isolated previews, no template code execution, import size/row limits, CSV formula protection, malware/URL policy without unbounded fetches. |
+| Operator abuse / compromised stop path | Exact corporate verified identity plus platform permission, append-only decisions, step-up and scoped credentials, tested independent control-plane shutdown. |
+
+No secrets in `workspace_secrets` projections, client bundles, analytics or audit.
+Store provider credentials in the established server secret mechanism; workspace
+rows contain references/configuration only. Do not read or print existing secrets
+to inventory them. Independent security review is required before integrating
+identity, RLS, billing, webhook or Worker control changes. Open critical/high
+findings retain the repository release hold.
+
+## Delivery plan and review boundaries
+
+Each row is a small PR boundary; split a row further if its implementation exceeds
+a reviewable scope. Use native GitHub stacks only for real dependencies; independent
+UI scaffolding and provider research can be separate. The integration owner owns
+merge/promotion. This draft PR is never merged by the design child.
+
+| Phase / PR | Dependencies and deliverable | Risk / decisions | Required tests and acceptance |
+| --- | --- | --- | --- |
+| 1. Design (this PR) | Inventory, decisions, architecture and docs navigation only | Low; resolve open questions below | Docs links/frontmatter/navigation and changed-file gate; no runtime claim. |
+| 2. Provider feasibility | After design: documented marketing permission, customer-zone delegation, account capacity and API/SDK compatibility spike, default off | High; Cloudflare confirmation, account ownership, margins/caps | Disposable hosted domain proof, DNS alignment, header/DKIM capture, trusted feedback and provider unknown-outcome contract. No customer rollout. |
+| 3a. Add-on schema | After decisions: catalog/subscriptions/promotions/receipts, pure entitlement resolver | High; coupon lifetime and cancellation policy | Applied isolated migration, pgTAP RLS/grants/search-path, duplicate subscription, pure resolution boundaries. |
+| 3b. Newsletter approval schema | Can parallel 3a after 2: workspace/domain/sender approval, audit and control generations | High; approver permission and retention | Lock rehearsal, cross-tenant/actor/revision negatives, state transition and suspension tests. |
+| 4a. Polar checkout | Stack on 3a: product classification, bound intents and sandbox-only setup adapter | High; prices, subsidy, proration | Checkout intent duplication, wrong merchant/env, unknown create; hosted sandbox checkout receipt. |
+| 4b. Polar lifecycle | Stack on 4a: verified inbox/webhook, reconcile, downgrade/cancel | High; recovery/refund policy | Full sandbox matrix, forged signatures, replay/order/crash; existing tier/credit-pack regressions. |
+| 5a. Domain/sender APIs | Stack on 3b and 2: proofs, approval mutations and bounded Cron Control verification | High; customer delegation | DNS fixtures, poll exhaustion, expiry, transfer, permission removal and Worker stop/reschedule races. |
+| 5b. Infrastructure console | Stack on 5a: workspace/domain/sender decisions and audit views | Medium | EN/VI, keyboard/accessibility, stale decisions, unauthorized direct calls and admitted browser QA. |
+| 6a. Audience foundation | Stack on 3b: subscriber/list/consent/import/suppression model and APIs | High; lawful basis and retention | Applied migrations, import bounds, consent/withdrawal/deletion races, CSV and tenant negatives. |
+| 6b. Unsubscribe + feedback | Stack on 6a and 2: RFC 8058 endpoint, provider events and suppression sync | High; DKIM/feedback support | Received header evidence, scanner GET/noninteractive POST, duplicate/late events, queue trust and outage pause. |
+| 7a. Campaign authoring | Stack on 6a and 5a: templates, revisions, composer and request/setup UX | Medium | Sanitization/merge fields, autosave conflicts, EN/VI and accessible desktop/mobile browser flows. |
+| 7b. Send ledger and caps | Stack on 3a/3b/6b: quota, spend, outbox, stop and finite leases; no live sending | High; numeric budgets | Parallel quota races, midnight/DST, upgrade/downgrade, duplicate outbox, crash and unknown-state tests with counted operations. |
+| 8a. Cloudflare fan-out | Stack on 7b: schedule dispatch, queue consumer and transport | High; provider gate must be closed out | Real isolated Worker + emitted CI artifact, poison/no-progress/empty/expiry/restart/stop races, maximum operation counts. |
+| 8b. Mail management | Stack on 7a/8a/4b: scheduling, usage, coupons, portal and analytics | Medium | End-to-end sandbox billing to quota, paused/rejected/unknown recovery, EN/VI/navigation and browser QA. |
+| 9. Operations and pilot | After all above: Infrastructure health/stop UI, dashboards/runbook, approved limited pilot | High; explicit promotion and legal/provider approval | Exact-SHA CI builds, staged migrations, hosted stop/revoke and residual cost proof, real bounce/unsubscribe tests, rollback rehearsal and customer acceptance. |
+
+Local verification stays build-free; queue heavy tests/type checks through
+`ttr resources` and use an admitted devbox where appropriate. CI must run applicable
+lint/type/test and real app/Worker builds on the exact commit. Do not run
+`bun validate` or app release builds on this machine. Required database reset tests
+run only in an admitted isolated environment. Production cutover, Polar live
+catalog writes and customer sending need separate release authorization and proof.
+
+## Open questions for the user
+
+1. Can we obtain Cloudflare approval for newsletters/resale, and should v1 accept
+   only customer domains with a proven Cloudflare DNS/account delegation path?
+2. Is $2/month for 2,000/day a subsidized separate plan; for how long, for which
+   workspaces, and what price/quota applies afterward? Both example paid offers
+   can cost more in email alone than their subscription revenue at full usage.
+3. Accept UTC daily quotas and next-period downgrades, with free quota on past-due?
+4. Who approves newsletters, what are the global/workspace spend caps, and what
+   consent-evidence/PII retention and legal review are required for the pilot?
