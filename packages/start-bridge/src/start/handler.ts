@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
+import { type AssetsBinding, fetchAsset } from '../core/assets';
 import { type BasePath, createBasePath } from '../core/base-path';
 import { createNonce } from '../core/csp';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
@@ -16,9 +17,7 @@ import {
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
 
-export interface AssetsBinding {
-  fetch(request: Request): Promise<Response>;
-}
+export type { AssetsBinding } from '../core/assets';
 
 export interface BridgeHandlerOptions<Env, Ctx> {
   /** Where this artifact is served; the base is resolved per request. */
@@ -116,7 +115,7 @@ export function createBridgeHandler<
     ) {
       const assets = options.assets(env);
       if (!assets) throw new Error('Assets binding is unavailable');
-      response = await assets.fetch(base.stripRequest(request) ?? request);
+      response = await fetchAsset(assets, base.stripRequest(request) ?? request);
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;

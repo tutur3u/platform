@@ -1,3 +1,7 @@
+import {
+  type AssetsBinding,
+  fetchAsset,
+} from '@tuturuuu/start-bridge/assets';
 import type { ClickGeolocation } from '../link/analytics';
 import { clickRecord, trackClick } from '../link/analytics';
 import { rawSearch } from '../link/destination';
@@ -7,7 +11,8 @@ import type { ShortLinkStore } from '../link/store';
 import { verifyShortLinkPassword } from '../link/verify';
 
 export interface ShortenerEnvironment {
-  ASSETS: { fetch(request: Request): Promise<Response> };
+  /** The Workers assets binding, typed portably (see `fetchAsset`). */
+  ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
   SHORTENER_HOME_URL?: string;
   SHORTENER_CANONICAL_HOST_ENABLED?: string;
@@ -178,7 +183,7 @@ export async function shortenerRequest(
       false
     );
   if (url.pathname.startsWith('/assets/') || PUBLIC_FILES.has(url.pathname))
-    return finalize(request, await env.ASSETS.fetch(request), false);
+    return finalize(request, await fetchAsset(env.ASSETS, request), false);
   if (url.pathname.startsWith('/_serverFn/'))
     return finalize(request, await deps.renderPage(request, null), true);
   return finalize(
