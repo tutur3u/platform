@@ -33,7 +33,19 @@ export default defineBridgeAppConfig<StorefrontApiEnvironment>({
   wrapResponse(response, { request }) {
     const result = new Response(response.body, response);
     result.headers.set('X-Robots-Tag', 'noindex, nofollow');
-    result.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+    const csp = result.headers.get('Content-Security-Policy');
+    const directives =
+      csp
+        ?.split(';')
+        .filter(
+          (directive) =>
+            directive.trim() &&
+            !/^frame-ancestors(?:\s|$)/iu.test(directive.trim())
+        ) ?? [];
+    result.headers.set(
+      'Content-Security-Policy',
+      [...directives, "frame-ancestors 'none'"].join('; ')
+    );
     result.headers.set('X-Frame-Options', 'DENY');
     result.headers.set('X-Content-Type-Options', 'nosniff');
     result.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
