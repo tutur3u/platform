@@ -6,6 +6,8 @@ before the seal is trusted.
 """
 import importlib.util
 import os
+import json
+import sys
 from pathlib import Path
 
 WORKER = "tuturuuu-passwords"
@@ -40,7 +42,37 @@ def load():
     return module
 
 
+def prepare(directory):
+    # Void emits public build inputs for local preview; never seal that env file.
+    path = Path(directory) / "dist/server/.dev.vars"
+    if not path.exists():
+        return
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 4096:
+        raise ValueError("invalid build environment artifact")
+    expected = {
+        "NEXT_PUBLIC_SUPABASE_URL": "https://passwords-ci.supabase.invalid",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_passwords_ci_placeholder",
+    }
+    found = {}
+    for line in path.read_text().splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        key, separator, value = line.partition("=")
+        if not separator or key not in expected or key in found:
+            raise ValueError("unreviewed build environment key")
+        try:
+            found[key] = json.loads(value)
+        except (ValueError, TypeError):
+            raise ValueError("invalid build environment encoding") from None
+    if found != expected:
+        raise ValueError("unreviewed build environment value")
+    path.unlink()
+
+
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == "prepare":
+        prepare(sys.argv[2])
+        return
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
     if "PASSWORDS_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["PASSWORDS_SOURCE_SHA"]

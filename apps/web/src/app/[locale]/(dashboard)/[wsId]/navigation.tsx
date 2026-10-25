@@ -73,7 +73,7 @@ export async function WorkspaceNavigationLinks({
   user?: NavigationUser | null;
 }) {
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-  const [supabase, { getTranslations }, workspaceNavigationHelpers] =
+  const [supabase, { getTranslations, getLocale }, workspaceNavigationHelpers] =
     await Promise.all([
       createNavigationSupabaseClient(),
       import('next-intl/server'),
@@ -585,6 +585,8 @@ export async function WorkspaceNavigationLinks({
     // ── Vertical 5: More (collapsed features) ──
     createMoreToolsNavigation({
       t,
+      locale: await getLocale(),
+      canAccessPasswords: workspacePermissions.membershipType === 'MEMBER',
       personalOrWsId,
       resolvedWorkspaceId,
       ENABLE_AI_ONLY,

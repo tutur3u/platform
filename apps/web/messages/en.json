@@ -27126,5 +27126,8 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
+  },
+  "passwords_vault": {
+    "title": "Passwords"
   }
 }

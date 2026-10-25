@@ -3,6 +3,7 @@ import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import type { getTranslations } from 'next-intl/server';
 import { DEV_MODE } from '@/constants/env';
 import { createTierRequirement } from '@/lib/feature-tiers';
+import { getPasswordsAppOrigin } from '@/lib/passwords-app-url';
 import {
   createDashboardNavigationIcon,
   type DashboardNavigationLink,
@@ -10,6 +11,8 @@ import {
 
 type MoreToolsInput = {
   t: Awaited<ReturnType<typeof getTranslations>>;
+  locale: string;
+  canAccessPasswords: boolean;
   personalOrWsId: string;
   resolvedWorkspaceId: string;
   ENABLE_AI_ONLY: boolean;
@@ -36,6 +39,8 @@ type MoreToolsInput = {
 
 export function createMoreToolsNavigation({
   t,
+  locale,
+  canAccessPasswords,
   personalOrWsId,
   resolvedWorkspaceId,
   ENABLE_AI_ONLY,
@@ -58,6 +63,19 @@ export function createMoreToolsNavigation({
     title: t('sidebar_tabs.more_tools'),
     icon: createDashboardNavigationIcon('SquareChevronRight', 'h-5 w-5'),
     children: [
+      {
+        id: 'passwords',
+        title: t('passwords_vault.title'),
+        href: `${getPasswordsAppOrigin()}/${locale}/${personalOrWsId}`,
+        aliases: [
+          `/${personalOrWsId}/passwords`,
+          `/${personalOrWsId}/passwords/*`,
+        ],
+        icon: createDashboardNavigationIcon('Lock', 'h-5 w-5'),
+        external: true,
+        disabled: !canAccessPasswords || !process.env.PASSWORDS_APP_URL,
+        preferenceSectionLabel: sidebarSections.workTools,
+      },
       {
         id: 'personal_journal',
         title: t('personal_journal.title'),

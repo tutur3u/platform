@@ -27133,5 +27133,8 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "passwords_vault": {
+    "title": "Mật khẩu"
   }
 }
