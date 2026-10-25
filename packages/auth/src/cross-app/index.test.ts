@@ -44,6 +44,25 @@ function searchParamsWithNextUrl(nextUrl: string) {
   return new URLSearchParams({ nextUrl });
 }
 
+it('verifies a mounted callback at its app-owned endpoint', async () => {
+  const fetcher = vi.fn(async () =>
+    Response.json({ appSessionCreated: true, userId: 'mounted-user' })
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const router = createMockRouter();
+  await verifyRouteToken({
+    token: 'mounted-endpoint-token',
+    router,
+    searchParams: searchParamsWithNextUrl('/personal/meetings'),
+    verifyApiPath: '/meet/api/auth/verify-app-token',
+  });
+  expect(fetcher).toHaveBeenCalledWith(
+    '/meet/api/auth/verify-app-token',
+    expect.objectContaining({ method: 'POST' })
+  );
+  expect(router.push).toHaveBeenCalledWith('/personal/meetings');
+});
+
 describe('mapUrlToApp', () => {
   it('maps the CMS production URL to the cms app', () => {
     expect(

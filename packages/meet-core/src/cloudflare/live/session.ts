@@ -19,6 +19,7 @@ import {
   finalizeSessionBilling,
   settlePublicBillings,
 } from './finalize-billing';
+import { acceptsLiveOrigin } from './origin';
 import { connectLiveProvider, drainLiveProvider } from './provider';
 import { LiveTranscriptPublisher } from './publish-transcript';
 import { LiveRegistryQueue } from './registry';
@@ -186,10 +187,11 @@ export class MeetLiveDurableObject {
     )
       return new Response('Unauthorized', { status: 401 });
     if (
-      request.headers.get('Origin') !==
-        (saved.claims.app === 'parley'
-          ? this.env.PARLEY_APP_URL
-          : this.env.NEXT_PUBLIC_APP_URL) ||
+      !acceptsLiveOrigin(
+        request.headers.get('Origin'),
+        saved.claims.app,
+        this.env
+      ) ||
       request.headers.get('Upgrade') !== 'websocket'
     )
       return new Response('Forbidden', { status: 403 });

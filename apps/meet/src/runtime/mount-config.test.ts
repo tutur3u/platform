@@ -76,4 +76,9 @@ it('keeps the staging profile off canonical hosts', () => {
   expect(
     isMeetStagingCanonical(new Request('https://tuturuuu.com/meet'), env)
   ).toBe(false);
+  for (const host of ['www.tuturuuu.com', 'www.meet.tuturuuu.com']) {
+    expect(
+      isMeetStagingCanonical(new Request(`https://${host}/meet`), staging)
+    ).toBe(true);
+  }
 });

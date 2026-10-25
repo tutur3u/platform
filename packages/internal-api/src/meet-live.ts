@@ -1,4 +1,5 @@
-import { getInternalApiClient, type InternalApiClientOptions } from './client';
+import type { InternalApiClientOptions } from './client';
+import { getMeetApiClient } from './meet-client';
 export type MeetPrivateMemory = {
   id: string;
   content: string;
@@ -6,7 +7,7 @@ export type MeetPrivateMemory = {
   created_at: string;
 };
 export function readMeetPrivateMemory(options?: InternalApiClientOptions) {
-  return getInternalApiClient(options).json<{
+  return getMeetApiClient(options).json<{
     enabled: boolean;
     memories: MeetPrivateMemory[];
   }>('/api/meet-live/memory', { cache: 'no-store' });
@@ -23,7 +24,7 @@ export function updateMeetPrivateMemory(
     | { action: 'delete'; id: string },
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ ok: boolean }>(
+  return getMeetApiClient(options).json<{ ok: boolean }>(
     '/api/meet-live/memory',
     {
       method: 'POST',
@@ -59,7 +60,7 @@ export function controlMeetLive(
   meetingId: string,
   command: LiveStart | { action: 'resume' | 'stop'; sessionId: string }
 ) {
-  return getInternalApiClient().json<LiveConnection | { ok: boolean }>(
+  return getMeetApiClient().json<LiveConnection | { ok: boolean }>(
     `/api/meet-live/${encodeURIComponent(meetingId)}`,
     {
       method: 'POST',
@@ -73,7 +74,7 @@ export function reviewMeetLiveTool(
   meetingId: string,
   payload: { sessionId: string; reviewId: string; approved: boolean }
 ) {
-  return getInternalApiClient().json<{ ok: boolean }>(
+  return getMeetApiClient().json<{ ok: boolean }>(
     `/api/meet-live/${encodeURIComponent(meetingId)}/review`,
     {
       method: 'POST',

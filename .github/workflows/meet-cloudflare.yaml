@@ -142,6 +142,9 @@ jobs:
       - name: Test Meet public callback and current account assurance
         working-directory: apps/meet
         run: bun x --no-install vitest run --config vitest.native-auth.config.ts --maxWorkers=1
+      - name: Test mounted Live Worker to DO admission
+        working-directory: apps/meet
+        run: bun x --no-install vitest run --config vitest.worker.config.ts --maxWorkers=1
       - name: Test bounded Meet SSR diagnostics
         working-directory: apps/meet
         run: bun x --no-install vitest run --config vitest.config.ts src/runtime/ssr-diagnostics.test.ts src/runtime/ssr-error-boundary.test.tsx src/runtime/login-redirect-diagnostics.test.ts src/runtime/handler-start-handoff.test.ts src/runtime/proxy-bridge.test.ts --maxWorkers=1

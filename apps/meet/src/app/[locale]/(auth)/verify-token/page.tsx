@@ -1,1 +1,1 @@
-export { default } from '@tuturuuu/satellite/verify-token-page';
+export { default } from '../../../../runtime/verify-token-page';

@@ -269,6 +269,22 @@ CSRF checks and the canonical authorization suppliers. Intentional credentialed
 guest actions remain scoped to the existing plan policy. Confirmed mutations
 invalidate the native loader; denied or uncertain results do not report success.
 
+The mounted Meet surface shares Tuturuuu's root session. The bridge preserves
+cookie names and paths. Logout is global and uses Web's root account/logout
+endpoints; it must not become a Meet-only logout. Meet-owned refresh and token
+verification resolve below `/meet/api/auth` on the mounted surface and below
+`/api/auth` on the subdomain. Shared-session security acceptance remains a
+cutover requirement. Coverage includes `auth-api-url.test.ts` and the mounted
+callback case in `packages/auth/src/cross-app/index.test.ts`.
+
+Both the Meet Worker and the Live Durable Object check the browser document
+origin independently of the mount path. Meet accepts configured subdomain and
+apex document origins at the DO boundary; the Worker additionally binds the
+origin to the requested surface. Parley's existing origin restriction remains.
+`apps/meet/cloudflare/worker-live-origin.test.ts` drives the real Worker-to-DO
+dispatch and stops at a fixture room-context supplier before provider work.
+Hosted WebSocket, SFU and TURN acceptance is separate.
+
 The owning workflow must verify emitted server/client boundaries, bilingual SSR,
 SSO redirects, logout cookies, API forwarding, static assets and Live admission.
 The artifact-dependent suite is `scripts/ci/meet-cloudflare-render.runtime.mjs`;

@@ -35,8 +35,8 @@ export function isMeetStagingCanonical(
 ) {
   return (
     env.TUTURUUU_NOINDEX === '1' &&
-    ['meet.tuturuuu.com', 'tuturuuu.com'].includes(
-      new URL(request.url).hostname
+    [...meetMounts().rootHosts, ...meetMounts().mountHosts].some((host) =>
+      [host, `www.${host}`].includes(new URL(request.url).host)
     )
   );
 }

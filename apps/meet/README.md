@@ -154,8 +154,10 @@ Portable libraries do not depend on the private bridge or a framework runtime.
 The staging profile sets `TUTURUUU_NOINDEX=1`: documents receive a noindex header
 and canonical hosts are rejected. It declares no routes and does not publish a
 Worker. Per the user's shared-session decision, the bridge never renames or
-path-scopes cookies. Mounted auth and global logout still require the auth
-owner's implementation and independent security review before cutover.
+path-scopes cookies. Mounted apps share the root session; logout remains global
+through Web's root endpoints. App-owned refresh and token verification use
+`/meet/api/auth/*` on the mounted surface and `/api/auth/*` on the subdomain.
+Shared-session security acceptance remains required before cutover.
 
 The temporary build command uses `vp build --configLoader runner`, as the shared
 bridge owner directs for the TypeScript config preset. Exact-artifact validation

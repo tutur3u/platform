@@ -16,6 +16,7 @@ export interface LiveEnvironment {
   NEXT_PUBLIC_SUPABASE_URL: string;
   SUPABASE_SECRET_KEY: string;
   NEXT_PUBLIC_APP_URL: string;
+  APP_ORIGIN?: string;
   PARLEY_APP_URL?: string;
   MEET_REALTIME_URL: string;
 }
