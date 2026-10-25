@@ -13,10 +13,13 @@ import {
 } from './abuse-protection/edge-trust';
 import { guardApiProxyBody } from './api-proxy-body';
 import {
+  DEFAULT_TRUSTED_BYPASS_RULES,
+  type TrustedProxyBypassRule,
+} from './api-proxy-bypass-rules';
+import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
 } from './api-proxy-read-policy';
-import { DEV_MODE } from './constants';
 import { guardOfflineDownloadRequest } from './offline-download-guard';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import { enforceRequiredMfaRequest } from './required-mfa-runtime';
@@ -82,9 +85,7 @@ export type ProxyRoutePolicy = {
   rateLimits: RateLimitProfile;
 };
 
-export type TrustedProxyBypassRule = {
-  matches: (pathname: string, headers: Headers) => boolean;
-};
+export type { TrustedProxyBypassRule } from './api-proxy-bypass-rules';
 
 export type GuardOptions = {
   /** Reuse the actor already verified by the MFA guard for opted-in routes. */
@@ -568,62 +569,6 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   },
 ];
 
-function hasBearerToken(headers: Headers, secrets: Array<string | undefined>) {
-  const authHeader = headers.get('authorization');
-  if (!authHeader) {
-    return false;
-  }
-
-  return secrets.some(
-    (secret) => !!secret && authHeader === `Bearer ${secret}`
-  );
-}
-
-function hasHeaderToken(
-  headers: Headers,
-  headerName: string,
-  secrets: Array<string | undefined>
-) {
-  const headerValue = headers.get(headerName);
-  if (!headerValue) {
-    return false;
-  }
-
-  return secrets.some((secret) => !!secret && headerValue === secret);
-}
-
-const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/cron' || pathname.startsWith('/api/cron/')) &&
-      (hasBearerToken(headers, [
-        process.env.CRON_SECRET,
-        process.env.VERCEL_CRON_SECRET,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-      ]) ||
-        hasHeaderToken(headers, 'x-cron-secret', [
-          process.env.CRON_SECRET,
-          process.env.VERCEL_CRON_SECRET,
-        ]) ||
-        hasHeaderToken(headers, 'x-vercel-cron-secret', [
-          process.env.CRON_SECRET,
-          process.env.VERCEL_CRON_SECRET,
-        ])),
-  },
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/v1/webhooks' ||
-        pathname.startsWith('/api/v1/webhooks/')) &&
-      !!process.env.SUPABASE_WEBHOOK_SECRET &&
-      headers.get('x-webhook-secret') === process.env.SUPABASE_WEBHOOK_SECRET,
-  },
-  // Migration APIs: bypass rate limit in DEV_MODE (routes already return 403 in production)
-  {
-    matches: (pathname, _headers) =>
-      pathname.startsWith('/api/v1/infrastructure/migrate/') && DEV_MODE,
-  },
-];
-
 function createRedisRateLimitBuckets(
   redis: UpstashRatelimitRedisClient,
   prefixBase: string,
@@ -1070,9 +1015,25 @@ function getRateLimitPrefix(
 export function isTrustedProxyBypassRequest(
   pathname: string,
   headers: Headers,
-  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES
+  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES,
+  method?: string
 ): boolean {
-  return trustedBypassRules.some((rule) => rule.matches(pathname, headers));
+  return trustedBypassRules.some((rule) =>
+    rule.matches(pathname, headers, method)
+  );
+}
+
+/** Same check for a whole request, so method-bound rules see the method. */
+export function isTrustedProxyBypassForRequest(
+  req: Pick<NextRequest, 'nextUrl' | 'headers' | 'method'>,
+  trustedBypassRules?: TrustedProxyBypassRule[]
+): boolean {
+  return isTrustedProxyBypassRequest(
+    req.nextUrl.pathname,
+    req.headers,
+    trustedBypassRules,
+    req.method
+  );
 }
 
 export function clearApiProxyGuardLimiterCache() {
@@ -1084,7 +1045,14 @@ export async function guardApiProxyRequest(
   options: GuardOptions
 ): Promise<NextResponse | null> {
   let authenticatedActor: string | null = null;
-  if (!isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)) {
+  if (
+    !isTrustedProxyBypassRequest(
+      req.nextUrl.pathname,
+      req.headers,
+      undefined,
+      req.method
+    )
+  ) {
     const assurance = await enforceRequiredMfaRequest(
       req,
       options.useVerifiedBearerActor
@@ -1112,7 +1080,8 @@ export async function guardApiProxyRequest(
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
       req.headers,
-      trustedBypassRules
+      trustedBypassRules,
+      req.method
     )
   ) {
     // Credential presence alone never grants an authenticated budget.

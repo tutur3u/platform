@@ -1222,6 +1222,37 @@ transient checkpoint failures display a delayed-backup warning. Editing continue
 and a successful checkpoint clears the warning. Rejoining restores the current
 backup status. The Worker rejects client-authored backup status notifications.
 
+The room Durable Object posts each checkpoint to the platform API from a Worker
+`fetch`, which carries no `User-Agent`. The web API proxy treats an anonymous
+`/api/*` request without one as scanner traffic (HTTP 400, with an egress IP
+block on repeat), so an unidentified checkpoint never reaches its route and the
+room keeps retrying and re-announcing "backup delayed". Behind that guard, the
+proxy's account-assurance step treats every other bearer token as a Supabase
+access token and answers 401 before the route runs, which rejects the Worker's
+HMAC ticket just the same. Every Worker-to-platform call therefore sends the
+shared service headers from `packages/realtime/src/core/service-request.ts`, and
+the proxy's default trusted-bypass rules exempt exactly the two checkpoint routes
+for a `POST` whose bearer verifies as an unexpired realtime service ticket with
+the audience and kind bound to that route (`tuturuuu.channels` /
+`document-checkpoint` for documents; `tuturuuu.collaboration` / `checkpoint` or
+`runner-files` for programming; `packages/utils/src/realtime-service-ticket.ts`).
+Other methods, path variants, audiences, kinds and ordinary JWTs fall through to
+the normal proxy checks. The route verifies the same ticket again together with
+its topic, ids and version. A ticket may be replayed within its 30 s lifetime;
+the route's checks decide the outcome and tickets are not single-use. The checkpoint route passes the private RPC status through (a `40001`
+conflict is HTTP 409, not 503) so the room reports a real conflict instead of an
+endless delay. Regression coverage:
+`apps/meet-realtime/src/channel-checkpoint-request.test.ts` (request identity and
+status mapping in the Durable Object), `realtime-service-ticket.test.ts` (proxy
+exemption bounds) and
+`apps/web/src/app/api/v1/realtime/documents/checkpoint/route.test.ts`.
+
+The shared document surface is the panel itself: padding lives on the editable
+area, the writing surface fills the panel height so a click below the last line
+still places the caret, and the surface shows no focus ring (the caret, remote
+cursors and toolbar state convey focus). `document-panel.test.tsx` asserts that
+class contract because jsdom computes no layout.
+
 Native mobile opens the same shared web rich-text and programming editors inside
 an authenticated app-owned WebView. This preserves Yjs, formatting, remote
 cursors, pointers, selections and reconnect behavior across web and mobile.
