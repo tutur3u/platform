@@ -68,6 +68,61 @@ void main() {
     }
   });
 
+  test('redacts credential-bearing field names, in English and Vietnamese', () {
+    // Plain values that no secret-shape scan would catch: only the name can.
+    const names = [
+      'recovery_phrase', 'auth', 'authCode', 'credential', 'cookie', //
+      'session', 'sessionId', 'jwt', 'seed', 'mnemonic', 'routing', //
+      'routingNumber', 'swift', 'swiftCode', 'tax_id', 'taxId', 'iban', //
+      'ssn', 'pin', 'otp', 'private_key', 'api_key', 'bearer', //
+      'sort_code', 'social_security', 'passport', 'national_id',
+    ];
+    const vietnameseLabels = [
+      'Mật khẩu', 'Tài khoản', 'Xác thực', 'Mã bảo mật', 'Khóa bí mật', //
+      'Cụm từ khôi phục', 'Mã số thuế', 'Số căn cước', 'Mã OTP',
+    ];
+    // Two forms: a form shares at most 30 fields.
+    final values = _values([
+      for (final name in names) _text(name, 'apple river window'),
+    ]);
+    for (final name in names) {
+      expect(values[name], redactedFieldValue, reason: name);
+    }
+    final vietnamese = _values([
+      for (final (i, label) in vietnameseLabels.indexed)
+        _text('vi$i', 'apple river window', label: label),
+    ]);
+    for (final (i, label) in vietnameseLabels.indexed) {
+      expect(vietnamese['vi$i'], redactedFieldValue, reason: label);
+    }
+  });
+
+  test('ordinary calendar and form labels stay unredacted', () {
+    const ordinary = {
+      'title': 'Title',
+      'notes': 'Notes',
+      'location': 'Location',
+      'description': 'Description',
+      'all_day': 'All day',
+      'start': 'Start date',
+      'end': 'End date',
+      'vi_title': 'Tiêu đề',
+      'vi_description': 'Mô tả',
+      'vi_all_day': 'Cả ngày',
+      'vi_start': 'Ngày bắt đầu',
+      'vi_end': 'Ngày kết thúc',
+      'vi_location': 'Địa điểm',
+      'vi_notes': 'Ghi chú',
+    };
+    final values = _values([
+      for (final MapEntry(:key, :value) in ordinary.entries)
+        _text(key, 'Team standup', label: value),
+    ]);
+    for (final key in ordinary.keys) {
+      expect(values[key], 'Team standup', reason: key);
+    }
+  });
+
   test('bounds records, fields and values', () {
     registry.register(
       Object(),
@@ -174,7 +229,10 @@ void main() {
     Widget host({required bool enabled, required bool mounted}) => TickerMode(
       enabled: enabled,
       child: mounted
-          ? const AssistantScreenContextScope(entry: entry, child: SizedBox())
+          ? const AssistantScreenContextScope.unscoped(
+              entry: entry,
+              child: SizedBox(),
+            )
           : const SizedBox(),
     );
 
@@ -332,7 +390,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: AssistantScreenContextScope(
+          child: AssistantScreenContextScope.unscoped(
             entry: AssistantScreenContextEntry(
               fields: [
                 AssistantFormFieldContext.text(
@@ -364,7 +422,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: AssistantScreenContextScope(
+          child: AssistantScreenContextScope.unscoped(
             entry: AssistantScreenContextEntry(
               fields: [
                 // Misleading names: only the real controls reveal secrecy.

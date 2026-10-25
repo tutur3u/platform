@@ -15,14 +15,18 @@ import 'package:mobile/l10n/l10n.dart';
 /// a calendar event.
 ///
 /// Returns the event data as a [Map] if saved, or `null` if dismissed.
+///
+/// [isCurrentScope] must return false once the workspace or account the form
+/// was opened for is no longer current; the form then stops sharing screen
+/// context with Mira and refuses to save.
 Future<Map<String, dynamic>?> showEventFormSheet(
   BuildContext context, {
+  required bool Function() isCurrentScope,
   CalendarEvent? event,
   DateTime? initialStartTime,
   String? timezone,
   GoogleCalendarColorOptions? providerColors,
   Future<GoogleCalendarColorOptions?>? providerColorsFuture,
-  bool Function()? isCurrentScope,
 }) {
   return showAppSheet<Map<String, dynamic>>(
     context: context,
@@ -39,12 +43,12 @@ Future<Map<String, dynamic>?> showEventFormSheet(
 
 class _EventFormContent extends StatefulWidget {
   const _EventFormContent({
+    required this.isCurrentScope,
     this.event,
     this.initialStartTime,
     this.timezone,
     this.providerColors,
     this.providerColorsFuture,
-    this.isCurrentScope,
   });
 
   final CalendarEvent? event;
@@ -52,7 +56,7 @@ class _EventFormContent extends StatefulWidget {
   final String? timezone;
   final GoogleCalendarColorOptions? providerColors;
   final Future<GoogleCalendarColorOptions?>? providerColorsFuture;
-  final bool Function()? isCurrentScope;
+  final bool Function() isCurrentScope;
 
   @override
   State<_EventFormContent> createState() => _EventFormContentState();
@@ -91,7 +95,7 @@ class _EventFormContentState extends State<_EventFormContent> {
     _initialProviderColor = _storedProviderColor(_providerColors);
     unawaited(
       widget.providerColorsFuture?.then((colors) {
-        if (!mounted || widget.isCurrentScope?.call() == false) return;
+        if (!mounted || !widget.isCurrentScope()) return;
         setState(() {
           _providerColors = colors;
           _initialProviderColor = _storedProviderColor(colors);
@@ -193,7 +197,7 @@ class _EventFormContentState extends State<_EventFormContent> {
       initial.minute == selected.minute;
 
   void _save() {
-    if (widget.isCurrentScope?.call() == false) {
+    if (!widget.isCurrentScope()) {
       setState(() => _dateTimeError = context.l10n.calendarEventUnavailable);
       return;
     }
@@ -295,7 +299,7 @@ class _EventFormContentState extends State<_EventFormContent> {
   AssistantScreenContextEntry _assistantContext(AppLocalizations l10n) {
     String when(DateTime date, TimeOfDay time) => _isAllDay
         ? DateFormat('yyyy-MM-dd').format(date)
-        : _combineDateAndTime(date, time).toIso8601String();
+        : calendarWallIso8601(_combineDateAndTime(date, time), widget.timezone);
     return AssistantScreenContextEntry(
       entities: [
         if (widget.event case final event?)

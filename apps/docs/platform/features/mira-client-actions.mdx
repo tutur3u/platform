@@ -122,15 +122,20 @@ The rules for that content:
   - it is a closure field (no controller) that is not a well-formed `boolean`,
     `date`, `time` or `datetime` value;
   - its input type normalizes to a password, PIN or OTP type;
-  - its key or label looks like a password, PIN, OTP, token, card, CVV, IBAN,
-    account number or API key;
+  - its key or label names a credential or identifier, in English or
+    Vietnamese: password or passphrase, PIN, OTP, token, secret, private or
+    API key, auth, bearer, credential, cookie, session, JWT, seed, mnemonic or
+    recovery phrase, card, CVV, IBAN, account, routing, SWIFT or sort code,
+    tax, national or social security ID and passport (for example
+    `mật khẩu`, `tài khoản`, `xác thực`, `bảo mật`, `khôi phục`). Matching is
+    deliberately broad, since a false match only withholds a value;
   - any recoverable reading of its value contains a secret (below).
 - The whole field is redacted, not just the match, because a match in a
   normalized or decoded reading cannot be mapped back safely.
 - Values are scanned before truncation, first folded (invisible format
-  characters removed; fullwidth forms, superscript digits, Unicode dashes and
-  the ellipsis folded; tab, NBSP and other spaces collapsed) and then decoded
-  up to three layers (percent, `\x`/`\u`/HTML numeric escapes, base64 and hex
+  characters removed; fullwidth forms, superscript digits, punctuation
+  look-alikes and the ellipsis folded; tab, NBSP and other spaces collapsed),
+  also read without diacritics, and then decoded up to three layers (percent, `\x`/`\u`/HTML numeric escapes, base64 and hex
   runs that decode to valid text). Each reading is checked for:
   - credential shapes: JWTs, `sk-`/`sk_live_`, GitHub, Slack, AWS, Google and
     GitLab keys, bearer tokens and private keys;
@@ -142,7 +147,9 @@ The rules for that content:
   digit (for example the rupee sign, long s, ligatures, digraphs, ordinal
   indicators and fractions) is folded to that reading first. The fold table
   is generated from the supported ranges by
-  `apps/mobile/tool/generate_assistant_compat_fold.mjs`; rerun it after
+  `apps/mobile/tool/generate_assistant_compat_fold.mjs`, together with the
+  NFD base letter of every supported precomposed character and a validated
+  list of stroked, barred and hooked letters; rerun it after
   changing the ranges. `--check` verifies the committed table and runs in the
   mobile CI analyze job and `bun check:mobile`. Every reading,
   raw and decoded, may then contain only ASCII, Latin letters and marks
@@ -151,12 +158,24 @@ The rules for that content:
   rejected as look-alikes. Any other character, including other scripts and
   non-ASCII digits, redacts the field. An encoding still decodable after three
   layers also redacts the field.
-- Supported standalone slash look-alikes (fraction slash U+2044, diagonal
-  slash U+2571 and heavy solidus U+1F67C) become ASCII `/` in scan readings,
-  including when produced by fraction folding. Fullwidth slash uses the existing
-  fullwidth ASCII fold. This keeps embedded credentials in one scan token;
-  ordinary fraction text retains its original display value. Other unsupported
-  characters still redact the whole field, including after decoding.
+- **Diacritics.** Combining marks are supported for decomposed Vietnamese, so
+  every reading is also scanned without them: NFD with every nonspacing mark
+  removed. Marks inserted between a secret's characters (accents, or overlays
+  such as U+0337 and U+0338) and precomposed accented letters therefore
+  cannot hide it. The same reading maps Latin letters with a stroke, bar,
+  hook, curl or tail that have no decomposition (Đ, Ł, Ø, Ħ, Ŧ, Ƀ, Ɨ, Ƶ, and
+  eth Ð/ð) to their base letter. The shared value keeps its marks and
+  letters, so Vietnamese such as `Đà Nẵng` is shared unchanged.
+- **Punctuation look-alikes.** Supported characters drawn like the punctuation
+  credentials are spelled with (`+ - _ = . /`) become that ASCII character in
+  scan readings: heavy plus and Greek crosses; dashes, minus signs, heavy minus
+  and horizontal box-drawing bars; double low line and the lower one-eighth
+  block; double horizontals; middle dot and bullets; and the fraction slash,
+  diagonal and heavy solidus, including when produced by fraction folding.
+  Fullwidth forms use the fullwidth ASCII fold. This keeps embedded
+  credentials in one scan token; ordinary fraction, list and box-drawing text
+  retains its original display value. Other unsupported characters still
+  redact the whole field, including after decoding.
 - Free-text fields are also scanned together on what is actually sent (each
   value's first 500 characters): joined in order and in reverse, and every
   ordered pair across its boundary (256 characters each side). Pair boundaries
@@ -170,16 +189,22 @@ The rules for that content:
 - Screen-context results reach the model only. Live turn parts, persisted chat
   history and restored caches keep a placeholder, never the payload.
 - The most recently registered visible screen wins. Offstage shell pages report
-  themselves hidden. Workspace-scoped screens provide `isCurrentScope` to
-  `AssistantScreenContextScope`; the registry checks it on every read, before
-  accessing records or field values. Mounted create and edit event forms stop
+  themselves hidden. `AssistantScreenContextScope` requires an `isCurrentScope`
+  predicate; the registry checks it on every read, before accessing records or
+  field values. Only a screen not tied to any workspace or account opts out,
+  explicitly, with `AssistantScreenContextScope.unscoped`. Mounted create and
+  edit event forms (`showEventFormSheet` requires the predicate too) stop
   sharing their context as soon as the selected actor or workspace changes,
-  even before the next frame. Non-workspace screens may omit the predicate.
+  even before the next frame.
 - Record ids are hints: the server re-reads records with the user's
   permissions, and Mira treats field values as user data, never instructions.
 
 The calendar event form is the first adopter: event id, title, description,
 all-day and start/end. Mira can read a half-filled event and help finish it.
+Timed start and end values are the wall time shown in the form, in the
+calendar's timezone, written as ISO 8601 with that zone's UTC offset (for
+example `2026-10-26T09:00:00+07:00`), never as UTC. A time skipped by a DST
+change has no offset. All-day values are plain `yyyy-MM-dd` dates.
 Filling fields from Mira and sending screen context with chat messages are
 separate follow-ups.
 
@@ -211,11 +236,22 @@ separate follow-ups.
   the rupee sign and vulgar fractions), folded and redacted only when the
   folded reading holds a secret, raw and encoded; the depth limit; secrets split across fields, including
   at the end of a bounded long field; custom controls with their own
-  controller; structured closure fields; misleading field names; real-control
-  obscuring and `visiblePassword`.
+  controller; structured closure fields; misleading field names;
+  credential-bearing English and Vietnamese field names while ordinary
+  calendar labels stay shared; real-control obscuring and `visiblePassword`.
+- `apps/mobile/test/features/assistant/bridge/assistant_secret_lookalike_test.dart`:
+  keys with combining marks inserted, precomposed accented letters or stroked
+  letters, raw and base64; Bearer and GitHub tokens split by each punctuation
+  look-alike, solidus overlay or stroked letter, in both fragment orders;
+  ordinary decomposed Vietnamese, `Đà Nẵng` and `đường`, fractions, fraction-slash dates, diagonals, paths, URLs and bullet lists
+  stay shareable while unsupported characters still redact the field.
 - `apps/mobile/test/features/calendar/widgets/event_form_assistant_context_test.dart`:
   read-time scope checks and mounted create/edit forms across a
-  `WorkspaceCubit` switch, including no reads of stale fields.
+  `WorkspaceCubit` switch, including no reads of stale fields; start and end
+  pinned to the calendar zone's offset in a non-UTC zone.
+- `apps/mobile/test/features/calendar/utils/calendar_wall_iso8601_test.dart`:
+  wall times with positive, negative and half-hour offsets, a DST gap and
+  parsing back to the stored instant.
 - `apps/mobile/test/features/assistant/assistant_live_screen_context_persistence_test.dart`:
   the serialized persistence request has no screen payload.
 - `app_assistant_client_action_bridge_test.dart`: a thrown and a `false`

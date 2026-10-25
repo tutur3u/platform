@@ -128,6 +128,7 @@ void main() {
           child: TextButton(
             onPressed: () => showEventFormSheet(
               context,
+              isCurrentScope: () => true,
               event: CalendarEvent(
                 id: 'event-1',
                 title: 'Standup',
@@ -159,7 +160,9 @@ void main() {
     };
     expect(fields['title'], 'Team standup');
     expect(fields['all_day'], 'false');
-    expect(fields['start'], startsWith('2026-10-26T09:00'));
+    // Wall time in the calendar zone (UTC+7) with its offset, never as UTC.
+    expect(fields['start'], '2026-10-26T09:00:00+07:00');
+    expect(fields['end'], '2026-10-26T10:00:00+07:00');
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
