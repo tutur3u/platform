@@ -1053,11 +1053,9 @@ exchanges the code using that same registered URI, clears state at its matching
 cookie path, and returns to the inbox under the serving mount. An unconfigured
 host fails closed. Existing subdomain configuration remains the default.
 
-The native cutover requires one sign-in on the apex and carries no session from
-the old host. A one-time reset of browser preferences is accepted; important
-preferences belong on the server. Webhooks, OAuth callbacks and WebSockets keep
-being served on the old subdomain. These rules apply to the Mail browser app;
-provider registration and production routes remain separate owner operations.
+Webhooks, OAuth callbacks and WebSockets also continue to be served on the old
+subdomain until it only redirects. Provider registration and production routes
+remain separate owner operations.
 Callback selection and both providers' mounted start/completion behavior are
 covered by `oauth-callback-url.test.ts`, `oauth.test.ts` and
 `oauth-callback.test.ts` under `apps/mail/src/lib/mail/connected/`.
