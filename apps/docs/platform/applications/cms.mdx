@@ -130,3 +130,21 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Production deployments run through `.github/workflows/vercel-production-cms.yaml`.
 - Both workflows are gated through `ci-check.yml` and the `tuturuuu.ts` workflow allowlist.
 - The Vercel project must be configured through the `VERCEL_CMS_PROJECT_ID` repository secret.
+
+## Native Start candidate
+
+The app's retained App Router pages and layouts are compiled through the
+shared Start bridge RSC adapter. Generate the native candidate with
+`node scripts/start-bridge-codemod/cli.mjs cms --apply`; rerun the generator
+instead of editing marked generated files. `bun run --cwd apps/cms
+type-check:cloudflare` checks the native entry and `bun run --cwd apps/cms
+build:cloudflare` runs the real Vite+ build on an admitted build host.
+
+The route registry compiles in the RSC environment so server-only imports
+retain their boundary. Server actions use the shared bridge action transport
+and existing CSRF checks. The router carries the request CSP nonce.
+
+The candidate supports the subdomain root and `/cms`; production remains on
+its existing publisher until an explicit cutover-preparation PR. That PR
+requires an app-specific enforced CSP policy, exact-source sealed artifact,
+runtime and authenticated browser acceptance, and an immediate rollback.
