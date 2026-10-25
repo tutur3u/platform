@@ -156,6 +156,10 @@ its fallback label. Keep the original filename, storage path and tuple assertion
 These controls require actual mobile CI execution; source preparation alone is
 not a passing test result.
 
+Byte-backed `XFile.fromData` fixtures need a nonempty `path` as well as `name`
+when testing filenames on the IO implementation. Assert the uploaded name and
+outbound summary rather than accepting an empty attachment label.
+
 ## Keep asynchronous Assistant fixtures in their owning zone
 
 Widget callbacks run in fake async, while a fixture may use real Hive/file I/O.
@@ -174,6 +178,32 @@ fake-owned Future from `runAsync` does not necessarily advance its source-zone
 continuations. A reduced cross-zone probe must attach its caller-owned completion
 bridge while the source is still pending and record explicit final completion;
 an empty exit-zero process is not proof that its awaited work finished.
+
+Page workspace bootstrap may disconnect a supplied Live socket. Open a controlled
+socket after that owned cleanup and assert its setup frame before testing sink
+admission. A seeded connected Cubit state alone does not establish an open sink.
+Create real file/cache operations and socket cancellation inside `runAsync`;
+passing a previously created fake-zone Future into it does not move its work.
+Keep the original dispatch, filename, ACK and retirement assertions.
+
+When advancing reconnect and readiness timers in a widget test, construct the
+Cubit inside that widget body. Ordinary `setUp` can put socket listeners and
+reconnect timers in a real zone while the watchdog runs in fake time. Hold and
+observe the actual replacement preparation so the clocks cannot conceal request
+supersession. `assistant_live_typed_dispatch_test.dart` covers this boundary.
+
+A retired send must leave shared setup in a terminal state, or under a newer
+preparation owner. Assert that state after abort and fence cleanup publication
+across native awaits. Count preparation attempts before retry or screen teardown
+awaits, so abandoned cleanup preserves a newer attempt before request admission.
+The latest rejected attempt settles inherited setup; teardown rechecks that
+ownership after native awaits.
+Notice guards must use the requested selection while a
+restore is pending; the previous loaded chat snapshot is not selection proof.
+`assistant_live_preparation_cases.dart` retains both same-chat recovery and
+no-notice controls for another conversation. Manual End needs a monotonic
+retirement fence independent of automatic recovery; resetting a connection flag
+must not revive a cancelled send during replacement preparation.
 
 Actor-ABA stream controls must establish that the actual response body is subscribed
 before retiring the actor/epoch. Complete an explicit handshake inside the existing

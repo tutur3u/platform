@@ -37,6 +37,7 @@ import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart';
@@ -103,6 +104,7 @@ class AssistantPage extends StatefulWidget {
     this.preferences,
     this.currentActor,
     this.liveRepository,
+    this.liveSocket,
   });
 
   final int replayToken;
@@ -110,6 +112,7 @@ class AssistantPage extends StatefulWidget {
   final AssistantPreferences? preferences;
   final String? Function()? currentActor;
   final AssistantLiveRepository? liveRepository;
+  final AssistantLiveSocketClient? liveSocket;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -216,7 +219,7 @@ class _AssistantPageState extends State<AssistantPage>
   late final AssistantLiveCubit _liveCubit = AssistantLiveCubit(
     currentScopeToken: () => _voiceActorScopeEpoch,
     repository: _liveRepository,
-    socket: AssistantLiveSocketClient(),
+    socket: widget.liveSocket ?? AssistantLiveSocketClient(),
     audioPlayer: AssistantLiveAudioPlayer(),
     recorder: AssistantLiveRecorder(),
     cameraService: AssistantLiveCameraService(),
@@ -569,7 +572,14 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _showInlineNotice(String message) {
-    showAppToast(context, message: message);
+    showAppToast(
+      context,
+      message: message,
+      bottomClearance: _composerReservedSpace(
+        context,
+        isComposerVisible: _isComposerVisible,
+      ),
+    );
   }
 
   double _composerReservedSpace(

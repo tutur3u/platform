@@ -12,6 +12,8 @@ import 'package:mobile/features/assistant/data/assistant_chat_persistence_contra
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
+import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
+import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
@@ -30,7 +32,15 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/helpers.dart';
+import '../live_dispatch_transport.dart';
+import '../widgets/assistant_component_raster.dart';
 import 'background_reply_harness.dart';
+
+part 'assistant_submission_timezone_cases.dart';
+part 'assistant_submission_async.dart';
+part 'assistant_live_dispatch_cases.dart';
+part 'assistant_live_preparation_cases.dart';
+part 'assistant_reply_feedback_render_cases.dart';
 
 const _actor = '33333333-3333-4333-8333-333333333333';
 const _workspace = '22222222-2222-4222-8222-222222222222';
@@ -156,8 +166,17 @@ AssistantTranscriptBubble _bubble(WidgetTester tester) => tester
     )
     .singleWhere((bubble) => bubble.text == 'Saved answer');
 
-Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
-  final h = BackgroundReplyHarness(repository: _Repository());
+Future<BackgroundReplyHarness> _mount(
+  WidgetTester tester, {
+  LiveDispatchTransport? transport,
+  AssistantLiveRepository? liveRepository,
+  _Repository? repository,
+  bool openTransport = true,
+  ThemeMode? themeMode,
+}) async {
+  final wire = transport ?? LiveDispatchTransport();
+  addTearDown(wire.dispose);
+  final h = BackgroundReplyHarness(repository: repository ?? _Repository());
   addTearDown(() => h.dispose(tester));
   SharedPreferences.setMockInitialValues({
     '$_actor::$assistantKeepLiveWhileBrowsingKeyPrefix$_workspace': true,
@@ -187,7 +206,8 @@ Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
           navigation: const SizedBox(height: 52),
           child: AssistantPage(
             repository: h.repository,
-            liveRepository: _LiveRepository(),
+            liveRepository: liveRepository ?? _LiveRepository(),
+            liveSocket: wire.socket,
             preferences: AssistantPreferences(
               currentUserId: () => h.auth.state.user?.id,
             ),
@@ -196,6 +216,7 @@ Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
         ),
       ),
     ),
+    themeMode: themeMode,
   );
   await tester.pumpAndSettle();
   h.pageContext = tester.element(find.byType(ShellDockPublisher));
@@ -207,6 +228,11 @@ Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
     await tester.pumpAndSettle();
   }
   expect(_composer(tester).chatCubit, same(h.chat));
+  expect(wire.admitted, isEmpty);
+  if (openTransport) {
+    await wire.open();
+    expect(wire.admitted.single, contains('setup'));
+  }
   return h;
 }
 
@@ -260,7 +286,11 @@ Future<void> _prepareDraft(
       wsId: _workspace,
       files: [
         GalleryPlatformFile(
-          XFile.fromData(Uint8List.fromList([1, 2, 3]), name: 'retained.txt'),
+          XFile.fromData(
+            Uint8List.fromList([1, 2, 3]),
+            name: 'retained.txt',
+            path: 'retained.txt',
+          ),
         ),
       ],
       modelId: 'synthetic-model',
@@ -272,6 +302,12 @@ Future<void> _prepareDraft(
 }
 
 void main() {
+  setUpAll(loadAssistantRenderFonts);
+  submissionTimezoneCases();
+  liveDispatchCases();
+  livePreparationCases();
+  replyFeedbackRenderCases();
+
   testWidgets('retained Live hides Reply and rejects a stale open sheet', (
     tester,
   ) async {
@@ -380,9 +416,14 @@ void main() {
         expect(composer.controller.value, draft);
         expect(h.chat.state.composerAttachments, attachments);
       }
-      await tester
-          .widget<AssistantLiveStageCard>(find.byType(AssistantLiveStageCard))
-          .onDisconnect();
+      final stage = tester.widget<AssistantLiveStageCard>(
+        find.byType(AssistantLiveStageCard),
+      );
+      await _driveSubmissionFuture(
+        tester,
+        stage.onDisconnect(),
+        reason: 'The actual End callback must finish before native resend.',
+      );
       await tester.pumpAndSettle();
       expect(live.state.status, AssistantLiveConnectionStatus.disconnected);
       final sending = _composer(tester).onSend();
@@ -516,7 +557,11 @@ void main() {
         wsId: _workspace,
         files: [
           GalleryPlatformFile(
-            XFile.fromData(Uint8List.fromList([1, 2, 3]), name: 'retained.txt'),
+            XFile.fromData(
+              Uint8List.fromList([1, 2, 3]),
+              name: 'retained.txt',
+              path: 'retained.txt',
+            ),
           ),
         ],
         modelId: 'synthetic-model',
@@ -568,6 +613,7 @@ void main() {
     expect(h.chat.state.replyTarget, same(nextReply));
     expect(composer.controller.value, nextDraft);
     expect(h.chat.state.composerAttachments, nextAttachments);
+    expect(find.text(_replyChangedNotice), findsNothing);
   });
 
   testWidgets(
@@ -596,10 +642,12 @@ void main() {
       await tester.pump();
       expect(completed, isTrue);
       await sending;
+      await tester.pump();
       expect(h.repository.starts, 0);
       expect(h.chat.state.replyTarget, isNull);
       expect(composer.controller.value, draft);
       expect(h.chat.state.composerAttachments, attachments);
+      expect(find.text(_replyChangedNotice), findsOneWidget);
     },
   );
 

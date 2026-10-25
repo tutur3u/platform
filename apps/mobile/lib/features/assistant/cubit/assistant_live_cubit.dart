@@ -16,6 +16,7 @@ import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_startup_timings.dart';
@@ -33,6 +34,7 @@ part 'assistant_live_state.dart';
 part 'assistant_live_tools.dart';
 part 'assistant_live_persistence.dart';
 part 'assistant_live_disposal.dart';
+part 'assistant_live_typed_submission.dart';
 
 /// Session-handle cleanup failed after local disconnect teardown completed.
 final class AssistantLiveSessionCleanupException implements Exception {
@@ -104,6 +106,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   StreamSubscription<AssistantLiveSocketEvent>? _socketSubscription;
   Completer<void>? _readyCompleter;
   int _requestVersion = 0;
+  int _preparationVersion = 0;
+  int _typedSubmissionVersion = 0;
+  int _transportFailureVersion = 0;
+  int _disconnectVersion = 0;
   int _conversationVersion = 0;
   Future<void> _pendingPersistence = Future<void>.value();
   final _sealedParts = <AssistantLiveTurnParts>{};
@@ -132,22 +138,38 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
 
   CameraController? get cameraController => _cameraService.controller;
 
-  Future<void> prepareSession({
+  Future<int?> prepareSession({
     required String wsId,
     String? chatId,
     String? model,
     bool forceFresh = false,
     bool reconnect = false,
+    bool Function()? isCurrent,
+    Future<void> Function(String wsId, String chatId)? onChatBound,
   }) async {
+    final preparationVersion = ++_preparationVersion;
     final admissionVersion = _requestVersion;
     final requestedActor = _currentUserId();
     final requestedScope = _currentScopeToken();
     bool admitted() =>
+        preparationVersion == _preparationVersion &&
+        (isCurrent?.call() ?? true) &&
         !_isClosing &&
         !isClosed &&
         admissionVersion == _requestVersion &&
         requestedActor == _currentUserId() &&
         requestedScope == _currentScopeToken();
+    Future<int?> rejectAdmission() async {
+      if (preparationVersion == _preparationVersion &&
+          !_isStale(admissionVersion) &&
+          state.workspaceId == wsId &&
+          state.isBusy &&
+          !(isCurrent?.call() ?? true)) {
+        await disconnect();
+      }
+      return null;
+    }
+
     final sameConversation =
         !forceFresh &&
         state.chatId != null &&
@@ -156,11 +178,11 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         _sessionUserId == _currentUserId() &&
         _sessionScopeToken == _currentScopeToken();
     if (sameConversation) await retryPendingTurns();
-    if (!admitted()) return;
+    if (!admitted()) return await rejectAdmission();
     if (state.isScreenSharing || state.isScreenSharingPending) {
       await stopScreenSharing();
     }
-    if (!admitted()) return;
+    if (!admitted()) return await rejectAdmission();
     if (!sameConversation) {
       _conversationVersion++;
       _sealedParts.clear();
@@ -169,6 +191,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       emit(state.copyWith(completedTurns: const []));
     }
     final requestVersion = ++_requestVersion;
+    bool currentRequest() =>
+        preparationVersion == _preparationVersion &&
+        !_isStale(requestVersion) &&
+        (isCurrent?.call() ?? true);
     _sessionUserId = requestedActor;
     _sessionScopeToken = requestedScope;
     _pendingTools = Future<void>.value();
@@ -199,8 +225,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
           forceFresh: forceFresh,
         ),
       );
-      if (_isStale(requestVersion)) {
-        return;
+      if (!currentRequest()) {
+        return null;
       }
 
       _toolProtocol = envelope.toolProtocol;
@@ -225,14 +251,14 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       await Future.wait<void>([
         timings.measure(
           AssistantLiveStartupPhase.history,
-          () => _onChatBound(wsId, envelope.chatId),
+          () => (onChatBound ?? _onChatBound)(wsId, envelope.chatId),
         ),
         timings.measure(
           AssistantLiveStartupPhase.audio,
           _audioPlayer.initialize,
         ),
       ]);
-      if (_isStale(requestVersion)) return;
+      if (!currentRequest()) return null;
       await timings.measure(
         AssistantLiveStartupPhase.socket,
         () => _socket.connect(
@@ -242,10 +268,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
           sessionHandle: sessionHandle,
         ),
       );
-      if (_isStale(requestVersion)) return;
+      if (!currentRequest()) return null;
       await timings.measure(AssistantLiveStartupPhase.ready, _waitForReady);
-      if (_isStale(requestVersion)) {
-        return;
+      if (!currentRequest()) {
+        return null;
       }
 
       emit(
@@ -262,76 +288,44 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         ),
       );
     } on ApiException catch (error) {
-      if (_isStale(requestVersion)) return;
+      if (!currentRequest()) return null;
       _emitError(error.message);
     } on TimeoutException {
-      if (_isStale(requestVersion)) return;
+      if (!currentRequest()) return null;
       _emitError('Timed out while connecting to live session.');
     } on Exception catch (error) {
-      if (_isStale(requestVersion)) return;
+      if (!currentRequest()) return null;
       _emitError(error.toString());
     } finally {
       timings.finish();
-      if (!_isStale(requestVersion)) {
+      if (preparationVersion == _preparationVersion &&
+          !_isStale(requestVersion) &&
+          !(isCurrent?.call() ?? true)) {
+        await disconnect();
+      } else if (currentRequest()) {
         emit(state.copyWith(startupTimings: timings.snapshot));
       }
     }
+    return currentRequest() &&
+            state.status == AssistantLiveConnectionStatus.connected
+        ? requestVersion
+        : null;
   }
 
-  Future<void> sendTypedMessage({
+  Future<AssistantLiveDispatch> sendTypedMessage({
     required String wsId,
     required String text,
     required List<AssistantAttachment> attachments,
-  }) async {
-    final trimmed = text.trim();
-    final uploadedAttachments = attachments
-        .where((attachment) => attachment.isUploaded)
-        .toList(growable: false);
-    if (trimmed.isEmpty && uploadedAttachments.isEmpty) {
-      return;
-    }
-
-    if (state.status != AssistantLiveConnectionStatus.connected) {
-      await prepareSession(wsId: wsId, chatId: state.chatId);
-    } else {
-      await _waitForReady();
-    }
-
-    _currentTurnId = _newTurnId();
-    _currentTypedInput = trimmed;
-    _currentUserTranscript = '';
-    _currentAssistantText = '';
-    _currentAssistantTranscript = '';
-    _currentTurnAttachments = uploadedAttachments;
-    _turnParts = AssistantLiveTurnParts();
-
-    emit(
-      state.copyWith(
-        userDraft: trimmed,
-        userTranscript: '',
-        assistantDraft: '',
-        assistantTranscript: '',
-        assistantParts: const [],
-        isInterrupted: false,
-      ),
-    );
-
-    for (final attachment in uploadedAttachments.where(
-      (file) => file.isImage,
-    )) {
-      await _sendImageAttachment(attachment);
-    }
-
-    final summary = _buildAttachmentSummary(uploadedAttachments);
-    final payload = [
-      if (summary != null) summary,
-      if (trimmed.isNotEmpty) trimmed,
-    ].join('\n\n');
-
-    if (payload.trim().isNotEmpty) {
-      _socket.sendText(payload);
-    }
-  }
+    bool Function()? isCurrent,
+    Future<void> Function(String wsId, String chatId)? onChatBound,
+  }) => _sendTypedMessage(
+    wsId: wsId,
+    text: text,
+    attachments: attachments,
+    isCurrent: isCurrent,
+    onChatBound: onChatBound,
+    publish: emit,
+  );
 
   Future<void> disconnect({
     bool clearSession = false,
@@ -339,10 +333,14 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool reportSessionCleanupFailure = false,
   }) async {
     final endingVersion = _requestVersion;
+    final preparationVersion = _preparationVersion;
+    if (finishTurn && _isStale(endingVersion)) return;
+    _disconnectVersion++;
     if (finishTurn) {
-      if (_isStale(endingVersion)) return;
-      await _stopInputs();
-      if (_isStale(endingVersion)) return;
+      bool current() =>
+          preparationVersion == _preparationVersion && !_isStale(endingVersion);
+      await _stopInputs(isCurrent: current);
+      if (!current()) return;
     }
     if (!finishTurn) {
       _conversationVersion++;
@@ -355,10 +353,12 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     // conversation lease and must not delay local audio/transport teardown.
     final finishing = finishTurn ? _finalizeTurn() : Future<void>.value();
     final disconnectVersion = ++_requestVersion;
-    bool superseded() => finishTurn
-        ? _isStale(disconnectVersion)
-        : isClosed || disconnectVersion != _requestVersion;
-    await _stopInputs();
+    bool superseded() =>
+        preparationVersion != _preparationVersion ||
+        (finishTurn
+            ? _isStale(disconnectVersion)
+            : isClosed || disconnectVersion != _requestVersion);
+    await _stopInputs(isCurrent: () => !superseded());
     if (superseded()) return;
     await _socket.disconnect();
     if (superseded()) return;
@@ -476,22 +476,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         }
       }),
     );
-  }
-
-  Future<void> _sendImageAttachment(AssistantAttachment attachment) async {
-    final path = attachment.localPath;
-    if (path == null || path.isEmpty) {
-      return;
-    }
-
-    final rawBytes = await File(path).readAsBytes();
-    final decoded = img.decodeImage(rawBytes);
-    if (decoded == null) {
-      return;
-    }
-
-    final jpegBytes = Uint8List.fromList(img.encodeJpg(decoded, quality: 72));
-    _socket.sendVideoFrame(jpegBytes);
   }
 
   Future<void> _waitForReady() async {

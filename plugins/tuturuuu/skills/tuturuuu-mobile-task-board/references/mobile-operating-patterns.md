@@ -103,6 +103,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Stable Shell Top Bars Across Tabs**: Keep shell navbar layout stable across Home, Assistant, and Apps; place assistant-only actions in the assistant surface.
 - **Opt-In Mobile Fullscreen Chat**: Do not auto-enter fullscreen because the assistant tab opened or workspace reloaded.
 - **Inline Mobile Streaming State**: Create/update the pending assistant message as soon as stream starts and keep streaming/thinking indicators inline with transcript.
+- **Assistant transport fixtures**: Establish the controlled socket after Page workspace bootstrap, assert its setup before sink admission, and create real cache/file or cancellation work in its owning asynchronous zone. Byte-backed IO file fixtures need a nonempty path to retain their filename. Claim preparation ownership before the first await, control reconnect/watchdog timers in one fixture zone, and preserve dispatch, terminal-state and receipt assertions; see `apps/docs/build/development-tools/mobile-state-regressions.mdx`.
 - **Explicit Mobile Live Entry**: Do not auto-create Gemini Live sessions on workspace/chat load. Keep normal text chat on the standard `AssistantChatCubit` path, and only route text/audio through `AssistantLiveCubit` after the user explicitly enters live mode for the current chat.
 - **Dedicated Mobile Live Presentation State**: Drive fullscreen live UI from explicit page/chrome presentation state, not from inferred transport signals such as bound live `chatId`, socket status, or restored model ids. Reconnects and restored live transcripts must not silently force the user back into live mode or overwrite the normal text-model selection.
 - **Fullscreen Live Status Must Expose Detail Inline**: Do not rely on a generic live status badge or a secondary info sheet for failure diagnosis. Fullscreen live mode must render the current status detail inline, provide a primary recovery action for reconnecting/error states, and keep reconnecting states labeled as reconnecting even when a transport error reason is present.
@@ -146,7 +147,9 @@ Read only the section relevant to the current feature; paths are repository-rela
 After extracting Cubit code, keep protected `emit` access in the subclass or use
 its existing publication helper; extensions do not inherit subclass access.
 Recheck suppressions in both files, search callers of retired APIs, and inspect
-the declared constructor before correcting test fixtures. Qualify the final
+the declared constructor and extension visibility before correcting fixtures. A
+public-looking method in a private extension is not an exported Cubit API; test
+through the existing public entrypoint rather than exposing an internal helper. Qualify the final
 composed source; earlier parent snapshots remain diagnostic evidence. See the
 [formatter context guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx)
 when the local checkout lacks package configuration.

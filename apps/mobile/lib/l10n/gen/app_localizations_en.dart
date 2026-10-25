@@ -11308,4 +11308,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantReplyLiveUnavailable => 'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.';
+
+  @override
+  String get assistantReplyChangedBeforeSend => 'The reply changed before sending. Your draft was kept. Review it and send again.';
+
+  @override
+  String get assistantLiveSendRefused => 'Live did not accept this message. Your draft was kept. Check the connection before trying again.';
+
+  @override
+  String get assistantLiveSendUnknown => 'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.';
 }
