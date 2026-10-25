@@ -95,3 +95,19 @@ it('preserves the exact registered URI bytes for authorization and exchange', ()
   vi.stubEnv('MAIL_GOOGLE_REDIRECT_URI', configured);
   expect(resolveOAuthCallback('google', root).redirectUri).toBe(configured);
 });
+
+describe.each(['google', 'microsoft'] as const)(
+  '%s primary configuration',
+  (provider) => {
+    it.each([
+      '',
+      'not-a-url',
+      'https://mail.tuturuuu.com/wrong/callback',
+      'https://mail.tuturuuu.com/api/v1/mail/connected/callback?unexpected=1',
+    ])('fails closed for malformed SET primary %j', (value) => {
+      const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
+      vi.stubEnv(`MAIL_${prefix}_REDIRECT_URI`, value);
+      expect(() => resolveOAuthCallback(provider, root)).toThrow();
+    });
+  }
+);

@@ -93,3 +93,27 @@ describe('mail OAuth authorization', () => {
     expect(matchesState('abc', 'abcd')).toBe(false);
   });
 });
+
+it.each(['google', 'microsoft'] as const)(
+  '%s starts with the canonical subdomain callback when unset',
+  async (provider) => {
+    const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
+    vi.stubEnv(`MAIL_${prefix}_REDIRECT_URI`, undefined);
+    vi.stubEnv(`MAIL_${prefix}_APEX_REDIRECT_URI`, undefined);
+    const response = await startOAuth(
+      { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+      provider,
+      new Request('https://mail.tuturuuu.com/api/start')
+    );
+    expect(
+      new URL((await response.json()).authUrl).searchParams.get('redirect_uri')
+    ).toBe('https://mail.tuturuuu.com/api/v1/mail/connected/callback');
+    await expect(
+      startOAuth(
+        { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+        provider,
+        new Request('https://tuturuuu.com/mail/api/start')
+      )
+    ).rejects.toMatchObject({ status: 400 });
+  }
+);

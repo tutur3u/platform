@@ -263,3 +263,34 @@ it.each(['google', 'microsoft'] as const)(
     );
   }
 );
+
+it.each(['google', 'microsoft'] as const)(
+  '%s completes on the canonical subdomain when its primary callback is unset',
+  async (provider) => {
+    pending!.provider = provider;
+    const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
+    vi.stubEnv(`MAIL_${prefix}_REDIRECT_URI`, undefined);
+    vi.stubEnv(`MAIL_${prefix}_APEX_REDIRECT_URI`, undefined);
+    if (provider === 'microsoft')
+      mocks.fetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({ id: 'fixture-provider', mail: 'me@example.test' })
+        )
+      );
+    const rootCallback =
+      'https://mail.tuturuuu.com/api/v1/mail/connected/callback';
+    const response = await finishOAuth(
+      new NextRequest(`${rootCallback}?state=${state}&code=fixture`, {
+        headers: { cookie: `mail_oauth_state=${state}` },
+      }),
+      'owner'
+    );
+    expect(mocks.exchange).toHaveBeenCalledExactlyOnceWith(
+      provider,
+      expect.objectContaining({ redirect_uri: rootCallback })
+    );
+    expect(response.headers.get('location')).toBe(
+      'https://mail.tuturuuu.com/personal/inbox?connected=1'
+    );
+  }
+);

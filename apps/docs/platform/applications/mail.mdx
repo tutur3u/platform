@@ -1041,6 +1041,8 @@ Configure these server-only variables for the Mail deployment:
 - `MAIL_MICROSOFT_CLIENT_ID`, `MAIL_MICROSOFT_CLIENT_SECRET`,
   `MAIL_MICROSOFT_REDIRECT_URI`.
 
+When the primary redirect URI is unset, both providers default to the canonical
+subdomain callback below. Malformed explicitly configured values fail closed.
 The existing provider callback stays at
 `https://mail.tuturuuu.com/api/v1/mail/connected/callback`. Before admitting the
 apex mount, register `https://tuturuuu.com/mail/api/v1/mail/connected/callback`
