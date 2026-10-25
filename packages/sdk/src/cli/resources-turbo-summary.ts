@@ -21,18 +21,22 @@ async function openRegularFile(path: string) {
   const noFollow = constants.O_NOFOLLOW || 0;
   const flags = constants.O_RDONLY | noFollow | (constants.O_NONBLOCK || 0);
   if (noFollow) return open(path, flags);
-  const before = await lstat(path, { bigint: true });
-  if (!before.isFile() || before.ino === 0n)
-    throw new Error('not-a-regular-file');
+  // Without O_NOFOLLOW, open first and only then confirm that the path still
+  // names that same regular file. A symlink or a swapped inode at the path no
+  // longer matches the opened descriptor, so it is rejected; checking before
+  // opening would leave a check-then-use window.
   const file = await open(path, flags);
   try {
-    const after = await file.stat({ bigint: true });
+    const opened = await file.stat({ bigint: true });
+    const named = await lstat(path, { bigint: true });
     if (
-      !after.isFile() ||
-      after.dev !== before.dev ||
-      after.ino !== before.ino
+      !opened.isFile() ||
+      !named.isFile() ||
+      opened.ino === 0n ||
+      named.dev !== opened.dev ||
+      named.ino !== opened.ino
     ) {
-      throw new Error('file-changed');
+      throw new Error('not-a-regular-file');
     }
     return file;
   } catch (error) {
