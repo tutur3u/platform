@@ -29,6 +29,17 @@
             "pages": [
               "platform/overview",
               {
+                "group": "Data protection",
+                "pages": [
+                  "platform/data-protection-standard",
+                  "platform/data-protection/inventory",
+                  "platform/data-protection/delivery-plan",
+                  "platform/data-protection/schema-private",
+                  "platform/data-protection/schema-public",
+                  "platform/data-protection/schema-storage"
+                ]
+              },
+              {
                 "group": "User guides",
                 "pages": [
                   "platform/guides/getting-started",
