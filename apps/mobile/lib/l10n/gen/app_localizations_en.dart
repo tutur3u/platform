@@ -11149,4 +11149,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantSubmitSuccess => 'Submitted successfully';
+
+  @override
+  String get mailSettingsReadOnly => 'Saved settings are read-only until access can be verified.';
 }

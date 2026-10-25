@@ -80,7 +80,6 @@ lib/features/inventory/widgets/inventory_ui.dart
 lib/features/mail/view/mail_html_body.dart
 lib/features/mail/view/mail_page.dart
 lib/features/mail/view/mail_reader.dart
-lib/features/mail/view/mail_settings_chrome.dart
 lib/features/meet/view/meet_page.dart
 lib/features/mobile_versions/view/mobile_version_settings_page.dart
 lib/features/notes/notes_page.dart

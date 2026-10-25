@@ -297,6 +297,39 @@ Coverage:
 - `profile_page_test.dart` and `profile_page_render_test.dart` cover the Edit
   profile groups and renders.
 
+### Mail settings offline behavior
+
+Mail account rows and mailbox settings restore an encrypted account/workspace
+snapshot before background revalidation. Long addresses wrap within their row.
+Save belongs to the floating navbar, and unsynchronized changes remain visibly
+queued or require review until acknowledged by the server.
+
+Cached mailbox roles never grant editing. Restored settings open immediately in
+read-only mode until current-session membership can be verified. A previously
+verified editor can queue an offline edit; an uncertain send retains its original
+operation identity for manual review. Before a queued settings PATCH leaves the
+device, its manual-review state is persisted. An interruption therefore cannot
+automatically resend it after restart; an interruption before actual transmission
+also conservatively requires review because the API has no operation receipt.
+Settings use a separate outbox scope,
+including legacy retained records, so a held settings write does not hold inbox
+actions. Saves send changed top-level fields only; nested automation and group
+policies remain complete objects. A sender-name edit preserves an unrelated web
+signature change, but concurrent edits to the same field or policy still use the
+server's existing last-write-wins contract. No revision precondition is claimed.
+Server-setting controls stay read-only while that mailbox has an unresolved
+edit, including when reopened, and until a fresh response installs the next
+confirmed baseline. Retry after a mailbox denial requires a fresh owner/admin
+management grant; cached roles never restore editing. Failed
+edits do not overlay confirmed settings. A mailbox settings 403/404 removes only
+that mailbox's snapshot; workspace bootstrap denial still revokes workspace Mail.
+Authorization denial removes the affected snapshot;
+a verification challenge retains it without granting new management access.
+Refreshes preserve dirty form values. This behavior is covered by
+`mail_settings_cache_ui_regression_test.dart` and
+`mail_settings_offline_regression_test.dart`. Restart and in-flight Retry fencing
+are covered by `mail_settings_dispatch_restart_test.dart`.
+
 ### Assistant settings layout
 
 Mira's settings action and Settings → Apps → Assistant open the same routed
