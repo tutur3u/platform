@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   definePageAdapterTests,
   pageAdapterMocks,
@@ -27,8 +27,10 @@ definePageAdapterTests({
 describe('mounted Forms shared-session boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://fixture.supabase.co');
     pageAdapterMocks.continuation.mockImplementation(() => NextResponse.next());
   });
+  afterEach(() => vi.unstubAllEnvs());
 
   it.each([
     '/forms/f/share',
