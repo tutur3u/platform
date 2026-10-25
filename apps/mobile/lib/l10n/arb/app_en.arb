@@ -4641,7 +4641,6 @@
   "assistantNewChatResetCommittedStale": "The reset was saved for the earlier context, but this screen changed. Your draft is retained. Check your chat history; the app will not retry automatically.",
   "assistantSettingsSelectionDenied": "You cannot change these chat settings. Your previous settings and draft are retained.",
   "assistantSettingsSelectionUnconfirmed": "The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.",
-  "assistantExpandPrompt": "Expand prompt",
   "assistantSettingInfo": "About {setting}",
   "@assistantSettingInfo": {
     "placeholders": {

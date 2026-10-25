@@ -10772,9 +10772,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSettingsSelectionUnconfirmed => 'Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.';
 
   @override
-  String get assistantExpandPrompt => 'Mở rộng lời nhắc';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'Thông tin về $setting';
   }

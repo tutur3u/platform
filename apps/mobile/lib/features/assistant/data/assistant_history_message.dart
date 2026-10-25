@@ -15,4 +15,7 @@ AssistantMessage restoreAssistantChatMessage(ChatMessage message) =>
       createdAt: message.createdAt,
       liveTurnId: message.metadata['liveTurnId'] as String?,
       clientRequestId: assistantClientRequestId(message.metadata),
+      reactions: message.reactions,
+      replyToMessageId: message.replyToMessageId,
+      isPersisted: true,
     );

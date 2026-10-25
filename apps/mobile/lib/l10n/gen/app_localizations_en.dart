@@ -10901,9 +10901,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSettingsSelectionUnconfirmed => 'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.';
 
   @override
-  String get assistantExpandPrompt => 'Expand prompt';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'About $setting';
   }

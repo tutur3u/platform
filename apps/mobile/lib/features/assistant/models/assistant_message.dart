@@ -8,6 +8,10 @@ class AssistantMessage extends Equatable {
     this.createdAt,
     this.liveTurnId,
     this.clientRequestId,
+    this.reactions = const [],
+    this.replyToMessageId,
+    this.isPersisted = false,
+    this.reactionRefreshRequired = false,
   });
 
   factory AssistantMessage.fromJson(Map<String, dynamic> json) =>
@@ -21,6 +25,13 @@ class AssistantMessage extends Equatable {
         createdAt: _parseDateTime(json['created_at']),
         liveTurnId: json['liveTurnId'] as String?,
         clientRequestId: json['clientRequestId'] as String?,
+        reactions: (json['reactions'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(ChatReactionSummary.fromJson)
+            .toList(growable: false),
+        replyToMessageId: json['replyToMessageId'] as String?,
+        isPersisted: json['isPersisted'] == true,
+        reactionRefreshRequired: json['reactionRefreshRequired'] == true,
       );
 
   final String id;
@@ -29,6 +40,12 @@ class AssistantMessage extends Equatable {
   final DateTime? createdAt;
   final String? liveTurnId;
   final String? clientRequestId;
+  final List<ChatReactionSummary> reactions;
+  final String? replyToMessageId;
+
+  /// Only authoritative restores and validated native receipts set this.
+  final bool isPersisted;
+  final bool reactionRefreshRequired;
 
   AssistantMessage copyWith({
     String? id,
@@ -37,6 +54,10 @@ class AssistantMessage extends Equatable {
     DateTime? createdAt,
     String? liveTurnId,
     String? clientRequestId,
+    List<ChatReactionSummary>? reactions,
+    String? replyToMessageId,
+    bool? isPersisted,
+    bool? reactionRefreshRequired,
   }) {
     return AssistantMessage(
       id: id ?? this.id,
@@ -45,6 +66,11 @@ class AssistantMessage extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       liveTurnId: liveTurnId ?? this.liveTurnId,
       clientRequestId: clientRequestId ?? this.clientRequestId,
+      reactions: reactions ?? this.reactions,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      isPersisted: isPersisted ?? this.isPersisted,
+      reactionRefreshRequired:
+          reactionRefreshRequired ?? this.reactionRefreshRequired,
     );
   }
 
@@ -55,6 +81,12 @@ class AssistantMessage extends Equatable {
     'created_at': createdAt?.toIso8601String(),
     if (liveTurnId != null) 'liveTurnId': liveTurnId,
     if (clientRequestId != null) 'clientRequestId': clientRequestId,
+    'reactions': reactions
+        .map((r) => {'emoji': r.emoji, 'count': r.count, 'userIds': r.userIds})
+        .toList(growable: false),
+    if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+    'isPersisted': isPersisted,
+    'reactionRefreshRequired': reactionRefreshRequired,
   };
 
   @override
@@ -65,6 +97,10 @@ class AssistantMessage extends Equatable {
     createdAt,
     liveTurnId,
     clientRequestId,
+    reactions,
+    replyToMessageId,
+    isPersisted,
+    reactionRefreshRequired,
   ];
 }
 
