@@ -6,7 +6,13 @@ const mocks = vi.hoisted(() => ({
     operation: string;
     payload?: unknown;
   }>,
+  challenge: { close_at: null, duration: 3600 } as Record<string, unknown>,
   getUser: vi.fn(),
+  session: {
+    challenge_id: 'challenge-1',
+    start_time: new Date(Date.now() - 60_000).toISOString(),
+    status: 'ENDED',
+  } as Record<string, unknown>,
 }));
 
 vi.mock('@/lib/app-session', () => ({
@@ -34,19 +40,16 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             call.filters.push([column, value]);
             return builder;
           },
+          limit: () => builder,
           select: () => builder,
           maybeSingle: async () => ({
-            data:
-              table === 'nova_challenges'
-                ? { close_at: null, duration: 3600 }
-                : {
-                    challenge_id: 'challenge-1',
-                    start_time: new Date(Date.now() - 60_000).toISOString(),
-                    status: 'IN_PROGRESS',
-                  },
+            data: table === 'nova_challenges' ? mocks.challenge : mocks.session,
             error: null,
           }),
-          single: async () => ({ data: { id: 'session-1' }, error: null }),
+          single: async () => ({
+            data: { id: 'session-1', ...mocks.session },
+            error: null,
+          }),
           // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
           then: (resolve: (value: unknown) => unknown) =>
             Promise.resolve({ error: null }).then(resolve),
@@ -82,6 +85,12 @@ describe('Nova session ownership', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.calls.length = 0;
+    mocks.challenge = { close_at: null, duration: 3600 };
+    mocks.session = {
+      challenge_id: 'challenge-1',
+      start_time: new Date(Date.now() - 60_000).toISOString(),
+      status: 'ENDED',
+    };
     mocks.getUser.mockReturnValue({ id: 'user-1' });
   });
 
@@ -97,6 +106,7 @@ describe('Nova session ownership', () => {
   });
 
   it('ends only the caller-owned session', async () => {
+    mocks.session = { ...mocks.session, status: 'IN_PROGRESS' };
     const response = await put({
       endTime: '2026-10-24T01:00:00.000Z',
       status: 'ENDED',
@@ -132,5 +142,42 @@ describe('Nova session ownership', () => {
     expect(mocks.calls.at(-1)?.filters).toContainEqual(['user_id', 'user-1']);
     expect(deleted.status).toBe(403);
     expect(mocks.calls).toHaveLength(1);
+  });
+
+  it('does not return an in-progress session after its duration expires', async () => {
+    mocks.challenge = { close_at: null, duration: 60 };
+    mocks.session = {
+      challenge_id: 'challenge-1',
+      start_time: new Date(Date.now() - 120_000).toISOString(),
+      status: 'IN_PROGRESS',
+    };
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('https://nova.test/api/v1/sessions/session-1'),
+      params
+    );
+
+    expect(response.status).toBe(410);
+  });
+
+  it('does not return an in-progress session after the challenge closes', async () => {
+    mocks.challenge = {
+      close_at: new Date(Date.now() - 60_000).toISOString(),
+      duration: 3600,
+    };
+    mocks.session = {
+      challenge_id: 'challenge-1',
+      start_time: new Date(Date.now() - 60_000).toISOString(),
+      status: 'IN_PROGRESS',
+    };
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('https://nova.test/api/v1/sessions/session-1'),
+      params
+    );
+
+    expect(response.status).toBe(410);
   });
 });

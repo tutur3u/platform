@@ -195,6 +195,12 @@ describe('Nova session creation for password-protected challenges', () => {
 
   it('rejects participants outside the open and close window', async () => {
     mocks.challenge = protectedChallenge({
+      previewable_at: new Date(Date.now() + 60_000).toISOString(),
+      password_hash: null,
+    });
+    expect((await startSession()).status).toBe(403);
+
+    mocks.challenge = protectedChallenge({
       open_at: new Date(Date.now() + 60_000).toISOString(),
       password_hash: null,
     });
