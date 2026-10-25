@@ -26,7 +26,7 @@ questions below.
 | Browser preferences | A one-time reset of per-app `localStorage` preferences at cutover is accepted. Important preferences move server-side. |
 | Sign-in at cutover | A one-time re-login on the apex is accepted. There is **no** cross-host token handoff from the subdomain to the apex. |
 | Web `/meet` marketing | Moves to `/products/<app>`, so `/meet` belongs to the Meet app. |
-| Session cookies | `tuturuuu_app_session_<app>` with `Path=/<app>`, owned by the Start bridge lane (see [session cookies](/platform/architecture/one-origin-security#session-cookies)). |
+| Session cookies | One shared `tuturuuu.com` session accepted by every app, with no per-app split. Web no longer clears it. Designed by the Start bridge lane (see [session cookies](/platform/architecture/one-origin-security#session-cookies)). This decision supersedes the earlier per-app proposal. |
 
 ## Goal
 
@@ -355,7 +355,7 @@ DNS/proxy lane.
 | # | Change | Owner | Depends on | Migration |
 | --- | --- | --- | --- | --- |
 | P1 | Base-path-aware app registry and URL builders in `@tuturuuu/utils` (`{origin, basePath}`, longest-prefix match). No behavior change. | Bridge | — | None |
-| P2 | Per-app session cookies `tuturuuu_app_session_<app>` with `Path=/<app>`; `createClient` detection updated. | Bridge | P1 | None (one re-login) |
+| P2 | One shared apex session accepted by every app; Web's `createClient` stops treating it as a satellite marker. | Bridge | P1 | None (one re-login) |
 | P3a | Web service-worker bypass for `/meet` and `/mail`. | One-origin lane | — | None |
 | P3b | Web marketing to `/products/<app>`, `robots.ts` disallow, `/vi/meet` → `/meet/vi`, rollback 307s, `returnUrl` acceptance. | L2 | P1 | None |
 | P4 | Meet base-path build serving both hosts, `appApi`/`centralApi` split, origin/base split. | Bridge | P1, P2 | None |

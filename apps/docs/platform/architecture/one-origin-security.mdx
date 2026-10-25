@@ -28,8 +28,8 @@ in any one of them can do all of the following:
   grant for Meet also covers a script injected into Mail.
 
 **Therefore: an XSS in any mounted app is an XSS in all of them, Web's dashboard
-included.** Path-scoped cookies, per-app CSP and frame rules reduce accidents and
-raise attacker cost. They do not restore isolation. The rest of this page is about
+included.** The session is shared by design. Per-app CSP and frame rules reduce
+accidents and raise attacker cost. They do not restore isolation. The rest of this page is about
 keeping XSS out and limiting what a successful one can reach.
 
 ### What changes compared with subdomains
@@ -66,7 +66,7 @@ cannot toss, once every app is on the apex.
    `https://tuturuuu.com/<app>/` and `https://tuturuuu.com/api/` plus the app's
    external hosts, never `'self'`. Meet's CSP then forbids `fetch('/mail/api/...')`.
    CSP ignores the path after a redirect, so this is a speed bump, not a boundary.
-5. **Every session-bearing cookie is `HttpOnly`.** See
+5. **The shared session cookie is `HttpOnly`.** See
    [session cookies](#session-cookies).
 6. **Permissions-Policy per document.** Only Meet documents enable `camera`,
    `microphone`, `display-capture` and `autoplay`. Every other app's documents
@@ -85,29 +85,54 @@ cannot toss, once every app is on the apex.
 
 ## Session cookies
 
-The current shared name `tuturuuu_app_session` (host-only, `Path=/`) is unsafe on one
-host. Mounted apps would overwrite each other's audience-bound tokens. Web's
-`createClient(request)` also treats the cookie's presence as "this is a satellite
-request" and returns an unauthenticated client.
+Decision (user, 2026-10-25): **one shared `tuturuuu.com` session, no per-app split.**
+The Start bridge lane designs the implementation. This page records the
+requirements it must meet.
 
-Decision (implemented by the Start bridge lane, PR P2):
+- One session cookie on the apex is valid for every app. Web and every mounted app
+  accept the same token. There are no per-app names, no `Path=/<app>` scoping and
+  no per-app audience tokens on the apex.
+- Web must stop treating the session cookie as a satellite marker. Today
+  `createClient(request)` (`packages/supabase/src/next/server.ts`) returns an
+  unauthenticated client when `tuturuuu_app_session` is present. Web must neither
+  drop nor clear the shared session.
+- Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, host-only. Use
+  `__Host-` once no subdomain needs it, so subdomains cannot toss or overwrite it.
+  Refresh and rotation are single-writer: concurrent refreshes from two apps must
+  not invalidate each other.
+- Logout from any app ends the session for all of them. `Clear-Site-Data` on logout
+  is acceptable for that reason.
+- There is no cross-host handoff: users sign in once on the apex at cutover
+  (recorded decision). Subdomains keep their current cookies until they only
+  redirect.
 
-| Cookie | Name | Attributes |
-| --- | --- | --- |
-| App session (per mounted app) | `tuturuuu_app_session_<app>` | Host-only, `Path=/<app>`, `HttpOnly`, `Secure`, `SameSite=Lax` |
-| App refresh (per mounted app) | the bridge lane's matching per-app refresh name | Same, `Path=/<app>` |
-| Supabase session | unchanged for now | `Domain=.tuturuuu.com` while any app remains on a subdomain. Once all apps are on the apex, plan `__Host-` host-only. |
+### What the shared session changes in the threat model
 
-- `Path=/<app>` keeps the token off Web's requests and off other apps' requests, so
-  it cannot trigger Web's satellite detection. `/meet` matches `/meet` and `/meet/*`,
-  but not `/meeting`.
-- There is no cross-host session handoff. Users sign in once on the apex at cutover
-  (recorded decision). The subdomain keeps its old cookie until it only redirects.
-- On one origin, a signed-in user already carries the Supabase cookie. Treat the app
-  session as the fallback it already is (`supabase-first`). Removing it for mounted
-  apps is a follow-up and needs its own MFA (aal2) review.
-- `Clear-Site-Data` on logout now affects every app. That matches "one session"
-  semantics, but use the `"cookies"` and `"storage"` directives deliberately.
+A per-app path-scoped cookie never protected against same-origin script; the core
+trade above already holds. The shared session removes the remaining speed bump:
+**an XSS in any mounted app acts with the full session for every app and Web's
+dashboard**. It can call any app's API as the user and reach every app's data.
+`HttpOnly` stops the token being read, but script on the origin does not need to
+read it to use it.
+
+That raises the admission bar. Before any app is routed onto the apex:
+
+1. **Strict CSP is enforced, not report-only**: nonce-based scripts and no
+   `unsafe-inline` or `unsafe-eval`. A report-only policy is not admission. This
+   depends on the bridge supplying a per-request nonce to the router (`ssr.nonce`).
+2. **Trusted Types is enforced** (`require-trusted-types-for 'script'`), with named
+   policies only for audited sinks.
+3. **No user-generated or third-party active content on the apex.** Email HTML,
+   playground previews and uploads render on a separate sandbox origin, or in an
+   opaque-origin sandbox with a regression guard. "Low risk because scripts are
+   disabled" is no longer enough on its own.
+4. **No same-origin `postMessage` or storage trust** between apps without explicit
+   validated message types.
+5. **Independent security review** of each app's CSP, sinks and content inventory at
+   the exact routed head. An open critical or high finding holds the route.
+6. **Session hardening:** short access-token lifetime with refresh, re-authentication
+   (aal2) for sensitive actions, and CSP violation monitoring that can trigger a
+   route rollback.
 
 ## Shared security headers
 
@@ -140,10 +165,11 @@ through its Next config:
 
 ## Residual risk and its owner
 
-The residual risk is an XSS in any mounted app reaching every app's data, including
-media permissions granted to Meet. The release authority accepts it once per app at
-admission. Mitigations: strict CSP and Trusted Types (prevention), HttpOnly
-path-scoped sessions (credential theft), path-scoped `connect-src` (casual
+The residual risk is an XSS in any mounted app acting with the shared session for
+every app, including media permissions granted to Meet. The release authority
+accepts it once per app at admission. Mitigations: enforced strict CSP and Trusted
+Types (prevention), an `HttpOnly` shared session (token theft, not misuse),
+path-scoped `connect-src` (casual
 exfiltration) and per-document Permissions-Policy (silent media use). CSP violation
 reports from every mounted app feed one monitored sink, and a new violation class
 is triaged as a potential release hold.
