@@ -8,13 +8,13 @@ import {
   type AppMountConfig,
   resolveAppBase,
 } from '../core/mounts';
-import type { BridgeRequestContext } from '../server/request-context';
 import { fromNextSourcePattern, matchRoute } from '../core/route-match';
 import {
   type BridgeDispatch,
   dispatchThroughProxy,
   type NextProxy,
 } from '../next/proxy-bridge';
+import type { BridgeRequestContext } from '../server/request-context';
 
 export interface AssetsBinding {
   fetch(request: Request): Promise<Response>;

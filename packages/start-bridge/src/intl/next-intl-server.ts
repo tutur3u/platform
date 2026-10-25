@@ -1,11 +1,11 @@
 import nextIntlConfig from 'next-intl/config';
 import type { AbstractIntlMessages } from 'use-intl';
 import { createFormatter, createTranslator } from 'use-intl/core';
+import { getRootParam } from '../next/root-params';
 import {
   createRequestLocal,
   maybeBridgeRequest,
 } from '../server/request-context';
-import { getRootParam } from '../next/root-params';
 
 /**
  * Generic `next-intl/server` for bridged apps. Like next-intl's own plugin,

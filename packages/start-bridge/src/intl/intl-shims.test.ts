@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { withBridgeRequest } from '../server/request-context';
 import { getRootParam, locale } from '../next/root-params';
+import { withBridgeRequest } from '../server/request-context';
 import { createNavigation } from './navigation';
 import {
   getFormatter,
