@@ -1,1 +1,5 @@
-{ "appDir": "src/app", "api": null, "pages": null }
+{
+  "appDir": null,
+  "api": null,
+  "pages": null
+}
