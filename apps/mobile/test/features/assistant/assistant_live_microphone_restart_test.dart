@@ -132,7 +132,7 @@ class _Fixture {
 
   Future<void> disposeWidget(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
-    await close();
+    await drainLiveFixtureCleanup(tester, close());
   }
 
   Future<void> close() async {
@@ -338,6 +338,11 @@ void main() {
     expect(fixture.captures, 0);
     final stopsAfterDenial = fixture.stops;
     expect(stopsAfterDenial, greaterThan(0));
+    await expectLiveStartupCompletion(
+      tester,
+      fixture.microphoneStartup!,
+      reason: 'Permission denial must release startup before connection.',
+    );
     expect(fixture.microphoneStartCompletions, 1);
     expect(connection.isCompleted, isFalse);
     connection.complete();
@@ -365,6 +370,11 @@ void main() {
     expect(
       fixture.cubit.state.microphonePermission,
       AssistantLivePermissionState.granted,
+    );
+    await expectLiveStartupCompletion(
+      tester,
+      fixture.microphoneStartup!,
+      reason: 'The explicit retry must finish its admitted startup.',
     );
     expect(fixture.microphoneStartCompletions, 2);
     expect(fixture.stops, stopsAfterDenial);
