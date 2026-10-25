@@ -2,8 +2,7 @@ import { defineConfig } from 'void/config';
 
 // Staging profile for the native Tasks candidate. The source-declared sandbox
 // name does not establish a hosted Worker, route or credential; production
-// stays on Vercel until an explicit cutover PR. TUTURUUU_NATIVE_CANARY_PERCENT
-// defaults to 0 (every browser legacy) per the start-bridge canary contract.
+// stays on Vercel until an explicit cutover PR.
 export default defineConfig({
   target: 'cloudflare',
   inference: {
@@ -24,7 +23,6 @@ export default defineConfig({
     },
     vars: {
       TUTURUUU_NOINDEX: '1',
-      TUTURUUU_NATIVE_CANARY_PERCENT: '0',
     },
     workers_dev: false,
   },

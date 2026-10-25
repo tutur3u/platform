@@ -1,9 +1,11 @@
-import start from '@tanstack/react-start/server-entry';
-import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import { decideCohort, tagResponse } from '@tuturuuu/start-bridge/canary';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
-import { appBasePath } from '@tuturuuu/start-bridge/start/base-path';
+import {
+  type AppMountConfig,
+  resolveAppBase,
+} from '@tuturuuu/start-bridge/mounts';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
+import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { withoutPageRewrite } from '../lib/page-rewrite';
 import { proxy } from '../proxy';
@@ -16,22 +18,24 @@ export interface TasksWorkerEnv {
   INTERNAL_WEB_API_ORIGIN?: string;
   /** `1` on staging: every response carries `X-Robots-Tag: noindex`. */
   TUTURUUU_NOINDEX?: string;
-  /** Native share read by the canary router (start-bridge `canary`). */
-  TUTURUUU_NATIVE_CANARY_PERCENT?: string;
 }
 
 export interface TasksExecutionContext {
   waitUntil(work: Promise<unknown>): void;
 }
 
-export const tasksBasePath = createBasePath({
+/** One artifact serves `tasks.tuturuuu.com` and `tuturuuu.com/tasks`. */
+export const TASKS_MOUNTS: AppMountConfig = {
   app: 'tasks',
-  basePath: appBasePath(),
-});
+  rootHosts: ['tasks.tuturuuu.com'],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/tasks',
+};
 
 const bridge = createBridgeHandler<TasksWorkerEnv, TasksExecutionContext>({
-  basePath: tasksBasePath,
-  start,
+  mounts: TASKS_MOUNTS,
+  start: createBridgeStartHandler(),
+  serverFnBase: '/_serverFn',
   proxy,
   endpoints,
   functionBase: '/_serverFn',
@@ -43,9 +47,8 @@ const bridge = createBridgeHandler<TasksWorkerEnv, TasksExecutionContext>({
 });
 
 /**
- * Every response this Worker serves is the native runtime. Cohort selection
- * (and the legacy proxy) belongs to the canary router; here the decision is
- * forced so the runtime header is always present and nothing is persisted.
+ * Every response this Worker serves is tagged `x-tuturuuu-runtime: native` so
+ * the post-cutover watch can attribute traffic; nothing is persisted.
  */
 const NATIVE = decideCohort({ percent: undefined, force: 'native' });
 
@@ -56,13 +59,18 @@ export async function handleTasksRequest(
 ): Promise<Response> {
   // Only the proxy may name a page rewrite.
   const request = withoutPageRewrite(incoming);
-  const appRequest = tasksBasePath.stripRequest(request);
-  const response =
-    (appRequest && workerBuildInfo(appRequest, 'tasks')) ??
-    (await bridge(request, env, ctx));
-  const tagged = tagResponse(response, NATIVE, {
-    path: tasksBasePath.basePath || '/',
-  });
+  const url = new URL(request.url);
+  const base = resolveAppBase(url, TASKS_MOUNTS)?.basePath ?? '';
+  const appPath = base ? url.pathname.slice(base.length) || '/' : url.pathname;
+  const buildInfo =
+    appPath === '/api/build-info'
+      ? workerBuildInfo(
+          new Request(new URL(appPath, url), { method: request.method }),
+          'tasks'
+        )
+      : null;
+  const response = buildInfo ?? (await bridge(request, env, ctx));
+  const tagged = tagResponse(response, NATIVE);
   if (env.TUTURUUU_NOINDEX === '1')
     tagged.headers.set('X-Robots-Tag', 'noindex, nofollow');
   return tagged;
