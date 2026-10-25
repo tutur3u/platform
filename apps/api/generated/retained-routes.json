@@ -586,7 +586,7 @@
   {
     "path": "/api/v1/assistant/live/token",
     "source": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
-    "sourceSha256": "7e0766f42851935f340f34572b574780f875d0fc4ccbc80cf3042e458beb2afb",
+    "sourceSha256": "c18f8ab27357c3c50340627dfbc0f75b42dfa5ac698e817e8a05ecd687acd56c",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1634,7 +1634,7 @@
   {
     "path": "/api/v1/realtime/documents/checkpoint",
     "source": "apps/web/src/app/api/v1/realtime/documents/checkpoint/route.ts",
-    "sourceSha256": "b1a3cdf5381180ad94bdd4f6de7690980697eb8332b1f30a9ae85f9f60e79d1c",
+    "sourceSha256": "2b4dc11379760e28d930f7838c13b9b6258b093b167bcfbd917367ee8670970c",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
