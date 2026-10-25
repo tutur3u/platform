@@ -90,7 +90,6 @@ export function createPOST(
 ) {
   const defaultProvider = _options.defaultProvider ?? 'google';
 
-  // Higher-order function that returns the actual request handler
   return async function handler(req: NextRequest): Promise<Response> {
     let releaseClaimedPersistenceLease: (() => Promise<void>) | null = null;
     try {
@@ -481,6 +480,7 @@ export function createPOST(
           );
           return { error };
         },
+        requestScoped: Boolean(persistenceRequestId),
         source: isMiraMode ? 'Mira' : 'Rewise',
       });
       if (persistUserMessageError) {
