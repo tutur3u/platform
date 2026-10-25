@@ -46,7 +46,7 @@ output="\${10}"
 [[ ! -e "$output" && ! -L "$output" ]]
 printf '%s' invoked > "$INVOCATION_RECEIPT"
 case "$TYPEGEN_MODE" in
-  success) printf 'interface CloudflareEnv { GENERATED: string; }\\n' > "$output" ;;
+  success|cf-failure) printf 'interface CloudflareEnv { GENERATED: string; }\\n' > "$output" ;;
   partial) printf 'partial' > "$output"; exit 17 ;;
   missing) : ;;
   empty) : > "$output" ;;
@@ -55,7 +55,27 @@ case "$TYPEGEN_MODE" in
 esac
 `;
 
-for (const mode of ['success', 'partial', 'missing', 'empty', 'symlink']) {
+const fakeNode = `#!/bin/bash
+set -euo pipefail
+[[ "$#" == 7 ]]
+[[ "$1" == ../../scripts/ci/calendar-cf-types.mjs ]]
+[[ "$2" == --config && "$3" == "$EXPECTED_CONFIG" ]]
+[[ "$4" == --reference && "$5" == "$RUNNER_TEMP"/calendar-typegen.*/cloudflare-env.d.ts ]]
+[[ "$6" == --sha && "$7" == "$SOURCE_SHA" ]]
+[[ -f "$5" && -s "$5" && ! -L "$5" ]]
+if [[ "$TYPEGEN_MODE" == cf-failure ]]; then exit 23; fi
+cp -- "$5" cloudflare-env.d.ts
+printf '%s\\n' '{"schema":1,"referenceCompared":true}'
+`;
+
+for (const mode of [
+  'success',
+  'partial',
+  'missing',
+  'empty',
+  'symlink',
+  'cf-failure',
+]) {
   test(`workflow typegen: ${mode} preserves output and cleanup contracts`, () => {
     const root = mkdtempSync(join(tmpdir(), 'calendar-typegen-test-'));
     try {
@@ -71,6 +91,7 @@ for (const mode of ['success', 'partial', 'missing', 'empty', 'symlink']) {
       writeFileSync(config, '{}');
       writeFileSync(target, original);
       writeFileSync(join(bin, 'bun'), fakeBun, { mode: 0o755 });
+      writeFileSync(join(bin, 'node'), fakeNode, { mode: 0o755 });
       const unrelated = join(runnerTemp, 'owned-fixture.txt');
       const symlinkTarget = join(root, 'generated-target.d.ts');
       const receipt = join(root, 'invocation.txt');
@@ -88,6 +109,7 @@ for (const mode of ['success', 'partial', 'missing', 'empty', 'symlink']) {
             RUNNER_TEMP: runnerTemp,
             CALENDAR_EMITTED_CONFIG: config,
             EXPECTED_CONFIG: config,
+            SOURCE_SHA: 'a'.repeat(40),
             INVOCATION_RECEIPT: receipt,
             SYMLINK_TARGET: symlinkTarget,
             TYPEGEN_MODE: mode,
@@ -99,13 +121,31 @@ for (const mode of ['success', 'partial', 'missing', 'empty', 'symlink']) {
       assert.equal(readFileSync(receipt, 'utf8'), 'invoked');
       assert.equal(
         result.status,
-        mode === 'success' ? 0 : mode === 'partial' ? 17 : 1
+        mode === 'success'
+          ? 0
+          : mode === 'partial'
+            ? 17
+            : mode === 'cf-failure'
+              ? 23
+              : 1
       );
       assert.equal(
         readFileSync(target, 'utf8'),
         mode === 'success' ? generated : original
       );
-      assert.deepEqual(readdirSync(runnerTemp), ['owned-fixture.txt']);
+      assert.deepEqual(
+        readdirSync(runnerTemp),
+        mode === 'success'
+          ? ['calendar-cf-types.json', 'owned-fixture.txt']
+          : ['owned-fixture.txt']
+      );
+      if (mode === 'success')
+        assert.deepEqual(
+          JSON.parse(
+            readFileSync(join(runnerTemp, 'calendar-cf-types.json'), 'utf8')
+          ),
+          { schema: 1, referenceCompared: true }
+        );
       assert.equal(readFileSync(unrelated, 'utf8'), 'unrelated owner bytes');
       assert.equal(readFileSync(symlinkTarget, 'utf8'), generated);
     } finally {

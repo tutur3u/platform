@@ -3,17 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
-import 'package:mobile/features/notifications/notification_display_copy.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/notifications/widgets/notification_day_groups.dart';
 import 'package:mobile/features/notifications/widgets/notification_destination.dart';
 import 'package:mobile/features/notifications/widgets/notification_read_feedback.dart';
+import 'package:mobile/features/notifications/widgets/notification_row.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -23,7 +24,6 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'notifications_list.dart';
-part 'notifications_relative_time.dart';
 
 Future<void> showNotificationsSheet({
   required BuildContext context,
@@ -107,7 +107,7 @@ class _NotificationsViewState extends State<NotificationsView> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = AppTokens.of(context).colorScheme;
     final maxHeight =
         MediaQuery.sizeOf(context).height * (context.isCompact ? 0.82 : 0.76);
 
@@ -140,7 +140,7 @@ class _NotificationsViewState extends State<NotificationsView> {
           ),
           onLoadMore: () =>
               context.read<NotificationsCubit>().loadMore(_selectedTab),
-          itemBuilder: (notification) => _NotificationTile(
+          itemBuilder: (notification) => NotificationRow(
             notification: notification,
             isPending: state.isPending(notification.id),
             openLabel: _openActionLabel(context, notification),
@@ -168,25 +168,14 @@ class _NotificationsViewState extends State<NotificationsView> {
           ),
         );
 
-        if (widget.pageMode) {
-          return SafeArea(
-            top: false,
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ResponsivePadding.horizontal(context.deviceClass),
-              ),
-              child: list,
-            ),
-          );
-        }
+        if (widget.pageMode) return list;
 
         final content = Padding(
           padding: EdgeInsets.fromLTRB(
-            18,
-            context.isCompact ? 10 : 18,
-            18,
-            context.isCompact ? 18 : 16,
+            AppSpacing.lg,
+            context.isCompact ? AppSpacing.sm : AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +188,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                   pageMode: false,
                 ),
               ),
-              const shad.Gap(16),
+              const SizedBox(height: AppSpacing.lg),
               StaggeredEntrance(
                 replayKey: 'notifications-drawer-tabs-${_selectedTab.name}',
                 delay: const Duration(milliseconds: 40),
@@ -211,22 +200,24 @@ class _NotificationsViewState extends State<NotificationsView> {
                         : context.l10n.notificationsInbox;
                     return Row(
                       children: [
-                        SizedBox.square(
-                          dimension: 44,
-                          child: IconButton(
+                        if (state.isArchivingAll)
+                          const SizedBox.square(
+                            dimension: 44,
+                            child: Center(
+                              child: NovaLoadingIndicator(size: 20),
+                            ),
+                          )
+                        else
+                          AppIconButton(
                             tooltip: context.l10n.notificationsArchiveAll,
                             onPressed:
                                 _selectedTab == NotificationsTab.inbox &&
-                                    state.unreadCount > 0 &&
-                                    !state.isArchivingAll
+                                    state.unreadCount > 0
                                 ? () => unawaited(_archiveAll(context))
                                 : null,
-                            icon: state.isArchivingAll
-                                ? const NovaLoadingIndicator(size: 20)
-                                : const Icon(Icons.archive_outlined),
+                            icon: const Icon(LucideIcons.archive),
                           ),
-                        ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: SegmentedButton<NotificationsTab>(
                             showSelectedIcon: false,
@@ -256,19 +247,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                   },
                 ),
               ),
-              const shad.Gap(16),
-              StaggeredEntrance(
-                replayKey:
-                    'notifications-drawer-section-${_selectedTab.name}'
-                    '-${state.unreadCount}',
-                delay: const Duration(milliseconds: 80),
-                child: _NotificationsSectionHeader(
-                  title: _selectedTab == NotificationsTab.inbox
-                      ? context.l10n.notificationsInbox
-                      : context.l10n.notificationsArchive,
-                ),
-              ),
-              const shad.Gap(10),
+              const SizedBox(height: AppSpacing.lg),
               Expanded(child: list),
             ],
           ),
@@ -279,22 +258,16 @@ class _NotificationsViewState extends State<NotificationsView> {
           child: Container(
             constraints: BoxConstraints(maxHeight: maxHeight),
             decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(context.isCompact ? 0 : 22),
+              color: tokens.background,
+              borderRadius: BorderRadius.circular(
+                context.isCompact ? 0 : AppRadius.card,
+              ),
               border: context.isCompact
                   ? null
-                  : Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.22),
-                    ),
+                  : Border.all(color: tokens.border.withValues(alpha: 0.6)),
               boxShadow: context.isCompact
                   ? null
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 28,
-                        offset: const Offset(0, 14),
-                      ),
-                    ],
+                  : AppElevation.overlay(tokens),
             ),
             child: SafeArea(top: !context.isCompact, child: content),
           ),
@@ -435,261 +408,45 @@ class _NotificationsHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF162334), Color(0xFF1E1D3B), Color(0xFF16303A)]
-              : const [Color(0xFFEAF3FF), Color(0xFFF1EBFF), Color(0xFFE8F9F7)],
-          stops: const [0, 0.58, 1],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.12)
-              : colorScheme.primary.withValues(alpha: 0.18),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: isDark ? 0.16 : 0.1),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          if (pageMode && onBack != null) ...[
-            shad.IconButton.ghost(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded, size: 18),
-            ),
-            const shad.Gap(8),
-          ],
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              Icons.notifications_none_rounded,
-              size: 20,
-              color: colorScheme.primary,
-            ),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.notificationsTitle,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const shad.Gap(2),
-                Text(
-                  context.l10n.notificationsSubtitle(unreadCount),
-                  style: theme.typography.small.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!pageMode && onBack != null)
-            shad.IconButton.ghost(
-              onPressed: onBack,
-              icon: const Icon(Icons.close_rounded, size: 18),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationsSectionHeader extends StatelessWidget {
-  const _NotificationsSectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
 
     return Row(
       children: [
+        AppIconTile(
+          icon: LucideIcons.bell,
+          tone: AppTone.primary,
+          size: notificationLeadingSize,
+          badge: unreadCount > 0,
+        ),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              title,
-              style: theme.typography.small.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.notificationsTitle,
+                style: tokens.typography.large.copyWith(
+                  color: c.foreground,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
+              Text(
+                context.l10n.notificationsSubtitle(unreadCount),
+                style: tokens.typography.small.copyWith(
+                  color: c.mutedForeground,
+                ),
+              ),
+            ],
           ),
         ),
+        if (!pageMode && onBack != null)
+          AppIconButton(
+            onPressed: onBack,
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            icon: const Icon(AppIcons.close),
+          ),
       ],
     );
   }
-}
-
-class _NotificationsSurface extends StatelessWidget {
-  const _NotificationsSurface({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.18),
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _InviteStatusChip extends StatelessWidget {
-  const _InviteStatusChip({required this.actionTaken});
-
-  final String actionTaken;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final accepted = actionTaken == 'accepted';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: accepted
-            ? Colors.green.withValues(alpha: 0.12)
-            : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        accepted
-            ? context.l10n.notificationsInviteAccepted
-            : context.l10n.notificationsInviteDeclined,
-        style: shad.Theme.of(context).typography.xSmall.copyWith(
-          color: accepted
-              ? Colors.green.shade700
-              : colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationsEmptyState extends StatelessWidget {
-  const _NotificationsEmptyState({
-    required this.title,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String message;
-  final String? actionLabel;
-  final Future<void> Function()? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(
-                Icons.notifications_none_rounded,
-                size: 24,
-                color: colorScheme.primary,
-              ),
-            ),
-            const shad.Gap(14),
-            Text(
-              title,
-              style: theme.typography.large.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const shad.Gap(6),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.typography.small.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const shad.Gap(14),
-              FilledButton(
-                onPressed: () => unawaited(onAction!.call()),
-                child: Text(actionLabel!),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Color _accentColor(BuildContext context, String type) {
-  return switch (type) {
-    'workspace_invite' => Colors.orange,
-    'security_alert' => Theme.of(context).colorScheme.error,
-    'system_announcement' => Theme.of(context).colorScheme.primary,
-    'task_completed' || 'report_approved' || 'post_approved' => Colors.green,
-    'report_rejected' || 'post_rejected' => Theme.of(context).colorScheme.error,
-    'task_mention' => Colors.purple,
-    _ => Theme.of(context).colorScheme.primary,
-  };
-}
-
-IconData _iconForType(String type) {
-  return switch (type) {
-    'workspace_invite' || 'mail_received' => Icons.mail_outline_rounded,
-    'security_alert' => Icons.shield_outlined,
-    'system_announcement' => Icons.campaign_outlined,
-    'task_completed' => Icons.check_circle_outline_rounded,
-    'task_mention' => Icons.alternate_email_rounded,
-    'task_moved' => Icons.compare_arrows_rounded,
-    'task_assigned' => Icons.assignment_ind_outlined,
-    _ => Icons.notifications_none_rounded,
-  };
 }

@@ -139,15 +139,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json"
       - name: Require pre-provisioned server credentials
-        working-directory: apps/coordination
-        env:
-          CF_SEND_TELEMETRY: 'false'
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
-          bun x --no-install wrangler secret list -c wrangler.publish.jsonc > "$RUNNER_TEMP/coordination-secrets.json"
-          # Fail closed on any output shape that does not name the secret.
-          jq -e '[.. | objects | select(.name? == "COORDINATION_TOKEN")] | length > 0' "$RUNNER_TEMP/coordination-secrets.json" > /dev/null
+          jq -e '(.secrets | type == "array") and (.secrets | index("COORDINATION_TOKEN") != null)' "$RUNNER_TEMP/coordination-settings-before.json" > /dev/null
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: coordination-worker-${{ github.sha }}
@@ -162,17 +155,13 @@ jobs:
         env:
           CF_SEND_TELEMETRY: 'false'
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
-      - name: Verify the coordination token survived publication
-        working-directory: apps/coordination
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
-        run: |
-          bun x --no-install wrangler secret list -c wrangler.publish.jsonc > "$RUNNER_TEMP/coordination-secrets-after.json"
-          jq -e 'any(.[]; .name == "COORDINATION_TOKEN")' "$RUNNER_TEMP/coordination-secrets-after.json" > /dev/null
       - name: Capture and compare settings after publication
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json" "$RUNNER_TEMP/coordination-settings-after.json"
+      - name: Verify the coordination token survived publication
+        run: |
+          jq -e '(.secrets | type == "array") and (.secrets | index("COORDINATION_TOKEN") != null)' "$RUNNER_TEMP/coordination-settings-after.json" > /dev/null
       - name: Retain settings and rollback evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
