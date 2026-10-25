@@ -110,4 +110,17 @@ describe('Track proxy redirects under a basePath', () => {
       'https://track.tuturuuu.com/personal'
     );
   });
+
+  it.each(['*', '*;q=0.5', 'vi-VN,*;q=0.1'])(
+    'negotiates a locale for Accept-Language %s instead of failing',
+    async (acceptLanguage) => {
+      const response = await proxy(
+        new NextRequest('https://track.tuturuuu.com/workspace-1/history', {
+          headers: { 'accept-language': acceptLanguage },
+        })
+      );
+
+      expect(response.status).toBeLessThan(500);
+    }
+  );
 });

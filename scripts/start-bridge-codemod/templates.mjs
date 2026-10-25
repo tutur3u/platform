@@ -111,7 +111,13 @@ export default defineConfig({
 `;
 }
 
-export function workerEntry({ app, proxyModule, rootHost, proxyMatcher }) {
+export function workerEntry({
+  app,
+  proxyModule,
+  rootHost,
+  proxyMatcher,
+  assetsBinding,
+}) {
   const name = `${pascal(app)}Environment`;
   const proxyImport = proxyMatcher
     ? `import { config as proxyConfig, proxy } from '${proxyModule}';`
@@ -126,8 +132,16 @@ import { createProxyMatcher } from '${BRIDGE.proxyMatcher}';
     // The proxy's own \`config.matcher\`, evaluated like Next.
     matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),`
     : '';
+  // The portable binding (#6753): the Workers \`Fetcher\` satisfies it.
+  const assetsImport = assetsBinding
+    ? `import type { AssetsBinding } from '${BRIDGE.assets}';
+`
+    : '';
+  const assetsType = assetsBinding
+    ? 'AssetsBinding'
+    : '{ fetch(request: Request): Promise<Response> }';
   return `${header(app)}/// <reference types="@vitejs/plugin-rsc/types" />
-import { createFunctionProxy } from '${BRIDGE.functionProxy}';
+${assetsImport}import { createFunctionProxy } from '${BRIDGE.functionProxy}';
 ${matcherImports}import { createBridgeHandler } from '${BRIDGE.handler}';
 import { createBridgeStartHandler } from '${BRIDGE.serverEntry}';
 ${proxyImport}
@@ -136,7 +150,7 @@ import { centralFirst } from '${moduleFrom('../', CENTRAL_FIRST)}';
 import { publicAssets } from '${moduleFrom('../', PUBLIC_ASSETS)}';
 
 export interface ${name} {
-  ASSETS: { fetch(request: Request): Promise<Response> };
+  ASSETS: ${assetsType};
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
