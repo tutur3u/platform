@@ -272,6 +272,8 @@ void livePreparationCases() {
         await _untilSettled(tester, sending);
         expect(f.live.state.status, AssistantLiveConnectionStatus.disconnected);
         expect(f.connections, lessThanOrEqualTo(maxConnections));
+        // A provider wire opened during binding must be closed, not leaked.
+        expect(f.wire.sinkCloses, f.connections == 0 ? 0 : greaterThan(0));
         expect(f.wire.textAttempts, 0);
         expect(f.h.repository.starts, 0);
         expect(f.live.state.userDraft, isEmpty);
@@ -325,6 +327,7 @@ void livePreparationCases() {
       expect(f.h.chat.state.storedChatId, _canonicalLiveChat);
       expect(f.h.chat.state.chat?.id, _canonicalLiveChat);
       expect(f.connections, lessThanOrEqualTo(1));
+      expect(f.wire.sinkCloses, f.connections == 0 ? 0 : greaterThan(0));
       expect(f.wire.textAttempts, 0);
       expect(composer.controller.value, draft);
       expect(f.h.chat.state.composerAttachments, attachments);

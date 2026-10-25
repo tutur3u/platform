@@ -11,6 +11,8 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_startup_timings.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'live_dispatch_transport.dart';
+
 class _Repository extends Mock implements AssistantLiveRepository {}
 
 class _Player extends Mock implements AssistantLiveAudioPlayer {}
@@ -244,6 +246,71 @@ void main() {
       expect(cubit.state.startupTimings, isEmpty);
     },
   );
+
+  test(
+    'scope change while binding retires the connected provider socket',
+    () async {
+      final preparing = cubit.prepareSession(wsId: 'ws');
+      for (var i = 0; i < 6; i++) {
+        await _tick();
+      }
+      expect(cubit.state.status, AssistantLiveConnectionStatus.connected);
+      verifyNever(socket.disconnect);
+      scopeToken++;
+      history.complete();
+      expect(await preparing, isNull);
+      verify(socket.disconnect).called(1);
+      expect(cubit.state.status, AssistantLiveConnectionStatus.disconnected);
+    },
+  );
+
+  for (final change in ['actor', 'workspace scope']) {
+    test('$change change while binding closes the opened wire', () async {
+      final wire = LiveDispatchTransport()..autoReady = true;
+      final binding = Completer<void>();
+      final recorder = _Recorder();
+      final camera = _Camera();
+      when(recorder.stop).thenAnswer((_) async {});
+      when(recorder.dispose).thenAnswer((_) async {});
+      when(camera.stopStreaming).thenAnswer((_) async {});
+      when(camera.dispose).thenAnswer((_) async {});
+      var actor = 'user';
+      var scope = 0;
+      final live = AssistantLiveCubit(
+        repository: repository,
+        socket: wire.socket,
+        audioPlayer: player,
+        recorder: recorder,
+        cameraService: camera,
+        currentUserId: () => actor,
+        currentScopeToken: () => scope,
+        onChatBound: (_, _) => binding.future,
+        onHistoryUpdated: (_, _) async {},
+      );
+      addTearDown(() async {
+        await live.close();
+        await wire.dispose();
+      });
+      final preparing = live.prepareSession(wsId: 'ws');
+      for (var i = 0; i < 8; i++) {
+        await _tick();
+      }
+      expect(live.state.status, AssistantLiveConnectionStatus.connected);
+      expect(wire.setups, 1);
+      expect(wire.sinkCloses, 0);
+      if (change == 'actor') {
+        actor = 'other-user';
+      } else {
+        scope++;
+      }
+      binding.complete();
+      expect(await preparing, isNull);
+      expect(wire.sinkCloses, 1);
+      expect(wire.setups, 1);
+      expect(wire.textAttempts, 0);
+      expect(live.state.status, AssistantLiveConnectionStatus.disconnected);
+    });
+  }
 
   test(
     'duration snapshots are immutable and contain only completed stages',

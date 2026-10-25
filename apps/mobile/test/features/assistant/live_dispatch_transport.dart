@@ -15,7 +15,9 @@ class LiveDispatchTransport {
     when(() => _channel.stream).thenAnswer((_) => frames.stream);
     when(() => _channel.sink).thenReturn(_sink);
     when(() => _channel.closeCode).thenAnswer((_) => closeCode);
-    when(_sink.close).thenAnswer((_) async {});
+    when(_sink.close).thenAnswer((_) async {
+      sinkCloses++;
+    });
     when(() => _sink.add(any<dynamic>())).thenAnswer((invocation) {
       final frame =
           jsonDecode(invocation.positionalArguments.single as String)
@@ -51,6 +53,7 @@ class LiveDispatchTransport {
   late final AssistantLiveSocketClient socket;
   int? closeCode;
   int textAttempts = 0;
+  int sinkCloses = 0;
   bool autoReady = false;
   void Function()? onSetup;
   bool throwAfterTextAdd = false;
@@ -58,6 +61,9 @@ class LiveDispatchTransport {
   bool throwAfterAudioAdd = false;
   void Function()? beforeText;
   void Function()? afterText;
+
+  int get setups =>
+      admitted.where((frame) => frame.containsKey('setup')).length;
 
   List<String> get texts => admitted
       .map((frame) => frame['realtimeInput'])
