@@ -13,6 +13,7 @@ import { mailOneOriginConfig } from './one-origin';
 import { dispatchThroughMailProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
 import { applyMailResponsePolicy } from './response-policy';
+import { applyMailDocumentHeaders } from './security-profile';
 import type { MailExecutionContext, MailRuntimeEnv } from './worker-contract';
 
 async function dispatchMailRequest(
@@ -82,9 +83,13 @@ export async function handleMailRequest(
   const decision = decideOneOriginRequest(incoming, mailOneOriginConfig(env));
   if (decision.action !== 'serve') return decision.response;
   const { request } = decision;
-  const response = applyMailResponsePolicy(
-    request,
-    await dispatchMailRequest(request, env, ctx)
+  const response = applyMailDocumentHeaders(
+    incoming,
+    applyMailResponsePolicy(
+      request,
+      await dispatchMailRequest(request, env, ctx)
+    ),
+    env
   );
   return decision.noindex ? applyOneOriginNoindex(response) : response;
 }
