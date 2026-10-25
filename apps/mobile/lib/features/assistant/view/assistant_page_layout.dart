@@ -104,7 +104,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                       _appIsForeground &&
                       WidgetsBinding.instance.lifecycleState ==
                           AppLifecycleState.resumed &&
-                      TickerMode.valuesOf(context).enabled &&
+                      (TickerMode.valuesOf(context).enabled ||
+                          _isLiveCallPresented) &&
                       context.read<AssistantChromeCubit>().state.isLiveMode &&
                       _currentActor() != null &&
                       _shellCubit.state.workspace?.id == state.workspaceId,
@@ -174,9 +175,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                         // Pending preferences block sends and retained content.
                         // Preserve the requested dock presentation.
                         final isLiveMode = chrome.isLiveMode && !local.local;
-                        final liveConnected =
-                            liveState.status ==
-                            AssistantLiveConnectionStatus.connected;
                         final liveCameraController =
                             _liveCubit.cameraController;
                         final isVisibleLiveSession = _isVisibleLiveSession(
@@ -217,6 +215,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                         final isPersonalWorkspace = currentWorkspace.personal;
                         const scrollDismissBehavior =
                             ScrollViewKeyboardDismissBehavior.onDrag;
+                        final messageActionsCurrent = _messageActionScope(
+                          chatState,
+                        );
                         Future<void> removeComposerAttachment(
                           String attachmentId,
                         ) {
@@ -342,21 +343,22 @@ extension _AssistantPageLayout on _AssistantPageState {
                                     slot: ShellDockSlot(
                                       location: Routes.assistant,
                                       workspaceId: currentWorkspace.id,
-                                      expandContent: !isLiveMode,
                                       composing: isLiveMode
-                                          ? liveConnected &&
-                                                !chrome.navigationExpanded
+                                          ? !chrome.navigationExpanded
                                           : _isComposerVisible,
                                       content: isLiveMode
-                                          ? liveConnected
-                                                ? _liveCallDock(
-                                                    currentWorkspace.id,
-                                                    chatState,
-                                                    liveState,
-                                                  )
-                                                : const SizedBox.shrink()
+                                          ? _liveCallDock(
+                                              currentWorkspace.id,
+                                              chatState,
+                                              liveState,
+                                            )
                                           : AssistantComposerDock(
                                               embedded: true,
+                                              onCancelReply: () {
+                                                if (messageActionsCurrent()) {
+                                                  _chatCubit.clearReplyTarget();
+                                                }
+                                              },
                                               onHeightChanged:
                                                   _setComposerHeight,
                                               localOnly: localLane,
@@ -424,30 +426,23 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   ),
                                               onSend: () => _handleSend(
                                                 currentWorkspace.id,
-                                                shellState,
-                                                chatState,
-                                                liveState,
                                               ),
                                               onRemoveAttachment:
                                                   removeComposerAttachment,
                                             ),
                                       primary: isLiveMode
-                                          ? _livePrimaryAction(
-                                              currentWorkspace.id,
-                                              chatState,
-                                              liveState,
-                                            )
+                                          ? _livePrimaryAction()
                                           : _isComposerVisible
                                           ? AssistantComposerPrimaryAction(
+                                              key: const ValueKey(
+                                                'assistant-dock-primary',
+                                              ),
                                               controller: _inputController,
                                               focusNode: _inputFocusNode,
                                               onToggleNavigation:
                                                   _toggleComposerNavigation,
                                               onSend: () => _handleSend(
                                                 currentWorkspace.id,
-                                                shellState,
-                                                chatState,
-                                                liveState,
                                               ),
                                               voiceCapture: localLane
                                                   ? null
@@ -547,10 +542,23 @@ extension _AssistantPageLayout on _AssistantPageState {
     AssistantLiveState liveState,
     AssistantShellState shellState,
   ) {
+    final current = _messageActionScope(chatState);
+    final remote = !_localCubit.state.local && !_localCubit.state.blocked;
     return AssistantTranscriptSection(
       chatState: chatState,
       liveState: liveState,
       assistantName: shellState.soul.name,
+      actorId: _currentActor(),
+      canPersistMessage: remote ? _chatCubit.canPersistMessage : null,
+      needsReactionRefresh: remote ? _chatCubit.needsReactionRefresh : null,
+      isActionCurrent: current,
+      onJumpToReply: _transcriptFollower.suspend,
+      onReply: _shouldSendThroughLive(chatState, liveState)
+          ? null
+          : (id) => _replyToMessage(id, current),
+      onReact: (id, reaction) =>
+          unawaited(_reactToMessage(id, reaction, current)),
+      onRefreshReactions: (id) => unawaited(_reactToMessage(id, null, current)),
       onRetry: () => _localCubit.state.local || _localCubit.state.blocked
           ? _localCubit.state.selectedModelId == null
                 ? _showLiveSettings()

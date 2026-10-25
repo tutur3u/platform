@@ -53,6 +53,7 @@ function rankOne(
   staleAfterMs: number,
   hardLimitPercent: number
 ): RankedInstance {
+  const observedWindows = account.windows;
   account = {
     ...account,
     windows: account.windows.filter((window) =>
@@ -121,9 +122,14 @@ function rankOne(
     });
   if (!windows.length)
     reasons.push({
-      code: 'no-usage-signal',
-      message:
-        'No authoritative usage signal is exposed; eligibility is UNKNOWN.',
+      code: observedWindows.some((window) => window.scope?.kind === 'unknown')
+        ? 'scope-unverified'
+        : 'no-usage-signal',
+      message: observedWindows.some(
+        (window) => window.scope?.kind === 'unknown'
+      )
+        ? 'A provider window exists, but its model scope is unverified; it cannot establish headroom or exhaustion for this task.'
+        : 'No authoritative usage signal is exposed; eligibility is UNKNOWN.',
     });
   reasons.push({
     code: 'task-kind',

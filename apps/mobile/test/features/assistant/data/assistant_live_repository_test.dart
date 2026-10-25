@@ -95,4 +95,59 @@ void main() {
       verify(() => api.postJson(path, any())).called(1);
     });
   }
+
+  for (final protocol in ['legacy', 'canonical-v1']) {
+    test('Live declares capabilities and timezone only for $protocol '
+        'canonical executions', () async {
+      final api = _Api();
+      Map<dynamic, dynamic>? sent;
+      when(() => api.postJson(any(), any())).thenAnswer((invocation) async {
+        sent = invocation.positionalArguments[1] as Map;
+        return {'result': <String, dynamic>{}};
+      });
+      await AssistantLiveRepository(
+        apiClient: api,
+        deviceTimezone: () async => 'Asia/Ho_Chi_Minh',
+        clientCapabilities: () => const ['theme', 'navigate'],
+      ).executeToolCall(
+        wsId: 'workspace',
+        functionName: 'execute_workspace_tool',
+        args: {},
+        toolProtocol: protocol,
+        toolCallId: 'call-1',
+      );
+      if (protocol == 'canonical-v1') {
+        expect(sent!['clientCapabilities'], ['theme', 'navigate']);
+        expect(sent!['timezone'], 'Asia/Ho_Chi_Minh');
+      } else {
+        expect(sent!.containsKey('clientCapabilities'), isFalse);
+        expect(sent!.containsKey('timezone'), isFalse);
+      }
+    });
+  }
+
+  test(
+    'an unverified device timezone is omitted from Live executions',
+    () async {
+      final api = _Api();
+      Map<dynamic, dynamic>? sent;
+      when(() => api.postJson(any(), any())).thenAnswer((invocation) async {
+        sent = invocation.positionalArguments[1] as Map;
+        return {'result': <String, dynamic>{}};
+      });
+      await AssistantLiveRepository(
+        apiClient: api,
+        deviceTimezone: () async => throw Exception('unavailable'),
+        clientCapabilities: () => const [],
+      ).executeToolCall(
+        wsId: 'workspace',
+        functionName: 'execute_workspace_tool',
+        args: {},
+        toolProtocol: 'canonical-v1',
+        toolCallId: 'call-1',
+      );
+      expect(sent!.containsKey('timezone'), isFalse);
+      expect(sent!['clientCapabilities'], isEmpty);
+    },
+  );
 }

@@ -7672,6 +7672,206 @@
     "front": "Front",
     "id": "ID"
   },
+  "fleet": {
+    "actions": {
+      "all_machines": "All machines",
+      "drain": "Drain",
+      "undrain": "Resume placement"
+    },
+    "empty": {
+      "machines_detail": "Run ttr box connect --service on a host to enroll it.",
+      "machines_title": "No machines enrolled",
+      "runs": "No runs on this machine in the latest snapshot."
+    },
+    "errors": {
+      "machine_missing_detail": "It may have been removed, or it is outside the 50 most recently updated machines.",
+      "machine_missing_title": "Machine not found",
+      "snapshot_detail": "Nothing below is current. Retry, and check the devbox storage migrations if this persists.",
+      "snapshot_title": "Fleet data could not be loaded"
+    },
+    "facts": {
+      "cli": "ttr version",
+      "commit_run": "Commit-run protocol",
+      "cpu": "CPU",
+      "credential": "Credentials",
+      "credential_value": "{active} active of {total}",
+      "execution_mode": "Execution mode",
+      "features": "Enabled services",
+      "heartbeat": "Last heartbeat",
+      "hostname": "Hostname",
+      "memory": "Memory",
+      "never": "Never",
+      "none": "None",
+      "not_reported": "Not reported",
+      "platform": "Platform",
+      "registered": "Registered",
+      "reported": "Readings reported",
+      "runtimes": "Runtimes",
+      "uptime": "Uptime"
+    },
+    "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Dedicated Docker socket",
+        "dedicatedUser": "Dedicated service user",
+        "gvisorDefault": "gVisor by default",
+        "noGeneralDockerGroup": "Not in the general Docker group",
+        "privateTokenDirectory": "Private token directory",
+        "protectedService": "Protected service"
+      },
+      "no": "No",
+      "not_attested": "This machine does not report isolation. Enable TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE on the runner to attest it.",
+      "yes": "Yes"
+    },
+    "jobs": {
+      "columns": {
+        "created": "Requested",
+        "duration": "Duration",
+        "exit": "Exit",
+        "machine": "Machine",
+        "source": "Source",
+        "state": "Status"
+      },
+      "detail": {
+        "completed": "Finished",
+        "duration": "Duration",
+        "exit_code": "Exit code",
+        "load_failed": "This run could not be loaded. Retry; nothing shown here is current.",
+        "log_empty": "This run has not written any output.",
+        "log_label": "Run log",
+        "log_truncated": "Showing the last {count} events. Older output is not shown here.",
+        "machine": "Machine",
+        "none": "None",
+        "not_found_detail": "The ID is malformed or the run no longer exists.",
+        "not_found_title": "Run not found",
+        "not_yet": "Not yet",
+        "requested": "Requested",
+        "run_id": "Run ID",
+        "sections": {
+          "execution": "Execution",
+          "log": "Log",
+          "source": "Source"
+        },
+        "started": "Started",
+        "stop": "Request stop",
+        "timeout": "Timeout"
+      },
+      "empty": "No runs match this filter in the latest snapshot.",
+      "filters": {
+        "all": "All",
+        "failed": "Failed",
+        "label": "Filter runs",
+        "queued": "Queued",
+        "running": "Running",
+        "unknown": "Outcome unknown"
+      },
+      "recovery": {
+        "cancel_requested": "Stop requested. The runner stops it at its next check; until then it may still be running.",
+        "failed": "Failed with exit code {code}. The log below shows the last output.",
+        "outcome_unknown": "The machine running this is unreachable, so its result is unknown. It is not rescheduled automatically. Check the host before requesting it again; it may still be running.",
+        "queued_unassigned": "Waiting for an eligible machine to claim it.",
+        "timed_out": "Stopped after reaching its time limit.",
+        "unrecognized": "This console does not recognise the status \"{status}\". Treat the outcome as unknown."
+      },
+      "source": {
+        "command": "Command",
+        "commit": "Commit",
+        "directory": "Directory",
+        "invalid": "Unreadable commit-run envelope",
+        "maintenance": "Maintenance: {name}",
+        "repository_root": "Repository root"
+      },
+      "title": "Runs",
+      "unassigned": "Unassigned",
+      "window": "Latest {count} devbox runs"
+    },
+    "manage": "Runner admin",
+    "recovery": {
+      "awaiting_first_heartbeat": "Registered but never reported. Setup may have failed; rerun ttr box connect --service on the host and check its agent service.",
+      "disconnected": "Last heartbeat {age}. Runs that were active here have an unknown outcome and are not rescheduled automatically. Check the agent service on the host.",
+      "draining": "Drain requested {age}. Current work finishes; no new work is placed here.",
+      "heartbeat_disabled": "Heartbeat is turned off, so this machine takes no work. Turn it on in runner admin.",
+      "revoked": "Revoked. This machine can no longer authenticate or take work.",
+      "telemetry_late": "Last heartbeat {age}. Readings are not current and no new work is placed here.",
+      "untrusted": "No active runner credential. Reconnect with ttr box connect to issue one, or revoke this machine."
+    },
+    "refresh": "Refresh",
+    "resources": {
+      "disk": "Disk in use",
+      "disk_free": "{free} GiB free",
+      "load": "Load per core (1 min)",
+      "memory": "Memory in use",
+      "not_reported": "Not reported",
+      "unknown": "Unknown"
+    },
+    "run_state": {
+      "cancel_requested": "Cancelling",
+      "cancelled": "Cancelled",
+      "claimed": "Claimed",
+      "failed": "Failed",
+      "outcome_unknown": "Outcome unknown",
+      "queued": "Queued",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "timed_out": "Timed out",
+      "unrecognized": "Unrecognized status"
+    },
+    "runs": {
+      "command": "Command",
+      "exit": "Exit",
+      "started": "Started",
+      "status": "Status"
+    },
+    "sections": {
+      "attention": "Needs attention",
+      "identity": "Identity and setup",
+      "isolation": "Isolation attestation",
+      "machines": "Machines",
+      "recent_runs": "Recent runs",
+      "resources": "Resources",
+      "work": "Work on this machine"
+    },
+    "snapshot": "Snapshot {time}",
+    "state": {
+      "awaiting_first_heartbeat": "Setup incomplete",
+      "disconnected": "Disconnected",
+      "draining": "Draining",
+      "heartbeat_disabled": "Heartbeat off",
+      "online": "Online",
+      "revoked": "Revoked",
+      "telemetry_late": "Heartbeat late",
+      "untrusted": "No credential"
+    },
+    "stats": {
+      "attention": "Needs attention",
+      "of_machines": "of {count} machines",
+      "online": "Online",
+      "outcome_unknown": "Outcome unknown",
+      "queued": "Queued",
+      "run_window": "in the latest {count} runs",
+      "running": "Running"
+    },
+    "telemetry": {
+      "fresh": "Live readings",
+      "missing": "No readings",
+      "stale": "Stale readings"
+    },
+    "title": "Fleet",
+    "trust": {
+      "no_active_credential": "No active credential",
+      "revoked": "Revoked",
+      "trusted": "Credential active"
+    },
+    "work": {
+      "activity_unavailable": "Per-machine activity is unavailable until the drain/activity migration is applied.",
+      "kept_leases": "Kept leases",
+      "lane_ceiling": "Lane ceiling",
+      "leases": "Active leases",
+      "queued": "Queued here",
+      "running": "Running",
+      "summary": "{running} running, {queued} queued",
+      "summary_unknown": "{running} with unknown outcome, {queued} queued"
+    }
+  },
   "forms": {
     "access_mode": {
       "anonymous": "Anonymous allowed",
@@ -8639,6 +8839,12 @@
         "description": "Email audit, templates, queues, blacklist controls, and push delivery.",
         "title": "Communications"
       },
+      "delivery": {
+        "title": "Delivery"
+      },
+      "integrations": {
+        "title": "Integrations"
+      },
       "monitoring": {
         "description": "Runtime telemetry, deployments, cron health, logs, and resources."
       },
@@ -8662,6 +8868,11 @@
       "calendar_sync": "Calendar Sync",
       "holidays": "Holidays",
       "monitoring_deployments": "Deployment Stages"
+    },
+    "sections": {
+      "fleet": "Fleet",
+      "govern": "Govern",
+      "operate": "Operate"
     }
   },
   "infrastructure-tabs": {
@@ -8688,6 +8899,8 @@
     "entity_creation_limits": "Entity Creation Limits",
     "external_apps": "External Apps",
     "features": "Features",
+    "fleet": "Fleet",
+    "fleet_runs": "Runs",
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
@@ -12711,6 +12924,34 @@
     "reset-password-desc": "Enter the new password for your account",
     "resetting": "Resetting",
     "success-message": "Your password has been reset successfully. You can now log in with your new password."
+  },
+  "satellite-account-settings": {
+    "accounts": "Accounts",
+    "accounts_add": "Add another account",
+    "accounts_description": "Manage multiple accounts and switch between them",
+    "accounts_remove": "Remove an account from this browser",
+    "accounts_switch": "Switch between signed-in accounts",
+    "appearance": "Appearance",
+    "appearance_description": "Theme and language",
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
+    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
+    "managed_centrally_title": "Managed in your Tuturuuu account",
+    "open_in_tuturuuu": "Open in Tuturuuu",
+    "preferences": "Preferences",
+    "profile": "Profile",
+    "profile_description": "Manage your name, avatar and email",
+    "security": "Security",
+    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
+    "security_linked_identities": "Linked sign-in methods",
+    "security_passkeys": "Passkeys",
+    "security_password": "Change or reset your password",
+    "security_two_factor": "Two-factor authentication with an authenticator app",
+    "sessions": "Sessions & Devices",
+    "sessions_description": "Manage your active sessions and devices",
+    "sessions_devices": "See every device signed in to your account",
+    "sessions_revoke": "Sign out other devices",
+    "signed_in_as": "Signed in as {email}",
+    "title": "Account"
   },
   "satellite-workspace-settings": {
     "avatar": "Workspace avatar",
@@ -23634,33 +23875,5 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
-  },
-  "satellite-account-settings": {
-    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
-    "title": "Account",
-    "preferences": "Preferences",
-    "profile": "Profile",
-    "profile_description": "Manage your name, avatar and email",
-    "accounts": "Accounts",
-    "accounts_description": "Manage multiple accounts and switch between them",
-    "security": "Security",
-    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
-    "sessions": "Sessions & Devices",
-    "sessions_description": "Manage your active sessions and devices",
-    "appearance": "Appearance",
-    "appearance_description": "Theme and language",
-    "managed_centrally_title": "Managed in your Tuturuuu account",
-    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
-    "signed_in_as": "Signed in as {email}",
-    "open_in_tuturuuu": "Open in Tuturuuu",
-    "accounts_switch": "Switch between signed-in accounts",
-    "accounts_add": "Add another account",
-    "accounts_remove": "Remove an account from this browser",
-    "security_password": "Change or reset your password",
-    "security_two_factor": "Two-factor authentication with an authenticator app",
-    "security_passkeys": "Passkeys",
-    "security_linked_identities": "Linked sign-in methods",
-    "sessions_devices": "See every device signed in to your account",
-    "sessions_revoke": "Sign out other devices"
   }
 }

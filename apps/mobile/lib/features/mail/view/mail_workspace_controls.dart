@@ -72,6 +72,8 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
       _labelId = null;
       _folderId = null;
       _selected.clear();
+      // An open conversation belongs to the previous mailbox.
+      _selection = null;
     });
     unawaited(_load(forceRefresh: false));
   }

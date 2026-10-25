@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+/// A row's place in its day card; see [ProfileTimelineDays.segment].
+typedef ProfileTimelineSegment = ({bool first, bool last});
 
 /// Sort snapshots as well as API results; cache order is not an API guarantee.
 Map<DateTime, List<ProfileTimelineItem>> groupProfileTimelineDays(
@@ -34,6 +38,7 @@ class ProfileTimelineDays extends StatelessWidget {
     this.itemKey,
     this.showHeader = true,
     this.showItems = true,
+    this.segment,
     super.key,
   });
 
@@ -45,10 +50,16 @@ class ProfileTimelineDays extends StatelessWidget {
   final bool showHeader;
   final bool showItems;
 
+  /// Where a single-item row sits in its day's card. Rows of one day stack
+  /// into one rounded card: the first rounds its top, the last its bottom.
+  /// Null draws the rows without a card.
+  final ProfileTimelineSegment? segment;
+
   @override
   Widget build(BuildContext context) {
     final groups = groupProfileTimelineDays(items, convertDate: convertDate);
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     final locale = Localizations.localeOf(context).toString();
     final localNow = now ?? DateTime.now();
     final date = convertDate?.call(localNow) ?? localNow.toLocal();
@@ -60,11 +71,19 @@ class ProfileTimelineDays extends StatelessWidget {
     ).format(convertDate?.call(item.createdAt) ?? item.createdAt.toLocal());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: showHeader && !showItems
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       children: [
         for (final entry in groups.entries) ...[
           if (showHeader)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.sm,
+              ),
               child: Semantics(
                 header: true,
                 child: Column(
@@ -75,20 +94,22 @@ class ProfileTimelineDays extends StatelessWidget {
                           ? context.l10n.profileTimelineToday
                           : entry.key == yesterday
                           ? context.l10n.profileTimelineYesterday
-                          : DateFormat.yMMMd(locale).format(entry.key),
+                          : DateFormat.yMMMEd(locale).format(entry.key),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.base.copyWith(
-                        fontWeight: FontWeight.w700,
+                      style: tokens.typography.base.copyWith(
+                        color: c.foreground,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const shad.Gap(4),
+                    const SizedBox(height: AppSpacing.xxs),
                     Text(
                       _summary(context, entry.value),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
+                      style: tokens.typography.xSmall.copyWith(
+                        color: c.mutedForeground,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -96,37 +117,84 @@ class ProfileTimelineDays extends StatelessWidget {
               ),
             ),
           for (final item in showItems ? entry.value : <ProfileTimelineItem>[])
-            Material(
-              color: Colors.transparent,
-              child: ListTile(
+            _segmented(
+              context,
+              AppGroupedRow(
                 key: itemKey?.call(item),
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Icon(_icon(item.type), size: 22),
+                leading: AppIconTile(
+                  icon: _icon(item.type),
+                  tone: _tone(item.type),
+                ),
                 title: Text(
                   item.title?.trim().isNotEmpty == true
                       ? item.title!.trim()
                       : _milestone(context, item),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.base,
                 ),
                 subtitle: Text(
                   item.title?.trim().isNotEmpty == true
                       ? '${_milestone(context, item)} · ${time(item)}'
                       : time(item),
-                  style: theme.typography.textSmall,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: _canOpen(item)
-                    ? const Icon(Icons.chevron_right_rounded, size: 18)
-                    : null,
+                showChevron: _canOpen(item),
                 onTap: _canOpen(item) ? () => onOpen(item) : null,
               ),
             ),
         ],
       ],
+    );
+  }
+
+  /// Wraps a row in its slice of the day card so consecutive fixed-extent
+  /// rows read as one grouped card.
+  Widget _segmented(BuildContext context, Widget row) {
+    final segment = this.segment;
+    if (segment == null) {
+      return Material(type: MaterialType.transparency, child: row);
+    }
+    final colors = Theme.of(context).colorScheme;
+    final solid = MediaQuery.highContrastOf(context);
+    const radius = Radius.circular(AppRadius.card);
+    final border = BorderSide(
+      color: colors.outlineVariant.withValues(alpha: solid ? 1 : 0.4),
+    );
+    final shape = BorderRadius.vertical(
+      top: segment.first ? radius : Radius.zero,
+      bottom: segment.last ? radius : Radius.zero,
+    );
+    return Expanded(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surface.withValues(alpha: solid ? 1 : 0.72),
+          borderRadius: shape,
+          border: Border(
+            left: border,
+            right: border,
+            top: segment.first ? border : BorderSide.none,
+            bottom: segment.last ? border : BorderSide.none,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: shape,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!segment.first)
+                  Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    indent: AppLayout.rowDividerInset,
+                    color: colors.outlineVariant.withValues(alpha: 0.6),
+                  ),
+                Expanded(child: Center(child: row)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -162,10 +230,19 @@ class ProfileTimelineDays extends StatelessWidget {
   }
 
   IconData _icon(String type) => switch (type) {
-    'task' => Icons.task_alt_rounded,
-    'transaction' => Icons.account_balance_wallet_outlined,
-    'note' => Icons.edit_note_rounded,
-    'calendar' => Icons.event_rounded,
-    _ => Icons.history_rounded,
+    'task' => LucideIcons.circleCheck,
+    'transaction' => LucideIcons.wallet,
+    'note' => LucideIcons.notebookPen,
+    'calendar' => LucideIcons.calendarDays,
+    _ => LucideIcons.history,
+  };
+
+  // Each source keeps its app's tone (see the mobile design language).
+  AppTone _tone(String type) => switch (type) {
+    'task' => AppTone.primary,
+    'transaction' => AppTone.success,
+    'note' => AppTone.warning,
+    'calendar' => AppTone.info,
+    _ => AppTone.neutral,
   };
 }

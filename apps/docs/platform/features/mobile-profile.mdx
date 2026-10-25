@@ -1,0 +1,65 @@
+---
+title: Mobile Profile overview and timeline
+description: Layout, identity, private-activity and timeline presentation rules for the mobile Profile root tab
+---
+
+The Profile root tab uses the shared mobile design language: theme tokens,
+Lucide line icons, the composition kit and the grouped row vocabulary. Data
+sources, privacy scope and navigation did not change with the redesign. The
+overview still shows only the signed-in user's own identity and personal,
+user-filtered activity. Opening the timeline never shares it.
+
+## Overview
+
+- **Identity card.** The cover (or a soft accent wash when no cover is set),
+  an 80dp avatar overlapping the cover, the display name, email and bio, and
+  an **Edit profile** button that opens the existing profile editor
+  (`/settings/profile`). The shell navbar keeps the page title, and identity
+  from a previous account is never shown while the current one loads.
+- **Private activity.** It is introduced by a section header with a lock
+  icon. Tracked time for Today, This week and This month appears as kit stat
+  tiles in compact units ("1h 30m", "45m"); the full "N min tracked" reading
+  is the tiles' semantics label. The 12-week heatmap sits in a panel and uses
+  the info tone, with intensity by tracked time and muted cells for empty
+  days.
+- **States.** First loads show static tile shapes. A failed load shows an
+  inline destructive message with **Retry**. A missing personal workspace
+  shows an inline "timeline unavailable" message.
+- **Responsive.** Page kind `root`. Below 840dp of body width, identity sits
+  above activity. From 840dp, a 360dp identity column sits beside the
+  activity column. The three stat tiles share one row when it fits; where
+  only two columns fit, Today leads at full width so no cell is left empty.
+
+## Timeline
+
+- **Day cards.** Each day has a caption (Today, Yesterday or the localized
+  date) with a per-type summary. Its rows stack into one rounded grouped card
+  with inset dividers. Rows keep the fixed row extent the browser uses for
+  anchoring and date jumps.
+- **Rows.** Each row has a tone tile per source: tasks primary, transactions
+  success, notes warning, calendar info. Openable sources show a chevron.
+- **Date strip.** It shows the month label, Today, and previous/next week as
+  48dp icon buttons, plus a week of rounded day chips. The selected day is
+  filled with the primary colour, days with activity are tinted and carry a
+  dot, and every chip keeps its semantics label and tap action.
+- **States.** First loads show skeleton rows. Empty, partial and unavailable
+  timelines show a centred state message. Load and partial failures still
+  raise a toast (now `showAppToast`).
+- **Responsive.** The browser keeps one full-width scroll view and pads its
+  content with the `detail` page insets (a readable column of up to 600dp on
+  tablets and 720dp on desktops).
+
+## Regression coverage
+
+- `test/features/shell/view/appearance_root_tabs_render_test.dart` (part
+  `profile_render_cases.dart`) renders Overview and Timeline in the real
+  shell with fixture data at 390x844, 820x1180 and 1440x900 in Classic
+  light/dark, a gradient and a blob theme. It asserts:
+  - the phone gutter;
+  - the two-column desktop layout;
+  - the compact stat values;
+  - the 44dp edit target;
+  - the day captions and rows.
+- The existing `test/features/profile/view/*` suites cover activity scoping,
+  timeline anchoring, paging, races, navigation and account changes against
+  the restyled widgets.

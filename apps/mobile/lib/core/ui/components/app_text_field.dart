@@ -18,6 +18,7 @@ class AppTextField extends StatelessWidget {
     this.selectionControls,
     this.focusNode,
     this.placeholder,
+    this.hintMaxLines,
     this.label,
     this.errorText,
     this.leading,
@@ -52,6 +53,7 @@ class AppTextField extends StatelessWidget {
   final TextSelectionControls? selectionControls;
   final FocusNode? focusNode;
   final String? placeholder;
+  final int? hintMaxLines;
 
   /// Visible label above the field; also its accessible name.
   final String? label;
@@ -123,6 +125,7 @@ class AppTextField extends StatelessWidget {
       cursorColor: c.primary,
       decoration: InputDecoration(
         hintText: placeholder == label ? null : placeholder,
+        hintMaxLines: hintMaxLines,
         errorText: errorText,
         hintStyle: resolvedStyle.copyWith(color: c.mutedForeground),
         prefixIcon: leading,

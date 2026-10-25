@@ -103,7 +103,14 @@ avoid waiting. A bypass is a deliberate exception for a known small operation.
 
 Disk admission uses hysteresis. A volume turns `low` below `TTR_STORAGE_MIN_FREE`
 (15G), 5% free or 5% inodes. It recovers only at `TTR_STORAGE_RECOVER_FREE*`
-(default twice each).
+(default twice each; percentage recovery is capped at the low watermark plus
+100 GiB on that volume). Admission retains its absolute floor plus a 10 GiB
+band (and normally twice the byte low threshold). Explicit recovery byte or
+percentage settings can lower the corresponding recovery threshold, bounded
+by low plus 1 GiB or 0.1 percentage point; an explicit byte setting can narrow
+the admission floor band to at least 1 GiB. Inode checks remain independent.
+Regression coverage: `storage-hysteresis-recovery.test.ts` and
+`resources-disk-floor.test.ts` cover large disks and explicit recovery settings.
 
 While a volume is `low` and automatic reclaim is opted in, admission first
 runs it under the cleanup lease of this storage authority (one OS user's
@@ -203,8 +210,9 @@ activate it from an agent session.
   order: skr-studio > skr-sonha > skr-linux-lan > M4.
 - Fairness is by repository share with a bypass bound (`maxBypass`), so no
   waiter starves.
-- Every lane-queued job re-checks disk at dequeue: `TTR_STORAGE_MIN_FREE`
-  (15 GiB) and `TTR_STORAGE_MIN_FREE_PERCENT` (5%), fail closed;
+- Every lane-queued job re-checks disk at dequeue: `TTR_RESOURCES_MIN_FREE_GIB`
+  (50 GiB absolute floor), with no default percentage floor; explicit
+  `TTR_STORAGE_MIN_FREE_PERCENT` and inode checks still apply, fail closed;
   `TTR_RESOURCES_IGNORE_DISK=1` overrides it for one command.
 
 Use `ttr resources hosts --simulate` for the offline dry run. The SDK reference
@@ -216,6 +224,23 @@ has the measured old to new limits table.
 | skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
 | Sonha, ThanhStudio | none | not registered |
 
+Capability-aware `--hosts` placement uses repeatable `--requires
+ios|macos|flutter|web|rust|docker|supabase`, host capability attestations and declared OS
+checked against runtime telemetry. Direct tools and known repository wrappers infer requirements; ambiguous
+heavy scripts must declare them for automatic placement. Registries containing runners require `hubHostname` to match
+the M4 before dispatch. Remote hosts use local admission, never another fleet
+dispatch. This fence controls dispatch origin; it does not prohibit local heavy
+work or builds. Follow the M4 no-build policy separately. Nested `--hosts` must
+validate capabilities and actual OS before reusing a heavy lane or light host
+reservation; incompatible nesting fails before spawning.
+Requirement parsing and local compatibility checks precede the trusted trivial
+command shortcut too; explicit resource bypass retains raw local execution.
+Preserve ticket identity, age and bypass on retries; an unknown remote write
+must be reconciled rather than replayed. See the owning
+[capability and drain-window procedure](../../../../apps/docs/reference/packages/sdk.mdx#capability-placement-and-the-m4-hub).
+Mastermind owns Studio pool A (6 base/8 max; no pool B) and idle-only lane changes. Do not count the
+same physical Studio twice or activate a registry/config from an agent session.
+
 ## SDK supplier updates
 
 For an authorized dev/latest or private-tarball supplier change, use the
@@ -224,6 +249,14 @@ installation and the existing queue, verifies checksums, records rollback, and
 qualifies each host. Source changes never authorize activation.
 
 ## Diagnose and recover
+
+System probes use trusted absolute sysctl/ps paths and bounded platform
+fallbacks; Linux pressure reads `/proc/meminfo`. Unreadable burst telemetry
+marks only that waiter base-only. Its original ticket stays first for base
+capacity; eligible burst waiters follow the existing FIFO/project-share rules.
+Real high load or elevated pressure still blocks under the original policy.
+See [burst probe behavior and regression evidence](../../../../apps/docs/reference/packages/sdk.mdx#burst-telemetry-and-minimal-path).
+
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
 ages. It warns when an owner has been idle at 0% CPU for more than 10 minutes.
 Inspect such an owner and its thread; status never kills anything.
@@ -313,3 +346,41 @@ fi
 ```
 
 Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity. Resolve HOME and the Bun install base independently: a symlinked `.bun` or `.bun/install` is supported, while entries outside that resolved install base are still refused.
+
+## Automatic placement (requires released CLI and operator activation)
+
+Use `ttr resources run --host auto --dry-run -- COMMAND` to explain one
+invocation against the trusted registry. Without `--dry-run`, eligible free
+lanes are tried in Thanh, Sonha, Linux, M4 order. Never queue on a full host
+while another eligible host has a free lane. Only all-full eligible hosts may
+wait; report the shortest estimated wait and recheck for free lanes at admission.
+An unreachable runner/fleet or failed/unknown/stale probe is ineligible, with a
+reason. Capabilities (`--requires`, including Supabase) and OS filter first.
+
+Keep the registry operator-owned and disabled until activation is explicitly
+coordinated. Execution uses the existing devbox API transport. Configure `sshHost` aliases
+for bounded read-only admission probes that count each remote canonical queue.
+Probes respect SSH config and host-key checks; failures exclude the host.
+SSH reachability alone does not admit a host. Do not rewrite SSH configuration.
+Do not forward ambient local secrets. Explicit nonsecret environment assignments
+can travel as literal `/usr/bin/env KEY=value COMMAND` argv without shell quoting.
+Local worker caps still apply. Preserve remote operation keys on unknown writes.
+
+New local jobs require 50 GiB free by default (`TTR_RESOURCES_MIN_FREE_GIB`);
+status reports the floor and verdict. Remote placement uses the larger of the
+host's reserved disk and `minDiskFreeGiB` (default 50). Resource admission does not impose a default percentage floor on large disks;
+explicit storage percentage thresholds and inode gates remain. Configure Sonha's 2–4 lanes and Linux's pktm reservation
+from current evidence. See the SDK reference's automatic placement section for
+activation, estimation limits and regression coverage.
+
+Remote reservations without identity-bearing lane confirmation stay charged
+until completion, including before remote creation. Dispatch and planning share
+class/physical-lane/budget checks and exclude only the dispatcher's own
+reservation during its final check. Current aggregate telemetry may conservatively
+overcount a running job; it must never erase an unconfirmed reservation.
+
+Known `sb:*` wrappers infer Supabase plus Docker. Mobile/Flutter scripts and
+Dart/Melos wrappers infer Flutter, with Apple build requirements preserved.
+Ambiguous heavy scripts need explicit `--requires` for automatic placement.
+Invalid disk-floor configuration appears in status/probe explanations. Admission
+below the byte floor runs reclaim and blocker reporting before refusal.

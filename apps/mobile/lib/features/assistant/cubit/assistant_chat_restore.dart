@@ -183,6 +183,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
     _restoredSettings = null;
     final actor = _repository.currentActorId;
     final version = ++_workspaceVersion;
+    _chatSelection = (workspaceId: wsId, chatId: chatId, version: version);
     bool current() =>
         !isClosed &&
         version == _workspaceVersion &&

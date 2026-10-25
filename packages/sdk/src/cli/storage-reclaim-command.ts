@@ -7,6 +7,7 @@ import {
   nextVolumeState,
   recordVolumeState,
   storageHome,
+  volumeRecoveryThresholds,
 } from './storage-hysteresis';
 import { readLeaseRecord } from './storage-lease';
 import { realLiveness } from './storage-liveness';
@@ -117,6 +118,10 @@ export async function runReclaimCommand(options: ReclaimOptions) {
   }
 
   const volume = await probeVolume(volumePath);
+  Object.assign(
+    thresholds.recover,
+    volumeRecoveryThresholds(volume, thresholds.recover)
+  );
   const state = nextVolumeState('low', volume, thresholds);
   const dirs = holdsDirs(env);
   const candidates = planReclaim({

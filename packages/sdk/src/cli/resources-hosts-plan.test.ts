@@ -117,8 +117,11 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
       capabilities: {
         executionMode: 'trusted',
         protocols: { commitRun: [1] },
-        disk: { freeGiB: 400 },
-        resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+        resources: {
+          loadAverage: [4, 4, 4],
+          cpu: { cores: 20 },
+          disk: { freeGiB: 400, freePct: 85 },
+        },
       },
       drain_requested_at: null,
       activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
@@ -172,8 +175,11 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
           capabilities: {
             executionMode: 'trusted',
             protocols: { commitRun: [] },
-            disk: { freeGiB: 400 },
-            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+            resources: {
+              loadAverage: [4, 4, 4],
+              cpu: { cores: 20 },
+              disk: { freeGiB: 400, freePct: 85 },
+            },
           },
         }),
       ]),
@@ -220,7 +226,7 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
     expect(plan.blocked.w1).toMatch(/free disk is unknown/u);
     states.m4!.diskFreeGiB = 10;
     const low = planAdmissions(registry, states, [], [waiter('w1', 'light')]);
-    expect(low.blocked.w1).toMatch(/below the 15 GiB floor/u);
+    expect(low.blocked.w1).toMatch(/below the 50 GiB floor/u);
   });
 
   it('keeps dirty or unpushed trees off remote runners', () => {

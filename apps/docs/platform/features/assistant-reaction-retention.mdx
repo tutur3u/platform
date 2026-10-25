@@ -1,0 +1,93 @@
+---
+title: "Assistant reaction retention proposal"
+description: "A bounded cleanup plan that preserves reaction retry and retirement guarantees."
+updatedAt: "2026-10-25"
+---
+
+## Status and current behavior
+
+This is a proposal, not an enabled cleanup service or a migration. Native mobile
+Assistant uses `private.chat_reaction_operations` for actor-bound receipts and
+`private.chat_retired_reaction_operations` to reject delayed retired writes.
+Existing web Chat toggle callers do not use these operation receipts.
+
+The current default retains these records. Receipt rows already cascade with
+their actor, workspace, conversation or message; retirement rows cascade with
+their actor. There is no age-based expiry. Do not delete either table's records
+by age under the current protocol: an old request with a forgotten operation ID
+could otherwise apply its desired state after a newer choice.
+
+See [native reaction operations](/platform/features/assistant-live#native-mobile-reaction-operations)
+for the shipping retry and sign-out contract.
+
+## Proposed expiry contract
+
+Introduce a versioned write contract with server-issued, actor-bound operation
+tickets. Bind the ticket to the operation ID, canonical intent and an absolute
+server expiry. A proposed starting policy is a seven-day admission window;
+confirm that product window before implementation.
+
+Require the ticket for both desired-state writes and retirement. Reject arbitrary
+unissued IDs and expired unseen operations without mutating reactions. Preserve
+the current actor authentication, conversation admission and intent-mismatch
+checks. Issuance needs bounded actor quotas and its own abuse controls.
+
+Check expiry using fresh server time after acquiring the operation lock, before
+any new mutation. An ingress-only check or client timestamp is insufficient.
+Keep operation/retirement lock ordering and message serialization. Bound database
+transaction lifetime and test requests that expire while waiting for locks.
+
+A terminal expiry response lets the client stop replaying that operation and
+read the exact current message. A new reaction still requires a new explicit
+choice. Expiry must not silently claim that the previous operation never applied.
+Provide localized recovery on mobile before changing its replay window.
+
+Only enable deletion after the legacy unbounded desired-state write contract is
+closed, its admitted transactions have drained, and old clients fail closed.
+Old signed-out journals need terminal reconciliation through the new contract;
+they must not be discarded during migration. Existing web POST toggles remain a
+separate compatibility path.
+
+After those prerequisites, proposed storage limits are 30 days for terminal
+receipts and 90 days for retirement fences. Eligibility must also exceed the
+ticket expiry plus a verified transaction-drain grace period. These are proposed
+limits, not current promises. Add reliable expiry/creation columns and indexed
+eligibility through a new reviewed migration; do not modify the shipped migration.
+
+## Cloudflare cleanup owner and bounds
+
+Use a dedicated Cloudflare Worker with an hourly Cron Trigger and a Durable
+Object holding the enabled state, stop generation and bounded run cursor. Do not
+use Vercel Cron, Next background work or a database scheduler.
+
+Start disabled. Each admitted run may perform at most ten database batches of
+250 rows, with a fixed execution deadline and no automatic retry loop. Select
+only eligible rows using indexed expiry and stable keys; deleting an already
+deleted row is a successful no-op. Resume unfinished work at the next scheduled
+run and finish immediately when there are no eligible rows.
+
+Persist and acknowledge a stop generation before disabling execution. Check it
+before every database batch and define completion only after an already-admitted
+batch drains. Bound the database statement as well as the Worker request; a
+client timeout alone does not establish cancellation. No queue or continuation
+may schedule itself after the stop fence.
+
+Record rows selected/deleted, batch count, duration and the oldest eligible age
+without actor, message, emoji or operation payloads. Define daily database and
+Worker operation budgets and stop on exhaustion. Request rate limits, alerts and
+per-invocation CPU limits do not bound total scheduled spend.
+
+## Acceptance before activation
+
+- Apply the additive migration in an isolated full-chain fixture and regenerate
+  database types. Independently review service-role access and cleanup admission.
+- Prove expiry before dispatch, while waiting on both locks, after an unknown
+  response, after sign-out and after a newer add/remove. Exercise concurrent
+  connections and verify an expired delayed request cannot change the result.
+- Prove old clients and arbitrary retirement IDs fail closed, and mobile retains
+  unknown intent until terminal reconciliation. Cover localized expiry recovery.
+- Verify retry, restart and cursor behavior with both empty and maximum batches.
+  Assert operation budgets, deadline behavior, durable stop and in-flight drain.
+- Run exact-commit CI and the real Worker/Durable Object runtime. Obtain scoped
+  activation and rollback authorization before enabling the schedule. Rollback
+  stops cleanup first and must not reopen an unbounded legacy mutation path.
