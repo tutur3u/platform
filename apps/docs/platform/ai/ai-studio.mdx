@@ -204,3 +204,26 @@ bun --filter @tuturuuu/ai-studio build
 
 Keep model grants, budgets, rates, capture policy, and legal publication
 controls conservative while expanding API-key issuance workspace by workspace.
+
+## Native staging candidate
+
+AI Studio retains its Next routes while the staging candidate renders them with
+TanStack Start and the shared Start bridge. Generate the adapters with
+`node scripts/start-bridge-codemod/cli.mjs ai --apply --hold`; rerun the generator
+rather than editing its marked files. The app route registry includes the public
+`/v1/**` provider endpoints as well as `/api/**`. Public provider authentication
+continues to use API keys or scoped external-app tokens, independently of browser
+sessions. The existing Web workspace API rewrites keep precedence over AI routes.
+
+The same candidate supports `ai.tuturuuu.com` and the `/ai` mount. App-owned API
+paths use the shared internal-api resolver; Web-owned paths stay at root `/api`.
+Login and locale redirects use the current bridge request's document origin and
+mount, with the configured AI origin retained for the legacy production runtime.
+`src/lib/bridge-routing.test.ts` covers concurrent mounted and root requests.
+
+Run `bun run routes:check`, `bun run type-check:cloudflare`, and
+`bun run build:cloudflare` from `apps/ai` on an admitted validation host. The real
+emitted Worker, mounted browser flows, public credential denials, and staging
+canonical-host rejection must pass before promotion. Hosted provider calls are
+separate acceptance; local fixtures do not prove billable provider behavior.
+Production publication is held in `tuturuuu.ci.ts` until an explicit cutover PR.

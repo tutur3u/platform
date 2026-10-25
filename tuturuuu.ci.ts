@@ -124,4 +124,5 @@ export const productionPublicationPolicy = {
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },
+  ai: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

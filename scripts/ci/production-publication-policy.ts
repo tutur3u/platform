@@ -12,6 +12,7 @@ const protectedSurfaces = {
   apps: ['frontend'],
   // Wave 2: held until a reviewed Start + Void cutover admits it.
   shortener: ['frontend'],
+  ai: ['frontend'],
 } as const;
 
 type ProtectedApp = keyof typeof protectedSurfaces;

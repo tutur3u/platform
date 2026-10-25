@@ -2,7 +2,11 @@
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
     "module": "ESNext",
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
       "@/*": ["./src/*"],
       "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
@@ -11,5 +15,17 @@
     "resolveJsonModule": true
   },
   "include": ["src", ".next/types/**/*.ts", "global.d.ts", "messages"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo",
+    "cloudflare",
+    "src/routeTree.gen.ts",
+    "src/router.tsx",
+    "src/routes",
+    "src/start-bridge",
+    "src/start.ts",
+    "vite.config.mts",
+    "void.config.ts"
+  ]
 }
