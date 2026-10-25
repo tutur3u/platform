@@ -1,8 +1,8 @@
 import { parseInternalApiError } from './internal-api-error';
 import {
+  type InternalApiAppBaseResolver,
   normalizeApiPath,
   resolveInternalApiUrlWithAppBase,
-  type InternalApiAppBaseResolver,
 } from './internal-api-url';
 import { mergeHeaders } from './request-headers';
 
