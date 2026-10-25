@@ -174,13 +174,14 @@ jobs:
         # the Workers types they name, checked under the app's own tsconfig, so
         # global runtime types never retype the app (see the helper's header).
         run: |
-          python3 scripts/ci/native-binding-type-harness.py \
+          config="$(python3 scripts/ci/native-binding-type-harness.py \
             --app-dir "$APP_DIR" \
             --generated "$RUNNER_TEMP/native-env.d.ts" \
             --env-interface "$ENV_INTERFACE" \
             --worker-type "$WORKER_ENVIRONMENT_TYPE" \
-            --out "$RUNNER_TEMP/native-env-check"
-          bun x --no-install tsc --project "$RUNNER_TEMP/native-env-check/native-env-tsconfig.json"
+            --out "$RUNNER_TEMP/native-env-check")"
+          trap 'rm -f "$config"' EXIT
+          bun x --no-install tsc --project "$config"
       - name: Qualify the emitted exact-artifact Wrangler adapter without publication
         working-directory: apps/${{ inputs.app }}
         env:

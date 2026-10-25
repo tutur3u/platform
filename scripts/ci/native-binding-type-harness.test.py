@@ -67,7 +67,7 @@ class HarnessTest(unittest.TestCase):
         return harness.build(**options)
 
     def test_emits_only_the_binding_body_as_a_module(self):
-        used = self.run_build()
+        used, _ = self.run_build()
         self.assertEqual(used, ["Fetcher", "KVNamespace"])
         module = (self.out / "native-env.module.d.ts").read_text()
         self.assertTrue(
@@ -83,8 +83,10 @@ class HarnessTest(unittest.TestCase):
         self.assertTrue((self.out / "cloudflare-workers-types.d.ts").is_file())
 
     def test_checks_against_the_app_config_without_overriding_it(self):
-        self.run_build()
-        config = json.loads((self.out / "native-env-tsconfig.json").read_text())
+        _, config_path = self.run_build()
+        # Beside the app tsconfig so type roots resolve exactly as for the app.
+        self.assertEqual(config_path.parent, self.app)
+        config = json.loads(config_path.read_text())
         self.assertEqual(config["extends"], str(self.app / "tsconfig.json"))
         self.assertEqual(config["compilerOptions"], {"noEmit": True})
         self.assertNotIn("include", config)
@@ -95,7 +97,7 @@ class HarnessTest(unittest.TestCase):
 
     def test_reads_bindings_declared_on_the_interface_itself(self):
         self.generated.write_text("interface FinanceGeneratedEnv {\n\tASSETS: Fetcher;\n}\n")
-        self.assertEqual(self.run_build(), ["Fetcher"])
+        self.assertEqual(self.run_build()[0], ["Fetcher"])
 
     def test_rejects_unsafe_type_names(self):
         with self.assertRaises(SystemExit):

@@ -95,7 +95,10 @@ def build(app, generated_path, env_interface, worker_type, worker_module, out):
     )
     # Extending the app config keeps its include, types and paths; `files`
     # only adds the harness, so the program is the app's own plus the check.
-    (out / "native-env-tsconfig.json").write_text(
+    # The config sits beside the app's tsconfig (and is removed after the
+    # check) because type roots resolve from the config's own directory.
+    config_path = app / CONFIG_NAME
+    config_path.write_text(
         json.dumps(
             {
                 "extends": str(app / "tsconfig.json"),
@@ -108,7 +111,10 @@ def build(app, generated_path, env_interface, worker_type, worker_module, out):
             indent=2,
         )
     )
-    return used
+    return used, config_path
+
+
+CONFIG_NAME = ".native-env-check.tsconfig.json"
 
 
 def main(argv=None):
@@ -121,7 +127,7 @@ def main(argv=None):
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
     app = args.app_dir.resolve()
-    used = build(
+    used, config_path = build(
         app,
         args.generated,
         args.env_interface,
@@ -129,7 +135,8 @@ def main(argv=None):
         app / args.worker_module,
         args.out.resolve(),
     )
-    print(f"harness: {args.out / 'native-env-tsconfig.json'} (Workers types: {', '.join(used) or 'none'})")
+    print(config_path)
+    print(f"Workers types: {', '.join(used) or 'none'}", file=sys.stderr)
 
 
 if __name__ == "__main__":
