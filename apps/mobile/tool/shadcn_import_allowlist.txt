@@ -114,7 +114,6 @@ lib/features/settings/cubit/theme_cubit.dart
 lib/features/settings/cubit/theme_state.dart
 lib/features/settings/view/release_notes_page.dart
 lib/features/settings/view/settings_page.dart
-lib/features/settings/view/settings_profile_header.dart
 lib/features/settings/view/settings_profile_parts.dart
 lib/features/settings/view/settings_route_frame.dart
 lib/features/settings/view/settings_row_layout.dart

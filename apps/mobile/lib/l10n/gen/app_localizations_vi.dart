@@ -11489,4 +11489,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get feedbackDetailsPlaceholder => 'Chuyện gì đã xảy ra, bạn mong đợi điều gì và các bước để tái hiện.';
+
+  @override
+  String settingsWorkspaceCountValue(int count) {
+    return '$count không gian';
+  }
 }
