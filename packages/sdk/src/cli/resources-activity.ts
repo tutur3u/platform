@@ -1,10 +1,8 @@
-import { execFile } from 'node:child_process';
 import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import type { ResourceOwner } from './resources-slots';
+import { systemProbe } from './resources-system-probes';
 
-const exec = promisify(execFile);
 export const idleWarningMs = 10 * 60_000;
 export const activitySampleMs = 30_000;
 // Cumulative CPU below this between samples counts as idle (timer wakeups).
@@ -55,7 +53,7 @@ export function parseProcessCpu(output: string): ProcessCpu[] {
 }
 export async function processCpuTable() {
   try {
-    const { stdout } = await exec(
+    const { stdout } = await systemProbe(
       'ps',
       ['-axo', 'pid=,ppid=,pgid=,%cpu=,time='],
       { timeout: 5000, maxBuffer: 16 * 1024 * 1024 }
