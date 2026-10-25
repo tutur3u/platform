@@ -1042,7 +1042,16 @@ Configure these server-only variables for the Mail deployment:
   `MAIL_MICROSOFT_REDIRECT_URI`.
 
 Both registered callback URLs point to the Mail origin's
-`/api/v1/mail/connected/callback`. Enable the Gmail API and grant
+`/api/v1/mail/connected/callback`. While Mail moves to `tuturuuu.com/mail`, also
+set `MAIL_GOOGLE_ONE_ORIGIN_REDIRECT_URI` and
+`MAIL_MICROSOFT_ONE_ORIGIN_REDIRECT_URI` to
+`https://tuturuuu.com/mail/api/v1/mail/connected/callback`, and register that URL
+with each provider alongside the existing one. Mail picks the registered callback
+on the origin that served the connect request. The state cookie is scoped to that
+mount and the token exchange repeats the same URI. Requests from any other origin
+keep the primary callback. Keep the subdomain callback registered and served,
+never redirected, until no authorization older than the 10-minute state TTL can
+return to it. Enable the Gmail API and grant
 `https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
 complete the provider's required consent verification before public rollout.
 Register the Microsoft app for organizational and personal Microsoft accounts

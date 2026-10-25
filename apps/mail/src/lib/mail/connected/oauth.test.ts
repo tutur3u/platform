@@ -47,6 +47,34 @@ describe('mail OAuth authorization', () => {
       expect(url.searchParams.has('client_secret')).toBe(false);
     }
   );
+  it('starts on the callback of the origin that served the request', async () => {
+    vi.stubEnv(
+      'MAIL_GOOGLE_ONE_ORIGIN_REDIRECT_URI',
+      'https://tuturuuu.example.test/mail/api/v1/mail/connected/callback'
+    );
+    const apex = await startOAuth(
+      { user: { id: 'owner' }, normalizedWsId: 'workspace' } as any,
+      'google',
+      'https://tuturuuu.example.test/mail/api/v1/workspaces/workspace/mail/connected/connect'
+    );
+    expect(
+      new URL((await apex.json()).authUrl).searchParams.get('redirect_uri')
+    ).toBe('https://tuturuuu.example.test/mail/api/v1/mail/connected/callback');
+    expect(apex.headers.get('set-cookie')).toContain(
+      'Path=/mail/api/v1/mail/connected'
+    );
+    const subdomain = await startOAuth(
+      { user: { id: 'owner' }, normalizedWsId: 'workspace' } as any,
+      'google',
+      'https://mail.example.test/api/v1/workspaces/workspace/mail/connected/connect'
+    );
+    expect(
+      new URL((await subdomain.json()).authUrl).searchParams.get('redirect_uri')
+    ).toBe('https://mail.example.test/api/v1/mail/connected/callback');
+    expect(subdomain.headers.get('set-cookie')).toContain(
+      'Path=/api/v1/mail/connected;'
+    );
+  });
   it('rejects mismatched, missing and different-length browser state', () => {
     expect(matchesState('abc', 'abc')).toBe(true);
     expect(matchesState('abc', 'xyz')).toBe(false);

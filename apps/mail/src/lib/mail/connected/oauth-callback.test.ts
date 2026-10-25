@@ -169,3 +169,29 @@ it('rejects a Microsoft profile without a durable mailbox identity', async () =>
   });
   expect(mocks.upsert).not.toHaveBeenCalled();
 });
+it('finishes a shared-origin callback on the apex callback and mount', async () => {
+  vi.stubEnv(
+    'MAIL_GOOGLE_ONE_ORIGIN_REDIRECT_URI',
+    'https://tuturuuu.example.test/mail/api/v1/mail/connected/callback'
+  );
+  const result = await finishOAuth(
+    new NextRequest(
+      `https://tuturuuu.example.test/mail/api/v1/mail/connected/callback?state=${state}&code=fixture-code`,
+      { headers: { cookie: `mail_oauth_state=${state}` } }
+    ),
+    'owner'
+  );
+  expect(mocks.exchange).toHaveBeenCalledWith(
+    'google',
+    expect.objectContaining({
+      redirect_uri:
+        'https://tuturuuu.example.test/mail/api/v1/mail/connected/callback',
+    })
+  );
+  expect(result.headers.get('location')).toBe(
+    'https://tuturuuu.example.test/mail/personal/inbox?connected=1'
+  );
+  expect(result.headers.get('set-cookie')).toContain(
+    'Path=/mail/api/v1/mail/connected'
+  );
+});

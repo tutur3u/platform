@@ -46,7 +46,7 @@ export async function connectedMailRoute(
         z.object({ provider: z.enum(['google', 'microsoft']) })
       );
       if (!body.ok) return body.response;
-      return await startOAuth(ctx, body.data.provider);
+      return await startOAuth(ctx, body.data.provider, request.url);
     }
     const accountId = z.uuid().safeParse(segments[0]);
     if (!accountId.success)

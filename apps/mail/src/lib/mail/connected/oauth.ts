@@ -9,6 +9,7 @@ import {
   scopes,
 } from './config';
 import { seal, unseal } from './crypto';
+import { selectMailOAuthCallback } from './redirect-uri';
 import { exchangeToken, table } from './repository';
 
 const cookieName = 'mail_oauth_state';
@@ -22,9 +23,11 @@ export function matchesState(state: string, cookie: string | undefined) {
 }
 export async function startOAuth(
   ctx: MailRouteContext,
-  provider: MailProvider
+  provider: MailProvider,
+  requestUrl?: string
 ) {
   const config = providerConfig(provider);
+  const callback = selectMailOAuthCallback(provider, requestUrl);
   const state = randomBytes(32).toString('base64url');
   const verifier = randomBytes(32).toString('base64url');
   const { error } = await (await table('mail_oauth_requests')).insert({
@@ -39,7 +42,7 @@ export async function startOAuth(
   const url = new URL(config.authorize);
   url.search = new URLSearchParams({
     client_id: config.clientId,
-    redirect_uri: config.redirectUri,
+    redirect_uri: callback.redirectUri,
     response_type: 'code',
     scope: scopes[provider].join(' '),
     state,
@@ -54,7 +57,7 @@ export async function startOAuth(
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/api/v1/mail/connected',
+    path: callback.cookiePath,
     maxAge: 600,
   });
   return response;
@@ -101,10 +104,11 @@ export async function finishOAuth(request: NextRequest, userId: string) {
   if (memberError || workspaceError || !member || !workspace?.personal)
     throw new ConnectedMailError(403, 'Personal workspace access required');
   const provider = pending.provider as MailProvider;
+  const callback = selectMailOAuthCallback(provider, request.url);
   const credentials = await exchangeToken(provider, {
     grant_type: 'authorization_code',
     code,
-    redirect_uri: providerConfig(provider).redirectUri,
+    redirect_uri: callback.redirectUri,
     code_verifier: unseal<string>(pending.verifier, userId),
   });
   const endpoint =
@@ -154,13 +158,16 @@ export async function finishOAuth(request: NextRequest, userId: string) {
   );
   if (saveError) throw new Error('Failed to save connected mailbox');
   const result = NextResponse.redirect(
-    new URL(`/${pending.ws_id}/inbox?connected=1`, request.url)
+    new URL(
+      `${callback.basePath}/${pending.ws_id}/inbox?connected=1`,
+      request.url
+    )
   );
   result.cookies.set(cookieName, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/api/v1/mail/connected',
+    path: callback.cookiePath,
     maxAge: 0,
   });
   return result;
