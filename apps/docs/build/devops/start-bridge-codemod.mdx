@@ -155,6 +155,7 @@ Worker behaviour without editing generated files:
 | `mounts` | Overrides the generated hosts, `basePath` or `unknownHost` (`'reject'` answers 404 for unlisted hosts) |
 | `apiOrigin(request, { env, path })` | Origin for one unowned `/api/*` request (e.g. Storefront's `/api/v1/inventory/**` to Inventory); `undefined` keeps the central Web API. Forwarding keeps the central forward's base stripping, loop guard and header removal |
 | `wrapResponse(response, { request, env })` | Decorates every response, e.g. a staging noindex header |
+| `worker: { workersDev?, compatibilityFlags? }` | Generated Worker settings, applied when the codemod runs: `workers_dev` (default off when `mounts.unknownHost` is `'reject'`, otherwise on) and flags added to the always-on `nodejs_compat` and `global_fetch_strictly_public` (e.g. AI's `enable_request_signal`). They reach `void.config.ts`, the sealed artifact identity and the runtime test, which fails if the config changed without a re-run. A `workers.dev` root host with `workers_dev` off is a codemod problem |
 
 API paths the app owns but forwards (Storefront's Inventory APIs) are listed
 client-safely in `start-bridge.routes.json` as
@@ -162,7 +163,9 @@ client-safely in `start-bridge.routes.json` as
 them into `appApiPatterns`, so the shared app-base resolver mounts them like
 local routes, and the Worker, finding no local handler, forwards them through
 `apiOrigin`. `start-bridge.config.ts` holds server code and is never imported
-by the browser.
+by the browser. The codemod and the runtime test load it with Node's type
+stripping, so keep its imports strippable (packages, or relative paths with
+their `.ts` extension).
 
 ### Route handlers load lazily
 

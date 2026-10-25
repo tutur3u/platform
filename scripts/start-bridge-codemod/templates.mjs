@@ -83,8 +83,8 @@ export default defineConfig(({ command }) => ({
 `;
 }
 
-export function voidConfig({ app, workerName }) {
-  const flags = RUNTIME.compatibilityFlags.map(quote).join(', ');
+export function voidConfig({ app, workerName, worker }) {
+  const flags = worker.compatibilityFlags.map(quote).join(', ');
   return `${header(app)}import { defineConfig } from 'void/config';
 
 // Staging candidate only: production stays held in tuturuuu.ci.ts until an
@@ -97,7 +97,7 @@ export default defineConfig({
     main: './cloudflare/worker.ts',
     compatibility_date: ${quote(RUNTIME.compatibilityDate)},
     compatibility_flags: [${flags}],
-    workers_dev: true,
+    workers_dev: ${worker.workersDev},
     vars: { TUTURUUU_NOINDEX: '1' },
     assets: {
       binding: 'ASSETS',

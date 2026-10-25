@@ -5,6 +5,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readAppConfig } from './app-config.mjs';
 import {
   artifactHelper,
   callerPath,
@@ -47,6 +48,10 @@ import {
 } from './repo-edits.mjs';
 import { runtimeExpectationProblems } from './runtime-outcome.mjs';
 import * as templates from './templates.mjs';
+import {
+  effectiveWorkerConfig,
+  workerConfigProblems,
+} from './worker-config.mjs';
 
 export const DEFAULT_SERVER_ONLY = [
   '@tuturuuu/satellite/auth',
@@ -183,6 +188,16 @@ export function planConversion(repoRoot, app, options = {}) {
     ...detectInputs(repoRoot, appPath, inventory, manifest),
   };
   const problems = [];
+  // App-owned Worker options shape the generated Worker config.
+  const appConfig = (options.loadAppConfig ?? readAppConfig)(
+    path.join(appRoot, APP_CONFIG)
+  );
+  if (appConfig.error)
+    problems.push(`${appPath}/${APP_CONFIG}: ${appConfig.error}`);
+  const mounts = templates.defaultMounts(resolved);
+  for (const problem of workerConfigProblems(appConfig.config, mounts))
+    problems.push(`${appPath}/${APP_CONFIG}: ${problem}`);
+  resolved.worker = effectiveWorkerConfig(appConfig.config, mounts);
   if (!inventory.proxy)
     problems.push(`${appPath}: no src/proxy.ts; the bridge handler needs one`);
 
