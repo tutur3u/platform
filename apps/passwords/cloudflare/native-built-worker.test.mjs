@@ -117,10 +117,11 @@ test('emitted Passwords Worker stops vault and auth work across restart', {
 
   for (const enabled of ['false', 'true', 'false']) {
     const network = { calls: 0 };
-    const { worker, origin } = await launch(staged, enabled, network);
+    const { worker } = await launch(staged, enabled, network);
+    const origin = 'https://passwords.tuturuuu.com';
     try {
       if (enabled === 'true') {
-        const response = await fetch(`${origin}/en/personal`, {
+        const response = await worker.fetch(`${origin}/en/personal`, {
           redirect: 'manual',
         });
         guarded(response);
@@ -141,7 +142,7 @@ test('emitted Passwords Worker stops vault and auth work across restart', {
           '/_passwords/functions/unknown',
         ]) {
           for (const method of ['GET', 'POST']) {
-            const response = await fetch(origin + path, {
+            const response = await worker.fetch(origin + path, {
               method,
               redirect: 'manual',
             });
@@ -150,10 +151,10 @@ test('emitted Passwords Worker stops vault and auth work across restart', {
             assert.deepEqual(await response.json(), { code: 'STOPPED' });
           }
         }
-        const manifest = await fetch(`${origin}/site.webmanifest`);
+        const manifest = await worker.fetch(`${origin}/site.webmanifest`);
         assert.equal(manifest.status, 200);
         assert.equal((await manifest.json()).name, 'Tuturuuu Passwords');
-        const info = await fetch(`${origin}/api/build-info`);
+        const info = await worker.fetch(`${origin}/api/build-info`);
         assert.equal(info.status, 200);
         const identity = await info.json();
         assert.equal(identity.appName, 'passwords');
