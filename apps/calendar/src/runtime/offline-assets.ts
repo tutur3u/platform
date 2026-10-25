@@ -14,7 +14,7 @@ export function calendarOfflineContract(basePath = '') {
   const base = createBasePath({ app: 'calendar', basePath });
   return {
     workerUrl: base.withBase(OFFLINE_WORKER_URL),
-    scope: base.withBase(OFFLINE_SCOPE),
+    scope: base.isRoot ? OFFLINE_SCOPE : `${base.basePath}/`,
     precache: offlinePrecache.map((path) => base.withBase(path)),
     fallback: base.withBase('/offline.html'),
   };

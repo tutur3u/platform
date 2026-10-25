@@ -88,7 +88,10 @@ async function dispatchCalendarRequest(
       (response) => {
         if (path !== '/serwist/sw.js') return response;
         const headers = new Headers(response.headers);
-        headers.set('Service-Worker-Allowed', base.withBase('/'));
+        headers.set(
+          'Service-Worker-Allowed',
+          base.isRoot ? '/' : `${base.basePath}/`
+        );
         headers.set('Cache-Control', 'no-cache');
         return new Response(response.body, {
           status: response.status,
