@@ -4,19 +4,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const ValueKey<String> _sendKey = ValueKey('send-reference');
 
@@ -45,45 +41,43 @@ class _NavigationPill extends StatelessWidget {
 }
 
 Widget _scene(AppearanceSettings settings, Brightness brightness) =>
-    shad.ShadcnApp(
+    MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppearanceTheme.shadTheme(settings, brightness),
-      localizationsDelegates: const [
-        ...AppLocalizations.localizationsDelegates,
-        AppShadcnLocalizationsDelegate(),
-      ],
+      theme: AppearanceTheme.materialTheme(settings, brightness),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) => AppearanceBackdrop(
-        settings: settings,
-        child: ShadcnMaterialBridge(child: child!),
-      ),
-      home: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 34),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // The composer's send action occupies the same dock slot.
-              FloatingDockRail(
-                navigation: const _NavigationPill(),
-                primary: ShellDockActionButton(
-                  key: _sendKey,
-                  action: ShellActionSpec(
-                    id: 'send',
-                    icon: LucideIcons.arrowUp,
-                    tooltip: 'Send',
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 34),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // The composer's send action occupies the same dock slot.
+                FloatingDockRail(
+                  navigation: const _NavigationPill(),
+                  primary: ShellDockActionButton(
+                    key: _sendKey,
+                    action: ShellActionSpec(
+                      id: 'send',
+                      icon: LucideIcons.arrowUp,
+                      tooltip: 'Send',
+                      onPressed: () {},
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FloatingDockRail(
+                  navigation: const _NavigationPill(),
+                  primary: AssistantComposerFab(
+                    label: 'Chat',
                     onPressed: () {},
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              FloatingDockRail(
-                navigation: const _NavigationPill(),
-                primary: AssistantComposerFab(label: 'Chat', onPressed: () {}),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -113,19 +107,17 @@ void main() {
 
   final raster = Platform.environment['ASSISTANT_DOCK_RASTER_DIR'];
   for (final brightness in Brightness.values) {
-    for (final style in AppearanceBackgroundStyle.values) {
+    for (final theme in [
+      AppearanceThemeId.classic,
+      AppearanceThemeId.aurora,
+      AppearanceThemeId.sunset,
+    ]) {
       for (final accent in [
         AppearanceAccentId.theme,
         AppearanceAccentId.violet,
       ]) {
-        final settings = AppearanceSettings(
-          theme: style == AppearanceBackgroundStyle.solid
-              ? AppearanceThemeId.classic
-              : AppearanceThemeId.aurora,
-          accent: accent,
-          backgroundStyle: style,
-        );
-        final name = '${brightness.name}-${style.name}-${accent.name}';
+        final settings = AppearanceSettings(theme: theme, accent: accent);
+        final name = '${brightness.name}-${theme.name}-${accent.name}';
         testWidgets('dock chat action matches the circular send action: '
             '$name', (tester) async {
           tester.view.devicePixelRatio = 3;
