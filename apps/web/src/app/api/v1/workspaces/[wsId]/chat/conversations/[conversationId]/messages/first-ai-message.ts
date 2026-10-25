@@ -137,17 +137,21 @@ export async function sendFirstAiChatMessage({
       publishInitialMessages: async () => {
         const currentConversation = { ...conversation, latestMessage: message };
         const audience = getChatRealtimeAudience(currentConversation);
+        const delivery = { signal: AbortSignal.timeout(5_000) };
         const publications = await Promise.allSettled([
           ...(!result.replayed
             ? [
-                publishChatRealtimeEvent({
-                  actorUserId: auth.user.id,
-                  audience,
-                  conversation: currentConversation,
-                  conversationId,
-                  type: 'conversation.created',
-                  wsId: context.normalizedWsId,
-                }),
+                publishChatRealtimeEvent(
+                  {
+                    actorUserId: auth.user.id,
+                    audience,
+                    conversation: currentConversation,
+                    conversationId,
+                    type: 'conversation.created',
+                    wsId: context.normalizedWsId,
+                  },
+                  delivery
+                ),
                 notifyChatMessageRecipients({
                   actorUserId: auth.user.id,
                   conversation: currentConversation,
@@ -156,14 +160,17 @@ export async function sendFirstAiChatMessage({
                 }),
               ]
             : []),
-          publishChatRealtimeEvent({
-            actorUserId: auth.user.id,
-            audience,
-            conversationId,
-            message,
-            type: 'message.created',
-            wsId: context.normalizedWsId,
-          }),
+          publishChatRealtimeEvent(
+            {
+              actorUserId: auth.user.id,
+              audience,
+              conversationId,
+              message,
+              type: 'message.created',
+              wsId: context.normalizedWsId,
+            },
+            delivery
+          ),
         ]);
         if (publications.some((result) => result.status === 'rejected')) {
           console.warn(

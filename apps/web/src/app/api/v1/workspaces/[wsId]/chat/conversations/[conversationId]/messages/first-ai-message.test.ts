@@ -238,7 +238,8 @@ describe('atomic native first-message route', () => {
         conversationId: id,
         message: result().message,
         type: 'message.created',
-      })
+      }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
     expect(mocks.notifyChatMessageRecipients).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
