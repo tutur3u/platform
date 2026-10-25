@@ -37,6 +37,14 @@ describe('native root response policy', () => {
       expect(await result.text()).toBe('body');
     }
   );
+  it('retains other CSP directives while denying framing', async () => {
+    const result = await decorate('/', {
+      'Content-Security-Policy': "default-src 'self'; frame-ancestors *",
+    });
+    expect(result.headers.get('Content-Security-Policy')).toBe(
+      "default-src 'self'; frame-ancestors 'none'"
+    );
+  });
   it('preserves endpoint cache policy and merges existing variation', async () => {
     const result = await decorate('/api/public', {
       'Cache-Control': 'public, max-age=60',
