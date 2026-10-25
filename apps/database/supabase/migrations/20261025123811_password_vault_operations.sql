@@ -74,8 +74,21 @@ BEGIN
   mutates := p_action NOT IN ('item.read', 'item.list', 'rotation.snapshot', 'key.read',
     'member.list', 'audit.list', 'request.status');
   -- Workspace lock serializes creation against the 32-vault cap.
-  PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR UPDATE;
+  PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR NO KEY UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
+  -- Lock identity/membership rows before the vault, matching lifecycle invalidation.
+  IF p_token IS NOT NULL THEN
+    SELECT g0.issuer_user_id INTO actor FROM private.password_vault_machine_tokens t0
+      JOIN private.password_vault_machine_grants g0 ON g0.ws_id = t0.ws_id AND g0.vault_id = t0.vault_id AND g0.id = t0.grant_id
+      WHERE t0.ws_id = p_ws AND t0.vault_id = p_vault AND t0.id = p_token
+        AND t0.token_digest = p_token_digest AND t0.revoked_at IS NULL AND t0.expires_at > clock_timestamp()
+        AND g0.revoked_at IS NULL AND g0.expires_at > clock_timestamp();
+    IF NOT FOUND THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
+  END IF;
+  PERFORM private.password_vault_require_workspace_member(p_ws, actor);
+  IF p_action = 'member.set' THEN
+    PERFORM private.password_vault_require_workspace_member(p_ws, (p_input->>'user_id')::uuid);
+  END IF;
   IF p_action = 'vault.create' THEN
     IF p_token IS NOT NULL OR p_token_digest IS NOT NULL THEN
       RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
@@ -85,7 +98,7 @@ BEGIN
       IF (SELECT count(*) FROM private.password_vaults WHERE ws_id = p_ws) >= 32 THEN
         RAISE EXCEPTION 'Vault limit reached' USING ERRCODE = '54000';
       END IF;
-      INSERT INTO private.password_vaults(id, ws_id, label, created_by) VALUES (p_vault, p_ws, p_input->>'label', actor);
+      INSERT INTO private.password_vaults(id, ws_id, scope_ws_id, label, created_by) VALUES (p_vault, p_ws, p_ws, p_input->>'label', actor);
       INSERT INTO private.password_vault_versions(ws_id, vault_id, version, encrypted_data_key)
         VALUES (p_ws, p_vault, 1, p_input->>'encrypted_data_key');
       INSERT INTO private.password_vault_members(ws_id, vault_id, user_id, role)
@@ -222,7 +235,7 @@ BEGIN
     IF lim NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'Invalid page limit' USING ERRCODE = '22023'; END IF;
     SELECT jsonb_build_object('members', COALESCE(jsonb_agg(x ORDER BY x.user_id), '[]'::jsonb)) INTO result FROM (
       SELECT vm.user_id, vm.role, vm.revoked_at, vm.created_at FROM private.password_vault_members vm
-      WHERE vm.ws_id = p_ws AND vm.vault_id = p_vault
+      WHERE vm.ws_id = p_ws AND vm.vault_id = p_vault AND vm.user_id IS NOT NULL
         AND (p_input->>'after_id' IS NULL OR vm.user_id > (p_input->>'after_id')::uuid)
       ORDER BY vm.user_id LIMIT lim
     ) x;
@@ -313,7 +326,7 @@ BEGIN
       RAISE EXCEPTION 'Last owner cannot be removed' USING ERRCODE = '23514';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM private.password_vault_members WHERE ws_id = p_ws AND vault_id = p_vault AND user_id = target)
-      AND (SELECT count(*) FROM private.password_vault_members WHERE ws_id = p_ws AND vault_id = p_vault) >= 100 THEN
+      AND (SELECT count(*) FROM private.password_vault_members WHERE ws_id = p_ws AND vault_id = p_vault AND user_id IS NOT NULL) >= 100 THEN
       RAISE EXCEPTION 'Member limit reached' USING ERRCODE = '54000';
     END IF;
     INSERT INTO private.password_vault_members(ws_id, vault_id, user_id, role, revoked_at)
@@ -426,7 +439,7 @@ BEGIN
     RAISE EXCEPTION 'Service role required' USING ERRCODE = '42501'; END IF;
   IF p_request IS NULL OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 32 THEN
     RAISE EXCEPTION 'Invalid page request' USING ERRCODE = '22023'; END IF;
-  PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR UPDATE;
+  PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR NO KEY UPDATE;
   PERFORM private.password_vault_require_workspace_member(p_ws, p_actor);
   SELECT * INTO prior FROM private.password_vault_audit_events
     WHERE ws_id = p_ws AND vault_id IS NULL AND request_id = p_request;
