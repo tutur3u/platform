@@ -1,6 +1,7 @@
 'use client';
 
 import { Clock, Eye, EyeOff } from '@tuturuuu/icons';
+import { verifyNovaChallengePassword } from '@tuturuuu/internal-api/nova';
 import type { NovaChallenge } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -30,6 +31,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
+import { challengePasswordErrorKey } from '@/lib/challenge-password-error';
 
 const formSchema = z.object({
   password: z.string().min(1, { message: 'Password is required' }).optional(),
@@ -68,13 +70,9 @@ export function ConfirmDialog({
     try {
       // Check password if challenge is password protected
       if (challenge.password_hash !== null) {
-        const response = await fetch(`/api/auth/challenges/verify-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            challengeId: challenge.id,
-            password: formData.password,
-          }),
+        const response = await verifyNovaChallengePassword({
+          challengeId: challenge.id,
+          password: formData.password,
         });
 
         if (response.status === 429) {
@@ -89,7 +87,9 @@ export function ConfirmDialog({
         }
 
         if (!response.ok) {
-          form.setError('password', { message: 'Invalid password' });
+          form.setError('password', {
+            message: t(await challengePasswordErrorKey(response)),
+          });
           setIsConfirming(false);
           return;
         }

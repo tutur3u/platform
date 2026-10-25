@@ -1258,9 +1258,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarConnectionsEmpty => 'No accounts connected';
 
   @override
-  String get calendarConnectionsSubtitle => 'Connect Google and Microsoft accounts to sync calendars.';
-
-  @override
   String get calendarConnectionsTitle => 'Manage Calendar Accounts';
 
   @override
@@ -6742,9 +6739,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get remindersDescription => 'Task deadlines and calendar events, kept ready on this device.';
-
-  @override
   String get remindersEnableNotifications => 'Enable notifications';
 
   @override
@@ -10856,9 +10850,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantExpandPrompt => 'Expand prompt';
 
   @override
-  String get assistantMinimizePrompt => 'Minimize prompt';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'About $setting';
   }
@@ -11101,4 +11092,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Set';
+
+  @override
+  String get assistantSubmitSuccess => 'Submitted successfully';
 }

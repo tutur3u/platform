@@ -74,6 +74,7 @@ import {
 } from './executors/tasks';
 import {
   executeManageWorkspace,
+  executeOpenApp,
   executeSetSidebar,
   executeSetTheme,
   executeShowWorkspaceArtifact,
@@ -234,6 +235,7 @@ const toolHandlers = {
   update_my_settings: executeUpdateMySettings,
   set_default_currency: executeSetDefaultCurrency,
   set_theme: executeSetTheme,
+  open_app: executeOpenApp,
   set_sidebar: executeSetSidebar,
   manage_workspace: executeManageWorkspace,
   show_workspace_artifact: executeShowWorkspaceArtifact,

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
@@ -428,28 +427,9 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                             _
                                 when _call.error != null &&
                                     _call.status != 'open' =>
-                              Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(
-                                    AppLayout.gutter(context.deviceClass),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        l10n.commonSomethingWentWrong,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextButton.icon(
-                                        onPressed: () =>
-                                            unawaited(_call.start()),
-                                        icon: const Icon(Icons.refresh),
-                                        label: Text(l10n.commonRetry),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              buildMeetCallError(
+                                context,
+                                onRetry: () => unawaited(_call.start()),
                               ),
                             (_, 'denied') => Center(
                               child: Text(l10n.meetAccessDenied),

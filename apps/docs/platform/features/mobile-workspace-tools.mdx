@@ -653,6 +653,10 @@ fixed `https://calendar.tuturuuu.com` origin. Calendar validates the original
 session again and enforces workspace permissions. Incoming cookies, forwarding
 headers, and client-supplied gateway credentials are never relayed. Redirects and
 non-JSON upstream responses are rejected; mutations are never automatically retried.
+Authenticated requests preserve `x-tuturuuu-offline-download` and
+`x-tuturuuu-turnstile-token` when supplied, so Calendar applies the same bulk-read
+protection and verification flow. Ordinary reads stay unmarked. Regression coverage
+lives in `apps/infrastructure/src/lib/mobile-calendar/gateway.test.ts`.
 
 The server credential is stored as a versioned encrypted envelope in the root
 workspace's `workspace_secrets` row named `mobile_calendar_gateway:v1`. Its data

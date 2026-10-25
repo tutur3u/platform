@@ -1258,9 +1258,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendarConnectionsEmpty => 'Chưa có tài khoản nào được kết nối';
 
   @override
-  String get calendarConnectionsSubtitle => 'Kết nối tài khoản Google và Microsoft để đồng bộ lịch.';
-
-  @override
   String get calendarConnectionsTitle => 'Quản lý tài khoản lịch';
 
   @override
@@ -6645,9 +6642,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get remindersDescription => 'Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.';
-
-  @override
   String get remindersEnableNotifications => 'Bật thông báo';
 
   @override
@@ -10728,9 +10722,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantExpandPrompt => 'Mở rộng lời nhắc';
 
   @override
-  String get assistantMinimizePrompt => 'Thu gọn lời nhắc';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'Thông tin về $setting';
   }
@@ -10966,4 +10957,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Đã đặt';
+
+  @override
+  String get assistantSubmitSuccess => 'Đã gửi thành công';
 }

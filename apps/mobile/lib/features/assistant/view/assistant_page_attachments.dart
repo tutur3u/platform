@@ -111,7 +111,7 @@ extension _AssistantAttachments on _AssistantPageState {
   Future<void> _showAttachmentSheet(BuildContext context, String wsId) async {
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantAttachmentSheetBody(
         hasAttachments: _chatCubit.state.composerAttachments.isNotEmpty,
@@ -167,7 +167,7 @@ extension _AssistantAttachments on _AssistantPageState {
         !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.iOS ||
             defaultTargetPlatform == TargetPlatform.android);
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantCaptureSheet(
         cameraSupported: cameraSupported,

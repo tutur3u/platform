@@ -1,9 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
+
 import '../../../helpers/pump_app.dart';
 import '../assistant_personal_settings_harness.dart';
 
@@ -32,20 +35,20 @@ void main() {
         find.byKey(const ValueKey('assistant-personality-name')),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField), 'Nova');
+      await tester.enterText(find.byType(AppTextFormField), 'Nova');
 
       final save = find.text(locale == 'en' ? 'Save' : 'Lưu');
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(find.text('Nova'), findsOneWidget);
+      expect(find.text('Nova').hitTestable(), findsOneWidget);
       expect(repository.writes, 1);
       await tester.tap(
         find.byKey(const ValueKey('assistant-personality-personality')),
       );
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.byType(TextFormField),
+        find.byType(AppTextFormField),
         'Synthetic kind style',
       );
       await tester.ensureVisible(save);
@@ -144,7 +147,7 @@ void main() {
     await tester.pumpAndSettle();
     tester.view.viewInsets = const FakeViewPadding(bottom: 250);
     addTearDown(tester.view.resetViewInsets);
-    await tester.tap(find.byType(TextFormField).first);
+    await tester.tap(find.byType(AppTextFormField).first);
     await tester.pumpAndSettle();
     final save = find.text('Save');
     await tester.ensureVisible(save);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
@@ -44,33 +45,37 @@ void main() {
                 textScaler: TextScaler.linear(scale),
                 padding: const EdgeInsets.fromLTRB(0, 47, 0, 34),
               ),
-              child: AssistantSettingsHub(
-                workspaceId: 'ws',
-                locations: const {'/test'},
-                isScopeCurrent: () => true,
-                preferences: preferences,
-                localModels: models,
+              child: SafeArea(
+                child: AssistantSettingsHub(
+                  workspaceId: 'ws',
+                  isScopeCurrent: () => true,
+                  preferences: preferences,
+                  localModels: models,
+                ),
               ),
             ),
           ),
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsOneWidget);
         expect(find.text('Assistant Settings'), findsOneWidget);
-        final header = tester.getRect(find.byType(MobileSectionAppBar));
-        final setting = tester.getRect(find.byType(SwitchListTile));
-        expect(header.top, 47);
-        expect(setting.top - header.bottom, inInclusiveRange(0, 12));
+        final header = tester.getRect(find.text('Assistant Settings'));
+        final setting = tester.getRect(find.byType(AppToggleRow));
+        expect(header.top, greaterThanOrEqualTo(47));
+        expect(setting.top - header.bottom, inInclusiveRange(0, AppSpacing.xl));
         expect(setting.left, 16);
         expect(setting.right, width - 16);
 
-        final dock = tester.getRect(
-          find.byKey(const ValueKey('settings-route-back')),
+        final scroll = find.byType(CustomScrollView).first;
+        await tester.scrollUntilVisible(
+          find.text('On-device models'),
+          300,
+          scrollable: find
+              .descendant(of: scroll, matching: find.byType(Scrollable))
+              .first,
         );
-        expect(dock.bottom, lessThanOrEqualTo(844 - 34));
-        final scroll = find.byType(ListView).first;
-        await tester.scrollUntilVisible(find.text('On-device models'), 300);
         expect(tester.getTopLeft(find.text('On-device models')).dx, 16);
         tester
             .state<ScrollableState>(
@@ -98,16 +103,19 @@ void main() {
         final l = tester.element(find.byType(AssistantSettingsHub)).l10n;
         // Remote is the last control in this unsupported-platform fixture.
         final finalControl = find.widgetWithText(
-          ListTile,
+          AppListTile,
           l.assistantLocalRemote,
         );
         expect(finalControl, findsOneWidget);
-        expect(tester.getRect(finalControl).bottom, lessThan(dock.top));
+        expect(
+          844 - 34 - tester.getRect(finalControl).bottom,
+          greaterThanOrEqualTo(16),
+        );
         final info = find.byTooltip(
           l.assistantSettingInfo(l.assistantLocalTitle),
         );
         final infoButton = find
-            .ancestor(of: info, matching: find.byType(IconButton))
+            .ancestor(of: info, matching: find.byType(AppIconButton))
             .first;
         await tester.ensureVisible(infoButton);
         await tester.pumpAndSettle();
@@ -124,7 +132,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.textContaining(l.assistantLocalModeSwitch), findsOneWidget);
-        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.byType(AppDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });

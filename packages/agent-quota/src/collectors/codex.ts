@@ -1,4 +1,3 @@
-import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { AccountUsage, UsageWindow, WindowKind } from '../types';
 import {
@@ -6,7 +5,7 @@ import {
   readCodexAppServerLimits,
 } from './codex-app-server';
 import { resetTimestamp, windowKind } from './codex-rate-limits';
-import { listJsonlFiles } from './files';
+import { listJsonlFiles, readJsonlSnapshot } from './files';
 import { allowedSessionFile, codexRoot, codexRoots } from './paths';
 
 interface LimitSample {
@@ -128,11 +127,13 @@ export async function collectCodex(
     );
     for (const file of valid) {
       try {
-        const info = await stat(file);
-        if (info.mtimeMs < Date.now() - 7 * 24 * 60 * 60 * 1000) continue;
+        const info = await readJsonlSnapshot(
+          file,
+          Date.now() - 7 * 24 * 60 * 60 * 1000
+        );
+        if (!info) continue;
         lastMtime = Math.max(lastMtime, info.mtimeMs);
-        const content = await readFile(file, 'utf8');
-        for (const line of content.split('\n')) {
+        for (const line of info.content.split('\n')) {
           const parsed = parseLimits(line);
           samples.push(...parsed.samples);
           if (

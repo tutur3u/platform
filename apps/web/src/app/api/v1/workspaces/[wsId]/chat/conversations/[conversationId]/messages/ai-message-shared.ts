@@ -598,6 +598,8 @@ export async function callAiChatRoute({
   request,
   supabase,
   thinkingMode,
+  timezone,
+  clientCapabilities,
   user,
   wsId,
 }: {
@@ -612,6 +614,8 @@ export async function callAiChatRoute({
   request: NextRequest;
   supabase: SessionAuthContext['supabase'];
   thinkingMode: 'fast' | 'thinking';
+  timezone?: string;
+  clientCapabilities?: string[];
   user: SessionAuthContext['user'];
   wsId: string;
 }) {
@@ -629,6 +633,8 @@ export async function callAiChatRoute({
       observabilityContext,
       persistenceRequestId,
       thinkingMode,
+      ...(timezone ? { timezone } : {}),
+      ...(clientCapabilities ? { clientCapabilities } : {}),
       workspaceContextId: wsId,
       wsId,
       ...(creditWsId ? { creditWsId } : {}),

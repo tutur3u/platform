@@ -6,10 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_cache_inventory.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_preferences.dart';
 import 'package:mobile/features/settings/view/offline_preparation_section.dart';
+import 'package:mobile/features/settings/view/offline_search_chrome.dart';
 import 'package:mobile/features/settings/view/offline_stored_items.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -40,6 +43,7 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
   String? _workspaceId;
   String? _error;
   String _query = '';
+  final _search = TextEditingController();
   bool _allowed = false;
   bool _busy = false;
   bool _refreshScheduled = false;
@@ -92,12 +96,14 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
     _inventory = null;
     _error = null;
     _query = '';
+    _search.clear();
     unawaited(_refresh());
   }
 
   @override
   void dispose() {
     _generation++;
+    _search.dispose();
     _coordinator.state.removeListener(_changed);
     super.dispose();
   }
@@ -178,12 +184,6 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final title = switch (widget.moduleId) {
-      'finance' => l10n.financeTitle,
-      'inventory' => l10n.inventoryTitle,
-      'tasks' => l10n.tasksTitle,
-      _ => l10n.calendarTitle,
-    };
     final inventory = _inventory;
     final rows = inventory?.namespaces
         .where((row) => row.namespace.toLowerCase().contains(_query))
@@ -192,16 +192,10 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
         !_allowed ||
         _coordinator.state.value.products[widget.moduleId]?.status ==
             OfflinePreparationStatus.unavailable;
-    final body = RefreshIndicator(
+    final scrollingBody = RefreshIndicator(
       onRefresh: _refresh,
-      child: ListView(
+      child: AppPageListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-          20,
-          16,
-          20,
-          24 + MediaQuery.paddingOf(context).bottom,
-        ),
         children: [
           if (unavailable)
             Text(l10n.offlinePreparationUnavailable)
@@ -224,12 +218,6 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
               Text(l10n.offlineLogicalBytes('${inventory.logicalBytes}')),
               Text(l10n.offlinePendingCoverage(inventory.pending)),
               const SizedBox(height: 12),
-              TextField(
-                key: const ValueKey('offline-namespace-search'),
-                decoration: InputDecoration(hintText: l10n.offlineSearchStored),
-                onChanged: (value) =>
-                    setState(() => _query = value.toLowerCase().trim()),
-              ),
               if (rows!.isEmpty) Text(l10n.offlineNoStoredItems),
               for (final row in rows)
                 Padding(
@@ -277,26 +265,39 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
                   ),
                 ),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
+              AppButton.outline(
                 onPressed: _busy || _coordinator.state.value.running
                     ? null
                     : _evict,
-                icon: const Icon(Icons.delete_outline),
-                label: Text(l10n.offlineEvictTitle),
+                leading: const Icon(LucideIcons.trash2),
+                child: Text(l10n.offlineEvictTitle),
               ),
             ],
             if (_error != null) ...[
               Text(_error!, semanticsLabel: _error),
-              TextButton(onPressed: _refresh, child: Text(l10n.commonRetry)),
+              AppButton.ghost(
+                onPressed: _refresh,
+                child: Text(l10n.commonRetry),
+              ),
             ],
           ],
         ],
       ),
     );
-    if (widget.embedded) return body;
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: body,
+    final body = Column(
+      children: [
+        if (!unavailable && inventory != null)
+          OfflineSearchChrome(
+            moduleId: widget.moduleId,
+            controller: _search,
+            onChanged: (value) =>
+                setState(() => _query = value.toLowerCase().trim()),
+            hint: l10n.offlineSearchStored,
+          ),
+        Expanded(child: scrollingBody),
+      ],
     );
+    if (widget.embedded) return body;
+    return AppScaffold(child: body);
   }
 }

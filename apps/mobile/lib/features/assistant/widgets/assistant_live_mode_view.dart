@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
@@ -45,11 +45,18 @@ class AssistantLiveModeView extends StatelessWidget {
   final CameraController? cameraController;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _buildLive(
+      context,
+      AppPageInsets.gutterOf(context, width: constraints.maxWidth),
+    ),
+  );
+
+  // Live is a full-bleed canvas; its header and stage still use the gutter of
+  // the body width.
+  Widget _buildLive(BuildContext context, double gutter) {
     final theme = Theme.of(context);
     final shortViewport = MediaQuery.sizeOf(context).height < 500;
-    // Live is a full-bleed canvas; its header and stage still use the gutter.
-    final gutter = AppLayout.gutter(context.deviceClass);
     final userBlobCaption = liveState.isMicrophoneActive
         ? context.l10n.assistantLiveStageYouListening
         : context.l10n.assistantLiveStageYouMuted;

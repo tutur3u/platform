@@ -5,6 +5,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
@@ -102,7 +103,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text(l.assistantKeepLiveBrowsingDescription), findsOneWidget);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(AppDialog), findsOneWidget);
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });
@@ -179,11 +180,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(InputChip));
+    await tester.tap(find.byType(AppChip));
     await tester.pumpAndSettle();
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(AppSheetScaffold), findsOneWidget);
     // No video/audio platform is installed in this widget harness.
-    final l = tester.element(find.byType(Dialog)).l10n;
+    final l = tester.element(find.byType(AppSheetScaffold)).l10n;
     expect(find.text(l.assistantMediaPreviewError), findsOneWidget);
     expect(removed, isFalse);
     expect(tester.takeException(), isNull);

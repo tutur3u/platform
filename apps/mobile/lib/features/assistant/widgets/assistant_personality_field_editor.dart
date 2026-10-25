@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -147,33 +148,30 @@ class _AssistantPersonalityFieldEditorState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (options.isEmpty)
-              TextFormField(
+              AppTextFormField(
                 controller: _text,
                 enabled: !_saving && !_saved,
                 minLines: field == AssistantPersonalityField.name ? 1 : 3,
                 maxLines: field == AssistantPersonalityField.name ? 1 : 8,
                 maxLength: field == AssistantPersonalityField.name ? 50 : 2000,
-                decoration: InputDecoration(labelText: field.title(context)),
                 validator: (value) =>
                     field == AssistantPersonalityField.name &&
                         (value?.trim().isEmpty ?? true)
                     ? l.assistantPersonalityNameRequired
                     : null,
+                label: field.title(context),
               )
             else
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                initialValue: _text.text,
-                decoration: InputDecoration(labelText: field.title(context)),
-                items: options.entries
-                    .map(
-                      (e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)),
-                    )
-                    .toList(),
+              AppSelect<String>(
+                title: field.title(context),
+                value: _text.text,
+                options: [
+                  for (final option in options.entries)
+                    AppSelectOption(value: option.key, label: option.value),
+                ],
                 onChanged: _saving || _saved
                     ? null
-                    : (value) => _text.text = value!,
+                    : (value) => setState(() => _text.text = value),
               ),
             if (_failed)
               Semantics(
@@ -184,8 +182,7 @@ class _AssistantPersonalityFieldEditorState
                 ),
               ),
             const SizedBox(height: 16),
-            FilledButton(
-              style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+            AppButton.primary(
               onPressed: _saving
                   ? null
                   : _saved

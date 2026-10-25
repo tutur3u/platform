@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
@@ -29,7 +30,7 @@ class AssistantPersonalityEditor extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16),
           children: [
             for (final field in AssistantPersonalityField.values)
-              ListTile(
+              AppListTile(
                 key: ValueKey('assistant-personality-${field.name}'),
                 title: Text(field.title(context)),
                 subtitle: Text(
@@ -38,20 +39,22 @@ class AssistantPersonalityEditor extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(LucideIcons.chevronRight),
                 enabled: !state.busy,
                 onTap: () => unawaited(
                   pushScopedSettingsPage(
                     context,
-                    rootNavigator: true,
-                    builder: (_, isCurrent) => AssistantSettingsEditorPage(
-                      title: field.title(context),
-                      child: AssistantPersonalityFieldEditor(
-                        cubit: cubit,
-                        field: field,
-                        isScopeCurrent: () => isCurrent() && isScopeCurrent(),
-                      ),
-                    ),
+                    asSheet: true,
+                    builder: (editorContext, isCurrent) =>
+                        AssistantSettingsEditorPage(
+                          title: field.title(editorContext),
+                          child: AssistantPersonalityFieldEditor(
+                            cubit: cubit,
+                            field: field,
+                            isScopeCurrent: () =>
+                                isCurrent() && isScopeCurrent(),
+                          ),
+                        ),
                   ),
                 ),
               ),

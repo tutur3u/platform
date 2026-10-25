@@ -65,15 +65,15 @@ acceptance remain required. Do not run global migration or deployment as part of
 planning. Follow the phased plan in the adoption guidance above and recheck
 [upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
 
-Execute cf with Node22.18+ even when Bun installs dependencies; typed-config
-commands are not supported on Bun. Discover a reviewed exact version from private
-scratch outside app config/.env ancestry before adding it to a workspace. Use
-anonymous operation-only search queries, then focused command help/schema.
-Require `cf auth whoami` JSON `authenticated === true`, not process exit0:
-unauthenticated results can exit successfully. cf credentials are separate from
-Wrangler. Stop authenticated parity work when access is absent; do not copy tokens
-or login files. Account selection may write project cache, so verify identity and
-local files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
+Execute the pinned cf CLI with a Node version satisfying its package engines
+(`cf@1.0.0-beta.20`: `^22.23 || ^24.22 || ^26.12`); Bun cannot run typed-config commands.
+The older discovery minimum does not suffice. Native service `dev` and `type-check`
+scripts select typed config and `.cloudflare/types/index.d.ts`; legacy
+`types --config <emitted-config>` consumers need declaration/config parity first. Discover exact-version help/schema from private scratch outside app config/.env ancestry.
+Use anonymous operation-only queries. Require `cf auth whoami` JSON
+`authenticated === true`; unauthenticated results can exit zero. cf credentials
+are separate: stop when access is absent; never copy tokens or login files.
+Account selection may write project cache; verify identity and resulting files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
 
 ## Cloudflare runaway-work review
 
@@ -161,12 +161,12 @@ whose reusable workflow requests more than its caller grants.
 `scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
 workflow-level write allowlist, and caller and callee grants in both directions.
 
-CodeQL PR uploads are diff-filtered; an analysis with zero uploaded results does
-not prove the local SARIF gate had no findings. The trusted new-alert gate prints
-blocking rule IDs and primary locations, omits message bodies, and escapes workflow
-command characters. A missing category baseline still fails closed. For exact
-CLI reproduction and regression coverage, follow
-[`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
+CodeQL PR uploads are diff-filtered; zero uploaded results do not clear the
+local SARIF gate. Triage at the analyzed SHA and current main: trace validation
+rejections, same-descriptor reads and directory-only fsync before calling an alert real.
+Keep optional-reader defects distinct from default production reachability; test
+replacement negatives without enabling collection. The gate prints escaped rule IDs
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
 
 ## Bun runtime pins
 

@@ -10,7 +10,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -330,7 +330,6 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final wsId = _wsId;
-    final compact = context.isCompact;
     final visible = _notes
         .where(
           (note) => '${note.title} ${note.preview}'.toLowerCase().contains(
@@ -490,78 +489,91 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                       ),
                 ],
               ),
-              // Wider windows show the list and editor side by side, so the
-              // body uses the root width rather than a single column.
-              AppPageBody(
-                kind: AppPageKind.root,
-                child: Column(
-                  children: [
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          if (!compact || _selected == null)
-                            Expanded(
-                              flex: compact ? 1 : 2,
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: _loading && _notes.isEmpty
-                                        ? const Center(
-                                            child: NovaLoadingIndicator(),
-                                          )
-                                        : RefreshIndicator(
-                                            onRefresh: _refresh,
-                                            child: NoteList(
-                                              notes: visible,
-                                              workspaceId: _wsId ?? '',
-                                              archived:
-                                                  _tab == NotesTab.archive,
-                                              selectedId: _selected?.id,
-                                              onSelect: (note) async {
-                                                if (!(await _save())) {
-                                                  return;
-                                                }
-                                                if (mounted) {
-                                                  final current = _notes
-                                                      .where(
-                                                        (item) =>
-                                                            item.id == note.id,
-                                                      )
-                                                      .firstOrNull;
-                                                  await _select(
-                                                    current ?? note,
-                                                  );
-                                                }
-                                              },
-                                            ),
-                                          ),
-                                  ),
-                                ],
+              // Wider bodies show the list and editor side by side, so the
+              // page uses the root width rather than a single column. The
+              // split follows the width the body receives, not the window.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact =
+                      Breakpoints.fromWidth(constraints.maxWidth) ==
+                      DeviceClass.compact;
+                  return AppPageBody(
+                    kind: AppPageKind.root,
+                    child: Column(
+                      children: [
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
+                            ),
+                            child: Text(
+                              _error!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
                               ),
                             ),
-                          if (!compact) const VerticalDivider(width: 24),
-                          if (!compact || _selected != null)
-                            Expanded(
-                              flex: compact ? 1 : 5,
-                              child: _selected == null
-                                  ? Center(child: Text(context.l10n.notesEmpty))
-                                  : _localAiEditor(),
-                            ),
-                        ],
-                      ),
+                          ),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              if (!compact || _selected == null)
+                                Expanded(
+                                  flex: compact ? 1 : 2,
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: _loading && _notes.isEmpty
+                                            ? const Center(
+                                                child: NovaLoadingIndicator(),
+                                              )
+                                            : RefreshIndicator(
+                                                onRefresh: _refresh,
+                                                child: NoteList(
+                                                  notes: visible,
+                                                  workspaceId: _wsId ?? '',
+                                                  archived:
+                                                      _tab == NotesTab.archive,
+                                                  selectedId: _selected?.id,
+                                                  onSelect: (note) async {
+                                                    if (!(await _save())) {
+                                                      return;
+                                                    }
+                                                    if (mounted) {
+                                                      final current = _notes
+                                                          .where(
+                                                            (item) =>
+                                                                item.id ==
+                                                                note.id,
+                                                          )
+                                                          .firstOrNull;
+                                                      await _select(
+                                                        current ?? note,
+                                                      );
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (!compact) const VerticalDivider(width: 24),
+                              if (!compact || _selected != null)
+                                Expanded(
+                                  flex: compact ? 1 : 5,
+                                  child: _selected == null
+                                      ? Center(
+                                          child: Text(context.l10n.notesEmpty),
+                                        )
+                                      : _localAiEditor(),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),

@@ -2533,12 +2533,6 @@ abstract class AppLocalizations {
   /// **'No accounts connected'**
   String get calendarConnectionsEmpty;
 
-  /// No description provided for @calendarConnectionsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Google and Microsoft accounts to sync calendars.'**
-  String get calendarConnectionsSubtitle;
-
   /// No description provided for @calendarConnectionsTitle.
   ///
   /// In en, this message translates to:
@@ -12829,12 +12823,6 @@ abstract class AppLocalizations {
   /// **'Calendar: {when}'**
   String remindersCalendarTiming(String when);
 
-  /// No description provided for @remindersDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Task deadlines and calendar events, kept ready on this device.'**
-  String get remindersDescription;
-
   /// No description provided for @remindersEnableNotifications.
   ///
   /// In en, this message translates to:
@@ -20575,12 +20563,6 @@ abstract class AppLocalizations {
   /// **'Expand prompt'**
   String get assistantExpandPrompt;
 
-  /// No description provided for @assistantMinimizePrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Minimize prompt'**
-  String get assistantMinimizePrompt;
-
   /// No description provided for @assistantSettingInfo.
   ///
   /// In en, this message translates to:
@@ -21006,6 +20988,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set'**
   String get profileMediaSet;
+
+  /// No description provided for @assistantSubmitSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted successfully'**
+  String get assistantSubmitSuccess;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

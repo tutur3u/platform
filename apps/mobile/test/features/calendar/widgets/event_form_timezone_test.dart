@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
@@ -137,11 +138,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(
         find.descendant(
-          of: find.byType(DatePickerDialog),
+          of: find.byType(AppDatePicker),
           matching: find.text('6'),
         ),
       );
-      await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
       expect(find.text('Oct 6, 2026'), findsNWidgets(2));
       await tester.tap(find.text('Save'));

@@ -85,9 +85,11 @@ localization changes.
   conditional and relative import URIs).
 - Use the mapping in `apps/docs/build/development-tools/mobile-shadcn-migration.mdx`:
   `AppTokens.of(context)` for `shad.Theme.of`, `AppGap`, `LucideIcons` from
-  `lucide_icons_flutter`, `AppButton.*`, `AppIconButton(tooltip:)`,
+  `core/ui/icons/app_icons.dart`, `AppButton.*`, `AppIconButton(tooltip:)`,
   `AppTextField`, `AppCard`, `AppBadge`, `AppAlert`, `AppSwitch`,
-  `AppCheckbox`, `AppSelect`, `showAppToast`, `AppScaffold`. Run
+  `AppCheckbox`, `AppToggleRow`, `AppCheckboxRow`, `AppChip`, `AppSlider`,
+  `AppSelect`, `showAppDatePicker`, `showAppTimePicker`, `showAppToast`,
+  `AppScaffold`. Run
   `scripts/mobile-shadcn-codemod.js` for the mechanical Gap/Theme/icon renames
   on whole libraries; part files inherit their library's import.
 - Colours come from `AppColorTokens`, a `ThemeExtension` derived from the
@@ -100,6 +102,9 @@ localization changes.
   with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
   `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
   `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+- Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
+  add a second IME padding layer in their bodies. Verify phone paths with a
+  keyboard open and tap OK/Save; a tablet-only picker test does not cover them.
 - Back must close the topmost overlay first. `AppModalBinding` registers a
   modal entry in `ShellChromeActionsCubit`, so `ShellPage.didPopRoute`, dock
   Back and Android Back resolve to the overlay. A sheet on the shell's nested
@@ -241,3 +246,27 @@ from invalid images and signed PUT ticket failures separately from API permissio
 denials. See the mobile profile banner section in
 `apps/docs/platform/features/user-management.mdx` and the focused banner lifecycle,
 picker, image-state and repository failure-contract tests.
+
+### Migrating scoped editors to sheets
+
+When a scoped settings route opens as a hosted sheet, forward its captured
+AuthCubit and WorkspaceCubit with value providers even on a nested navigator.
+A navigator does not inherit providers placed inside its sibling page route.
+Retain the original scope-generation invalidation and cancel both parent and
+child sheets on account/workspace transitions, including switching away and back.
+
+Resolve localized titles from the context passed to the editor builder. An
+opening page can be deactivated while a departing sheet rebuilds; a captured
+parent context is unsafe even when the new editor remains mounted. Keep the
+actual actor/workspace ABA tests and late-write assertions when changing the
+presentation.
+
+Toggle and checkbox rows activate from their labels as well as their controls.
+Toast handles cancel their timers when their overlay is disposed. Regression
+coverage lives in app_toast_lifecycle_test.dart,
+assistant_personality_route_scope_test.dart and assistant_routed_editors_test.dart.
+
+A covered ancestor can pause a nested navigator's exit animation. Scope
+invalidation removes the exact owned settings route instead of waiting for a pop
+animation; it must preserve an unrelated covering route. The settings shell ABA
+checks cover this cancellation while the editor is covered.

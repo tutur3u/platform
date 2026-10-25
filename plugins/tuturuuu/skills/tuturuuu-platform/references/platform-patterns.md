@@ -431,6 +431,27 @@ Rules:
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
   on the app's `src/lib/workspace.ts`. `check-internal-app-auth` enforces both
   halves; the actorless rule is per-app via `ACTORLESS_CHECK_APPS`.
+- **`@tuturuuu/internal-api` is emitted as CommonJS** (`tsconfig.build.json`
+  uses `NodeNext` without `"type": "module"`), so a Vite+ app that imports it
+  from `dist/` bundles the whole client (~1 MB raw, every zod schema) into its
+  entry chunk; this was the single largest download on every Meet and Mail
+  page. Vite+ satellites alias `@tuturuuu/internal-api` and its subpaths to
+  `packages/internal-api/src/*.ts` in `vite.config.ts`, and the package declares
+  `"sideEffects": false`, so rolldown keeps only the readers a page uses. Keep
+  new internal-api modules free of import-time side effects, and check
+  `dist/client/assets` for a `dist-*.js`/`join-outcome-*.js`-sized chunk after
+  changing the alias list.
+- **Client bundles must not import both message bundles.** Meet's `en.json` and
+  `vi.json` weigh ~940 KB raw; `NextIntlClientProvider` now reads them through
+  `runtime/locale-messages.ts`, which keeps the static import on the server
+  (`createIsomorphicFn`) and fetches only the active locale from the hashed
+  `?url` asset the route head preloads. Route pending copy lives in
+  `loading-labels.ts` with a test that pins it to the JSON. Load heavy views
+  (call shell, collaboration editors, live plan editor, meeting detail) with
+  `lazy()` inside `page-view.tsx`; the server still renders them and hydration
+  waits for the chunk, so no layout shift. Preload the Noto Sans subsets and
+  use `font-display: swap` with the metric-matched `Noto Sans Fallback` face in
+  `typography.css` rather than `block`, which hid text until the font arrived.
 - A satellite that renders broad shared UI must be in the **checked** `APPS` list
   in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
   app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /
@@ -671,12 +692,11 @@ the shared runtime’s `BASE_URL` points at Parley when running there. Participa
 invitations must instead remain on the current Parley origin at `/r/<code>`,
 never `/sessions/<id>`. Codes do not confer authorization.
 
-Reset participation acknowledgement when switching the selected scenario. Keep
-the selection visible when search filters hide its option. Load saved private
-rubrics only after both session-owner and meeting-host checks; render the session
-snapshot rather than the current scenario revision. See the Parley product guide
-and studio setup, invitation, review-route and Meet-link regression tests.
-
+Reset participation acknowledgement when switching scenarios. Keep filtered selections
+visible. Load private rubrics only after session-owner and meeting-host checks;
+render the session snapshot. See the Parley product guide and studio setup,
+invitation, review-route and Meet-link regression tests. Keep shared chat mention
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
 
 ## Immediate notification selection
 

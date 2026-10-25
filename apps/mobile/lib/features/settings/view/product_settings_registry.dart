@@ -167,13 +167,11 @@ final productSettingsRegistry = <ProductSettingsEntry>[
           .currentWorkspace
           ?.id;
       if (workspaceId == null) return;
-      final location = GoRouterState.of(context).matchedLocation;
       await pushScopedSettingsPage(
         context,
-        rootNavigator: true,
+        asSheet: true,
         builder: (_, isCurrent) => AssistantSettingsHub(
           workspaceId: workspaceId,
-          locations: {location},
           isScopeCurrent: isCurrent,
         ),
       );

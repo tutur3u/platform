@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
+import 'package:mobile/core/ui/ui.dart';
 
 import '../../helpers/pump_app.dart';
 
@@ -82,7 +83,7 @@ void main() {
       );
       await tester.tap(find.text('Start'));
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(AppDialog), findsNothing);
       expect(result, DownloadNetworkConsent.wifiOnly);
     },
   );

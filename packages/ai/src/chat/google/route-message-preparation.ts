@@ -307,6 +307,11 @@ type PersistLatestUserMessageParams = {
   insertChatMessage: (
     args: SupabaseRpcClientLike
   ) => PromiseLike<{ error: { message: string } | null }>;
+  /**
+   * Request-scoped sends must persist even a single-message history: the
+   * persistence claim requires the user row, and no earlier step created it.
+   */
+  requestScoped?: boolean;
   source: 'Mira' | 'Rewise';
 };
 
@@ -396,9 +401,11 @@ export async function persistLatestUserMessage({
   processedMessages,
   chatId,
   insertChatMessage,
+  requestScoped = false,
   source,
 }: PersistLatestUserMessageParams): Promise<Response | null> {
-  if (processedMessages.length === 1) {
+  // Unscoped first turns were already saved by chat creation.
+  if (processedMessages.length === 1 && !requestScoped) {
     return null;
   }
 

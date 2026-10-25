@@ -337,6 +337,25 @@ void main() {
       }
     }
   }
+  testWidgets('the list keeps the detail width on a landscape tablet', (
+    tester,
+  ) async {
+    Finder named(String type) => find.byWidgetPredicate(
+      (widget) => widget.runtimeType.toString() == type,
+    );
+    await mount(tester, size: const Size(1194, 834));
+    // Expanded `detail` box: 720dp including the 32dp gutters.
+    expect(tester.getSize(named('_DriveListTile').first).width, 720 - 2 * 32);
+
+    actions.state
+        .resolveForLocation(Routes.drive)
+        .firstWhere((action) => action.id == 'drive-view')
+        .onPressed!();
+    await pump(tester);
+    // The grid lays its cards across the wider `root` box.
+    expect(tester.getSize(named('_DriveGrid').first).width, 1194 - 2 * 32);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('search is registered with the shared dock and closes cleanly', (
     tester,
   ) async {

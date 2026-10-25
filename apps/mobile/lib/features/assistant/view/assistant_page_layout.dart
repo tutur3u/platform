@@ -17,11 +17,11 @@ extension _AssistantPageLayout on _AssistantPageState {
           if (currentWorkspace == null) {
             if (workspaceState.status == WorkspaceStatus.initial ||
                 workspaceState.status == WorkspaceStatus.loading) {
-              return const shad.Scaffold(
+              return const AppScaffold(
                 child: Center(child: NovaLoadingIndicator()),
               );
             }
-            return shad.Scaffold(
+            return AppScaffold(
               child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
             );
           }
@@ -247,8 +247,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                           );
                         }
 
-                        return shad.Scaffold(
-                          resizeToAvoidBottomInset: false,
+                        return AppScaffold(
                           child: SafeArea(
                             top: false,
                             bottom: false,
@@ -388,6 +387,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   ),
                                               repository: _repository,
                                               chatState: chatState,
+                                              chatCubit: _chatCubit,
                                               liveState: liveState,
                                               liveUiState: liveUiState,
                                               shellState: shellState,
@@ -440,10 +440,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                           : _isComposerVisible
                                           ? AssistantComposerPrimaryAction(
                                               controller: _inputController,
-                                              attachments:
-                                                  chatState.composerAttachments,
-                                              onRemoveAttachment:
-                                                  removeComposerAttachment,
                                               focusNode: _inputFocusNode,
                                               onToggleNavigation:
                                                   _toggleComposerNavigation,

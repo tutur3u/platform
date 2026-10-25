@@ -45,7 +45,16 @@ def connect(path: Path, *, initialize=False, readonly=False):
 
 
 def records(db):
-    return {row["id"]: json.loads(row["payload"]) for row in db.execute("SELECT * FROM items")}
+    items = {}
+    for row in db.execute("SELECT * FROM items"):
+        item = json.loads(row["payload"])
+        # Rows written by older or external tools may omit the id or use
+        # statuses outside STATES; keep them readable without rewriting them.
+        if isinstance(item, dict):
+            item.setdefault("id", row["id"])
+            item.setdefault("status", "captured")
+        items[row["id"]] = item
+    return items
 
 
 def validate(item):
@@ -132,11 +141,18 @@ def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=N
         if key not in items:
             raise ValueError("unknown request id")
         item = dict(items[key])
+        stored = json.loads(db.execute("SELECT payload FROM items WHERE id = ?", (key,)).fetchone()[0])
+        if not isinstance(stored, dict) or "id" not in stored or stored.get("status", "captured") not in STATES:
+            # Legacy rows stay readable but are never rewritten in place.
+            raise ValueError(f"request {key} is not a standard record; re-capture it")
+        item.setdefault("owner", "")
+        item.setdefault("links", [])
         if status is not None:
             if status not in STATES:
                 raise ValueError("unknown status")
             if status in {"ready", "active", "verified"}:
-                pending = [d for d in item.get("dependencies", []) if items[d]["status"] != "verified"]
+                pending = [d for d in item.get("dependencies", [])
+                           if d not in items or items[d].get("status") != "verified"]
                 if pending:
                     raise ValueError(f"unverified dependencies: {pending}")
             if status == "active" and not (owner or item["owner"]).strip():
@@ -177,8 +193,8 @@ def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=N
             invalidated = False
             for dependent in items.values():
                 pending = [d for d in dependent.get("dependencies", [])
-                           if items[d]["status"] != "verified"]
-                if dependent["status"] == "verified" and pending:
+                           if d not in items or items[d].get("status") != "verified"]
+                if dependent.get("status") == "verified" and pending:
                     dependent["status"] = "implemented"
                     dependent.pop("verification", None)
                     dependent["invalidatedDependencies"] = pending
@@ -191,8 +207,12 @@ def update(db, key, *, status=None, owner=None, note=None, link=None, evidence=N
 
 def snapshot(db):
     items = sorted(records(db).values(), key=lambda x: (x.get("priority", 2), x["id"]))
-    counts = {state: sum(i["status"] == state for i in items) for state in sorted(STATES)}
-    return {"counts": counts, "items": items, "liveVerificationPerformed": False}
+    counts = {state: sum(i.get("status") == state for i in items) for state in sorted(STATES)}
+    nonstandard = sorted(i["id"] for i in items if i.get("status") not in STATES)
+    result = {"counts": counts, "items": items, "liveVerificationPerformed": False}
+    if nonstandard:
+        result["nonstandardStatus"] = nonstandard
+    return result
 
 
 def main():

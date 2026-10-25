@@ -1,12 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
-import 'package:mobile/features/settings/view/settings_route_frame.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+
 import '../../../helpers/pump_app.dart';
 import '../assistant_personal_settings_harness.dart';
 
@@ -25,25 +26,33 @@ Future<void> openPersonality(
     ),
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.byType(ListTile).first);
+  await tester.tap(find.byType(AppListTile).first);
   await tester.pumpAndSettle();
 }
 
 void expectChrome() {
-  expect(find.byType(SettingsRouteFrame), findsOneWidget);
-  expect(find.byType(MobileSectionAppBar), findsOneWidget);
-  expect(find.byKey(const ValueKey('settings-route-back')), findsOneWidget);
+  expect(find.byType(AppSheetScaffold).hitTestable(), findsOneWidget);
+  expect(
+    find.byKey(const ValueKey('app-sheet-close')).hitTestable(),
+    findsOneWidget,
+  );
   expect(find.byType(AppBar), findsNothing);
 }
 
 void main() {
-  testWidgets('actual personality entry opens a dedicated settings route', (
+  testWidgets('actual personality entry opens a hosted settings sheet', (
     tester,
   ) async {
     await openPersonality(tester, SettingsRepository());
     expectChrome();
-    expect(find.byType(TextFormField), findsNothing);
-    expect(find.byType(ListTile), findsNWidgets(5));
+    expect(find.byType(AppTextFormField), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AppSheetScaffold).last,
+        matching: find.byType(AppListTile),
+      ),
+      findsNWidgets(5),
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -94,9 +103,9 @@ void main() {
                 tester.element(find.byType(AssistantPersonalityFieldEditor)),
               )
               .isEmpty) {
-            await tester.enterText(find.byType(TextFormField), entry.value);
+            await tester.enterText(find.byType(AppTextFormField), entry.value);
           } else {
-            final dropdown = find.byType(DropdownButtonFormField<String>);
+            final dropdown = find.byType(AppSelect<String>);
             await tester.tap(dropdown);
             await tester.pumpAndSettle();
             final label = entry.key.options(
@@ -106,7 +115,7 @@ void main() {
             await tester.pumpAndSettle();
           }
           final save = find.widgetWithText(
-            FilledButton,
+            AppButton,
             language == 'en' ? 'Save' : 'Lưu',
           );
           await tester.ensureVisible(save);
@@ -118,7 +127,7 @@ void main() {
           expectChrome();
         }
         expect(repository.writes, 5);
-        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+        await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
         await tester.pumpAndSettle();
         expect(find.text('Nova'), findsOneWidget);
         // Re-entry shows confirmed settings.
@@ -133,8 +142,8 @@ void main() {
   }
 
   for (final editor in ['name', 'memory']) {
-    for (final back in ['dock', 'system']) {
-      testWidgets('$editor route has keyboard-safe content and $back back '
+    for (final back in ['close', 'system']) {
+      testWidgets('$editor sheet has keyboard-safe content and $back back '
           'at 320px/2x', (tester) async {
         tester.view.physicalSize = const Size(320, 640);
         tester.view.devicePixelRatio = 1;
@@ -149,7 +158,7 @@ void main() {
             find.byKey(const ValueKey('assistant-personality-name')),
           );
         } else {
-          await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+          await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
           await tester.pumpAndSettle();
           await tester.tap(find.text('Memory'));
           await tester.pumpAndSettle();
@@ -161,24 +170,30 @@ void main() {
         tester.view.viewInsets = const FakeViewPadding(bottom: 240);
         addTearDown(tester.view.resetViewInsets);
         await tester.pumpAndSettle();
-        final save = find.widgetWithText(FilledButton, 'Save');
+        final save = find.widgetWithText(AppButton, 'Save');
         await tester.ensureVisible(save);
         await tester.pumpAndSettle();
         expectChrome();
         final dock = tester.getRect(
-          find.byKey(const ValueKey('settings-route-back')),
+          find.byKey(const ValueKey('app-sheet-close')).last,
         );
-        expect(dock.bottom, lessThanOrEqualTo(400));
-        expect(tester.getRect(save).bottom, lessThanOrEqualTo(dock.top));
+        expect(
+          find.byKey(const ValueKey('app-sheet-close')).last.hitTestable(),
+          findsOneWidget,
+        );
+        expect(dock.size.height, greaterThanOrEqualTo(48));
+        expect(tester.getRect(save).top, greaterThanOrEqualTo(dock.bottom));
+        expect(tester.getRect(save).bottom, lessThanOrEqualTo(400));
+        expect(tester.getRect(save).overlaps(dock), isFalse);
         expect(save.hitTestable(), findsOneWidget);
         expect(tester.takeException(), isNull);
-        if (back == 'dock') {
-          await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+        if (back == 'close') {
+          await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
         } else {
           await tester.binding.handlePopRoute();
         }
         await tester.pumpAndSettle();
-        expect(find.byType(TextFormField), findsNothing);
+        expect(find.byType(AppTextFormField), findsNothing);
         expect(repository.writes, 0);
         expect(repository.edits, 0);
         await tester.pumpWidget(const SizedBox.shrink());
@@ -196,24 +211,24 @@ void main() {
         find.byKey(const ValueKey('assistant-personality-name')),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField), 'Unsaved Nova');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.enterText(find.byType(AppTextFormField), 'Unsaved Nova');
+      await tester.tap(find.widgetWithText(AppButton, 'Save'));
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<TextFormField>(find.byType(TextFormField))
+            .widget<AppTextFormField>(find.byType(AppTextFormField))
             .controller!
             .text,
         'Unsaved Nova',
       );
       expect(
-        find.text('Could not complete this change. Try again.'),
+        find.text('Could not complete this change. Try again.').hitTestable(),
         findsOneWidget,
       );
       repository.write = (soul) async => soul;
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(find.widgetWithText(AppButton, 'Save'));
       await tester.pumpAndSettle();
-      expect(find.text('Unsaved Nova'), findsOneWidget);
+      expect(find.text('Unsaved Nova').hitTestable(), findsOneWidget);
       expect(repository.writes, 2);
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -225,8 +240,8 @@ void main() {
     await openPersonality(tester, repository);
     await tester.tap(find.byKey(const ValueKey('assistant-personality-name')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField), 'Confirmed Nova');
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.enterText(find.byType(AppTextFormField), 'Confirmed Nova');
+    await tester.tap(find.widgetWithText(AppButton, 'Save'));
     await tester.pump();
     final navigator = Navigator.of(
       tester.element(find.byType(AssistantPersonalityFieldEditor)),
@@ -245,10 +260,10 @@ void main() {
     expect(find.text('Unrelated covering route'), findsOneWidget);
     navigator.pop();
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(FilledButton, 'Done'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Done'));
+    expect(find.widgetWithText(AppButton, 'Done'), findsOneWidget);
+    await tester.tap(find.widgetWithText(AppButton, 'Done'));
     await tester.pumpAndSettle();
-    expect(find.text('Confirmed Nova'), findsOneWidget);
+    expect(find.text('Confirmed Nova').hitTestable(), findsOneWidget);
     expect(repository.writes, 1);
     await tester.pumpWidget(const SizedBox.shrink());
   });

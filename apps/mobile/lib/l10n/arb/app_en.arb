@@ -1575,7 +1575,6 @@
   "calendarConnectionsDisconnect": "Disconnect",
   "calendarConnectionsDisconnectConfirm": "Disconnect {account}? Associated calendars will be disabled.",
   "calendarConnectionsEmpty": "No accounts connected",
-  "calendarConnectionsSubtitle": "Connect Google and Microsoft accounts to sync calendars.",
   "calendarConnectionsTitle": "Manage Calendar Accounts",
   "calendarDayView": "Day",
   "calendarDeleteConfirm": "Delete this event?",
@@ -3291,7 +3290,6 @@
   "reminders3h": "3 hours before",
   "remindersAllDayEvent": "All-day event: {title}",
   "remindersCalendarTiming": "Calendar: {when}",
-  "remindersDescription": "Task deadlines and calendar events, kept ready on this device.",
   "remindersEnableNotifications": "Enable notifications",
   "remindersEventTitle": "Calendar events",
   "remindersIn12h": "In 12 hours",
@@ -4603,7 +4601,6 @@
   "assistantSettingsSelectionDenied": "You cannot change these chat settings. Your previous settings and draft are retained.",
   "assistantSettingsSelectionUnconfirmed": "The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.",
   "assistantExpandPrompt": "Expand prompt",
-  "assistantMinimizePrompt": "Minimize prompt",
   "assistantSettingInfo": "About {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4740,5 +4737,6 @@
   "settingsSearchBrowserTerm": "browser",
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
-  "profileMediaSet": "Set"
+  "profileMediaSet": "Set",
+  "assistantSubmitSuccess": "Submitted successfully"
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_models_section.dart';
@@ -125,12 +126,12 @@ void main() {
       await _mount(tester, models);
       expect(find.text('Gemma 3 270M'), findsOneWidget);
       expect(find.text('Qwen 3 0.6B'), findsNothing);
-      final use = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Use on this device'),
+      final use = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Use on this device'),
       );
       expect(use.onPressed, isNull);
-      final remove = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Remove weights'),
+      final remove = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Remove weights'),
       );
       expect(remove.onPressed, isNotNull);
       await tester.pumpWidget(const SizedBox());
@@ -145,12 +146,12 @@ void main() {
       await _mount(tester, models);
       expect(find.text('Gemma 3 270M'), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      final cancel = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Cancel'),
+      final cancel = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Cancel'),
       );
       expect(cancel.onPressed, isNotNull);
-      final install = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Import licensed file'),
+      final install = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Import licensed file'),
       );
       expect(install.onPressed, isNull);
       await tester.pumpWidget(const SizedBox());

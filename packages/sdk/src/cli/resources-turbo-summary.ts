@@ -1,5 +1,5 @@
-import { existsSync, readdirSync } from 'node:fs';
-import { lstat, readdir, readFile, rm } from 'node:fs/promises';
+import { constants, existsSync, readdirSync } from 'node:fs';
+import { lstat, open, readdir, rm } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 
 // Report Turbo cache reuse after a resource-managed command. Turbo only writes
@@ -16,6 +16,34 @@ export type TurboSummaryPlan = {
 const runners = new Set(['bun', 'bunx', 'npx', 'pnpm', 'yarn']);
 const turboNames = new Set(['turbo', 'turbo:local']);
 const skipFlags = ['--dry', '--dry-run', '--graph', '--help', '-h'];
+
+async function openRegularFile(path: string) {
+  const noFollow = constants.O_NOFOLLOW || 0;
+  const flags = constants.O_RDONLY | noFollow | (constants.O_NONBLOCK || 0);
+  if (noFollow) return open(path, flags);
+  // Without O_NOFOLLOW, open first and only then confirm that the path still
+  // names that same regular file. A symlink or a swapped inode at the path no
+  // longer matches the opened descriptor, so it is rejected; checking before
+  // opening would leave a check-then-use window.
+  const file = await open(path, flags);
+  try {
+    const opened = await file.stat({ bigint: true });
+    const named = await lstat(path, { bigint: true });
+    if (
+      !opened.isFile() ||
+      !named.isFile() ||
+      opened.ino === 0n ||
+      named.dev !== opened.dev ||
+      named.ino !== opened.ino
+    ) {
+      throw new Error('not-a-regular-file');
+    }
+    return file;
+  } catch (error) {
+    await file.close();
+    throw error;
+  }
+}
 
 function turboRunIndex(name: string, args: string[]) {
   const tool = basename(name);
@@ -193,8 +221,15 @@ export async function reportTurboSummary(
     if (candidates.length !== 1) return;
     const name = candidates[0]!;
     const path = join(directory, name);
-    if (!(await lstat(path)).isFile()) return;
-    const summary = JSON.parse(await readFile(path, 'utf8'));
+    const file = await openRegularFile(path);
+    let content: string;
+    try {
+      if (!(await file.stat()).isFile()) return;
+      content = await file.readFile('utf8');
+    } finally {
+      await file.close();
+    }
+    const summary = JSON.parse(content);
     if (summary.id !== basename(name, '.json')) return;
     const report = summarizeTurboRun(summary);
     if (report.total > 0) write(formatTurboCacheReport(report));

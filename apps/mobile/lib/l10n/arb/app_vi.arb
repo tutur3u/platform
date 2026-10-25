@@ -1578,7 +1578,6 @@
   "calendarConnectionsDisconnect": "Ngắt kết nối",
   "calendarConnectionsDisconnectConfirm": "Ngắt kết nối {account}? Các lịch liên quan sẽ bị vô hiệu hóa.",
   "calendarConnectionsEmpty": "Chưa có tài khoản nào được kết nối",
-  "calendarConnectionsSubtitle": "Kết nối tài khoản Google và Microsoft để đồng bộ lịch.",
   "calendarConnectionsTitle": "Quản lý tài khoản lịch",
   "calendarDayView": "Ngày",
   "calendarDeleteConfirm": "Xóa sự kiện này?",
@@ -3294,7 +3293,6 @@
   "reminders3h": "Trước 3 giờ",
   "remindersAllDayEvent": "Sự kiện cả ngày: {title}",
   "remindersCalendarTiming": "Lịch: {when}",
-  "remindersDescription": "Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.",
   "remindersEnableNotifications": "Bật thông báo",
   "remindersEventTitle": "Sự kiện lịch",
   "remindersIn12h": "Còn 12 giờ",
@@ -4592,7 +4590,6 @@
   "assistantSettingsSelectionDenied": "Bạn không thể thay đổi cài đặt cuộc trò chuyện này. Cài đặt trước đó và bản nháp được giữ lại.",
   "assistantSettingsSelectionUnconfirmed": "Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.",
   "assistantExpandPrompt": "Mở rộng lời nhắc",
-  "assistantMinimizePrompt": "Thu gọn lời nhắc",
   "assistantSettingInfo": "Thông tin về {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4670,5 +4667,6 @@
   "settingsSearchBrowserTerm": "trình duyệt",
   "profilePhoto": "Ảnh đại diện",
   "profileCoverBanner": "Ảnh bìa",
-  "profileMediaSet": "Đã đặt"
+  "profileMediaSet": "Đã đặt",
+  "assistantSubmitSuccess": "Đã gửi thành công"
 }

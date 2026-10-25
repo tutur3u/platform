@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
@@ -223,7 +224,7 @@ List<_StarterPrompt> _starterPrompts(BuildContext context) {
       label: context.l10n.assistantStarterFocus,
       prompt: context.l10n.assistantStarterFocus,
       caption: context.l10n.assistantStarterCaptionFocus,
-      icon: Icons.track_changes_rounded,
+      icon: LucideIcons.target,
       background: focusPalette.background,
       border: focusPalette.border,
       shadow: focusPalette.shadow,
@@ -235,7 +236,7 @@ List<_StarterPrompt> _starterPrompts(BuildContext context) {
       label: context.l10n.assistantStarterPlan,
       prompt: context.l10n.assistantStarterPlan,
       caption: context.l10n.assistantStarterCaptionPlan,
-      icon: Icons.event_note_rounded,
+      icon: LucideIcons.calendarDays,
       background: planPalette.background,
       border: planPalette.border,
       shadow: planPalette.shadow,
@@ -247,7 +248,7 @@ List<_StarterPrompt> _starterPrompts(BuildContext context) {
       label: context.l10n.assistantStarterBacklog,
       prompt: context.l10n.assistantStarterBacklog,
       caption: context.l10n.assistantStarterCaptionBacklog,
-      icon: Icons.inventory_2_outlined,
+      icon: LucideIcons.package,
       background: backlogPalette.background,
       border: backlogPalette.border,
       shadow: backlogPalette.shadow,
@@ -259,7 +260,7 @@ List<_StarterPrompt> _starterPrompts(BuildContext context) {
       label: context.l10n.assistantStarterDraft,
       prompt: context.l10n.assistantStarterDraft,
       caption: context.l10n.assistantStarterCaptionDraft,
-      icon: Icons.edit_outlined,
+      icon: LucideIcons.pencil,
       background: draftPalette.background,
       border: draftPalette.border,
       shadow: draftPalette.shadow,

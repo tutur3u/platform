@@ -101,7 +101,7 @@ void registerSettingsAssistantEntrypointChecks() {
           await _settle(tester);
           expect(find.text(l10n.assistantHistoryTitle), findsNothing);
           final settingsAction = find.widgetWithText(
-            ListTile,
+            AppListTile,
             l10n.assistantSettingsTitle,
           );
           // The nested sheet shares the bottom edge with the floating dock.
@@ -113,39 +113,52 @@ void registerSettingsAssistantEntrypointChecks() {
         await _settle(tester);
         final hub = find.byType(AssistantSettingsHub);
         expect(hub, findsOneWidget);
-        expect(Navigator.of(tester.element(hub)), same(root));
-        expect(find.byType(ShellPage), findsNothing);
+        expect(Navigator.of(tester.element(hub)), same(nested));
+        expect(find.byType(ShellPage), findsOneWidget);
         expect(find.text(l10n.assistantSettingsTitle), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('app-sheet-close')).last,
+          findsOneWidget,
+        );
         expect(tester.element(hub).read<AuthCubit>(), same(h.auth));
         expect(tester.element(hub).read<WorkspaceCubit>(), same(h.workspaces));
         expect(tester.widget<AssistantSettingsHub>(hub).workspaceId, 'ws');
         // Continue through the actual caller and hub into both routed editors.
         final personality = find.widgetWithText(
-          ListTile,
+          AppListTile,
           l10n.assistantPersonalityTitle,
         );
         await tester.ensureVisible(personality);
         await tester.tap(personality);
         await _settle(tester);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-        expect(find.byType(ShellPage), findsNothing);
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold).last, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('app-sheet-close')).last,
+          findsOneWidget,
+        );
+        expect(find.byType(ShellPage), findsOneWidget);
         await tester.tap(
           find.byKey(const ValueKey('assistant-personality-name')),
         );
         await _settle(tester);
         expect(find.byType(AssistantPersonalityFieldEditor), findsOneWidget);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        await tester.enterText(find.byType(TextFormField), 'Routed Nova');
-        await tester.tap(find.widgetWithText(FilledButton, l10n.commonSave));
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold).last, findsOneWidget);
+        await tester.enterText(
+          find.byType(AppTextFormField).last,
+          'Routed Nova',
+        );
+        await tester.tap(
+          find.widgetWithText(AppButton, l10n.commonSave).hitTestable(),
+        );
         await _settle(tester);
-        expect(find.text('Routed Nova'), findsOneWidget);
+        expect(find.text('Routed Nova').hitTestable(), findsOneWidget);
         expect(settingsRepository.writes, 1);
-        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+        await tester.binding.handlePopRoute();
         await _settle(tester);
         final memory = find.widgetWithText(
-          ExpansionTile,
+          AppDisclosure,
           l10n.assistantMemoryTitle,
         );
         await tester.ensureVisible(memory);
@@ -156,17 +169,26 @@ void registerSettingsAssistantEntrypointChecks() {
         await tester.tap(memoryRow);
         await _settle(tester);
         expect(find.byType(AssistantMemoryEditor), findsOneWidget);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-        await tester.enterText(find.byType(TextFormField), 'Routed memory');
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold).last, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('app-sheet-close')).last,
+          findsOneWidget,
+        );
+        await tester.enterText(
+          find.byType(AppTextFormField).last,
+          'Routed memory',
+        );
         await _settle(tester);
-        final memorySave = find.widgetWithText(FilledButton, l10n.commonSave);
+        final memorySave = find
+            .widgetWithText(AppButton, l10n.commonSave)
+            .hitTestable();
         await tester.ensureVisible(memorySave);
         await tester.tap(memorySave);
         await _settle(tester);
         expect(find.text('Routed memory'), findsOneWidget);
         expect(settingsRepository.edits, 1);
-        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+        await tester.binding.handlePopRoute();
         await _settle(tester);
         expect(hub, findsNothing);
         expect(origin, findsOneWidget);

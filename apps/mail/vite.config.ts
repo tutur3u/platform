@@ -100,6 +100,16 @@ export default defineConfig(({ command }) => ({
         ),
       },
       {
+        // The package builds as CommonJS, which bundles the entire client into
+        // every page; the ESM source lets rolldown tree-shake per import.
+        find: /^@tuturuuu\/internal-api$/u,
+        replacement: local('../../packages/internal-api/src/index.ts'),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/u,
+        replacement: local('../../packages/internal-api/src/$1.ts'),
+      },
+      {
         find: /^server-only$/u,
         replacement: '@tanstack/react-start/server-only',
       },

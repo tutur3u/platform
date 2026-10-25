@@ -47,10 +47,10 @@ const domains = {
   },
   workspace: {
     keywords:
-      'workspace member context sidebar artifact panel theme layout screen khong gian thanh ben giao dien',
-    matches: /workspace|sidebar|theme|immersive/,
+      'workspace member context sidebar artifact panel theme layout screen open switch app navigate go khong gian thanh ben giao dien mo chuyen ung dung',
+    matches: /workspace|sidebar|theme|immersive|open_app/,
     guidance:
-      'Resolve named workspaces before operations. Opening artifacts fetches data in the UI, not in the model. Keep explanations in chat. Make each UI change once and finish after success. Replace a panel with close_artifact plus show_workspace_artifact; focus_artifact closes all other panels.',
+      'Resolve named workspaces before operations. Opening artifacts fetches data in the UI, not in the model. Keep explanations in chat. Make each UI change once and finish after success. Replace a panel with close_artifact plus show_workspace_artifact; focus_artifact closes all other panels. Use open_app to switch apps; it only navigates.',
   },
   creative: {
     keywords:

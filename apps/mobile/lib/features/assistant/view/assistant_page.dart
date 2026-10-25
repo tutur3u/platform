@@ -10,8 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -79,7 +79,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'assistant_page_new_chat.dart';
 part 'assistant_page_settings.dart';
@@ -174,11 +173,7 @@ class _AssistantPageState extends State<AssistantPage>
     onSoulRefreshRequested: _shellCubit.refreshSoul,
     onThemeRequested: (theme, isCurrent) async {
       if (!mounted || !isCurrent()) return;
-      final mode = switch (theme) {
-        'light' => shad.ThemeMode.light,
-        'dark' => shad.ThemeMode.dark,
-        _ => shad.ThemeMode.system,
-      };
+      final mode = ThemeCubit.parseThemeMode(theme);
       await context.read<ThemeCubit>().setThemeMode(
         mode,
         isCurrent: () => mounted && isCurrent(),
@@ -187,10 +182,7 @@ class _AssistantPageState extends State<AssistantPage>
     onSoulRefreshFailed: (_) {
       if (!mounted) return;
       final message = context.l10n.assistantSettingsRefreshFailed;
-      shad.showToast(
-        context: context,
-        builder: (_, _) => shad.SurfaceCard(child: Text(message)),
-      );
+      showAppToast(context, message: message);
     },
     onImmersiveModeChanged: _shellCubit.setImmersiveMode,
     onSettingsRestored: (settings) {
@@ -565,9 +557,7 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _showInlineNotice(String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    messenger?.hideCurrentSnackBar();
-    messenger?.showSnackBar(SnackBar(content: Text(message)));
+    showAppToast(context, message: message);
   }
 
   double _composerReservedSpace(

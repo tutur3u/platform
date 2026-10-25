@@ -416,7 +416,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   return NovaRefreshIndicator(
                     notificationPredicate: (notification) =>
                         state.currentView == TaskBoardDetailView.kanban &&
-                            !context.isCompact
+                            !_usesPagedKanban(constraints.maxWidth)
                         ? notification.metrics.axis == Axis.vertical
                         : notification.depth == 0,
                     onRefresh: () => _refreshBoardContent(

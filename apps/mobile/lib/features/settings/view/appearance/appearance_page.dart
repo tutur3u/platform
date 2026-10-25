@@ -8,7 +8,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
@@ -22,7 +22,6 @@ import 'package:mobile/features/settings/view/settings_profile_header.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Settings → Appearance: mode, curated themes, accent, background style and
 /// surface tuning. Every choice applies instantly and persists.
@@ -50,7 +49,7 @@ class _AppearancePageState extends State<AppearancePage> {
     final cubit = context.read<ThemeCubit>();
     final state = context.watch<ThemeCubit>().state;
     final settings = state.appearance;
-    final brightness = shad.Theme.of(context).brightness;
+    final brightness = AppTokens.of(context).brightness;
     final horizontal = ResponsivePadding.horizontal(context.deviceClass);
 
     void choose(Future<void> Function() apply) {
@@ -71,13 +70,13 @@ class _AppearancePageState extends State<AppearancePage> {
               ),
           ],
         ),
-        const shad.Gap(8),
+        const AppGap(8),
         child,
-        const shad.Gap(SettingsRowLayout.groupGap),
+        const AppGap(SettingsRowLayout.groupGap),
       ],
     );
 
-    return shad.Scaffold(
+    return AppScaffold(
       child: ResponsiveWrapper(
         maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
         child: ListView(
@@ -90,17 +89,20 @@ class _AppearancePageState extends State<AppearancePage> {
             ),
             section(
               l10n.appearanceModeTitle,
-              AppearanceSegmented<shad.ThemeMode>(
+              AppearanceSegmented<ThemeMode>(
                 key: const ValueKey('appearance-mode'),
-                values: shad.ThemeMode.values,
-                selected: state.themeMode,
+                values: ThemeMode.values,
+                selected: ThemeMode.values.byName(state.themeMode.name),
                 label: l10n.appearanceMode,
                 icon: (mode) => switch (mode) {
-                  shad.ThemeMode.system => LucideIcons.sunMoon,
-                  shad.ThemeMode.light => LucideIcons.sun,
-                  shad.ThemeMode.dark => LucideIcons.moon,
+                  ThemeMode.system => LucideIcons.sunMoon,
+                  ThemeMode.light => LucideIcons.sun,
+                  ThemeMode.dark => LucideIcons.moon,
                 },
-                onSelected: (mode) => choose(() => cubit.setThemeMode(mode)),
+                onSelected: (mode) => choose(
+                  () =>
+                      cubit.setThemeMode(ThemeCubit.parseThemeMode(mode.name)),
+                ),
               ),
             ),
             section(
@@ -171,7 +173,8 @@ class _ResetButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isDefault =
-        state.appearance.isDefault && state.themeMode == shad.ThemeMode.system;
+        state.appearance.isDefault &&
+        state.themeMode.name == ThemeMode.system.name;
     return Opacity(
       opacity: isDefault ? 0.5 : 1,
       child: SettingsPillButton(
@@ -180,18 +183,10 @@ class _ResetButton extends StatelessWidget {
         onPressed: isDefault
             ? null
             : () async {
-                final toastContext = Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).context;
                 unawaited(AppHaptics.success());
                 await cubit.resetAppearance();
-                if (!toastContext.mounted) return;
-                shad.showToast(
-                  context: toastContext,
-                  builder: (_, _) =>
-                      shad.SurfaceCard(child: Text(l10n.appearanceResetDone)),
-                );
+                if (!context.mounted) return;
+                showAppToast(context, message: l10n.appearanceResetDone);
               },
       ),
     );

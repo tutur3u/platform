@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/components/app_alert.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Handle to a visible toast.
@@ -14,6 +15,12 @@ class AppToastHandle {
   bool _closed = false;
 
   bool get isOpen => !_closed;
+
+  void _onDisposed() {
+    _timer?.cancel();
+    _closed = true;
+    if (identical(_current, this)) _current = null;
+  }
 
   void close() {
     if (_closed) return;
@@ -64,6 +71,7 @@ AppToastHandle showAppToast(
                   onAction();
                 },
           onDismiss: () => handle.close(),
+          onDispose: handle._onDisposed,
         ),
       ),
     ),
@@ -75,11 +83,12 @@ AppToastHandle showAppToast(
   return handle;
 }
 
-class _AppToast extends StatelessWidget {
+class _AppToast extends StatefulWidget {
   const _AppToast({
     required this.message,
     required this.variant,
     required this.onDismiss,
+    required this.onDispose,
     this.title,
     this.actionLabel,
     this.onAction,
@@ -91,6 +100,18 @@ class _AppToast extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final VoidCallback onDismiss;
+  final VoidCallback onDispose;
+
+  @override
+  State<_AppToast> createState() => _AppToastState();
+}
+
+class _AppToastState extends State<_AppToast> {
+  @override
+  void dispose() {
+    widget.onDispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +121,7 @@ class _AppToast extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 480),
         child: Dismissible(
           key: const ValueKey('app-toast'),
-          onDismissed: (_) => onDismiss(),
+          onDismissed: (_) => widget.onDismiss(),
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -109,14 +130,14 @@ class _AppToast extends StatelessWidget {
             child: Material(
               type: MaterialType.transparency,
               child: AppAlert(
-                variant: variant,
-                title: title == null ? null : Text(title!),
-                content: Text(message),
-                trailing: actionLabel == null
+                variant: widget.variant,
+                title: widget.title == null ? null : Text(widget.title!),
+                content: Text(widget.message),
+                trailing: widget.actionLabel == null
                     ? null
-                    : TextButton(
-                        onPressed: onAction,
-                        child: Text(actionLabel!),
+                    : AppButton.ghost(
+                        onPressed: widget.onAction,
+                        child: Text(widget.actionLabel!),
                       ),
               ),
             ),

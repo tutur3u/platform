@@ -748,6 +748,16 @@
       },
       "digest": "bcbb803436432247ed4dc192bb85735f75fc20f1be4a53fa2aa8497b86b24ad0"
     },
+    "packages/sdk/src/cli/storage-scratch.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6618",
+        "reason": "Retain recognition of legacy CLI scratch-directory names while the root toolchain still supplies that CLI; this classifier invokes no CLI. Remove with retirement of its scratch artifacts."
+      },
+      "digest": "d12248f30b5486419590f1859a232a3300ccb098f78eb6b1648c6b038c8476d1"
+    },
     "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch": {
       "lines": 1,
       "uses": 1,
@@ -1468,6 +1478,16 @@
       },
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
+    "scripts/ci/turbo-cache-config.test.js": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6618",
+        "reason": "Retain recognition of legacy binding-type generators alongside cf so cache policy verifies declaration outputs and environment inputs. This detector invokes no CLI; remove when no legacy declaration producer remains."
+      },
+      "digest": "dea61c5925b68295ab2c201cfdecd29b970bf4a0c96c53e000e8b2a77313bf4f"
+    },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,
       "uses": 1,
@@ -1577,6 +1597,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "baf94f033c6a453806621a425b7a8168436a006d48c8af2159c8880bf313872c"
+    },
+    "scripts/worktree-footprint-git.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6618",
+        "reason": "Retain the explicit exclusion of local D1/KV state from rebuildable-output cleanup. This comment documents preservation rather than CLI invocation; remove only when the owning toolchain and retained local state are retired."
+      },
+      "digest": "a748a547eebc824ed34217f85495ab4a686ea3c2701c612f424f66b093513ebc"
     }
   }
 }

@@ -23,7 +23,14 @@ show a calling screen with the real connection status and a cancel action;
 microphone/camera/text/end controls appear only after connection. The connected
 controls replace navigation inside the same shell material at the same adaptive
 navbar width. Expanding navigation or ending the call preserves that surface.
-Text chat grows to at least three lines while focused and at most five lines in the dock. The control above Send opens a full-screen draft editor; minimizing returns the same text and selection to the dock without sending.
+Text chat grows to at most five lines in the dock, then scrolls inside the input.
+The Assistant has no fullscreen/expand draft action. Its single 52dp side action
+remains Send, recording control, or navigation as appropriate. Attachment previews,
+text selection, multiline input and keyboard/dock clearance remain inline.
+`assistant_composer_draft_test.dart`, `assistant_composer_multiline_test.dart`
+and `assistant_composer_geometry_test.dart` cover these mobile rules.
+
+![Mobile Assistant inline composer without an expand action](/images/assistant-inline-composer.png)
 
 Live capture requests PCM16 mono, gain control, echo cancellation, and noise
 suppression. Android uses the communication source/mode and speaker route. The
@@ -45,6 +52,23 @@ Mobile chat uses the shell's existing dock for its composer and primary action.
 An empty draft keeps the navigation menu; a nonempty draft or attachment changes
 that action to Send. During inline recording it becomes Pause, then Send while
 paused. Cancel discards only the recording and returns to the retained text draft.
+An untouched actor/workspace scope with no envelope, legacy selection/context,
+creation marker or in-process hold receives one serialized, acknowledged fresh
+envelope. Its first Send creates the chat without a reset dialog and retains the
+draft until the user-message acknowledgement. Missing envelopes with legacy
+state, a vanished inspected envelope, pending creation and held state still
+require informed recovery. If a
+text-only send has no selected conversation and local creation authority needs
+recovery, Send opens the existing informed New Chat confirmation. Cancel
+retains the draft without creating or sending anything. Confirmation resets the
+held selection, retains the unchanged draft, and sends it once; only a persisted
+user-message acknowledgement clears it. Unknown writes still require informed
+recovery and are never silently replayed. Remote-model preference hydration does
+not show a temporary local-model status in the navbar; a resolved local choice or
+preparation failure still shows its status. These mobile-only rules are covered
+by `assistant_send_recovery_test.dart` and `assistant_fresh_scope_test.dart`.
+
+![Mobile Assistant creation recovery with a retained draft](/images/assistant-send-recovery.png)
 The input row has no second Send button. Each assistant turn has one initially
 collapsed transparent thinking accordion, showing the latest heading from reasoning
 text already supplied by the API. Expanding it reveals those existing sections in

@@ -103,10 +103,18 @@ async function roomModel(code: string, locale: string, url: URL) {
 async function workspaceModel(id: string) {
   const invitation = await getPendingWorkspaceInvitation(id, await headers());
   if (invitation) return { kind: 'invitation' as const, invitation };
-  const context = await getMeetWorkspaceContext(id);
+  // The workspace lookup and the member's profile read are independent
+  // network calls; running them sequentially added both latencies to TTFB.
+  const userPromise = getSatelliteCurrentUser('meet').catch(() => null);
+  const context = await getMeetWorkspaceContext(id).catch(
+    async (error: unknown) => {
+      await userPromise;
+      throw error;
+    }
+  );
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
-  const user = await getSatelliteCurrentUser('meet');
+  const user = await userPromise;
   return {
     kind: 'workspace' as const,
     ...context,
@@ -270,10 +278,14 @@ async function loadResolvedPageModel(url: URL) {
   if (segments[0] === 'r' && segments[1] && segments.length === 2)
     return { ...common, ...(await roomModel(segments[1], locale, url)) };
   if (segments[0] === 'plans' && segments[1] && segments.length === 2) {
+    const profilePromise = actor
+      ? getSatelliteCurrentUser('meet').catch(() => null)
+      : Promise.resolve(null);
     const snapshot = await getMeetPlanSnapshot(
       segments[1],
       withForwardedInternalApiAuth(await headers())
-    ).catch((error: unknown) => {
+    ).catch(async (error: unknown) => {
+      await profilePromise;
       if (
         error instanceof InternalApiError &&
         [401, 403, 404].includes(error.status)
@@ -281,7 +293,7 @@ async function loadResolvedPageModel(url: URL) {
         throw notFound();
       throw error;
     });
-    const profile = actor ? await getSatelliteCurrentUser('meet') : null;
+    const profile = await profilePromise;
     return {
       ...common,
       kind: 'plan' as const,
@@ -314,7 +326,19 @@ async function loadResolvedPageModel(url: URL) {
       href: `${locale === 'vi' ? '/vi' : ''}/${workspaceId}/meetings`,
     });
   if (segments[1] !== 'meetings' && segments[1] !== 'plans') throw notFound();
-  const workspace = await workspaceModel(workspaceId);
+  // Hosting eligibility only depends on the actor, so it resolves alongside
+  // the workspace instead of after it.
+  const hostingPromise =
+    segments[1] === 'meetings' && segments.length === 2 && actor
+      ? hostingModel(actor.id)
+      : Promise.resolve({ canCreate: false, unavailable: false });
+  hostingPromise.catch(() => undefined);
+  const workspace = await workspaceModel(workspaceId).catch(
+    async (error: unknown) => {
+      await hostingPromise.catch(() => undefined);
+      throw error;
+    }
+  );
   if (workspace.kind === 'invitation')
     return { ...common, kind: 'workspace-invitation' as const, workspace };
   if (segments[1] === 'plans' && segments.length === 2) {
@@ -346,7 +370,7 @@ async function loadResolvedPageModel(url: URL) {
       kind: 'meetings' as const,
       workspace,
       paging: pagination(url, 10),
-      hosting: await hostingModel(workspace.user.id),
+      hosting: await hostingPromise,
     };
   throw notFound();
 }

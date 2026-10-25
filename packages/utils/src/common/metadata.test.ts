@@ -240,11 +240,22 @@ describe('createPageMetadata', () => {
 describe('application metadata coverage', () => {
   it('keeps every Next.js application on the shared metadata contract', () => {
     const appsDirectory = resolve(repoRoot, 'apps');
+    // Native Start apps (e.g. Shortener) keep `next.config.ts` only for the
+    // SEO and next-intl registries; cover apps that ship an App Router tree
+    // or still build with `next build`.
+    const buildsWithNext = (app: string) =>
+      /\bnext build\b/.test(
+        JSON.parse(
+          readFileSync(resolve(appsDirectory, app, 'package.json'), 'utf8')
+        ).scripts?.build ?? ''
+      );
     const nextApps = readdirSync(appsDirectory, { withFileTypes: true })
       .filter(
         (entry) =>
           entry.isDirectory() &&
-          existsSync(resolve(appsDirectory, entry.name, 'next.config.ts'))
+          existsSync(resolve(appsDirectory, entry.name, 'next.config.ts')) &&
+          (existsSync(resolve(appsDirectory, entry.name, 'src/app')) ||
+            buildsWithNext(entry.name))
       )
       .map((entry) => entry.name)
       .sort();

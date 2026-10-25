@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
@@ -12,6 +14,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
+
 import '../../../helpers/pump_app.dart';
 import '../assistant_personal_settings_harness.dart';
 
@@ -77,7 +80,7 @@ void main() {
         if (operation != 'load') {
           await tester.pumpAndSettle();
           await tester.enterText(
-            find.byType(TextFormField),
+            find.byType(AppTextFormField),
             'Private late edit',
           );
           repository.updateEdit = operation == 'save'
@@ -133,7 +136,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.byType(TextFormField), findsNothing);
+        expect(find.byType(AppTextFormField), findsNothing);
         expect(find.text('Private stale source'), findsNothing);
         expect(find.text('Private late edit'), findsNothing);
         expect(find.text('Synthetic preference'), findsOneWidget);

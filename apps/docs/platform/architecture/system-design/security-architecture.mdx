@@ -633,11 +633,22 @@ Alarms clean up expired state. Arbitrary payloads and unbounded TTLs are rejecte
 Validate changes with:
 
 ```sh
-bun x --no-install wrangler types --env-interface CoordinationEnv apps/coordination/worker-configuration.d.ts -c apps/coordination/wrangler.jsonc
-bun x --no-install tsc --project apps/coordination/tsconfig.json
+bun run --cwd apps/coordination type-check
 node --test apps/coordination/src/worker.test.mjs
-bun x --no-install wrangler deploy --dry-run -c apps/coordination/wrangler.jsonc
+# CI checks the emitted Build Output after its build.
+node scripts/ci/cf-worker-parity.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json
 ```
+
+`type-check` runs the pinned `cf workers types` before TypeScript; its generated
+bindings are in `apps/coordination/.cloudflare/types/index.d.ts`. The source
+runtime test uses the cf/Vite harness with disposable secret fixtures. Run local
+checks through the shared resource queue. Builds and emitted-artifact checks run
+in CI; use `bun run --cwd apps/coordination dev` for normal local development.
+
+The [cf publication runbook](/build/development-tools/cf-cli-wrangler-parity)
+records the retained Durable Object publication gap. Production keeps its applied
+`v1` migration history until a separate disposable data-retention rehearsal clears
+the publisher transition.
 
 The Coordination Cloudflare workflow runs these checks and deploys only the
 production branch. Pre-provision `COORDINATION_TOKEN` on the Worker and configure

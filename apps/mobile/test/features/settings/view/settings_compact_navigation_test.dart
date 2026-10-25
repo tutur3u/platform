@@ -47,7 +47,6 @@ import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/settings/view/offline_page.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
-import 'package:mobile/features/settings/view/settings_route_frame.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
@@ -66,7 +65,6 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -434,7 +432,7 @@ void main() {
         expect(find.text('Off'), findsOneWidget);
         final choices = find.ancestor(
           of: find.text('Off'),
-          matching: find.byType(SingleChildScrollView),
+          matching: find.byType(CustomScrollView),
         );
         expect(choices, findsOneWidget);
         expect(tester.getSize(choices).height, greaterThanOrEqualTo(48));
@@ -487,14 +485,14 @@ void main() {
       expect(dockOpacity(), 1);
       await tester.tap(row);
       await _settle(tester);
-      expect(find.byType(CustomScrollView), findsNothing);
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
       final body = find.ancestor(
         of: find.text('Show amounts').last,
-        matching: find.byType(SingleChildScrollView),
+        matching: find.byType(CustomScrollView),
       );
       expect(body, findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
-      expect(find.byType(AppDialogScaffold), findsOneWidget);
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
       final scrollable = find.descendant(
         of: body,
         matching: find.byType(Scrollable),
@@ -516,7 +514,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await _settle(tester);
       expect(find.text('Cancel'), findsNothing);
-      expect(find.byType(AppDialogScaffold), findsNothing);
+      expect(find.byType(AppSheetScaffold), findsNothing);
       expect(h.router.state.matchedLocation, finance);
       expect(dockOpacity(), 1);
       expect(prefs.get('finance-amounts-visible'), before);

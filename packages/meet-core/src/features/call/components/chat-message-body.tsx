@@ -3,8 +3,8 @@ import { ArrowUpRight, Globe, Quote } from '@tuturuuu/icons';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import {
+  getMeetMentionMarker,
   MEET_ASSISTANT_PROFILE,
-  MEET_MENTION_MARKER,
   remarkMeetMentions,
 } from '../lib/assistant-identity';
 import {
@@ -54,7 +54,7 @@ export function ChatMessageBody({
           a: ({ href, title, children, node, ...props }) => {
             if (
               href === MEET_ASSISTANT_PROFILE &&
-              node?.properties.title === MEET_MENTION_MARKER
+              node?.properties.title === getMeetMentionMarker()
             )
               return <MiraProfile mention>{children}</MiraProfile>;
             if (assistant && href === UNRESOLVED_CITATION)

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
@@ -9,6 +10,8 @@ import 'package:mobile/features/assistant/widgets/assistant_tool_json_preview.da
 import 'package:mobile/features/assistant/widgets/assistant_tool_summary.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+
+part 'assistant_generated_image_viewer.dart';
 
 /// A compact transparent summary; detailed tool output stays inspectable.
 class AssistantToolResultsSection extends StatelessWidget {
@@ -146,7 +149,7 @@ class _AssistantToolResultTileState extends State<_AssistantToolResultTile> {
                       turns: _expanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 180),
                       child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
+                        LucideIcons.chevronDown,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -387,111 +390,20 @@ class _AssistantGeneratedImageState extends State<_AssistantGeneratedImage> {
   }
 
   Future<void> _openFullscreen(String imageUrl) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _AssistantGeneratedImageViewer(
-          heroTag: _heroTag(imageUrl),
-          initialUrl: imageUrl,
-          storagePath: widget.storagePath,
-          alt: widget.alt,
-        ),
+    await showAppSheet<void>(
+      context: context,
+      size: AppSheetSize.full,
+      enableDrag: false,
+      builder: (_) => _AssistantGeneratedImageViewer(
+        initialUrl: imageUrl,
+        storagePath: widget.storagePath,
+        alt: widget.alt,
       ),
     );
   }
 
   String _heroTag(String imageUrl) =>
       'assistant-tool-image:${widget.storagePath ?? imageUrl}';
-}
-
-class _AssistantGeneratedImageViewer extends StatefulWidget {
-  const _AssistantGeneratedImageViewer({
-    required this.heroTag,
-    required this.initialUrl,
-    required this.storagePath,
-    required this.alt,
-  });
-
-  final String heroTag;
-  final String initialUrl;
-  final String? storagePath;
-  final String alt;
-
-  @override
-  State<_AssistantGeneratedImageViewer> createState() =>
-      _AssistantGeneratedImageViewerState();
-}
-
-class _AssistantGeneratedImageViewerState
-    extends State<_AssistantGeneratedImageViewer> {
-  final _repository = AssistantRepository();
-  late Future<String?> _imageUrlFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _imageUrlFuture = _resolveImageUrl();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        top: false,
-        child: FutureBuilder<String?>(
-          future: _imageUrlFuture,
-          builder: (context, snapshot) {
-            final url = snapshot.data ?? widget.initialUrl;
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: NovaLoadingIndicator());
-            }
-            return Center(
-              child: InteractiveViewer(
-                minScale: 0.75,
-                maxScale: 5,
-                child: Hero(
-                  tag: widget.heroTag,
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.white70,
-                        size: 44,
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<String?> _resolveImageUrl() async {
-    if (!_isSignedUrlExpired(widget.initialUrl)) {
-      return widget.initialUrl;
-    }
-
-    final storagePath = widget.storagePath?.trim();
-    if (storagePath == null || storagePath.isEmpty) {
-      return widget.initialUrl;
-    }
-
-    try {
-      final urls = await _repository.fetchSignedReadUrls([storagePath]);
-      return urls[storagePath] ?? widget.initialUrl;
-    } on Exception {
-      return widget.initialUrl;
-    }
-  }
 }
 
 class _AssistantImageFrame extends StatelessWidget {
@@ -525,7 +437,7 @@ class _AssistantImageErrorState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.broken_image_outlined,
+                LucideIcons.imageOff,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 8),
@@ -546,9 +458,9 @@ class _AssistantImageErrorState extends StatelessWidget {
 
 IconData _toolIcon(String? toolName) {
   return switch (toolName) {
-    'create_image' => Icons.image_outlined,
-    'select_tools' => Icons.tune_rounded,
-    _ => Icons.handyman_outlined,
+    'create_image' => LucideIcons.image,
+    'select_tools' => LucideIcons.slidersHorizontal,
+    _ => LucideIcons.wrench,
   };
 }
 

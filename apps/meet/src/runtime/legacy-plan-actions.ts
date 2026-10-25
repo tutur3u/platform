@@ -10,6 +10,21 @@ async function visibleResult<T>(result: Promise<T>) {
   });
 }
 
+const resetGuestPasswordTransport = createServerFn({ method: 'POST' })
+  .validator(legacyActionSchemas.resetGuestPassword)
+  .handler(async ({ data }) => {
+    const { getLegacyActionPorts } = await import(
+      './legacy-action-runtime.server'
+    );
+    return getLegacyActionPorts().resetGuestPassword(data);
+  });
+
+export function resetGuestPassword(
+  ...args: Parameters<LegacyActionSupplier['resetGuestPassword']>
+) {
+  return visibleResult(resetGuestPasswordTransport({ data: args }));
+}
+
 const guestLoginTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.guestLogin)
   .handler(async ({ data }) => {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -32,10 +33,10 @@ class AssistantLivePrimaryAction extends StatelessWidget {
             ? 'assistant-cancel-call'
             : 'assistant-call',
         icon: connected
-            ? Icons.menu_rounded
+            ? LucideIcons.menu
             : calling
-            ? Icons.call_end_rounded
-            : Icons.call_rounded,
+            ? LucideIcons.phoneOff
+            : LucideIcons.phone,
         tooltip: connected
             ? context.l10n.assistantExpandNavigation
             : calling

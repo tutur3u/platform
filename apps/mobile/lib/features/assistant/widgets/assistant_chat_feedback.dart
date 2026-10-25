@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -31,7 +32,7 @@ class AssistantChatFeedback extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.error_outline_rounded,
+                  LucideIcons.circleAlert,
                   color: Theme.of(context).colorScheme.error,
                   size: 20,
                 ),
@@ -48,11 +49,10 @@ class AssistantChatFeedback extends StatelessWidget {
                 if (state.diagnostics case final diagnostics?)
                   InternalDiagnosticsCopy(diagnostics: diagnostics),
                 if (onRetry != null)
-                  IconButton(
+                  AppIconButton(
                     onPressed: onRetry,
                     tooltip: context.l10n.commonRetry,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const Icon(LucideIcons.refreshCw),
                   ),
               ],
             ),
