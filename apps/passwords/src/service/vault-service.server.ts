@@ -1,8 +1,6 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session-core';
 import {
   decodeValue,
   integer,
-  PASSWORDS_MAX_BYTES,
   PASSWORDS_MAX_ITEMS,
   PasswordsError,
   type PasswordsRecord,
@@ -130,20 +128,7 @@ export function createPasswordsService(
     const app = new URL(env.NEXT_PUBLIC_APP_URL);
     if (new URL(request.url).origin !== app.origin)
       throw new PasswordsError('FORBIDDEN');
-    const origin = request.headers.get('origin');
-    if (origin === app.origin) return;
-    if (origin !== null) throw new PasswordsError('FORBIDDEN');
-    const authorization = request.headers.get('authorization');
-    const bearer =
-      authorization &&
-      getAppSessionClaimsFromRequest(
-        { headers: new Headers({ authorization }) },
-        {
-          targetApp: 'passwords',
-          secret: env.TUTURUUU_APP_COORDINATION_SECRET,
-        }
-      );
-    if (!bearer || bearer.sub !== database.principal().sub)
+    if (request.headers.get('origin') !== app.origin || request.headers.has('authorization'))
       throw new PasswordsError('FORBIDDEN');
   }
 
@@ -302,10 +287,7 @@ export function createPasswordsService(
     putItem: (input) =>
       run(true, async (engine) => {
         const workspace = await database.resolveWorkspace(input.wsId);
-        const maxBytes = request.headers.has('origin')
-          ? PASSWORDS_LIMITS.itemMaxBytes
-          : PASSWORDS_MAX_BYTES;
-        const bytes = decodeValue(input.base64, maxBytes);
+        const bytes = decodeValue(input.base64, PASSWORDS_LIMITS.itemMaxBytes);
         try {
           return await engine.putItem(
             { ...input, wsId: workspace.wsId },

@@ -11,6 +11,7 @@ export const GITHUB_ISSUER = 'https://token.actions.githubusercontent.com';
 export const GITHUB_JWKS = `${GITHUB_ISSUER}/.well-known/jwks`;
 export const OIDC_AUDIENCE = 'tuturuuu-passwords';
 const matchFields = [
+  'sub',
   'repository_id',
   'repository',
   'ref',
@@ -18,6 +19,7 @@ const matchFields = [
   'environment',
 ] as const;
 export interface GitHubPolicy {
+  sub: string;
   repository_id: string;
   repository: string;
   ref: string;
@@ -64,7 +66,8 @@ export function parsePolicies(source: string | undefined): GitHubPolicy[] {
       if (
         !/^[1-9][0-9]*$/.test(value.repository_id) ||
         !/^[^/]+\/[^/]+$/.test(value.repository) ||
-        !value.ref.startsWith('refs/') ||
+        (!value.ref.startsWith('refs/heads/') && !value.ref.startsWith('refs/tags/')) ||
+        value.sub.includes(':pull_request') ||
         !value.workflow_ref.startsWith(
           `${value.repository}/.github/workflows/`
         ) ||
@@ -133,7 +136,11 @@ export async function verifyGitHubPolicy(
       typeof payload.exp !== 'number' ||
       payload.exp - payload.iat > 600 ||
       payload.exp <= payload.iat ||
-      payload.aud !== OIDC_AUDIENCE
+      payload.aud !== OIDC_AUDIENCE ||
+      typeof payload.event_name !== 'string' ||
+      !payload.event_name ||
+      ['pull_request', 'pull_request_target'].includes(payload.event_name) ||
+      (typeof payload.ref === 'string' && payload.ref.startsWith('refs/pull/'))
     )
       throw new Error();
     const matches = policies.filter((policy) =>

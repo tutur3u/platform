@@ -72,6 +72,10 @@ export function createPasswordsAuthEdge(
         if (!secret) throw new Error('Invalid authentication configuration');
         if (url.origin !== origin)
           return response({ code: 'INVALID_ORIGIN' }, 403);
+        if (request.headers.has('authorization'))
+          return callback
+            ? redirect(new URL('/api/auth/error', origin).toString())
+            : response({ code: 'AUTH_REQUIRED' }, 401);
         const options = {
           secret,
           targetApp: 'passwords',
@@ -195,8 +199,17 @@ export function createPasswordsAuthEdge(
           const next = safeNext(url.searchParams.get('next'), origin);
           if (!next || !subject)
             return response({ code: 'AUTH_REQUIRED' }, 401);
-          // A cross-site navigation cannot replace an outstanding login attempt.
-          if (request.headers.get('sec-fetch-site') === 'cross-site')
+          const site = request.headers.get('sec-fetch-site');
+          const initiator = request.headers.get('origin') ?? request.headers.get('referer');
+          let initiatorMatches = false;
+          try {
+            initiatorMatches = initiator !== null && new URL(initiator).origin === origin;
+          } catch {}
+          if (
+            (site !== null && site !== 'same-origin') ||
+            (initiator !== null && !initiatorMatches) ||
+            (site === null && !initiatorMatches)
+          )
             return response({ code: 'INVALID_ORIGIN' }, 403);
           return start(next, true);
         }
@@ -289,10 +302,6 @@ export function createPasswordsAuthEdge(
           return issue(pair, response({ valid: true }));
         }
         if (access?.ok) return null;
-        const bearer = request.headers
-          .get('authorization')
-          ?.match(/^Bearer ([^\s]+)$/iu)?.[1];
-        if (bearer && verifyAppSessionToken(bearer, options).ok) return null;
         if (
           (request.method === 'GET' || request.method === 'HEAD') &&
           request.headers.get('accept')?.includes('text/html')

@@ -20,6 +20,7 @@ import {
 const now = Date.UTC(2026, 9, 25, 12);
 const seconds = now / 1000;
 const policy: GitHubPolicy = {
+  sub: 'repo:operator/repo:environment:production',
   repository_id: '123456',
   repository: 'operator/repo',
   ref: 'refs/heads/main',
@@ -42,6 +43,7 @@ beforeAll(async () => {
 });
 async function sign(overrides: Record<string, unknown> = {}, kid = 'fixture') {
   return new SignJWT({
+    event_name: 'push',
     iss: GITHUB_ISSUER,
     aud: OIDC_AUDIENCE,
     sub: 'repo:operator/repo:environment:production',
@@ -87,6 +89,7 @@ describe('GitHub OIDC', () => {
     });
   });
   it.each([
+    'sub',
     'repository_id',
     'repository',
     'ref',
@@ -98,6 +101,15 @@ describe('GitHub OIDC', () => {
     await expect(
       verifyGitHubPolicy(await sign({ [field]: 'different' }), [policy], deps())
     ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+  });
+  it.each([
+    { event_name: 'pull_request' },
+    { event_name: 'pull_request_target' },
+    { event_name: undefined },
+    { ref: 'refs/pull/42/merge' },
+  ])('rejects pull-request and missing event contexts', async (claims) => {
+    await expect(verifyGitHubPolicy(await sign(claims), [policy], deps()))
+      .rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
   it.each([
     { exp: seconds - 1 },

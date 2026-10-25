@@ -1,10 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { passwordsHandoffTarget, passwordsStepUpTarget } from './target';
 
 const state = 'a'.repeat(43);
 const next = `https://passwords.tuturuuu.com/vi/workspace?state=${state}`;
 
 describe('Passwords step-up target', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it('refuses Portless destinations in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(passwordsStepUpTarget('passwords', `https://passwords.tuturuuu.localhost/en/workspace?state=${state}`)).toBeNull();
+    expect(passwordsStepUpTarget('passwords', next)).toBe(next);
+  });
   it.each([
     'https://passwords.tuturuuu.com',
     'https://passwords.tuturuuu.localhost',

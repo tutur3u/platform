@@ -127,7 +127,7 @@ async function main() {
     const owner = mint(false);
     const request = new Request(`${SECRETS_ORIGIN}/en/${WORKSPACE}`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${owner.token}` },
+      headers: { origin: SECRETS_ORIGIN, cookie: `tuturuuu_app_session=${owner.token}` },
       signal: controller.signal,
     });
     const created = await createPasswordsService(request, env).createVault({
