@@ -7,5 +7,5 @@ export function createAiPublicUrl(path = '/', request?: Request) {
     maybeBridgeRequest()?.request.url ??
     (request && process.env.NODE_ENV !== 'production' ? request.url : BASE_URL);
 
-  return appUrl(path, base);
+  return new URL(appUrl(path, base));
 }
