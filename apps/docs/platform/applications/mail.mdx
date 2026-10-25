@@ -1110,12 +1110,12 @@ Scope: Mail's native frontend defaults to strict noncomposite noemit app checkin
 
 Limits: generated binding-only declarations must come from the qualified emitted deployment config. Pinned compiler workspace-external classification/rootDir behavior, declaration closure and clean/restored-cache acceptance remain unproven. Missing bridge/ambient isolation regressions are authored UNRUN in `apps/mail/src/runtime/type-programs.test.ts`; source assertions do not establish compiler or workerd acceptance. Unexpected foreign emission or incompatible contracts stop qualification without source exclusions. Logger timer/buffer lifetime and all provider/runtime delivery gates remain parent-owned; this decision adds no scheduler or resource.
 
-Mounted Mail APIs use the shared internal API client's default resolver,
-registered once by Mail's browser and server adapters. The server resolver
-reads the bridge request on each call; it never captures an incoming request. Mail endpoints
-gain `/mail`; Web endpoints retain root `/api`. Attachment download and
-preview hrefs use the same base helper. `mail-api-options.test.ts` exercises
-the real typed clients at both serving bases.
+Mounted Mail API helpers receive raw `/api/...` paths; the shared resolver adds `/mail`
+for Mail routes and leaves Web routes at root. Browser and server adapters register
+once and read request context at call time. Rendered attachment href/src values use
+the base helper; text/DOCX helpers receive raw protected URLs. CID images get the
+mount when serialized into preview HTML. See `mail-api-options.test.ts`,
+`mail-attachment-card.test.ts` and `mail-message-preview-utils.test.ts`.
 
 Mounted page, API and function middleware relies on the shared apex Supabase
 session. It skips cross-app token consumption, satellite session refresh and
