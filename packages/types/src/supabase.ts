@@ -23530,6 +23530,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      prune_cron_history: { Args: { p_limit?: number }; Returns: Json };
       prune_discord_interaction_claims: {
         Args: { p_limit?: number };
         Returns: number;

@@ -440,3 +440,17 @@ the exact check only for the oversized tail in one transaction. The table lock
 lasts through commit; do not drop the check before the regular scan. Preserve
 payload bytes and verify the safe-only path retains the constraint OID. See
 [disposable proof requirements](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#backfills-with-historical-payload-violations).
+
+### Cron maintenance after private-schema moves
+
+When moving a function called by pg_cron, inspect and execute the stored
+`cron.job.command` on the complete disposable migration chain. Function existence
+or direct helper tests do not prove that the schedule still resolves its target.
+For the retained pure-SQL dashboard refresh, alter only the command to call
+`private.refresh_posts_dashboard_view()`; preserve job id, schedule and active state.
+New retention scheduling belongs in Cloudflare Cron Control. Its service-only
+`private.prune_cron_history(integer)` RPC bounds each table's oldest completed
+seven-day history batch; unfinished executions remain for recovery. See the
+[Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
+and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
+regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
