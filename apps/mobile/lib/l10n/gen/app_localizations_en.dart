@@ -11034,9 +11034,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackTitle => 'Send feedback';
 
   @override
-  String get feedbackPrivate => 'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.';
-
-  @override
   String get feedbackSubject => 'Subject';
 
   @override
@@ -11633,4 +11630,90 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get offlineStoredOnDevice => 'Stored on this device';
+
+  @override
+  String get offlineStorageUsed => 'Storage used';
+
+  @override
+  String offlineQueuedChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes waiting to sync',
+      one: '1 change waiting to sync',
+      zero: 'No changes waiting to sync',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineCollectionSummary(int items, String size, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items items',
+      one: '1 item',
+    );
+    return '$_temp0 · $size · Updated $time';
+  }
+
+  @override
+  String get offlineManageData => 'Manage data';
+
+  @override
+  String get offlineEvictRowDescription => 'Frees space. Data downloads again when you are online.';
+
+  @override
+  String get offlineTechnicalDetails => 'Technical details';
+
+  @override
+  String get mailSettingsReadingGroup => 'Reading';
+
+  @override
+  String get mailSettingsComposeGroup => 'Sender and signature';
+
+  @override
+  String get mailSettingsAiGroup => 'AI drafts';
+
+  @override
+  String get mailSettingsDeliveryGroup => 'Delivery and routing';
+
+  @override
+  String get mailSettingsGroupPermissions => 'Group permissions';
+
+  @override
+  String get mailSettingsOrganizeGroup => 'Organize';
+
+  @override
+  String get mailSenderNameHelper => 'Recipients see this name next to your address.';
+
+  @override
+  String get mailSignatureHelper => 'Added to the end of new messages and replies.';
+
+  @override
+  String get mailAutoDraftDescription => 'Prepare reply drafts for you to review before sending.';
+
+  @override
+  String get mailDraftInstructions => 'Draft instructions';
+
+  @override
+  String get mailDraftInstructionsHelper => 'Tells the assistant how to write your reply drafts.';
+
+  @override
+  String get feedbackIntro => 'Tell us what works and what doesn\'t. Only the Tuturuuu team reads your feedback.';
+
+  @override
+  String get feedbackYourFeedback => 'Your feedback';
+
+  @override
+  String get feedbackDetailsHelper => 'Do not include passwords or other secrets.';
+
+  @override
+  String get feedbackScreenshotGroup => 'Screenshot (optional)';
+
+  @override
+  String get feedbackAttachDescription => 'PNG, JPEG or WebP, up to 2 MB';
 }
