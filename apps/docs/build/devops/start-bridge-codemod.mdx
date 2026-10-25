@@ -200,8 +200,15 @@ Shortener:
   emitted-Worker smoke run on the sealed artifact, with all egress denied:
   Worker identity, public-file parity, build identity when the app has
   `/api/build-info` (read anonymously, as production smoke does: an app whose
-  proxy guards API routes must admit exact `GET`/`HEAD /api/build-info`), the page outcomes the app declares on both the root and
-  the `tuturuuu.com/<app>` mount, and no server error on an unknown path. Page
+  proxy guards API routes must admit exact `GET`/`HEAD /api/build-info`), the page outcomes the app declares, and no server error on an unknown path.
+  The test reads the Worker's effective mounts (the generated defaults plus
+  `mounts` in the app-owned `start-bridge.config.ts`, loaded with Node's type
+  stripping, so keep that file's imports strippable) and probes with raw
+  `Host` headers: every configured root host serves `/`. A mounted app serves
+  every declared page on `tuturuuu.com/<app>`. A root-only app (no
+  `tuturuuu.com` in `mountHosts`) must set `unknownHost: 'reject'`, and the
+  bridge must reject its apex paths and an unknown host with its own 404
+  before any app code runs, with no egress. Page
   outcomes come from `runtime` in `start-bridge.routes.json` (default
   `{ "/": 200 }`): a record that must declare `/`, mapping app-relative paths
   to an exact status or `{ "redirect": "<path or absolute URL>" }`. A path
