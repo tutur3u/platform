@@ -123,19 +123,21 @@ tone resolves a foreground and a quiet fill:
 `BrandAccents` (`core/theme/appearance/brand_accents.dart`, also exposed as
 `AppearancePalettes.brandAccents`) holds the four Tuturuuu logo colours from
 [tuturuuu.com/branding](https://tuturuuu.com/branding): Innovation `#4180E9`,
-Growth `#4ACA3F`, Energy `#FB7B05` and Impact `#E94646`, plus four companion
-hues (violet, teal, pink, gold) that are not part of the published brand. Each
-accent keeps the published colour as `mark` and resolves a light and dark fill
-with a readable label (white on light, `#09090B` on dark), every pair at least
-4.5:1 and every fill at least 3:1 against any appearance background.
+Growth `#4ACA3F`, Energy `#FB7B05` and Impact `#E94646`. Identity colours use
+only these four hues, each at two steps: the base fill and a strong step (a
+deeper shade in light mode, a lighter tint in dark mode). There are no
+non-brand hues. Every step keeps its published `mark`, a fill per brightness
+with a readable label (white on light, `#09090B` on dark) at 4.5:1 or better,
+and at least 3:1 against any appearance background.
 
 - Use identity accents for things that need a stable colour of their own, such
   as workspace tiles: `BrandAccents.forKey(id)` hashes an id to one of the
-  eight, so the colour survives renames, devices and themes.
+  eight brand steps, so the colour survives renames, devices and themes.
 - Selection tints and key actions take the accent's fill; text on top keeps
   the theme foreground.
 - Do not inline the hex values in widgets. `brand_accents_contrast_test.dart`
-  enforces the contrast floors and pins the hash results.
+  enforces the contrast floors for every step in light and dark, checks that
+  each fill stays on its brand hue, and pins the hash results.
 
 ## Iconography
 

@@ -291,7 +291,7 @@ abstract final class AppearancePalettes {
   /// labels per brightness. See [BrandAccents].
   static const List<BrandAccent> brandAccents = BrandAccents.core;
 
-  /// Brand marks plus companions, for stable per-object identity colours
+  /// Brand marks at two steps each, for stable per-object identity colours
   /// ([BrandAccents.forKey]). Theme-independent: an object keeps its colour
   /// across appearances.
   static const List<BrandAccent> identityAccents = BrandAccents.identity;

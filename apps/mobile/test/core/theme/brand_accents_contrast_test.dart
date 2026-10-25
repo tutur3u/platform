@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:flutter/painting.dart' show HSVColor;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
@@ -50,6 +52,26 @@ void main() {
     ]);
     expect(BrandAccents.ink, const Color(0xFF09090B));
     expect(BrandAccents.identity, hasLength(8));
+  });
+
+  test('identity colours are only the brand hues, at every step', () {
+    double hue(Color color) => HSVColor.fromColor(color).hue;
+    double distance(double a, double b) {
+      final d = (a - b).abs() % 360;
+      return d > 180 ? 360 - d : d;
+    }
+
+    final marks = {for (final accent in BrandAccents.core) accent.mark};
+    for (final accent in BrandAccents.identity) {
+      expect(marks, contains(accent.mark), reason: accent.name);
+      for (final brightness in Brightness.values) {
+        expect(
+          distance(hue(accent.fill(brightness)), hue(accent.mark)),
+          lessThanOrEqualTo(3),
+          reason: '${accent.name} ${brightness.name} leaves its brand hue',
+        );
+      }
+    }
   });
 
   for (final brightness in Brightness.values) {

@@ -4,8 +4,9 @@ import 'dart:ui';
 /// that reads on each fill.
 ///
 /// Light fills are shades of the brand mark deep enough for white labels;
-/// dark fills are the marks themselves, lifted slightly where a mark is too
-/// close to the darkest ambient backgrounds, and carry near-black labels.
+/// dark fills are the mark or a tint of it, lifted where a mark is too close
+/// to the darkest ambient backgrounds, and carry near-black labels. Every
+/// fill keeps the mark's hue.
 /// Both pairs reach WCAG AA (4.5:1), and both fills reach 3:1 against every
 /// appearance surface of their brightness; `brand_accents_contrast_test.dart`
 /// enforces this.
@@ -46,9 +47,10 @@ class BrandAccent {
 /// The Tuturuuu brand palette (https://tuturuuu.com/branding).
 ///
 /// [core] are the four logo marks: Innovation blue `#4180E9`, Growth green
-/// `#4ACA3F`, Energy orange `#FB7B05` and Impact red `#E94646`. [companions]
-/// extend them with four hues of the same weight so identity colours stay
-/// distinct across many items. Use [forKey] for a stable per-object colour.
+/// `#4ACA3F`, Energy orange `#FB7B05` and Impact red `#E94646`. [strong]
+/// holds a shade (light mode) or tint (dark mode) of each, so identity
+/// colours stay distinct across many items without leaving the brand hues.
+/// Use [forKey] for a stable per-object colour.
 abstract final class BrandAccents {
   /// Brand dark background (`#09090B`), the label colour on dark fills.
   static const Color ink = Color(0xFF09090B);
@@ -80,39 +82,47 @@ abstract final class BrandAccents {
     light: Color(0xFFC93C3C),
     dark: Color(0xFFEC5C5C),
   );
-  static const violet = BrandAccent(
-    name: 'violet',
-    mark: Color(0xFF8B5CF6),
-    light: Color(0xFF7A4FE0),
-    dark: Color(0xFF9974F7),
+  static const innovationStrong = BrandAccent(
+    name: 'innovation-strong',
+    mark: Color(0xFF4180E9),
+    light: Color(0xFF2A5397),
+    dark: Color(0xFFA6C3F5),
   );
-  static const teal = BrandAccent(
-    name: 'teal',
-    mark: Color(0xFF14B8A6),
-    light: Color(0xFF0E7D71),
-    dark: Color(0xFF14B8A6),
+  static const growthStrong = BrandAccent(
+    name: 'growth-strong',
+    mark: Color(0xFF4ACA3F),
+    light: Color(0xFF235F1E),
+    dark: Color(0xFF75D76D),
   );
-  static const pink = BrandAccent(
-    name: 'pink',
-    mark: Color(0xFFEC4899),
-    light: Color(0xFFC03A7D),
-    dark: Color(0xFFED4F9D),
+  static const energyStrong = BrandAccent(
+    name: 'energy-strong',
+    mark: Color(0xFFFB7B05),
+    light: Color(0xFF854103),
+    dark: Color(0xFFFDB16C),
   );
-  static const gold = BrandAccent(
-    name: 'gold',
-    mark: Color(0xFFEAB308),
-    light: Color(0xFF8B6A05),
-    dark: Color(0xFFEAB308),
+  static const impactStrong = BrandAccent(
+    name: 'impact-strong',
+    mark: Color(0xFFE94646),
+    light: Color(0xFF972D2D),
+    dark: Color(0xFFF6AFAF),
   );
 
   /// The four logo marks, in logo order.
   static const List<BrandAccent> core = [innovation, growth, energy, impact];
 
-  static const List<BrandAccent> companions = [violet, teal, pink, gold];
+  /// The same four hues one step further from the page: a deeper shade in
+  /// light mode and a lighter tint in dark mode.
+  static const List<BrandAccent> strong = [
+    innovationStrong,
+    growthStrong,
+    energyStrong,
+    impactStrong,
+  ];
 
-  /// Identity palette: brand marks first, then companions. Do not reorder:
-  /// people learn an object's colour, and [forKey] indexes this list.
-  static const List<BrandAccent> identity = [...core, ...companions];
+  /// Identity palette: only the four brand hues, each at its base step and
+  /// its strong step. Do not reorder: people learn an object's colour, and
+  /// [forKey] indexes this list.
+  static const List<BrandAccent> identity = [...core, ...strong];
 
   /// Stable identity colour for [key] (for example a workspace id). Uses a
   /// 32-bit FNV-1a hash, which, unlike `String.hashCode`, is the same on
