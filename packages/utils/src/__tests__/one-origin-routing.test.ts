@@ -62,14 +62,19 @@ describe('subdomain navigations', () => {
     expect(decision.response.headers.get('cache-control')).toBe('no-store');
   });
 
-  it('maps the subdomain root to the bare mount', () => {
-    const root = decideOneOriginRequest(
-      nav('https://meet.tuturuuu.com/'),
-      base
-    );
-    expect(
-      root.action === 'redirect' && root.response.headers.get('location')
-    ).toBe('https://tuturuuu.com/meet');
+  it('maps the subdomain root to the canonical mount with a trailing slash', () => {
+    for (const [from, to] of [
+      ['https://meet.tuturuuu.com/', 'https://tuturuuu.com/meet/'],
+      [
+        'https://meet.tuturuuu.com/?utm_source=x',
+        'https://tuturuuu.com/meet/?utm_source=x',
+      ],
+    ]) {
+      const root = decideOneOriginRequest(nav(from!), base);
+      expect(
+        root.action === 'redirect' && root.response.headers.get('location')
+      ).toBe(to);
+    }
   });
 
   it('uses 301 without a no-store header once promoted', () => {

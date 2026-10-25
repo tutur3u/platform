@@ -85,7 +85,9 @@ Worker variables:
 
 Redirects apply only to subdomain GET/HEAD navigations: `Sec-Fetch-Mode: navigate`,
 or an HTML `Accept` header without Fetch Metadata. They keep the raw path and query
-bytes. Machine traffic is always served on the subdomain and never redirected.
+bytes, and the subdomain root maps to the canonical `/<app>/` (the bare `/<app>`
+is canonicalized by a zone redirect, because Worker routes cannot match it once a
+query string is present). Machine traffic is always served on the subdomain and never redirected.
 That covers `/api/*` (webhooks, OAuth callbacks), `/assets/*`, `/.well-known/*`,
 WebSocket upgrades, server functions (`/_serverFn` and the legacy app bases) and
 Meet's `/live-connect`. The decision never rewrites URLs. The Start bridge
