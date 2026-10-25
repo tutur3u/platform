@@ -143,7 +143,7 @@ describe('Meet terminal navigation responses', () => {
           request: new Request('https://meet.invalid/vi/room'),
           responseHeaders,
           waitUntil,
-          observeLoginNavigation: observer,
+          observeNavigation: observer,
         },
         () => permanentRedirect(href)
       )

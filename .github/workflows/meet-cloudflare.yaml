@@ -135,6 +135,8 @@ jobs:
           PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Verify Meet bridge route registration
+        run: bun packages/start-bridge/src/codegen/cli.ts check apps/meet
       - name: Test build identity and workflow ordering
         run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
       - name: Test Meet public callback and current account assurance

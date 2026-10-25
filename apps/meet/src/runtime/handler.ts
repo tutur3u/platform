@@ -43,7 +43,7 @@ function dispatchMeetRequest(
   }
   return dispatchThroughMeetProxy({
     request,
-    observeLoginNavigation: probe?.observeNavigation,
+    observeNavigation: probe?.observeNavigation,
     proxy:
       path === MEET_FUNCTION_BASE || path.startsWith(`${MEET_FUNCTION_BASE}/`)
         ? nativeFunctionProxy

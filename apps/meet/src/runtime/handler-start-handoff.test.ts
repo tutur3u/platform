@@ -90,7 +90,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
       }
     });
     ports.proxy.mockImplementation(async () => {
-      late = meetRequest().observeLoginNavigation;
+      late = meetRequest().observeNavigation;
       const middleware = NextResponse.rewrite('https://meet.invalid/en/login');
       middleware.headers.set('location', '/vi/verify-token');
       return middleware;
@@ -98,7 +98,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
     ports.start.mockImplementation(async (request) => {
       expect(request.url).toBe('https://meet.invalid/login?SECRET_REQUEST=one');
       expect(meetRequest().request.url).toBe('https://meet.invalid/en/login');
-      expect(meetRequest().observeLoginNavigation).toBe(late);
+      expect(meetRequest().observeNavigation).toBe(late);
       withMeetRequest({ ...meetRequest() }, () =>
         navigate('https://tuturuuu.com/login?SECRET_NAV=two')
       );
@@ -170,7 +170,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
     const original = new Error('SECRET_PRIMARY');
     let late: ObserveLoginNavigation | undefined;
     ports.start.mockImplementation(async () => {
-      late = meetRequest().observeLoginNavigation;
+      late = meetRequest().observeNavigation;
       navigate('https://tuturuuu.com/login');
       throw original;
     });
@@ -200,7 +200,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
     const entered = deferred<void>();
     const callbacks: ObserveLoginNavigation[] = [];
     ports.start.mockImplementation(async (request) => {
-      const callback = meetRequest().observeLoginNavigation;
+      const callback = meetRequest().observeNavigation;
       if (!callback) throw Error('Missing probe');
       callbacks.push(callback);
       if (callbacks.length === 2) entered.resolve();
@@ -268,11 +268,11 @@ it('R21 late asynchronous navigation keeps inherited ALS wiring after terminal r
   const release = deferred<void>();
   let lateWork: Promise<void> | undefined;
   ports.start.mockImplementation(async () => {
-    const callback = meetRequest().observeLoginNavigation;
+    const callback = meetRequest().observeNavigation;
     if (!callback) throw Error('Missing handler probe');
     navigate('https://tuturuuu.com/login');
     lateWork = release.promise.then(() => {
-      expect(meetRequest().observeLoginNavigation).toBe(callback);
+      expect(meetRequest().observeNavigation).toBe(callback);
       navigate('/vi/verify-token');
     });
     return new Response(null, { status: 307, headers: { location: '/login' } });

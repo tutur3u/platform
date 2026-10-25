@@ -36,9 +36,27 @@ unsigned actor before loading suppliers; canonical suppliers still enforce
 ownership, guest credentials, and plan locks. Confirmed mutations invalidate the
 visible native route. Failed mutations do not claim success or refresh.
 
-App-local Vite aliases adapt request headers/cookies, navigation, localization,
-render-cache revalidation, images, links, dynamic imports, and Cloudflare context.
-They do not alter shared package exports. Real transitional Next imports remain:
+`@tuturuuu/start-bridge` owns request headers/cookies, middleware dispatch,
+function admission, navigation, localization, render-cache revalidation, images,
+links, dynamic imports and Cloudflare context. App-local modules retain stable
+import paths through thin re-exports; Meet keeps its page models, diagnostics,
+plan action transports and typed Worker port. All adapters use the same bridge
+request store.
+
+`start-bridge.routes.json` registers every retained App Router page and API.
+Regenerate after adding or moving a route, then check the committed output:
+
+```sh
+bun packages/start-bridge/src/codegen/cli.ts generate apps/meet
+bun packages/start-bridge/src/codegen/cli.ts check apps/meet
+```
+
+The generated page pattern union requires an explicit model dispatch kind in
+`src/runtime/page-routing.ts`. Public room previews retain both localized and
+unlocalized aliases. CI rejects stale registries before the frontend build.
+Root/subdomain operation is the bridge-adoption baseline. Dual-host mounting,
+per-app cookie acceptance and hosted staging remain separate qualification gates;
+production publication stays held until the explicit cutover PR. Real transitional Next imports remain:
 `next/dist/server/web/spec-extension/{request,response}`, the compiled edge cookie
 classes, and `next/dist/shared/lib/router/utils/format-url`. Next types remain in
 retained source. This runtime has not fully removed the Next dependency.

@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
@@ -11,18 +12,19 @@ const meetRequire = createRequire(import.meta.url);
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
+const bridge = startBridgePreset({
+  appRoot: import.meta.url,
+  app: 'meet',
+  serverFnBase: MEET_FUNCTION_BASE,
+  srcAlias: false,
+});
+
 export default defineConfig(({ command }) => ({
+  base: bridge.base,
   plugins: [
     voidPlugin(),
     tanstackStart({
-      serverFns: { base: MEET_FUNCTION_BASE },
-      router: {
-        enableRouteGeneration: true,
-        routesDirectory: 'routes',
-        generatedRouteTree: 'routeTree.gen.ts',
-        routeTreeFileHeader: [],
-        disableTypes: false,
-      },
+      ...bridge.tanstackStart,
       rsc: { enabled: false },
       importProtection: {
         behavior: 'error',
@@ -43,36 +45,8 @@ export default defineConfig(({ command }) => ({
     conditions: ['bun', 'module', 'browser', 'development|production'],
     alias: [
       {
-        find: /^next\/headers$/u,
-        replacement: local('./src/runtime/request-context.ts'),
-      },
-      {
-        find: /^next\/cache$/u,
-        replacement: local('./src/runtime/request-cache.ts'),
-      },
-      {
         find: /^@tuturuuu\/apis\/meet\/actions$/u,
         replacement: local('./src/runtime/legacy-plan-actions.ts'),
-      },
-      {
-        find: /^next\/server$/u,
-        replacement: local('./src/runtime/next-server.ts'),
-      },
-      {
-        find: /^next\/navigation$/u,
-        replacement: local('./src/runtime/next-navigation.tsx'),
-      },
-      {
-        find: /^next\/link$/u,
-        replacement: local('./src/runtime/next-link.tsx'),
-      },
-      {
-        find: /^next\/dynamic$/u,
-        replacement: local('./src/runtime/next-dynamic.tsx'),
-      },
-      {
-        find: /^next\/image$/u,
-        replacement: local('./src/runtime/next-image.tsx'),
       },
       {
         find: /^next\/og$/u,
@@ -83,10 +57,6 @@ export default defineConfig(({ command }) => ({
       {
         find: /^next-intl\/server$/u,
         replacement: local('./src/runtime/intl-server.ts'),
-      },
-      {
-        find: /^@opennextjs\/cloudflare$/u,
-        replacement: local('./src/runtime/cloudflare-context.ts'),
       },
       {
         find: /^@tuturuuu\/satellite\/i18n$/u,
@@ -106,6 +76,7 @@ export default defineConfig(({ command }) => ({
         find: /^@tuturuuu\/internal-api\/(.+)$/u,
         replacement: local('../../packages/internal-api/src/$1.ts'),
       },
+      ...bridge.alias,
       {
         find: /^server-only$/u,
         replacement: '@tanstack/react-start/server-only',
@@ -113,6 +84,7 @@ export default defineConfig(({ command }) => ({
     ],
   },
   define: {
+    ...bridge.define,
     'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(
       process.env.NEXT_PUBLIC_SUPABASE_URL
     ),
@@ -129,16 +101,7 @@ export default defineConfig(({ command }) => ({
   },
   environments: {
     client: {
-      define: {
-        'process.env': JSON.stringify({
-          ...Object.fromEntries(
-            Object.entries(process.env).filter(([key]) =>
-              key.startsWith('NEXT_PUBLIC_')
-            )
-          ),
-          NODE_ENV: command === 'serve' ? 'development' : 'production',
-        }),
-      },
+      define: bridge.clientDefine(command),
     },
   },
   server: {

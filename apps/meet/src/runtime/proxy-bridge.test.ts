@@ -171,7 +171,9 @@ describe('Meet request bridge', () => {
         expect((await cookies()).get('actor')?.value).toBe('second');
       }
     );
-    expect(() => meetRequest()).toThrow('Meet request context is unavailable');
+    expect(() => meetRequest()).toThrow(
+      'Start bridge request context unavailable'
+    );
   });
 
   it('does not run document authentication for excluded assets', async () => {
@@ -204,7 +206,7 @@ describe('Meet request bridge', () => {
           throw new Error('Must not dispatch');
         },
       })
-    ).rejects.toThrow('Unexpected external Meet middleware rewrite');
+    ).rejects.toThrow('Unexpected external middleware rewrite');
   });
 });
 
@@ -215,7 +217,7 @@ it('R21 passes the exact navigation callback through initial, forwarded and spre
   const { redirect } = await import('./next-navigation');
   const { isRedirect } = await import('@tanstack/react-router');
   const probe = createLoginRedirectProbe('https://meet.tuturuuu.com/login');
-  const observeLoginNavigation = probe.observeNavigation;
+  const observeNavigation = probe.observeNavigation;
   const start = new Response('SECRET_BODY', {
     status: 307,
     headers: { location: '/login' },
@@ -223,13 +225,13 @@ it('R21 passes the exact navigation callback through initial, forwarded and spre
   const result = await dispatchThroughMeetProxy({
     request: new Request('https://meet.tuturuuu.com/login'),
     waitUntil,
-    observeLoginNavigation,
+    observeNavigation,
     proxy: async () => {
-      expect(meetRequest().observeLoginNavigation).toBe(observeLoginNavigation);
+      expect(meetRequest().observeNavigation).toBe(observeNavigation);
       return NextResponse.rewrite('https://meet.tuturuuu.com/en/login');
     },
     dispatch: async () => {
-      expect(meetRequest().observeLoginNavigation).toBe(observeLoginNavigation);
+      expect(meetRequest().observeNavigation).toBe(observeNavigation);
       withMeetRequest({ ...meetRequest() }, () => {
         try {
           redirect('https://tuturuuu.com/login?SECRET=token');

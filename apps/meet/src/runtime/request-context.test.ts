@@ -11,7 +11,7 @@ import {
 
 function fixture(cookie = '') {
   const pending: Promise<unknown>[] = [];
-  const context: MeetRequestContext = {
+  const context = {
     request: new Request('https://meet.tuturuuu.com/plans/one', {
       headers: { cookie, 'x-actor': cookie },
     }),
@@ -19,25 +19,27 @@ function fixture(cookie = '') {
     waitUntil(work) {
       pending.push(work);
     },
-  };
+  } satisfies MeetRequestContext;
   return { context, pending };
 }
 
 describe('Meet request lifecycle boundary', () => {
   it('fails closed outside a request without scheduling background work', async () => {
     const task = vi.fn();
-    expect(() => meetRequest()).toThrow('Meet request context is unavailable');
+    expect(() => meetRequest()).toThrow(
+      'Start bridge request context unavailable'
+    );
     await expect(headers()).rejects.toThrow(
-      'Meet request context is unavailable'
+      'Start bridge request context unavailable'
     );
     await expect(cookies()).rejects.toThrow(
-      'Meet request context is unavailable'
+      'Start bridge request context unavailable'
     );
     await expect(connection()).rejects.toThrow(
-      'Meet request context is unavailable'
+      'Start bridge request context unavailable'
     );
     expect(() => afterResponse(task)).toThrow(
-      'Meet request context is unavailable'
+      'Start bridge request context unavailable'
     );
     expect(task).not.toHaveBeenCalled();
   });
@@ -94,12 +96,18 @@ describe('Meet request lifecycle boundary', () => {
       await withMeetRequest(inner.context, async () => {
         expect((await cookies()).get('actor')?.value).toBe('inner');
         await Promise.resolve();
-        expect(meetRequest()).toBe(inner.context);
+        expect(meetRequest().request).toBe(inner.context.request);
+        expect(meetRequest().responseHeaders).toBe(
+          inner.context.responseHeaders
+        );
       });
-      expect(meetRequest()).toBe(outer.context);
+      expect(meetRequest().request).toBe(outer.context.request);
+      expect(meetRequest().responseHeaders).toBe(outer.context.responseHeaders);
       expect((await cookies()).get('actor')?.value).toBe('outer');
     });
-    expect(() => meetRequest()).toThrow('Meet request context is unavailable');
+    expect(() => meetRequest()).toThrow(
+      'Start bridge request context unavailable'
+    );
     expect(outer.context.responseHeaders.getSetCookie()).toEqual([]);
     expect(inner.context.responseHeaders.getSetCookie()).toEqual([]);
   });
@@ -107,7 +115,8 @@ describe('Meet request lifecycle boundary', () => {
   it('hands deferred callbacks and promises to the owning execution context', async () => {
     const { context, pending } = fixture();
     const callback = vi.fn(() => {
-      expect(meetRequest()).toBe(context);
+      expect(meetRequest().request).toBe(context.request);
+      expect(meetRequest().responseHeaders).toBe(context.responseHeaders);
       return 'callback complete';
     });
     withMeetRequest(context, () => {
@@ -120,7 +129,9 @@ describe('Meet request lifecycle boundary', () => {
       'promise complete',
     ]);
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(() => meetRequest()).toThrow('Meet request context is unavailable');
+    expect(() => meetRequest()).toThrow(
+      'Start bridge request context unavailable'
+    );
   });
 
   it('retains a deferred failure for the execution context instead of reporting success', async () => {

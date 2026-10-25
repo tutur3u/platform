@@ -49,6 +49,7 @@
     "@tuturuuu/meet-core": "workspace:*",
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/tasks-api": "workspace:*",
