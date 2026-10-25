@@ -7672,6 +7672,144 @@
     "front": "Mặt trước",
     "id": "Mã số"
   },
+  "fleet": {
+    "actions": {
+      "all_machines": "Tất cả máy",
+      "drain": "Rút việc",
+      "undrain": "Tiếp tục nhận việc"
+    },
+    "empty": {
+      "machines_detail": "Chạy ttr box connect --service trên một máy để đăng ký.",
+      "machines_title": "Chưa có máy nào được đăng ký",
+      "runs": "Không có lượt chạy nào trên máy này trong ảnh chụp gần nhất."
+    },
+    "errors": {
+      "machine_missing_detail": "Máy có thể đã bị xoá, hoặc nằm ngoài 50 máy được cập nhật gần nhất.",
+      "machine_missing_title": "Không tìm thấy máy",
+      "snapshot_detail": "Không có số liệu hiện hành. Hãy thử lại và kiểm tra migration lưu trữ devbox nếu lỗi vẫn còn.",
+      "snapshot_title": "Không tải được dữ liệu đội máy"
+    },
+    "facts": {
+      "cli": "Phiên bản ttr",
+      "commit_run": "Giao thức commit-run",
+      "cpu": "CPU",
+      "credential": "Thông tin xác thực",
+      "credential_value": "{active} còn hiệu lực trên {total}",
+      "execution_mode": "Chế độ thực thi",
+      "features": "Dịch vụ đã bật",
+      "heartbeat": "Nhịp tim cuối",
+      "hostname": "Tên máy",
+      "memory": "Bộ nhớ",
+      "never": "Chưa từng",
+      "none": "Không có",
+      "not_reported": "Chưa báo cáo",
+      "platform": "Nền tảng",
+      "registered": "Đăng ký lúc",
+      "reported": "Số liệu báo cáo lúc",
+      "runtimes": "Môi trường chạy",
+      "uptime": "Thời gian hoạt động"
+    },
+    "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Socket Docker riêng",
+        "dedicatedUser": "Người dùng dịch vụ riêng",
+        "gvisorDefault": "Mặc định dùng gVisor",
+        "noGeneralDockerGroup": "Không thuộc nhóm Docker chung",
+        "privateTokenDirectory": "Thư mục token riêng tư",
+        "protectedService": "Dịch vụ được bảo vệ"
+      },
+      "no": "Không",
+      "not_attested": "Máy này không báo cáo cách ly. Bật TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE trên runner để xác nhận.",
+      "yes": "Có"
+    },
+    "manage": "Quản trị runner",
+    "recovery": {
+      "awaiting_first_heartbeat": "Đã đăng ký nhưng chưa từng báo cáo. Có thể thiết lập đã lỗi; chạy lại ttr box connect --service trên máy và kiểm tra dịch vụ agent.",
+      "disconnected": "Nhịp tim cuối {age}. Các lượt chạy đang hoạt động ở đây chưa rõ kết quả và không được tự động lên lịch lại. Hãy kiểm tra dịch vụ agent trên máy.",
+      "draining": "Đã yêu cầu rút việc {age}. Công việc hiện tại sẽ hoàn tất; không nhận việc mới.",
+      "heartbeat_disabled": "Nhịp tim đang tắt nên máy không nhận việc. Bật lại trong quản trị runner.",
+      "revoked": "Đã thu hồi. Máy này không thể xác thực hay nhận việc.",
+      "telemetry_late": "Nhịp tim cuối {age}. Số liệu không còn hiện hành và máy không nhận việc mới.",
+      "untrusted": "Không có thông tin xác thực runner còn hiệu lực. Kết nối lại bằng ttr box connect để cấp mới, hoặc thu hồi máy này."
+    },
+    "refresh": "Làm mới",
+    "resources": {
+      "disk": "Ổ đĩa đã dùng",
+      "disk_free": "Còn trống {free} GiB",
+      "load": "Tải mỗi lõi (1 phút)",
+      "memory": "Bộ nhớ đang dùng",
+      "not_reported": "Chưa báo cáo",
+      "unknown": "Không rõ"
+    },
+    "run_state": {
+      "cancel_requested": "Đang huỷ",
+      "cancelled": "Đã huỷ",
+      "claimed": "Đã nhận",
+      "failed": "Thất bại",
+      "outcome_unknown": "Chưa rõ kết quả",
+      "queued": "Đang chờ",
+      "running": "Đang chạy",
+      "succeeded": "Thành công",
+      "timed_out": "Hết thời gian",
+      "unrecognized": "Trạng thái không xác định"
+    },
+    "runs": {
+      "command": "Lệnh",
+      "exit": "Mã thoát",
+      "started": "Bắt đầu",
+      "status": "Trạng thái"
+    },
+    "sections": {
+      "attention": "Cần xử lý",
+      "identity": "Danh tính và thiết lập",
+      "isolation": "Xác nhận cách ly",
+      "machines": "Máy",
+      "recent_runs": "Lượt chạy gần đây",
+      "resources": "Tài nguyên",
+      "work": "Công việc trên máy này"
+    },
+    "snapshot": "Ảnh chụp lúc {time}",
+    "state": {
+      "awaiting_first_heartbeat": "Chưa thiết lập xong",
+      "disconnected": "Mất kết nối",
+      "draining": "Đang rút việc",
+      "heartbeat_disabled": "Đã tắt nhịp tim",
+      "online": "Trực tuyến",
+      "revoked": "Đã thu hồi",
+      "telemetry_late": "Nhịp tim trễ",
+      "untrusted": "Không có thông tin xác thực"
+    },
+    "stats": {
+      "attention": "Cần xử lý",
+      "of_machines": "trên {count} máy",
+      "online": "Trực tuyến",
+      "outcome_unknown": "Chưa rõ kết quả",
+      "queued": "Đang chờ",
+      "run_window": "trong {count} lượt chạy gần nhất",
+      "running": "Đang chạy"
+    },
+    "telemetry": {
+      "fresh": "Số liệu trực tiếp",
+      "missing": "Chưa có số liệu",
+      "stale": "Số liệu cũ"
+    },
+    "title": "Đội máy",
+    "trust": {
+      "no_active_credential": "Không có xác thực hiệu lực",
+      "revoked": "Đã thu hồi",
+      "trusted": "Xác thực còn hiệu lực"
+    },
+    "work": {
+      "activity_unavailable": "Hoạt động theo từng máy chưa khả dụng cho đến khi áp dụng migration drain/activity.",
+      "kept_leases": "Lease được giữ",
+      "lane_ceiling": "Giới hạn làn",
+      "leases": "Lease đang hoạt động",
+      "queued": "Đang chờ ở đây",
+      "running": "Đang chạy",
+      "summary": "{running} đang chạy, {queued} đang chờ",
+      "summary_unknown": "{running} chưa rõ kết quả, {queued} đang chờ"
+    }
+  },
   "forms": {
     "access_mode": {
       "anonymous": "Cho phép ẩn danh",
@@ -8699,6 +8837,7 @@
     "entity_creation_limits": "Giới hạn tạo thực thể",
     "external_apps": "Ứng dụng bên ngoài",
     "features": "Tính năng",
+    "fleet": "Đội máy",
     "github_bot": "Bot GitHub",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",

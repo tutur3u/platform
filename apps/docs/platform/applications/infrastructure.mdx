@@ -32,6 +32,38 @@ Infrastructure entry point in its numbered source pages. Feature-specific
 operating rules remain in [DevOps](/build/devops/overview) and
 [Commercial controls](/platform/features/commercial-controls).
 
+## Fleet machine states
+
+Infrastructure > Fleet (`/[wsId]/fleet`) reads the devbox runner snapshot and
+shows one state per machine. The first matching state wins:
+
+| State | Rule |
+| --- | --- |
+| Revoked | The runner was revoked. |
+| No credential | No active runner token, whatever the heartbeat says. |
+| Setup incomplete | Registered but no heartbeat has ever arrived. |
+| Heartbeat off | An administrator turned heartbeats off. |
+| Disconnected | The last heartbeat is older than 15 minutes. |
+| Heartbeat late | The last heartbeat is older than 60 seconds, the SDK's placement freshness window, or the status is not `online`. |
+| Draining | A drain was requested. |
+| Online | A fresh heartbeat, an active token and `online` status. |
+
+Resource readings (load per core, memory, disk) are shown only while the
+heartbeat is fresh and the runner's `reportedAt` is within five minutes.
+Otherwise they read **Unknown** or **Not reported**, never as zero or as the last
+value. A queued, claimed or running run on a late, disconnected, untrusted or
+revoked machine shows **Outcome unknown**. It is neither counted as running nor
+assumed failed, and this view never reschedules it.
+
+Judge sandbox limits (`resource_limits`) do not constrain trusted commands. They
+are not lane ceilings, so Fleet reports the lane ceiling as not reported until
+the balancer publishes host lanes. Run counts cover only the latest snapshot
+window, and the tiles say so.
+
+Regression coverage: `src/lib/fleet/fleet-model.test.ts` (state precedence,
+freshness, unknown run outcomes, telemetry parsing) and
+`fleet/_components/machine-card.test.tsx` (fresh versus disconnected rendering).
+
 ## Current schedulers
 
 Hosted Calendar provider sync and smart scheduling run through Infrastructure's

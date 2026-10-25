@@ -70,9 +70,15 @@ function getTopLevelNavigation({
       title: t('infrastructure-tabs.overview'),
     },
     {
-      href: href(wsId, '/devboxes'),
+      aliases: [href(wsId, '/fleet/machines/*')],
+      href: href(wsId, '/fleet'),
       icon: icon(Server),
       sectionLabel: t('infrastructure-navigation.sections.fleet'),
+      title: t('infrastructure-tabs.fleet'),
+    },
+    {
+      href: href(wsId, '/devboxes'),
+      icon: icon(Settings),
       title: t('infrastructure-tabs.devboxes'),
     },
     {

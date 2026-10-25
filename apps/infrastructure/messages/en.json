@@ -7672,6 +7672,144 @@
     "front": "Front",
     "id": "ID"
   },
+  "fleet": {
+    "actions": {
+      "all_machines": "All machines",
+      "drain": "Drain",
+      "undrain": "Resume placement"
+    },
+    "empty": {
+      "machines_detail": "Run ttr box connect --service on a host to enroll it.",
+      "machines_title": "No machines enrolled",
+      "runs": "No runs on this machine in the latest snapshot."
+    },
+    "errors": {
+      "machine_missing_detail": "It may have been removed, or it is outside the 50 most recently updated machines.",
+      "machine_missing_title": "Machine not found",
+      "snapshot_detail": "Nothing below is current. Retry, and check the devbox storage migrations if this persists.",
+      "snapshot_title": "Fleet data could not be loaded"
+    },
+    "facts": {
+      "cli": "ttr version",
+      "commit_run": "Commit-run protocol",
+      "cpu": "CPU",
+      "credential": "Credentials",
+      "credential_value": "{active} active of {total}",
+      "execution_mode": "Execution mode",
+      "features": "Enabled services",
+      "heartbeat": "Last heartbeat",
+      "hostname": "Hostname",
+      "memory": "Memory",
+      "never": "Never",
+      "none": "None",
+      "not_reported": "Not reported",
+      "platform": "Platform",
+      "registered": "Registered",
+      "reported": "Readings reported",
+      "runtimes": "Runtimes",
+      "uptime": "Uptime"
+    },
+    "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Dedicated Docker socket",
+        "dedicatedUser": "Dedicated service user",
+        "gvisorDefault": "gVisor by default",
+        "noGeneralDockerGroup": "Not in the general Docker group",
+        "privateTokenDirectory": "Private token directory",
+        "protectedService": "Protected service"
+      },
+      "no": "No",
+      "not_attested": "This machine does not report isolation. Enable TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE on the runner to attest it.",
+      "yes": "Yes"
+    },
+    "manage": "Runner admin",
+    "recovery": {
+      "awaiting_first_heartbeat": "Registered but never reported. Setup may have failed; rerun ttr box connect --service on the host and check its agent service.",
+      "disconnected": "Last heartbeat {age}. Runs that were active here have an unknown outcome and are not rescheduled automatically. Check the agent service on the host.",
+      "draining": "Drain requested {age}. Current work finishes; no new work is placed here.",
+      "heartbeat_disabled": "Heartbeat is turned off, so this machine takes no work. Turn it on in runner admin.",
+      "revoked": "Revoked. This machine can no longer authenticate or take work.",
+      "telemetry_late": "Last heartbeat {age}. Readings are not current and no new work is placed here.",
+      "untrusted": "No active runner credential. Reconnect with ttr box connect to issue one, or revoke this machine."
+    },
+    "refresh": "Refresh",
+    "resources": {
+      "disk": "Disk in use",
+      "disk_free": "{free} GiB free",
+      "load": "Load per core (1 min)",
+      "memory": "Memory in use",
+      "not_reported": "Not reported",
+      "unknown": "Unknown"
+    },
+    "run_state": {
+      "cancel_requested": "Cancelling",
+      "cancelled": "Cancelled",
+      "claimed": "Claimed",
+      "failed": "Failed",
+      "outcome_unknown": "Outcome unknown",
+      "queued": "Queued",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "timed_out": "Timed out",
+      "unrecognized": "Unrecognized status"
+    },
+    "runs": {
+      "command": "Command",
+      "exit": "Exit",
+      "started": "Started",
+      "status": "Status"
+    },
+    "sections": {
+      "attention": "Needs attention",
+      "identity": "Identity and setup",
+      "isolation": "Isolation attestation",
+      "machines": "Machines",
+      "recent_runs": "Recent runs",
+      "resources": "Resources",
+      "work": "Work on this machine"
+    },
+    "snapshot": "Snapshot {time}",
+    "state": {
+      "awaiting_first_heartbeat": "Setup incomplete",
+      "disconnected": "Disconnected",
+      "draining": "Draining",
+      "heartbeat_disabled": "Heartbeat off",
+      "online": "Online",
+      "revoked": "Revoked",
+      "telemetry_late": "Heartbeat late",
+      "untrusted": "No credential"
+    },
+    "stats": {
+      "attention": "Needs attention",
+      "of_machines": "of {count} machines",
+      "online": "Online",
+      "outcome_unknown": "Outcome unknown",
+      "queued": "Queued",
+      "run_window": "in the latest {count} runs",
+      "running": "Running"
+    },
+    "telemetry": {
+      "fresh": "Live readings",
+      "missing": "No readings",
+      "stale": "Stale readings"
+    },
+    "title": "Fleet",
+    "trust": {
+      "no_active_credential": "No active credential",
+      "revoked": "Revoked",
+      "trusted": "Credential active"
+    },
+    "work": {
+      "activity_unavailable": "Per-machine activity is unavailable until the drain/activity migration is applied.",
+      "kept_leases": "Kept leases",
+      "lane_ceiling": "Lane ceiling",
+      "leases": "Active leases",
+      "queued": "Queued here",
+      "running": "Running",
+      "summary": "{running} running, {queued} queued",
+      "summary_unknown": "{running} with unknown outcome, {queued} queued"
+    }
+  },
   "forms": {
     "access_mode": {
       "anonymous": "Anonymous allowed",
@@ -8699,6 +8837,7 @@
     "entity_creation_limits": "Entity Creation Limits",
     "external_apps": "External Apps",
     "features": "Features",
+    "fleet": "Fleet",
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
