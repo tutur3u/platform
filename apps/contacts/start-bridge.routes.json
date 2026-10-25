@@ -1,0 +1,6 @@
+{
+  "appDir": "src/app",
+  "stripSegments": { "[locale]": { "locale": "en" } },
+  "api": { "out": "src/runtime/api-registry.bridge.gen.ts" },
+  "pages": { "out": "src/runtime/page-registry.bridge.gen.ts" }
+}
