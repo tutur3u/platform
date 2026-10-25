@@ -383,14 +383,16 @@ export function createBiomeFormatter(repoRoot, spawn = spawnSync) {
         'x',
         '--no-install',
         'biome',
-        'format',
+        // Format plus safe fixes (organized imports), as check:changed checks.
+        'check',
+        '--write',
         `--stdin-file-path=${relativePath}`,
       ],
       { cwd: repoRoot, input: content, encoding: 'utf8', timeout: 30000 }
     );
     if (result.status !== 0)
       throw new Error(
-        `biome format failed for ${relativePath}: ${(result.stderr ?? '').trim()}`
+        `biome check failed for ${relativePath}: ${(result.stderr ?? '').trim()}`
       );
     return result.stdout;
   };
