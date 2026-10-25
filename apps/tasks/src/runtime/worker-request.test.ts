@@ -99,7 +99,7 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
     );
   });
 
-  it('keeps an explicit private cache policy and asset caching', async () => {
+  it('keeps asset caching and stores no dynamic response', async () => {
     const { handle } = setup(
       () =>
         new Response('x', {
@@ -122,6 +122,26 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
       'public, max-age=31536000, immutable'
     );
     expect(page.headers.get('cache-control')).toBe(
+      'private, no-store, max-age=0'
+    );
+  });
+
+  it.each([
+    'private, max-age=60, stale-while-revalidate=30',
+    'private, max-age=10, stale-while-revalidate=20',
+    'no-store',
+  ])('replaces a handler cache policy with no-store: %s', async (policy) => {
+    const { handle } = setup(
+      () => new Response('{}', { headers: { 'cache-control': policy } })
+    );
+
+    const response = await handle(
+      new Request('https://tasks.tuturuuu.com/api/v1/users/me/task-settings'),
+      {},
+      ctx
+    );
+
+    expect(response.headers.get('cache-control')).toBe(
       'private, no-store, max-age=0'
     );
   });

@@ -65,7 +65,9 @@ function isStaticAsset(appPath: string) {
 /**
  * Production parity with the Next build (robots per the Tasks SEO policy,
  * anti-framing, HSTS) plus `nosniff` and a referrer policy. Dynamic responses
- * are never shared-cacheable; hashed assets and public files keep theirs.
+ * are personalized, so none is stored by any cache, whatever the handler set
+ * (a handler's `private, max-age` would keep it in the browser); hashed assets
+ * and public files keep theirs.
  */
 function decorate(response: Response, appPath: string | null) {
   const tagged = tagResponse(response, NATIVE);
@@ -77,11 +79,8 @@ function decorate(response: Response, appPath: string | null) {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Strict-Transport-Security', 'max-age=63072000');
-  if (appPath === null || !isStaticAsset(appPath)) {
-    const cache = headers.get('Cache-Control') ?? '';
-    if (!/\b(?:private|no-store)\b/u.test(cache))
-      headers.set('Cache-Control', 'private, no-store, max-age=0');
-  }
+  if (appPath === null || !isStaticAsset(appPath))
+    headers.set('Cache-Control', 'private, no-store, max-age=0');
   return tagged;
 }
 
