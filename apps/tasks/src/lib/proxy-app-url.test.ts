@@ -21,7 +21,7 @@ describe('proxyAppUrl', () => {
       'https://tuturuuu.com/tasks/vi/personal/tasks'
     );
     expect(proxyAppUrl(request, '/?y=2').href).toBe(
-      'https://tuturuuu.com/tasks/?y=2'
+      'https://tuturuuu.com/tasks?y=2'
     );
   });
 
@@ -32,18 +32,32 @@ describe('proxyAppUrl', () => {
       'https://tuturuuu.com/tasks/en/personal/tasks?y=2'
     );
     expect(proxyAppUrl(request, '/tasks').href).toBe(
-      'https://tuturuuu.com/tasks/'
+      'https://tuturuuu.com/tasks'
     );
     expect(proxyAppUrl(request, '/tasksx/a').href).toBe(
       'https://tuturuuu.com/tasks/tasksx/a'
     );
   });
 
-  it('never leaves the request origin', () => {
-    const request = based('https://tuturuuu.com/tasks/en/a');
+  it('does not carry the request trailing slash', () => {
+    const request = based('https://tuturuuu.com/tasks/?retry=1');
 
-    expect(proxyAppUrl(request, '//evil.example/x?y=1').origin).toBe(
-      'https://tuturuuu.com'
+    expect(proxyAppUrl(request, '/en/personal/tasks').href).toBe(
+      'https://tuturuuu.com/tasks/en/personal/tasks'
     );
+  });
+
+  it.each([
+    '//evil.example/x?y=1',
+    '/.//evil.example/x',
+    'https://evil.example/x',
+  ])('never leaves the request origin for %s', (path) => {
+    expect(
+      proxyAppUrl(based('https://tuturuuu.com/tasks/en/a'), path).origin
+    ).toBe('https://tuturuuu.com');
+    expect(
+      proxyAppUrl(new NextRequest('https://tasks.tuturuuu.com/en/a'), path)
+        .origin
+    ).toBe('https://tasks.tuturuuu.com');
   });
 });
