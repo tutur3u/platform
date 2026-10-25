@@ -9,7 +9,6 @@ import {
   updateMailDraft,
   uploadMailDraftAttachment,
 } from '@tuturuuu/internal-api';
-import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -336,9 +335,7 @@ export function FloatingComposer({
         setAttachments((current) => [...current, response.attachment]);
         if (inline) {
           setImageUrlToInsert(
-            withAppBase(
-              `/api/v1/workspaces/${workspaceId}/mail/mailboxes/${mailboxId}/drafts/${savedDraftId}/attachments/${response.attachment.id}`
-            )
+            `/api/v1/workspaces/${workspaceId}/mail/mailboxes/${mailboxId}/drafts/${savedDraftId}/attachments/${response.attachment.id}`
           );
         }
       }

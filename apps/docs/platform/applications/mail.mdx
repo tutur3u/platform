@@ -261,6 +261,14 @@ text exposes Enhance selection. AI previews replace only that passage after revi
 a document change invalidates the captured selection. Plain-text reading caps runs
 of blank lines without changing stored text or meaningful indentation.
 
+Draft attachment images are stored with raw `/api/v1/...` paths. The editor mounts
+them only for display, so a draft saved at `tuturuuu.com/mail` can reopen at
+`mail.tuturuuu.com` and vice versa. Previously saved `/mail/api/...` draft image
+references are normalized when the editor loads them. External image URLs retain
+their original value. The composer regression in
+`apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-composer-editor.test.ts`
+covers both directions and the legacy reference.
+
 ## SES Receiving Setup
 
 Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.
