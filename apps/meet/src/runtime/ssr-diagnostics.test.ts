@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 import { NextRequest } from 'next/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ports = vi.hoisted(() => ({
   proxy: vi.fn(),
@@ -12,6 +12,9 @@ const ports = vi.hoisted(() => ({
     throw Error('Unexpected native proxy port');
   }),
   webOrigin: vi.fn(() => 'https://unused.invalid'),
+  externalFetch: vi.fn(() => {
+    throw Error('Unexpected external API request');
+  }),
   endpoint: vi.fn(async (request: Request) => {
     if (
       ![
@@ -53,11 +56,13 @@ import {
   reportMeetSsr,
 } from './ssr-diagnostics';
 
+beforeEach(() => vi.stubGlobal('fetch', ports.externalFetch));
 afterEach(() => {
   expect(ports.unusedProxy).not.toHaveBeenCalled();
   expect(ports.unusedNative).not.toHaveBeenCalled();
-  expect(ports.webOrigin).not.toHaveBeenCalled();
+  expect(ports.externalFetch).not.toHaveBeenCalled();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 describe('closed Meet SSR observations', () => {
   it('preserves actual router redirect and normal error identities', async () => {

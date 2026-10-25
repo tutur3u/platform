@@ -9,8 +9,9 @@ const ports = vi.hoisted(() => ({
   native: vi.fn(() => {
     throw Error('Unexpected native proxy');
   }),
-  web: vi.fn(() => {
-    throw Error('Unexpected external API destination');
+  web: vi.fn(() => 'https://tuturuuu.com'),
+  externalFetch: vi.fn(() => {
+    throw Error('Unexpected external API request');
   }),
 }));
 vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
@@ -73,11 +74,13 @@ const ctx = { waitUntil() {} };
 beforeEach(() => {
   vi.clearAllMocks();
   ports.proxy.mockImplementation(async () => NextResponse.next());
+  vi.stubGlobal('fetch', ports.externalFetch);
 });
 afterEach(() => {
   expect(ports.native).not.toHaveBeenCalled();
-  expect(ports.web).not.toHaveBeenCalled();
+  expect(ports.externalFetch).not.toHaveBeenCalled();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('R21 actual handler request-local diagnostic handoff with fixed dependency ports', () => {
