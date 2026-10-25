@@ -149,3 +149,14 @@ ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
 
 Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. An explicit Vitest import selects Vitest when a file also imports Node test helpers or types. This runner partition avoids false “No test suite found” failures.
+
+### Keep host configuration types out of app programs
+
+Mail, Calendar and Meet check Vite/Void configuration in a separate
+`tsconfig.config.json` through their normal `type-check` command. Their app
+programs retain runtime and test files. This prevents host tooling such as
+`unplugin` from loading Bun globals into browser app types, where Bun's
+`fetch.preconnect` would incorrectly become mandatory for fetch fixtures and
+ordinary request wrappers. Keep the configuration check in the package gate
+when moving config roots. `scripts/ci/vite-config-type-boundary.test.js` verifies
+the compiler's resolved app/config roots and the package command wiring.
