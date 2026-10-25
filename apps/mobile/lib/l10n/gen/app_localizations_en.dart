@@ -5144,6 +5144,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailOwner => 'Owner';
 
   @override
+  String get mailPreviewEmptyMessage => 'Pick a conversation from the list to read it here.';
+
+  @override
+  String get mailPreviewEmptyTitle => 'Select a conversation';
+
+  @override
   String get mailRemoveAttachment => 'Remove attachment';
 
   @override

@@ -2872,6 +2872,8 @@
   "mailOpenFailed": "Could not open this message. Please try again.",
   "mailOrganization": "Organization",
   "mailOwner": "Owner",
+  "mailPreviewEmptyMessage": "Pick a conversation from the list to read it here.",
+  "mailPreviewEmptyTitle": "Select a conversation",
   "mailRemoveAttachment": "Remove attachment",
   "mailReply": "Reply",
   "mailReplyAll": "Reply all",

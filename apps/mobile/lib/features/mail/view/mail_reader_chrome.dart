@@ -17,10 +17,7 @@ IconData _mailMessageActionIcon(String action) => switch (action) {
 extension _MailReaderChrome on _MailReaderState {
   Widget _readerChrome(String subject, Map<String, String> actions) {
     final l10n = context.l10n;
-    final preferred = MailPrimaryActionPreference.instance.value;
-    final primary = preferred == MailPrimaryAction.reply && !widget.canSend
-        ? MailPrimaryAction.archive
-        : preferred;
+    final primary = _primaryAction;
     return Stack(
       children: [
         ShellTitleOverride(
@@ -37,14 +34,14 @@ extension _MailReaderChrome on _MailReaderState {
               id: 'back',
               icon: Icons.chevron_left,
               label: l10n.navBack,
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: _close,
             ),
             ShellMiniNavItemSpec(
               id: 'inbox',
               icon: Icons.inbox_outlined,
               label: l10n.mailInbox,
               selected: true,
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: _close,
             ),
             ShellMiniNavItemSpec(
               id: 'appearance',
@@ -79,15 +76,9 @@ extension _MailReaderChrome on _MailReaderState {
               icon: primary.icon,
               tooltip: primary.label(context),
               inDock: true,
-              enabled: !_busy,
-              callbackToken: primary.name,
-              onPressed: () {
-                if (primary == MailPrimaryAction.reply) {
-                  if (_messages.isNotEmpty) unawaited(_reply(_messages.last));
-                } else {
-                  unawaited(_action(primary.stateAction!, close: true));
-                }
-              },
+              enabled: !_busy && _detail != null,
+              callbackToken: (primary.name, _detail != null),
+              onPressed: _runPrimaryAction,
             ),
           ],
         ),
@@ -134,7 +125,7 @@ extension _MailReaderChrome on _MailReaderState {
   }
 
   Future<void> _chooseAction(Map<String, String> actions) async {
-    if (_busy) return;
+    if (_busy || _detail == null) return;
     final value = await showAdaptiveSheet<String>(
       context: context,
       useRootNavigator: true,
