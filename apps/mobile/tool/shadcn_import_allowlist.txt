@@ -32,7 +32,6 @@ lib/features/chat/widgets/chat_composer.dart
 lib/features/chat/widgets/chat_conversation_list.dart
 lib/features/chat/widgets/chat_sheets.dart
 lib/features/chat/widgets/chat_thread_view.dart
-lib/features/cms/view/cms_page.dart
 lib/features/crm/view/crm_page.dart
 lib/features/dashboard/view/dashboard_page.dart
 lib/features/desktop_update/desktop_update_gate.dart

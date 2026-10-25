@@ -5,7 +5,7 @@ extension _CmsOwnedSheets on _CmsPageState {
     required BuildContext context,
     required WidgetBuilder builder,
     required VoidCallback onDispose,
-  }) => showAdaptiveSheet<T>(
+  }) => showAppSheet<T>(
     context: context,
     builder: (context) => _CmsOwnedOverlay(
       alive: _alive,
@@ -16,7 +16,7 @@ extension _CmsOwnedSheets on _CmsPageState {
   Future<T?> _showOwnedDialog<T>({
     required BuildContext context,
     required WidgetBuilder builder,
-  }) => showDialog<T>(
+  }) => showAppDialog<T>(
     context: context,
     builder: (context) =>
         _CmsOwnedOverlay(alive: _alive, child: builder(context)),
