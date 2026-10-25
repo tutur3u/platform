@@ -6,7 +6,8 @@
     }
   },
   "api": {
-    "out": "src/runtime/api-registry.bridge.gen.ts"
+    "out": "src/runtime/api-registry.bridge.gen.ts",
+    "patternsOut": "src/runtime/api-patterns.bridge.gen.ts"
   },
   "pages": {
     "out": "src/runtime/page-registry.bridge.gen.ts"

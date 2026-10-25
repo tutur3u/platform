@@ -9,6 +9,7 @@ import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
 import { beforeLocalApiOwner, forwardToOwner } from './api-owner-routing';
 import { dispatchCalendarEndpoint } from './api-registry.server';
+import { registerCalendarServerApiPaths } from './calendar-api-server';
 import { calendarBase } from './calendar-mount';
 import {
   CALENDAR_FUNCTION_BASE,
@@ -29,6 +30,7 @@ import type {
   CalendarWorkerEnvironment,
 } from './worker-contract';
 
+registerCalendarServerApiPaths();
 const start = createBridgeStartHandler();
 
 export async function handleCalendarRequest(
@@ -71,6 +73,18 @@ async function dispatchCalendarRequest(
   if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
   if (!base.isRoot || request.headers.has(APP_BASE_HEADER))
     request = new Request(request, { headers });
+  if (
+    !base.isRoot &&
+    [
+      '/api/auth/logout',
+      '/api/auth/refresh-app-session',
+      '/api/auth/verify-app-token',
+    ].includes(path)
+  )
+    return Response.json(
+      { error: 'The shared session is managed by Web' },
+      { status: 409 }
+    );
   if (path === '/api/build-info') {
     const identity = workerBuildInfo(
       base.stripRequest(request) ?? request,

@@ -6,6 +6,7 @@ import {
   type NextProxy,
 } from '@tuturuuu/start-bridge/proxy-bridge';
 import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import {
   type CalendarRequestContext,
   withCalendarRequest,
@@ -50,6 +51,7 @@ export function dispatchThroughCalendarProxy({
     matches: proxyMatches,
     basePath: runtimeAppBase(),
     requestInit,
+    rewriteOrigins: [resolveTuturuuuWebAppUrl()],
     proxy: (forwarded) => enter(forwarded, () => proxy(forwarded)),
     dispatch: (forwarded) => enter(forwarded, () => dispatch(forwarded)),
   });
