@@ -1041,8 +1041,28 @@ Configure these server-only variables for the Mail deployment:
 - `MAIL_MICROSOFT_CLIENT_ID`, `MAIL_MICROSOFT_CLIENT_SECRET`,
   `MAIL_MICROSOFT_REDIRECT_URI`.
 
-Both registered callback URLs point to the Mail origin's
-`/api/v1/mail/connected/callback`. Enable the Gmail API and grant
+The existing provider callback stays at
+`https://mail.tuturuuu.com/api/v1/mail/connected/callback`. Before admitting the
+apex mount, register `https://tuturuuu.com/mail/api/v1/mail/connected/callback`
+**alongside** the old callback in both providers. Configure the additional
+server-only `MAIL_GOOGLE_APEX_REDIRECT_URI` and
+`MAIL_MICROSOFT_APEX_REDIRECT_URI` only after registration. Each request selects
+an exact configured callback by its serving origin and `/mail` mount; it never
+trusts a forwarded host or redirects authorization across hosts. The callback
+exchanges the code using that same registered URI, clears state at its matching
+cookie path, and returns to the inbox under the serving mount. An unconfigured
+host fails closed. Existing subdomain configuration remains the default.
+
+The native cutover requires one sign-in on the apex and carries no session from
+the old host. A one-time reset of browser preferences is accepted; important
+preferences belong on the server. Webhooks, OAuth callbacks and WebSockets keep
+being served on the old subdomain. These rules apply to the Mail browser app;
+provider registration and production routes remain separate owner operations.
+Callback selection and both providers' mounted start/completion behavior are
+covered by `oauth-callback-url.test.ts`, `oauth.test.ts` and
+`oauth-callback.test.ts` under `apps/mail/src/lib/mail/connected/`.
+
+Enable the Gmail API and grant
 `https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
 complete the provider's required consent verification before public rollout.
 Register the Microsoft app for organizational and personal Microsoft accounts

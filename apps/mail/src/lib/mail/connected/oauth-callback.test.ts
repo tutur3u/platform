@@ -169,3 +169,52 @@ it('rejects a Microsoft profile without a durable mailbox identity', async () =>
   });
   expect(mocks.upsert).not.toHaveBeenCalled();
 });
+
+it.each(['google', 'microsoft'] as const)(
+  '%s exchanges the exact mounted callback URI and returns to the mounted inbox',
+  async (provider) => {
+    pending!.provider = provider;
+    const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
+    vi.stubEnv(
+      `MAIL_${prefix}_APEX_REDIRECT_URI`,
+      'https://tuturuuu.com/mail/api/v1/mail/connected/callback'
+    );
+    if (provider === 'microsoft')
+      mocks.fetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({ id: 'fixture-provider', mail: 'me@example.test' })
+        )
+      );
+    const callback = new NextRequest(
+      `https://tuturuuu.com/mail/api/v1/mail/connected/callback?state=${state}&code=fixture`,
+      { headers: { cookie: `mail_oauth_state=${state}` } }
+    );
+    const response = await finishOAuth(callback, 'owner');
+    expect(mocks.exchange).toHaveBeenCalledWith(
+      provider,
+      expect.objectContaining({
+        redirect_uri:
+          'https://tuturuuu.com/mail/api/v1/mail/connected/callback',
+        code_verifier: 'fixture-verifier',
+      })
+    );
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/mail/personal/inbox?connected=1'
+    );
+    expect(response.headers.get('set-cookie')).toContain(
+      'Path=/mail/api/v1/mail/connected'
+    );
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+  }
+);
+it('rejects callbacks on another host before exchanging or saving credentials', async () => {
+  const callback = new NextRequest(
+    `https://other.example.test/api/v1/mail/connected/callback?state=${state}&code=fixture`,
+    { headers: { cookie: `mail_oauth_state=${state}` } }
+  );
+  await expect(finishOAuth(callback, 'owner')).rejects.toMatchObject({
+    status: 400,
+  });
+  expect(mocks.exchange).not.toHaveBeenCalled();
+  expect(mocks.upsert).not.toHaveBeenCalled();
+});
