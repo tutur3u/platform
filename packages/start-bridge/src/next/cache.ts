@@ -1,4 +1,4 @@
-import { bridgeRequest } from '../core/request-context';
+import { bridgeRequest } from '../server/request-context';
 
 export function revalidatePath(_path: string, _type?: 'page' | 'layout') {
   // Native Start has no persistent Next rendering cache. Every successful

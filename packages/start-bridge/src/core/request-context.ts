@@ -1,21 +1,20 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
-import {
-  RequestCookies,
-  ResponseCookies,
-} from 'next/dist/compiled/@edge-runtime/cookies';
 import { installAppBaseResolver } from './app-url';
 
 /**
- * One request's server context. A single store backs every `next/headers`,
- * `next/server` and `next/cache` port, so all bridge modules observe the same
- * request regardless of which alias imported them.
+ * One request's server context, framework- and runtime-independent. The
+ * server adapter (`@tuturuuu/start-bridge/request-context`) installs the
+ * AsyncLocalStorage-backed store and Next's cookie API; this core only
+ * depends on a `BridgeRequestStore` found under a global Symbol, so every
+ * bundled copy (SSR, an RSC environment, client-safe readers) shares it.
  */
 export interface BridgeRequestContext {
   request: Request;
   /** Accumulates `Set-Cookie` and response headers written by app code. */
   responseHeaders: Headers;
-  /** Request cookies as app code sees them, including writes this request. */
-  cookieStore: RequestCookies;
+  /** Headers backing the request cookie view (writes flow into them). */
+  cookieSource: Headers;
+  /** Adapter-owned cookie view, created on first use. */
+  cookieJar?: unknown;
   waitUntil?: (work: Promise<unknown>) => void;
   cloudflare?: { env: unknown; ctx: unknown };
   /** Observes `redirect()` calls (diagnostics only; never replaces them). */
@@ -24,6 +23,8 @@ export interface BridgeRequestContext {
   appBase?: string;
   /** Root-layout params (e.g. `locale`) for `next/root-params`. */
   rootParams?: Record<string, string>;
+  /** This response's CSP script nonce (see `createBridgeHandler` `csp`). */
+  nonce?: string;
   /** App-owned per-request values; see `createRequestLocal`. */
   locals: Map<symbol, unknown>;
 }
@@ -32,7 +33,7 @@ export interface BridgeRequestInit {
   request: Request;
   responseHeaders?: Headers;
   /**
-   * Headers backing the cookie store. Defaults to a copy of the request
+   * Headers backing the cookie view. Defaults to a copy of the request
    * headers; pass a mutable request's own headers to let cookie writes flow
    * into a forwarded request (the proxy bridge does this).
    */
@@ -42,39 +43,57 @@ export interface BridgeRequestInit {
   observeNavigation?: (href: string, result: unknown) => void;
   appBase?: string;
   rootParams?: Record<string, string>;
+  nonce?: string;
   locals?: Map<symbol, unknown>;
 }
 
-// Anchored on globalThis: with React Server Components the Worker bundles an
-// `rsc` environment beside SSR, and both must observe the same request.
-const STORAGE_KEY = Symbol.for('tuturuuu.start-bridge.request-context');
-const anchor = globalThis as {
-  [STORAGE_KEY]?: AsyncLocalStorage<BridgeRequestContext>;
-};
-if (!anchor[STORAGE_KEY])
-  anchor[STORAGE_KEY] = new AsyncLocalStorage<BridgeRequestContext>();
-const storage: AsyncLocalStorage<BridgeRequestContext> = anchor[STORAGE_KEY];
+/** The async-context contract a runtime adapter provides. */
+export interface BridgeRequestStore {
+  run<T>(context: BridgeRequestContext, run: () => T): T;
+  getStore(): BridgeRequestContext | undefined;
+}
+
+export const REQUEST_STORE_KEY = Symbol.for(
+  'tuturuuu.start-bridge.request-context'
+);
+type Anchor = { [REQUEST_STORE_KEY]?: BridgeRequestStore };
+
+/** Installs the runtime store once; later bundles reuse the first one. */
+export function installRequestStore(store: BridgeRequestStore) {
+  const anchor = globalThis as Anchor;
+  anchor[REQUEST_STORE_KEY] ??= store;
+  return anchor[REQUEST_STORE_KEY];
+}
+
+function currentStore(): BridgeRequestStore | undefined {
+  return (globalThis as Anchor)[REQUEST_STORE_KEY];
+}
 
 // Server-side `runtimeAppBase()` reads the current request's base.
-installAppBaseResolver(() => storage.getStore()?.appBase);
+installAppBaseResolver(() => currentStore()?.getStore()?.appBase);
 
 export function withBridgeRequest<T>(
   init: Request | BridgeRequestInit,
   run: () => T
 ): T {
   const options = init instanceof Request ? { request: init } : init;
-  return storage.run(
+  const store = currentStore();
+  if (!store)
+    throw new Error(
+      'Start bridge request store is not installed; import @tuturuuu/start-bridge/request-context'
+    );
+  return store.run(
     {
       request: options.request,
       responseHeaders: options.responseHeaders ?? new Headers(),
-      cookieStore: new RequestCookies(
-        options.cookieSource ?? new Headers(options.request.headers)
-      ),
+      cookieSource:
+        options.cookieSource ?? new Headers(options.request.headers),
       waitUntil: options.waitUntil,
       cloudflare: options.cloudflare,
       observeNavigation: options.observeNavigation,
       appBase: options.appBase,
       rootParams: options.rootParams,
+      nonce: options.nonce,
       locals: options.locals ?? new Map(),
     },
     run
@@ -82,20 +101,20 @@ export function withBridgeRequest<T>(
 }
 
 export function bridgeRequest(): BridgeRequestContext {
-  const context = storage.getStore();
+  const context = currentStore()?.getStore();
   if (!context) throw new Error('Start bridge request context unavailable');
   return context;
 }
 
 export function maybeBridgeRequest(): BridgeRequestContext | undefined {
-  return storage.getStore();
+  return currentStore()?.getStore();
 }
 
 /** A typed per-request slot, e.g. a Worker-resolved page model. */
 export function createRequestLocal<T>(description: string) {
   const key = Symbol(description);
   return {
-    get: (): T | undefined => storage.getStore()?.locals.get(key) as T,
+    get: (): T | undefined => currentStore()?.getStore()?.locals.get(key) as T,
     set: (value: T) => {
       bridgeRequest().locals.set(key, value);
     },
@@ -104,38 +123,6 @@ export function createRequestLocal<T>(description: string) {
 
 export async function headers() {
   return new Headers(bridgeRequest().request.headers);
-}
-
-export async function cookies() {
-  const context = bridgeRequest();
-  const incoming = context.cookieStore;
-  const outgoing = new ResponseCookies(context.responseHeaders);
-  const store = {
-    get: incoming.get.bind(incoming),
-    getAll: incoming.getAll.bind(incoming),
-    has: incoming.has.bind(incoming),
-    toString: incoming.toString.bind(incoming),
-    get size() {
-      return incoming.size;
-    },
-    [Symbol.iterator]: incoming[Symbol.iterator].bind(incoming),
-    set(...args: Parameters<ResponseCookies['set']>) {
-      outgoing.set(...args);
-      const name = typeof args[0] === 'string' ? args[0] : args[0].name;
-      const cookie = outgoing.get(name);
-      if (!cookie)
-        throw new Error('Start bridge cookie write was not retained');
-      incoming.set(cookie.name, cookie.value);
-      return store;
-    },
-    delete(...args: Parameters<ResponseCookies['delete']>) {
-      outgoing.delete(...args);
-      const name = typeof args[0] === 'string' ? args[0] : args[0].name;
-      incoming.delete(name);
-      return store;
-    },
-  };
-  return store;
 }
 
 export async function draftMode() {

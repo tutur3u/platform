@@ -1,19 +1,20 @@
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type BasePath, createBasePath } from '../core/base-path';
+import { createNonce } from '../core/csp';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
 import {
   APP_BASE_HEADER,
   type AppMountConfig,
   resolveAppBase,
 } from '../core/mounts';
-import type { BridgeRequestContext } from '../core/request-context';
 import { fromNextSourcePattern, matchRoute } from '../core/route-match';
 import {
   type BridgeDispatch,
   dispatchThroughProxy,
   type NextProxy,
 } from '../next/proxy-bridge';
+import type { BridgeRequestContext } from '../server/request-context';
 
 export interface AssetsBinding {
   fetch(request: Request): Promise<Response>;
@@ -52,6 +53,12 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   requestInit?: (initial: Request, headers: Headers) => RequestInit;
   observeNavigation?: BridgeRequestContext['observeNavigation'];
   waitUntil?: (ctx: Ctx) => (work: Promise<unknown>) => void;
+  /**
+   * Builds the `Content-Security-Policy` for a fresh per-response script
+   * nonce (e.g. `defaultContentSecurityPolicy`). The nonce is in the request
+   * context (`requestNonce()`); pass it to `createRouter({ ssr: { nonce } })`.
+   */
+  csp?: (nonce: string) => string;
 }
 
 /**
@@ -101,6 +108,7 @@ export function createBridgeHandler<
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
     const request = new Request(incoming, { headers });
+    const nonce = options.csp ? createNonce() : undefined;
     let response: Response;
     if (
       (request.method === 'GET' || request.method === 'HEAD') &&
@@ -126,7 +134,10 @@ export function createBridgeHandler<
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(
             base.stripRequest(forwarded) ?? forwarded,
-            origin
+            origin,
+            // Under a mount the app owns only its base; at a host root it
+            // owns every path, so a same-origin central API is a loop.
+            { ownsPath: (path) => base.isRoot || base.owns(path) }
           );
         }
         // Server functions are compiled against the root base; pages hydrate
@@ -151,8 +162,13 @@ export function createBridgeHandler<
         matches: options.matches,
         requestInit: options.requestInit,
         rewriteOrigins: [options.centralApiOrigin(env)],
+        nonce,
       });
     }
-    return base.finalizeResponse(response);
+    const final = base.finalizeResponse(response);
+    if (!nonce || !options.csp) return final;
+    const secured = new Response(final.body, final);
+    secured.headers.set('Content-Security-Policy', options.csp(nonce));
+    return secured;
   };
 }

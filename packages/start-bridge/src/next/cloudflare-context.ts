@@ -1,4 +1,4 @@
-import { bridgeRequest } from '../core/request-context';
+import { bridgeRequest } from '../server/request-context';
 
 /** `@opennextjs/cloudflare` `getCloudflareContext` over the bridge request. */
 export function getCloudflareContext<Env = unknown, Ctx = unknown>(_options?: {

@@ -1,4 +1,5 @@
 import { APP_BASE_GLOBAL, runtimeAppBase, withAppBase } from '../core/app-url';
+import { requestNonce } from '../core/csp';
 
 export {
   appPath,
@@ -6,6 +7,7 @@ export {
   runtimeAppBase,
   withAppBase,
 } from '../core/app-url';
+export { createNonce, requestNonce } from '../core/csp';
 
 /** @deprecated Use `runtimeAppBase`; kept for the v0 export surface. */
 export const appBasePath = runtimeAppBase;
@@ -19,9 +21,15 @@ export function routerBasepath(): string {
  * Head script that hands the request's base to the browser before
  * hydration. Add it first in the root route `head().scripts`.
  */
-export function appBaseHeadScript(basePath = runtimeAppBase()) {
+export function appBaseHeadScript(
+  basePath = runtimeAppBase(),
+  nonce = requestNonce()
+) {
   const value = JSON.stringify(basePath).replace(/</gu, '\\u003c');
-  return { children: `globalThis.${APP_BASE_GLOBAL}=${value};` };
+  return {
+    children: `globalThis.${APP_BASE_GLOBAL}=${value};`,
+    ...(nonce ? { nonce } : {}),
+  };
 }
 
 /**

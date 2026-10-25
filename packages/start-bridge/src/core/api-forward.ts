@@ -16,16 +16,32 @@ export interface ForwardOptions {
    */
   search?: string;
   fetcher?: typeof fetch;
+  /**
+   * Whether this app serves `pathname` on the request origin. A same-origin
+   * central API is a loop only for paths the app itself owns; omitted, any
+   * same-origin target is refused.
+   */
+  ownsPath?: (pathname: string) => boolean;
 }
 
 /**
  * Validates a configured central Web API origin: an http(s) origin with no
- * credentials or path, and never the request's own origin (a loop).
+ * credentials or path. A same-origin target is refused when it would come
+ * back to this app (a loop): always without `ownsPath`, otherwise only for
+ * paths the app owns. Mounted apps share `tuturuuu.com` with Web but own only
+ * `/<app>/*`, so their base-stripped `/api/*` reaches Web.
  */
-export function centralApiOrigin(webOrigin: string, requestUrl: URL) {
+export function centralApiOrigin(
+  webOrigin: string,
+  requestUrl: URL,
+  ownsPath?: (pathname: string) => boolean
+) {
   const origin = new URL(webOrigin);
+  const loops =
+    origin.origin === requestUrl.origin &&
+    (ownsPath ? ownsPath(requestUrl.pathname) : true);
   if (
-    origin.origin === requestUrl.origin ||
+    loops ||
     origin.username ||
     origin.password ||
     origin.pathname !== '/' ||
@@ -46,7 +62,7 @@ export async function forwardToCentralApi(
   options: ForwardOptions = {}
 ) {
   const url = new URL(request.url);
-  const origin = centralApiOrigin(webOrigin, url);
+  const origin = centralApiOrigin(webOrigin, url, options.ownsPath);
   if (!origin)
     return new Response('Invalid central API origin', { status: 503 });
   let target: string | URL;

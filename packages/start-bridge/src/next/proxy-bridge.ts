@@ -3,7 +3,7 @@ import type { NextResponse } from 'next/dist/server/web/spec-extension/response'
 import {
   type BridgeRequestContext,
   withBridgeRequest,
-} from '../core/request-context';
+} from '../server/request-context';
 
 export type NextProxy = (request: NextRequest) => Promise<NextResponse>;
 export type BridgeDispatch = (request: NextRequest) => Promise<Response>;
@@ -59,6 +59,8 @@ export interface ProxyBridgeOptions {
   cloudflare?: BridgeRequestContext['cloudflare'];
   observeNavigation?: BridgeRequestContext['observeNavigation'];
   locals?: BridgeRequestContext['locals'];
+  /** CSP script nonce for this response. */
+  nonce?: string;
   /** Middleware matcher over the app-relative pathname. */
   matches?: (pathname: string) => boolean;
   /** Next `basePath`; `nextUrl.pathname` is then app-relative. Also the
@@ -125,6 +127,7 @@ export async function dispatchThroughProxy({
   basePath = '',
   requestInit = forwardedRequestInit,
   rewriteOrigins = [],
+  nonce,
 }: ProxyBridgeOptions) {
   const allowedOrigins = new Set(
     rewriteOrigins.map((origin) => new URL(origin).origin)
@@ -138,6 +141,7 @@ export async function dispatchThroughProxy({
     observeNavigation,
     locals,
     appBase: basePath,
+    nonce,
   };
   return withBridgeRequest(
     { ...context, request: initial, cookieSource: initial.headers },

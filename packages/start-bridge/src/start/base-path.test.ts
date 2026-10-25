@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { APP_BASE_GLOBAL, installAppBaseResolver } from '../core/app-url';
-import { withBridgeRequest } from '../core/request-context';
+import { withBridgeRequest } from '../server/request-context';
 import {
   appBaseHeadScript,
   appPath,

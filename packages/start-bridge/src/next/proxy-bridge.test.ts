@@ -6,7 +6,7 @@ import {
   cookies,
   headers,
   withBridgeRequest,
-} from '../core/request-context';
+} from '../server/request-context';
 import { defaultProxyMatches, dispatchThroughProxy } from './proxy-bridge';
 
 const waitUntil = (promise: Promise<unknown>) => {
