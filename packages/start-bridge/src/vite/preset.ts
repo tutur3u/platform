@@ -1,10 +1,10 @@
 import { fileURLToPath } from 'node:url';
-import { type BasePath, createBasePath } from '../core/base-path';
 
 /**
- * Vite+/TanStack Start configuration fragments for a bridged app. This module
- * imports no Vite plugin so it loads in any config loader; the app config
- * spreads the returned values into its own `defineConfig` call.
+ * Vite+/TanStack Start configuration fragments for a bridged app. Vite+ loads
+ * workspace config dependencies with native Node type stripping, which cannot
+ * resolve extensionless relative imports, so this module imports nothing but
+ * Node built-ins. Its basePath rules mirror `createBasePath` (parity-tested).
  */
 export const NEXT_SHIMS = {
   'next/headers': 'next/headers.ts',
@@ -84,8 +84,40 @@ export function startBridgeAliases(
   return alias;
 }
 
+/** Build-time values of the basePath contract (see `createBasePath`). */
+export interface PresetBasePath {
+  basePath: string;
+  app: string;
+  isRoot: boolean;
+  assetBase: string;
+  serverFnBase: string;
+  routerBasepath: string;
+}
+
+export function presetBasePath(
+  app: string,
+  input: string | undefined
+): PresetBasePath {
+  if (!/^[a-z0-9][a-z0-9-]*$/u.test(app))
+    throw new Error(`Invalid app id: ${app}`);
+  const basePath = (input ?? '').trim().replace(/\/+$/u, '');
+  if (
+    basePath &&
+    !/^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u.test(basePath)
+  )
+    throw new Error(`Invalid basePath: ${input}`);
+  return {
+    basePath,
+    app,
+    isRoot: basePath === '',
+    assetBase: `${basePath}/`,
+    serverFnBase: `${basePath}/_serverFn`,
+    routerBasepath: basePath || '/',
+  };
+}
+
 export interface StartBridgePreset {
-  basePath: BasePath;
+  basePath: PresetBasePath;
   /** Vite `base`. */
   base: string;
   alias: StartBridgeAlias[];
@@ -115,10 +147,10 @@ export function startBridgePreset(
   options: StartBridgePresetOptions,
   env: Record<string, string | undefined> = process.env
 ): StartBridgePreset {
-  const basePath = createBasePath({
-    app: options.app,
-    basePath: options.basePath ?? env.TUTURUUU_BASE_PATH,
-  });
+  const basePath = presetBasePath(
+    options.app,
+    options.basePath ?? env.TUTURUUU_BASE_PATH
+  );
   return {
     basePath,
     base: basePath.assetBase,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { startBridgePreset } from './preset';
+import { createBasePath } from '../core/base-path';
+import { presetBasePath, startBridgePreset } from './preset';
 
 const appRoot = 'file:///repo/apps/apps/vite.config.mts';
 
@@ -57,5 +58,34 @@ describe('Vite preset', () => {
     );
     expect(preset.alias.at(-1)?.find).toBe('@/');
     expect(preset.alias).toHaveLength(10);
+  });
+
+  it('matches createBasePath for every accepted and rejected input', () => {
+    const keys = [
+      'basePath',
+      'app',
+      'isRoot',
+      'assetBase',
+      'serverFnBase',
+      'routerBasepath',
+    ] as const;
+    for (const input of [undefined, '', '/', '/meet', '/meet/', '/a/b-c']) {
+      const full = createBasePath({ app: 'meet', basePath: input });
+      expect(presetBasePath('meet', input)).toEqual(
+        Object.fromEntries(keys.map((key) => [key, full[key]]))
+      );
+    }
+    for (const input of ['meet', '/Meet', '//x', '/a?b'])
+      expect(() => presetBasePath('meet', input)).toThrow('Invalid basePath');
+    expect(() => presetBasePath('Meet', '')).toThrow('Invalid app id');
+  });
+
+  it('imports only Node built-ins so native type stripping can load it', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const source = await readFile(
+      new URL('./preset.ts', import.meta.url),
+      'utf8'
+    );
+    expect(source.match(/^import .* from '(?!node:)[^']*';$/gmu)).toBeNull();
   });
 });

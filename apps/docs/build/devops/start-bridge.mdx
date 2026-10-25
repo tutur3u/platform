@@ -37,7 +37,7 @@ signature needs a new subpath and a coordinated migration.
 | `intl`, `intl/localized-navigation`, `intl/server` | `next-intl` on `use-intl`; en/vi localized links; `createIntlServer(messages)` | English unprefixed, Vietnamese under `/vi` |
 | `start/handler` | `createBridgeHandler(options)` | The Worker `fetch` skeleton |
 | `start/base-path` | `appBasePath`, `routerBasepath`, `withAppBase` | Build-time base for app code |
-| `vite` | `startBridgePreset`, `startBridgeAliases`, `NEXT_SHIMS` | Plain config fragments; no plugin imports |
+| `vite` | `startBridgePreset`, `startBridgeAliases`, `presetBasePath`, `NEXT_SHIMS` | Plain config fragments; imports only Node built-ins because Vite+ loads it with native type stripping |
 | `codegen` + bin `start-bridge-routes` | `planRegistries`, `classifyRouteFile`, renderers; CLI `generate`/`check` | Fails on any unregistered `route.*`/`page.*` |
 
 ## Worker handler
