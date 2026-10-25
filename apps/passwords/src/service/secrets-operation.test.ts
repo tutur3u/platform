@@ -84,6 +84,15 @@ describe('file-only operation', () => {
     }
     expect(f.contextCalls()).toBe(0);
   });
+  it('rejects ambient cookies before machine authentication', async () => {
+    const f = await fixture();
+    const request = f.request('list');
+    const headers = new Headers(request.headers);
+    headers.set('cookie', 'tuturuuu_app_session=ambient-cookie');
+    const result = await f.handler(new Request(request, { headers }));
+    expect(result?.status).toBe(403);
+    expect(f.contextCalls()).toBe(0);
+  });
   it('bounds body bytes and aborts stalled body consumption', async () => {
     const f = await fixture();
     const request = f.request('put', {
