@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { createOfflineWorker } from '../../../../packages/offline/src/worker';
+import { cleanupLegacyCalendarCaches } from './legacy-offline-cache';
 import { calendarOfflineContract, isNativeStaticAsset } from './offline-assets';
 
 declare const self: ServiceWorkerGlobalScope & {
@@ -22,3 +23,12 @@ createOfflineWorker({
     },
   ],
 }).addEventListeners();
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    cleanupLegacyCalendarCaches({
+      origin: self.location.origin,
+      storage: caches,
+    })
+  );
+});

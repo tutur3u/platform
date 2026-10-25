@@ -7,8 +7,11 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type UserConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
 import { CALENDAR_FUNCTION_BASE } from './src/runtime/native-function-config';
+import { createCalendarNativePortResolver } from './src/runtime/native-port-resolver';
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
+
+const nativePorts = createCalendarNativePortResolver(local);
 
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
@@ -34,34 +37,13 @@ export default defineConfig(
       {
         name: 'calendar-owned-native-ports',
         enforce: 'pre',
-        resolveId(source, importer) {
-          if (!importer) return;
-          if (
-            importer.endsWith(
-              '/packages/satellite/src/components/workspace-settings/settings-workspace-breadcrumb.tsx'
-            ) &&
-            source === '../../utils/workspace-actions'
-          )
-            return local('./src/runtime/workspace-actions.ts');
-          if (
-            importer.endsWith(
-              '/packages/supabase/src/next/realtime-log-provider.tsx'
-            ) &&
-            source === './realtime-log-actions'
-          )
-            return local('./src/runtime/realtime-log-actions.ts');
-          if (
-            importer.includes('/apps/calendar/') &&
-            !importer.endsWith('/legacy-telemetry-supplier.server.ts') &&
-            /(?:^|\/)infrastructure\/log-drain$/u.test(source)
-          )
-            return local('./src/runtime/request-telemetry.server.ts');
-          if (
-            importer.includes('/apps/calendar/') &&
-            /(?:^|\/)actions$/u.test(source) &&
-            importer.includes('/(dashboard)/[wsId]/')
-          )
-            return local('./src/runtime/workspace-actions.ts');
+        resolveId: nativePorts.resolveId,
+        buildStart() {
+          // Client-only suppliers resolve before the final SSR bundle.
+          if (this.environment.name === 'client') nativePorts.reset();
+        },
+        generateBundle() {
+          if (this.environment.name === 'ssr') nativePorts.assertComplete();
         },
       },
       startBridgeNodeBuiltinsPlugin(),

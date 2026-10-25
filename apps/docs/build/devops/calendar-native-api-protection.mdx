@@ -559,3 +559,16 @@ with mocked Google and storage boundaries: token-free logs, pagination/storage,
 first-page 410 clearing and next-invocation fetching, and non-410 propagation.
 They do not prove live Google acceptance, clear-failure recovery, later-page
 recovery correctness, or database event-write behavior.
+
+## Native port and offline migration checks
+
+The native Calendar SSR build requires every configured native port substitution
+to run. A moved supplier or import must update the owning resolver; a missing
+substitution fails the build before an original server action can ship.
+
+Calendar uses its own `calendar` offline cache namespace. Activation on exactly
+`https://calendar.tuturuuu.com` retires the previous `tuturuuu-offline-precache-*`
+and `tuturuuu-offline-runtime-v1` caches. Repeated activation is idempotent.
+Apex and staging apex origins retain Web's legacy caches, including when the
+Calendar worker has a `/calendar` scope. Source tests and the emitted classic
+worker acceptance cover this migration boundary.
