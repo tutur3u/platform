@@ -56,8 +56,31 @@ vi.mock('@/lib/workspace-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ownedChatAdmin('user-1'),
   createDynamicAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
+
+// Stored-object verification has its own tests; these cover routing only.
+vi.mock('@/legacy-api-routes/ai/chat/_lib/chat-resource-object-guard', () => ({
+  verifyAiChatStoredObjects: async ({
+    objects,
+  }: {
+    objects: { path: string }[];
+  }) => new Map(objects.map(({ path }) => [path, 'valid'])),
+}));
+
+/** The actor owns the requested chat; ownership is covered elsewhere. */
+function ownedChatAdmin(userId: string) {
+  const query = {
+    select: () => query,
+    eq: () => query,
+    maybeSingle: async () => ({
+      data: { id: '11111111-1111-4111-8111-111111111111', creator_id: userId },
+      error: null,
+    }),
+  };
+  return { from: () => query, schema: () => ({ from: () => query }) };
+}
 
 type FileUrlsRouteHandler = (
   request: NextRequest,
