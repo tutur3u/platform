@@ -28,7 +28,10 @@ it('keeps concurrent mounted and subdomain AI URLs request-local', async () => {
             `${origin}${appBase}/api/v1/workspaces/one/ai/usage?period=month`
           );
           expect(resolve('/api/v1/workspaces/one/avatar')).toBe(
-            '/api/v1/workspaces/one/avatar'
+            `${origin}${appBase}/api/v1/workspaces/one/avatar`
+          );
+          expect(resolve('/api/v1/workspaces/one/settings/permissions')).toBe(
+            '/api/v1/workspaces/one/settings/permissions'
           );
           expect(resolve('/api/v1/workspaces/one/tasks')).toBe(
             '/api/v1/workspaces/one/tasks'
