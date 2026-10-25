@@ -340,6 +340,7 @@
                   "build/devops/tuturuuu-bot",
                   "build/devops/active-runtime",
                   "build/devops/wave1-native-cutover",
+                  "build/devops/native-start-migration",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/shortener-start-void",
                   "build/devops/wave1-native-publishers",

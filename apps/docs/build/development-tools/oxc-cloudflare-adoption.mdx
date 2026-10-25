@@ -17,9 +17,11 @@ release/generated-file formatting remain authoritative. No workspace has complet
 the switch merely because these tools are installed.
 
 Lettin and Parley already have Next.js/OpenNext Worker deployments. Their next
-architecture milestone is a Vite-native runtime preserving existing contracts.
-React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
-a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
+architecture milestone is the same per-app TanStack Start + Void + Vite+ Worker
+runtime as the other web apps, reaching `next/*` only through
+`@tuturuuu/start-bridge` and preserving existing contracts. See the
+[native Start migration runbook](/build/devops/native-start-migration). The
+retired `apps/tanstack-web` is not revived.
 
 ## Platform-wide target and daily checkpoints
 
@@ -260,7 +262,7 @@ MFA, consent, membership and revocation checks in reusable policy services.
 Current seams include Lettin's Actor/Store context and SQL permission fences,
 with bindings/identity/HTTP as framework adapters. Parley/Meet domain contracts can
 remain shared while routes, session lookup and meeting UI adapters are extracted.
-A package can support Next.js, React Router or other React hosts by implementing
+A package can support Next.js, TanStack Start or other React hosts by implementing
 these small adapters; support for every framework is a goal requiring consumer
 verification, not an automatic guarantee.
 
@@ -378,4 +380,4 @@ CI; a migration direction does not authorize production cutover.
 - [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html)
 - [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
-- [React Router on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/)
+- [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
