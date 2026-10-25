@@ -16,9 +16,15 @@ export const UNKNOWN_CLIENT_IP = 'unknown';
 
 export const TRUSTED_PROXY_ENV = 'TRUSTED_PROXY';
 export const TRUSTED_PROXY_HOPS_ENV = 'TRUSTED_PROXY_HOPS';
+/** Shared secret Cloudflare injects when it proxies to the Vercel origin. */
+export const TRUSTED_PROXY_ORIGIN_SECRET_ENV = 'TRUSTED_PROXY_ORIGIN_SECRET';
+/** Request header carrying {@link TRUSTED_PROXY_ORIGIN_SECRET_ENV}. */
+export const CLOUDFLARE_ORIGIN_AUTH_HEADER = 'x-tuturuuu-origin-auth';
+const MIN_ORIGIN_SECRET_LENGTH = 32;
 
 export const TRUSTED_PROXY_MODES = [
   'cloudflare',
+  'cloudflare-origin',
   'vercel',
   'forwarded',
   'none',
@@ -34,6 +40,11 @@ export interface ClientIpConfig {
    * the right; anything further left is client-supplied and ignored.
    */
   trustedHops: number;
+  /**
+   * `cloudflare-origin` only: the secret Cloudflare adds to every request it
+   * proxies to Vercel. Absent or too short means no request is authenticated.
+   */
+  originAuthSecret?: string;
 }
 
 export type ClientIpHeaders =
@@ -78,6 +89,44 @@ function parseTrustedHops(raw: string | undefined): number {
   return Math.min(parsed, MAX_TRUSTED_HOPS);
 }
 
+let weakOriginSecretWarned = false;
+
+function resolveOriginAuthSecret(env: ClientIpEnv): string | undefined {
+  const secret = env[TRUSTED_PROXY_ORIGIN_SECRET_ENV]?.trim();
+  if (secret && secret.length >= MIN_ORIGIN_SECRET_LENGTH) return secret;
+  if (!weakOriginSecretWarned) {
+    weakOriginSecretWarned = true;
+    console.warn(
+      `[client-ip] cloudflare-origin needs ${TRUSTED_PROXY_ORIGIN_SECRET_ENV} of at least ${MIN_ORIGIN_SECRET_LENGTH} characters; Cloudflare client IPs are not trusted.`
+    );
+  }
+  return undefined;
+}
+
+/** Comparison whose time depends only on the secret's length. */
+function constantTimeEquals(actual: string, expected: string): boolean {
+  let difference = actual.length ^ expected.length;
+  for (let index = 0; index < expected.length; index++) {
+    // Past the end `charCodeAt` is NaN, which `|| 0` turns into a mismatch-safe 0.
+    difference |= (actual.charCodeAt(index) || 0) ^ expected.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+/**
+ * Whether the request came through the Cloudflare proxy that holds the
+ * configured origin secret. Direct requests to the Vercel origin never pass.
+ */
+export function isAuthenticatedCloudflareOrigin(
+  headers: ClientIpHeaders,
+  config: ClientIpConfig
+): boolean {
+  const secret = config.originAuthSecret;
+  if (config.mode !== 'cloudflare-origin' || !secret) return false;
+  const presented = readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER);
+  return presented !== null && constantTimeEquals(presented, secret);
+}
+
 /**
  * Resolve which proxy headers this deployment may trust.
  *
@@ -93,6 +142,13 @@ export function resolveTrustedProxyConfig(
   const explicit = env[TRUSTED_PROXY_ENV]?.trim().toLowerCase();
 
   if (explicit) {
+    if (explicit === 'cloudflare-origin') {
+      return {
+        mode: explicit,
+        trustedHops,
+        originAuthSecret: resolveOriginAuthSecret(env),
+      };
+    }
     if (isTrustedProxyMode(explicit)) {
       return { mode: explicit, trustedHops };
     }
@@ -232,6 +288,20 @@ export function pickForwardedClientIp(
   return normalizeClientIp(entries[index]);
 }
 
+function resolveVercelClientIp(headers: ClientIpHeaders): string | null {
+  // Vercel overwrites these headers and does not forward external IPs.
+  // `x-vercel-forwarded-for` survives a proxy placed in front of Vercel.
+  for (const name of [
+    'x-vercel-forwarded-for',
+    'x-real-ip',
+    'x-forwarded-for',
+  ]) {
+    const value = readHeader(headers, name);
+    if (value) return pickForwardedClientIp(value, 1);
+  }
+  return null;
+}
+
 function resolveForMode(
   headers: ClientIpHeaders,
   config: ClientIpConfig
@@ -240,19 +310,15 @@ function resolveForMode(
     case 'cloudflare':
       // Cloudflare's edge overwrites this header on every proxied request.
       return normalizeClientIp(readHeader(headers, 'cf-connecting-ip'));
-    case 'vercel': {
-      // Vercel overwrites these headers and does not forward external IPs.
-      // `x-vercel-forwarded-for` survives a proxy placed in front of Vercel.
-      for (const name of [
-        'x-vercel-forwarded-for',
-        'x-real-ip',
-        'x-forwarded-for',
-      ]) {
-        const value = readHeader(headers, name);
-        if (value) return pickForwardedClientIp(value, 1);
-      }
-      return null;
-    }
+    case 'cloudflare-origin':
+      // Cloudflare in front of Vercel. Only a request carrying the origin
+      // secret came through Cloudflare, so only then is its overwritten
+      // client header meaningful; a direct hit falls back to Vercel's headers.
+      return isAuthenticatedCloudflareOrigin(headers, config)
+        ? normalizeClientIp(readHeader(headers, 'cf-connecting-ip'))
+        : resolveVercelClientIp(headers);
+    case 'vercel':
+      return resolveVercelClientIp(headers);
     case 'forwarded': {
       const forwardedFor = readHeader(headers, 'x-forwarded-for');
       if (forwardedFor) {
