@@ -57,7 +57,12 @@
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
-              />            
+              />
+            <!-- Static Mira shortcuts and App Actions; see res/xml/shortcuts.xml
+                 in each flavor (targetPackage differs per applicationId). -->
+            <meta-data
+              android:name="android.app.shortcuts"
+              android:resource="@xml/shortcuts" />            
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -92,6 +97,24 @@
                 <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/settings.*" />
             </intent-filter>
         </activity>
+        <!-- Launcher-shortcut trampoline. Not exported: other apps cannot
+             start a Mira voice session through it. -->
+        <activity
+            android:name=".assistant.MiraShortcutActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
+        <!-- Google Assistant App Actions entry. Exported, therefore untrusted:
+             Flutter confirms on screen before the microphone opens. -->
+        <activity
+            android:name=".assistant.MiraAssistantActionActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:screenOrientation="portrait"

@@ -31,6 +31,8 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_settings_refresh.dart';
 import 'package:mobile/features/assistant/data/assistant_settings_selection.dart';
+import 'package:mobile/features/assistant/launch/assistant_launch_action.dart';
+import 'package:mobile/features/assistant/launch/assistant_launch_coordinator.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_state.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
@@ -52,6 +54,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_primary_act
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_launch_confirmation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
@@ -88,6 +91,7 @@ part 'assistant_page_chrome.dart';
 part 'assistant_page_history.dart';
 part 'assistant_page_local.dart';
 part 'assistant_page_submission.dart';
+part 'assistant_page_launch.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({
@@ -97,6 +101,7 @@ class AssistantPage extends StatefulWidget {
     this.preferences,
     this.currentActor,
     this.liveRepository,
+    this.launchCoordinator,
   });
 
   final int replayToken;
@@ -104,6 +109,7 @@ class AssistantPage extends StatefulWidget {
   final AssistantPreferences? preferences;
   final String? Function()? currentActor;
   final AssistantLiveRepository? liveRepository;
+  final AssistantLaunchCoordinator? launchCoordinator;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -118,6 +124,8 @@ class _AssistantPageState extends State<AssistantPage>
   String? _currentActor() => (widget.currentActor ?? currentCacheUserId)();
   late final AssistantLiveRepository _liveRepository =
       widget.liveRepository ?? AssistantLiveRepository();
+  late final AssistantLaunchCoordinator _launchCoordinator =
+      widget.launchCoordinator ?? AssistantLaunchCoordinator.instance;
   final _voiceCapture = AssistantVoiceCaptureCubit();
   String? _voiceWorkspaceId;
   String? _voiceActorId;
@@ -276,6 +284,7 @@ class _AssistantPageState extends State<AssistantPage>
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_handleScroll);
     _inputFocusNode.addListener(_handleInputFocusChange);
+    _launchCoordinator.request.addListener(_scheduleLaunchDrain);
   }
 
   @override
@@ -316,6 +325,7 @@ class _AssistantPageState extends State<AssistantPage>
     super.didChangeDependencies();
     if (TickerMode.valuesOf(context).enabled) {
       _resumeLocal();
+      _scheduleLaunchDrain();
     } else {
       _liveHaptics.suspend();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -337,6 +347,7 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _launchCoordinator.request.removeListener(_scheduleLaunchDrain);
     _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);
     _inputFocusNode.removeListener(_handleInputFocusChange);

@@ -4718,5 +4718,15 @@
   "offlineDownloadsPaused": "Đã tạm dừng tải xuống. Bạn vẫn có thể dùng dữ liệu đã lưu. Ứng dụng sẽ thử lại trong nền.",
   "offlineDownloadsRetryLimit": "Hiện vẫn chưa thể tải xuống. Hãy thử lại sau; bạn vẫn có thể dùng dữ liệu đã lưu.",
   "mailSettingsReadOnly": "Cài đặt đã lưu ở chế độ chỉ đọc cho đến khi xác minh được quyền truy cập.",
-  "calendarSettingsError": "Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng."
+  "calendarSettingsError": "Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng.",
+  "assistantLaunchVoiceConfirmTitle": "Bắt đầu trò chuyện bằng giọng nói với {assistantName}?",
+  "@assistantLaunchVoiceConfirmTitle": {
+    "placeholders": {
+      "assistantName": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLaunchVoiceConfirmDescription": "Một lối tắt đã yêu cầu bắt đầu trò chuyện bằng giọng nói. Micrô chỉ bật sau khi bạn chọn Bắt đầu.",
+  "assistantLaunchVoiceConfirmStart": "Bắt đầu"
 }

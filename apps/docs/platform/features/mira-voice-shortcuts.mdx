@@ -1,0 +1,108 @@
+---
+title: "Mira Voice Shortcuts"
+updatedAt: "2026-10-25"
+description: "Start Mira Live voice chat hands-free with Siri, Shortcuts, a custom \"Hey Mira\" Vocal Shortcut, Android launcher shortcuts and Google Assistant."
+---
+
+The Tuturuuu mobile app exposes system shortcuts that open Mira and start a Live
+voice chat in one step. On iPhone you can bind them to a custom spoken phrase such
+as "Hey Mira". Grok's "Start Voice Chat with Bot" action works the same way.
+
+## Set up "Hey Mira" on iPhone
+
+Requires iOS 18 or later for Vocal Shortcuts. The actions themselves work from
+iOS 16.
+
+1. Open the Tuturuuu app once and sign in.
+2. Open **Shortcuts**, tap **+**, search for **Tuturuuu**, and add
+   **Start Mira voice chat**. Name the shortcut, for example "Mira voice".
+3. Open **Settings → Accessibility → Vocal Shortcuts → Set Up Vocal Shortcuts**.
+   Choose **Shortcut → Mira voice**. Say your phrase, for example "Hey Mira",
+   three times.
+4. Optional: in the shortcut's details, turn on **Allow Running When Locked**.
+   When the phone is locked, saying the phrase still asks for Face ID or the
+   passcode before Tuturuuu opens. When the phone is unlocked, saying the phrase
+   opens Mira Live and starts listening with no other input.
+
+Without setup, you can say "Talk to Mira in Tuturuuu" or "Start Mira voice chat
+in Tuturuuu" to Siri. The **Ask Mira** action ("Ask Mira in Tuturuuu") asks
+what you want to ask and sends that question to Mira chat. In Vietnamese, the
+phrases are "Nói chuyện với Mira trên Tuturuuu" and "Hỏi Mira trên Tuturuuu".
+
+## Android
+
+- **Launcher shortcuts:** long-press the Tuturuuu icon and choose **Mira voice**
+  or **Mira chat**. Drag one to the home screen to pin it. **Mira voice** starts
+  Live directly. **Mira chat** opens the chat composer.
+- **Google Assistant:** say "Hey Google, open Mira voice chat on Tuturuuu".
+  Tuturuuu opens and asks **Start voice chat with Mira?** The microphone turns
+  on only after you tap **Start**.
+
+## Product decisions
+
+**Scope.** These shortcuts cover Mira in the native mobile app (iOS and Android).
+They start the same Live call as the in-app call button, for the current chat,
+in the selected workspace. Web, desktop and Meet assistants have no system
+shortcuts.
+
+**Default.** The shortcuts are available after install with no in-app setting.
+Nothing listens in the background, and Tuturuuu registers no always-on wake
+word. "Hey Mira" is a phrase the user records in iOS Accessibility, and iOS
+recognizes it on the device.
+
+**Sign-in, workspace and locks.** The app holds a shortcut request until all of
+these are true, then opens Mira:
+
+- the user is signed in (signed-out users see sign-in first);
+- the in-app Tuturuuu app lock, if enabled, is unlocked;
+- the app is in the foreground;
+- a workspace is available (otherwise the workspace picker opens).
+
+A request expires after five minutes. If sign-in takes longer, Mira opens without
+starting the microphone. Switching accounts or signing out discards a held
+request. Live opens only when the workspace has Live access; otherwise the app
+shows the existing Live access sheet. The first call still shows the system
+microphone permission prompt.
+
+**One session.** Each request has an id. A repeated trigger, whether a double
+tap or the same action seen at cold start and again after resume, is handled
+once. A request is claimed only by the signed-in actor it was delivered for.
+Live starts through the same start gate as the call button, so a trigger
+during an active or connecting call reuses that session.
+
+**Per-platform trust (intentional exceptions):**
+
+| Entry | Who can invoke it | Voice | Prompt |
+| --- | --- | --- | --- |
+| iOS App Intents (Siri, Shortcuts, Vocal Shortcuts, Spotlight) | Only the user, through the system | Starts directly | **Ask Mira** sends the spoken or typed question |
+| Android launcher shortcuts | Only the launcher, for the user. The target activity is not exported | Starts directly | Opens the composer, with no text |
+| Android Google Assistant (App Actions) | Any app could send this intent, because the activity is exported | Asks **Start voice chat with Mira?** first | Not supported |
+| Android `MainActivity` with a Mira shortcut action | Any app | Ignored; opens the app normally | Ignored |
+| Web links (`tuturuuu.com/.../assistant`) | Anyone | Opens Mira without starting Live | Not supported |
+
+On iOS, `openAppWhenRun` and `requiresAuthentication` mean the device must be
+unlocked before Tuturuuu comes to the foreground, so the microphone can't start
+from the lock screen. No exported or URL path can open the microphone without a
+visible confirmation, or send a prompt.
+
+## Implementation
+
+- iOS: `ios/Runner/AssistantShortcutIntents.swift` (intents and
+  `AppShortcutsProvider`) and `AssistantShortcutsPlugin.swift` (inbox and the
+  `mobile/assistant_shortcuts` channel). Phrases and titles are in
+  `en.lproj` and `vi.lproj` (`AppShortcuts.strings`, `Localizable.strings`).
+- Android: `kotlin/.../assistant/` (`MiraShortcutActivity`,
+  `MiraAssistantActionActivity`, `AssistantShortcutIntents`, inbox and plugin).
+  Static shortcuts are in `src/<flavor>/res/xml/shortcuts.xml`, one file per
+  flavor because `targetPackage` differs.
+- Flutter: `AssistantLaunchChannel` drains native actions, and
+  `AssistantLaunchCoordinator` applies the gates above. The Assistant page claims
+  the request in `assistant_page_launch.dart`.
+
+Regression coverage: `assistant_launch_coordinator_test.dart` (cold, warm,
+signed-out, locked, missing workspace, duplicate, actor and expiry),
+`assistant_launch_channel_test.dart`, `assistant_launch_action_test.dart`,
+`assistant_launch_page_test.dart` (confirmation, no access, prefill only, wrong
+actor), `AssistantShortcutIntentsTest.kt` (an external explicit intent to
+`MainActivity` never starts Live; App Actions stay untrusted and voice-only), and
+`RunnerTests.swift` (payload and inbox).

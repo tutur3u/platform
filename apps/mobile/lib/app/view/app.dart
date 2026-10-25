@@ -42,6 +42,8 @@ import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/launch/assistant_launch_channel.dart';
+import 'package:mobile/features/assistant/launch/assistant_launch_coordinator.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -88,6 +90,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'app_push_navigation.dart';
 part 'app_inventory_warmup.dart';
 part 'app_offline_preparation.dart';
+part 'app_assistant_launch.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -148,6 +151,9 @@ class _AppState extends State<App> {
   late final _AppLifecycleObserver _lifecycleObserver;
   StreamSubscription<Uri>? _appLinkSubscription;
   MobileDeepLink? _pendingDeepLink;
+  late final AssistantLaunchHost _assistantLaunchHost;
+  AssistantLaunchChannel? _assistantLaunchChannel;
+  String? _assistantLaunchActor;
   DateTime? _backgroundedAt;
 
   @override
@@ -235,6 +241,7 @@ class _AppState extends State<App> {
       initialLocation: widget.initialRoute,
     );
     _initializeDeepLinks();
+    _initializeAssistantLaunch();
     unawaited(_localeCubit.loadLocale());
     unawaited(_calendarSettingsCubit.loadUserPreference());
     unawaited(_experimentalAppsCubit.load());
@@ -360,6 +367,7 @@ class _AppState extends State<App> {
   @override
   void dispose() {
     _unregisterOfflinePreparation();
+    _disposeAssistantLaunch();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     unawaited(_appLinkSubscription?.cancel());
     _router.dispose();
@@ -415,6 +423,7 @@ class _AppState extends State<App> {
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
                 _syncOfflinePreparationScope(resetWorkspace: true);
+                _syncAssistantLaunchActor();
                 ProfileCubit.clearMemoryCache();
                 if (state.status == AuthStatus.authenticated) {
                   unawaited(
@@ -483,6 +492,20 @@ class _AppState extends State<App> {
                 unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
                 unawaited(_openPendingDeepLinkIfReady());
               },
+            ),
+            BlocListener<WorkspaceCubit, WorkspaceState>(
+              listenWhen: (previous, current) =>
+                  previous.status != current.status ||
+                  previous.currentWorkspace?.id != current.currentWorkspace?.id,
+              listener: (_, _) =>
+                  AssistantLaunchCoordinator.instance.tryDeliver(),
+            ),
+            BlocListener<AppLockCubit, AppLockState>(
+              listenWhen: (previous, current) =>
+                  previous.locked != current.locked ||
+                  previous.hasLoaded != current.hasLoaded,
+              listener: (_, _) =>
+                  AssistantLaunchCoordinator.instance.tryDeliver(),
             ),
           ],
           child: BlocBuilder<LocaleCubit, LocaleState>(

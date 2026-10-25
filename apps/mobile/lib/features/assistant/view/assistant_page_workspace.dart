@@ -42,5 +42,6 @@ extension _AssistantPageWorkspace on _AssistantPageState {
     unawaited(_shellCubit.loadWorkspace(workspace));
     _shellCubit.setImmersiveMode(false);
     unawaited(_chatCubit.loadWorkspace(workspace.id));
+    _scheduleLaunchDrain();
   }
 }

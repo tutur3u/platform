@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep in sync across production/staging/development flavors; only
+     android:targetPackage differs. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="mira_voice"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/mira_shortcut_voice_short"
+        android:shortcutLongLabel="@string/mira_shortcut_voice_long">
+        <intent
+            android:action="com.tuturuuu.app.mobile.action.START_MIRA_VOICE"
+            android:targetPackage="com.tuturuuu.app.mobile"
+            android:targetClass="com.tuturuuu.app.mobile.assistant.MiraShortcutActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="mira_chat"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/mira_shortcut_chat_short"
+        android:shortcutLongLabel="@string/mira_shortcut_chat_long">
+        <intent
+            android:action="com.tuturuuu.app.mobile.action.OPEN_MIRA_CHAT"
+            android:targetPackage="com.tuturuuu.app.mobile"
+            android:targetClass="com.tuturuuu.app.mobile.assistant.MiraShortcutActivity" />
+    </shortcut>
+    <!-- "Hey Google, open Mira voice chat on Tuturuuu". Exported and untrusted:
+         Flutter shows a confirmation before the microphone opens. -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:targetPackage="com.tuturuuu.app.mobile"
+            android:targetClass="com.tuturuuu.app.mobile.assistant.MiraAssistantActionActivity">
+            <parameter
+                android:name="feature"
+                android:key="feature" />
+        </intent>
+    </capability>
+</shortcuts>

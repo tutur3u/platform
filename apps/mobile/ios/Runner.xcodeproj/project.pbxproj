@@ -23,6 +23,10 @@
 		BFF989FEA8BC6D083EAC560A /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51D520EFFEBFB4B98150DD26 /* Pods_Runner.framework */; };
 		C55CDB213877C51DA2BBA38E /* LiveScreenSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E106669B9E6A865BCC11EA /* LiveScreenSession.swift */; };
 		CD49B4F9E05A6EC559DEC45F /* LiveScreenBroadcast.appex in Embed Live Broadcast Extension */ = {isa = PBXBuildFile; fileRef = 7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A5515C0000000000000000A2 /* AssistantShortcutsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5515C0000000000000000A1 /* AssistantShortcutsPlugin.swift */; };
+		A5515C0000000000000000A4 /* AssistantShortcutIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5515C0000000000000000A3 /* AssistantShortcutIntents.swift */; };
+		A5515C0000000000000000A8 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = A5515C0000000000000000A5 /* AppShortcuts.strings */; };
+		A5515C0000000000000000AC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A5515C0000000000000000A9 /* Localizable.strings */; };
 		E6E79E6687FB6C866E0BC4D6 /* LiveScreenCapturePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */; };
 		EB5303CF837D875CD804AAF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF8F1777CC86A04CCD67BADC /* Localizable.strings */; };
 /* End PBXBuildFile section */
@@ -109,6 +113,12 @@
 		AE20919566879215181712FC /* Pods-RunnerTests.release-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-production.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-production.xcconfig"; sourceTree = "<group>"; };
 		B1C6298825328F0979CA5512 /* Pods-Runner.release-development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-development.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-development.xcconfig"; sourceTree = "<group>"; };
 		C6693A43C03DD2083A932770 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A5515C0000000000000000A1 /* AssistantShortcutsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantShortcutsPlugin.swift; sourceTree = "<group>"; };
+		A5515C0000000000000000A3 /* AssistantShortcutIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantShortcutIntents.swift; sourceTree = "<group>"; };
+		A5515C0000000000000000A6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		A5515C0000000000000000A7 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		A5515C0000000000000000AA /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A5515C0000000000000000AB /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = LiveScreenCapturePlugin.swift; path = LiveScreenCapturePlugin.swift; sourceTree = "<group>"; };
 		C9102F808D710857DD2B01A6 /* SampleHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = SampleHandler.swift; path = SampleHandler.swift; sourceTree = "<group>"; };
 		DA7107FF798637B85D5571EB /* Pods-RunnerTests.profile-staging.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-staging.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-staging.xcconfig"; sourceTree = "<group>"; };
@@ -238,6 +248,10 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */,
 				DE1100010000000000000002 /* DeliveredInboxNotificationsPlugin.swift */,
+				A5515C0000000000000000A1 /* AssistantShortcutsPlugin.swift */,
+				A5515C0000000000000000A3 /* AssistantShortcutIntents.swift */,
+				A5515C0000000000000000A5 /* AppShortcuts.strings */,
+				A5515C0000000000000000A9 /* Localizable.strings */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -391,6 +405,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D4E5F6000F007C1180 /* InfoPlist.strings in Resources */,
+				A5515C0000000000000000A8 /* AppShortcuts.strings in Resources */,
+				A5515C0000000000000000AC /* Localizable.strings in Resources */,
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
@@ -592,6 +608,8 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				E6E79E6687FB6C866E0BC4D6 /* LiveScreenCapturePlugin.swift in Sources */,
 				DE1100010000000000000001 /* DeliveredInboxNotificationsPlugin.swift in Sources */,
+				A5515C0000000000000000A2 /* AssistantShortcutsPlugin.swift in Sources */,
+				A5515C0000000000000000A4 /* AssistantShortcutIntents.swift in Sources */,
 				1E3FC0D9F09D51E98AFEEC0C /* LiveScreenSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -636,6 +654,24 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		A5515C0000000000000000A5 /* AppShortcuts.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A5515C0000000000000000A6 /* en */,
+				A5515C0000000000000000A7 /* vi */,
+			);
+			name = AppShortcuts.strings;
+			sourceTree = "<group>";
+		};
+		A5515C0000000000000000A9 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A5515C0000000000000000AA /* en */,
+				A5515C0000000000000000AB /* vi */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 		A1B2C3D4E5F6000F007C117D /* InfoPlist.strings */ = {

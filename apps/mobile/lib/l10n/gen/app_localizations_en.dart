@@ -11200,4 +11200,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarSettingsError => 'Could not load or save calendar preferences. Retry when online.';
+
+  @override
+  String assistantLaunchVoiceConfirmTitle(String assistantName) {
+    return 'Start voice chat with $assistantName?';
+  }
+
+  @override
+  String get assistantLaunchVoiceConfirmDescription => 'A shortcut asked to start a voice chat. Your microphone turns on only after you choose Start.';
+
+  @override
+  String get assistantLaunchVoiceConfirmStart => 'Start';
 }

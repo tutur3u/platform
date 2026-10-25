@@ -31,6 +31,7 @@ extension _AppPushNavigation on _AppState {
         !isAppLockExcludedRoute(_currentMatchedLocation())) {
       _appLockCubit.lock();
     }
+    AssistantLaunchCoordinator.instance.tryDeliver();
 
     unawaited(_refreshOfflinePreparationOnResume());
     unawaited(_appVersionCubit.checkVersion(background: true));
