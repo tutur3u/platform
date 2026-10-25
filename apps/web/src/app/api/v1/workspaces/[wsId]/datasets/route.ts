@@ -58,8 +58,6 @@ export async function POST(req: Request, { params }: Params) {
             .nullable()
             .optional(),
           url: z.string().max(MAX_URL_LENGTH).nullable().optional(),
-          type: z.enum(['excel', 'csv', 'html']).optional(),
-          html_ids: z.array(z.string()).nullable().optional(),
         })
         .strict()
         .safeParse(await req.json().catch(() => null));
