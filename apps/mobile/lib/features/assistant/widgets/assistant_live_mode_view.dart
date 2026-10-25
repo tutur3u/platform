@@ -49,15 +49,16 @@ class AssistantLiveModeView extends StatelessWidget {
       builder: (context, constraints) => SingleChildScrollView(
         key: const ValueKey('live-conversation-scroll'),
         controller: scrollController,
-        padding: EdgeInsets.symmetric(
-          horizontal: AppPageInsets.gutterOf(
-            context,
-            width: constraints.maxWidth,
-          ),
-        ).copyWith(
-          top: floatingShellHeaderInset(context) + 16,
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-        ),
+        padding:
+            EdgeInsets.symmetric(
+              horizontal: AppPageInsets.gutterOf(
+                context,
+                width: constraints.maxWidth,
+              ),
+            ).copyWith(
+              top: floatingShellHeaderInset(context) + 16,
+              bottom: MediaQuery.paddingOf(context).bottom + 24,
+            ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
