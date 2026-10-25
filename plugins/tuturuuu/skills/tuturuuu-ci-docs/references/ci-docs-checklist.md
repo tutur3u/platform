@@ -165,3 +165,15 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 - Run `bun ff` on touched docs, scripts, config, and workflow files.
 - Run `git diff --check`.
 - Run `bun validate` when root TypeScript config or repo-wide script/config behavior changed.
+
+## Windows Flutter installer verification
+
+Reuse `desktop-beta.yaml` and `scripts/desktop-deployment/package-windows.mjs`
+for unsigned Windows release work. A branch dispatch with `dry_run=true` builds
+only on GitHub-hosted Windows, uploads the installer and checksum receipt, and
+never publishes. `smoke-windows.ps1` silently installs that installer, checks
+required Flutter files, requires a live native window after 15 seconds, records
+installed file sizes, and uninstalls. Keep placeholder-config smoke results
+separate from production authentication and update acceptance. Public distribution
+uses the existing protected production flow and provenance gates; see
+[the desktop runbook](../../../../../apps/docs/build/devops/desktop-beta-distribution.mdx).

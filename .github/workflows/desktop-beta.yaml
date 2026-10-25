@@ -89,6 +89,8 @@ jobs:
         env:
           DESKTOP_BETA_PLATFORMS: windows
         run: node scripts/desktop-deployment/verify-publication.mjs
+      - name: Smoke installed Windows dry run
+        run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload Windows dry-run installer and checksum receipt
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -246,6 +248,9 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_PRIVATE_KEY_P8_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 }}
         run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Smoke installed Windows beta
+        if: matrix.platform == 'windows'
+        run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload isolated beta package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

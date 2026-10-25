@@ -13,6 +13,46 @@ the Flutter mobile app to the Google Play and Apple App stores.
 Each field on the settings page has an inline help tooltip with a short summary
 and the console URL; this page is the full reference with clickable links.
 
+## Windows desktop release
+
+The Flutter package also produces the Windows desktop app. Use
+[Desktop beta distribution](/build/devops/desktop-beta-distribution) for its
+release and signing configuration; desktop signing does not use this mobile vault.
+`desktop-beta.yaml` builds `lib/main_production.dart` with
+`flutter build windows --release` on GitHub-hosted `windows-latest`, then packages
+the runner, DLLs and `data` directory with Inno Setup. The installer is per-user
+and does not require administrator privileges.
+
+Release Please owns `apps/mobile/pubspec.yaml` (currently the common version
+source). Desktop tags use `desktop-v<pubspec-version>-<run-id>` to identify
+immutable GitHub Releases. Production pushes affecting the mobile app trigger
+both store delivery and the existing desktop release flow; desktop publication
+retains `DESKTOP_BETA_ENABLED`, platform selection, protected environment, bundle
+audit and provenance gates. Manual `desktop-beta.yaml` dispatch with
+`dry_run=true` produces an unsigned workflow artifact on a feature branch without
+publishing. Do not create a release to test an installer.
+
+Windows identity comes from `windows/runner/Runner.rc` and
+`windows/runner/resources/app_icon.ico`: product/publisher **Tuturuuu**, runner
+`tuturuuu.exe`. The installer displays **Tuturuuu Beta**, preserves its stable
+AppId and registers `com.tuturuuu.app.mobile` for browser login. Inno Setup takes
+its version from pubspec; no manual version bump is needed.
+
+Android store delivery builds a production AAB signed with the upload keystore
+and sends it to Google Play internal testing. iOS archives/exports the production
+IPA, verifies and uploads Crashlytics symbols, and sends it to TestFlight. The
+store workflow calculates build names from store metadata and uses a monotonic
+CI build number. macOS desktop delivery produces a universal DMG with Developer ID
+signing, notarization and stapling. Desktop packages are GitHub Release assets
+consumed by `tuturuuu.com/download`; no R2 download host is required.
+
+Unsigned Windows downloads can show SmartScreen **Windows protected your PC** or
+**Unknown publisher**. Verify the official release checksum, then choose **More
+info → Run anyway** only if offered and you trust the release. If organization
+policy blocks it, use the web app. Do not disable Windows protections. The desktop
+runbook covers Authenticode, EV certificates, Azure Trusted Signing and the later
+MSIX channel.
+
 ## How The Vault Is Organized
 
 The Infrastructure deployment must have the existing `ENCRYPTION_MASTER_KEY`

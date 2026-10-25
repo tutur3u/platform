@@ -86,6 +86,23 @@ and provide `DESKTOP_WINDOWS_VAULT_CI_TOKEN` after approving the matching Window
 signing material in the vault. SignPath or Azure integration requires a separate
 reviewed change after provisioning; their credentials are not PFX replacements.
 
+### Signing later
+
+Continue shipping unsigned installers with the warning and checksums until a
+trusted signer is provisioned. Authenticode is the Windows signing format; an
+OV or EV certificate needs a compatible hardware or cloud key integration and
+timestamping for both the runner binaries and installer. EV is not a reason to
+remove SmartScreen guidance or assume a new download already has reputation.
+Azure Trusted Signing (now Artifact Signing) is an alternative managed signing
+service; evaluate identity eligibility, bounded usage and cost before enabling
+it. No account, certificate purchase or signing service is created by this flow.
+
+MSIX is a separate packaging/distribution follow-up, not a prerequisite for the
+`.exe`. Reuse the existing `desktop-store-draft.yaml` diagnostics and
+`windows-store-manifest.xml`; validate publisher identity, signing, URI activation,
+upgrade behavior and Microsoft Store certification before advertising that channel.
+See [Microsoft's signing overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
+
 ### Install an unsigned Windows beta
 
 The download page includes the x64 installer and installation guidance in English
@@ -115,8 +132,13 @@ even if the dry run is dispatched on `production`.
 
 The `desktop-windows-x64-dry-run` artifact contains the Inno Setup installer and
 `verified-windows.json`, including its SHA-256 checksum, exact source SHA, workflow
-run ID, and `unsigned-windows` status. Artifacts expire after seven days. A successful
-build is not installation, sign-in, or update acceptance on a Windows device.
+run ID, and `unsigned-windows` status. Artifacts expire after seven days. The job silently installs the actual installer on `windows-latest`, checks the
+runner, Flutter DLL, ICU data, AOT library and assets, then requires the installed
+app to keep a native window open for 15 seconds. It stops that process and runs
+the uninstaller. `windows-installed-files.json` records installed filenames and
+byte sizes alongside the source SHA and run ID. This is an installation/startup
+smoke check; placeholder configuration cannot prove production sign-in or updates.
+The same smoke check gates Windows publication in the production matrix.
 The packaging and updater currently use x64 paths and filenames. ARM64 needs
 separate native-plugin, installer, and updater qualification before advertising it.
 
