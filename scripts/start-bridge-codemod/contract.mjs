@@ -13,6 +13,9 @@ export const BRIDGE = {
   startBasePath: `${BRIDGE_PACKAGE}/start/base-path`,
   functionProxy: `${BRIDGE_PACKAGE}/function-proxy`,
   csp: `${BRIDGE_PACKAGE}/csp`,
+  proxyBridge: `${BRIDGE_PACKAGE}/proxy-bridge`,
+  proxyMatcher: `${BRIDGE_PACKAGE}/proxy-matcher`,
+  appBase: `${BRIDGE_PACKAGE}/start/app-base`,
   pages: `${BRIDGE_PACKAGE}/pages`,
   pageRoute: `${BRIDGE_PACKAGE}/start/page-route`,
   pageRender: `${BRIDGE_PACKAGE}/start/page-render`,
@@ -28,6 +31,15 @@ export const GENERATED_DIR = 'src/start-bridge';
 export const API_REGISTRY = `${GENERATED_DIR}/api-registry.bridge.gen.ts`;
 export const PAGE_MANIFEST = `${GENERATED_DIR}/page-registry.bridge.gen.ts`;
 export const PAGE_MODULES = `${GENERATED_DIR}/page-modules.bridge.gen.ts`;
+/** Client-safe app API patterns (bridge codegen `api.patternsOut`). */
+export const API_PATTERNS = `${GENERATED_DIR}/api-patterns.bridge.gen.ts`;
+/** The rsc API entry: registers the app base, then exports the registry. */
+export const API_ENTRY = `${GENERATED_DIR}/api-entry.ts`;
+export const CENTRAL_FIRST = `${GENERATED_DIR}/central-first.ts`;
+export const APP_BASE = `${GENERATED_DIR}/app-base.ts`;
+/** `next/og` on Workers, as Meet runs it. */
+export const OG_PACKAGE = '@cloudflare/pages-plugin-vercel-og';
+export const OG_VERSION = '0.1.2';
 export const PUBLIC_ASSETS = `${GENERATED_DIR}/public-assets.bridge.gen.ts`;
 /**
  * The `rsc` environment entry that carries the API registry: route handlers
@@ -54,6 +66,8 @@ export const SHIMMED_SPECIFIERS = new Set([
   'next-intl',
   'next-intl/server',
   '@opennextjs/cloudflare',
+  // Through the preset `og` option, which the codemod wires when used.
+  'next/og',
 ]);
 
 /** Framework specifiers that are type-only or framework-neutral. */

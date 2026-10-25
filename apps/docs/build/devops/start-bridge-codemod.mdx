@@ -123,11 +123,28 @@ Conversion PRs therefore run without `--hold`; the app's cutover-prep PR adds
 the hold and merges just before the flip.
 </Warning>
 
+### Generator inputs
+
+The codemod reads app-specific behaviour from the app's existing
+configuration, so apps regenerate instead of forking generated files:
+
+| Input | Read from | Generated result |
+| --- | --- | --- |
+| Proxy matcher | `src/proxy.ts` `export const config = { matcher }` | `matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches)` in `cloudflare/worker.ts`; Next's path-to-regexp evaluates each source on the app-relative path (`has`/`missing` entries always run the proxy) |
+| `centralFirst` | `next.config.*` calling `createTuturuuuWebWorkspaceApiRewrites` (`beforeFiles`) | `src/start-bridge/central-first.ts` re-exports `TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS`; the Worker and the app-base resolver share it |
+| `next/og` | any `next/og` import under `src/` | preset `og: '@cloudflare/pages-plugin-vercel-og/api'` (as Meet) and the pinned dependency |
+| Internal API app base | `@tuturuuu/internal-api` exports `registerDefaultAppBaseResolver` (#6764) and the app depends on it | `src/start-bridge/app-base.ts` registers `createAppBaseResolver(appApiPatterns, centralFirst)` from the codegen's client-safe `api-patterns.bridge.gen.ts`: app-owned routes are mounted in the browser and absolute on the request host on the server; Web routes are untouched |
+
+Each environment bundle (browser, SSR, rsc) carries its own internal-api
+module, so the registration is imported by `src/router.tsx`, the page route
+and the rsc API entry (`src/start-bridge/api-entry.ts`).
+
 ### Coverage report
 
 The report classifies each page through its layouts and local import graph. A
 page is generic unless it reaches an unshimmed framework specifier or a
-parallel/intercepting segment. The shim list follows the bridge preset.
+parallel/intercepting segment. The shim list follows the bridge preset;
+`'use server'` modules and `next/og` are features, not blockers.
 
 ### Verification
 

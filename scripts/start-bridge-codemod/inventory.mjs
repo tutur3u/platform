@@ -133,8 +133,10 @@ export function createGraphAnalyzer(
       const label = path.relative(appRoot, file).split(path.sep).join('/');
       if (file === entry && facts.directive === 'use client')
         features.add('client-page');
+      // 'use server' runs through the bridge's action transport
+      // (start/server-actions); it is a feature, not a blocker.
       if (facts.directive === 'use server' || facts.inlineServerAction)
-        blockers.set(`server-action:${label}`, label);
+        features.add('server-action');
       for (const specifier of facts.framework) {
         features.add(specifier);
         if (!shimmed.has(specifier) && !NEUTRAL_SPECIFIERS.has(specifier))

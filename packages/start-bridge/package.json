@@ -40,6 +40,8 @@
     "./start/page-render": "./src/start/page-render.tsx",
     "./start/page-params": "./src/start/page-params.ts",
     "./start/page-location": "./src/start/page-location.ts",
+    "./start/app-base": "./src/start/app-base.ts",
+    "./proxy-matcher": "./src/next/proxy-matcher.ts",
     "./start/metadata": "./src/start/metadata.ts",
     "./start/server-actions": "./src/start/server-actions.ts"
   },

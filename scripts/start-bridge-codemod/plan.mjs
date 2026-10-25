@@ -6,10 +6,16 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  API_ENTRY,
+  API_PATTERNS,
   API_REGISTRY,
+  APP_BASE,
+  CENTRAL_FIRST,
   DEPENDENCIES,
   GENERATED_MARKER,
   nativeScripts,
+  OG_PACKAGE,
+  OG_VERSION,
   PAGE_MANIFEST,
   PAGE_MODULES,
   PUBLIC_ASSETS,
@@ -42,6 +48,40 @@ function read(repoRoot, relative) {
   return fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null;
 }
 
+const NEXT_CONFIGS = ['next.config.ts', 'next.config.mjs', 'next.config.js'];
+
+/**
+ * Generator inputs read from the app's existing configuration, so apps
+ * regenerate instead of forking generated files: the proxy's own
+ * `config.matcher`, the Web workspace API paths its `next.config` rewrites
+ * `beforeFiles` (`centralFirst`), `next/og` use, and whether internal-api
+ * offers the default app-base resolver (#6764).
+ */
+export function detectInputs(repoRoot, appPath, inventory, manifest) {
+  const proxySource = inventory.proxy
+    ? (read(repoRoot, `${appPath}/${inventory.proxy}`) ?? '')
+    : '';
+  const nextConfig = NEXT_CONFIGS.map((file) =>
+    read(repoRoot, `${appPath}/${file}`)
+  ).find((source) => source !== null);
+  const sources = walk(path.join(repoRoot, appPath, 'src'))
+    .filter((file) => /\.[cm]?[jt]sx?$/u.test(file) && !/\.test\./u.test(file))
+    .map((file) => read(repoRoot, `${appPath}/src/${file}`) ?? '');
+  const internalApi =
+    read(repoRoot, 'packages/internal-api/src/internal-api-url.ts') ?? '';
+  const deps = { ...manifest.dependencies, ...manifest.devDependencies };
+  return {
+    proxyMatcher: /export\s+const\s+config\b/u.test(proxySource),
+    workspaceApiCentralFirst: /createTuturuuuWebWorkspaceApiRewrites/u.test(
+      nextConfig ?? ''
+    ),
+    og: sources.some((source) => /from\s+['"]next\/og['"]/u.test(source)),
+    appBase:
+      /export function registerDefaultAppBaseResolver/u.test(internalApi) &&
+      '@tuturuuu/internal-api' in deps,
+  };
+}
+
 function devPort(manifest) {
   const match = /PORT:-(\d+)/u.exec(manifest.scripts?.['dev:app'] ?? '');
   return match ? Number(match[1]) : 3000;
@@ -55,14 +95,17 @@ function defaultLocale(repoRoot, app) {
 export function routesConfig(existing, inventory, locale) {
   const defaults = {
     appDir: inventory.appDir,
-    api: { out: API_REGISTRY },
+    api: { out: API_REGISTRY, patternsOut: API_PATTERNS },
     pages: { out: PAGE_MANIFEST },
     stripSegments: inventory.hasLocaleSegment ? { '[locale]': { locale } } : {},
     owned: {},
     ignored: {},
   };
-  // Hand-maintained owned/ignored entries and overrides always win.
-  return { ...defaults, ...(existing ?? {}) };
+  // Hand-maintained owned/ignored entries and overrides always win; an
+  // existing `api` gains the client-safe pattern list unless it opts out.
+  const merged = { ...defaults, ...(existing ?? {}) };
+  if (existing?.api) merged.api = { ...defaults.api, ...existing.api };
+  return merged;
 }
 
 export function planConversion(repoRoot, app, options = {}) {
@@ -91,6 +134,7 @@ export function planConversion(repoRoot, app, options = {}) {
         )
       : null,
     publicFiles: walk(path.join(appRoot, 'public')),
+    ...detectInputs(repoRoot, appPath, inventory, manifest),
   };
   const problems = [];
   if (!inventory.proxy)
@@ -132,6 +176,9 @@ export function planConversion(repoRoot, app, options = {}) {
     owned('cloudflare/worker.ts', templates.workerEntry(resolved));
   owned(PUBLIC_ASSETS, templates.publicAssetsModule(resolved));
   owned('src/start-bridge/page-route.tsx', templates.pageRouteModule(resolved));
+  owned(CENTRAL_FIRST, templates.centralFirstModule(resolved));
+  owned(API_ENTRY, templates.apiEntryModule(resolved));
+  if (resolved.appBase) owned(APP_BASE, templates.appBaseModule(resolved));
   owned(
     PAGE_MODULES,
     templates.pageModulesModule({
@@ -252,7 +299,18 @@ export function planConversion(repoRoot, app, options = {}) {
       repoRoot,
       formatWrites(writes, options.format, appPath)
     ),
-    commands: dependencyCommands(manifestSource, DEPENDENCIES).map((argv) => ({
+    commands: dependencyCommands(
+      manifestSource,
+      resolved.og
+        ? {
+            ...DEPENDENCIES,
+            dependencies: {
+              ...DEPENDENCIES.dependencies,
+              [OG_PACKAGE]: OG_VERSION,
+            },
+          }
+        : DEPENDENCIES
+    ).map((argv) => ({
       argv,
       cwd: appPath,
     })),

@@ -49,18 +49,15 @@ test('pages are classified through layouts and the local import graph', (t) => {
     inventory.pages.map((page) => [page.file, page])
   );
   assert.equal(byFile['[locale]/page.tsx'].generic, true);
-  assert.deepEqual(byFile['[locale]/notes/page.tsx'].blockers, [
-    {
-      reason: 'server-action:src/app/[locale]/notes/actions.ts',
-      file: 'src/app/[locale]/notes/actions.ts',
-    },
-  ]);
-  assert.deepEqual(
-    byFile['[locale]/og/page.tsx'].blockers.map((blocker) => blocker.reason),
-    ['unshimmed:next/og']
+  // Server actions run through the bridge's action transport.
+  assert.deepEqual(byFile['[locale]/notes/page.tsx'].blockers, []);
+  assert.ok(
+    byFile['[locale]/notes/page.tsx'].features.includes('server-action')
   );
+  // next/og resolves through the preset `og` option the codemod wires.
+  assert.deepEqual(byFile['[locale]/og/page.tsx'].blockers, []);
   assert.ok(byFile['[locale]/page.tsx'].features.includes('next/link'));
-  assert.deepEqual(inventory.coverage, { pages: 3, generic: 1, ratio: 1 / 3 });
+  assert.deepEqual(inventory.coverage, { pages: 3, generic: 3, ratio: 1 });
   assert.equal(inventory.routes.length, 1);
   assert.equal(inventory.proxy, 'src/proxy.ts');
   assert.equal(inventory.hasLocaleSegment, true);

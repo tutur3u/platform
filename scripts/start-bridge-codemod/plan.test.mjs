@@ -4,7 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { applyPlan, main } from './cli.mjs';
 import { GENERATED_MARKER } from './contract.mjs';
-import { createFixtureRepo, fakeCodegen } from './fixture-repo.mjs';
+import { createFixtureRepo, fakeCodegen, writeTree } from './fixture-repo.mjs';
 import { pendingWrites, planConversion } from './plan.mjs';
 
 const noCommands = () => ({ status: 0 });
@@ -96,7 +96,7 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
   assert.doesNotMatch(worker, /from '\.\.\/src\/start-bridge\/api-registry/);
   assert.match(
     read('vite.config.mts'),
-    /rscEntries: \{\n?\s*'bridge-api': new URL\(\n?\s*'\.\/src\/start-bridge\/api-registry\.bridge\.gen\.ts',/
+    /rscEntries: \{\n?\s*'bridge-api': new URL\(\n?\s*'\.\/src\/start-bridge\/api-entry\.ts',/
   );
   assert.match(
     read('vite.config.mts'),
@@ -138,12 +138,90 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
   ]);
   assert.match(read('src/router.tsx'), /ssr: \{ nonce: requestNonce\(\) \},/);
   // Workers types would retype `Response` app-wide; the entry types its env.
-  assert.deepEqual(
-    JSON.parse(read('tsconfig.cloudflare.json')).compilerOptions.types,
-    ['vite/client', 'node']
-  );
+  const cloudflareTsconfig = JSON.parse(read('tsconfig.cloudflare.json'));
+  assert.deepEqual(cloudflareTsconfig.compilerOptions.types, [
+    'vite/client',
+    'node',
+  ]);
+  // Tests keep their Next/Vitest type-check; the build validates vite.config.
+  assert.ok(cloudflareTsconfig.exclude.includes('**/*.test.tsx'));
+  assert.equal(cloudflareTsconfig.include.includes('vite.config.mts'), false);
   const config = JSON.parse(read('start-bridge.routes.json'));
   assert.deepEqual(config.stripSegments, { '[locale]': { locale: 'vi' } });
+});
+
+test('generator inputs come from the app configuration, not hand edits', (t) => {
+  const root = createFixtureRepo(t);
+  const generated = (result, file) =>
+    result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
+  // Defaults: no proxy config, no Web rewrites, no app-base resolver.
+  const plain = plan(root);
+  assert.doesNotMatch(generated(plain, 'cloudflare/worker.ts'), /matches:/);
+  assert.match(
+    generated(plain, 'src/start-bridge/central-first.ts'),
+    /export const centralFirst: readonly string\[\] = \[\];/
+  );
+  assert.equal(generated(plain, 'src/start-bridge/app-base.ts'), undefined);
+  assert.doesNotMatch(generated(plain, 'src/router.tsx'), /app-base/);
+  // The fixture page imports next/og: Meet's Workers port is wired.
+  assert.match(
+    generated(plain, 'vite.config.mts'),
+    /og: '@cloudflare\/pages-plugin-vercel-og\/api'/
+  );
+  assert.ok(
+    plain.commands.some((command) =>
+      command.argv.includes('@cloudflare/pages-plugin-vercel-og@0.1.2')
+    )
+  );
+  assert.deepEqual(plain.config.api, {
+    out: 'src/start-bridge/api-registry.bridge.gen.ts',
+    patternsOut: 'src/start-bridge/api-patterns.bridge.gen.ts',
+  });
+
+  // The app's own proxy matcher, next.config Web rewrites, and #6764.
+  writeTree(path.join(root, 'apps/demo'), {
+    'src/proxy.ts':
+      "export async function proxy() {}\nexport const config = { matcher: ['/((?!_next|.*\\\\..*).*)'] };\n",
+    'next.config.ts':
+      "import { createTuturuuuWebWorkspaceApiRewrites } from '@tuturuuu/utils/next-config';\nexport default { rewrites: async () => ({ beforeFiles: createTuturuuuWebWorkspaceApiRewrites('https://tuturuuu.com') }) };\n",
+  });
+  writeTree(root, {
+    'packages/internal-api/src/internal-api-url.ts':
+      'export function registerDefaultAppBaseResolver() {}\n',
+  });
+  const manifestPath = path.join(root, 'apps/demo/package.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.dependencies['@tuturuuu/internal-api'] = 'workspace:*';
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const full = plan(root);
+  const worker = generated(full, 'cloudflare/worker.ts');
+  assert.match(worker, /import \{ config as proxyConfig, proxy \} from/);
+  assert.match(
+    worker,
+    /matches: createProxyMatcher\(proxyConfig\.matcher, defaultProxyMatches\)/
+  );
+  assert.match(worker, /\n {4}centralFirst,\n/);
+  assert.match(
+    generated(full, 'src/start-bridge/central-first.ts'),
+    /TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS as centralFirst/
+  );
+  assert.match(
+    generated(full, 'src/start-bridge/app-base.ts'),
+    /registerDefaultAppBaseResolver\(\n {2}createAppBaseResolver\(appApiPatterns, centralFirst\)/
+  );
+  // Registered in every environment bundle: browser/ssr, rsc pages, rsc API.
+  assert.match(
+    generated(full, 'src/router.tsx'),
+    /^import '\.\/start-bridge\/app-base';/m
+  );
+  assert.match(
+    generated(full, 'src/start-bridge/page-route.tsx'),
+    /^import '\.\/app-base';/m
+  );
+  assert.match(
+    generated(full, 'src/start-bridge/api-entry.ts'),
+    /^import '\.\/app-base';\nexport \{ endpoints \}/m
+  );
 });
 
 test('dependencies are installed by package commands, never by edits', (t) => {
