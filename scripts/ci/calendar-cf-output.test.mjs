@@ -242,6 +242,88 @@ test('paired ESM source maps remain sealed metadata outside the upload manifest'
   );
 });
 
+test('manifest-listed hashed server CSS and fonts become sealed static assets', async (t) => {
+  const f = fixture(t);
+  const font = 'assets/noto-sans-latin-wght-normal-BYSzYMf3.woff2';
+  const css = 'assets/router-B8ffZdGS.css';
+  const fontBytes = Buffer.from([0, 1, 2, 255]);
+  const cssBytes = Buffer.from(
+    '@font-face{src:url(/assets/noto-sans-latin-wght-normal-BYSzYMf3.woff2)}'
+  );
+  f.put(`dist/server/${font}`, fontBytes);
+  f.put(`dist/client/${font}`, fontBytes);
+  f.put(`dist/server/${css}`, cssBytes);
+  f.put('dist/client/assets/index-B8ffZdGS.css', cssBytes);
+  f.put('dist/server/.vite/manifest.json', {
+    entry: { file: 'worker.js', imports: ['chunk'] },
+    chunk: { file: 'nested/chunk.js' },
+    font: { file: font },
+    'src/router.tsx': {
+      file: 'nested/chunk.js',
+      css: [css],
+      assets: [font],
+    },
+  });
+  f.seal();
+  const receipt = await emitCalendarOutput(options(f));
+  assert.deepEqual(receipt.routedServerAssets, [font, css]);
+  const output = join(f.destination, outputPrefix, 'workers/default');
+  for (const [name, bytes] of [
+    [font, fontBytes],
+    [css, cssBytes],
+  ]) {
+    assert.deepEqual(readFileSync(join(output, 'assets', name)), bytes);
+    assert.equal(existsSync(join(output, 'bundle', name)), false);
+    assert.equal(typeof receipt.sourceFiles[`dist/server/${name}`], 'string');
+  }
+  const config = JSON.parse(readFileSync(join(output, 'worker.config.json')));
+  assert.equal(Object.hasOwn(config.manifest.modules, font), false);
+  assert.equal(Object.hasOwn(config.manifest.modules, css), false);
+  await verifyCalendarOutput(options(f));
+  f.put(`dist/server/${font}`, Buffer.from([0, 1, 2, 0]));
+  await assert.rejects(
+    verifyCalendarOutput(options(f)),
+    /identity or bytes changed/
+  );
+});
+
+test('orphan, unhashed and unknown server assets remain unqualified', async (t) => {
+  for (const [name, listed] of [
+    ['assets/orphan-BYSzYMf3.woff2', false],
+    ['assets/router.css', true],
+    ['assets/runtime-BYSzYMf3.wasm', true],
+  ]) {
+    const f = fixture(t);
+    f.put(`dist/server/${name}`, 'unqualified');
+    if (listed)
+      f.put('dist/server/.vite/manifest.json', {
+        entry: { file: 'worker.js', assets: [name] },
+      });
+    f.seal();
+    await assert.rejects(
+      emitCalendarOutput(options(f)),
+      /unqualified server file/
+    );
+    assert.equal(existsSync(f.destination), false);
+  }
+});
+
+test('server and client copies of an asset must have the same sealed bytes', async (t) => {
+  const f = fixture(t);
+  const name = 'assets/font-BYSzYMf3.woff2';
+  f.put(`dist/server/${name}`, Buffer.from([1, 2, 3]));
+  f.put(`dist/client/${name}`, Buffer.from([1, 2, 4]));
+  f.put('dist/server/.vite/manifest.json', {
+    entry: { file: 'worker.js', assets: [name] },
+  });
+  f.seal();
+  await assert.rejects(
+    emitCalendarOutput(options(f)),
+    /server and client asset bytes differ/
+  );
+  assert.equal(existsSync(f.destination), false);
+});
+
 test('an existing output remains owned and untouched', async (t) => {
   const f = fixture(t);
   mkdirSync(f.destination);

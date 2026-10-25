@@ -85,9 +85,24 @@ function source(appDirectory, sourceSha, receiptPath) {
   );
   const serverFiles = inventory(server);
   const assets = inventory(qualified.assets);
+  const staticFiles = new Set();
+  if (typeof serverFiles['.vite/manifest.json'] === 'string') {
+    const vite = JSON.parse(
+      readCalendarFile(join(server, '.vite/manifest.json')).bytes
+    );
+    for (const record of Object.values(vite))
+      for (const name of [
+        record.file,
+        ...(record.css ?? []),
+        ...(record.assets ?? []),
+      ])
+        if (/\.(?:css|woff2)$/.test(name)) staticFiles.add(name);
+  }
   const configName = posix(relative(server, qualified.configPath));
   const modules = {};
   const excluded = [];
+  const serverAssets = {};
+  const routedServerAssets = [];
   for (const [name, digest] of Object.entries(serverFiles)) {
     if (digest === null) continue;
     if (name === configName || name === '.vite/manifest.json') {
@@ -100,6 +115,28 @@ function source(appDirectory, sourceSha, receiptPath) {
         'unqualified server file; source map has no ESM module'
       );
       excluded.push(name);
+      continue;
+    }
+    if (staticFiles.has(name)) {
+      assert.match(
+        name,
+        /^assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8}\.(?:css|woff2)$/,
+        'unqualified server file; static asset must be hashed'
+      );
+      assert.match(digest, /^[a-f0-9]{64}$/);
+      assert.equal(
+        digest,
+        receipt.files[`dist/server/${name}`],
+        'server asset differs from sealed source'
+      );
+      if (Object.hasOwn(assets, name))
+        assert.equal(
+          digest,
+          assets[name],
+          'server and client asset bytes differ'
+        );
+      else serverAssets[name] = digest;
+      routedServerAssets.push(name);
       continue;
     }
     assert.match(
@@ -133,6 +170,8 @@ function source(appDirectory, sourceSha, receiptPath) {
     rootConfig,
     workerConfig,
     assets,
+    serverAssets,
+    routedServerAssets,
     serverFiles,
     excluded,
   };
@@ -160,6 +199,11 @@ function expectedFiles(input) {
         : readCalendarFile(join(input.qualified.assets, name)).bytes
     );
   }
+  for (const name of Object.keys(input.serverAssets))
+    files.set(
+      `${prefix}workers/default/assets/${name}`,
+      readCalendarFile(join(input.server, name)).bytes
+    );
   return files;
 }
 
@@ -186,6 +230,7 @@ function parityReceipt(input, versions, files, sourceSha) {
     sourceFiles: input.receipt.files,
     outputFiles: expectedInventory(files),
     excludedServerMetadata: input.excluded,
+    routedServerAssets: input.routedServerAssets,
     unqualifiedAssetControlFiles: [
       '.assetsignore',
       '_headers',
