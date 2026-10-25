@@ -48,9 +48,8 @@ export function MailAttachmentCard({
     attachment.contentType,
     attachment.filename
   );
-  const url = attachment.protectedUrl
-    ? withAppBase(attachment.protectedUrl)
-    : undefined;
+  const url = attachment.protectedUrl ?? undefined;
+  const downloadUrl = url ? withAppBase(url) : undefined;
   const textPreview = useQuery({
     queryKey: ['mail', 'attachment-text', url],
     queryFn: ({ signal }) => getMailAttachmentText(url!, signal),
@@ -58,7 +57,9 @@ export function MailAttachmentCard({
     retry: false,
     gcTime: 0,
   });
-  const previewUrl = url ? mailAttachmentPreviewUrl(url) : undefined;
+  const previewUrl = url
+    ? withAppBase(mailAttachmentPreviewUrl(url))
+    : undefined;
   return (
     <>
       <div className="flex min-w-0 items-center gap-2 rounded-xl bg-foreground/[0.045] p-3 text-sm">
@@ -89,7 +90,7 @@ export function MailAttachmentCard({
           <Button asChild size="icon" variant="ghost">
             <a
               download
-              href={url}
+              href={downloadUrl}
               aria-label={t('download_attachment', {
                 filename: attachment.filename,
               })}
@@ -159,7 +160,7 @@ export function MailAttachmentCard({
           </div>
           {url ? (
             <Button asChild className="self-end" variant="secondary">
-              <a download href={url}>
+              <a download href={downloadUrl}>
                 <Download className="size-4" />
                 {t('download')}
               </a>
