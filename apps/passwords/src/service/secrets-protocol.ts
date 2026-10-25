@@ -110,11 +110,13 @@ export async function boundedJson(
   try {
     while (true) {
       const chunk = await Promise.race([reader.read(), cancelled]);
+      if (signal.aborted) throw new PasswordsError('UNAVAILABLE');
       if (chunk.done) break;
       chunks.push(chunk.value);
       length += chunk.value.byteLength;
       if (length > limit) throw new PasswordsError('TOO_LARGE');
     }
+    if (signal.aborted) throw new PasswordsError('UNAVAILABLE');
     bytes = new Uint8Array(length);
     let offset = 0;
     for (const chunk of chunks) {
