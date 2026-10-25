@@ -95,6 +95,12 @@ extension _AppOfflinePreparation on _AppState {
         : _workspaceCubit.state.currentWorkspace?.id;
     final coordinator = OfflinePreparationCoordinator.instance;
     unawaited(
+      _calendarSettingsCubit.load(
+        userId: auth.status == AuthStatus.authenticated ? userId : null,
+        workspaceId: workspaceId,
+      ),
+    );
+    unawaited(
       coordinator
           .setScope(userId: userId, workspaceId: workspaceId)
           .then((_) async {

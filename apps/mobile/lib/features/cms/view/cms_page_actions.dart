@@ -47,15 +47,15 @@ extension _CmsPageActions on _CmsPageState {
   }) async {
     final confirmed = await _showOwnedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
+      builder: (context) => AppDialog(
+        title: title,
         content: Text(message),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.destructive(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
@@ -66,28 +66,12 @@ extension _CmsPageActions on _CmsPageState {
   }
 
   void _toast(String message, {bool destructive = false}) {
-    shad.showToast(
-      context: context,
-      builder: (context, overlay) => shad.SurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            message,
-            style: TextStyle(
-              color: destructive ? Theme.of(context).colorScheme.error : null,
-            ),
-          ),
-        ),
-      ),
+    showAppToast(
+      context,
+      message: message,
+      variant: destructive
+          ? AppAlertVariant.destructive
+          : AppAlertVariant.success,
     );
-  }
-
-  String _statusLabel(BuildContext context, String status) {
-    return switch (status) {
-      'published' => context.l10n.cmsStatusPublished,
-      'scheduled' => context.l10n.cmsStatusScheduled,
-      'archived' => context.l10n.cmsStatusArchived,
-      _ => context.l10n.cmsStatusDraft,
-    };
   }
 }

@@ -29,6 +29,7 @@ class ShellChromeConfig {
         'calendar' => l10n.navCalendar,
         'finance' => l10n.navFinance,
         'timer' => l10n.timerTitle,
+        'assistant' => l10n.assistantSettingsTitle,
         _ => l10n.settingsAppsGroup,
       };
       return ShellChromeConfig(title: title, navMode: ShellNavMode.miniApp);

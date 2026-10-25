@@ -504,7 +504,7 @@ test('Gradle restores never register setup-java post-job saves', () => {
           );
         if (
           step.uses?.startsWith('actions/cache/restore@') &&
-          step.with?.key?.startsWith('gradle-v1-')
+          step.with?.key?.startsWith('gradle-downloads-v2-')
         )
           restores++;
       }
