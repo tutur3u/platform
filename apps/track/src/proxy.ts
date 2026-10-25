@@ -319,7 +319,17 @@ const getDefaultLocale = (
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
-  const languages = new Negotiator({ headers }).languages();
+  // `match` throws on `*` and malformed tags, which clients may send.
+  const languages = new Negotiator({ headers })
+    .languages()
+    .flatMap((language) => {
+      if (language === '*') return [];
+      try {
+        return Intl.getCanonicalLocales(language);
+      } catch {
+        return [];
+      }
+    });
   const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
