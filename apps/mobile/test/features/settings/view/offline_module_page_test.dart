@@ -239,6 +239,11 @@ void main() {
     await pump(tester, chrome: chrome);
     tester.view.physicalSize = const Size(390, 600);
     await tester.pumpAndSettle();
+    // Expanded details make the list long enough to scroll.
+    final details = find.text('Technical details');
+    await tester.ensureVisible(details);
+    await tester.tap(details);
+    await tester.pumpAndSettle();
     const location = '/settings/offline/inventory';
     expect(chrome.state.resolveForLocation(location), hasLength(1));
     chrome.state.resolveForLocation(location).single.onPressed!();

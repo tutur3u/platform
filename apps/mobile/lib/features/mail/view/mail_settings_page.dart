@@ -479,6 +479,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
           ),
           SettingsFieldRow(
             child: AppTextField(
+              key: const ValueKey('mail-settings-instructions'),
               controller: _instructions,
               enabled: editable,
               minLines: 3,

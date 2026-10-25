@@ -97,6 +97,7 @@ class OfflineModuleStorageSection extends StatelessWidget {
               icon: LucideIcons.trash2,
               title: l10n.offlineEvictTitle,
               subtitle: l10n.offlineEvictRowDescription,
+              wrapSupportingText: true,
               showChevron: false,
               onTap: canEvict ? onEvict : null,
             ),
