@@ -4975,5 +4975,11 @@
   "inputPlaceholderWorkoutExercise": "e.g. Squats",
   "inputPlaceholderWorkoutReps": "e.g. 12",
   "inputPlaceholderWorkoutSets": "e.g. 3",
-  "inputPlaceholderWorkoutWeight": "e.g. 20"
+  "inputPlaceholderWorkoutWeight": "e.g. 20",
+  "mailSenderNamePlaceholder": "e.g. Alex Nguyen",
+  "mailSignaturePlaceholder": "e.g. Best regards,\nAlex Nguyen\nProduct team",
+  "mailDraftInstructionsPlaceholder": "e.g. Keep replies short and friendly. Sign off with my first name.",
+  "mailForwardToPlaceholder": "name@example.com",
+  "feedbackSubjectPlaceholder": "e.g. Calendar doesn't sync on Wi-Fi",
+  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there."
 }

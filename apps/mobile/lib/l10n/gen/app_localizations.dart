@@ -21960,6 +21960,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. 20'**
   String get inputPlaceholderWorkoutWeight;
+
+  /// No description provided for @mailSenderNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Alex Nguyen'**
+  String get mailSenderNamePlaceholder;
+
+  /// No description provided for @mailSignaturePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Best regards,\nAlex Nguyen\nProduct team'**
+  String get mailSignaturePlaceholder;
+
+  /// No description provided for @mailDraftInstructionsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Keep replies short and friendly. Sign off with my first name.'**
+  String get mailDraftInstructionsPlaceholder;
+
+  /// No description provided for @mailForwardToPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'name@example.com'**
+  String get mailForwardToPlaceholder;
+
+  /// No description provided for @feedbackSubjectPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Calendar doesn\'t sync on Wi-Fi'**
+  String get feedbackSubjectPlaceholder;
+
+  /// No description provided for @feedbackDetailsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened, what you expected, and the steps to get there.'**
+  String get feedbackDetailsPlaceholder;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

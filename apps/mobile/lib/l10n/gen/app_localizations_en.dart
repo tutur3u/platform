@@ -11604,4 +11604,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inputPlaceholderWorkoutWeight => 'e.g. 20';
+
+  @override
+  String get mailSenderNamePlaceholder => 'e.g. Alex Nguyen';
+
+  @override
+  String get mailSignaturePlaceholder => 'e.g. Best regards,\nAlex Nguyen\nProduct team';
+
+  @override
+  String get mailDraftInstructionsPlaceholder => 'e.g. Keep replies short and friendly. Sign off with my first name.';
+
+  @override
+  String get mailForwardToPlaceholder => 'name@example.com';
+
+  @override
+  String get feedbackSubjectPlaceholder => 'e.g. Calendar doesn\'t sync on Wi-Fi';
+
+  @override
+  String get feedbackDetailsPlaceholder => 'What happened, what you expected, and the steps to get there.';
 }

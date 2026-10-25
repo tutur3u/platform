@@ -11468,4 +11468,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inputPlaceholderWorkoutWeight => 'VD: 20';
+
+  @override
+  String get mailSenderNamePlaceholder => 'Ví dụ: Nguyễn Minh An';
+
+  @override
+  String get mailSignaturePlaceholder => 'Ví dụ: Trân trọng,\nNguyễn Minh An\nNhóm Sản phẩm';
+
+  @override
+  String get mailDraftInstructionsPlaceholder => 'Ví dụ: Trả lời ngắn gọn, thân thiện. Ký tên bằng tên của tôi.';
+
+  @override
+  String get mailForwardToPlaceholder => 'ten@example.com';
+
+  @override
+  String get feedbackSubjectPlaceholder => 'Ví dụ: Lịch không đồng bộ khi dùng Wi-Fi';
+
+  @override
+  String get feedbackDetailsPlaceholder => 'Chuyện gì đã xảy ra, bạn mong đợi điều gì và các bước để tái hiện.';
 }

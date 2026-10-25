@@ -266,7 +266,10 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
                   : null,
               enabled: !locked,
               maxLength: 160,
-              decoration: InputDecoration(labelText: l10n.feedbackSubject),
+              decoration: InputDecoration(
+                labelText: l10n.feedbackSubject,
+                hintText: l10n.feedbackSubjectPlaceholder,
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -281,7 +284,10 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
               maxLength: 8000,
               minLines: 5,
               maxLines: 12,
-              decoration: InputDecoration(labelText: l10n.feedbackDetails),
+              decoration: InputDecoration(
+                labelText: l10n.feedbackDetails,
+                hintText: l10n.feedbackDetailsPlaceholder,
+              ),
             ),
             const SizedBox(height: 12),
             if (_image != null) ...[

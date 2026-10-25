@@ -4878,5 +4878,11 @@
   "inputPlaceholderWorkoutExercise": "VD: Squat",
   "inputPlaceholderWorkoutReps": "VD: 12",
   "inputPlaceholderWorkoutSets": "VD: 3",
-  "inputPlaceholderWorkoutWeight": "VD: 20"
+  "inputPlaceholderWorkoutWeight": "VD: 20",
+  "mailSenderNamePlaceholder": "Ví dụ: Nguyễn Minh An",
+  "mailSignaturePlaceholder": "Ví dụ: Trân trọng,\nNguyễn Minh An\nNhóm Sản phẩm",
+  "mailDraftInstructionsPlaceholder": "Ví dụ: Trả lời ngắn gọn, thân thiện. Ký tên bằng tên của tôi.",
+  "mailForwardToPlaceholder": "ten@example.com",
+  "feedbackSubjectPlaceholder": "Ví dụ: Lịch không đồng bộ khi dùng Wi-Fi",
+  "feedbackDetailsPlaceholder": "Chuyện gì đã xảy ra, bạn mong đợi điều gì và các bước để tái hiện."
 }
