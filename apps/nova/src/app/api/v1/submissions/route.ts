@@ -3,6 +3,7 @@ import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permissi
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 import { createSubmissionSchema } from '../schemas';
 
 export async function GET(request: Request) {
@@ -73,6 +74,8 @@ export async function POST(request: Request) {
     const validatedData = createSubmissionSchema.parse(body);
 
     const { canSubmit, remainingAttempts, message } = await checkPermission({
+      canManageChallenge: (challengeId) =>
+        canManageNovaChallenge(user, challengeId, supabase),
       problemId: validatedData.problemId,
       sessionId: validatedData.sessionId,
       userId: user.id,

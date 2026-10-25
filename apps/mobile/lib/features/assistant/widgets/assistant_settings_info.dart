@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/assistant/widgets/assistant_settings_action.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantSettingsInfo extends StatelessWidget {
   const AssistantSettingsInfo({
     required this.title,
     required this.description,
+    this.actionsBuilder,
     super.key,
   });
   final String title;
   final String description;
+  final List<Widget> Function(BuildContext)? actionsBuilder;
   @override
   Widget build(BuildContext context) => AppIconButton(
     tooltip: context.l10n.assistantSettingInfo(title),
@@ -18,11 +21,12 @@ class AssistantSettingsInfo extends StatelessWidget {
       context: context,
       builder: (context) => AppDialog(
         title: title,
-        content: SingleChildScrollView(child: Text(description)),
+        content: Text(description),
         actions: [
-          AppButton.ghost(
+          ...?actionsBuilder?.call(context),
+          AssistantSettingsAction(
+            label: context.l10n.commonDone,
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.commonDone),
           ),
         ],
       ),

@@ -147,6 +147,8 @@ extension AssistantChatResetOperations on AssistantChatCubit {
         creationOutcomeUnknown: false,
         chat: null,
         storedChatId: null,
+        replyTarget: null,
+        reactionResult: null,
         messages: const [],
         attachmentsByMessageId: const {},
         composerAttachments: const [],

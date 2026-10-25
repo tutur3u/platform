@@ -59,6 +59,8 @@ class ShellPage extends StatefulWidget {
     required this.matchedLocation,
     this.enableDebugLogs = kDebugMode,
     this.assistantPageBuilder,
+    this.homePageBuilder,
+    this.notificationsPageBuilder,
     super.key,
   });
 
@@ -67,6 +69,10 @@ class ShellPage extends StatefulWidget {
   final bool enableDebugLogs;
   @visibleForTesting
   final Widget Function(int replayToken)? assistantPageBuilder;
+  @visibleForTesting
+  final Widget Function(int replayToken)? homePageBuilder;
+  @visibleForTesting
+  final WidgetBuilder? notificationsPageBuilder;
 
   @override
   State<ShellPage> createState() => _ShellPageState();

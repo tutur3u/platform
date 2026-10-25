@@ -112,7 +112,7 @@ class _AssistantLocalModelsSectionState
       final enabled =
           state.loaded && state.supported && !state.busy && !_picking;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.only(top: 8, bottom: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -121,7 +121,7 @@ class _AssistantLocalModelsSectionState
                 Expanded(
                   child: Text(
                     l10n.assistantLocalTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 AssistantSettingsInfo(
@@ -129,6 +129,7 @@ class _AssistantLocalModelsSectionState
                   description: [
                     l10n.assistantLocalHelp,
                     l10n.assistantLocalBudgetDescription,
+                    l10n.assistantLocalHardware,
                     if (_models.supportsBackgroundDownloads)
                       l10n.assistantDownloadBackgroundNotice,
                     l10n.assistantLocalModeSwitch,
@@ -139,16 +140,26 @@ class _AssistantLocalModelsSectionState
             ),
             if (state.loaded && !state.supported) ...[
               const SizedBox(height: 12),
-              Text(l10n.assistantLocalHardware),
+              Text(l10n.assistantLocalUnsupported),
             ],
             AppListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(LucideIcons.cloud),
               title: Text(l10n.assistantLocalRemote),
-              subtitle: Text(l10n.assistantLocalRemoteHint),
-              trailing: state.loaded && state.selected == null
-                  ? const Icon(LucideIcons.circleCheck)
-                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (state.loaded && state.selected == null)
+                    const SizedBox.square(
+                      dimension: 44,
+                      child: Icon(LucideIcons.circleCheck),
+                    ),
+                  AssistantSettingsInfo(
+                    title: l10n.assistantLocalRemote,
+                    description: l10n.assistantLocalRemoteHint,
+                  ),
+                ],
+              ),
               selected: state.loaded && state.selected == null,
               onTap: state.loaded && !state.busy
                   ? () => unawaited(_models.select(null))

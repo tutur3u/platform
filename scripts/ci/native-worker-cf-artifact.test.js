@@ -99,7 +99,15 @@ for (const { app, runtimeEnv } of WORKERS) {
           step.name === 'Verify the coordination token survived publication'
       );
       assert.ok(secretCheck > publishIndex);
-      assert.match(deployment[secretCheck].run, /secret list/);
+      const afterSettings = deployment.findIndex((step) =>
+        step.run?.includes('cf-worker-settings.mjs after ')
+      );
+      assert.ok(afterSettings > publishIndex && secretCheck > afterSettings);
+      assert.match(deployment[secretCheck].run, /jq -e/);
+      assert.match(
+        deployment[secretCheck].run,
+        /coordination-settings-after\.json/
+      );
       assert.match(deployment[secretCheck].run, /COORDINATION_TOKEN/);
       assert.equal(deployment[secretCheck]['continue-on-error'], undefined);
     }

@@ -70,7 +70,7 @@ void registerSettingsAssistantEntrypointChecks() {
           }
         });
         await h.locale.setLocale(Locale(language));
-        await h.pump(tester);
+        await h.pump(tester, shellChrome: true);
         final origin = entrypoint.endsWith('live menu')
             ? find.byType(AssistantPage)
             : find.byType(ProductSettingsSection);
@@ -113,13 +113,14 @@ void registerSettingsAssistantEntrypointChecks() {
         await _settle(tester);
         final hub = find.byType(AssistantSettingsHub);
         expect(hub, findsOneWidget);
-        expect(Navigator.of(tester.element(hub)), same(nested));
+        expect(Navigator.of(tester.element(hub)), isNot(same(root)));
         expect(find.byType(ShellPage), findsOneWidget);
         expect(find.text(l10n.assistantSettingsTitle), findsOneWidget);
         expect(
-          find.byKey(const ValueKey('app-sheet-close')).last,
-          findsOneWidget,
+          h.router.state.matchedLocation,
+          Routes.settingsAppPath('assistant'),
         );
+        expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
         expect(tester.element(hub).read<AuthCubit>(), same(h.auth));
         expect(tester.element(hub).read<WorkspaceCubit>(), same(h.workspaces));
         expect(tester.widget<AssistantSettingsHub>(hub).workspaceId, 'ws');
@@ -132,11 +133,12 @@ void registerSettingsAssistantEntrypointChecks() {
         await tester.tap(personality);
         await _settle(tester);
         expect(find.byType(MobileSectionAppBar), findsNothing);
-        expect(find.byType(AppSheetScaffold).last, findsOneWidget);
+        expect(find.byType(AppSheetScaffold), findsNothing);
         expect(
-          find.byKey(const ValueKey('app-sheet-close')).last,
-          findsOneWidget,
+          h.router.state.matchedLocation,
+          Routes.settingsAppPath('assistant'),
         );
+        expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
         expect(find.byType(ShellPage), findsOneWidget);
         await tester.tap(
           find.byKey(const ValueKey('assistant-personality-name')),
@@ -144,14 +146,13 @@ void registerSettingsAssistantEntrypointChecks() {
         await _settle(tester);
         expect(find.byType(AssistantPersonalityFieldEditor), findsOneWidget);
         expect(find.byType(MobileSectionAppBar), findsNothing);
-        expect(find.byType(AppSheetScaffold).last, findsOneWidget);
+        expect(find.byType(AppSheetScaffold), findsNothing);
         await tester.enterText(
           find.byType(AppTextFormField).last,
           'Routed Nova',
         );
-        await tester.tap(
-          find.widgetWithText(AppButton, l10n.commonSave).hitTestable(),
-        );
+        expect(find.byTooltip(l10n.commonSave).hitTestable(), findsOneWidget);
+        await tester.tap(find.byTooltip(l10n.commonSave).hitTestable());
         await _settle(tester);
         expect(find.text('Routed Nova').hitTestable(), findsOneWidget);
         expect(settingsRepository.writes, 1);
@@ -170,19 +171,18 @@ void registerSettingsAssistantEntrypointChecks() {
         await _settle(tester);
         expect(find.byType(AssistantMemoryEditor), findsOneWidget);
         expect(find.byType(MobileSectionAppBar), findsNothing);
-        expect(find.byType(AppSheetScaffold).last, findsOneWidget);
+        expect(find.byType(AppSheetScaffold), findsNothing);
         expect(
-          find.byKey(const ValueKey('app-sheet-close')).last,
-          findsOneWidget,
+          h.router.state.matchedLocation,
+          Routes.settingsAppPath('assistant'),
         );
+        expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
         await tester.enterText(
           find.byType(AppTextFormField).last,
           'Routed memory',
         );
         await _settle(tester);
-        final memorySave = find
-            .widgetWithText(AppButton, l10n.commonSave)
-            .hitTestable();
+        final memorySave = find.byTooltip(l10n.commonSave).hitTestable();
         await tester.ensureVisible(memorySave);
         await tester.tap(memorySave);
         await _settle(tester);

@@ -10,6 +10,11 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 - Materialize replacement parent rows before rewiring child tables.
 - Update trigger helpers and underlying `CHECK` constraints together when tightening limits.
 - Audit reset/bootstrap scripts when strict limits change.
+- Nova session inserts must check overlapping active sessions after acquiring the
+  challenge lock, alongside attempt counts. Keep the expiry boundary exclusive,
+  retain expired attempt history, and use explicit UTC dates for daily limits.
+  Verify with `supabase/tests/private-schema-nova-session-limits.sql` through
+  `sb:validate:isolated`; the HTTP conflict path is covered in Nova session tests.
 
 ## Runtime Access
 
