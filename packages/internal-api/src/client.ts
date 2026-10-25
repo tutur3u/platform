@@ -1,4 +1,11 @@
 import { parseInternalApiError } from './internal-api-error';
+import {
+  hasAppBaseResolver,
+  type InternalApiAppBaseResolver,
+  normalizeApiPath,
+  normalizeBaseUrl,
+  resolveInternalApiUrlWithAppBase,
+} from './internal-api-url';
 import { mergeHeaders } from './request-headers';
 
 export type InternalApiQueryValue =
@@ -15,6 +22,7 @@ export type InternalApiFetchInit = Omit<RequestInit, 'headers'> & {
 };
 
 export type InternalApiClientOptions = {
+  appBaseResolver?: InternalApiAppBaseResolver;
   baseUrl?: string;
   defaultHeaders?: HeadersInit;
   fetch?: typeof fetch;
@@ -79,6 +87,10 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
 ]);
 
 export { InternalApiError } from './internal-api-error';
+export {
+  type InternalApiAppBaseResolver,
+  registerDefaultAppBaseResolver,
+} from './internal-api-url';
 
 function tryParseAbsoluteUrl(value: string): URL | null {
   try {
@@ -154,16 +166,6 @@ export function encodePathSegment(value: string) {
   return encodeURIComponent(value);
 }
 
-function normalizeBaseUrl(baseUrl: string) {
-  let end = baseUrl.length;
-
-  while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) {
-    end -= 1;
-  }
-
-  return end === baseUrl.length ? baseUrl : baseUrl.slice(0, end);
-}
-
 function isProductionDeployment() {
   if (process.env.VERCEL_ENV) {
     return process.env.VERCEL_ENV === 'production';
@@ -171,20 +173,12 @@ function isProductionDeployment() {
 
   return process.env.NODE_ENV === 'production';
 }
-function normalizePath(path: string): string {
-  if (/^https?:\/\//.test(path)) {
-    return path;
-  }
-
-  return path.startsWith('/') ? path : `/${path}`;
-}
-
 function appendQuery(path: string, query?: InternalApiQuery): string {
   if (!query || Object.keys(query).length === 0) {
     return path;
   }
 
-  const normalizedPath = normalizePath(path);
+  const normalizedPath = normalizeApiPath(path);
   const isAbsoluteUrl = /^https?:\/\//.test(normalizedPath);
   const url = isAbsoluteUrl
     ? new URL(normalizedPath)
@@ -260,7 +254,11 @@ export function getConfiguredTasksApiBaseUrl() {
 export function withTaskApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isTasksApiProxyBrowserRuntime()) {
+  if (
+    options.baseUrl ||
+    hasAppBaseResolver(options) ||
+    isTasksApiProxyBrowserRuntime()
+  ) {
     return options;
   }
 
@@ -284,7 +282,7 @@ export function getConfiguredMailApiBaseUrl() {
 export function withMailApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isMailAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isMailAppRuntime()) {
     return options;
   }
 
@@ -352,7 +350,7 @@ export function getConfiguredLearnApiBaseUrl() {
 export function withLearnApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isLearnAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isLearnAppRuntime()) {
     return options;
   }
 
@@ -376,7 +374,7 @@ export function getConfiguredTeachApiBaseUrl() {
 export function withTeachApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isTeachAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isTeachAppRuntime()) {
     return options;
   }
 
@@ -407,7 +405,7 @@ export function getConfiguredPayApiBaseUrl() {
 export function withPayApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isPayAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isPayAppRuntime()) {
     return options;
   }
 
@@ -440,7 +438,11 @@ export function getConfiguredContactsApiBaseUrl() {
 export function withContactsApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isContactsAppRuntime()) {
+  if (
+    options.baseUrl ||
+    hasAppBaseResolver(options) ||
+    isContactsAppRuntime()
+  ) {
     return options;
   }
 
@@ -459,7 +461,7 @@ export function withContactsApiBaseUrl(
 export function withEducationBootstrapBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl) {
+  if (options.baseUrl || hasAppBaseResolver(options)) {
     return options;
   }
 
@@ -497,7 +499,11 @@ export function getConfiguredFinanceApiBaseUrl() {
 export function withFinanceApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isFinanceBrowserRuntime()) {
+  if (
+    options.baseUrl ||
+    hasAppBaseResolver(options) ||
+    isFinanceBrowserRuntime()
+  ) {
     return options;
   }
 
@@ -508,23 +514,14 @@ export function withFinanceApiBaseUrl(
 }
 
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
-  const normalizedPath = normalizePath(path);
-
-  if (/^https?:\/\//.test(normalizedPath)) {
-    return normalizedPath;
-  }
-
-  const resolvedBaseUrl = baseUrl
-    ? normalizeBaseUrl(baseUrl)
-    : typeof window === 'undefined'
+  return resolveInternalApiUrlWithAppBase(
+    path,
+    baseUrl,
+    undefined,
+    typeof window === 'undefined'
       ? getConfiguredInternalApiBaseUrl()
-      : undefined;
-
-  if (!resolvedBaseUrl) {
-    return normalizedPath;
-  }
-
-  return new URL(normalizedPath, resolvedBaseUrl).toString();
+      : undefined
+  );
 }
 
 function getCookieName(cookiePart: string) {
@@ -633,7 +630,14 @@ export function createInternalApiClient(
     const fetchImpl = options.fetch ?? globalThis.fetch;
     const { baseUrl, headers: requestHeaders, query, ...requestInit } = init;
     const requestPath = appendQuery(path, query);
-    const url = resolveInternalApiUrl(requestPath, baseUrl || options.baseUrl);
+    const url = resolveInternalApiUrlWithAppBase(
+      requestPath,
+      baseUrl || options.baseUrl,
+      options.appBaseResolver,
+      typeof window === 'undefined'
+        ? getConfiguredInternalApiBaseUrl()
+        : undefined
+    );
     const headers = mergeHeaders(options.defaultHeaders, requestHeaders);
 
     return fetchImpl(url, {
@@ -659,10 +663,6 @@ export function createInternalApiClient(
   };
 }
 
-/**
- * Creates Internal API client options that forward auth-relevant headers
- * from an incoming request context (for example `next/headers()` in RSC).
- */
 export function withForwardedInternalApiAuth(
   requestHeaders: HeaderAccessor,
   options: InternalApiClientOptions = {}
