@@ -298,26 +298,118 @@ mixin _AssistantChatRepository {
         thinkingMode: thinkingMode.name,
       );
       {
-        final user = messages.reversed
-            .where((m) => m.role == 'user')
-            .firstOrNull;
-        yield* _adaptNativeChatEvents(
-          chatId: chatId,
-          wsId: wsId,
-          messages: messages,
-          attachments: attachments,
+        var assistantStarted = false;
+        final nativeAttachments = _chatAttachmentDrafts(chatId, attachments);
+        final requestId =
+            messages.reversed
+                .where((message) => message.role == 'user')
+                .firstOrNull
+                ?.clientRequestId ??
+            messages.reversed
+                .where((message) => message.role == 'user')
+                .firstOrNull
+                ?.id;
+        final replyToMessageId = messages.reversed
+            .where((message) => message.role == 'user')
+            .firstOrNull
+            ?.replyToMessageId;
+        AssistantJsonStreamEvent userReceipt(ChatMessage saved) =>
+            _nativeUserReceiptEvent(
+              saved,
+              chatId: chatId,
+              wsId: wsId,
+              requestId: requestId,
+              text: _latestUserText(messages),
+              attachments: attachments,
+              replyToMessageId: replyToMessageId,
+              admission: admission,
+            );
+
+        yield const AssistantJsonStreamEvent({
+          'type': 'native-dispatch-admitted',
+        });
+        admission?.check();
+        await for (final event in _chatRepository.sendMessageStream(
+          wsId,
+          chatId,
+          content: _latestUserText(messages),
+          attachments: nativeAttachments,
+          clientRequestId: requestId,
+          replyToMessageId: replyToMessageId,
+          miraMode: true,
           admission: admission,
-          events: _chatRepository.sendMessageStream(
-            wsId,
-            chatId,
-            content: _latestUserText(messages),
-            attachments: _chatAttachmentDrafts(chatId, attachments),
-            clientRequestId: user?.clientRequestId ?? user?.id,
-            replyToMessageId: user?.replyToMessageId,
-            miraMode: true,
-            admission: admission,
-          ),
-        );
+        )) {
+          if (event is ChatStreamMessageEvent &&
+              event.message.kind == ChatMessageKind.user) {
+            yield userReceipt(event.message);
+            continue;
+          }
+          if (event is ChatStreamAssistantDeltaEvent) {
+            if (!assistantStarted) {
+              assistantStarted = true;
+              yield AssistantJsonStreamEvent({
+                'type': 'start',
+                'messageId': generateUuid(),
+              });
+            }
+            yield AssistantJsonStreamEvent({
+              'type': 'text-delta',
+              'delta': event.delta,
+            });
+            continue;
+          }
+
+          if (event is ChatStreamAssistantPartEvent) {
+            if (!assistantStarted) {
+              assistantStarted = true;
+              yield AssistantJsonStreamEvent({
+                'type': 'start',
+                'messageId': generateUuid(),
+              });
+            }
+            yield _assistantEventFromChatPart(event.part);
+            continue;
+          }
+          if (event is ChatStreamMessagesEvent) {
+            requireAssistantMessageReceipts(
+              event.messages,
+              conversationId: chatId,
+            );
+            for (final user in event.messages.where(
+              (message) => message.kind == ChatMessageKind.user,
+            )) {
+              yield userReceipt(user);
+            }
+            final assistantMessages = event.messages
+                .where((message) => message.kind == ChatMessageKind.assistant)
+                .map(_assistantMessageFromChatMessage)
+                .toList(growable: false);
+            if (!assistantStarted && assistantMessages.isNotEmpty) {
+              assistantStarted = true;
+              yield AssistantJsonStreamEvent({
+                'type': 'start',
+                'messageId': assistantMessages.first.id,
+              });
+            }
+            yield AssistantJsonStreamEvent({
+              'type': 'saved-messages',
+              'messages': assistantMessages.map((m) => m.toJson()).toList(),
+            });
+            continue;
+          }
+
+          if (event is ChatStreamErrorEvent) {
+            yield AssistantJsonStreamEvent({
+              'type': 'error',
+              'errorText': event.message,
+            });
+            continue;
+          }
+
+          if (event is ChatStreamDoneEvent) {
+            yield const AssistantDoneStreamEvent();
+          }
+        }
         return;
       }
     } on Object catch (error, stack) {
