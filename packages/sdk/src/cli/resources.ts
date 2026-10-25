@@ -74,7 +74,7 @@ Setup options:
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
 The admission floor defaults to 50 GiB (TTR_RESOURCES_MIN_FREE_GIB).
 Heavy commands exit 75 when the disk holding their cwd is critical (below
-TTR_STORAGE_MIN_FREE 15G, 5% free or 5% inodes) and print the top
+the admission byte floor or 5% free inodes; explicit storage percentage floors apply) and print the top
 \`ttr storage suggest\` actions; --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1
 overrides once, and --offload auto then prefers a devbox runner.
 Run options: --tokens N and --memory-gib N declare this job's worker tokens and

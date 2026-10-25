@@ -2,7 +2,7 @@ import { statfs } from 'node:fs/promises';
 
 // Minimal disk headroom gate used at dequeue, just before a queued job spawns.
 // It mirrors Lane ST's storage thresholds (TTR_STORAGE_MIN_FREE, default
-// 15 GiB, TTR_STORAGE_MIN_FREE_PERCENT and inode percentage, default 5%) without depending on
+// 15 GiB, optional TTR_STORAGE_MIN_FREE_PERCENT, and inode percentage, default 5%) without depending on
 // the storage-* modules, and unlike an enqueue-time check it fails closed: a
 // volume whose free space cannot be read is never admitted.
 const GiB = 1024 ** 3;
@@ -126,7 +126,7 @@ export async function diskGate(
       bytes(env.TTR_STORAGE_MIN_FREE, 15 * GiB),
       resourceDiskFloorGiB(env) * GiB
     );
-    minPercent = percent(env.TTR_STORAGE_MIN_FREE_PERCENT, 5);
+    minPercent = percent(env.TTR_STORAGE_MIN_FREE_PERCENT, 0);
     minInodePercent = percent(
       env.TTR_STORAGE_MIN_FREE_INODE_PERCENT,
       5,

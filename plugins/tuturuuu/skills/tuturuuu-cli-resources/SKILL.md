@@ -352,7 +352,7 @@ Local worker caps still apply. Preserve remote operation keys on unknown writes.
 
 New local jobs require 50 GiB free by default (`TTR_RESOURCES_MIN_FREE_GIB`);
 status reports the floor and verdict. Remote placement uses the larger of the
-host's reserved disk and `minDiskFreeGiB` (default 50). Existing storage percentage
-and inode gates remain. Configure Sonha's 2–4 lanes and Linux's pktm reservation
+host's reserved disk and `minDiskFreeGiB` (default 50). Resource admission does not impose a default percentage floor on large disks;
+explicit storage percentage thresholds and inode gates remain. Configure Sonha's 2–4 lanes and Linux's pktm reservation
 from current evidence. See the SDK reference's automatic placement section for
 activation, estimation limits and regression coverage.

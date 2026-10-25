@@ -44,8 +44,8 @@ const realHolds = async (env: NodeJS.ProcessEnv) => {
 /**
  * Heavy commands are refused while the volume holding their working directory
  * is `low`: it entered that state below TTR_STORAGE_MIN_FREE* (default
- * 15 GiB / 5% / 5% inodes) and leaves it only at TTR_STORAGE_RECOVER_FREE*
- * (default twice each), so admission does not flap. On entering or staying
+ * 15 GiB / optional explicit percentage / 5% inodes) and leaves it only at TTR_STORAGE_RECOVER_FREE*
+ * (default twice the storage byte and inode floors), so admission does not flap. On entering or staying
  * low, automatic reclaim runs under this storage authority's cleanup lease;
  * if it cannot recover the volume, the command is refused with the owners of
  * what is left and the resume condition. Alerts print once per storage
@@ -105,7 +105,12 @@ export async function diskAdmission({
       refuse: true,
       message: `refusing a heavy command: ${(volume.freeBytes / 1024 ** 3).toFixed(1)} GiB free is below the ${floor} GiB admission floor (TTR_RESOURCES_MIN_FREE_GIB). Run ttr storage suggest or choose another host.`,
     };
-  const thresholds = hysteresisThresholds(env);
+  const thresholds = hysteresisThresholds({
+    ...env,
+    TTR_STORAGE_MIN_FREE_PERCENT: env.TTR_STORAGE_MIN_FREE_PERCENT ?? '0',
+    TTR_STORAGE_RECOVER_FREE_PERCENT:
+      env.TTR_STORAGE_RECOVER_FREE_PERCENT ?? '0',
+  });
   const home = storageHome(env);
   const host = hostId(env);
   const record = (probed: VolumeProbe) =>

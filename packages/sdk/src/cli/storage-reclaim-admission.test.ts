@@ -34,6 +34,8 @@ const volume = (freeGiB: number, path = '/w'): VolumeProbe => ({
 });
 const isolated = async (extra: NodeJS.ProcessEnv = {}) => ({
   TTR_RESOURCES_MIN_FREE_GIB: '0',
+  TTR_STORAGE_MIN_FREE_PERCENT: '5',
+  TTR_STORAGE_RECOVER_FREE_PERCENT: '10',
   TTR_STORAGE_HOME: await mkdtemp(join(tmpdir(), 'ttr-hysteresis-')),
   TTR_STORAGE_HOST_ID: 'mac-1',
   ...extra,

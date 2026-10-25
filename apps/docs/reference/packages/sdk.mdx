@@ -2094,8 +2094,10 @@ three times before exit 75; ambiguous remote writes retain the existing
 operation identity and never fall back blindly.
 
 The local admission floor is 50 GiB by default, configurable with
-`TTR_RESOURCES_MIN_FREE_GIB`. The existing storage byte, percentage and inode
-floors still apply. `ttr resources status [--json]` reports the configured floor,
+`TTR_RESOURCES_MIN_FREE_GIB`. Resource admission uses an absolute byte floor by default, so a large volume
+with hundreds of GiB free is not refused solely by a default percentage. Explicit
+`TTR_STORAGE_MIN_FREE_PERCENT` and the existing storage byte/inode floors still
+apply. Storage health reporting retains its own percentage defaults. `ttr resources status [--json]` reports the configured floor,
 current measured headroom and admission verdict. A remote host's effective
 floor is `max(reserved.diskGiB, minDiskFreeGiB ?? 50)` in `hosts.json` and is
 rechecked before dispatch. Disk probes that fail are unavailable, never zero

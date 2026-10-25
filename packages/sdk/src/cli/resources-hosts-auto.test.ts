@@ -237,10 +237,7 @@ describe('automatic placement', () => {
               },
               activity: {
                 queued_runs: 0,
-                running_runs:
-                  host.id === 'skr-sonha' && (!initiallyFull || probes > 1)
-                    ? 0
-                    : 2,
+                running_runs: 0,
                 active_leases: 0,
               },
             })),
@@ -259,6 +256,31 @@ describe('automatic placement', () => {
           auto: true,
           deps: {
             fleet,
+            probeHosts: async () =>
+              Object.fromEntries(
+                registry.hosts
+                  .filter((host) => host.kind === 'runner')
+                  .map((host) => [
+                    host.id,
+                    {
+                      healthy: true as const,
+                      sample: {
+                        platform: host.platform,
+                        occupied:
+                          host.id === 'skr-sonha' &&
+                          (!initiallyFull || probes > 1)
+                            ? 0
+                            : host.id === 'skr-studio'
+                              ? 8
+                              : 4,
+                        waiting: host.id === 'skr-studio' ? 22 : 0,
+                        effectiveLanes: host.id === 'skr-studio' ? 8 : 4,
+                        diskFreeGiB: 100,
+                        loadPerCpu: 0.2,
+                      },
+                    },
+                  ])
+              ),
             commitPlan: async () => ({
               sha: 'a'.repeat(40),
               prefix: 'packages/sdk',
@@ -345,6 +367,17 @@ describe('admission disk floor and command integrity', () => {
     expect(
       await diskGate('/job', { TTR_RESOURCES_MIN_FREE_GIB: 'bad' }, volume(100))
     ).toMatchObject({ admit: false, unknown: true });
+  });
+  it('admits large volumes above the absolute floor without a default percentage refusal', async () => {
+    const large = async () => ({
+      freeBytes: 316 * 1024 ** 3,
+      totalBytes: 7449 * 1024 ** 3,
+      inodeFreePercent: 98,
+    });
+    expect(await diskGate('/job', {}, large)).toMatchObject({ admit: true });
+    expect(
+      await diskGate('/job', { TTR_STORAGE_MIN_FREE_PERCENT: '5' }, large)
+    ).toMatchObject({ admit: false });
   });
   it('round trips argv and explicit env values through the remote envelope without shell expansion', () => {
     const value = ' spaces $HOME $(exit 99) `exit 99` ; " \\ newline\n';

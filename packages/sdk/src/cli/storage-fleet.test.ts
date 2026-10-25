@@ -105,6 +105,8 @@ describe('ttr resources disk admission', () => {
   // Hermetic: a private storage home and no real reclaim.
   const isolated = async () => ({
     TTR_RESOURCES_MIN_FREE_GIB: '0',
+    TTR_STORAGE_MIN_FREE_PERCENT: '5',
+    TTR_STORAGE_RECOVER_FREE_PERCENT: '10',
     TTR_STORAGE_HOME: await mkdtemp(join(tmpdir(), 'ttr-admission-')),
   });
   const reclaim = async () => ({ result: null, note: 'stubbed' });
