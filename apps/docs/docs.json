@@ -350,6 +350,7 @@
                   "build/devops/overview",
                   "build/devops/tuturuuu-bot",
                   "build/devops/active-runtime",
+                  "build/devops/standalone-api",
                   "build/devops/wave1-native-cutover",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
@@ -409,6 +410,7 @@
               "build/development-tools/employee-address-migration",
               "build/development-tools/notification-email-freshness",
               "build/development-tools/remote-devboxes",
+              "build/development-tools/fleet-balancer",
               "build/development-tools/machine-storage-health",
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",
@@ -540,6 +542,7 @@
                     "group": "Routes by app",
                     "pages": [
                       "reference/repository/routes/ai",
+                      "reference/repository/routes/api",
                       "reference/repository/routes/apps",
                       "reference/repository/routes/calendar",
                       "reference/repository/routes/chat",

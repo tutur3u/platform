@@ -1,3 +1,4 @@
+import 'server-only';
 import { dehydrate, QueryClient } from '@tanstack/react-query';
 import {
   getWorkspaceBoardsData,

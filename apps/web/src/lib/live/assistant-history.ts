@@ -26,6 +26,25 @@ type ChatRow = {
   created_at: string | null;
 };
 
+declare const ownedLiveChat: unique symbol;
+
+/**
+ * A chat row whose `creator_id` was matched to the caller (or that the caller
+ * just created). Only `ensureAssistantLiveChat` produces it, so seed-history
+ * reads can skip a second ownership round trip.
+ */
+export type OwnedAssistantLiveChat = ChatRow & {
+  readonly [ownedLiveChat]: true;
+};
+
+/** Most recent stored messages considered for a fresh Live session. */
+export const LIVE_SEED_MESSAGE_LIMIT = 60;
+/**
+ * Character budget for replayed history (~8k tokens). Gemini ingests seed
+ * turns before the first reply, so unbounded history delays the first answer.
+ */
+export const LIVE_SEED_CHAR_BUDGET = 32_000;
+
 function normalizeChatRole(role: string | null): 'user' | 'model' | null {
   if (role == null) return null;
   const normalized = role.toLowerCase();
@@ -53,23 +72,36 @@ function extractMessageSeedText(message: ChatMessageRow): string | null {
   return null;
 }
 
-export function buildLiveSeedHistory(messages: ChatMessageRow[]) {
+/**
+ * Builds chronological seed turns, keeping the newest messages that fit the
+ * character budget. A single oversized latest message is truncated to its tail
+ * rather than dropping all context.
+ */
+export function buildLiveSeedHistory(
+  messages: ChatMessageRow[],
+  charBudget = LIVE_SEED_CHAR_BUDGET
+) {
   const history: LiveSeedContent[] = [];
+  let remaining = charBudget;
 
-  for (const message of messages) {
+  for (let index = messages.length - 1; index >= 0 && remaining > 0; index--) {
+    const message = messages[index]!;
     const role = normalizeChatRole(message.role);
     const text = extractMessageSeedText(message);
     if (role == null || text == null) {
       continue;
     }
 
+    if (text.length > remaining && history.length > 0) break;
+    const kept = text.length > remaining ? text.slice(-remaining) : text;
+    remaining -= kept.length;
     history.push({
       role,
-      parts: [{ text }],
+      parts: [{ text: kept }],
     });
   }
 
-  return history;
+  return history.reverse();
 }
 
 export async function ensureAssistantLiveChat({
@@ -82,7 +114,7 @@ export async function ensureAssistantLiveChat({
   userId: string;
   chatId?: string;
   model: string;
-}): Promise<ChatRow> {
+}): Promise<OwnedAssistantLiveChat> {
   if (chatId != null) {
     const { data: existingChat, error } = await supabase
       .from('ai_chats')
@@ -96,7 +128,7 @@ export async function ensureAssistantLiveChat({
     }
 
     if (existingChat != null) {
-      return existingChat;
+      return existingChat as OwnedAssistantLiveChat;
     }
   }
 
@@ -114,37 +146,28 @@ export async function ensureAssistantLiveChat({
     throw new Error(createError?.message ?? 'Failed to create live chat');
   }
 
-  return createdChat;
+  return createdChat as OwnedAssistantLiveChat;
 }
 
 export async function loadAssistantLiveSeedHistory({
-  supabase,
-  chatId,
+  chat,
   userId,
 }: {
-  supabase: TypedSupabaseClient;
-  chatId: string;
+  chat: OwnedAssistantLiveChat;
   userId: string;
 }) {
-  // Message reads are server-only. Verify the caller owns the parent before
-  // obtaining an admin client; never rely on a caller-supplied chat id alone.
-  const { data: ownedChat, error: ownershipError } = await supabase
-    .from('ai_chats')
-    .select('id')
-    .eq('id', chatId)
-    .eq('creator_id', userId)
-    .maybeSingle();
-  if (ownershipError) throw new Error(ownershipError.message);
-  if (!ownedChat) throw new Error('Live chat is not available');
-
+  // Message reads are server-only. The branded chat proves ownership was
+  // checked by ensureAssistantLiveChat; the inner join re-asserts it in the
+  // same round trip so a foreign chat id can never return messages.
   const admin = await createAdminClient();
   const { data, error } = await admin
     .from('ai_chat_messages')
-    .select('role, content, metadata')
-    .eq('chat_id', ownedChat.id)
+    .select('role, content, metadata, ai_chats!chat_id!inner(creator_id)')
+    .eq('chat_id', chat.id)
+    .eq('ai_chats.creator_id', userId)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .limit(200);
+    .limit(LIVE_SEED_MESSAGE_LIMIT);
 
   if (error != null) throw new Error(error.message);
   return buildLiveSeedHistory([...(data ?? [])].reverse());

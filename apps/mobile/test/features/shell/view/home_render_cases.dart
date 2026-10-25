@@ -234,8 +234,8 @@ void _homeRenderCases() {
       find.semantics.byLabel('Current workspace: Northwind Studio'),
     );
     await settleShell(tester);
-    expect(find.byType(Dialog), findsOneWidget);
-    Navigator.of(tester.element(find.byType(Dialog))).pop();
+    expect(find.byType(AppSheetScaffold), findsOneWidget);
+    Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();
     await settleShell(tester);
 
     // ...and the section link navigates.

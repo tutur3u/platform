@@ -90,9 +90,14 @@ function nodeScriptTests(files, exists) {
   return [...selected].sort();
 }
 
-function isNodeTest(file, context) {
+/**
+ * Which runner owns a test file: 'vitest', 'node' (node --test) or 'bun'
+ * (`bun test`, for Worker/Durable Object suites that CI runs with Bun and that
+ * Node cannot load because of extensionless workspace imports).
+ */
+function testRunnerOf(file, context) {
   const workspace = workspaceOf(file);
-  if (!workspace) return NODE_TEST_FILE.test(file);
+  if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   const script = context.workspaces?.find(
     (entry) => entry.workspace === workspace
   )?.testScript;
@@ -101,9 +106,13 @@ function isNodeTest(file, context) {
     new RegExp(
       `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
     ).test(source);
-  if (imports('vitest')) return false;
-  if (imports('node:test')) return true;
-  return /\bnode\s+--test(?:\s|$)/.test(script ?? '');
+  if (imports('vitest')) return 'vitest';
+  if (imports('bun:test')) return 'bun';
+  if (imports('node:test')) return 'node';
+  return /\bnode\s+--test(?:\s|$)/.test(script ?? '') ? 'node' : 'vitest';
+}
+function isNodeTest(file, context) {
+  return testRunnerOf(file, context) === 'node';
 }
 
 /**
@@ -269,7 +278,7 @@ function planChecks(changes, context) {
   for (const file of present) {
     if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
     for (const related of siblingTests(file, exists)) {
-      relatedTests.set(related, isNodeTest(related, context));
+      relatedTests.set(related, testRunnerOf(related, context));
     }
   }
   const scriptTests = nodeScriptTests(
@@ -279,7 +288,9 @@ function planChecks(changes, context) {
   const nodeTests = [
     ...new Set([
       ...scriptTests,
-      ...[...relatedTests].filter(([, node]) => node).map(([file]) => file),
+      ...[...relatedTests]
+        .filter(([, runner]) => runner === 'node')
+        .map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
     ]),
   ].filter(exists);
@@ -344,10 +355,28 @@ function planChecks(changes, context) {
   }
 
   for (const [workspace, files] of byWorkspace) {
-    if (!context.hasVitest(workspace)) continue;
-    const tests = [
+    const related = [
       ...new Set(files.flatMap((file) => siblingTests(file, exists))),
-    ].filter((file) => !relatedTests.get(file));
+    ];
+    const bunTests = related.filter((file) => relatedTests.get(file) === 'bun');
+    if (bunTests.length) {
+      // `bun test` from the repository root would run the root `test` script.
+      steps.push({
+        id: `bun-test:${workspace}`,
+        label: `bun test ${workspace} (${bunTests.length} related files)`,
+        command: 'bun',
+        args: [
+          'test',
+          ...bunTests.map((file) => path.posix.relative(workspace, file)),
+        ],
+        cwd: workspace,
+        heavy: true,
+      });
+    }
+    if (!context.hasVitest(workspace)) continue;
+    const tests = related.filter(
+      (file) => (relatedTests.get(file) ?? 'vitest') === 'vitest'
+    );
     if (!tests.length) continue;
     steps.push({
       id: `vitest:${workspace}`,

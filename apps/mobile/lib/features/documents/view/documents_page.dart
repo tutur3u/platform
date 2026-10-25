@@ -149,6 +149,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
               controller: controller,
               autofocus: true,
               decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderDocumentName,
                 labelText: context.l10n.documentsDocumentName,
               ),
               textInputAction: TextInputAction.done,

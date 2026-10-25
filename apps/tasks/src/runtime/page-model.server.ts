@@ -11,6 +11,7 @@ import {
   publicBoardModel,
   sharedTaskModel,
 } from './public-page-model.server';
+import { rootEntry } from './root-page-model.server';
 import {
   type TasksWorkspaceModel,
   workspaceModel,
@@ -94,13 +95,14 @@ export type TasksPage = Awaited<
   ReturnType<(typeof loaders)[keyof typeof loaders]>
 >;
 
-/** Splits a router path into the app-relative pathname and its locale. */
+/** The app-relative pathname of a router path, without its locale prefix. */
 function appPathname(path: string) {
   const base = runtimeAppBase();
   let pathname = new URL(path, 'http://app.invalid').pathname;
   if (base && (pathname === base || pathname.startsWith(`${base}/`)))
     pathname = pathname.slice(base.length) || '/';
-  return pathname.replace(/^\/(?:en|vi)(?=\/|$)/u, '') || '/';
+  const localeless = pathname.replace(/^\/(?:en|vi)(?=\/|$)/u, '') || '/';
+  return { pathname: localeless, localePrefixed: localeless !== pathname };
 }
 
 export async function loadPageModel(path: string) {
@@ -110,8 +112,17 @@ export async function loadPageModel(path: string) {
     rewrite?.startsWith('/') && !rewrite.startsWith('//') ? rewrite : path;
   const url = new URL(target, 'http://app.invalid');
   const locale = resolvePathLocale(target);
-  const pathname = appPathname(target);
-  if (pathname === '/') redirect('/personal/tasks');
+  let { pathname, localePrefixed } = appPathname(target);
+  if (pathname === '/') {
+    const entry = await rootEntry({
+      locale,
+      localePrefixed,
+      search: url.searchParams,
+    });
+    if (entry.kind === 'board') redirect(entry.path);
+    // No board yet: the localized task entrypoint, as the proxy rewrites it.
+    pathname = `/${entry.target}/tasks`;
+  }
   const match = matchPage(pages, pathname);
   if (!match) notFound();
   const params = { ...match.params, locale } as Record<string, string>;

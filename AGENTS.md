@@ -25,6 +25,9 @@ merge, or production evidence only when that delivery is authorized.
 For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
 Route and switch accounts per its [account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation) and [cross-orchestrator quota and storage coordination](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination).
 
+Send inter-thread messages with mode `auto` by default; check the target queue first and consolidate
+instead of piling queued items. Keep long-running owners and children steerable, with no long turns.
+
 Operating model: `agent-allocation: 10` is the thread-tree ceiling, subject to
 observed runtime scope, resource admission and parent grants. Follow the
 [operating model and budget](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
@@ -72,6 +75,10 @@ for roles, independent review, publication, receipts and retirement.
   boundaries with focused tests when extracting shared modules.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
+- Remove redundant slogans, explanations and secondary labels; if clarity suffers, redesign the
+  layout instead of adding copy back.
+- Every change improves UX, DX and agent experience together without breaking behavior. State a
+  reason and get the user's OK before making one worse.
 - Do not add `export const dynamic` / `export const revalidate` route segment
   configs. Every Next app runs with `cacheComponents` enabled, which rejects them
   at build time. Opt an authed page or Supabase-backed GET route handler into
