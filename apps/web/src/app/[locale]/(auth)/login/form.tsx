@@ -884,13 +884,8 @@ export default function LoginForm({
         nextUrl.searchParams.set('multiAccount', 'true');
       }
 
-      if (nextUrl.origin !== window.location.origin) {
-        window.location.assign(nextUrl.toString());
-      } else {
-        router.push(nextUrl.toString());
-        router.refresh();
-      }
-
+      // Another app serves its verifier, even on this origin (an apex mount).
+      window.location.assign(nextUrl.toString());
       return;
     }
 
