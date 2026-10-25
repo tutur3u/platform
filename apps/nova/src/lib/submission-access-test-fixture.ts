@@ -50,11 +50,23 @@ export function submissionAccessFixture() {
     schema: () => client,
     from: (table: string) => {
       const filters: Array<[string, unknown]> = [];
+      const lists: Array<[string, unknown[]]> = [];
+      let columns: string[] | null = null;
       let write: (typeof writes)[number] | null = null;
       const rows = () =>
-        (tables[table] ?? []).filter((row) =>
-          filters.every(([column, value]) => row[column] === value)
-        );
+        (tables[table] ?? [])
+          .filter(
+            (row) =>
+              filters.every(([column, value]) => row[column] === value) &&
+              lists.every(([column, values]) => values.includes(row[column]))
+          )
+          .map((row) =>
+            columns
+              ? Object.fromEntries(
+                  columns.map((column) => [column, row[column]])
+                )
+              : row
+          );
       const one = () => {
         const [row] = write?.payload ? [write.payload as Row] : rows();
         return row
@@ -75,8 +87,19 @@ export function submissionAccessFixture() {
           filters.push([column, value]);
           return builder;
         },
+        in: (column: string, values: unknown[]) => {
+          lists.push([column, values]);
+          return builder;
+        },
         maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
-        select: () => builder,
+        // Explicit column lists are projected so tests can assert which
+        // fields leave the server; `*` and embedded selects return full rows.
+        select: (projection?: string) => {
+          if (projection && !projection.includes('*')) {
+            columns = projection.split(',').map((column) => column.trim());
+          }
+          return builder;
+        },
         single: async () => one(),
         // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
         then: (resolve: (value: unknown) => unknown) =>

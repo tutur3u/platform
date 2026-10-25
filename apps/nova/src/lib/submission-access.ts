@@ -8,6 +8,37 @@ import {
 
 type NovaSubmissionManager = Pick<SupabaseUser, 'email' | 'id'>;
 
+/**
+ * Whether the caller may view a submission's details: an enabled manager of
+ * the submission's challenge, or its owner when the submission is bound to the
+ * owner's own session in that challenge.
+ */
+export async function canViewNovaSubmission(
+  user: NovaSubmissionManager,
+  submission: { sessionId: string | null; userId: string },
+  challengeId: string,
+  sbAdmin: TypedSupabaseClient
+) {
+  if (submission.userId === user.id && submission.sessionId) {
+    const { data, error } = await sbAdmin
+      .schema('private')
+      .from('nova_sessions')
+      .select('id')
+      .eq('id', submission.sessionId)
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Database Error when fetching session:', error);
+    } else if (data) {
+      return true;
+    }
+  }
+
+  return canManageNovaChallenge(user, challengeId, sbAdmin);
+}
+
 export type NovaManagedSubmission = {
   challengeId: string;
   id: string;
