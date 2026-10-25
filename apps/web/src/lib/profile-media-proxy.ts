@@ -1,4 +1,4 @@
-import { PROFILE_MEDIA_MAX_BYTES } from '@tuturuuu/storage-core/profile-upload-budget';
+import { PROFILE_MEDIA_MAX_BYTES } from '@tuturuuu/storage-core/profile-upload-limits';
 
 export function profileMediaProxyPayloadLimit(
   method: string,

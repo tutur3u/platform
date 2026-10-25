@@ -222,6 +222,9 @@ For a 413, trace the real request from `apps/web/src/proxy.ts` through
 reject bytes before the profile handler. Profile-specific proxy limits must match
 storage-core's server caps for exact PUT paths while retaining streamed-byte,
 authentication, one-use ticket, budget and server re-encoding enforcement. See
+`@tuturuuu/storage-core/profile-upload-limits` for pure proxy-safe metadata;
+keep server-only budget imports in handlers. Verify the native bridge proxy
+suite without a `server-only` mock when changing this import chain. See
 `apps/web/src/lib/profile-media-proxy.test.ts` and the user-management feature
 page for recommended dimensions and current limits.
 

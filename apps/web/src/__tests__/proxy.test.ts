@@ -44,7 +44,6 @@ vi.mock('@tuturuuu/auth/cli-session', () => ({
     ...args: Parameters<typeof mocks.verifyCliAccessToken>
   ) => mocks.verifyCliAccessToken(...args),
 }));
-vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>

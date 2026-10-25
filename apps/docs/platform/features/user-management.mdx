@@ -261,6 +261,9 @@ requests without one retain the generic 512 KiB cap. The handler still validates
 the ticket. Unrelated API payloads retain their normal limit.
 Actual streamed bytes, one-use tickets, upload budgets and server-side
 WebP re-encoding remain authoritative; client sizes do not grant permission.
+Proxy consumers import the dependency-free
+`@tuturuuu/storage-core/profile-upload-limits` module. The server-only budget
+module re-exports the same limits for existing handler callers.
 Empty/corrupt images and native decode failures use invalid-image guidance,
 rather than size guidance. Recovery uses a compact design-system alert and
 retains fresh selection, dismissal and authorized sanitized diagnostics.
