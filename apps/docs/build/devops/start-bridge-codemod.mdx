@@ -209,6 +209,7 @@ configuration, so apps regenerate instead of forking generated files:
 | Proxy matcher | `src/proxy.ts` `export const config = { matcher }` | `matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches)` in `cloudflare/worker.ts`; Next's path-to-regexp evaluates each source on the app-relative path (`has`/`missing` entries always run the proxy) |
 | `centralFirst` | `next.config.*` calling `createTuturuuuWebWorkspaceApiRewrites` (`beforeFiles`) | `src/start-bridge/central-first.ts` re-exports `TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS`; the Worker and the app-base resolver share it |
 | `next/og` | any `next/og` import under `src/` | preset `og: '@cloudflare/pages-plugin-vercel-og/api'` (as Meet) and the pinned dependency |
+| Assets binding | `@tuturuuu/start-bridge` exports `./assets` (#6753) | the Worker env types `ASSETS: AssetsBinding` (`import type` from `@tuturuuu/start-bridge/assets`), which the Workers `Fetcher` satisfies; the handler serves it through `fetchAsset` |
 | Internal API app base | `@tuturuuu/internal-api` exports `registerDefaultAppBaseResolver` (#6764) and the app depends on it | `src/start-bridge/app-base.ts` registers `createAppBaseResolver(appApiPatterns, centralFirst)` from the codegen's client-safe `api-patterns.bridge.gen.ts`: app-owned routes are mounted in the browser and absolute on the request host on the server; Web routes are untouched |
 
 The preset renders `@tuturuuu/vercel`'s Analytics and Speed Insights as

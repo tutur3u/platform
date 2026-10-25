@@ -25,7 +25,6 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.9.0",
     "@hookform/resolvers": "^5.9.2",
     "@mantine/charts": "^9.7.3",
     "@mantine/core": "^9.7.3",
@@ -47,7 +46,6 @@
     "cookies-next": "^6.1.1",
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",
-    "negotiator": "^1.1.0",
     "next": "^16.4.0",
     "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
@@ -65,7 +63,6 @@
     "@tanstack/react-query-devtools": "^5.104.5",
     "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/negotiator": "^0.6.5",
     "@types/node": "^26.6.5",
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.7",

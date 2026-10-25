@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -47,6 +48,7 @@ class HarnessTest(unittest.TestCase):
         self.app = self.root / "apps/finance"
         types = self.root / "node_modules/@cloudflare/workers-types"
         types.mkdir(parents=True)
+        (types / "package.json").write_text('{"name":"@cloudflare/workers-types"}')
         (types / "index.ts").write_text(WORKERS)
         self.app.mkdir(parents=True)
         (self.app / "tsconfig.json").write_text("{}")
@@ -98,6 +100,42 @@ class HarnessTest(unittest.TestCase):
     def test_reads_bindings_declared_on_the_interface_itself(self):
         self.generated.write_text("interface FinanceGeneratedEnv {\n\tASSETS: Fetcher;\n}\n")
         self.assertEqual(self.run_build()[0], ["Fetcher"])
+
+    def module_source(self):
+        return (self.out / "cloudflare-workers-types.d.ts").read_text()
+
+    def test_resolves_a_hoisted_install_without_an_app_local_copy(self):
+        # setUp installs the package only at the repository root.
+        self.assertFalse((self.app / "node_modules").exists())
+        self.run_build()
+        self.assertEqual(self.module_source(), WORKERS)
+
+    def test_resolves_bun_isolated_store_through_the_root_symlink(self):
+        root_link = self.root / "node_modules/@cloudflare/workers-types"
+        shutil.rmtree(root_link)
+        store = (
+            self.root
+            / "node_modules/.bun/@cloudflare+workers-types@5.0.0/node_modules/@cloudflare/workers-types"
+        )
+        store.mkdir(parents=True)
+        (store / "package.json").write_text('{"name":"@cloudflare/workers-types"}')
+        (store / "index.ts").write_text(WORKERS.replace("Unused", "Isolated"))
+        root_link.symlink_to(store, target_is_directory=True)
+        self.run_build()
+        self.assertIn("Isolated", self.module_source())
+
+    def test_prefers_an_app_local_install_when_present(self):
+        local = self.app / "node_modules/@cloudflare/workers-types"
+        local.mkdir(parents=True)
+        (local / "package.json").write_text('{"name":"@cloudflare/workers-types"}')
+        (local / "index.ts").write_text(WORKERS.replace("Unused", "Local"))
+        self.run_build()
+        self.assertIn("Local", self.module_source())
+
+    def test_fails_when_the_package_cannot_be_resolved(self):
+        shutil.rmtree(self.root / "node_modules")
+        with self.assertRaises(SystemExit):
+            self.run_build()
 
     def test_rejects_unsafe_type_names(self):
         with self.assertRaises(SystemExit):

@@ -29,6 +29,8 @@
     "./function-proxy": "./src/next/function-proxy.ts",
     "./intl": "./src/intl/use-intl.tsx",
     "./intl/localized-navigation": "./src/intl/localized-navigation.tsx",
+    "./intl/satellite-i18n": "./src/intl/satellite-i18n.ts",
+    "./intl/satellite-locales": "./src/intl/satellite-locales.ts",
     "./intl/server": "./src/intl/server.ts",
     "./start/handler": "./src/start/handler.ts",
     "./start/base-path": "./src/start/base-path.ts",
