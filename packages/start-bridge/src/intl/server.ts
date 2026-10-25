@@ -10,9 +10,12 @@ export type BridgeLocale = 'en' | 'vi';
  * app's middleware, then English. Import from a server-only module.
  */
 export function createIntlServer(
-  messages: Record<BridgeLocale, AbstractIntlMessages>,
+  // JSON message bundles import as plain records; `en` is the fallback.
+  messages: Record<string, unknown>,
   options: { basePath?: string } = {}
 ) {
+  const bundle = (locale: string) =>
+    (messages[locale] ?? messages.en ?? {}) as AbstractIntlMessages;
   async function getLocale(): Promise<BridgeLocale> {
     const request = bridgeRequest().request;
     let pathname = new URL(request.url).pathname;
@@ -24,7 +27,7 @@ export function createIntlServer(
   }
   async function getMessages(input?: { locale?: string }) {
     const locale = input?.locale ?? (await getLocale());
-    return locale === 'vi' ? messages.vi : messages.en;
+    return bundle(locale);
   }
   async function getTranslations(
     input?: string | { locale?: string; namespace?: string }
@@ -34,7 +37,7 @@ export function createIntlServer(
       (await getLocale());
     return createTranslator({
       locale,
-      messages: locale === 'vi' ? messages.vi : messages.en,
+      messages: bundle(locale),
       namespace: typeof input === 'string' ? input : input?.namespace,
     });
   }

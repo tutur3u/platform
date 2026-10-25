@@ -27,7 +27,8 @@ signature needs a new subpath and a coordinated migration.
 | `request-context` | `withBridgeRequest`, `bridgeRequest`, `maybeBridgeRequest`, `createRequestLocal`, `headers`, `cookies`, `draftMode`, `connection`, `after`, `appendContextCookies` | One AsyncLocalStorage store for every alias; carries `appBase` |
 | `endpoints` | `dispatchEndpoint`, `sortEndpoints`, `BridgeEndpoint`, `RouteModule`, `HTTP_METHODS` | Next route-handler semantics (HEAD→GET, OPTIONS 204, 405 with `Allow`, 400 on bad encoding) |
 | `pages` | `matchPage`, `BridgePage` | Matches a generated page manifest |
-| `api-forward` | `forwardToCentralApi`, `centralApiOrigin`, `HOP_BY_HOP_HEADERS` | Unowned `/api/*` to the central Web API |
+| `api-forward` | `forwardToCentralApi`, `centralApiOrigin`, `HOP_BY_HOP_HEADERS` | Unowned `/api/*` to the central Web API; a same-origin target is refused only for paths the app owns (`ownsPath`), so a mounted app reaches Web on `tuturuuu.com` while a root-mounted self-forward stays a 503 |
+| `csp` | `createNonce`, `requestNonce`, `defaultContentSecurityPolicy` | Per-response script nonce; `createBridgeHandler({ csp })` sends the policy, `createRouter({ ssr: { nonce: requestNonce() } })` and `appBaseHeadScript()` stamp scripts. Required before any app mounts on the apex |
 | `canary` | `decideCohort`, `tagResponse`, `parseCanaryPercent`, `CANARY_PERCENT_VARIABLE`, `RUNTIME_HEADER`, `COHORT_COOKIE` | Interface frozen now, router behaviour in v0.2 |
 | `next/headers`, `next/server`, `next/cache` | Next server APIs over the bridge request | `after()` needs a `waitUntil` binding |
 | `next/navigation`, `next/link` | Router-mode navigation; `BridgeParamsContext` | Client navigation on the TanStack router |
@@ -39,7 +40,6 @@ signature needs a new subpath and a coordinated migration.
 | `proxy-bridge` | `dispatchThroughProxy`, `defaultProxyMatches`, `toNextRequest`, `forwardedRequestInit` | Runs `proxy.ts` with Next's middleware protocol |
 | `function-proxy` | `createFunctionProxy({ targetApp, prefixBase?, continueWith? })` | Guards the server-function base |
 | `intl`, `intl/localized-navigation`, `intl/server` | `next-intl` on `use-intl`; en/vi localized links; `createIntlServer(messages)` | English unprefixed, Vietnamese under `/vi` |
-| `start/page-route` | `renderAppRouterPage`, `metadataToHead` | App Router pages and layouts over Start RSC |
 | `start/handler` | `createBridgeHandler(options)` | The Worker `fetch` skeleton; `mounts` resolves the base per request |
 | `start/server-entry` | `createBridgeStartHandler()` | Start handler that prefixes SSR asset URLs with the request's base |
 | `start/base-path` | `routerBasepath`, `appBaseHeadScript`, `bridgeServerFnFetch`, `runtimeAppBase`, `withAppBase`, `appPath`, `appUrl`, `appBasePath` (deprecated alias) | Router basepath, hydration hand-off and server-function routing |
@@ -89,8 +89,12 @@ another origin throws unless that origin is the configured central API origin
 headers removed.
 
 In the app: `start.ts` passes `serverFns: { fetch: bridgeServerFnFetch }` to
-`createStart`, `getRouter()` sets `basepath: routerBasepath()`, and the root
-route lists `appBaseHeadScript()` first in `head().scripts`.
+`createStart`, `getRouter()` sets `basepath: routerBasepath()` and
+`ssr: { nonce: requestNonce() }`, and the root route lists
+`appBaseHeadScript()` first in `head().scripts`. With `csp` set, every
+response gets a fresh nonce in its `Content-Security-Policy`, which the router
+and the head script repeat. On the apex the handler sits behind the one-origin
+gate (`decideOneOriginRequest`, #6746).
 
 ## Registries and the unregistered-route check
 
@@ -108,10 +112,11 @@ Each app declares `start-bridge.routes.json` at its root:
 ```
 
 `bun packages/start-bridge/src/codegen/cli.ts generate apps/<app>` writes the
-registries; `check` fails when a generated file is stale, a `route.*` or
+registries; `check` fails when `appDir` is missing or not a directory (declare
+`"appDir": null` for an app without App Router source), when a generated file is stale, a `route.*` or
 `page.*` is neither generated, `owned` by an existing native file, nor
 `ignored` with a reason, an `owned`/`ignored` entry names no file, two files
-map to one pattern, or a parallel/intercepting route appears. Route groups are
+map to one URL shape (including `[id]` vs `[slug]`, or a page and a route), or a parallel/intercepting route appears. Route groups are
 dropped from patterns. The page manifest exports `PagePattern`; type the page
 model as `satisfies Record<PagePattern, Loader>` so a new page fails
 type-check until it is handled. `*.bridge.gen.ts` files are excluded from
@@ -215,33 +220,14 @@ untouched. Making that safe on the apex needs the auth change below. It is a
   user with a valid root session needs no re-login. Users with only a satellite
   app session re-login once at cutover (user decision; no cross-host handoff).
 
-## Page adapter (React Server Components)
+## Page adapter
 
-`@tuturuuu/start-bridge/start/page-route` renders App Router pages for Start
-with React Server Components. `renderAppRouterPage({ page, layouts, params,
-searchParams, render })` loads the page and its layouts, resolves metadata
-root-down (layout title templates apply; `metadata` or `generateMetadata`),
-awaits the page body and each layout so `notFound()`/`redirect()` reach the
-router as a 404 or redirect, and returns `{ head, node }`. Call it from an
-app-owned `createServerFn` handler with `render: renderServerComponent` from
-`@tanstack/react-start/rsc`; the route loader returns it, `head()` spreads
-`loaderData.head`, and the component renders `loaderData.node`.
-
-Enable it with `startBridgePreset({ rsc: true })` (Start `rsc: { enabled }`)
-and `rsc()` from `@vitejs/plugin-rsc` in the app's Vite plugins. The bridge
-request store is anchored on `globalThis`, so `next/headers`, cookies and the
-app base resolve inside the separately bundled `rsc` environment too.
-
-Spike evidence (2026-10-26, a contacts-shaped fixture built by `vp build`
-with Void and run from the emitted Worker in workerd): an async page with a
-server-only read and `generateMetadata` rendered with the right `<title>`; a
-`'use client'` child hydrated and handled clicks with no console errors;
-`notFound()` answered 404 and `redirect()` 307; the server-only module and
-its secret appeared in neither the client bundle nor the HTML; per-request
-context reached the RSC bundle for distinct actors. Start's RSC support is
-experimental (`@tanstack/react-start-rsc` 0.1.x): pin versions, keep
-`'use client'` boundaries as in Next, and expect nested async components that
-throw `notFound()` mid-stream to hit the error boundary rather than a 404.
+The generic App Router page adapter (React Server Components) and the
+`'use server'` path are owned by the conversion codemod in
+[#6760](https://github.com/tutur3u/platform/pull/6760), which also owns the
+RSC-environment shims for `next-intl/*` and `next/root-params`. The bridge
+keeps its request store on a global Symbol so every bundled environment
+observes the same request.
 
 ## Canary mode (v0.2 interface)
 

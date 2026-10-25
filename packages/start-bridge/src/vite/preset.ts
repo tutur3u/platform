@@ -57,11 +57,7 @@ export interface StartBridgePresetOptions {
   og?: string;
   /** Alias `server-only` to Start's server-only marker (default `true`). */
   serverOnly?: boolean;
-  /**
-   * Enable Start's React Server Components for `renderAppRouterPage`. The app
-   * config must also add `rsc()` from `@vitejs/plugin-rsc`.
-   */
-  rsc?: boolean;
+
 }
 
 export interface StartBridgeAlias {
@@ -212,7 +208,6 @@ export interface StartBridgePreset {
       disableTypes: false;
     };
     serverFns: { base: string };
-    rsc: { enabled: boolean };
     importProtection: {
       behavior: 'error';
       client: { specifiers: string[]; files: RegExp[] };
@@ -270,7 +265,6 @@ export function startBridgePreset(
       serverFns: {
         base: `${basePath.basePath}${options.serverFnBase ?? '/_serverFn'}`,
       },
-      rsc: { enabled: options.rsc ?? false },
       importProtection: {
         behavior: 'error',
         client: {

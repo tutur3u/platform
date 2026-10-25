@@ -24,6 +24,8 @@ export interface BridgeRequestContext {
   appBase?: string;
   /** Root-layout params (e.g. `locale`) for `next/root-params`. */
   rootParams?: Record<string, string>;
+  /** This response's CSP script nonce (see `createBridgeHandler` `csp`). */
+  nonce?: string;
   /** App-owned per-request values; see `createRequestLocal`. */
   locals: Map<symbol, unknown>;
 }
@@ -42,11 +44,12 @@ export interface BridgeRequestInit {
   observeNavigation?: (href: string, result: unknown) => void;
   appBase?: string;
   rootParams?: Record<string, string>;
+  nonce?: string;
   locals?: Map<symbol, unknown>;
 }
 
-// Anchored on globalThis: with React Server Components the Worker bundles an
-// `rsc` environment beside SSR, and both must observe the same request.
+// Keyed on a global Symbol so every bundled copy of this module (SSR, the
+// RSC environment, client-safe readers) observes the same request.
 const STORAGE_KEY = Symbol.for('tuturuuu.start-bridge.request-context');
 const anchor = globalThis as {
   [STORAGE_KEY]?: AsyncLocalStorage<BridgeRequestContext>;
@@ -75,6 +78,7 @@ export function withBridgeRequest<T>(
       observeNavigation: options.observeNavigation,
       appBase: options.appBase,
       rootParams: options.rootParams,
+      nonce: options.nonce,
       locals: options.locals ?? new Map(),
     },
     run

@@ -8,15 +8,24 @@ import {
 } from '@tanstack/react-router';
 import { createServerOnlyFn } from '@tanstack/react-start';
 import { createContext, useContext, useMemo } from 'react';
-import { maybeBridgeRequest } from '../core/request-context';
 import { withAppBase } from '../start/base-path';
 
 /** Logical App Router params supplied by a catch-all page view. */
 export const BridgeParamsContext = createContext<Record<string, string>>({});
 
+// Reads the bridge request store through its global Symbol so this client
+// module never imports node:async_hooks.
+const REQUEST_STORE = Symbol.for('tuturuuu.start-bridge.request-context');
+type ObservedStore = {
+  getStore(): { observeNavigation?: (href: string, r: unknown) => void } | undefined;
+};
+
 const observeRedirect = createServerOnlyFn(
   (href: string, response: unknown) => {
-    maybeBridgeRequest()?.observeNavigation?.(href, response);
+    const store = (globalThis as { [REQUEST_STORE]?: ObservedStore })[
+      REQUEST_STORE
+    ];
+    store?.getStore()?.observeNavigation?.(href, response);
   }
 );
 
