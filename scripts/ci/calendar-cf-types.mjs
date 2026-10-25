@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -16,6 +15,7 @@ import {
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readCalendarFile } from './calendar-cf-files.mjs';
 import {
   qualifyDeclarations,
   standaloneDeclaration,
@@ -26,17 +26,7 @@ const PIN = '1.0.0-beta.20';
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 
 function regular(path) {
-  const stat = lstatSync(path);
-  assert.ok(
-    stat.isFile() && !stat.isSymbolicLink(),
-    'regular type-generation file required'
-  );
-  assert.equal(
-    realpathSync(path),
-    path,
-    'type-generation path must be canonical'
-  );
-  const bytes = readFileSync(path);
+  const { bytes, stat } = readCalendarFile(path);
   assert.ok(bytes.length > 0, 'empty type-generation file');
   return { bytes, stat };
 }
