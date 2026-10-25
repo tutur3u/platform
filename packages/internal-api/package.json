@@ -223,6 +223,11 @@
       "import": "./dist/personal-journal.js",
       "require": "./dist/personal-journal.js"
     },
+    "./nova": {
+      "types": "./dist/nova.d.ts",
+      "import": "./dist/nova.js",
+      "require": "./dist/nova.js"
+    },
     "./onboarding": {
       "types": "./dist/onboarding.d.ts",
       "import": "./dist/onboarding.js",
