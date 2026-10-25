@@ -60,9 +60,22 @@ are not lane ceilings, so Fleet reports the lane ceiling as not reported until
 the balancer publishes host lanes. Run counts cover only the latest snapshot
 window, and the tiles say so.
 
+Infrastructure > Fleet > Runs (`/[wsId]/fleet/jobs`) lists the snapshot's devbox
+runs. Filters: all, running, queued, outcome unknown, and failed (including timed
+out). A run page shows its source and the tail of its event log (the last 500
+events). For a commit run, the source is the decoded `__ttr_commit_run_v1__`
+envelope: SHA, directory and argv. The decoding is display only; runners remain
+the authority. The run page never selects `env` or `env_files`. Administrators can
+request a stop, which sets `cancel_requested` on running work; a stop request is
+not proof that the process ended. Balancer runs (`@tuturuuu/devbox/balancer`)
+use their own identities. They link here through `balancer_runs.devbox_run_id`
+once that table ships.
+
 Regression coverage: `src/lib/fleet/fleet-model.test.ts` (state precedence,
 freshness, unknown run outcomes, telemetry parsing) and
-`fleet/_components/machine-card.test.tsx` (fresh versus disconnected rendering).
+`fleet/_components/machine-card.test.tsx` (fresh versus disconnected rendering),
+`src/lib/fleet/run-source.test.ts` (envelope decoding and rejection) and
+`fleet/jobs/[runId]/page.test.tsx` (unknown outcome, logs, stop permission).
 
 ## Current schedulers
 

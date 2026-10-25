@@ -7722,6 +7722,68 @@
       "not_attested": "Máy này không báo cáo cách ly. Bật TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE trên runner để xác nhận.",
       "yes": "Có"
     },
+    "jobs": {
+      "columns": {
+        "created": "Yêu cầu lúc",
+        "duration": "Thời lượng",
+        "exit": "Mã thoát",
+        "machine": "Máy",
+        "source": "Nguồn",
+        "state": "Trạng thái"
+      },
+      "detail": {
+        "completed": "Kết thúc",
+        "duration": "Thời lượng",
+        "exit_code": "Mã thoát",
+        "load_failed": "Không tải được lượt chạy này. Hãy thử lại; không có thông tin hiện hành.",
+        "log_empty": "Lượt chạy này chưa ghi đầu ra nào.",
+        "log_label": "Nhật ký lượt chạy",
+        "log_truncated": "Đang hiển thị {count} sự kiện cuối. Đầu ra cũ hơn không hiển thị ở đây.",
+        "machine": "Máy",
+        "none": "Không có",
+        "not_found_detail": "Mã không hợp lệ hoặc lượt chạy không còn tồn tại.",
+        "not_found_title": "Không tìm thấy lượt chạy",
+        "not_yet": "Chưa có",
+        "requested": "Yêu cầu lúc",
+        "run_id": "Mã lượt chạy",
+        "sections": {
+          "execution": "Thực thi",
+          "log": "Nhật ký",
+          "source": "Nguồn"
+        },
+        "started": "Bắt đầu",
+        "stop": "Yêu cầu dừng",
+        "timeout": "Giới hạn thời gian"
+      },
+      "empty": "Không có lượt chạy nào khớp bộ lọc trong ảnh chụp gần nhất.",
+      "filters": {
+        "all": "Tất cả",
+        "failed": "Thất bại",
+        "label": "Lọc lượt chạy",
+        "queued": "Đang chờ",
+        "running": "Đang chạy",
+        "unknown": "Chưa rõ kết quả"
+      },
+      "recovery": {
+        "cancel_requested": "Đã yêu cầu dừng. Runner sẽ dừng ở lần kiểm tra kế tiếp; trước đó lượt chạy có thể vẫn đang chạy.",
+        "failed": "Thất bại với mã thoát {code}. Nhật ký bên dưới hiển thị đầu ra cuối.",
+        "outcome_unknown": "Máy đang chạy lượt này không liên lạc được nên chưa rõ kết quả. Lượt chạy không được tự động lên lịch lại. Hãy kiểm tra máy trước khi yêu cầu chạy lại; nó có thể vẫn đang chạy.",
+        "queued_unassigned": "Đang chờ một máy phù hợp nhận việc.",
+        "timed_out": "Đã dừng do vượt giới hạn thời gian.",
+        "unrecognized": "Bảng điều khiển không nhận ra trạng thái \"{status}\". Hãy xem kết quả là chưa rõ."
+      },
+      "source": {
+        "command": "Lệnh",
+        "commit": "Commit",
+        "directory": "Thư mục",
+        "invalid": "Không đọc được gói commit-run",
+        "maintenance": "Bảo trì: {name}",
+        "repository_root": "Thư mục gốc kho mã"
+      },
+      "title": "Lượt chạy",
+      "unassigned": "Chưa gán máy",
+      "window": "{count} lượt chạy devbox gần nhất"
+    },
     "manage": "Quản trị runner",
     "recovery": {
       "awaiting_first_heartbeat": "Đã đăng ký nhưng chưa từng báo cáo. Có thể thiết lập đã lỗi; chạy lại ttr box connect --service trên máy và kiểm tra dịch vụ agent.",
@@ -8838,6 +8900,7 @@
     "external_apps": "Ứng dụng bên ngoài",
     "features": "Tính năng",
     "fleet": "Đội máy",
+    "fleet_runs": "Lượt chạy",
     "github_bot": "Bot GitHub",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",

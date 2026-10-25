@@ -144,7 +144,7 @@ export default async function FleetMachinePage({ params }: Props) {
       </div>
 
       <OpsSection count={runs.length} flush title={t('sections.recent_runs')}>
-        <MachineRuns locale={locale} runs={runs} t={t} />
+        <MachineRuns locale={locale} runs={runs} t={t} wsId={wsId} />
       </OpsSection>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

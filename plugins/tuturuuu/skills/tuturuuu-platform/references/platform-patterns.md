@@ -96,7 +96,8 @@ shared-package changes.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
 - Operational status surfaces use `@tuturuuu/ui/custom/ops` (`StatusPill`,
-  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`) and
+  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`,
+  `LogLines`) and
   the `OpsTone` vocabulary instead of app-local tone maps. `unknown` is not
   `neutral`: stale or missing telemetry and unreachable workers render as
   unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
