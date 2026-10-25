@@ -11158,4 +11158,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailSettingsReadOnly => 'Saved settings are read-only until access can be verified.';
+
+  @override
+  String get calendarSettingsError => 'Could not load or save calendar preferences. Retry when online.';
 }

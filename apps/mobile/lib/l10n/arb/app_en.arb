@@ -4782,5 +4782,6 @@
   "assistantSubmitSuccess": "Submitted successfully",
   "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
   "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
-  "mailSettingsReadOnly": "Saved settings are read-only until access can be verified."
+  "mailSettingsReadOnly": "Saved settings are read-only until access can be verified.",
+  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online."
 }
