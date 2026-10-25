@@ -16,7 +16,14 @@ Future<void> _liveDraft(WidgetTester tester, BackgroundReplyHarness h) async {
 }
 
 void liveDispatchCases() {
-  for (final edit in ['reply', 'text', 'attachment', 'new upload']) {
+  for (final edit in [
+    'reply',
+    'text',
+    'selection',
+    'composing',
+    'attachment',
+    'new upload',
+  ]) {
     testWidgets('admitted Live clears only captured unchanged data: $edit', (
       tester,
     ) async {
@@ -33,6 +40,16 @@ void liveDispatchCases() {
       final replyB = h.chat.state.replyTarget;
       var remaining = <AssistantAttachment>[];
       if (edit == 'text') composer.controller.text = 'Later draft B';
+      if (edit == 'selection' || edit == 'composing') {
+        final before = composer.controller.value;
+        composer.controller.value = edit == 'selection'
+            ? before.copyWith(
+                selection: const TextSelection.collapsed(offset: 1),
+              )
+            : before.copyWith(composing: const TextRange(start: 0, end: 3));
+        expect(composer.controller.text, before.text);
+        expect(composer.controller.value, isNot(before));
+      }
       if (edit == 'attachment') {
         remaining = [captured.copyWith(signedUrl: 'https://example.test/new')];
         h.chat.emit(h.chat.state.copyWith(composerAttachments: remaining));

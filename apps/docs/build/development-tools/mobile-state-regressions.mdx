@@ -194,7 +194,11 @@ supersession. `assistant_live_typed_dispatch_test.dart` covers this boundary.
 
 A retired send must leave shared setup in a terminal state, or under a newer
 preparation owner. Assert that state after abort and fence cleanup publication
-across native awaits. Notice guards must use the requested selection while a
+across native awaits. Count preparation attempts before retry or screen teardown
+awaits, so abandoned cleanup preserves a newer attempt before request admission.
+The latest rejected attempt settles inherited setup; teardown rechecks that
+ownership after native awaits.
+Notice guards must use the requested selection while a
 restore is pending; the previous loaded chat snapshot is not selection proof.
 `assistant_live_preparation_cases.dart` retains both same-chat recovery and
 no-notice controls for another conversation. Manual End needs a monotonic

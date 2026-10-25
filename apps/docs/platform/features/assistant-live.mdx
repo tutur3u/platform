@@ -115,7 +115,7 @@ An admitted native turn consumes its acknowledgement even if a later draft selec
 <img className="block dark:hidden" src="/images/assistant-reply-feedback-light.png" alt="Reply change keeps the unsent draft in light mode" />
 <img className="hidden dark:block" src="/images/assistant-reply-feedback-dark.png" alt="Reply change keeps the unsent draft in dark mode" />
 
-Live completion removes only its captured, unchanged draft and attachments, retaining a new reply and later edits. Local socket admission proves neither provider acknowledgement nor durable saving.
+Live completion clears unchanged submitted text regardless of cursor or IME ranges, and removes only matching attachments. New replies and later text edits remain. Local socket admission proves neither provider acknowledgement nor durable saving.
 Aborted typed preparation disconnects only its owned request; newer preparation remains active. Current-chat connection loss reports refusal, and same-chat reselection after possible dispatch reports uncertainty while retaining the draft.
 Refused or uncertain delivery is not automatically replayed. Mobile reply-guard and Live dispatch tests cover setup retirement, recovery, scoped notices and snapshot cleanup.
 

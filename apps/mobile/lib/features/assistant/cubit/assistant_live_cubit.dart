@@ -106,6 +106,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   StreamSubscription<AssistantLiveSocketEvent>? _socketSubscription;
   Completer<void>? _readyCompleter;
   int _requestVersion = 0;
+  int _preparationVersion = 0;
   int _typedSubmissionVersion = 0;
   int _transportFailureVersion = 0;
   int _disconnectVersion = 0;
@@ -146,16 +147,29 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool Function()? isCurrent,
     Future<void> Function(String wsId, String chatId)? onChatBound,
   }) async {
+    final preparationVersion = ++_preparationVersion;
     final admissionVersion = _requestVersion;
     final requestedActor = _currentUserId();
     final requestedScope = _currentScopeToken();
     bool admitted() =>
+        preparationVersion == _preparationVersion &&
         (isCurrent?.call() ?? true) &&
         !_isClosing &&
         !isClosed &&
         admissionVersion == _requestVersion &&
         requestedActor == _currentUserId() &&
         requestedScope == _currentScopeToken();
+    Future<int?> rejectAdmission() async {
+      if (preparationVersion == _preparationVersion &&
+          !_isStale(admissionVersion) &&
+          state.workspaceId == wsId &&
+          state.isBusy &&
+          !(isCurrent?.call() ?? true)) {
+        await disconnect();
+      }
+      return null;
+    }
+
     final sameConversation =
         !forceFresh &&
         state.chatId != null &&
@@ -164,11 +178,11 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         _sessionUserId == _currentUserId() &&
         _sessionScopeToken == _currentScopeToken();
     if (sameConversation) await retryPendingTurns();
-    if (!admitted()) return null;
+    if (!admitted()) return await rejectAdmission();
     if (state.isScreenSharing || state.isScreenSharingPending) {
       await stopScreenSharing();
     }
-    if (!admitted()) return null;
+    if (!admitted()) return await rejectAdmission();
     if (!sameConversation) {
       _conversationVersion++;
       _sealedParts.clear();
@@ -178,7 +192,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
     final requestVersion = ++_requestVersion;
     bool currentRequest() =>
-        !_isStale(requestVersion) && (isCurrent?.call() ?? true);
+        preparationVersion == _preparationVersion &&
+        !_isStale(requestVersion) &&
+        (isCurrent?.call() ?? true);
     _sessionUserId = requestedActor;
     _sessionScopeToken = requestedScope;
     _pendingTools = Future<void>.value();
@@ -282,7 +298,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       _emitError(error.toString());
     } finally {
       timings.finish();
-      if (!_isStale(requestVersion) && !(isCurrent?.call() ?? true)) {
+      if (preparationVersion == _preparationVersion &&
+          !_isStale(requestVersion) &&
+          !(isCurrent?.call() ?? true)) {
         await disconnect();
       } else if (currentRequest()) {
         emit(state.copyWith(startupTimings: timings.snapshot));
@@ -315,11 +333,14 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool reportSessionCleanupFailure = false,
   }) async {
     final endingVersion = _requestVersion;
+    final preparationVersion = _preparationVersion;
     if (finishTurn && _isStale(endingVersion)) return;
     _disconnectVersion++;
     if (finishTurn) {
-      await _stopInputs();
-      if (_isStale(endingVersion)) return;
+      bool current() =>
+          preparationVersion == _preparationVersion && !_isStale(endingVersion);
+      await _stopInputs(isCurrent: current);
+      if (!current()) return;
     }
     if (!finishTurn) {
       _conversationVersion++;
@@ -332,9 +353,11 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     // conversation lease and must not delay local audio/transport teardown.
     final finishing = finishTurn ? _finalizeTurn() : Future<void>.value();
     final disconnectVersion = ++_requestVersion;
-    bool superseded() => finishTurn
-        ? _isStale(disconnectVersion)
-        : isClosed || disconnectVersion != _requestVersion;
+    bool superseded() =>
+        preparationVersion != _preparationVersion ||
+        (finishTurn
+            ? _isStale(disconnectVersion)
+            : isClosed || disconnectVersion != _requestVersion);
     await _stopInputs(isCurrent: () => !superseded());
     if (superseded()) return;
     await _socket.disconnect();

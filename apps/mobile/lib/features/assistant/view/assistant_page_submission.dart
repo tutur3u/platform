@@ -61,8 +61,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
       return;
     }
 
-    final draft = _inputController.value;
-    final text = draft.text;
+    final text = _inputController.text;
     final attachments = chatState.composerAttachments
         .where((attachment) => attachment.isUploaded)
         .toList(growable: false);
@@ -119,7 +118,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
       switch (dispatch) {
         case AssistantLiveDispatch.dispatched:
           _chatCubit.takeUploadedComposerAttachments(matching: attachments);
-          if (_inputController.value == draft) _inputController.clear();
+          if (_inputController.text == text) _inputController.clear();
           _scheduleScrollToBottom();
         case AssistantLiveDispatch.refused:
           _showInlineNotice(context.l10n.assistantLiveSendRefused);
