@@ -10,12 +10,9 @@ import {
   closeSync,
   existsSync,
   mkdirSync,
-  openSync,
   readdirSync,
   readFileSync,
-  readSync,
   statfsSync,
-  statSync,
   writeSync,
 } from 'node:fs';
 import { arch, cpus, hostname, loadavg, totalmem } from 'node:os';
@@ -27,9 +24,11 @@ import {
   LEASE_ID,
   LOG_LIMIT,
   now,
+  openLog,
   processStart,
   RUN_ID,
   readJson,
+  readLogTail,
   reply,
   runDir,
   runRecord,
@@ -193,7 +192,7 @@ function start() {
     if (out.status === 0) supervisor = { unit, launchedAt: now() };
   }
   if (!supervisor) {
-    const log = openSync(join(dir, 'supervisor.log'), 'a', 0o600);
+    const log = openLog(join(dir, 'supervisor.log'));
     const child = spawn(process.execPath, [agent, 'supervise', spec.runId], {
       detached: true,
       stdio: ['ignore', log, log],
@@ -231,8 +230,11 @@ function cancel(runId: string, leaseId: string) {
     return reply({ exists: true, signalled: false, reason: 'stale_lease' });
   if (record.result)
     return reply({ exists: true, signalled: false, result: record.result });
-  if (!existsSync(join(runDir(runId), 'cancel.json')))
-    writeJson(join(runDir(runId), 'cancel.json'), { leaseId, at: now() });
+  writeJson(
+    join(runDir(runId), 'cancel.json'),
+    { leaseId, at: now() },
+    { exclusive: true }
+  );
   let signalled = false;
   const supervisor = record.supervisor;
   if (typeof supervisor?.unit === 'string') {
@@ -261,7 +263,7 @@ async function supervise(runId: string) {
   validSpec({ ...spec, v: VERSION });
   const startedAt = now();
   writeJson(join(dir, 'phase.json'), { phase: 'queued', at: startedAt });
-  const logFd = openSync(join(dir, 'output.log'), 'a', 0o600);
+  const logFd = openLog(join(dir, 'output.log'));
   const hash = createHash('sha256');
   let logBytes = 0;
   const write = (chunk: Buffer) => {
@@ -356,17 +358,7 @@ async function supervise(runId: string) {
 function log(runId: string) {
   if (!RUN_ID.test(runId)) fail('invalid runId');
   const path = join(runDir(runId), 'output.log');
-  if (!existsSync(path)) return reply({ exists: false, tail: '' });
-  const size = statSync(path).size;
-  const fd = openSync(path, 'r');
-  try {
-    const length = Math.min(size, 64 * 1024);
-    const buffer = Buffer.alloc(length);
-    readSync(fd, buffer, 0, length, size - length);
-    reply({ exists: true, bytes: size, tail: buffer.toString('utf8') });
-  } finally {
-    closeSync(fd);
-  }
+  reply(readLogTail(path) ?? { exists: false, tail: '' });
 }
 
 const [action, first, second] = process.argv.slice(2);
