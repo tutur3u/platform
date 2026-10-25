@@ -366,6 +366,27 @@
       }
     }
   },
+  "@homeGreetingAfternoonNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingEveningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingMorningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryAuditChanges": {
     "placeholders": {
       "count": {
@@ -1876,6 +1897,7 @@
   "dashboardTaskUpcoming": "Sắp tới",
   "dashboardTasksMetric": "{count} đang hoạt động",
   "dashboardTodayTitle": "Tổng quan hôm nay",
+  "dashboardUntitledEvent": "Sự kiện chưa đặt tên",
   "dashboardUpcomingEvents": "Sự kiện sắp tới",
   "dashboardUpcomingMeetings": "Cuộc họp sắp tới",
   "desktopUpdateCancel": "Hủy lịch cập nhật",
@@ -2434,10 +2456,17 @@
   "habitsWorkoutTotalVolume": "Tổng khối lượng",
   "habitsWorkoutWeight": "Mức tạ",
   "homeCustomize": "Tùy chỉnh Trang chủ",
+  "homeGreetingAfternoon": "Chào buổi chiều",
+  "homeGreetingAfternoonNamed": "Chào buổi chiều, {name}",
+  "homeGreetingEvening": "Chào buổi tối",
+  "homeGreetingEveningNamed": "Chào buổi tối, {name}",
+  "homeGreetingMorning": "Chào buổi sáng",
+  "homeGreetingMorningNamed": "Chào buổi sáng, {name}",
   "homeHiddenWidgets": "Tiện ích đã ẩn",
   "homeHideWidget": "Ẩn tiện ích",
   "homePersonalAgenda": "Lịch trình",
   "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
+  "homeSectionLoadFailed": "Kéo xuống để thử lại.",
   "homeShowWidget": "Hiện tiện ích",
   "inventoryAddCategory": "Thêm danh mục",
   "inventoryAddManufacturer": "Thêm nhà sản xuất",
@@ -3105,6 +3134,10 @@
   "notificationsArchiveEmptyTitle": "Không có thông báo đã lưu trữ",
   "notificationsDaysAgo": "{count} ngày trước",
   "notificationsDeclineInvite": "Từ chối",
+  "notificationsGroupEarlier": "Trước đó",
+  "notificationsGroupLastWeek": "7 ngày qua",
+  "notificationsGroupToday": "Hôm nay",
+  "notificationsGroupYesterday": "Hôm qua",
   "notificationsHoursAgo": "{count} giờ trước",
   "notificationsInbox": "Hộp thư",
   "notificationsInboxEmptyMessage": "Hoạt động mới, nhắc đến và lời mời sẽ xuất hiện ở đây.",
