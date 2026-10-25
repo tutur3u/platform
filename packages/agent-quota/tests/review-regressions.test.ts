@@ -18,6 +18,7 @@ import {
 } from '../src/reroute-plan';
 import { acquireSwitchLease, releaseSwitchLease } from '../src/switch-safety';
 import type { AccountUsage } from '../src/types';
+import { receiptCovers } from '../src/window-scope';
 
 const now = new Date('2026-10-23T04:00:00Z');
 const pool = (
@@ -218,6 +219,77 @@ describe('independent review regressions', () => {
     applyDescendantReceipts(snapshot, context);
     const result = admit(request, context);
     expect(result.pools.find((x) => x.pool === 'antigravity')).toMatchObject({
+      state: 'EXHAUSTED',
+      reasons: expect.arrayContaining(['observed-usage-limit']),
+    });
+    expect(result.chosen?.providerInstanceId).toBe('codex');
+  });
+  it('blocks Argon on the completed Antigravity limit receipt despite fresh 3p windows', () => {
+    const { request, context } = fixture();
+    context.now = new Date('2026-10-25T05:01:00Z');
+    context.accounts[1]!.windows = [
+      {
+        id: '3p-5h',
+        label: 'Claude & GPT (shared) · 5-hour',
+        scope: { kind: 'models', modelPrefixes: ['claude-', 'gpt-'] },
+        kind: 'short',
+        providerWindowKind: 'session',
+        usedPercent: 0,
+        resetsAt: '2026-10-25T10:00:00Z',
+        authoritative: true,
+        source: 'fixture',
+        observedAt: context.now.toISOString(),
+      },
+      {
+        id: '3p-weekly',
+        label: 'Claude & GPT (shared) · weekly',
+        scope: { kind: 'models', modelPrefixes: ['claude-', 'gpt-'] },
+        kind: 'long',
+        providerWindowKind: 'weekly',
+        usedPercent: 0,
+        resetsAt: '2026-10-31T05:00:00Z',
+        authoritative: true,
+        source: 'fixture',
+        observedAt: context.now.toISOString(),
+      },
+    ];
+    const failureAt = '2026-10-25T05:00:00Z';
+    applyDescendantReceipts(
+      {
+        ...snapshot,
+        runs: snapshot.runs.map((run) => ({
+          ...run,
+          completedAt: failureAt,
+        })),
+        failures: snapshot.failures.map((failure) => ({
+          ...failure,
+          observedAt: failureAt,
+          message:
+            'Usage Limit Reached. Your limit will reset in 4 days, 22 hours.',
+        })),
+      },
+      context
+    );
+    const receipt = context.ledger.observations.find(
+      (event) => event.outcome === 'usage-limit'
+    );
+    expect(receipt).toMatchObject({
+      resetsAt: '2026-10-30T03:00:00.000Z',
+      windowScope: {
+        kind: 'models',
+        modelPrefixes: ['gemini-4-argon'],
+      },
+    });
+    expect(receiptCovers(receipt!, 'antigravity', 'gemini-4-argon-high')).toBe(
+      true
+    );
+    expect(receiptCovers(receipt!, 'antigravity', 'gemini-3.8-flash-low')).toBe(
+      false
+    );
+    const result = admit(request, context);
+    expect(
+      result.pools.find((item) => item.pool === 'antigravity')
+    ).toMatchObject({
       state: 'EXHAUSTED',
       reasons: expect.arrayContaining(['observed-usage-limit']),
     });
