@@ -9,6 +9,7 @@
     "./globals.css": "./src/globals.css",
     "./progress/task-progress-page": "./src/progress/task-progress-page.tsx",
     "./calendar/task-calendar-page-shell": "./src/calendar/task-calendar-page-shell.tsx",
+    "./calendar/scheduling-task-transport": "./src/calendar/scheduling-task-transport.ts",
     "./calendar/components/*": "./src/calendar/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./settings/task-card-hotkey-settings": "./src/settings/task-card-hotkey-settings.tsx",
@@ -47,6 +48,7 @@
       "types": "./src/tu-do/utils/label-colors.ts",
       "import": "./src/tu-do/utils/label-colors.ts"
     },
+    "./tu-do/boards/boardId/task-board-page-model": "./src/tu-do/boards/boardId/task-board-page-model.ts",
     "./tu-do/boards/*": "./src/tu-do/boards/*.tsx",
     "./tu-do/drafts/*": "./src/tu-do/drafts/*.tsx",
     "./tu-do/my-tasks/use-my-tasks-state": {
@@ -65,6 +67,7 @@
     "./tu-do/labels/hooks/*": "./src/tu-do/labels/hooks/*.ts",
     "./tu-do/estimates/*": "./src/tu-do/estimates/*.tsx",
     "./tu-do/initiatives/*": "./src/tu-do/initiatives/*.tsx",
+    "./tu-do/cycles/task-cycles-page-model": "./src/tu-do/cycles/task-cycles-page-model.ts",
     "./tu-do/cycles/*": "./src/tu-do/cycles/*.tsx",
     "./tu-do/logs/*": "./src/tu-do/logs/*.tsx",
     "./tu-do/templates/types": {
