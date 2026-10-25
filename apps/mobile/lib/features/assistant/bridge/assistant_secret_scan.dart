@@ -34,9 +34,10 @@ final _tokenCandidate = RegExp(r'[A-Za-z0-9_\-+/=.]{24,}');
 
 /// Whether [value] holds a secret in any representation a reader could
 /// recover. Every reading is folded (invisible characters, Unicode spaces,
-/// fullwidth and superscript forms) and must contain only supported
-/// characters; the raw value and each decoded reading (percent, escape,
-/// base64 and hex, up to three layers) are checked the same way. Fails closed
+/// fullwidth and superscript forms, punctuation look-alikes), is also read
+/// without diacritics, and must contain only supported characters; the raw
+/// value and each decoded reading (percent, escape, base64 and hex, up to
+/// three layers) are checked the same way. Fails closed
 /// (returns true) on any unsupported character in any reading, and on an
 /// encoding still decodable at the depth limit.
 bool assistantTextContainsSecret(
@@ -47,7 +48,7 @@ bool assistantTextContainsSecret(
       ? value.substring(0, scanLimit)
       : value;
   final seen = <String>{};
-  var layer = [foldAssistantText(scanned)];
+  var layer = _readings(scanned).toList();
   for (var depth = 0; layer.isNotEmpty; depth++) {
     final next = <String>[];
     for (final text in layer) {
@@ -58,11 +59,18 @@ bool assistantTextContainsSecret(
       // Residual encoding past the bound is treated as a secret rather than
       // decoded further without limit.
       if (depth == _maxDecodeDepth) return true;
-      next.addAll(decoded.map(foldAssistantText));
+      next.addAll(decoded.expand(_readings));
     }
     layer = next;
   }
   return false;
+}
+
+/// The folded reading of [value] and the same reading without diacritics.
+Iterable<String> _readings(String value) sync* {
+  final folded = foldAssistantText(value);
+  yield folded;
+  yield stripAssistantMarks(folded);
 }
 
 /// Returns [value] unchanged, or [redactedFieldValue] for the whole value when

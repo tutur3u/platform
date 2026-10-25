@@ -128,9 +128,9 @@ The rules for that content:
 - The whole field is redacted, not just the match, because a match in a
   normalized or decoded reading cannot be mapped back safely.
 - Values are scanned before truncation, first folded (invisible format
-  characters removed; fullwidth forms, superscript digits, Unicode dashes and
-  the ellipsis folded; tab, NBSP and other spaces collapsed) and then decoded
-  up to three layers (percent, `\x`/`\u`/HTML numeric escapes, base64 and hex
+  characters removed; fullwidth forms, superscript digits, punctuation
+  look-alikes and the ellipsis folded; tab, NBSP and other spaces collapsed),
+  also read without diacritics, and then decoded up to three layers (percent, `\x`/`\u`/HTML numeric escapes, base64 and hex
   runs that decode to valid text). Each reading is checked for:
   - credential shapes: JWTs, `sk-`/`sk_live_`, GitHub, Slack, AWS, Google and
     GitLab keys, bearer tokens and private keys;
@@ -142,7 +142,8 @@ The rules for that content:
   digit (for example the rupee sign, long s, ligatures, digraphs, ordinal
   indicators and fractions) is folded to that reading first. The fold table
   is generated from the supported ranges by
-  `apps/mobile/tool/generate_assistant_compat_fold.mjs`; rerun it after
+  `apps/mobile/tool/generate_assistant_compat_fold.mjs`, together with the
+  NFD base letter of every supported precomposed character; rerun it after
   changing the ranges. `--check` verifies the committed table and runs in the
   mobile CI analyze job and `bun check:mobile`. Every reading,
   raw and decoded, may then contain only ASCII, Latin letters and marks
@@ -151,12 +152,21 @@ The rules for that content:
   rejected as look-alikes. Any other character, including other scripts and
   non-ASCII digits, redacts the field. An encoding still decodable after three
   layers also redacts the field.
-- Supported standalone slash look-alikes (fraction slash U+2044, diagonal
-  slash U+2571 and heavy solidus U+1F67C) become ASCII `/` in scan readings,
-  including when produced by fraction folding. Fullwidth slash uses the existing
-  fullwidth ASCII fold. This keeps embedded credentials in one scan token;
-  ordinary fraction text retains its original display value. Other unsupported
-  characters still redact the whole field, including after decoding.
+- **Diacritics.** Combining marks are supported for decomposed Vietnamese, so
+  every reading is also scanned without them: NFD with every nonspacing mark
+  removed. Marks inserted between a secret's characters (accents, or overlays
+  such as U+0337 and U+0338) and precomposed accented letters therefore
+  cannot hide it. The shared value keeps its marks.
+- **Punctuation look-alikes.** Supported characters drawn like the punctuation
+  credentials are spelled with (`+ - _ = . /`) become that ASCII character in
+  scan readings: heavy plus and Greek crosses; dashes, minus signs, heavy minus
+  and horizontal box-drawing bars; double low line and the lower one-eighth
+  block; double horizontals; middle dot and bullets; and the fraction slash,
+  diagonal and heavy solidus, including when produced by fraction folding.
+  Fullwidth forms use the fullwidth ASCII fold. This keeps embedded
+  credentials in one scan token; ordinary fraction, list and box-drawing text
+  retains its original display value. Other unsupported characters still
+  redact the whole field, including after decoding.
 - Free-text fields are also scanned together on what is actually sent (each
   value's first 500 characters): joined in order and in reverse, and every
   ordered pair across its boundary (256 characters each side). Pair boundaries
@@ -170,11 +180,13 @@ The rules for that content:
 - Screen-context results reach the model only. Live turn parts, persisted chat
   history and restored caches keep a placeholder, never the payload.
 - The most recently registered visible screen wins. Offstage shell pages report
-  themselves hidden. Workspace-scoped screens provide `isCurrentScope` to
-  `AssistantScreenContextScope`; the registry checks it on every read, before
-  accessing records or field values. Mounted create and edit event forms stop
+  themselves hidden. `AssistantScreenContextScope` requires an `isCurrentScope`
+  predicate; the registry checks it on every read, before accessing records or
+  field values. Only a screen not tied to any workspace or account opts out,
+  explicitly, with `AssistantScreenContextScope.unscoped`. Mounted create and
+  edit event forms (`showEventFormSheet` requires the predicate too) stop
   sharing their context as soon as the selected actor or workspace changes,
-  even before the next frame. Non-workspace screens may omit the predicate.
+  even before the next frame.
 - Record ids are hints: the server re-reads records with the user's
   permissions, and Mira treats field values as user data, never instructions.
 
@@ -213,6 +225,12 @@ separate follow-ups.
   at the end of a bounded long field; custom controls with their own
   controller; structured closure fields; misleading field names; real-control
   obscuring and `visiblePassword`.
+- `apps/mobile/test/features/assistant/bridge/assistant_secret_lookalike_test.dart`:
+  keys with combining marks inserted or precomposed accented letters, raw and
+  base64; Bearer and GitHub tokens split by each punctuation look-alike or
+  solidus overlay, in both fragment orders; ordinary decomposed Vietnamese,
+  fractions, fraction-slash dates, diagonals, paths, URLs and bullet lists
+  stay shareable while unsupported characters still redact the field.
 - `apps/mobile/test/features/calendar/widgets/event_form_assistant_context_test.dart`:
   read-time scope checks and mounted create/edit forms across a
   `WorkspaceCubit` switch, including no reads of stale fields.

@@ -128,6 +128,7 @@ void main() {
           child: TextButton(
             onPressed: () => showEventFormSheet(
               context,
+              isCurrentScope: () => true,
               event: CalendarEvent(
                 id: 'event-1',
                 title: 'Standup',

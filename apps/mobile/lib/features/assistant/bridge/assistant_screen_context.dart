@@ -283,18 +283,30 @@ String _bounded(String value) =>
 
 /// Registers [entry] while this widget is mounted.
 class AssistantScreenContextScope extends StatefulWidget {
+  /// A scope for a screen bound to a workspace or account. [isCurrentScope]
+  /// must return false once that workspace or account is no longer current.
   const AssistantScreenContextScope({
     required this.entry,
     required this.child,
-    this.isCurrentScope,
+    required this.isCurrentScope,
     super.key,
   });
+
+  /// A scope for a screen whose content is not tied to any workspace or
+  /// account, so it is current for as long as it is visible.
+  const AssistantScreenContextScope.unscoped({
+    required this.entry,
+    required this.child,
+    super.key,
+  }) : isCurrentScope = _alwaysCurrent;
 
   final AssistantScreenContextEntry entry;
   final Widget child;
 
   /// Checked on every snapshot, before reading this scope's records or fields.
-  final bool Function()? isCurrentScope;
+  final bool Function() isCurrentScope;
+
+  static bool _alwaysCurrent() => true;
 
   @override
   State<AssistantScreenContextScope> createState() =>
@@ -312,8 +324,7 @@ class _AssistantScreenContextScopeState
     _unregister = AssistantScreenContextRegistry.instance.register(
       this,
       widget.entry,
-      isVisible: () =>
-          mounted && _tickerEnabled && (widget.isCurrentScope?.call() ?? true),
+      isVisible: () => mounted && _tickerEnabled && widget.isCurrentScope(),
       lookupControl: _lookupControl,
     );
   }

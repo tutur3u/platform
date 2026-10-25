@@ -12,8 +12,39 @@ import 'package:mobile/features/assistant/bridge/assistant_secret_compat_fold.g.
 
 final _formatChars = RegExp(r'[\p{Cf}\u034F\uFE00-\uFE0F]', unicode: true);
 final _whitespace = RegExp(r'\s+');
-final _slashes = RegExp(r'[\u2044\u2571\u{1F67C}]', unicode: true);
-final _dashes = RegExp(r'[\u2010-\u2015\u2212\uFE58\uFE63]', unicode: true);
+final _marks = RegExp(r'\p{Mn}', unicode: true);
+
+/// Look-alikes of the punctuation credentials are spelled with
+/// (`+ - _ = . /`), each mapped to the ASCII character it reads as. A secret
+/// split by one of them reads back as one token, so it is scanned as one.
+/// Covers dashes and the supported shapes, dingbats and emoji that are drawn
+/// as a single bar, cross, dot or diagonal.
+final _punctuationLookAlikes = <(RegExp, String)>[
+  (
+    RegExp(
+      r'[\u2795\u2719-\u271C\u{1F7A1}-\u{1F7A7}]', // heavy plus, crosses
+      unicode: true,
+    ),
+    '+',
+  ),
+  (
+    RegExp(
+      // Dashes, minus signs, heavy minus and the horizontal box-drawing bars.
+      r'[\u2010-\u2015\u2212\uFE58\uFE63\u2796\u2500\u2501\u2504'
+      r'\u2505\u2508\u2509\u254C\u254D\u2574\u2576\u2578\u257A\u257C'
+      r'\u257E]',
+      unicode: true,
+    ),
+    '-',
+  ),
+  (RegExp(r'[\u2017\u2581]', unicode: true), '_'), // double low line, block
+  (RegExp(r'[\u2550\u268C]', unicode: true), '='), // double horizontals
+  (
+    RegExp(r'[\u00B7\u2022\u25CF\u25E6]', unicode: true), // dots, bullets
+    '.',
+  ),
+  (RegExp(r'[\u2044\u2571\u{1F67C}]', unicode: true), '/'), // diagonals
+];
 
 /// Characters screen context may share after folding: ASCII, Latin letters
 /// and marks used by English and Vietnamese (and other Latin-script
@@ -32,7 +63,6 @@ const _supportedRanges = <(int, int)>[
   (0x2016, 0x2023), // quotes, daggers, bullets
   (0x2030, 0x2030),
   (0x2039, 0x203A),
-  (0x2044, 0x2044), // fraction slash, produced by folding vulgar fractions
   (0x20A0, 0x20C0), // currency, including the dong sign
   (0x2190, 0x21FF), // arrows
   (0x2500, 0x27BF), // box drawing, shapes, symbols, dingbats
@@ -58,8 +88,9 @@ bool isSupportedAssistantText(String value) => value.runes.every(_isSupported);
 
 /// Strips invisible format characters; folds supported characters with an
 /// ASCII compatibility reading, fullwidth ASCII, superscript and subscript
-/// digits, Unicode dashes and the ellipsis; and collapses every whitespace run
-/// (tab, NBSP, ideographic space) to one ASCII space.
+/// digits, look-alikes of credential punctuation and the ellipsis; and
+/// collapses every whitespace run (tab, NBSP, ideographic space) to one ASCII
+/// space.
 String foldAssistantText(String value) {
   final buffer = StringBuffer();
   for (final rune in value.replaceAll(_formatChars, '').runes) {
@@ -80,11 +111,28 @@ String foldAssistantText(String value) {
       buffer.writeCharCode(rune);
     }
   }
-  return buffer
-      .toString()
-      .replaceAll(_dashes, '-')
-      .replaceAll(_slashes, '/')
-      .replaceAll(_whitespace, ' ');
+  var folded = buffer.toString();
+  for (final (lookAlikes, ascii) in _punctuationLookAlikes) {
+    folded = folded.replaceAll(lookAlikes, ascii);
+  }
+  return folded.replaceAll(_whitespace, ' ');
+}
+
+/// [value] read without diacritics, as NFD with every nonspacing mark
+/// removed: precomposed letters become their base letters and lone combining
+/// marks (accents, overlays) disappear. Decomposed Vietnamese is supported
+/// text, so marks inserted between a secret's characters must not hide it.
+String stripAssistantMarks(String value) {
+  final buffer = StringBuffer();
+  for (final rune in value.runes) {
+    final base = assistantMarkStrippedBases[rune];
+    if (base != null) {
+      buffer.write(base);
+    } else {
+      buffer.writeCharCode(rune);
+    }
+  }
+  return buffer.toString().replaceAll(_marks, '');
 }
 
 final _percent = RegExp('%[0-9A-Fa-f]{2}');

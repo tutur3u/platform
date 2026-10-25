@@ -174,7 +174,10 @@ void main() {
     Widget host({required bool enabled, required bool mounted}) => TickerMode(
       enabled: enabled,
       child: mounted
-          ? const AssistantScreenContextScope(entry: entry, child: SizedBox())
+          ? const AssistantScreenContextScope.unscoped(
+              entry: entry,
+              child: SizedBox(),
+            )
           : const SizedBox(),
     );
 
@@ -332,7 +335,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: AssistantScreenContextScope(
+          child: AssistantScreenContextScope.unscoped(
             entry: AssistantScreenContextEntry(
               fields: [
                 AssistantFormFieldContext.text(
@@ -364,7 +367,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: AssistantScreenContextScope(
+          child: AssistantScreenContextScope.unscoped(
             entry: AssistantScreenContextEntry(
               fields: [
                 // Misleading names: only the real controls reveal secrecy.
