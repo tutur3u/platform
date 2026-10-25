@@ -1,7 +1,7 @@
 import { defineConfig } from 'void/config';
 
-// Domain activation is a separate reviewed step: `routes` stays unset until the
-// activation runbook (apps/docs/build/devops/passwords-start-void.mdx) is accepted.
+// The operator attaches the custom domain after review and merge. Routing stays
+// dashboard-managed so activation does not alter the sealed artifact.
 export default defineConfig({
   target: 'cloudflare',
   remote: false,
