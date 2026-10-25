@@ -254,11 +254,15 @@ hosted trigger is enabled or healthy.
 
 1. **Scheduler cutover.** Qualify and then move `pay-products` first, preserving
    its 12-hour cadence, default-off behavior, auth contract and per-slot
-   operation envelope. Continue with `tasks-cleanup-media`, trust-cache,
-   calendar-provider sync, and the claim-fenced Web jobs. Move handover jobs only
-   after their old owner is removed and its last run is confirmed. Move the
-   exchange-rate `pg_net` call to Cron Control; keep the seven pure-SQL jobs in
-   Postgres under the existing exception.
+   operation envelope. Next move `tasks-cleanup-media`,
+   `infrastructure-sync-trust-cache`, `calendar-provider-sync`, and the
+   `finance-exchange-rates` pg_net call. Then move the claim-fenced jobs
+   `web-notification-batches`, `web-post-email-queue`,
+   `web-topic-announcements`, `web-report-automation`, and
+   `inventory-checkout-expiry`. Move `calendar-smart-schedule` and
+   `web-deadline-reminders` only after removing their old owner and confirming
+   its last run. Keep the seven pure-SQL jobs in Postgres under the existing
+   exception.
 2. **Worker processors.** Keep checkout expiry as the tested template, then
    move cleanup media with a durable cursor, product sync with bounded
    pagination/upserts, and trust-cache writes with their 32-write concurrency
@@ -267,9 +271,10 @@ hosted trigger is enabled or healthy.
 3. **Queues and workflows.** Move notification, email, announcement and report
    delivery, calendar provider sync, then the `after()` sites, with retry budgets
    aligned to their existing claims and persisted progress.
-4. **Retirements.** Confirm with Infrastructure owners whether to retire the
-   Docker-era sampler and alerts; retire the disabled Hive simulation route only
-   after its owner confirms there is no remaining need.
+4. **Retirements.** Confirm with Infrastructure owners whether to retire
+   `infrastructure-docker-recovery-alerts` and `infrastructure-sample-resources`;
+   retire the disabled Hive simulation route only after its owner confirms there
+   is no remaining need.
 
 Per-job cutover steps live in the
 [Cron Control runbook](/build/devops/cloudflare-cron-control); processor targets
