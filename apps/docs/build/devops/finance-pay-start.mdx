@@ -47,25 +47,28 @@ local route matching and forwards unmatched `/api/*` requests to Web afterwards.
 Port that precedence with the bridge's guarded forwarding contract. A page
 catch-all must never capture an API request.
 
-Finance's Worker entrypoint is maintained by the app because it composes the
-reserved Web paths through the shared handler's `centralFirst` option. The app
-reads the same shared rewrite definitions as the Next configuration.
-`/api/workspaces/invitations` must reach Web before the local
-`/api/workspaces/[wsId]` wildcard. The shared forwarder strips the app mount
-and preserves the request method/body/query and every response cookie. Ordinary local routes
-retain their existing handlers. `reserved-api.test.ts` covers that boundary.
-Finance also registers IA-BASE's shared URL resolver in the browser, SSR and
-RSC environments. The bridge's client-safe `appApiPatterns` output and the
-reserved Web paths decide which API calls gain `/finance`. Server callbacks
-read the incoming request inside each call; they never capture a request at
-startup. Explicit caller base URLs retain precedence. `api-base.test.ts` covers
-root/mount routing and interleaved request isolation.
+The codemod reads Finance's Next configuration and generates `central-first.ts`
+from the reserved Web rewrite definitions. `/api/workspaces/invitations` reaches
+Web before the local `/api/workspaces/[wsId]` wildcard. The shared handler strips
+the mount and preserves method/body/query and each response cookie. Ordinary
+Finance routes retain their local handlers. `reserved-api.test.ts` exercises
+that actual dispatch boundary.
 
-The Worker, router and Vite configuration are app-maintained adapters. Their RSC
-entries load the app resolver before exporting the generated API/page modules.
-Refresh the registries with `bun packages/start-bridge/src/codegen/cli.ts generate
-apps/finance`. Re-running the full codemod reports those adapters as manual-file
-conflicts; preserve their app glue instead of adopting over them.
+The generated `app-base.ts`, API entry, page route and router register IA-BASE's
+shared resolver in each environment. The client-safe `appApiPatterns` list and
+reserved Web paths decide which API calls gain `/finance`. Server callbacks read
+the incoming request on each call; explicit caller base URLs retain precedence.
+`api-base.test.ts` covers generated registration, Web ownership and interleaved
+request isolation. App code does not maintain a competing registrar or RSC
+entry wrapper.
+
+The Worker currently adds Finance's staging noindex response header after shared
+dispatch. Preserve that app behavior when regenerating; the router, Vite config,
+API entry and registration remain generated. Refresh the route registries with:
+
+```bash
+bun packages/start-bridge/src/codegen/cli.ts generate apps/finance
+```
 
 Keep the existing authorization and mutation behavior for invoices, wallet
 checkpoints and reconciliation, interest, budgets, promotions, inventory, and

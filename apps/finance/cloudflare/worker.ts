@@ -1,10 +1,11 @@
 /// <reference types="@vitejs/plugin-rsc/types" />
-import '../src/start-bridge/api-base.server';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
+import { defaultProxyMatches } from '@tuturuuu/start-bridge/proxy-bridge';
+import { createProxyMatcher } from '@tuturuuu/start-bridge/proxy-matcher';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
-import { proxy } from '../src/proxy';
-import { financeCentralFirst } from '../src/start-bridge/api-ownership';
+import { proxy, config as proxyConfig } from '../src/proxy';
+import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 
 export interface FinanceEnvironment {
@@ -17,12 +18,12 @@ interface WorkerContext {
   waitUntil(work: Promise<unknown>): void;
 }
 
-type ApiRegistry = typeof import('../src/start-bridge/api-registry.bridge.gen');
+type ApiEntry = typeof import('../src/start-bridge/api-entry');
 
 // Route handlers are server code (`server-only` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
 const handler = (
-  import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiRegistry>
+  import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiEntry>
 ).then(({ endpoints }) =>
   createBridgeHandler<FinanceEnvironment, WorkerContext>({
     // One artifact: the subdomain root and the tuturuuu.com/finance mount.
@@ -35,8 +36,10 @@ const handler = (
     start: createBridgeStartHandler(),
     serverFnBase: '/_serverFn',
     proxy,
+    // The proxy's own `config.matcher`, evaluated like Next.
+    matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
     endpoints,
-    centralFirst: financeCentralFirst,
+    centralFirst,
     functionBase: '/_serverFn',
     functionProxy: createFunctionProxy({ targetApp: 'finance' }),
     publicAssets,

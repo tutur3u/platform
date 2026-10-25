@@ -3,7 +3,7 @@ import type { BridgeEndpoint } from '@tuturuuu/start-bridge/endpoints';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { NextResponse } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { financeCentralFirst } from './api-ownership';
+import { centralFirst } from './central-first';
 
 const context = { waitUntil: vi.fn() };
 afterEach(() => vi.unstubAllGlobals());
@@ -20,7 +20,7 @@ function dispatch(
     start: { fetch: () => new Response('unexpected page', { status: 500 }) },
     proxy: async () => NextResponse.next(),
     endpoints: local,
-    centralFirst: financeCentralFirst,
+    centralFirst,
     assets: () => undefined,
     centralApiOrigin: () => 'https://central.example.test',
   });

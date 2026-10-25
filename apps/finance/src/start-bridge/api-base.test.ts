@@ -2,8 +2,7 @@ import { resolveInternalApiUrl } from '@tuturuuu/internal-api/client';
 import { APP_BASE_GLOBAL } from '@tuturuuu/start-bridge/app-url';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { financeApiPath } from './api-base';
-import './api-base.server';
+import './app-base';
 
 // Exercise the admitted source without building a workspace dependency here.
 vi.mock(
@@ -11,27 +10,32 @@ vi.mock(
   () => import('../../../../packages/internal-api/src/client')
 );
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 it('prefixes only Finance-owned browser API paths once', () => {
+  vi.stubGlobal('window', {});
   vi.stubGlobal(APP_BASE_GLOBAL, '/finance');
   const local = '/api/workspaces/ws-1/wallets?ref=a&ref=b';
-  expect(financeApiPath(local)).toBe(`/finance${local}`);
-  expect(financeApiPath(`/finance${local}`)).toBe(`/finance${local}`);
-  expect(financeApiPath('/api/workspaces/invitations')).toBe(
+  expect(resolveInternalApiUrl(local)).toBe(`/finance${local}`);
+  expect(resolveInternalApiUrl(`/finance${local}`)).toBe(`/finance${local}`);
+  expect(resolveInternalApiUrl('/api/workspaces/invitations')).toBe(
     '/api/workspaces/invitations'
   );
-  expect(financeApiPath('/api/v1/workspaces/ws-1/settings/permissions')).toBe(
-    '/api/v1/workspaces/ws-1/settings/permissions'
-  );
-  expect(financeApiPath('/api/unowned')).toBe('/api/unowned');
+  expect(
+    resolveInternalApiUrl('/api/v1/workspaces/ws-1/settings/permissions')
+  ).toBe('/api/v1/workspaces/ws-1/settings/permissions');
+  expect(resolveInternalApiUrl('/api/unowned')).toBe('/api/unowned');
 });
 
 describe.each([
   { origin: 'https://finance.tuturuuu.com', base: '' },
   { origin: 'https://tuturuuu.com', base: '/finance' },
 ])('Finance SSR API routing: $origin$base', ({ origin, base }) => {
-  it('uses the incoming host and request mount for shared clients', () => {
+  it('uses the request host for owned routes and Web for unowned routes', () => {
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://central.example.test');
     withBridgeRequest(
       { request: new Request(`${origin}${base}/en/ws-1`), appBase: base },
       () => {
@@ -39,10 +43,10 @@ describe.each([
           `${origin}${base}/api/workspaces/ws-1/wallets`
         );
         expect(resolveInternalApiUrl('/api/workspaces/invitations')).toBe(
-          `${origin}/api/workspaces/invitations`
+          'https://central.example.test/api/workspaces/invitations'
         );
         expect(resolveInternalApiUrl('/api/unowned')).toBe(
-          `${origin}/api/unowned`
+          'https://central.example.test/api/unowned'
         );
         expect(
           resolveInternalApiUrl(
