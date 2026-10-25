@@ -1,7 +1,7 @@
 ---
 title: 'Infrastructure'
 description: 'Privileged operations, diagnostics, configuration, and hosted scheduler ownership.'
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-25'
 ---
 
 Infrastructure (`infrastructure.tuturuuu.com`, `apps/infrastructure`) is the
@@ -20,6 +20,12 @@ console route never bypasses its operator eligibility and permission checks.
   timezones, Devboxes, and migration diagnostics.
 - Monitoring for requests, logs, analytics, projects, deployments, rollouts,
   resources, and retained cron/control surfaces.
+
+The sidebar groups these areas into labelled sections, matching the Tuturuuu
+web dashboard: **Fleet** (machines, jobs and resources), **Operate**
+(monitoring, delivery and integrations) and **Govern** (security, AI
+operations, communications and platform administration). Add a new route to
+the section that owns its operator task in `navigation.tsx`.
 
 The [route reference](/reference/repository/catalog) lists every current
 Infrastructure entry point in its numbered source pages. Feature-specific

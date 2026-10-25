@@ -35,12 +35,35 @@ describe('Infrastructure navigation', () => {
 
     expect(links.map((link) => link.title)).toEqual([
       't:infrastructure-tabs.overview',
+      't:infrastructure-tabs.devboxes',
       't:infrastructure-tabs.monitoring',
+      't:infrastructure-navigation.groups.delivery.title',
+      't:infrastructure-navigation.groups.integrations.title',
+      't:infrastructure-navigation.groups.security.title',
       't:infrastructure-navigation.groups.ai_operations.title',
       't:infrastructure-navigation.groups.communications.title',
-      't:infrastructure-navigation.groups.security.title',
       't:infrastructure-navigation.groups.platform_admin.title',
-      't:infrastructure-tabs.operations',
+    ]);
+  });
+
+  it('opens each sidebar section with fleet operations first', async () => {
+    const { getNavigationLinks } = await import('./navigation');
+
+    const links = compactLinks(
+      await getNavigationLinks({ personalOrWsId: 'internal' })
+    );
+
+    expect(
+      links
+        .filter((link) => link.sectionLabel)
+        .map((link) => [link.sectionLabel, link.href])
+    ).toEqual([
+      ['t:infrastructure-navigation.sections.fleet', '/internal/devboxes'],
+      ['t:infrastructure-navigation.sections.operate', '/internal/monitoring'],
+      [
+        't:infrastructure-navigation.sections.govern',
+        '/internal/abuse-intelligence',
+      ],
     ]);
   });
 
@@ -68,6 +91,10 @@ describe('Infrastructure navigation', () => {
         '/internal/desktop-deployment',
         '/internal/app-coordination',
         '/internal/calendar-sync',
+        '/internal/devboxes',
+        '/internal/github-bot',
+        '/internal/migrations',
+        '/internal/cron/whitelist/domains',
       ])
     );
     expect(hrefs).not.toContain('/internal/internal-accounts');

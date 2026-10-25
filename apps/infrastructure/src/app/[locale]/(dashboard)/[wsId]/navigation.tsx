@@ -70,8 +70,15 @@ function getTopLevelNavigation({
       title: t('infrastructure-tabs.overview'),
     },
     {
+      href: href(wsId, '/devboxes'),
+      icon: icon(Server),
+      sectionLabel: t('infrastructure-navigation.sections.fleet'),
+      title: t('infrastructure-tabs.devboxes'),
+    },
+    {
       href: href(wsId, '/monitoring'),
       icon: icon(Activity),
+      sectionLabel: t('infrastructure-navigation.sections.operate'),
       title: t('infrastructure-tabs.monitoring'),
       children: [
         {
@@ -143,6 +150,114 @@ function getTopLevelNavigation({
       ],
     },
     {
+      href: href(wsId, '/desktop-deployment'),
+      icon: icon(Rocket),
+      title: t('infrastructure-navigation.groups.delivery.title'),
+      children: [
+        {
+          href: href(wsId, '/desktop-deployment'),
+          icon: icon(Monitor),
+          title: t('infrastructure-tabs.desktop_deployment'),
+        },
+        {
+          href: href(wsId, '/mobile-deployment'),
+          icon: icon(Smartphone),
+          title: t('infrastructure-tabs.mobile_deployment'),
+        },
+        {
+          href: href(wsId, '/mobile-versions'),
+          icon: icon(Smartphone),
+          title: t('infrastructure-tabs.mobile_versions'),
+        },
+        {
+          href: href(wsId, '/migrations'),
+          icon: icon(Database),
+          title: t('workspace-settings-layout.migrations'),
+        },
+        {
+          href: href(wsId, '/github-bot'),
+          icon: icon(Bot),
+          title: t('infrastructure-tabs.github_bot'),
+        },
+      ],
+    },
+    {
+      href: href(wsId, '/external-apps'),
+      icon: icon(ExternalLink),
+      title: t('infrastructure-navigation.groups.integrations.title'),
+      children: [
+        {
+          aliases: [href(wsId, '/external-apps/approve')],
+          href: href(wsId, '/external-apps'),
+          icon: icon(ExternalLink),
+          title: t('infrastructure-tabs.external_apps'),
+        },
+        {
+          href: href(wsId, '/external-chat-lab'),
+          icon: icon(MessageSquare),
+          title: t('external-chat-lab.navigation'),
+        },
+        {
+          href: href(wsId, '/app-coordination'),
+          icon: icon(Settings),
+          title: t('infrastructure-tabs.app_coordination'),
+        },
+        {
+          href: href(wsId, '/calendar-sync'),
+          icon: icon(Calendar),
+          title: t('infrastructure-navigation.items.calendar_sync'),
+        },
+        {
+          href: href(wsId, '/cron/whitelist/domains'),
+          icon: icon(Clock),
+          title: t('infrastructure-tabs.managed_cron_whitelisted_domains'),
+        },
+      ],
+    },
+    {
+      href: href(wsId, '/abuse-intelligence'),
+      icon: icon(ShieldCheck),
+      sectionLabel: t('infrastructure-navigation.sections.govern'),
+      title: t('infrastructure-navigation.groups.security.title'),
+      children: [
+        {
+          href: href(wsId, '/abuse-intelligence'),
+          icon: icon(ShieldCheck),
+          title: t('infrastructure-tabs.abuse_intelligence'),
+        },
+        {
+          href: href(wsId, '/abuse-events'),
+          icon: icon(FileText),
+          title: t('infrastructure-tabs.abuse_events'),
+        },
+        {
+          href: href(wsId, '/blocked-ips'),
+          icon: icon(Lock),
+          title: t('infrastructure-tabs.blocked_ips'),
+        },
+        {
+          href: href(wsId, '/rate-limits'),
+          icon: icon(Clock),
+          title: t('infrastructure-tabs.rate_limits'),
+        },
+        {
+          href: href(wsId, '/rate-limit-appeals'),
+          icon: icon(FileText),
+          title: t('infrastructure-tabs.rate_limit_appeals'),
+        },
+        {
+          href: href(wsId, '/auth-recovery'),
+          icon: icon(Lock),
+          title: t('infrastructure-tabs.auth_recovery'),
+        },
+        {
+          href: href(wsId, '/otp-limits'),
+          icon: icon(Lock),
+          title: t('infrastructure-tabs.otp_limits'),
+        },
+      ],
+    },
+    {
       href: href(wsId, '/ai-agents'),
       icon: icon(Blocks),
       title: t('infrastructure-navigation.groups.ai_operations.title'),
@@ -203,48 +318,6 @@ function getTopLevelNavigation({
           href: href(wsId, '/push-notifications'),
           icon: icon(Bell),
           title: t('infrastructure-tabs.push_notifications'),
-        },
-      ],
-    },
-    {
-      href: href(wsId, '/abuse-intelligence'),
-      icon: icon(ShieldCheck),
-      title: t('infrastructure-navigation.groups.security.title'),
-      children: [
-        {
-          href: href(wsId, '/abuse-intelligence'),
-          icon: icon(ShieldCheck),
-          title: t('infrastructure-tabs.abuse_intelligence'),
-        },
-        {
-          href: href(wsId, '/abuse-events'),
-          icon: icon(FileText),
-          title: t('infrastructure-tabs.abuse_events'),
-        },
-        {
-          href: href(wsId, '/blocked-ips'),
-          icon: icon(Lock),
-          title: t('infrastructure-tabs.blocked_ips'),
-        },
-        {
-          href: href(wsId, '/rate-limits'),
-          icon: icon(Clock),
-          title: t('infrastructure-tabs.rate_limits'),
-        },
-        {
-          href: href(wsId, '/rate-limit-appeals'),
-          icon: icon(FileText),
-          title: t('infrastructure-tabs.rate_limit_appeals'),
-        },
-        {
-          href: href(wsId, '/auth-recovery'),
-          icon: icon(Lock),
-          title: t('infrastructure-tabs.auth_recovery'),
-        },
-        {
-          href: href(wsId, '/otp-limits'),
-          icon: icon(Lock),
-          title: t('infrastructure-tabs.otp_limits'),
         },
       ],
     },
@@ -311,69 +384,6 @@ function getTopLevelNavigation({
           href: href(wsId, '/holidays'),
           icon: icon(Calendar),
           title: t('infrastructure-navigation.items.holidays'),
-        },
-      ],
-    },
-    {
-      href: href(wsId, '/external-apps'),
-      icon: icon(Database),
-      title: t('infrastructure-tabs.operations'),
-      children: [
-        {
-          aliases: [href(wsId, '/external-apps/approve')],
-          href: href(wsId, '/external-apps'),
-          icon: icon(ExternalLink),
-          title: t('infrastructure-tabs.external_apps'),
-        },
-        {
-          href: href(wsId, '/external-chat-lab'),
-          icon: icon(MessageSquare),
-          title: t('external-chat-lab.navigation'),
-        },
-        {
-          href: href(wsId, '/desktop-deployment'),
-          icon: icon(Monitor),
-          title: t('infrastructure-tabs.desktop_deployment'),
-        },
-        {
-          href: href(wsId, '/mobile-deployment'),
-          icon: icon(Smartphone),
-          title: t('infrastructure-tabs.mobile_deployment'),
-        },
-        {
-          href: href(wsId, '/mobile-versions'),
-          icon: icon(Smartphone),
-          title: t('infrastructure-tabs.mobile_versions'),
-        },
-        {
-          href: href(wsId, '/devboxes'),
-          icon: icon(Server),
-          title: t('infrastructure-tabs.devboxes'),
-        },
-        {
-          href: href(wsId, '/migrations'),
-          icon: icon(Database),
-          title: t('workspace-settings-layout.migrations'),
-        },
-        {
-          href: href(wsId, '/app-coordination'),
-          icon: icon(Settings),
-          title: t('infrastructure-tabs.app_coordination'),
-        },
-        {
-          href: href(wsId, '/calendar-sync'),
-          icon: icon(Calendar),
-          title: t('infrastructure-navigation.items.calendar_sync'),
-        },
-        {
-          href: href(wsId, '/cron/whitelist/domains'),
-          icon: icon(Clock),
-          title: t('infrastructure-tabs.managed_cron_whitelisted_domains'),
-        },
-        {
-          href: href(wsId, '/github-bot'),
-          icon: icon(Bot),
-          title: t('infrastructure-tabs.github_bot'),
         },
       ],
     },
