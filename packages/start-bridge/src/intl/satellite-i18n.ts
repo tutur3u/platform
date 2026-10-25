@@ -1,6 +1,12 @@
 import { redirect as rawRedirect } from 'next/navigation';
 import { localize } from './satellite-locales';
 
+export {
+  Link,
+  LocalizedLink,
+  usePathname,
+  useRouter,
+} from './localized-navigation';
 /**
  * The `@tuturuuu/satellite/i18n` entry for bridged apps. Locale data and
  * `redirect` come from environment-neutral modules; only the hooks and the
@@ -15,12 +21,6 @@ export {
   routing,
   supportedLocales,
 } from './satellite-locales';
-export {
-  Link,
-  LocalizedLink,
-  usePathname,
-  useRouter,
-} from './localized-navigation';
 
 export function redirect({
   href,
