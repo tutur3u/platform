@@ -103,7 +103,18 @@ reachable directly. Use `cloudflare-origin`:
    requests fall back to `vercel` headers: bucketing degrades, but the client
    IP is never spoofable.
 
-Never forward the `x-tuturuuu-origin-auth` header to another service.
+The secret is the only thing separating a forged `cf-connecting-ip` from a real
+one, so it must exist only in the Transform Rule and the Web secret store. Never
+forward the `x-tuturuuu-origin-auth` header to another service, log it, or echo it
+in a response.
+
+The secret check is not an origin access restriction. Vercel's Verified Proxy is
+not one either: neither stops direct requests to the custom domain's origin or to
+`*.vercel.app` deployment URLs. Before setting `cloudflare-origin` in production,
+restrict and verify origin access separately for custom domains **and** every
+deployment URL (for example, Vercel Deployment Protection on deployment URLs).
+Record a direct request to each URL class with a forged `cf-connecting-ip` and
+`x-tuturuuu-origin-auth`; it must resolve to the caller's real IP or be refused.
 
 ## API Abuse IP Blocks
 
