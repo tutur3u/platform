@@ -71,6 +71,9 @@ export async function handleTasksRequest(
       : null;
   const response = buildInfo ?? (await bridge(request, env, ctx));
   const tagged = tagResponse(response, NATIVE);
+  // Parity with the Next build's anti-framing headers (createTuturuuuNextConfig).
+  tagged.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+  tagged.headers.set('X-Frame-Options', 'DENY');
   if (env.TUTURUUU_NOINDEX === '1')
     tagged.headers.set('X-Robots-Tag', 'noindex, nofollow');
   return tagged;
