@@ -115,8 +115,8 @@ fails.
 
 Generate the TanStack Start adapters with
 `node scripts/start-bridge-codemod/cli.mjs storefront --apply`. Regenerate
-marked files instead of editing them. The same bridge candidate targets the
-Storefront subdomain and `/storefront` mount; it retains both `/store/<slug>`
+marked files instead of editing them. The bridge remains mount-aware, while this profile admits only the
+Storefront root hosts; it retains both `/store/<slug>`
 legacy redirects and the current `/<storeSlug>` pages. Login returns to the
 request's mounted verifier, with the configured origin retained by the legacy
 runtime. `src/lib/storefront-public-url.test.ts` covers concurrent root and
@@ -124,8 +124,8 @@ mounted verifier URLs.
 
 Initial promotion serves the Storefront subdomain in root mode. Verify that
 browser inventory requests reach Storefront and are forwarded to Inventory,
-while other unowned APIs reach Web at root `/api`. The `/storefront` mount remains
-compatibility coverage; apex cutover waits for the shared-session decision and
+while other unowned APIs reach Web at root `/api`. The `/storefront` mount is rejected by this
+root-only profile; apex cutover waits for the shared-session decision and
 auth-boundary guard. The native adapter must retain the two-upstream fallback declared
 by `next.config.ts`, including order-token and payment callback admission. The
 emitted Worker must pass those checks as well as public browsing, bilingual
@@ -144,3 +144,24 @@ and local handler, without refreshing a session or writing cookies. Other method
 siblings and nested paths keep normal authentication. `proxy-build-info.test.ts`
 covers admission, guard denials and negative method/path controls; the emitted
 runtime suite still requires the exact compiled app name and source commit.
+
+### Root-only response and staging contract
+
+`start-bridge.config.ts` admits only `storefront.tuturuuu.com` and
+`storefront-staging.tuturuuu.com`. Empty mount hosts and `unknownHost: 'reject'`
+reject apex and unknown hosts before route execution. These allowlist entries
+do not provision DNS or authorize publication. Keep workers.dev disabled in the
+app-owned Worker configuration when the shared generator override is available.
+
+Every native response denies framing and content sniffing, sets the strict-origin
+referrer policy, and remains noindex. Documents and APIs default to
+`Cache-Control: private, no-store` and vary by Cookie; explicit endpoint cache
+policies and static asset caching are preserved. Source tests cover the defaults,
+endpoint overrides and variation merging; `cloudflare/response-policy.runtime.mjs`
+checks the emitted Worker on both admitted hosts and rejects apex/unknown hosts.
+
+Staging profile verification is an explicit cutover-prep gate. Supply and verify
+`INVENTORY_APP_URL` and `INTERNAL_WEB_API_ORIGIN` for the admitted staging
+upstreams. Inventory forwarding fails closed when its origin is absent. No conversion PR publishes production or qualifies
+hosted auth, provider behavior or checkout. Keep credentials out of artifacts
+and receipts; record only variable names and verification outcomes.

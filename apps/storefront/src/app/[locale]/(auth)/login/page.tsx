@@ -11,7 +11,11 @@ import { createStorefrontPublicUrl } from '@/lib/storefront-public-url';
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/demo');
+  return normalizeAuthRedirectPath(
+    rawValue,
+    createStorefrontPublicUrl('/').origin,
+    '/demo'
+  );
 }
 
 export default async function LoginPage({

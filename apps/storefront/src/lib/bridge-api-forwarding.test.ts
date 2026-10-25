@@ -4,10 +4,6 @@ import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { afterEach, expect, it, vi } from 'vitest';
 import appConfig from '../../start-bridge.config';
 
-vi.mock('@/constants/common', () => ({
-  INVENTORY_APP_URL: 'https://inventory.tuturuuu.com',
-}));
-
 afterEach(() => vi.unstubAllGlobals());
 
 it('forwards mounted Inventory APIs to Inventory and other APIs to root Web', async () => {
@@ -60,4 +56,15 @@ it('forwards mounted Inventory APIs to Inventory and other APIs to root Web', as
     'https://inventory.example.test/api/v1/inventory/storefronts/shop?tag=one&tag=two',
     'https://tuturuuu.com/api/v1/workspaces/one/tasks',
   ]);
+});
+
+it('fails closed when the Inventory origin is missing', () => {
+  const resolver = appConfig.apiOrigin;
+  if (!resolver) throw new Error('Inventory API resolver is required');
+  expect(() =>
+    resolver(new Request('https://storefront.tuturuuu.com'), {
+      env: {},
+      path: '/api/v1/inventory/storefronts/shop',
+    })
+  ).toThrow('Storefront requires INVENTORY_APP_URL');
 });
