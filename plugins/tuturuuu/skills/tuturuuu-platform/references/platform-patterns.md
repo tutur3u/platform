@@ -95,6 +95,13 @@ shared-package changes.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
+- Operational status surfaces use `@tuturuuu/ui/custom/ops` (`StatusPill`,
+  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`,
+  `LogLines`) and
+  the `OpsTone` vocabulary instead of app-local tone maps. `unknown` is not
+  `neutral`: stale or missing telemetry and unreachable workers render as
+  unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
+  surface for read-only pages; keep FeatureSummary for create/settings flows.
 - If a client admin surface grows large, keep the main shell focused on query
   state, mutations, and routing; extract heavy render branches nearby.
 - **Tiptap extensions are fixed at editor creation.** `Editor.setOptions({
