@@ -60,6 +60,16 @@ function read(repoRoot, relative) {
   return fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null;
 }
 
+/** JSON with sorted object keys: equal values compare equal in any layout. */
+const canonicalJson = (value) =>
+  JSON.stringify(value, (_key, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.entries(item).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        )
+      : item
+  );
+
 const NEXT_CONFIGS = ['next.config.ts', 'next.config.mjs', 'next.config.js'];
 
 /**
@@ -191,9 +201,16 @@ export function planConversion(repoRoot, app, options = {}) {
     inventory,
     defaultLocale(repoRoot, app)
   );
+  // An unchanged config keeps its bytes (however Biome laid it out); a
+  // changed one is formatted with the owned output.
+  const unchanged =
+    existingConfig !== null &&
+    canonicalJson(JSON.parse(existingConfig)) === canonicalJson(config);
   writes.push({
     path: `${appPath}/${ROUTES_CONFIG_FILE}`,
-    content: `${JSON.stringify(config, null, 2)}\n`,
+    content: unchanged
+      ? existingConfig
+      : `${JSON.stringify(config, null, 2)}\n`,
     owner: 'merged',
   });
 
@@ -416,10 +433,12 @@ export function createBiomeFormatter(repoRoot, spawn = spawnSync) {
 
 function formatWrites(writes, format, appPath) {
   if (!format) return writes;
-  // Owned files, plus the app's own JSON edits (package.json, tsconfig.json).
+  // Owned files, the merged routes config, and the app's own JSON edits
+  // (package.json, tsconfig.json).
   const formattable = (write) =>
     write.owner === 'generated' ||
     write.owner === 'app-owned' ||
+    write.owner === 'merged' ||
     (write.owner === 'edit' &&
       write.path.startsWith(`${appPath}/`) &&
       write.path.endsWith('.json'));

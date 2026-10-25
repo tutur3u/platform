@@ -396,6 +396,56 @@ test('hand-maintained route config entries survive a re-run', (t) => {
   );
 });
 
+test('a Biome-formatted route config is unchanged; a changed one is formatted', (t) => {
+  const root = createFixtureRepo(t);
+  applyPlan(root, plan(root), { spawn: noCommands });
+  const file = path.join(root, 'apps/demo/start-bridge.routes.json');
+  const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  config.api.forwarded = ['/api/v1/inventory/[...path]'];
+  // Biome keeps a short array on one line (Storefront's api.forwarded).
+  const biomeLayout = `${JSON.stringify(config, null, 2).replace(
+    /\[\n\s+("\/api\/v1\/inventory\/\[\.\.\.path\]")\n\s+\]/u,
+    '[$1]'
+  )}\n`;
+  assert.match(biomeLayout, /"forwarded": \["\/api\/v1\/inventory/u);
+  fs.writeFileSync(file, biomeLayout);
+  const formatted = [];
+  const format = (relativePath, content) => {
+    formatted.push(relativePath);
+    return content;
+  };
+  const again = plan(root, { format });
+  assert.equal(
+    pendingWrites(again).some((write) => write.path.endsWith('routes.json')),
+    false
+  );
+  assert.equal(fs.readFileSync(file, 'utf8'), biomeLayout);
+
+  // Key order is layout too.
+  const reordered = `${JSON.stringify(
+    Object.fromEntries(Object.entries(config).reverse()),
+    null,
+    2
+  )}\n`;
+  fs.writeFileSync(file, reordered);
+  assert.equal(
+    pendingWrites(plan(root, { format })).some((write) =>
+      write.path.endsWith('routes.json')
+    ),
+    false
+  );
+
+  // A missing default is restored, so the merged config is rewritten.
+  const { pages: _pages, ...withoutPages } = config;
+  fs.writeFileSync(file, `${JSON.stringify(withoutPages)}\n`);
+  formatted.length = 0;
+  const changed = plan(root, { format });
+  assert.ok(
+    pendingWrites(changed).some((write) => write.path.endsWith('routes.json'))
+  );
+  assert.ok(formatted.includes('apps/demo/start-bridge.routes.json'));
+});
+
 test('an unmarked hand-written owned file is a conflict unless adopted', (t) => {
   const root = createFixtureRepo(t);
   fs.writeFileSync(
