@@ -1,0 +1,150 @@
+---
+title: 'One-origin security model (design)'
+description: 'Threat model, cookie scoping, CSP, service-worker and storage rules that gate an app joining tuturuuu.com/<app>.'
+---
+
+<Note>
+**Status: proposed, phase 1 (design only).** This page gates admission to the
+[one-origin super-app](/platform/architecture/one-origin-super-app). An app may
+not be routed onto `tuturuuu.com` until it meets every admission requirement below
+with exact-commit evidence. Open critical/high findings hold the release, per the
+repository security default.
+</Note>
+
+## The core trade
+
+The browser's security boundary is the **origin** (scheme + host + port). Paths are
+not a boundary. Once Meet, Mail and Web share `https://tuturuuu.com`, script running
+in any one of them can do all of the following:
+
+- `fetch` any same-origin URL with the user's cookies and **read the response**
+  (`/api/*`, `/mail/api/*`). CORS no longer applies.
+- Open or frame another app's page (`window.open('/mail/...')`) and script its DOM.
+  `frame-ancestors` stops framing, but it cannot stop `window.open` from same-origin
+  script.
+- Read and write every app's `localStorage`, `sessionStorage`, IndexedDB and Cache
+  Storage, and enumerate or unregister service workers.
+- Use any permission the user granted to the **origin**. A camera or microphone
+  grant for Meet also covers a script injected into Mail.
+
+**Therefore: an XSS in any mounted app is an XSS in all of them, Web's dashboard
+included.** Path-scoped cookies, per-app CSP and frame rules reduce accidents and
+raise attacker cost. They do not restore isolation. The rest of this page is about
+keeping XSS out and limiting what a successful one can reach.
+
+### What changes compared with subdomains
+
+The subdomain model already shares a lot:
+
+- The Supabase auth cookie is set with `Domain=.tuturuuu.com`, so every subdomain
+  receives it.
+- Any subdomain can set (toss) a cookie for the parent domain.
+- Supabase SSR cookies are script-readable by default. **Verify** whether ours are.
+  If they are, an XSS on any subdomain can already steal the session.
+
+One origin adds the four capabilities listed above: response reading, storage,
+same-origin window scripting and shared permission grants. One origin also enables
+something the subdomain model cannot: host-only `__Host-` cookies that subdomains
+cannot toss, once every app is on the apex.
+
+## Admission requirements (per app)
+
+1. **No untrusted active content on the origin.** User-generated or third-party HTML
+   and scripts must render on a separate sandbox origin (planned
+   `*.tuturuuu-usercontent.com`), or in an opaque-origin sandbox: `sandbox` without
+   `allow-same-origin`, or a `Content-Security-Policy: sandbox` response header. They
+   must never be same-origin documents. See [current exposures](#current-exposures).
+2. **Strict CSP, enforced.** Use nonce-based `script-src 'nonce-…' 'strict-dynamic'`
+   with no `unsafe-inline` or `unsafe-eval` for scripts. Set `object-src 'none'`,
+   `base-uri 'none'` and `frame-ancestors 'none'` (or a path-specific `'self'` where
+   framing is required). Ship it report-only first, then enforce before the flag
+   reaches `on`.
+3. **Trusted Types.** Set `require-trusted-types-for 'script'` report-only, and
+   enforce it once violations reach zero. Rich-text editors (Mail's Tiptap) get a
+   named policy.
+4. **Path-scoped `connect-src`/`frame-src`.** Defense in depth: list
+   `https://tuturuuu.com/<app>/` and `https://tuturuuu.com/api/` plus the app's
+   external hosts, never `'self'`. Meet's CSP then forbids `fetch('/mail/api/...')`.
+   CSP ignores the path after a redirect, so this is a speed bump, not a boundary.
+5. **Every session-bearing cookie is `HttpOnly`.** See
+   [session cookies](#session-cookies).
+6. **Permissions-Policy per document.** Only Meet documents enable `camera`,
+   `microphone`, `display-capture` and `autoplay`. Every other app's documents
+   send `camera=(), microphone=(), display-capture=()`, which blocks use even when
+   the origin holds a grant. This does not stop the `window.open('/meet/...')` route,
+   so that remains a residual risk (see the core trade).
+7. **No storage, message or SW cross-talk.**
+   - Prefix every `localStorage`/IndexedDB/Cache Storage key and `BroadcastChannel`
+     name with the app slug.
+   - `postMessage` handlers must not treat `event.origin === location.origin` as
+     proof of a trusted sender. Use dedicated `MessageChannel` ports or explicit,
+     validated message types.
+   - Register no service worker, or one scoped to `/<app>/`.
+8. **Security review.** An independent reviewer signs off on the app's CSP, cookie
+   and content inventory at the exact head that gets routed.
+
+## Session cookies
+
+The current shared name `tuturuuu_app_session` (host-only, `Path=/`) is unsafe on one
+host. Mounted apps would overwrite each other's audience-bound tokens. Web's
+`createClient(request)` also treats the cookie's presence as "this is a satellite
+request" and returns an unauthenticated client.
+
+Proposal (implementation PR P2):
+
+| Cookie | Name | Attributes |
+| --- | --- | --- |
+| App session (per mounted app) | `__Secure-ttr_as_<app>` | Host-only, `Path=/<app>`, `HttpOnly`, `Secure`, `SameSite=Lax` |
+| App refresh (per mounted app) | `__Secure-ttr_asr_<app>` | Same, `Path=/<app>` |
+| Supabase session | unchanged for now | `Domain=.tuturuuu.com` while any app remains on a subdomain. Once all apps are on the apex, plan `__Host-` host-only. |
+
+- `Path=/<app>` keeps the token off Web's requests and off other apps' requests, so
+  it cannot trigger Web's satellite detection. `/meet` matches `/meet` and `/meet/*`,
+  but not `/meeting`. The `__Host-` prefix requires `Path=/`, so the path-scoped
+  cookie uses `__Secure-`.
+- During migration, readers accept the old names on the subdomain. Writers on the
+  apex only issue the new names. Logout clears both.
+- On one origin, a signed-in user already carries the Supabase cookie. Treat the app
+  session as the fallback it already is (`supabase-first`). Removing it for mounted
+  apps is a follow-up and needs its own MFA (aal2) review.
+- `Clear-Site-Data` on logout now affects every app. That matches "one session"
+  semantics, but use the `"cookies"` and `"storage"` directives deliberately.
+
+## Shared security headers
+
+Each app Worker applies one portable header builder (planned
+`@tuturuuu/utils/security-headers`, framework-free). Web applies the same baseline
+through its Next config:
+
+- `Strict-Transport-Security: max-age=63072000` (decide `includeSubDomains`/preload
+  separately; it affects every subdomain).
+- `X-Content-Type-Options: nosniff`.
+- `Referrer-Policy: strict-origin-when-cross-origin`.
+- `Cross-Origin-Opener-Policy: same-origin`. This isolates the app from cross-origin
+  openers, not from same-origin peers.
+- `Cross-Origin-Resource-Policy: same-origin` on API and private responses.
+- `X-Frame-Options: DENY` plus `frame-ancestors`. This follows the existing
+  `TUTURUUU_ANTI_FRAMING_HEADERS` and Mail `response-policy.ts` behavior.
+- Per-app CSP and Permissions-Policy, as above. Private pages keep
+  `Cache-Control: private, no-store` and `X-Robots-Tag`.
+
+## Current exposures
+
+| App | Surface | Today | Required before admission |
+| --- | --- | --- | --- |
+| Mail | Email HTML reader (`mail-message-preview.tsx`) | `srcDoc` iframe, `sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"`, no scripts. `allow-same-origin` serves keyboard handling. | Keep scripts impossible. Add a regression guard that fails if any Mail frame combines `allow-scripts` with `allow-same-origin`. Long-term, move to a usercontent origin plus `postMessage` for keys. |
+| Mail | Connected-mail reader, signature and docx previews | Sandboxed `srcDoc`, CSP `default-src 'none'` in the frame | Same guard |
+| Mail | Attachments | `sandbox; default-src 'none'; frame-ancestors 'self'` response CSP | Keep, and add the `/mail` prefix to the path regexes in `response-policy.ts` |
+| Meet | Programming preview proxy (`/api/meet-call/[id]/programming/preview/...`) | Response CSP `sandbox allow-scripts allow-forms` (opaque origin), no cookies forwarded | Move to a usercontent origin, **or** fence every response on that prefix (including errors) with the sandbox CSP and a test |
+| Web | Service worker at scope `/` | Controls every path | Bypass mounted prefixes (PR P3) |
+| All | `localStorage` keys | Mostly app-prefixed (`tuturuuu-mail-*`, Meet ended-room prefix) | Audit and prefix the rest |
+
+## Residual risk and its owner
+
+The residual risk is an XSS in any mounted app reaching every app's data, including
+media permissions granted to Meet. The release authority accepts it once per app at
+admission. Mitigations: strict CSP and Trusted Types (prevention), HttpOnly
+path-scoped sessions (credential theft), path-scoped `connect-src` (casual
+exfiltration) and per-document Permissions-Policy (silent media use). CSP violation
+reports from every mounted app feed one monitored sink, and a new violation class
+is triaged as a potential release hold.

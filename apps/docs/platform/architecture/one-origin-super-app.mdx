@@ -1,0 +1,379 @@
+---
+title: 'One-origin super-app (design)'
+description: 'Proposed design for serving satellite apps at tuturuuu.com/<app> instead of <app>.tuturuuu.com, piloted with Meet and Mail.'
+---
+
+<Note>
+**Status: proposed, phase 1 (design only).** Nothing on this page is implemented
+or authorized for production. Every DNS, proxy, route or cutover step on the live
+`tuturuuu.com` zone needs explicit user approval. The companion
+[same-origin security model](/platform/architecture/one-origin-security) is part
+of this design and gates each app's admission.
+</Note>
+
+## Goal
+
+Serve products at `https://tuturuuu.com/<app>/...` instead of
+`https://<app>.tuturuuu.com/...`. Opening another app should feel like moving
+around inside one app. The design adds no extra network hop for the mounted apps.
+Meet and Mail are the pilot. Web (`apps/web` on Vercel) keeps `/` and every path
+it does not hand over.
+
+## Current state (observed 2026-10-25)
+
+### Hosting
+
+| Host | Serving today | Evidence |
+| --- | --- | --- |
+| `tuturuuu.com` | Vercel (Web) | Public DNS A `216.150.x.x`, `server: Vercel`. **DNS-only, not proxied by Cloudflare.** |
+| `meet.tuturuuu.com` | Cloudflare Worker `tuturuuu-meet` (Custom Domain) | `server: cloudflare`; `apps/meet/void.config.ts` route `meet.tuturuuu.com`, `custom_domain: true`, placement `aws:ap-southeast-1` |
+| `mail.tuturuuu.com` | Vercel (legacy Next deployment) | CNAME `*.vercel-dns-016.com`, `server: Vercel` |
+| `meet-realtime.tuturuuu.com` | Cloudflare Worker (realtime DO) | `MEET_REALTIME_URL` in Meet vars |
+
+Both apps already have TanStack Start + Void + Vite+ native source: `vite.config.ts`,
+`void.config.ts`, `cloudflare/worker.ts`, and a single `src/routes/$.tsx` catch-all
+that dispatches to the retained Next page modules through `runtime/` adapters.
+Production for both is **held** by the
+[wave-1 publication hold](/build/devops/wave1-native-cutover). Meet keeps its
+currently deployed Worker version. Mail keeps its Vercel deployment. The Mail native
+Worker (`tuturuuu-mail`) has no production route yet.
+
+### Auth and cookies
+
+| Cookie | Set by | Scope today | One-origin consequence |
+| --- | --- | --- | --- |
+| `sb-<ref>-auth-token(.N)` | Web / Supabase SSR | `Domain=.tuturuuu.com; Path=/; SameSite=Lax` (`packages/supabase/src/next/common.ts`) | Already shared by every subdomain. It stays valid on the apex. |
+| `tuturuuu_app_session`, `tuturuuu_app_session_refresh` | Every satellite (`/api/auth/verify-app-token`) | Host-only, `Path=/`, `HttpOnly`, `SameSite=Lax` (`packages/auth/src/app-session.ts`) | **Collides.** Meet and Mail would overwrite each other's audience-bound token on one host. Web's `createClient(request)` also returns an *unauthenticated* client whenever this cookie is present (`packages/supabase/src/next/server.ts`). One visit to `/meet` would break Web. |
+| `tuturuuu_web_app_session(_refresh)` | Satellites | Host-only, `Path=/` | Same collision class |
+| `NEXT_LOCALE`, `NEXT_THEME`, `sidebar-*` | Web and satellites | Host-only, `Path=/` | Become shared. That is the desired behavior for one consistent shell. |
+| `mail_oauth_state` | Mail OAuth start | Host-only, `Path=/api/v1/mail/connected`, 10 min | Must start and finish on the same host (see [migration](#oauth-callback-continuity)) |
+
+Satellites run `sessionMode: 'supabase-first'`. A signed-in user already presents the
+shared Supabase cookie, and the app-session JWT is the satellite fallback. The
+cross-app handoff (`tuturuuu.com/login?returnUrl=https://meet.tuturuuu.com/verify-token...`
+followed by `POST /api/auth/verify-app-token`) is what an anonymous first visit
+pays today.
+
+### Web API proxy pattern
+
+Unmatched `/api/*` requests are forwarded to Web. Meet does this in
+`apps/meet/src/runtime/handler.ts` and Mail in `apps/mail/src/runtime/handler.ts`.
+Both use `x-forwarded-host`, and legacy Next uses `fallback` rewrites. Each app also
+owns API paths of its own under the same `/api` namespace:
+
+- Meet: `/api/auth/*`, `/api/build-info`, `/api/meet-ai/*`, `/api/meet-call/*`
+  (including the programming preview proxy), `/api/meet-live/*`.
+- Mail: `/api/auth/*`, `/api/ai/email-draft`, `/api/v1/mail/*`,
+  `/api/v1/webhooks/mail/{cloudflare,ses}`, `/api/v1/workspaces/[wsId]/mail/*`.
+
+Server functions use `/_meet/functions` and `/_mail/functions`.
+
+### Hard-coded origins
+
+`rg meet.tuturuuu.com` and `rg mail.tuturuuu.com` find about 120 files, mostly tests
+and fixtures. These non-test sources must become base-path aware:
+
+- Registry and URL builders: `packages/utils/src/internal-domains.ts`
+  (origin-only matching), `launchable-apps.ts`, `seo-policy.json`,
+  `packages/internal-api/src/client.ts` (host lists and `getConfiguredMailApiBaseUrl`
+  origin normalization), `apps/web/src/lib/{meet,mail}-app-url.ts`,
+  `apps/parley/src/features/studio/meet-links.ts`, `packages/ai/.../mail-helpers.ts`.
+- App constants and config: `apps/{meet,mail}/src/constants/*.ts`, `vite.config.ts`
+  `define` defaults, `void.config.ts` vars `NEXT_PUBLIC_APP_URL`.
+- Durable share links: `packages/meet-core/.../meeting-metadata.ts` and
+  `apps/meet/src/runtime/page-model.server.ts` canonicals (`/r/<code>`), ICS UIDs
+  (`meet-ics.ts`, which is an identifier and should **keep** its value).
+- Machine endpoints: `wrangler.email-routing.jsonc` `MAIL_INGEST_URL`, SES SNS
+  subscription, and the `MAIL_{GOOGLE,MICROSOFT}_REDIRECT_URI` secrets.
+- Mobile: `apps/mobile/lib/core/router/deep_links.dart` (`host == 'meet.tuturuuu.com'`),
+  `env.dart`, `api_origins.dart`.
+- Meet's `/live-connect` WebSocket compares `Origin` against `NEXT_PUBLIC_APP_URL`.
+  This breaks once that value has a path. The code must split **origin** from
+  **base URL**.
+
+### Path collisions on the apex
+
+Web already serves `/meet` (the Meet-Together marketing listing),
+`/meet/plans/[planId]` and `/vi/meet...`. It also redirects `/products/meet-together`.
+Meet's own `/plans/<id>` route maps to the same `/meet/plans/<id>` URL under the new
+base path. The marketing landing page needs an owner decision (see open questions).
+Web has no `/mail` page route. `/meet-together` exists, so route patterns must never
+be `tuturuuu.com/meet*`.
+
+## Routing options and latency
+
+Path routing at Cloudflare needs the apex to be a **proxied** (orange-cloud)
+record. The apex is DNS-only to Vercel today. Options (a) and (b) therefore both
+start with one shared operational change: proxy `tuturuuu.com` through Cloudflare
+to the existing Vercel origin.
+
+| | (a) Zone Worker routes per app | (b) Router Worker + service bindings | (c) Vercel rewrites to Workers |
+| --- | --- | --- | --- |
+| Meet/Mail request path | Client → CF edge → app Worker (same isolate pipeline) | Client → CF edge → router Worker → service binding → app Worker | Client → Vercel edge → internet → CF edge → app Worker |
+| Extra hop for apps | **None** | ~0 network; one extra invocation + CPU (sub-ms to low ms) | A full extra CDN hop. **No WebSocket upgrade**, which breaks Meet `/live-connect`. |
+| Web request path | Client → CF edge → Vercel (no Worker) | Client → CF edge → **router Worker** → `fetch` Vercel | Unchanged |
+| Billable ops | App traffic only (as today) | **Every** web request, asset and bot hit becomes a Worker invocation | Vercel edge requests plus Worker |
+| Failure blast radius | Per app route | Router bug takes down all of `tuturuuu.com` | Per rewrite |
+| Rollout control | Route present or absent, plus an in-app flag | Central table, percentage/cookie canaries | Per rewrite |
+
+**Recommendation: (a), direct zone routes, one pair per app.**
+
+```text
+tuturuuu.com/meet     -> tuturuuu-meet   (exact)
+tuturuuu.com/meet/*   -> tuturuuu-meet
+tuturuuu.com/mail     -> tuturuuu-mail   (exact)
+tuturuuu.com/mail/*   -> tuturuuu-mail
+everything else       -> no Worker; Cloudflare proxies to Vercel (Web)
+```
+
+Declare these routes in each app's `void.config.ts` (`zone_name: 'tuturuuu.com'`) so
+they are reviewed config-as-code and covered by the existing sealed-config checks.
+Never use `tuturuuu.com/meet*`, because it also matches `/meet-together` and
+`/meeting`. The router Worker (b) is rejected for two reasons:
+
+- It buys flexibility we can get more cheaply. The flag lives in the app Worker
+  (see [plan](#implementation-plan)), and canaries can use a cookie inside the app
+  Worker.
+- It adds a Worker invocation to every Web request. The Cloudflare
+  [billable-operation rules](/build/devops/cloudflare-backend-ownership) would then
+  require cost bounds that we otherwise avoid.
+
+### How Web keeps `/` without a double hop
+
+With (a), Web traffic crosses Cloudflare's edge as a plain proxied pass-through with
+no Worker. It then reaches Vercel's edge, which still does its own caching
+(`x-vercel-cache: HIT` today). This is one added CDN-to-CDN leg, not a second
+application hop. Both providers have PoPs in HKG/SIN, and Cloudflare pools origin
+connections, so the leg is expected to cost low single-digit milliseconds. That
+figure is an **estimate, not measured**. Treat it as a gate:
+
+- **Gate W1:** Web p75 TTFB through Cloudflare must regress by ≤ 10 ms compared with
+  direct Vercel, measured on a non-canonical proxied hostname before touching the
+  apex (operation O2).
+- Disable Cloudflare HTML caching for Web paths (cache-bypass rule). Vercel stays
+  the cache of record, so purges keep working.
+- Keep SSL mode **Full (strict)**. Let `/.well-known/acme-challenge/*` pass through
+  so Vercel certificate renewal keeps working. Vercel discourages third-party
+  proxies in front of deployments, so confirm current Vercel guidance and plan
+  support before O3.
+- **Client IP trust changes.** Behind Cloudflare, Vercel sees Cloudflare egress IPs.
+  The trusted-proxy resolver (`packages/utils/src/abuse-protection/client-ip.ts`,
+  `TRUSTED_PROXY`) must switch Web to `cloudflare` mode. It may do so **only**
+  together with an origin-authentication fence, such as a Cloudflare-injected
+  secret header verified in Web's `proxy.ts`, or a Vercel trusted-proxy feature if
+  the plan has one. Otherwise rate-limit buckets collapse to a few edge IPs, or
+  `cf-connecting-ip` becomes spoofable by anyone who reaches Vercel directly.
+
+The end state removes the leg entirely. Per `AGENTS.md`, every active app,
+including Web, eventually moves to Vite+ on Cloudflare. A Web Worker on the apex
+would make (a) zero-hop for every path. If gate W1 fails, see
+[fallback host](#fallback-a-shared-non-apex-host).
+
+### Fallback: a shared non-apex host
+
+If proxying the apex is rejected, serve the super-app from a new proxied host,
+for example `app.tuturuuu.com/{meet,mail}`. All the same-origin benefits hold
+between mounted apps, but **not** with Web's dashboard on `tuturuuu.com`. This
+fallback is only worth it if Web's dashboard also moves under that host later.
+
+## Per-app mounting
+
+The parallel Start/Void lane is making Meet and Mail base-path ready. The pilot
+needs exactly the following from that lane:
+
+| Concern | Requirement |
+| --- | --- |
+| Base path | One build serves **both** hosts. Assets are emitted under `/<app>/assets/*` (Vite `base: '/<app>/'`). TanStack Router `basepath` is chosen **per request** (`/<app>` on `tuturuuu.com`, `''` on `<app>.tuturuuu.com`) so the subdomain keeps working until cutover. |
+| Assets | The Worker strips `/<app>` before `env.ASSETS.fetch`, or Void emits into `dist/client/<app>/`. Either way: `run_worker_first`, no SPA fallback, `Cache-Control: immutable` on hashed files (Meet's `_headers` pattern moved under the prefix). `public/` files (favicons, `meet-audio-processor.js`, `site.webmanifest`) move under the prefix. Update `publicAssets` sets. |
+| Server functions | `serverFns.base` becomes `/<app>/_fn` (from `/_meet/functions`, `/_mail/functions`). The native function proxy and the Mail body bound follow the new prefix. |
+| App-owned API | Moves to `/<app>/api/*`. Central Web API stays at root `/api/*`, reached **directly** with no Worker proxy dispatch. The app needs an explicit `appApi(path)` / `centralApi(path)` helper. A root-relative `fetch('/api/meet-call/...')` would otherwise hit Web and 404. Keep the legacy `/api/*` forward on the subdomain only. |
+| Locale | `/<app>` (en, as-needed) and `/<app>/vi/...`. The app segment comes first so one route pair covers every locale. Web's `/vi/meet...` returns 301 to `/meet/vi...`. `NEXT_LOCALE` becomes one shared preference. |
+| Origin vs base URL | Replace single `NEXT_PUBLIC_APP_URL` with `APP_ORIGIN` (`https://tuturuuu.com`) plus `APP_BASE_PATH` (`/meet`). Every origin comparison (`/live-connect`, CSRF/Origin guards, `x-forwarded-host`) uses the origin. Every link builder uses origin + base path. |
+| App identity | `internal-domains.ts` gains `{ origin, basePath }` per app and **longest-prefix** matching (`tuturuuu.com/meet/...` → `meet`, everything else on the apex → `platform`). Cross-app handoff, `internal-api` runtime detection and launcher URLs read the app from this registry, never from the host alone. |
+| Service worker | Web's `/serwist/sw.js` is registered at scope `/` with `Service-Worker-Allowed: /`. It would control `/meet` and `/mail` pages: navigation fallback to Web's `~offline` page and SWR caching of their scripts. Web's worker must bypass every mounted prefix, read from the shared registry. Mounted apps register no worker, or one scoped to `/<app>/`. |
+| Robots | Only `tuturuuu.com/robots.txt` counts. Web's `robots.ts` must add `Disallow: /mail/` and Meet's private paths. Keep `X-Robots-Tag` from the app responses. |
+| Realtime | `meet-realtime.tuturuuu.com` stays a separate WebSocket host. Its token checks are origin-independent. Meet's own `/live-connect` becomes `wss://tuturuuu.com/meet/live-connect`. |
+
+The `[...slug]`-under-`[locale]/[wsId]` prohibition still applies to the retained
+Next page modules. The proxy-ordering trap moves from `/api` to `/<app>/api`.
+
+## Migrating the old subdomains
+
+### Redirect rules
+
+The app Worker keeps its subdomain Custom Domain and decides per request:
+
+- **GET/HEAD navigations** redirect `https://<app>.tuturuuu.com<rawPath><rawQuery>` to
+  `https://tuturuuu.com/<app><rawPath><rawQuery>`. Use the raw, undecoded path and
+  query bytes so duplicate keys, `+` and encoded slashes survive. Fragments survive
+  automatically.
+- **Use 307 during the observation window, then 301.** A cached 301 cannot be
+  revoked. If a route rollback sends `/meet` back to Web, which then redirects to the
+  subdomain, browsers holding a cached 301 would loop. Switch to 301 after the
+  stability window (≥ 14 days Meet, ≥ 30 days Mail, matching the wave-1 observation
+  periods). Keep the subdomain redirects **indefinitely**, because room links live in
+  calendar invites, ICS files and emails.
+- **Never redirect machine traffic.** POST/PUT/DELETE, WebSocket upgrades, webhooks
+  (`/api/v1/webhooks/mail/*`, SNS, Email Routing ingest), OAuth callbacks,
+  `/api/build-info` and `/.well-known/*` keep being served on the subdomain until
+  each sender is re-pointed. Open tabs on old builds keep calling the old host.
+- Web adds a temporary `/meet/:path*` and `/mail/:path*` → subdomain **307** as its
+  rollback safety net. This is unreachable while the Worker routes exist.
+
+### OAuth callback continuity
+
+Mail's Google/Microsoft connect flow sets `mail_oauth_state` on the host where it
+starts. The token exchange must repeat the exact `redirect_uri` used at
+authorization.
+
+1. Register the new callback (`https://tuturuuu.com/mail/api/v1/mail/connected/callback`)
+   with Google and Microsoft **in addition to** the old one. Provider console changes
+   are owner actions that need approval.
+2. Choose `redirect_uri` from the host that served the start request, against an
+   allowlist of the two registered values. The callback handler uses its own
+   canonical request URL as the exchange `redirect_uri`. No schema migration is
+   needed.
+3. Keep the old callback served (not redirected) on `mail.tuturuuu.com` until no
+   request older than the 10-minute state TTL can arrive. Remove the old URI from
+   the providers only after the subdomain-retirement decision.
+
+Web's central sign-in (`returnUrl`) must accept same-origin `/meet/...` and `/mail/...`
+return paths. On one origin, the Supabase cookie is already present after sign-in,
+so the `verify-token` round trip disappears for signed-in users.
+
+### Mobile and links
+
+- Before the redirect flips, ship a mobile build whose deep-link resolver accepts
+  `tuturuuu.com/meet/r/<code>` and `/meet/vi/r/<code>`. Old app versions keep
+  resolving the subdomain link directly.
+- Universal/App Links on the apex must list `/meet/r/*`. Associated-domain files are
+  per host.
+- Generated share links (`meeting-metadata.ts`, notification and AI mail helpers)
+  switch to the registry URL in the same release that flips the flag.
+
+### SEO
+
+Canonical URLs become `https://tuturuuu.com/meet/...`, with hreflang alternates for
+`/meet/vi/...`. `seo-policy.json` gains a base path. Meet public pages (room preview,
+plans) join Web's sitemap index. Mail stays noindex. Redirecting subdomain responses
+carry no canonical. Search engines consolidate signals through the 301 once it
+replaces the 307.
+
+## Same-origin wins
+
+- **Speculation Rules.** The launcher and shell links emit
+  `<script type="speculationrules">` with `prerender` at `moderate` eagerness (hover
+  or pointerdown) for `/<app>/` entry points. Today a cross-origin prerender needs
+  the target to opt into credentialed prerender. Same-origin works by default, with
+  cookies. Apps must defer side effects (camera, realtime connect, analytics) until
+  `document.prerendering` is false. Bound the cost: Chrome caps `moderate`
+  prerenders, and each prerender is a real SSR request to a billable Worker. Use
+  `prefetch` for long lists.
+- **Cross-document View Transitions.** `@view-transition { navigation: auto; }` only
+  animates **same-origin** navigations, and cross-origin switches can never use it.
+  Shared `view-transition-name`s on the satellite shell (sidebar, top bar, app
+  switcher) make the shell look persistent while the content swaps. Honor
+  `prefers-reduced-motion`.
+- **No cross-app CORS or proxy hop.** Mounted apps call `/api/*` on Web directly with
+  the shared session. Meet and Mail no longer forward central API calls through their
+  Worker or a Vercel rewrite. The cross-app token handoff disappears for signed-in
+  users.
+- **One connection.** Every app shares the HTTP/2 or HTTP/3 connection to the
+  Cloudflare edge. Today Meet (Cloudflare IP) and Web (Vercel IP) need separate DNS,
+  TCP and TLS setup on every first switch.
+
+## Metrics
+
+**App-switch time-to-interactive (ASI):** the time from user activation of a link in
+app A to app B's `ttr:app-ready` mark. Each app sets that mark once its primary
+control is hydrated and its first data has loaded. For prerendered pages, measure
+from `activationStart`.
+
+### RUM
+
+- When a cross-app link is activated, a shared, framework-free helper (planned
+  `@tuturuuu/utils/rum/app-switch`) writes a 30-second, non-HttpOnly
+  `ttr_switch=<epoch-ms>.<from-app>` cookie with `Domain=.tuturuuu.com`. The
+  subdomain baseline can read it across the auth-handoff redirects, and the apex can
+  read it after cutover. The destination computes
+  `timeOrigin + now() − clickEpoch` at `ttr:app-ready`, then clears the cookie.
+- Attach the dimensions `from`, `to`, `topology` (`subdomain|one-origin`),
+  `prerendered`, `handoff` (whether `verify-token` ran), `nextHopProtocol`,
+  connect/TLS duration and the effective connection type.
+- Transport is a sampled (10%), size-bounded `sendBeacon`, and it follows the
+  existing telemetry consent. Storage options are a Workers Analytics Engine dataset
+  or the existing Vercel analytics events (open question). Report p50/p75/p95 by
+  topology.
+
+### Lab
+
+A Playwright script (planned `scripts/perf/app-switch.lab.mjs`) runs on a Studio host,
+not the M4. It signs in a synthetic account, warms Web's dashboard and clicks the
+launcher to Meet and to Mail 30 times each. It runs cold and warm, under no
+throttling and under a "Slow 4G" profile, against the subdomain and the one-origin
+staging host. It also records Web TTFB direct versus through Cloudflare (gate W1).
+
+**Proposed targets:**
+
+- ASI p75 improves by ≥ 30% without prerender.
+- ASI with prerender is ≤ 300 ms at p75 on desktop.
+- Web p75 TTFB regresses by ≤ 10 ms.
+- No change in Meet/Mail 5xx or auth-loop rates.
+
+## Implementation plan
+
+Each PR is small, flagged and reversible. Per-app flag `TTR_ONE_ORIGIN_<APP>` is a
+Worker var with three values:
+
+- `off`: subdomain is canonical; apex route absent or 404.
+- `shadow`: apex is served with `noindex`; canonical stays on the subdomain; no
+  redirects.
+- `on`: apex is canonical; subdomain navigations get 307, later 301.
+
+| # | Change | Owner | Depends on | Migration |
+| --- | --- | --- | --- | --- |
+| P1 | Base-path-aware app registry and URL builders in `@tuturuuu/utils` (`{origin, basePath}`, longest-prefix match). No behavior change. | Platform | — | None |
+| P2 | Path-scoped, per-app session cookies (see [security](/platform/architecture/one-origin-security#session-cookies)). Read old and new names; `createClient` detection updated. | Platform/auth | P1 | None (cookies re-issue on refresh) |
+| P3 | Web: service-worker bypass for mounted prefixes, `robots.ts` disallow, `/vi/meet` → `/meet/vi`, rollback 307s, `returnUrl` acceptance. | Web | P1 | None |
+| P4 | Meet base-path build serving both hosts, `appApi`/`centralApi` split, origin/base split, flag plumbing. Staging profile only. | Meet + Start/Void lane | P1, P2, lane | None |
+| P5 | Meet CSP, Trusted Types and Permissions-Policy, report-only then enforced. Programming preview moved off the origin or fenced. | Meet | P4 | None |
+| P6 | RUM helper, `ttr:app-ready` marks and lab script. | Platform | P1 | None |
+| P7 | Mail equivalents of P4/P5, OAuth redirect-URI selection, email-frame guard. | Mail + lane | Mail wave-1 native cutover | None |
+| P8 | Speculation Rules and cross-document View Transitions in the launcher and satellite shell, behind the flag. | Platform UI | P4 | None |
+
+**Operations, each needing user approval through the orchestrator:**
+
+1. **O1.** Create a non-canonical proxied staging host (for example
+   `one-origin-staging.tuturuuu.com`) pointing at Web staging, with staging Worker
+   routes for `/meet` and `/mail`.
+2. **O2.** Measure gate W1 and record a baseline ASI on O1.
+3. **O3.** Proxy the production apex through Cloudflare (no Worker routes yet).
+   Capture DNS records and proxy modes for rollback. Configure the origin-auth
+   header and the Web `TRUSTED_PROXY` switch together.
+4. **O4.** Lift Meet's wave-1 hold for the base-path build, attach
+   `tuturuuu.com/meet{,/*}` and set the flag to `shadow`.
+5. **O5.** Set Meet to `on` (307), then to 301 after the observation window.
+6. **O6.** Register Mail's new OAuth redirect URIs.
+7. **O7.** Run O4–O5 for Mail.
+
+**Rollback:**
+
+- Detach the app's routes. Web's 307 safety net returns traffic to the subdomain,
+  where the flag is `off`.
+- Revert O3 by restoring the captured DNS-only records.
+- Never rebuild on the rollback path.
+
+## Open questions
+
+1. Is proxying the `tuturuuu.com` apex through Cloudflare acceptable (O3)? If not, is
+   the `app.tuturuuu.com` fallback wanted?
+2. Who owns `/meet` for anonymous visitors: a Meet-app public landing page, or Web's
+   Meet-Together marketing page moved to `/products/meet`?
+3. Should the pilot sequence be Meet first, with Mail after its wave-1 native
+   cutover? Mail production is still the Vercel deployment.
+4. Where should RUM be stored: Workers Analytics Engine or Vercel analytics?
+5. Should 307 → 301 follow the default observation windows (14 days Meet, 30 days
+   Mail)?
+6. Is it acceptable that per-app `localStorage` preferences (for example Mail's pane
+   layout and Meet's ended-room cache) reset once at cutover? Storage does not move
+   across origins.
