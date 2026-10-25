@@ -181,6 +181,13 @@ before retiring the actor/epoch. Complete an explicit handshake inside the exist
 creation alone does not prove subscription. Keep the original request tuple,
 receipt/body assertions, zero forbidden effects and cleanup after retirement.
 
+Shell fixtures must provide the getters used by their real page consumers.
+`MockCubit` does not supply a valid `isClosed` value automatically: stub an open
+AuthCubit explicitly when mounting Assistant. Preserve navigation and geometry
+assertions instead of ignoring the resulting page-build exception. For auth
+transitions, assert immediate revocation and await the actual source notification
+before requiring restored session identity.
+
 ## Measure the Mira composer after layout
 
 Mira text entry grows from one to five lines. Enter inserts a newline; the side

@@ -204,6 +204,11 @@ For the source-linked diagnosis guide, read
   Default settle-all `Future.wait` handles a sibling failure while another task
   remains pending; connect only after all prerequisites succeed and scope is
   still current. Test pending and failing tasks with controlled completers.
+- Keep shell provider mocks faithful to consumed getters, including an explicit
+  `AuthCubit.isClosed` value. Preserve page-build, navigation and geometry
+  assertions. Auth transition fixtures assert immediate revocation and await the
+  source notification before expecting restored actor identity; see the
+  [async fixture guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
 
 - Separate foreground interaction admission from the lease of an already admitted
   remote operation. A transient local runtime invalidation on pause must not drop
