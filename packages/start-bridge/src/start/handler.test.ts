@@ -109,10 +109,9 @@ describe('the same artifact mounted at tuturuuu.com/meet', () => {
     expect(await page.text()).toBe(
       'start /meet/r/abc basepath=/meet mount=/meet'
     );
-    // The shared session cookie is never renamed or path-scoped.
-    expect(page.headers.getSetCookie()).toEqual([
-      'tuturuuu_app_session=fresh; Path=/',
-    ]);
+    // Under a mount the root session is the only session: app-session
+    // cookies are never written, even by raw app code.
+    expect(page.headers.getSetCookie()).toEqual([]);
   });
 
   it('replaces a client-sent mount header with the resolved one', async () => {

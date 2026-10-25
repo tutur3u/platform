@@ -157,7 +157,8 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 **Decision (user, 2026-10-25):** keep one Tuturuuu session, usable across
 every app; no per-app session cookies. The bridge therefore leaves all cookies
 untouched. Making that safe on the apex needs the auth change below. It is a
-**proposal awaiting security review**; nothing here is implemented yet.
+**proposal awaiting security review**; only the model-independent no-writer
+guard below is implemented.
 
 ### Current model and the apex problems
 
@@ -249,6 +250,38 @@ not used on the apex.
    refreshes when near expiry, and may run the MFA lookups the satellites
    already run. Measure the p95 on staging before cutover.
 7. **Subdomains keep today's behaviour** until each app's cutover.
+
+### Implemented: the model-independent no-writer guard
+
+Both candidate models, (a) the Supabase apex session with enforced CSP and
+Trusted Types and (b) a backend-for-frontend `HttpOnly` session, need the same
+base invariant: under a mount, no app writes, refreshes or clears
+`tuturuuu_app_session*` or `tuturuuu_web_app_session*`. That part is enforced
+now; root (subdomain) mode is unchanged.
+
+- **Mount source.** `@tuturuuu/start-bridge/request-context` installs
+  `installMountedAppSessionResolver` (`@tuturuuu/auth/app-session-mount`),
+  which reads the URL-derived `appBase` from the bridge request context, never
+  a header. Without the bridge (Next-hosted satellites) nothing is mounted.
+- **Admission.** `createBridgeHandler` answers `409 APP_SESSION_MOUNTED` for
+  mounted `/api/auth/verify-app-token` and `/api/auth/refresh-app-session`
+  before `proxy.ts` or endpoint dispatch.
+- **Writers.** The app-session setters and `clearAppSessionCookie` are no-ops
+  under a mount; `createPOST` and `createRefreshPOST` return the same `409`
+  before reading credentials or calling the verifier.
+- **Ordinary auth.** Mounted `refreshAppSessionForRequest` and
+  `createCentralizedAuthProxy` use the root Supabase session only (in-memory
+  bearer) and never verify or refresh a cookie-borne app session.
+- **Backstop.** Mounted responses drop any remaining app-session `Set-Cookie`
+  (raw `cookies().set`, copied upstream headers); Supabase cookies pass.
+
+Coverage: `packages/start-bridge/src/start/mounted-session.test.ts` runs the
+real auth handlers and proxy through `createBridgeHandler`. Still open, by
+model: CSP/Trusted Types enforcement for every mount (a), BFF cookie issuance
+(b), mounted logout to Web sign-out, CSRF for unsafe apex endpoints, and the
+`requestHasAppSessionAuth` precedence change. The first three are marked
+`TODO(apex-session …)` in `app-session-mount.ts`, `start/handler.ts` and
+`app-session.ts`.
 
 ### Code that must change (auth owner, after acceptance)
 

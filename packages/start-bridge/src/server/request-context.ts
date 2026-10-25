@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { installMountedAppSessionResolver } from '@tuturuuu/auth/app-session-mount';
 import {
   RequestCookies,
   ResponseCookies,
@@ -7,6 +8,7 @@ import {
   type BridgeRequestContext,
   bridgeRequest,
   installRequestStore,
+  maybeBridgeRequest,
 } from '../core/request-context';
 
 /**
@@ -17,6 +19,9 @@ import {
  * `@tuturuuu/start-bridge/request-context/core`.
  */
 installRequestStore(new AsyncLocalStorage<BridgeRequestContext>());
+// Auth writers refuse app-session cookies under a mount. The base is the
+// URL-derived one the handler resolved, never a client header.
+installMountedAppSessionResolver(() => Boolean(maybeBridgeRequest()?.appBase));
 
 export * from '../core/request-context';
 

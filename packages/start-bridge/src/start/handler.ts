@@ -1,3 +1,8 @@
+import {
+  isAppSessionSetCookie,
+  isMountedAppSessionRefusedPath,
+  mountedAppSessionRefusal,
+} from '@tuturuuu/auth/app-session-mount';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type BasePath, createBasePath } from '../core/base-path';
@@ -120,7 +125,11 @@ export function createBridgeHandler<
     const request = new Request(incoming, { headers });
     const nonce = options.csp ? createNonce() : undefined;
     let response: Response;
-    if (
+    if (!base.isRoot && isMountedAppSessionRefusedPath(appPath)) {
+      // Admission: mounted session minting is refused before proxy.ts and
+      // endpoint dispatch, so nothing verifies, rotates or sets cookies.
+      response = mountedAppSessionRefusal();
+    } else if (
       (request.method === 'GET' || request.method === 'HEAD') &&
       (appPath.startsWith('/assets/') || publicAssets.has(appPath))
     ) {
@@ -177,10 +186,31 @@ export function createBridgeHandler<
         nonce,
       });
     }
-    const final = base.finalizeResponse(response);
+    let final = base.finalizeResponse(response);
+    if (!base.isRoot) final = withoutAppSessionCookies(final);
     if (!nonce || !options.csp) return final;
+    // TODO(apex-session model a): enforce CSP + Trusted Types for every
+    // mount (refuse a mounted artifact without `csp`) once model (a) is
+    // accepted. TODO(apex-session model b): a BFF issues its HttpOnly session
+    // cookie here instead and the browser Supabase client is not used.
     const secured = new Response(final.body, final);
     secured.headers.set('Content-Security-Policy', options.csp(nonce));
     return secured;
   };
+}
+
+/**
+ * Backstop for the mounted no-writer invariant: drops app-session
+ * `Set-Cookie`s that bypassed the auth writers (raw `cookies().set`, copied
+ * upstream headers). The root Supabase cookies pass through.
+ */
+function withoutAppSessionCookies(response: Response) {
+  const cookies = response.headers.getSetCookie();
+  if (!cookies.some(isAppSessionSetCookie)) return response;
+  const result = new Response(response.body, response);
+  result.headers.delete('Set-Cookie');
+  for (const cookie of cookies)
+    if (!isAppSessionSetCookie(cookie))
+      result.headers.append('Set-Cookie', cookie);
+  return result;
 }

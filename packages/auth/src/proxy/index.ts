@@ -21,6 +21,7 @@ import {
   createAppSessionToken,
   hasSupportedSupabaseAuthCookie,
 } from '../app-session';
+import { isMountedAppSessionRequest } from '../app-session-mount';
 import {
   hashMfaMobileApprovalSecret,
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
@@ -44,6 +45,7 @@ import {
 } from './signed-refresh';
 import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
 import {
+  matchesVerifyTokenPath,
   readVerifyTokenResponse,
   redirectToNormalizedVerifyTarget,
   redirectToVerifyFallback,
@@ -254,30 +256,6 @@ function shouldUseClientVerifyTokenFlow(req: NextRequest) {
   );
 }
 
-function matchesVerifyTokenPath(
-  pathname: string,
-  options: Pick<ConsumeVerifyTokenRequestOptions, 'locales' | 'verifyPath'>
-) {
-  const verifyPath = options.verifyPath ?? '/verify-token';
-
-  if (pathname === verifyPath) {
-    return true;
-  }
-
-  const locales = options.locales ?? [];
-  if (locales.length === 0) {
-    return false;
-  }
-
-  const segments = pathname.split('/').filter(Boolean);
-  const verifySegment = verifyPath.replace(/^\/+/u, '');
-  return (
-    segments.length === 2 &&
-    segments[1] === verifySegment &&
-    locales.includes(segments[0] ?? '')
-  );
-}
-
 export async function consumeVerifyTokenRequest(
   req: NextRequest,
   options: ConsumeVerifyTokenRequestOptions = {}
@@ -394,9 +372,11 @@ async function resolveAppSessionForRequest(
   }
 ): Promise<AppSessionRefreshState> {
   const now = options.now ?? new Date();
+  // Under an apex mount the root Supabase session is the only session.
+  const mounted = isMountedAppSessionRequest();
 
   if (
-    options.sessionMode === 'supabase-first' &&
+    (mounted || options.sessionMode === 'supabase-first') &&
     hasSupportedSupabaseAuthCookie(req)
   ) {
     const { res, claims } = await updateSession(req);
@@ -443,6 +423,9 @@ async function resolveAppSessionForRequest(
       };
     }
   }
+
+  // Mounted: never verify, refresh or rotate a cookie-borne app session.
+  if (mounted) return { error: 'Missing app session', ok: false };
 
   return resolveSignedAppSessionForRequest(req, options, () =>
     getAuthApiUrl(req, options.refreshPath ?? '/api/auth/refresh-app-session')
@@ -749,7 +732,8 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
 
       if (appSession) {
         if (
-          appSession.sessionMode === 'supabase-first' &&
+          (appSession.sessionMode === 'supabase-first' ||
+            isMountedAppSessionRequest()) &&
           hasSupportedSupabaseAuthCookie(req)
         ) {
           const { res, claims } = await updateSession(req);

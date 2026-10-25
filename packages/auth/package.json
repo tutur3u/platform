@@ -9,6 +9,7 @@
     "./app-coordination": "./src/app-coordination.ts",
     "./app-session-policy": "./src/app-session-policy.ts",
     "./app-session": "./src/app-session.ts",
+    "./app-session-mount": "./src/app-session-mount.ts",
     "./cli-session": "./src/cli-session.ts",
     "./supabase-session-user": "./src/supabase-session-user.ts",
     "./proxy": "./src/proxy/index.ts",
