@@ -50,6 +50,22 @@ export function syntheticSessionHeaders(secret) {
 
 export function signedSsrFixtureResponse(request, calls) {
   const url = new URL(request.url);
+  const transactions = `/api/workspaces/${fixtureWorkspaceId}/transactions`;
+  if (
+    ['finance.tuturuuu.com', 'finance-staging.tuturuuu.com'].includes(
+      url.hostname
+    ) &&
+    ['http:', 'https:'].includes(url.protocol) &&
+    request.method === 'GET' &&
+    url.pathname === transactions &&
+    url.searchParams.size === 2 &&
+    url.searchParams.get('itemsPerPage') === '10' &&
+    url.searchParams.get('page') === '1' &&
+    request.headers.has('authorization')
+  ) {
+    calls.push(url.pathname);
+    return Response.json([]);
+  }
   if (
     ![
       'https://finance-fixture.invalid',
@@ -64,6 +80,20 @@ export function signedSsrFixtureResponse(request, calls) {
   ) {
     calls.push(url.pathname);
     return Response.json({ ...user, user });
+  }
+  if (
+    url.pathname === '/api/v1/users/me/profile' &&
+    request.headers.has('authorization')
+  ) {
+    calls.push(url.pathname);
+    return Response.json({
+      ...user,
+      display_name: 'Finance Native Fixture',
+      default_workspace_id: fixtureWorkspaceId,
+      avatar_url: null,
+      full_name: 'Finance Native Fixture',
+      new_email: null,
+    });
   }
   if (url.pathname.startsWith('/rest/v1/')) {
     const table = url.pathname.slice('/rest/v1/'.length);

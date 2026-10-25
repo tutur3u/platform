@@ -203,6 +203,12 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
       }
       assert.ok(signedCalls.some((path) => path.startsWith('/auth/v1/')));
       assert.ok(signedCalls.includes('/rest/v1/workspaces'));
+      assert.ok(signedCalls.includes('/api/v1/users/me/profile'));
+      assert.ok(
+        signedCalls.includes(
+          `/api/workspaces/${fixtureWorkspaceId}/transactions`
+        )
+      );
       const rejected = await runtime.fetch(
         `${origin}/en/${fixtureWorkspaceId}`,
         {
