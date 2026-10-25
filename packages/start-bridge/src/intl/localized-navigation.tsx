@@ -9,20 +9,17 @@ import {
   useRouter as useRawRouter,
 } from '../next/navigation';
 
-/**
- * `@tuturuuu/satellite/i18n` navigation for bridged apps: English is the
- * unprefixed default, Vietnamese is served under `/vi`.
- */
-export const defaultLocale = 'en';
-export const supportedLocales = ['en', 'vi'] as const;
-export type Locale = (typeof supportedLocales)[number];
-export const routing = { locales: supportedLocales, defaultLocale };
+import { localize } from './satellite-locales';
 
-export function localize(href: string, locale: string) {
-  if (!href.startsWith('/') || href.startsWith('//')) return href;
-  const path = href.replace(/^\/(?:en|vi)(?=\/|$)/u, '') || '/';
-  return locale === 'vi' ? `/vi${path === '/' ? '' : path}` : path;
-}
+// Client-only navigation for `@tuturuuu/satellite/i18n`. Locale data lives in
+// `satellite-locales`; bridged apps import through `satellite-i18n`.
+export {
+  defaultLocale,
+  type Locale,
+  localize,
+  routing,
+  supportedLocales,
+} from './satellite-locales';
 
 export function LocalizedLink({
   href,

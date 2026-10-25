@@ -21,7 +21,8 @@ export const NEXT_SHIMS = {
   'next-intl/routing': 'intl/routing.ts',
   'next-intl/navigation': 'intl/navigation.tsx',
   '@opennextjs/cloudflare': 'next/cloudflare-context.ts',
-  '@tuturuuu/satellite/i18n': 'intl/localized-navigation.tsx',
+  // Not the client module: server code reads its locale data (see satellite-i18n).
+  '@tuturuuu/satellite/i18n': 'intl/satellite-i18n.ts',
 } as const;
 export type NextShim = keyof typeof NEXT_SHIMS;
 
