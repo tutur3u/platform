@@ -11,11 +11,12 @@ export async function checkPermission({
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  // Check if the user is an admin
+  // Check if the user is an admin; disabled roles grant nothing
   const { data: roleData, error: roleError } = await sbAdmin
     .from('platform_user_roles')
     .select('*')
     .eq('user_id', userId)
+    .eq('enabled', true)
     .eq('allow_challenge_management', true)
     .single();
 

@@ -27,11 +27,21 @@ handoff, the same satellite pattern used by
 
 ## Session integrity
 
-Nova participant submissions require the caller's own `IN_PROGRESS` session and
-an associated problem in that session's challenge. The server rejects submissions
-at or after `min(start_time + duration, close_at)`, including before the expiry
-cleanup runs. Manager submissions without a session retain their existing bypass;
-a supplied session must satisfy the same ownership, challenge and expiry checks.
+Creating a Nova participant submission requires the caller's own `IN_PROGRESS`
+session and an associated problem in that session's challenge. The server rejects
+submissions at or after `min(start_time + duration, close_at)`, including before
+the expiry cleanup runs. Managers with an enabled role keep the sessionless
+bypass; a supplied session must satisfy the same ownership, challenge and expiry
+checks. A disabled role grants no bypass.
+
+After creation, a submission's `problem_id` and `session_id` are immutable for
+every caller. Participants cannot edit, delete or grade their own submissions.
+Only an enabled manager of the submission's challenge may write or clear its
+grading (`/api/v1/submissions/{id}/criteria` and `/test-cases`), and only on a
+submission they own may that manager edit the prompt or delete it. A graded criterion must
+belong to the submission's challenge, and a graded test case must belong to its
+problem. The grading tables live in `private` with no `authenticated` grants,
+so the service-role routes are the only write path.
 
 Active-session reads select the newest start. Session inserts serialize on the
 challenge row and reject an overlapping active session with HTTP 409. Expired rows
@@ -40,9 +50,13 @@ use UTC in both the API and database. Criteria retain catalog/password eligibili
 before `open_at`; starting a session still requires the opening window.
 
 Regression coverage: `submissions/route.test.ts`,
+`submissions/[submissionId]/route.test.ts`,
+`submissions/[submissionId]/grading-access.test.ts`,
 `packages/utils/src/nova/submissions/check-permission.test.ts`,
 `challenge-catalog-access.test.ts`, `sessions/route.test.ts`, and
-`supabase/tests/private-schema-nova-session-limits.sql`.
+`supabase/tests/private-schema-nova-session-limits.sql`. The grant boundary is
+covered by `private-schema-nova-runtime.sql` and
+`private-schema-nova-challenge-catalog.sql`.
 
 ## Architecture / Satellite Auth
 

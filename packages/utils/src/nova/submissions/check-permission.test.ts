@@ -42,6 +42,17 @@ describe('Nova submission session permission', () => {
       })
     ).toMatchObject({ canSubmit: true, remainingAttempts: -1 });
   });
+  it('denies sessionless submissions for a disabled manager role', async () => {
+    fixture.state.manager = true;
+    fixture.state.managerEnabled = false;
+    expect(
+      await checkPermission({
+        problemId: 'problem-1',
+        sessionId: null,
+        userId: 'user-1',
+      })
+    ).toMatchObject({ canSubmit: false, remainingAttempts: 0 });
+  });
   it('validates supplied sessions for managers too', async () => {
     fixture.state.manager = true;
     fixture.state.session.user_id = 'user-2';

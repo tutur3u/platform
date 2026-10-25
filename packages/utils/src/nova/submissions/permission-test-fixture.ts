@@ -1,6 +1,7 @@
 export function permissionFixture() {
   const state = {
     manager: false,
+    managerEnabled: true,
     session: {
       id: 'session-1',
       user_id: 'user-1',
@@ -31,7 +32,11 @@ export function permissionFixture() {
                 : table === 'nova_submissions'
                   ? { id: 'submission-1' }
                   : table === 'platform_user_roles' && state.manager
-                    ? { user_id: 'user-1', allow_challenge_management: true }
+                    ? {
+                        user_id: 'user-1',
+                        allow_challenge_management: true,
+                        enabled: state.managerEnabled,
+                      }
                     : null;
         const matches =
           row &&
