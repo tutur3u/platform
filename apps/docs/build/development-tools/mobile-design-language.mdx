@@ -118,6 +118,25 @@ tone resolves a foreground and a quiet fill:
 - Per-module hex palettes (the Apps hub cards, Drive's green, finance
   positive/negative literals) are migration debt; map them to tones.
 
+### Brand identity accents
+
+`BrandAccents` (`core/theme/appearance/brand_accents.dart`, also exposed as
+`AppearancePalettes.brandAccents`) holds the four Tuturuuu logo colours from
+[tuturuuu.com/branding](https://tuturuuu.com/branding): Innovation `#4180E9`,
+Growth `#4ACA3F`, Energy `#FB7B05` and Impact `#E94646`, plus four companion
+hues (violet, teal, pink, gold) that are not part of the published brand. Each
+accent keeps the published colour as `mark` and resolves a light and dark fill
+with a readable label (white on light, `#09090B` on dark), every pair at least
+4.5:1 and every fill at least 3:1 against any appearance background.
+
+- Use identity accents for things that need a stable colour of their own, such
+  as workspace tiles: `BrandAccents.forKey(id)` hashes an id to one of the
+  eight, so the colour survives renames, devices and themes.
+- Selection tints and key actions take the accent's fill; text on top keeps
+  the theme foreground.
+- Do not inline the hex values in widgets. `brand_accents_contrast_test.dart`
+  enforces the contrast floors and pins the hash results.
+
 ## Iconography
 
 - Use the generated Lucide icons (`LucideIcons`, `LucideLabIcons`, `AppIcons`)
@@ -261,6 +280,11 @@ page level; never stack a caption under a section header.
 - Confirmations use `showAppDialog` with a destructive `AppButton` for
   destructive actions.
 - One primary action per sheet, in the sheet's action area.
+- Every text input has a visible label and a localized placeholder that gives
+  an example instead of repeating the label; use `helperText` for format or
+  privacy notes. `input_placeholder_audit_test.dart` fails on an input without
+  a placeholder. Settings sub-pages use the row template in
+  `mobile-settings-shell.mdx#settings-sub-page-forms`.
 
 ## Responsive rules
 
