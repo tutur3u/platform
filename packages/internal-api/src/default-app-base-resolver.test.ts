@@ -185,6 +185,66 @@ describe('default app base resolver', () => {
     );
   });
 
+  it('preserves an explicit base when the SSR default returns an absolute app URL', async () => {
+    const resolver = vi.fn(
+      () => 'https://tuturuuu.com/meet/api/meet-call/one/token'
+    );
+    register(resolver);
+    const fetch = mockFetch();
+    const path = '/api/meet-call/one/token';
+
+    expect(resolveInternalApiUrl(path, 'https://explicit.invalid')).toBe(
+      'https://explicit.invalid/api/meet-call/one/token'
+    );
+    await createInternalApiClient({
+      baseUrl: 'https://explicit.invalid',
+    }).fetch(path);
+    expect(fetch.mock.calls[0]?.[0]).toBe(
+      'https://explicit.invalid/api/meet-call/one/token'
+    );
+    expect(resolver).not.toHaveBeenCalled();
+  });
+
+  it('orders per-call base, client base, client resolver, default resolver and fallback', async () => {
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://fallback.invalid');
+    const fetch = mockFetch();
+    const defaultResolver = vi.fn(
+      (path: string) => `https://default.invalid/mail${path}`
+    );
+    const unregister = register(defaultResolver);
+    const clientResolver = vi.fn(
+      (path: string) => `https://client-resolver.invalid/meet${path}`
+    );
+    const path = '/api/meet-call/one/token';
+    const client = createInternalApiClient({
+      baseUrl: 'https://client-base.invalid',
+      appBaseResolver: clientResolver,
+    });
+
+    await client.fetch(path, { baseUrl: 'https://per-call.invalid' });
+    await client.fetch(path);
+    expect(clientResolver).not.toHaveBeenCalled();
+    expect(defaultResolver).not.toHaveBeenCalled();
+
+    await createInternalApiClient({ appBaseResolver: clientResolver }).fetch(
+      path
+    );
+    expect(clientResolver).toHaveBeenCalledExactlyOnceWith(path);
+    expect(defaultResolver).not.toHaveBeenCalled();
+    await internalApiClient.fetch(path);
+    expect(defaultResolver).toHaveBeenCalledExactlyOnceWith(path);
+    unregister();
+    await internalApiClient.fetch(path);
+
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      `https://per-call.invalid${path}`,
+      `https://client-base.invalid${path}`,
+      `https://client-resolver.invalid/meet${path}`,
+      `https://default.invalid/mail${path}`,
+      `https://fallback.invalid${path}`,
+    ]);
+  });
+
   it('unregisters idempotently and restores only still-active registrations', () => {
     vi.stubGlobal('window', {});
     const removeMeet = register((path) => `/meet${path}`);
@@ -211,7 +271,7 @@ describe('default app base resolver', () => {
     await internalApiClient.fetch(url);
     expect(resolver).not.toHaveBeenCalled();
     expect(fetch.mock.calls[0]?.[0]).toBe(url);
-    expect(resolveInternalApiUrl('/api/probe', 'https://web.example.com')).toBe(
+    expect(resolveInternalApiUrl('/api/probe')).toBe(
       'https://incoming.example.com/meet/api/probe'
     );
   });
