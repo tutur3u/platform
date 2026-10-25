@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -22,7 +23,9 @@ export default defineConfig({
     alias: [
       {
         find: /^server-only$/u,
-        replacement: '@tanstack/react-start/server-only',
+        replacement: fileURLToPath(
+          import.meta.resolve('@tanstack/react-start/server-only')
+        ),
       },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
