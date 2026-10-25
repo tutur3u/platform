@@ -429,13 +429,28 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   }
 
   Future<void> retry(String id) async {
-    final record = (await listPending())
-        .where((item) => item.id == id)
+    if (_disposed ||
+        syncingIds.value.contains(id) ||
+        _cancelingIds.contains(id)) {
+      return;
+    }
+    final existing = (await listPending())
+        .where((record) => record.id == id)
         .firstOrNull;
-    if (record == null || !record.canRetry) return;
-    await _store.savePendingMutation(
-      record.copyWith(status: PendingMutationStatus.queued),
-    );
+    if (existing == null || !existing.canRetry) return;
+    var admitted = false;
+    await _store.updatePendingMutation(id, (record) {
+      if (_disposed ||
+          record.userId != _userId() ||
+          !record.canRetry ||
+          syncingIds.value.contains(id) ||
+          _cancelingIds.contains(id)) {
+        return record;
+      }
+      admitted = true;
+      return record.copyWith(status: PendingMutationStatus.queued);
+    });
+    if (!admitted) return;
     await refresh();
     await drain();
     await synchronize();
@@ -525,6 +540,13 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
         syncingIds.value = {...syncingIds.value, record.id};
         try {
+          if (record.isMailSettings &&
+              !record.replaySafe &&
+              !await _holdMailSettingsDispatch(record)) {
+            blockedScopes.add(scope);
+            remember(record);
+            continue;
+          }
           await dispatcher(record);
           // An already dispatched ACK must be reconciled even after disposal.
           await _store.deletePendingMutation(record.id);
@@ -590,6 +612,28 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       }
     } finally {
       await refresh();
+    }
+  }
+
+  Future<bool> _holdMailSettingsDispatch(PendingMutationRecord record) async {
+    try {
+      // Without a server receipt, a restart cannot distinguish an accepted
+      // PATCH from one that never left the device. Persist review before send.
+      final retained = await _store.updatePendingMutation(record.id, (current) {
+        if (_disposed ||
+            current.userId != _userId() ||
+            _cancelingIds.contains(current.id) ||
+            current.status != PendingMutationStatus.queued) {
+          throw StateError('Mail settings dispatch is no longer admitted');
+        }
+        return current.copyWith(status: PendingMutationStatus.conflict);
+      });
+      return retained != null &&
+          !_disposed &&
+          record.userId == _userId() &&
+          !_cancelingIds.contains(record.id);
+    } on Object {
+      return false;
     }
   }
 

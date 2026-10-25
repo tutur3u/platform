@@ -307,7 +307,11 @@ queued or require review until acknowledged by the server.
 Cached mailbox roles never grant editing. Restored settings open immediately in
 read-only mode until current-session membership can be verified. A previously
 verified editor can queue an offline edit; an uncertain send retains its original
-operation identity for manual review. Settings use a separate outbox scope,
+operation identity for manual review. Before a queued settings PATCH leaves the
+device, its manual-review state is persisted. An interruption therefore cannot
+automatically resend it after restart; an interruption before actual transmission
+also conservatively requires review because the API has no operation receipt.
+Settings use a separate outbox scope,
 including legacy retained records, so a held settings write does not hold inbox
 actions. Saves send changed top-level fields only; nested automation and group
 policies remain complete objects. A sender-name edit preserves an unrelated web
@@ -323,7 +327,8 @@ Authorization denial removes the affected snapshot;
 a verification challenge retains it without granting new management access.
 Refreshes preserve dirty form values. This behavior is covered by
 `mail_settings_cache_ui_regression_test.dart` and
-`mail_settings_offline_regression_test.dart`.
+`mail_settings_offline_regression_test.dart`. Restart and in-flight Retry fencing
+are covered by `mail_settings_dispatch_restart_test.dart`.
 
 ### Assistant settings layout
 
