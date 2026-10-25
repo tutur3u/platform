@@ -162,15 +162,15 @@ Future<BackgroundReplyHarness> _mount(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({
     '$_actor::$assistantKeepLiveWhileBrowsingKeyPrefix$_workspace': true,
   });
-  final messenger = tester.binding.defaultBinaryMessenger;
-  messenger.setMockMethodCallHandler(
-    const MethodChannel('flutter_timezone'),
-    (_) async => 'UTC',
-  );
-  messenger.setMockMethodCallHandler(
-    const MethodChannel('com.llfbandit.record/messages'),
-    (_) async => null,
-  );
+  tester.binding.defaultBinaryMessenger
+    ..setMockMethodCallHandler(
+      const MethodChannel('flutter_timezone'),
+      (_) async => 'UTC',
+    )
+    ..setMockMethodCallHandler(
+      const MethodChannel('com.llfbandit.record/messages'),
+      (_) async => null,
+    );
   await tester.pumpApp(
     MultiBlocProvider(
       providers: [
