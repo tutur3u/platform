@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -57,12 +58,38 @@ def binding_body(generated, env_interface):
     return ""
 
 
+def resolve_with_node(app):
+    """Node package resolution from the app dir (hoisted or isolated installs)."""
+    try:
+        result = subprocess.run(
+            [
+                "node",
+                "-e",
+                "process.stdout.write(require.resolve("
+                "'@cloudflare/workers-types/index.ts', { paths: [process.argv[1]] }))",
+                str(app),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None
+    path = Path(result.stdout.strip()) if result.returncode == 0 else None
+    return path if path and path.is_file() else None
+
+
 def workers_types_module(app):
+    # Frozen installs hoist the package to the repository root (or keep it in
+    # Bun's isolated store behind a symlink); never assume an app-local copy.
+    resolved = resolve_with_node(app)
+    if resolved:
+        return resolved
     for base in (app, *app.parents):
         candidate = base / "node_modules/@cloudflare/workers-types/index.ts"
         if candidate.is_file():
             return candidate
-    fail("cannot find @cloudflare/workers-types/index.ts (module form)")
+    fail("cannot resolve @cloudflare/workers-types/index.ts from " + str(app))
 
 
 def build(app, generated_path, env_interface, worker_type, worker_module, out):
