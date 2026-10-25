@@ -148,3 +148,11 @@ The candidate supports the subdomain root and `/cms`; production remains on
 its existing publisher until an explicit cutover-preparation PR. That PR
 requires an app-specific enforced CSP policy, exact-source sealed artifact,
 runtime and authenticated browser acceptance, and an immediate rollback.
+
+At `/cms`, middleware relies on Web's shared Supabase session and does not
+refresh, exchange or clear satellite sessions. Legacy session-writing API
+endpoints return 409 on that mount; the host-root flow keeps its existing
+behavior. Page loaders and API handlers still validate the actor and CMS
+permissions. Machine-key APIs retain their ambient-cookie removal and route
+authentication. Mounted-session and redirect regressions are covered by
+`apps/cms/src/proxy.test.ts`.
