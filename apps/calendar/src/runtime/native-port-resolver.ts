@@ -1,20 +1,24 @@
 export function createCalendarNativePortResolver(
   local: (path: string) => string
 ) {
-  const required = [
-    'workspace breadcrumb',
-    'realtime logging',
-    'request telemetry',
-    'workspace actions',
-  ];
-  const observed = new Set<string>();
-  function replacement(name: string, path: string) {
-    observed.add(name);
+  const required = {
+    client: ['realtime logging'],
+    ssr: ['workspace breadcrumb', 'request telemetry', 'workspace actions'],
+  };
+  const observed = new Map<string, Set<string>>();
+  function replacement(environment: string, name: string, path: string) {
+    const ports = observed.get(environment) ?? new Set<string>();
+    ports.add(name);
+    observed.set(environment, ports);
     return local(path);
   }
   return {
     reset: () => observed.clear(),
-    resolveId(source: string, importer?: string) {
+    resolveId(
+      source: string,
+      importer: string | undefined,
+      environment: string
+    ) {
       if (!importer) return;
       if (
         importer.endsWith(
@@ -23,6 +27,7 @@ export function createCalendarNativePortResolver(
         source === '../../utils/workspace-actions'
       )
         return replacement(
+          environment,
           'workspace breadcrumb',
           './src/runtime/workspace-actions.ts'
         );
@@ -33,6 +38,7 @@ export function createCalendarNativePortResolver(
         source === './realtime-log-actions'
       )
         return replacement(
+          environment,
           'realtime logging',
           './src/runtime/realtime-log-actions.ts'
         );
@@ -42,6 +48,7 @@ export function createCalendarNativePortResolver(
         /(?:^|\/)infrastructure\/log-drain$/u.test(source)
       )
         return replacement(
+          environment,
           'request telemetry',
           './src/runtime/request-telemetry.server.ts'
         );
@@ -51,15 +58,18 @@ export function createCalendarNativePortResolver(
         importer.includes('/(dashboard)/[wsId]/')
       )
         return replacement(
+          environment,
           'workspace actions',
           './src/runtime/workspace-actions.ts'
         );
     },
-    assertComplete() {
-      const missing = required.filter((name) => !observed.has(name));
+    assertComplete(environment: keyof typeof required) {
+      const missing = required[environment].filter(
+        (name) => !observed.get(environment)?.has(name)
+      );
       if (missing.length)
         throw new Error(
-          `Calendar native port substitutions did not run: ${missing.join(', ')}`
+          `Calendar ${environment} native port substitutions did not run: ${missing.join(', ')}`
         );
     },
   };

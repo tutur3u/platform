@@ -562,8 +562,8 @@ recovery correctness, or database event-write behavior.
 
 ## Native port and offline migration checks
 
-The native Calendar SSR build requires every configured native port substitution
-to run. A moved supplier or import must update the owning resolver; a missing
+The native Calendar build requires realtime logging substitution in the client
+graph and breadcrumb, workspace-action and telemetry substitutions in SSR. A moved supplier or import must update the owning resolver; a missing
 substitution fails the build before an original server action can ship.
 
 Calendar uses its own `calendar` offline cache namespace. Activation on exactly

@@ -37,13 +37,19 @@ export default defineConfig(
       {
         name: 'calendar-owned-native-ports',
         enforce: 'pre',
-        resolveId: nativePorts.resolveId,
+        resolveId(source, importer) {
+          return nativePorts.resolveId(source, importer, this.environment.name);
+        },
         buildStart() {
           // Client-only suppliers resolve before the final SSR bundle.
           if (this.environment.name === 'client') nativePorts.reset();
         },
         generateBundle() {
-          if (this.environment.name === 'ssr') nativePorts.assertComplete();
+          if (
+            this.environment.name === 'client' ||
+            this.environment.name === 'ssr'
+          )
+            nativePorts.assertComplete(this.environment.name);
         },
       },
       startBridgeNodeBuiltinsPlugin(),
