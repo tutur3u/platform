@@ -1,3 +1,4 @@
+import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from './proxy';
@@ -387,15 +388,17 @@ describe('mounted Mail shared-session boundary', () => {
     const { nativeFunctionProxy } = await import(
       './runtime/native-function-proxy'
     );
-    const response = await nativeFunctionProxy(
-      new NextRequest('https://tuturuuu.com/mail/_fn/fixture', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          cookie: 'sb-fixture-auth-token=shared',
-        },
-        nextConfig: { basePath: '/mail' },
-      })
+    const request = new NextRequest('https://tuturuuu.com/mail/_fn/fixture', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: 'sb-fixture-auth-token=shared',
+      },
+      nextConfig: { basePath: '/mail' },
+    });
+    const response = await withBridgeRequest(
+      { request, appBase: '/mail' },
+      () => nativeFunctionProxy(request)
     );
     expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(expect.anything(), {
