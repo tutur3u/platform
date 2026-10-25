@@ -1086,6 +1086,233 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantToolsLabel => 'Tools';
 
   @override
+  String get assistantToolLabelTasksRead => 'Checked your tasks';
+
+  @override
+  String get assistantToolLabelTasksReadRunning => 'Checking your tasks';
+
+  @override
+  String get assistantToolLabelTaskCreate => 'Created a task';
+
+  @override
+  String get assistantToolLabelTaskCreateRunning => 'Creating a task';
+
+  @override
+  String get assistantToolLabelTaskUpdate => 'Updated a task';
+
+  @override
+  String get assistantToolLabelTaskUpdateRunning => 'Updating a task';
+
+  @override
+  String get assistantToolLabelTaskComplete => 'Completed a task';
+
+  @override
+  String get assistantToolLabelTaskCompleteRunning => 'Completing a task';
+
+  @override
+  String get assistantToolLabelTaskDelete => 'Deleted a task';
+
+  @override
+  String get assistantToolLabelTaskDeleteRunning => 'Deleting a task';
+
+  @override
+  String get assistantToolLabelBoardsRead => 'Checked your boards';
+
+  @override
+  String get assistantToolLabelBoardsReadRunning => 'Checking your boards';
+
+  @override
+  String get assistantToolLabelBoardsWrite => 'Updated your boards';
+
+  @override
+  String get assistantToolLabelBoardsWriteRunning => 'Updating your boards';
+
+  @override
+  String get assistantToolLabelCalendarRead => 'Checked your calendar';
+
+  @override
+  String get assistantToolLabelCalendarReadRunning => 'Checking your calendar';
+
+  @override
+  String get assistantToolLabelCalendarWrite => 'Updated your calendar';
+
+  @override
+  String get assistantToolLabelCalendarWriteRunning => 'Updating your calendar';
+
+  @override
+  String get assistantToolLabelEmailRead => 'Checked your email';
+
+  @override
+  String get assistantToolLabelEmailReadRunning => 'Checking your email';
+
+  @override
+  String get assistantToolLabelEmailDraft => 'Drafted a reply';
+
+  @override
+  String get assistantToolLabelEmailDraftRunning => 'Drafting a reply';
+
+  @override
+  String get assistantToolLabelFinanceRead => 'Checked your finances';
+
+  @override
+  String get assistantToolLabelFinanceReadRunning => 'Checking your finances';
+
+  @override
+  String get assistantToolLabelFinanceWrite => 'Updated your finances';
+
+  @override
+  String get assistantToolLabelFinanceWriteRunning => 'Updating your finances';
+
+  @override
+  String get assistantToolLabelTimeRead => 'Checked your time tracking';
+
+  @override
+  String get assistantToolLabelTimeReadRunning => 'Checking your time tracking';
+
+  @override
+  String get assistantToolLabelTimeWrite => 'Updated your time tracking';
+
+  @override
+  String get assistantToolLabelTimeWriteRunning => 'Updating your time tracking';
+
+  @override
+  String get assistantToolLabelHealthRead => 'Checked your health and habits';
+
+  @override
+  String get assistantToolLabelHealthReadRunning => 'Checking your health and habits';
+
+  @override
+  String get assistantToolLabelHealthWrite => 'Logged your progress';
+
+  @override
+  String get assistantToolLabelHealthWriteRunning => 'Logging your progress';
+
+  @override
+  String get assistantToolLabelDayOverview => 'Reviewed your day';
+
+  @override
+  String get assistantToolLabelDayOverviewRunning => 'Reviewing your day';
+
+  @override
+  String get assistantToolLabelMemorySave => 'Saved to memory';
+
+  @override
+  String get assistantToolLabelMemorySaveRunning => 'Saving to memory';
+
+  @override
+  String get assistantToolLabelMemoryRead => 'Checked memory';
+
+  @override
+  String get assistantToolLabelMemoryReadRunning => 'Checking memory';
+
+  @override
+  String get assistantToolLabelMemoryWrite => 'Updated memory';
+
+  @override
+  String get assistantToolLabelMemoryWriteRunning => 'Updating memory';
+
+  @override
+  String get assistantToolLabelImage => 'Created an image';
+
+  @override
+  String get assistantToolLabelImageRunning => 'Creating an image';
+
+  @override
+  String get assistantToolLabelQrCode => 'Created a QR code';
+
+  @override
+  String get assistantToolLabelQrCodeRunning => 'Creating a QR code';
+
+  @override
+  String get assistantToolLabelWebSearch => 'Searched the web';
+
+  @override
+  String get assistantToolLabelWebSearchRunning => 'Searching the web';
+
+  @override
+  String get assistantToolLabelChecks => 'Ran checks';
+
+  @override
+  String get assistantToolLabelChecksRunning => 'Running checks';
+
+  @override
+  String get assistantToolLabelFile => 'Read a file';
+
+  @override
+  String get assistantToolLabelFileRunning => 'Reading a file';
+
+  @override
+  String get assistantToolLabelWorkspace => 'Checked your workspace';
+
+  @override
+  String get assistantToolLabelWorkspaceRunning => 'Checking your workspace';
+
+  @override
+  String get assistantToolLabelSettings => 'Updated your settings';
+
+  @override
+  String get assistantToolLabelSettingsRunning => 'Updating your settings';
+
+  @override
+  String get assistantToolLabelOpenApp => 'Opened an app';
+
+  @override
+  String get assistantToolLabelOpenAppRunning => 'Opening an app';
+
+  @override
+  String get assistantToolLabelView => 'Prepared a view';
+
+  @override
+  String get assistantToolLabelViewRunning => 'Preparing a view';
+
+  @override
+  String assistantToolStepCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count steps',
+      one: '1 step',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String assistantToolStepResultCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+      zero: 'No results',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assistantToolStepWorking => 'Working…';
+
+  @override
+  String get assistantToolStepDetails => 'Details';
+
+  @override
+  String get assistantToolStepHideDetails => 'Hide details';
+
+  @override
+  String get assistantToolStepRunning => 'In progress';
+
+  @override
+  String get assistantToolStepDone => 'Done';
+
+  @override
+  String get assistantToolStepFailed => 'Couldn\'t finish this step';
+
+  @override
+  String get assistantToolStepsInProgress => 'Steps in progress';
+
+  @override
+  String get assistantToolStepsDone => 'Steps done';
+
+  @override
   String get assistantUntitledChat => 'Untitled chat';
 
   @override
