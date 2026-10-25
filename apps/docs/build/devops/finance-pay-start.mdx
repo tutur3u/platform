@@ -159,6 +159,12 @@ payments or enable live provider bindings to obtain acceptance.
 
 ## Close the migration gates
 
+Before applying a codemod update, inspect its plan for Finance's app-owned
+runtime suite, CI caller, and artifact wrapper. Preserve their strict mounted
+auth and CDP-fence assertions when adopting generated changes. The generated
+Worker uses the bridge's portable `AssetsBinding`; do not substitute DOM or
+global Workers request types.
+
 `finance-cloudflare.yaml` calls the reviewed reusable native Start workflow.
 It supplies the Finance artifact wrapper, the native type check, and a bounded
 workerd/Chromium acceptance command. The wrapper reuses the Apps seal/restore
@@ -177,9 +183,11 @@ render a public React shell. The suite does not qualify authenticated UI
 hydration, Finance operations or hosted shared-session behavior. Those remain
 required staging acceptance, including workspace and mutation flows.
 
-Run exact-head unit, type, and lint checks on Sonha and the real `vp build`,
-sealed-artifact verification, emitted-runtime tests, and browser acceptance on
-Thanh through `ttr resources run`. Install frozen dependencies. Keep the M4 for
+Run exact-head unit, type, lint, and real `vp build` checks on Sonha through
+`ttr resources run`, then seal the output and transfer it through the M4 for
+restored-runtime and browser acceptance on Thanh. Keep its heavy work within
+the shared six-ticket and two-build limits; Finance has priority for an admitted
+Thanh build slot when required. Install frozen dependencies. Keep the M4 for
 editing and focused source checks; it runs no builds, Docker, or local Supabase.
 If its `check:changed` gate refuses admission, run the same committed source
 through a Thanh bundle. Never bypass the gate.

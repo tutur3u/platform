@@ -130,7 +130,7 @@ jobs:
   native:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true'
-    uses: tutur3u/platform/.github/workflows/native-start-app.yaml@e79ea196f84bc4ec528ba6c9d24514e97409c236
+    uses: tutur3u/platform/.github/workflows/native-start-app.yaml@1eff8e6445f4a42734c2f8782f78be913ed36a41
     permissions:
       contents: read
     with:

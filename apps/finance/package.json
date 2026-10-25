@@ -29,7 +29,8 @@
     "dev:cloudflare": "vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7808}",
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7808}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
-    "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json"
+    "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
+    "test:runtime": "node --test cloudflare/*.runtime.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",
