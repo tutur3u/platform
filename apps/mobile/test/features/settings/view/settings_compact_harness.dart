@@ -35,6 +35,7 @@ class _SettingsHarness {
   _SettingsHarness({
     String initial = Routes.settings,
     GoRouterWidgetBuilder? settingsBuilder,
+    GoRouterWidgetBuilder? offlineModuleBuilder,
     this.assistantPageBuilder,
     this.assistantSettingsRepository,
     GoRouterWidgetBuilder? workspaceSecretsBuilder,
@@ -119,9 +120,16 @@ class _SettingsHarness {
                     Routes.settingsWorkspace,
                     Routes.settingsAbout,
                   }.contains((route as GoRoute).path) &&
+                  (offlineModuleBuilder == null ||
+                      route.path != Routes.settingsOfflineModule) &&
                   (workspaceSecretsBuilder == null ||
                       route.path != Routes.settingsWorkspaceSecrets),
             ),
+            if (offlineModuleBuilder != null)
+              GoRoute(
+                path: Routes.settingsOfflineModule,
+                builder: offlineModuleBuilder,
+              ),
             if (workspaceSecretsBuilder != null)
               GoRoute(
                 path: Routes.settingsWorkspaceSecrets,

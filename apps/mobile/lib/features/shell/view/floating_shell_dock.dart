@@ -233,7 +233,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             .background ??
         Theme.of(context).colorScheme.surface;
     final active = widget.bottomInset > 0;
-    final navigationHidden = _hidden && !widget.keepNavigationVisible;
+    final editorAction =
+        context
+            .watch<ShellChromeActionsCubit?>()
+            ?.state
+            .resolveForLocation(widget.location)
+            .any((action) => action.inDock && action.keepVisibleWithKeyboard) ??
+        false;
+    final editing = editorAction && widget.keyboardVisible;
+    final navigationHidden =
+        _hidden && !widget.keepNavigationVisible && !editing;
     final reserveClearance =
         widget.reserveNavigationClearance &&
         (!widget.hideIdleNavigation || _dockHasContent(context)) &&
@@ -298,7 +307,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                 top: false,
                 child: ShellKeyboardChrome(
                   keyboardVisible: widget.keyboardVisible,
-                  keepVisible: widget.composerVisible,
+                  keepVisible: widget.composerVisible || editorAction,
                   builder: (context, {required hidden, required settled}) =>
                       ExcludeSemantics(
                         excluding: navigationHidden || hidden,

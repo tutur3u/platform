@@ -270,16 +270,21 @@ Routes and redirects:
 - `/settings/preferences` still redirects to `/settings`, and existing Settings
   routes are unchanged.
 
-Settings search sits under the profile header. It matches titles, sections and
-the settings on app sub-screens, ignoring case and Vietnamese diacritics,
-including decomposed input with combining marks. A
-result for a routed destination opens it. A result for an inline root row clears
-the search and scrolls that row's group into view.
+Settings search is the Settings root's primary floating dock action, not an
+inline field. Opening it turns the shell's top navbar into the query field, and
+results replace the root list, profile header included. Search matches titles,
+sections and the settings on app sub-screens, ignoring case and Vietnamese
+diacritics, including decomposed input with combining marks. A result for a
+routed destination opens it. A result for an inline root row clears and closes
+the search and scrolls that row's group into view. Isolated previews without the
+shell chrome registry keep an inline field as a fallback. Settings and Offline
+search retain the floating dock above the keyboard; dock and system Back clear
+and close search before leaving the destination.
 
 Coverage:
 
 - `settings_apps_checks.dart` covers the Apps rows, sub-screens, renders and
-  search.
+  search, including the dock search action and its light/dark renders.
 - `timer_app_settings_test.dart` covers the threshold permission gate, workspace
   switch, Pomodoro persistence, the cache write-through and `focus=threshold`.
 - `time_tracker_threshold_cache_test.dart` covers offline reads of a queued
