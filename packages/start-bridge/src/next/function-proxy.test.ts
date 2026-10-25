@@ -26,7 +26,8 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 import { createFunctionProxy } from './function-proxy';
 
 const proxy = createFunctionProxy({ targetApp: 'meet' });
-const call = (url: string, appBase: string, init: RequestInit = {}) => {
+type Init = NonNullable<ConstructorParameters<typeof NextRequest>[1]>;
+const call = (url: string, appBase: string, init: Init = {}) => {
   const request = new NextRequest(url, {
     headers: { cookie: 'sb-ref-auth-token=x', 'content-type': 'application/json' },
     ...init,
