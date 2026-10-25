@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  providerWindowKind,
   resetTimestamp,
   windowKind,
 } from '../src/collectors/codex-rate-limits';
@@ -22,5 +23,8 @@ describe('shared Codex rate limit normalization', () => {
     expect(windowKind(1441, 0)).toBe('long');
     expect(windowKind(undefined, 0)).toBe('short');
     expect(windowKind(undefined, 1)).toBe('long');
+    expect(providerWindowKind(300)).toBe('session');
+    expect(providerWindowKind(10_080)).toBe('weekly');
+    expect(providerWindowKind(43_200)).toBe('monthly');
   });
 });
