@@ -28,6 +28,7 @@ signature needs a new subpath and a coordinated migration.
 | `request-context` | Server adapter: installs the AsyncLocalStorage store and adds Next's `cookies()`; re-exports the core: `withBridgeRequest`, `bridgeRequest`, `maybeBridgeRequest`, `createRequestLocal`, `headers`, `cookies`, `draftMode`, `connection`, `after`, `appendContextCookies` | One AsyncLocalStorage store for every alias; carries `appBase` |
 | `endpoints` | `dispatchEndpoint`, `sortEndpoints`, `BridgeEndpoint`, `RouteModule`, `HTTP_METHODS` | Next route-handler semantics (HEAD→GET, OPTIONS 204, 405 with `Allow`, 400 on bad encoding) |
 | `pages` | `matchPage`, `BridgePage` | Matches a generated page manifest |
+| `assets` | `AssetsBinding`, `fetchAsset`, `AssetsResponse`, `AssetsRequestInit` | Type `env.ASSETS` as `AssetsBinding` (the Workers `Fetcher` satisfies it structurally) and serve through `fetchAsset(binding, request)`, which sends a URL plus a plain init and streams the reply back as a web `Response`; no Workers runtime type crosses into app code |
 | `api-forward` | `forwardToCentralApi`, `centralApiOrigin`, `HOP_BY_HOP_HEADERS` | Unowned `/api/*` to the central Web API; a same-origin target is refused only for paths the app owns (`ownsPath`), so a mounted app reaches Web on `tuturuuu.com` while a root-mounted self-forward stays a 503 |
 | `csp` | `createNonce`, `requestNonce`, `defaultContentSecurityPolicy` | Per-response script nonce; `createBridgeHandler({ csp })` sends the policy, `createRouter({ ssr: { nonce: requestNonce() } })` and `appBaseHeadScript()` stamp scripts. Required before any app mounts on the apex |
 | `canary` | `RUNTIME_HEADER`, `tagResponse`; retained unused: `decideCohort`, `parseCanaryPercent`, `CANARY_PERCENT_VARIABLE`, `COHORT_COOKIE` | Runtime tag for the post-cutover watch; no staged canaries |
@@ -143,7 +144,7 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 | Next middleware | `NextRequest` carries Next's `basePath`; `nextUrl.pathname` is app-relative and `nextUrl.clone()` redirects keep the base |
 | Links and navigation | `next/link`, `useRouter().push/replace`, `redirect()` prefix path-absolute hrefs with the runtime base |
 | URLs in app code | `appPath('/...')` and `appUrl('/share/...', origin?)` from `app-url` (worklets, Live, preview, download, share) |
-| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` keeps calling Web relatively |
+| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` adapters register the same route-aware resolver for calls without client options |
 | Location headers | Path-relative `Location` not already under the base gains it. Absolute URLs are never rewritten, so `new URL('/login', request.url)` behaves as in Next (it leaves the app) |
 | Central API | Unowned `/<app>/api/*` is forwarded as `/api/*` |
 | Auth return URLs | `appUrl(path, origin)` so the central login returns into the app |
@@ -151,6 +152,51 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 
 `tuturuuu.com/meet` is the Meet app root; product marketing moves to
 `/products/<app>`.
+
+### Internal API resolver registration
+
+`registerDefaultAppBaseResolver(resolver)` is exported from
+`@tuturuuu/internal-api/client` and the package root. The callback receives a
+normalized path and returns a relative mounted path or an absolute URL. Clients,
+the shared singleton, `resolveInternalApiUrl(path, baseUrl?)`, and app-origin
+helpers use this precedence for relative inputs: explicit per-call `baseUrl` >
+client `options.baseUrl` > per-client `appBaseResolver` > latest active registered
+default > built-in fallback. Explicit bases bypass both resolvers, including
+resolvers returning absolute SSR URLs. Absolute input URLs bypass all base
+resolution. With no registration, existing root and subdomain defaults remain.
+
+Register once in each app adapter entrypoint, before requests or hydration.
+Browser adapters can register `appPath`, or `createApiPath(appApiPatterns,
+centralFirst)` when they also call Web-owned routes. The resolver applies to all
+relative internal-api calls, so mixed consumers must select their app-owned
+routes rather than prefix every route indiscriminately.
+
+Server adapters must return an absolute URL using the incoming request host;
+a mounted relative path alone would still resolve against the configured Web
+origin. Read the bridge context inside the callback on every invocation:
+
+```ts
+import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
+import { appUrl } from '@tuturuuu/start-bridge/app-url';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+
+const unregister = registerDefaultAppBaseResolver((path) =>
+  appUrl(path, bridgeRequest().request.url)
+);
+```
+
+This example addresses all calls to the incoming app host; adapters with central
+Web calls must apply their ownership policy in the callback. Never register a
+new resolver per request or close over one request's URL or base. The portable
+internal-api module stores callbacks only; the bridge owns request isolation.
+The returned unregister function is idempotent, supports out-of-order cleanup,
+and restores the latest registration that is still active. Use it for adapter
+teardown or hot reload.
+
+Regression coverage: `packages/internal-api/src/default-app-base-resolver.test.ts`
+executes root, Meet and Mail mounts, SSR host selection, interleaved bridge
+requests sharing one client, per-client precedence, unregister, absolute bypass
+and prefix-once behavior. Consumer runtime acceptance remains with each app.
 
 ## Shared session on the apex (proposal for security review)
 
@@ -304,6 +350,37 @@ export default defineConfig(({ command }) => ({
 `basePath` defaults to `TUTURUUU_BASE_PATH` at build time. List `shims`
 explicitly when converting an app whose current config aliases only some
 `next/*` modules, so the bundle does not change.
+
+## CI template
+
+`.github/workflows/native-start-app.yaml` is the reusable validation for a
+bridged app. Each app keeps a thin caller (`<app>-cloudflare.yaml`) that owns
+the triggers, the **path filters** (the app, every workspace package in its
+dependency closure including `packages/start-bridge/**`, its artifact helper,
+`bun.lock`, the caller and the template), concurrency and the `ci-check.yml`
+gate, then calls the template with:
+
+| Input | Example (Shortener) |
+| --- | --- |
+| `app`, `package` | `shortener`, `@tuturuuu/shortener` |
+| `artifact-script` | `scripts/ci/shortener-native-artifact.py` (config/seal/verify/pack/restore) |
+| `env-interface`, `worker-environment-type` | `ShortenerGeneratedEnv`, `ShortenerEnvironment` |
+| `public-env` | Newline-separated `NEXT_PUBLIC_*`/`TUTURUUU_NOINDEX` build fixtures; anything else is rejected |
+| `format-paths` | Owning paths for Biome |
+| `helper-tests`, `unit-command`, `runtime-command` | Optional overrides |
+
+The template validates the inputs and runs, on the exact source SHA: frozen
+install, dependency build, build identity, the registry check, unit tests,
+Biome, the Void build, route-tree drift, type-check, emitted-config validation,
+emitted binding-type compatibility (a scoped harness: the generated bindings
+become a module importing only the Workers types they name, checked under the
+app's own tsconfig, so global runtime types never retype app code), Wrangler `deploy --dry-run`, then seal →
+emitted runtime → verify → pack. A second job restores the archive into clean
+output and repeats the dry-run, runtime acceptance and byte verification. It
+has no publish job or provider credential; production stays held in
+`tuturuuu.ci.ts`. Apps with extra acceptance (Apps' browser anchors, Meet's
+realtime Worker) keep those steps in their own workflow until the template
+grows an input for them.
 
 ## Verification
 

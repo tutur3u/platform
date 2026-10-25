@@ -43,6 +43,15 @@ export interface BasePath {
   finalizeResponse(response: Response): Response;
 }
 
+/**
+ * Set by the bridge's `redirect()` to the exact path of a same-origin target
+ * outside the app (Start's router reduces such an absolute href to its path).
+ * Finalization then leaves that `Location` unprefixed instead of adding the
+ * mount. It can only withhold the prefix from a matching path, so it never
+ * introduces another destination. Never forwarded.
+ */
+export const OUTSIDE_APP_LOCATION_HEADER = 'x-tuturuuu-bridge-outside-app';
+
 const BASE_PATTERN = /^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u;
 
 export function normalizeBasePath(input: string | undefined): string {
@@ -113,6 +122,15 @@ export function createBasePath(options: BasePathOptions): BasePath {
       return retarget(request, url);
     },
     finalizeResponse(response) {
+      const outside = response.headers.get(OUTSIDE_APP_LOCATION_HEADER);
+      if (outside !== null) {
+        const result = new Response(response.body, response);
+        result.headers.delete(OUTSIDE_APP_LOCATION_HEADER);
+        const location = result.headers.get('location');
+        if (location !== null && location !== outside && !isRoot)
+          result.headers.set('location', withBase(location));
+        return result;
+      }
       if (isRoot) return response;
       const location = response.headers.get('location');
       if (!location) return response;
