@@ -45,6 +45,13 @@ const domains = {
     guidance:
       'Discover categories and sessions before edits. Respect the user timezone and running session state. Use history pagination and date filters to keep results small.',
   },
+  health: {
+    keywords:
+      'weight body bodyweight habit habits streak health plan planning overview nang thoi quen suc khoe hoach hom nay',
+    matches: /body_weight|habit|day_overview/,
+    guidance:
+      'Body weight and habit entries stay in the user habit trackers. When log_body_weight returns trackerCreated, tell the user a private Body Weight tracker was created and in which workspace. Use get_day_overview once for planning a day; report section errors instead of guessing missing data.',
+  },
   memory: {
     keywords:
       'memory remember recall preference personality name settings nho so thich',

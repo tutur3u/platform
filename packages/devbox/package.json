@@ -26,6 +26,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./balancer": {
+      "types": "./dist/balancer/index.d.ts",
+      "import": "./dist/balancer/index.js",
+      "require": "./dist/balancer/index.js"
     }
   },
   "packageManager": "bun@1.4.4",
