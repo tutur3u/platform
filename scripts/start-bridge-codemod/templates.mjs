@@ -111,6 +111,19 @@ export default defineConfig({
 `;
 }
 
+/**
+ * The generated Worker's default mounts, before the app-owned
+ * `start-bridge.config.ts` overrides them. The runtime test applies the same
+ * defaults and overrides, so its root/apex expectations cannot drift.
+ */
+export function defaultMounts({ app, rootHost }) {
+  return {
+    rootHosts: [rootHost],
+    mountHosts: ['tuturuuu.com'],
+    basePath: `/${app}`,
+  };
+}
+
 export function workerEntry({
   app,
   proxyModule,
@@ -119,6 +132,7 @@ export function workerEntry({
   assetsBinding,
 }) {
   const name = `${pascal(app)}Environment`;
+  const mounts = defaultMounts({ app, rootHost });
   const proxyImport = proxyMatcher
     ? `import { config as proxyConfig, proxy } from '${proxyModule}';`
     : `import { proxy } from '${proxyModule}';`;
@@ -170,9 +184,9 @@ const handler = (
     // One artifact: the subdomain root and the tuturuuu.com/${app} mount.
     mounts: {
       app: ${quote(app)},
-      rootHosts: [${quote(rootHost)}],
-      mountHosts: ['tuturuuu.com'],
-      basePath: ${quote(`/${app}`)},
+      rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],
+      mountHosts: [${mounts.mountHosts.map(quote).join(', ')}],
+      basePath: ${quote(mounts.basePath)},
       ...appConfig.mounts,
     },
     csp: appConfig.csp,

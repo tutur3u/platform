@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceDataset } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -6,6 +5,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { requireDatasetWorkspaceAccess } from '@/lib/datasets/page-access';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 
@@ -34,6 +34,7 @@ export default async function WorkspaceDatasetsPage({
   params,
   searchParams,
 }: Props) {
+  await requireDatasetWorkspaceAccess((await params).wsId);
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, locale }) => {
@@ -84,16 +85,16 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
+  const { supabase, wsId: verifiedWsId } =
+    await requireDatasetWorkspaceAccess(wsId);
   try {
-    const supabase = await createClient();
-
     const queryBuilder = supabase
       .from('workspace_datasets')
       .select(
         '*, workspace_dataset_columns(id.count()), workspace_dataset_rows(id.count())'
       )
       .order('name', { ascending: true, nullsFirst: false })
-      .eq('ws_id', wsId);
+      .eq('ws_id', verifiedWsId);
 
     if (page && pageSize) {
       const parsedPage = parseInt(page, 10);

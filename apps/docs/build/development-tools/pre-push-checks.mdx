@@ -149,3 +149,14 @@ ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
 
 Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. The classifier parses actual runtime imports, including CommonJS `require` and dynamic imports. Fixture strings, template text, comments, regular expressions and type-only imports cannot choose a runner. An explicit runtime Vitest import still takes precedence when a file also imports Node test helpers. Without a runner import, the owning package test script supplies the existing fallback. This runner partition avoids false “No test suite found” failures. `scripts/check-changed-runners.test.js` covers the SDK portable-build fixture and both runner directions.
+
+### Keep host configuration types out of app programs
+
+Mail, Calendar and Meet check Vite/Void configuration in a separate
+`tsconfig.config.json` through their normal `type-check` command. Their app
+programs retain runtime and test files. This prevents host tooling such as
+`unplugin` from loading Bun globals into browser app types, where Bun's
+`fetch.preconnect` would incorrectly become mandatory for fetch fixtures and
+ordinary request wrappers. Keep the configuration check in the package gate
+when moving config roots. `scripts/ci/vite-config-type-boundary.test.js` verifies
+the compiler's resolved app/config roots and the package command wiring.

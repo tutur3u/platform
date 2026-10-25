@@ -89,6 +89,8 @@ export const DEPENDENCIES = {
     '@tanstack/react-start': '1.169.3',
   },
   devDependencies: {
+    // The native binding type check resolves it from the owning app (#6787).
+    '@cloudflare/workers-types': '5.20261022.1',
     '@tailwindcss/vite': '4.3.3',
     '@vitejs/plugin-react': '6.1.2',
     '@vitejs/plugin-rsc': '0.5.38',
@@ -101,7 +103,10 @@ export const DEPENDENCIES = {
 
 export const RUNTIME = {
   compatibilityDate: '2026-10-12',
-  compatibilityFlags: ['nodejs_compat'],
+  // Same-zone self-fetches (app-base `appUrl(path, request.url)`) must reach
+  // this Worker, not the zone origin (the retained Vercel app), as Calendar,
+  // Mail and Meet already do.
+  compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
   bun: '1.4.4',
   node: '24.22.0',
 };

@@ -45,6 +45,7 @@ import {
   addVercelProductionPolicyGate,
   dependencyCommands,
 } from './repo-edits.mjs';
+import { runtimeExpectationProblems } from './runtime-outcome.mjs';
 import * as templates from './templates.mjs';
 
 export const DEFAULT_SERVER_ONLY = [
@@ -128,6 +129,9 @@ export function routesConfig(existing, inventory, locale) {
     stripSegments: inventory.hasLocaleSegment ? { '[locale]': { locale } } : {},
     owned: {},
     ignored: {},
+    // What the generated runtime test expects of public pages: a status, or
+    // `{ "redirect": "<path or URL prefix>" }`. Not merely "no 5xx".
+    runtime: { '/': 200 },
   };
   // Hand-maintained owned/ignored entries and overrides always win; an
   // existing `api` gains the client-safe pattern list unless it opts out.
@@ -201,6 +205,8 @@ export function planConversion(repoRoot, app, options = {}) {
     inventory,
     defaultLocale(repoRoot, app)
   );
+  for (const problem of runtimeExpectationProblems(config.runtime))
+    problems.push(`${appPath}/${ROUTES_CONFIG_FILE}: ${problem}`);
   // An unchanged config keeps its bytes (however Biome laid it out); a
   // changed one is formatted with the owned output.
   const unchanged =
@@ -330,6 +336,7 @@ export function planConversion(repoRoot, app, options = {}) {
       RUNTIME_TEST,
       runtimeTest({
         ...resolved,
+        expectations: config.runtime,
         hasBuildInfo: inventory.routes.some(
           (route) => route.file === 'api/build-info/route.ts'
         ),
@@ -341,7 +348,16 @@ export function planConversion(repoRoot, app, options = {}) {
         content: callerWorkflow({
           ...resolved,
           packageName: manifest.name,
-          closure: workspaceClosure(repoRoot, manifest),
+          // Include the workspace packages --apply is about to add
+          // (@tuturuuu/start-bridge), so the first run's filters equal the
+          // re-run's.
+          closure: workspaceClosure(repoRoot, {
+            ...manifest,
+            dependencies: {
+              ...manifest.dependencies,
+              ...DEPENDENCIES.dependencies,
+            },
+          }),
           hasTestScript: Boolean(manifest.scripts?.test),
           formatPaths: NATIVE_FORMAT_PATHS,
         }),
