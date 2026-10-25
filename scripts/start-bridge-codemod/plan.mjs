@@ -59,6 +59,20 @@ function read(repoRoot, relative) {
   return fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null;
 }
 
+/** A runtime expectation: a non-5xx status or a redirect target prefix. */
+export function validRuntimeExpectation(route, expected) {
+  if (typeof route !== 'string' || !route.startsWith('/')) return false;
+  if (typeof expected === 'number')
+    return Number.isInteger(expected) && expected >= 200 && expected < 500;
+  return (
+    typeof expected === 'object' &&
+    expected !== null &&
+    Object.keys(expected).length === 1 &&
+    typeof expected.redirect === 'string' &&
+    expected.redirect.length > 0
+  );
+}
+
 const NEXT_CONFIGS = ['next.config.ts', 'next.config.mjs', 'next.config.js'];
 
 /**
@@ -112,6 +126,9 @@ export function routesConfig(existing, inventory, locale) {
     stripSegments: inventory.hasLocaleSegment ? { '[locale]': { locale } } : {},
     owned: {},
     ignored: {},
+    // What the generated runtime test expects of public pages: a status, or
+    // `{ "redirect": "<path or URL prefix>" }`. Not merely "no 5xx".
+    runtime: { '/': 200 },
   };
   // Hand-maintained owned/ignored entries and overrides always win; an
   // existing `api` gains the client-safe pattern list unless it opts out.
@@ -185,6 +202,11 @@ export function planConversion(repoRoot, app, options = {}) {
     inventory,
     defaultLocale(repoRoot, app)
   );
+  for (const [route, expected] of Object.entries(config.runtime ?? {}))
+    if (!validRuntimeExpectation(route, expected))
+      problems.push(
+        `${appPath}/${ROUTES_CONFIG_FILE}: runtime[${JSON.stringify(route)}] must be a non-5xx status or { "redirect": "<path or URL prefix>" }`
+      );
   writes.push({
     path: `${appPath}/${ROUTES_CONFIG_FILE}`,
     content: `${JSON.stringify(config, null, 2)}\n`,
@@ -307,6 +329,7 @@ export function planConversion(repoRoot, app, options = {}) {
       RUNTIME_TEST,
       runtimeTest({
         ...resolved,
+        expectations: config.runtime,
         hasBuildInfo: inventory.routes.some(
           (route) => route.file === 'api/build-info/route.ts'
         ),
