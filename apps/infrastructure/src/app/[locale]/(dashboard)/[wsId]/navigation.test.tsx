@@ -36,6 +36,7 @@ describe('Infrastructure navigation', () => {
     expect(links.map((link) => link.title)).toEqual([
       't:infrastructure-tabs.overview',
       't:infrastructure-tabs.fleet',
+      't:infrastructure-tabs.fleet_runs',
       't:infrastructure-tabs.devboxes',
       't:infrastructure-tabs.monitoring',
       't:infrastructure-navigation.groups.delivery.title',
@@ -94,6 +95,7 @@ describe('Infrastructure navigation', () => {
         '/internal/calendar-sync',
         '/internal/devboxes',
         '/internal/fleet',
+        '/internal/fleet/jobs',
         '/internal/github-bot',
         '/internal/migrations',
         '/internal/cron/whitelist/domains',

@@ -6,19 +6,23 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import Link from 'next/link';
 import type { FleetRunView } from '@/lib/fleet/fleet-view';
 import { formatUtcTime } from '@/lib/fleet/format';
 import type { FleetTranslator } from '../../_components/fleet-data';
 import { RunStatePill } from '../../_components/machine-state-pill';
+import { RunSourceLabel } from '../../_components/run-source-label';
 
 export function MachineRuns({
   locale,
   runs,
   t,
+  wsId,
 }: {
   locale: string;
   runs: FleetRunView[];
   t: FleetTranslator;
+  wsId: string;
 }) {
   if (runs.length === 0) {
     return (
@@ -43,10 +47,17 @@ export function MachineRuns({
           {runs.map(({ run, state }) => (
             <TableRow key={run.id}>
               <TableCell>
-                <RunStatePill rawStatus={run.status} state={state} t={t} />
+                <Link href={`/${wsId}/fleet/jobs/${run.id}`}>
+                  <RunStatePill rawStatus={run.status} state={state} t={t} />
+                </Link>
               </TableCell>
-              <TableCell className="max-w-md truncate font-mono text-xs">
-                {run.command.join(' ') || '-'}
+              <TableCell className="max-w-md text-xs">
+                <Link
+                  className="block min-w-0 hover:underline"
+                  href={`/${wsId}/fleet/jobs/${run.id}`}
+                >
+                  <RunSourceLabel command={run.command} t={t} />
+                </Link>
               </TableCell>
               <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
                 {run.started_at ? formatUtcTime(run.started_at, locale) : '-'}

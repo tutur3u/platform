@@ -101,6 +101,7 @@ export default async function FleetPage({ params }: Props) {
         <StatTile
           detail={runWindow}
           icon={<Clock />}
+          href={`/${wsId}/fleet/jobs?state=queued`}
           label={t('stats.queued')}
           tone={fleet.counts.queued > 0 ? 'warning' : 'neutral'}
           unknownLabel={t('resources.unknown')}
@@ -109,6 +110,7 @@ export default async function FleetPage({ params }: Props) {
         <StatTile
           detail={runWindow}
           icon={<Play />}
+          href={`/${wsId}/fleet/jobs?state=running`}
           label={t('stats.running')}
           tone={fleet.counts.running > 0 ? 'info' : 'neutral'}
           unknownLabel={t('resources.unknown')}
@@ -118,6 +120,7 @@ export default async function FleetPage({ params }: Props) {
           className="col-span-2 lg:col-span-1"
           detail={runWindow}
           icon={<CircleHelp />}
+          href={`/${wsId}/fleet/jobs?state=unknown`}
           label={t('stats.outcome_unknown')}
           tone={fleet.counts.outcomeUnknown > 0 ? 'unknown' : 'neutral'}
           unknownLabel={t('resources.unknown')}

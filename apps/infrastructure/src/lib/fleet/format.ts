@@ -39,6 +39,17 @@ export function formatUtcTime(value: Date | string, locale: string) {
   }).format(new Date(value))} UTC`;
 }
 
+/** HH:mm:ss in UTC, for dense log timestamps under a UTC-labelled header. */
+export function formatUtcClock(value: Date | string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    hourCycle: 'h23',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(value));
+}
+
 export function formatGiB(bytes: number | null) {
   if (bytes === null) return null;
   return `${(bytes / 1024 ** 3).toFixed(1)} GiB`;
@@ -51,5 +62,6 @@ export function formatDurationSeconds(seconds: number | null) {
   const minutes = Math.floor((seconds % 3600) / 60);
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${Math.floor(seconds % 60)}s`;
+  return `${Math.floor(seconds)}s`;
 }

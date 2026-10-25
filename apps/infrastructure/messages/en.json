@@ -7722,6 +7722,68 @@
       "not_attested": "This machine does not report isolation. Enable TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE on the runner to attest it.",
       "yes": "Yes"
     },
+    "jobs": {
+      "columns": {
+        "created": "Requested",
+        "duration": "Duration",
+        "exit": "Exit",
+        "machine": "Machine",
+        "source": "Source",
+        "state": "Status"
+      },
+      "detail": {
+        "completed": "Finished",
+        "duration": "Duration",
+        "exit_code": "Exit code",
+        "load_failed": "This run could not be loaded. Retry; nothing shown here is current.",
+        "log_empty": "This run has not written any output.",
+        "log_label": "Run log",
+        "log_truncated": "Showing the last {count} events. Older output is not shown here.",
+        "machine": "Machine",
+        "none": "None",
+        "not_found_detail": "The ID is malformed or the run no longer exists.",
+        "not_found_title": "Run not found",
+        "not_yet": "Not yet",
+        "requested": "Requested",
+        "run_id": "Run ID",
+        "sections": {
+          "execution": "Execution",
+          "log": "Log",
+          "source": "Source"
+        },
+        "started": "Started",
+        "stop": "Request stop",
+        "timeout": "Timeout"
+      },
+      "empty": "No runs match this filter in the latest snapshot.",
+      "filters": {
+        "all": "All",
+        "failed": "Failed",
+        "label": "Filter runs",
+        "queued": "Queued",
+        "running": "Running",
+        "unknown": "Outcome unknown"
+      },
+      "recovery": {
+        "cancel_requested": "Stop requested. The runner stops it at its next check; until then it may still be running.",
+        "failed": "Failed with exit code {code}. The log below shows the last output.",
+        "outcome_unknown": "The machine running this is unreachable, so its result is unknown. It is not rescheduled automatically. Check the host before requesting it again; it may still be running.",
+        "queued_unassigned": "Waiting for an eligible machine to claim it.",
+        "timed_out": "Stopped after reaching its time limit.",
+        "unrecognized": "This console does not recognise the status \"{status}\". Treat the outcome as unknown."
+      },
+      "source": {
+        "command": "Command",
+        "commit": "Commit",
+        "directory": "Directory",
+        "invalid": "Unreadable commit-run envelope",
+        "maintenance": "Maintenance: {name}",
+        "repository_root": "Repository root"
+      },
+      "title": "Runs",
+      "unassigned": "Unassigned",
+      "window": "Latest {count} devbox runs"
+    },
     "manage": "Runner admin",
     "recovery": {
       "awaiting_first_heartbeat": "Registered but never reported. Setup may have failed; rerun ttr box connect --service on the host and check its agent service.",
@@ -8838,6 +8900,7 @@
     "external_apps": "External Apps",
     "features": "Features",
     "fleet": "Fleet",
+    "fleet_runs": "Runs",
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
