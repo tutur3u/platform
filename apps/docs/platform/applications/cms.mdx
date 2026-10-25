@@ -150,6 +150,7 @@ before application dispatch or network access. Apex stays held until the
 shared-session decision and auth guard are admitted; the same artifact can
 support a mount after that separate review. This policy is covered by
 `apps/cms/src/runtime/root-host-policy.test.ts` and the emitted Worker gate.
+Hosted staging uses `cms-staging.tuturuuu.com`; `workers.dev` hosts are not admitted.
 Production remains on its existing publisher until an explicit cutover-preparation PR. That PR
 requires an app-specific enforced CSP policy, exact-source sealed artifact,
 runtime and authenticated browser acceptance, and an immediate rollback.

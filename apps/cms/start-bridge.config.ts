@@ -8,7 +8,6 @@ export default defineBridgeAppConfig({
     rootHosts: [
       'cms.tuturuuu.com',
       'cms-staging.tuturuuu.com',
-      'tuturuuu-cms-vite-staging.tuturuuu-e89.workers.dev',
     ],
     mountHosts: [],
     unknownHost: 'reject',

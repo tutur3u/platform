@@ -34,6 +34,7 @@ describe('CMS root-only host policy', () => {
     'https://tuturuuu.com/cms/_serverFn/fixture',
     'https://tuturuuu.com/cms/assets/fixture.js',
     'https://unknown.example.test/',
+    'https://tuturuuu-cms-vite-staging.tuturuuu-e89.workers.dev/',
   ])('rejects %s before app dispatch or egress', async (url) => {
     const { handle, ctx, start, proxy, assets, outbound } = fixture();
     const response = await handle(
@@ -53,7 +54,6 @@ describe('CMS root-only host policy', () => {
   it.each([
     'cms.tuturuuu.com',
     'cms-staging.tuturuuu.com',
-    'tuturuuu-cms-vite-staging.tuturuuu-e89.workers.dev',
   ])('admits the explicit root host %s', async (host) => {
     const { handle, ctx, start, proxy, assets, outbound } = fixture();
     const response = await handle(
