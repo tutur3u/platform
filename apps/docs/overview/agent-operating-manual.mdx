@@ -100,11 +100,9 @@ Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
 
 Every open Tuturuuu pull request must be reviewed, fixed, validated, and prepared
 for merge in an isolated checkout under `.worktrees/`. Do not switch the shared
-main checkout onto the PR branch. Immediately run `bun setup` after creating the
-worktree so dependencies and required workspace builds are ready. In a
-non-interactive environment where Portless would require sudo to bind port 443,
-run `SKIP_PORTLESS_SETUP=1 bun setup` so only the interactive proxy step is
-skipped.
+main checkout onto the PR branch. Immediately run `bun install` after creating
+the worktree. Do not run `bun setup` on agent machines: it includes local
+builds. Builds run in CI for the exact commit.
 
 Keep the worktree and its local task branch for as long as the PR remains open.
 After GitHub confirms the PR merge is present on `main` and required post-merge
