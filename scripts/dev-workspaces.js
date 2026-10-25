@@ -8,13 +8,11 @@ const {
   getPortlessRoutesForApp,
   removeClosedSameAppAliases,
 } = require('./portless-safe-dev');
-
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_PORT_CHECK_TIMEOUT_MS = 250;
 const PORTLESS_ROUTE_LOCK_PATTERN = /Failed to acquire route lock/u;
 const PORTLESS_ROUTE_LOCK_RETRY_DELAY_MS = 11_000;
 const PORTLESS_ROUTE_LOCK_EXIT_TIMEOUT_MS = 1500;
-
 const DEV_TARGETS = Object.freeze({
   ai: {
     apps: ['ai', 'web'],
@@ -138,6 +136,7 @@ const DEV_TARGETS = Object.freeze({
     apps: ['rewise', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
+  passwords: { apps: ['passwords', 'web'] },
   shortener: {
     apps: ['shortener', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
@@ -159,7 +158,6 @@ const DEV_TARGETS = Object.freeze({
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
 });
-
 const DEV_SERVICES = Object.freeze({
   'chat-realtime': {
     args: ['--watch', 'apps/chat-realtime/src/index.ts'],

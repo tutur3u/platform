@@ -4,6 +4,11 @@ import {
 } from './portless';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
+  {
+    name: 'passwords',
+    url: 'https://passwords.tuturuuu.com',
+    requiresExactOrigin: true,
+  },
   { name: 'parley', url: 'https://parley.tuturuuu.com' },
   { name: 'lettin', url: 'https://lettin.tuturuuu.com' },
   { name: 'colab', url: 'https://colab.tuturuuu.com' },
@@ -136,6 +141,11 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [
+  {
+    name: 'passwords',
+    url: getTuturuuuPortlessAppOrigin('passwords'),
+    requiresExactOrigin: true,
+  },
   { name: 'parley', url: getTuturuuuPortlessAppOrigin('parley') },
   { name: 'lettin', url: getTuturuuuPortlessAppOrigin('lettin') },
   { name: 'colab', url: getTuturuuuPortlessAppOrigin('colab') },

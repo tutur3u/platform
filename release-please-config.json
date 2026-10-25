@@ -342,6 +342,10 @@
     "packages/meet-core": {
       "component": "meet-core",
       "package-name": "@tuturuuu/meet-core"
+    },
+    "apps/passwords": {
+      "component": "passwords",
+      "package-name": "@tuturuuu/passwords"
     }
   }
 }
