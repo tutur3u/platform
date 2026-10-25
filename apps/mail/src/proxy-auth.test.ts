@@ -320,6 +320,14 @@ it('persists an explicit English entry locale over a Vietnamese cookie or langua
 });
 
 describe('mounted Mail app-owned redirects', () => {
+  beforeEach(() => {
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.normalizeAuthRedirectPath.mockImplementation(
+      (value, _origin, fallback) => value ?? fallback
+    );
+  });
   it.each(['/login', '/vi/login'])(
     'keeps the explicit signed-in destination under /mail from %s',
     async (path) => {
