@@ -8,6 +8,7 @@ import {
 } from './executors/calendar';
 import { executeCalendarAutomation } from './executors/calendar-automation';
 import { executeSetImmersiveMode } from './executors/chat';
+import { executeGetDayOverview } from './executors/day-overview';
 import {
   executeCreateTransactionCategory,
   executeCreateTransactionTag,
@@ -29,6 +30,12 @@ import {
   executeUpdateTransactionTag,
   executeUpdateWallet,
 } from './executors/finance';
+import {
+  executeGetBodyWeightHistory,
+  executeListHabitTrackers,
+  executeLogBodyWeight,
+  executeLogHabitEntry,
+} from './executors/habits';
 import { executeGenerateImage } from './executors/image';
 import { executeMailTool } from './executors/mail';
 import { executeConvertFileToMarkdown } from './executors/markitdown';
@@ -117,7 +124,7 @@ import type { MiraToolContext } from './mira-tool-types';
 type ToolHandler = (
   args: Record<string, unknown>,
   ctx: MiraToolContext,
-  options?: { abortSignal?: AbortSignal }
+  options?: { abortSignal?: AbortSignal; toolCallId?: string }
 ) => Promise<unknown> | unknown;
 
 const toolHandlers = {
@@ -225,6 +232,11 @@ const toolHandlers = {
   update_time_tracking_session: executeUpdateTimeTrackingSession,
   delete_time_tracking_session: executeDeleteTimeTrackingSession,
   move_time_tracking_session: executeMoveTimeTrackingSession,
+  log_body_weight: executeLogBodyWeight,
+  get_body_weight_history: executeGetBodyWeightHistory,
+  list_habit_trackers: executeListHabitTrackers,
+  log_habit_entry: executeLogHabitEntry,
+  get_day_overview: executeGetDayOverview,
 
   remember: executeRemember,
   recall: executeRecall,
@@ -255,7 +267,7 @@ export async function executeMiraTool(
   toolName: string,
   args: Record<string, unknown>,
   ctx: MiraToolContext,
-  options?: { abortSignal?: AbortSignal }
+  options?: { abortSignal?: AbortSignal; toolCallId?: string }
 ): Promise<unknown> {
   if (toolName === 'render_ui') {
     if (!isRenderableRenderUiSpec(args)) {
