@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
 
-const identitySchema = z.object({ dev: z.string(), ino: z.string() });
+const identitySchema = z.object({ ino: z.string() });
 const manifestSchema = z.object({
   protocol: z.literal('descriptor-lock-v1'),
   root: identitySchema,
@@ -24,12 +24,11 @@ const manifestSchema = z.object({
 type Manifest = z.infer<typeof manifestSchema>;
 type Identity = z.infer<typeof identitySchema>;
 type Info = Awaited<ReturnType<typeof privateInfo>>;
-const identity = (info: { dev: bigint; ino: bigint }): Identity => ({
-  dev: String(info.dev),
+const identity = (info: { ino: bigint }): Identity => ({
   ino: String(info.ino),
 });
-const same = (info: { dev: bigint; ino: bigint }, expected: Identity) =>
-  String(info.dev) === expected.dev && String(info.ino) === expected.ino;
+const same = (info: { ino: bigint }, expected: Identity) =>
+  String(info.ino) === expected.ino;
 const exists = async (path: string) =>
   lstat(path).then(
     () => true,
@@ -49,6 +48,8 @@ const invalid = () =>
   );
 
 // Unknown types (including NFS, SMB, FUSE and cluster filesystems) fail closed.
+// macOS IDs are mount-assigned. Other APFS/HFS assignments fail closed until
+// admission can resolve filesystem names instead of these known numeric IDs.
 const localTypes: Readonly<Record<string, readonly number[]>> = {
   darwin: [26, 17], // APFS, HFS
   linux: [0xef53, 0x58465342, 0x9123683e, 0x01021994], // ext, XFS, Btrfs, tmpfs
@@ -139,6 +140,7 @@ async function initialize(root: string) {
 
 async function validate(root: string, manifest: Manifest) {
   await requireLocal(root);
+  const rootInfo = await privateInfo(root, true);
   for (const [path, expected] of [
     [root, manifest.root],
     [join(root, '.lock'), manifest.fence],
@@ -146,14 +148,14 @@ async function validate(root: string, manifest: Manifest) {
     [join(root, 'runs'), manifest.runs],
     [join(root, 'requests'), manifest.requests],
   ] as const) {
-    const info = await privateInfo(path, true);
-    if (!same(info, expected) || String(info.dev) !== manifest.root.dev)
-      throw invalid();
+    const info = path === root ? rootInfo : await privateInfo(path, true);
+    if (!same(info, expected) || info.dev !== rootInfo.dev) throw invalid();
   }
   if (await exists(join(root, '.lock', 'pid'))) throw invalid();
+  return rootInfo.dev;
 }
 
-async function established(root: string): Promise<Manifest> {
+async function established(root: string) {
   await initialize(root);
   try {
     const path = join(root, '.lock', 'protocol.json');
@@ -161,8 +163,8 @@ async function established(root: string): Promise<Manifest> {
     const manifest = manifestSchema.parse(
       JSON.parse(await readFile(path, 'utf8'))
     );
-    await validate(root, manifest);
-    return manifest;
+    const device = await validate(root, manifest);
+    return { manifest, device };
   } catch (error) {
     if (
       isMissing(error) ||
@@ -174,11 +176,11 @@ async function established(root: string): Promise<Manifest> {
   }
 }
 
-function verifyMutex(info: Info, manifest: Manifest) {
+function verifyMutex(info: Info, manifest: Manifest, rootDevice: bigint) {
   if (
     !info.isFile() ||
     !same(info, manifest.mutex) ||
-    String(info.dev) !== manifest.root.dev ||
+    info.dev !== rootDevice ||
     (info.mode & 0o077n) !== 0n ||
     info.uid !== BigInt(process.geteuid?.() ?? -1)
   )
@@ -194,7 +196,7 @@ export async function withLedgerLock<T>(
       'Balancer ledger mutations require Node.js. Use the installed ttr balancer command, which selects Node.js.'
     );
   const { tryLock } = await import('fs-native-extensions');
-  const manifest = await established(root);
+  const { manifest, device } = await established(root);
   const path = join(root, '.lock', 'mutex');
   // Ordinary acquisition never creates the file. A missing/replaced mutex is
   // an integrity failure even if another controller still holds the old fd.
@@ -205,14 +207,14 @@ export async function withLedgerLock<T>(
     }
   );
   try {
-    verifyMutex(await file.stat({ bigint: true }), manifest);
+    verifyMutex(await file.stat({ bigint: true }), manifest, device);
     for (let attempt = 0; !tryLock(file.fd); attempt++) {
       if (attempt >= 600) throw new Error('Balancer ledger lock is held.');
       await sleep(50);
     }
-    await validate(root, manifest);
-    verifyMutex(await file.stat({ bigint: true }), manifest);
-    verifyMutex(await privateInfo(path, false), manifest);
+    const lockedDevice = await validate(root, manifest);
+    verifyMutex(await file.stat({ bigint: true }), manifest, lockedDevice);
+    verifyMutex(await privateInfo(path, false), manifest, lockedDevice);
     return await action();
   } finally {
     // BSD flock / Linux OFD locks belong to this fd, not the PID or pathname.

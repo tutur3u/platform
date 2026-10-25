@@ -49,7 +49,11 @@ Unmarked stores are refused by the descriptor-lock protocol; preserve them for
 reconciliation and choose a fresh `TTR_BALANCER_HOME` after stopping predecessors.
 Do not remove either permanent protocol fence (`.lock` and
 `mutation-lock.sqlite`, both directories) or its mutex. Missing or replaced
-identity fails closed without repair. The published balancer launcher selects Node.js; direct Bun mutations fail
+inode identity fails closed without repair. Historical device numbers are not
+pinned across reboots; entry devices must match the live root device.
+Whole-store removal also deletes the identity record, so stop all controllers
+and reconcile in-flight work before removal or restore.
+The published balancer launcher selects Node.js; direct Bun mutations fail
 closed before native binding use. The SDK includes the pinned native lock
 supplier's prebuilt binaries; do not compile replacements or activate an
 unreviewed supplier during validation.
