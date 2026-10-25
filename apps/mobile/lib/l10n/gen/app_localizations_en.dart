@@ -6510,6 +6510,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameRequired => 'Display name cannot be empty';
 
   @override
+  String profileDurationHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String profileDurationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String profileDurationMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
   String get profileEmail => 'Email';
 
   @override

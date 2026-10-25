@@ -673,6 +673,30 @@
       }
     }
   },
+  "@profileDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "@profileEmailPendingChange": {
     "placeholders": {
       "email": {
@@ -3271,6 +3295,9 @@
   "profileDisplayNameDescription": "This name appears in collaborative surfaces across the app.",
   "profileDisplayNameHint": "Your display name",
   "profileDisplayNameRequired": "Display name cannot be empty",
+  "profileDurationHours": "{hours}h",
+  "profileDurationHoursMinutes": "{hours}h {minutes}m",
+  "profileDurationMinutes": "{minutes}m",
   "profileEmail": "Email",
   "profileEmailDescription": "Updating your email sends confirmation to both the old and new addresses.",
   "profileEmailHint": "example@tuturuuu.com",

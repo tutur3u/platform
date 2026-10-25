@@ -3,18 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/personal_profile_workspace.dart';
-import 'package:mobile/features/profile/view/profile_activity_chart.dart';
+import 'package:mobile/features/profile/view/profile_activity_summary.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 typedef ProfileStatsLoader =
     Future<TimeTrackerStats> Function(
@@ -133,104 +133,59 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
     super.dispose();
   }
 
+  void _retry() {
+    final user = context.read<AuthCubit>().state.user;
+    final workspace = verifiedPersonalProfileWorkspace(
+      userId: user?.id,
+      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.read<WorkspaceCubit>(),
+    );
+    if (user != null && workspace != null) {
+      setState(() => _failed = false);
+      unawaited(_load(workspace.id, user.id, workspace.personal));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final stats = _stats;
-    if (_scope == null) return Text(l10n.profileTimelineUnavailable);
-    if (_failed) {
-      return Center(
-        child: TextButton.icon(
-          icon: const Icon(Icons.refresh),
-          label: Text(l10n.commonRetry),
-          onPressed: () {
-            final user = context.read<AuthCubit>().state.user;
-            final workspace = verifiedPersonalProfileWorkspace(
-              userId: user?.id,
-              cacheUserId:
-                  (widget.cacheUserId ?? currentPersonalProfileUserId)(),
-              workspaces: context.read<WorkspaceCubit>(),
-            );
-            if (user != null && workspace != null) {
-              setState(() => _failed = false);
-              unawaited(_load(workspace.id, user.id, workspace.personal));
-            }
-          },
-        ),
+    final Widget body;
+    if (_scope == null) {
+      body = AppGroupedCard(
+        children: [
+          AppStateMessage.inline(
+            icon: LucideIcons.lock,
+            title: l10n.profileTimelineUnavailable,
+          ),
+        ],
       );
-    }
-    if (stats == null) {
-      return const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: NovaLoadingIndicator()),
+    } else if (_failed) {
+      body = AppGroupedCard(
+        children: [
+          AppStateMessage.inline(
+            icon: LucideIcons.cloudOff,
+            tone: AppTone.destructive,
+            title: l10n.commonSomethingWentWrong,
+            actionLabel: l10n.commonRetry,
+            onAction: _retry,
+          ),
+        ],
       );
+    } else if (stats == null) {
+      body = const ProfileActivitySkeleton();
+    } else {
+      body = ProfileActivitySummary(stats: stats);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          l10n.profilePrivateActivity,
-          style: shad.Theme.of(
-            context,
-          ).typography.large.copyWith(fontWeight: FontWeight.w800),
+        AppSectionHeader(
+          title: l10n.profilePrivateActivity,
+          icon: LucideIcons.lock,
         ),
-        const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-            final columns = constraints.maxWidth >= 480 * scale ? 3 : 1;
-            final width =
-                ((constraints.maxWidth - 12 * (columns - 1)) / columns)
-                    .floorToDouble();
-            return Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                for (final entry in [
-                  (l10n.timerToday, stats.todayTime, 'calendar'),
-                  (l10n.timerThisWeek, stats.weekTime, 'tasks'),
-                  (l10n.timerThisMonth, stats.monthTime, 'mail'),
-                ])
-                  SizedBox(
-                    width: width,
-                    child: Builder(
-                      builder: (context) {
-                        final palette = AppCardPalette.resolve(
-                          context,
-                          index: 0,
-                          moduleId: entry.$3,
-                        );
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                entry.$1,
-                                style: shad.Theme.of(
-                                  context,
-                                ).typography.textSmall,
-                              ),
-                              Text(
-                                l10n.profileTrackedMinutes(entry.$2 ~/ 60),
-                                style: shad.Theme.of(context).typography.base
-                                    .copyWith(
-                                      color: palette.textColor,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        ProfileActivityChart(activity: stats.dailyActivity),
+        body,
       ],
     );
   }

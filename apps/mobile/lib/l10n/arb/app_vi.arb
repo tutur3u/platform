@@ -673,6 +673,30 @@
       }
     }
   },
+  "@profileDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "@profileEmailPendingChange": {
     "placeholders": {
       "email": {
@@ -3247,6 +3271,9 @@
   "profileDisplayNameDescription": "Tên này xuất hiện ở các bề mặt cộng tác trong ứng dụng.",
   "profileDisplayNameHint": "Tên hiển thị của bạn",
   "profileDisplayNameRequired": "Tên hiển thị không được để trống",
+  "profileDurationHours": "{hours} giờ",
+  "profileDurationHoursMinutes": "{hours} giờ {minutes} phút",
+  "profileDurationMinutes": "{minutes} phút",
   "profileEmail": "Email",
   "profileEmailDescription": "Khi cập nhật email, thư xác nhận sẽ được gửi đến cả địa chỉ cũ và mới.",
   "profileEmailHint": "example@tuturuuu.com",

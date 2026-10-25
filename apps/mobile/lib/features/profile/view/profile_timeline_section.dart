@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/personal_profile_workspace.dart';
@@ -12,7 +14,6 @@ import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ProfileTimelineSection extends StatefulWidget {
   const ProfileTimelineSection({
@@ -20,6 +21,7 @@ class ProfileTimelineSection extends StatefulWidget {
     this.repository,
     this.cacheUserId,
     this.contentTopPadding = 0,
+    this.horizontalPadding = EdgeInsets.zero,
     this.fullSurface = false,
     this.datesOpen,
     this.onDatesChanged,
@@ -30,6 +32,10 @@ class ProfileTimelineSection extends StatefulWidget {
   final String? Function()? cacheUserId;
   final bool fullSurface;
   final double contentTopPadding;
+
+  /// Page gutters applied inside the timeline's own scroll view, so the
+  /// scrollable stays full width.
+  final EdgeInsets horizontalPadding;
   final bool? datesOpen;
   final ValueChanged<bool>? onDatesChanged;
   final ProfileTimelineRepository? repository;
@@ -213,15 +219,11 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     _failureReported = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || request != _request) return;
-      shad.showToast(
-        context: context,
-        builder: (context, _) => shad.Alert(
-          content: Text(
-            unavailable
-                ? context.l10n.profileTimelineUnavailable
-                : context.l10n.profileTimelinePartial,
-          ),
-        ),
+      showAppToast(
+        context,
+        message: unavailable
+            ? context.l10n.profileTimelineUnavailable
+            : context.l10n.profileTimelinePartial,
       );
     });
   }
@@ -281,8 +283,14 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     final l10n = context.l10n;
     if (_scope == null) {
       return Padding(
-        padding: EdgeInsets.only(top: widget.contentTopPadding),
-        child: Text(l10n.profileTimelineUnavailable),
+        padding: widget.horizontalPadding.copyWith(
+          top: widget.contentTopPadding,
+          bottom: 0,
+        ),
+        child: AppStateMessage(
+          icon: LucideIcons.lock,
+          title: l10n.profileTimelineUnavailable,
+        ),
       );
     }
     final items = _items;
@@ -297,6 +305,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     key: ValueKey(_scope),
     fullSurface: widget.fullSurface,
     contentTopPadding: widget.contentTopPadding,
+    horizontalPadding: widget.horizontalPadding,
     status: status,
     datesOpen: widget.datesOpen,
     onDatesChanged: widget.onDatesChanged,

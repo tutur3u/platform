@@ -12421,6 +12421,24 @@ abstract class AppLocalizations {
   /// **'Display name cannot be empty'**
   String get profileDisplayNameRequired;
 
+  /// No description provided for @profileDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h'**
+  String profileDurationHours(int hours);
+
+  /// No description provided for @profileDurationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String profileDurationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @profileDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String profileDurationMinutes(int minutes);
+
   /// No description provided for @profileEmail.
   ///
   /// In en, this message translates to:
