@@ -137,3 +137,10 @@ template for binding types, sealing, and original/restored emitted-runtime
 acceptance. Run `bun run test:runtime` only after the native build, with the
 workflow's exact source identity. These fixture checks do not qualify a hosted
 payment provider or authorize a payment.
+
+Exact GET and HEAD `/api/build-info` requests expose only public build identity.
+The proxy strips ambient cookies and authorization before the existing API guard
+and local handler, without refreshing a session or writing cookies. Other methods,
+siblings and nested paths keep normal authentication. `proxy-build-info.test.ts`
+covers admission, guard denials and negative method/path controls; the emitted
+runtime suite still requires the exact compiled app name and source commit.
