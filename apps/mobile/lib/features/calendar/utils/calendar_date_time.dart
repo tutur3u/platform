@@ -99,6 +99,31 @@ DateTime calendarWallToUtc(DateTime wall, String? zone) {
   return instant.toUtc();
 }
 
+/// [wall] as ISO 8601 with the UTC offset [zone] has at that wall time, for
+/// example `2026-10-26T09:00:00+07:00`, so a reader never takes the visible
+/// wall time for UTC. A wall time skipped by a DST change has no instant and
+/// is written without an offset.
+String calendarWallIso8601(DateTime wall, String? zone) {
+  final local = wall.toIso8601String().substring(0, 19);
+  final DateTime instant;
+  try {
+    instant = calendarWallToUtc(wall, zone);
+  } on FormatException {
+    return local;
+  }
+  final offset = DateTime.utc(
+    wall.year,
+    wall.month,
+    wall.day,
+    wall.hour,
+    wall.minute,
+    wall.second,
+  ).difference(instant).inMinutes;
+  final sign = offset < 0 ? '-' : '+';
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '$local$sign${two(offset.abs() ~/ 60)}:${two(offset.abs() % 60)}';
+}
+
 CalendarEvent calendarProjectEvent(CalendarEvent event, String? zone) {
   final start = event.startAt;
   final end = event.endAt;

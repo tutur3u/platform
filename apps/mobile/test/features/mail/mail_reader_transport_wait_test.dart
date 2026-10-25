@@ -8,11 +8,14 @@ import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/phone_surface.dart';
 import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
 
 void main() {
+  // These suites cover the compact (pushed reader) flow.
+  usePhoneSurface();
   testWidgets(
     'reader awaits one pending detail beyond the old timeout budget',
     (tester) async {
@@ -70,16 +73,23 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Synthetic message'));
       await tester.pump();
-      // The mocked repository sees prewarming plus opening; the real cache
-      // coalesces those consumers, covered by mail_invalidation_race_test.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      // The reader opens from the inbox row while its detail is pending.
+      expect(find.byType(MailReader), findsOneWidget);
+      // Prefetching and opening share one pending read in the preview store.
       final initialReads = reads;
-      expect(initialReads, 2);
+      expect(initialReads, 1);
       // Cross both old 12s deadlines plus the old 350ms retry delay.
       await tester.pump(const Duration(seconds: 12));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(seconds: 13));
       expect(reads, initialReads);
       expect(find.byType(SnackBar), findsNothing);
+      expect(
+        find.text('Could not open this message. Please try again.'),
+        findsNothing,
+      );
       when(
         () => repository.changeState(
           'ws',

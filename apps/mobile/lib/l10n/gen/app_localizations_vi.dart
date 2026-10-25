@@ -486,31 +486,87 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Camera trực tiếp';
 
   @override
+  String get assistantLiveCallCamera => 'Camera';
+
+  @override
+  String get assistantLiveCallCaptions => 'Phụ đề';
+
+  @override
+  String get assistantLiveCallCaptionsEmpty => 'Phụ đề sẽ hiện ở đây khi bạn nói.';
+
+  @override
+  String get assistantLiveCallClose => 'Đóng';
+
+  @override
+  String get assistantLiveCallConnected => 'Đã kết nối';
+
+  @override
+  String get assistantLiveCallConnecting => 'Đang kết nối…';
+
+  @override
+  String get assistantLiveCallDuration => 'Thời lượng cuộc gọi';
+
+  @override
+  String get assistantLiveCallEnd => 'Kết thúc';
+
+  @override
+  String assistantLiveCallEndedWithDuration(String duration) {
+    return 'Đã kết thúc · $duration';
+  }
+
+  @override
+  String get assistantLiveCallFailed => 'Không thể kết nối';
+
+  @override
+  String get assistantLiveCallKeyboard => 'Bàn phím';
+
+  @override
+  String get assistantLiveCallMinimize => 'Thu nhỏ';
+
+  @override
+  String get assistantLiveCallMute => 'Tắt tiếng';
+
+  @override
+  String get assistantLiveCallMuted => 'Đã tắt tiếng';
+
+  @override
+  String get assistantLiveCallReconnecting => 'Đang kết nối lại…';
+
+  @override
+  String get assistantLiveCallRetry => 'Thử lại';
+
+  @override
+  String get assistantLiveCallReturn => 'Quay lại cuộc gọi';
+
+  @override
+  String get assistantLiveCallYou => 'Bạn';
+
+  @override
   String get assistantLiveCancelCall => 'Hủy cuộc gọi';
 
   @override
   String get assistantLiveConnect => 'Bắt đầu phiên trực tiếp';
 
   @override
-  String get assistantLiveDescriptionConnecting => 'Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.';
+  String get assistantLiveDescriptionConnecting => 'Đang kết nối cuộc trò chuyện trực tiếp.';
 
   @override
   String get assistantLiveDescriptionError => 'Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.';
 
   @override
-  String get assistantLiveDescriptionIdle => 'Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.';
+  String get assistantLiveDescriptionIdle => 'Nhấn micrô để bắt đầu nói. Cuộc trò chuyện của bạn được giữ tại đây.';
 
   @override
   String get assistantLiveDescriptionListening => 'Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.';
 
   @override
-  String get assistantLiveDescriptionPreparing => 'Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.';
+  String get assistantLiveDescriptionPreparing => 'Đang chuẩn bị cuộc trò chuyện trực tiếp của bạn.';
 
   @override
   String get assistantLiveDescriptionReady => 'Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.';
 
   @override
-  String get assistantLiveDescriptionReconnecting => 'Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.';
+  String get assistantLiveDescriptionReconnecting => 'Đang kết nối lại cuộc trò chuyện. Bản ghi của bạn vẫn ở đây.';
 
   @override
   String get assistantLiveDisconnect => 'Kết thúc phiên trực tiếp';
@@ -525,7 +581,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveHideCamera => 'Ẩn camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Trò chuyện với Mira';
+  String get assistantLiveIdleHeading => 'Sẵn sàng trò chuyện';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
@@ -5044,6 +5100,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailOwner => 'Chủ sở hữu';
 
   @override
+  String get mailPreviewEmptyMessage => 'Chọn một cuộc hội thoại trong danh sách để đọc tại đây.';
+
+  @override
+  String get mailPreviewEmptyTitle => 'Chọn một cuộc hội thoại';
+
+  @override
   String get mailRemoveAttachment => 'Xóa tệp đính kèm';
 
   @override
@@ -6436,6 +6498,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileDisplayNameRequired => 'Tên hiển thị không được để trống';
 
   @override
+  String profileDurationHours(int hours) {
+    return '$hours giờ';
+  }
+
+  @override
+  String profileDurationHoursMinutes(int hours, int minutes) {
+    return '$hours giờ $minutes phút';
+  }
+
+  @override
+  String profileDurationMinutes(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
   String get profileEmail => 'Email';
 
   @override
@@ -6771,8 +6848,8 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
+  String remindersOccurrenceDetails(String leadTime, String occurrence) {
+    return '$leadTime · $occurrence';
   }
 
   @override
@@ -11064,4 +11141,106 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarSettingsError => 'Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng.';
+
+  @override
+  String get assistantReactionCelebrate => 'Chúc mừng';
+
+  @override
+  String get assistantReactionInsightful => 'Hữu ích';
+
+  @override
+  String get assistantReactionLabel => 'Cảm xúc';
+
+  @override
+  String get assistantReactionLike => 'Thích';
+
+  @override
+  String get assistantReactionLove => 'Yêu thích';
+
+  @override
+  String get assistantReactionUnconfirmed => 'Chưa thể xác nhận cảm xúc. Hãy làm mới cảm xúc để đối soát an toàn.';
+
+  @override
+  String get assistantReactionUnavailable => 'Hiện chưa thể cập nhật cảm xúc. Vui lòng thử lại.';
+
+  @override
+  String get assistantRefreshReactions => 'Làm mới cảm xúc';
+
+  @override
+  String get assistantReplyMessageAction => 'Trả lời';
+
+  @override
+  String get assistantReplyUnavailable => 'Không tìm thấy tin nhắn gốc';
+
+  @override
+  String get assistantThemeAdvanced => 'Nâng cao';
+
+  @override
+  String get assistantThemeBackground => 'Màu nền';
+
+  @override
+  String get assistantThemeBackgroundStyle => 'Kiểu nền';
+
+  @override
+  String get assistantThemeCustom => 'Tùy chỉnh';
+
+  @override
+  String get assistantThemeDeviceScope => 'Áp dụng cho các cuộc trò chuyện Trợ lý của bạn trên thiết bị này, trong mọi không gian làm việc.';
+
+  @override
+  String get assistantThemeIntensity => 'Cường độ màu nền';
+
+  @override
+  String get assistantThemeLoading => 'Đang tải giao diện…';
+
+  @override
+  String get assistantThemeMessages => 'Màu tin nhắn';
+
+  @override
+  String get assistantThemeOmbre => 'Chuyển màu mềm';
+
+  @override
+  String get assistantThemePreset => 'Mẫu giao diện';
+
+  @override
+  String get assistantThemePreview => 'Xem trước giao diện trò chuyện';
+
+  @override
+  String get assistantThemePreviewAssistant => 'Hãy dành thời gian cho những điều quan trọng.';
+
+  @override
+  String get assistantThemePreviewUser => 'Giúp tôi lên kế hoạch cho một ngày tập trung.';
+
+  @override
+  String get assistantThemeReset => 'Đặt lại giao diện';
+
+  @override
+  String get assistantThemeRetry => 'Thử lại';
+
+  @override
+  String get assistantThemeSaving => 'Đang lưu giao diện…';
+
+  @override
+  String get assistantThemeStorageError => 'Không thể lưu hoặc tải giao diện trên thiết bị này.';
+
+  @override
+  String get assistantThemeText => 'Màu chữ';
+
+  @override
+  String get assistantThemeTitle => 'Giao diện trò chuyện';
+
+  @override
+  String get assistantReplyPending => 'Tin nhắn trước vẫn chưa được xác nhận. Hãy bỏ trích dẫn này và thử lại tin nhắn trước.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Không thể trả lời trích dẫn khi Live đang kết nối. Hãy kết thúc cuộc gọi hoặc hủy trích dẫn trước khi gửi.';
+
+  @override
+  String get assistantReplyChangedBeforeSend => 'Trích dẫn đã thay đổi trước khi gửi. Bản nháp vẫn được giữ lại. Hãy kiểm tra rồi gửi lại.';
+
+  @override
+  String get assistantLiveSendRefused => 'Live chưa tiếp nhận tin nhắn này. Bản nháp vẫn được giữ lại. Hãy kiểm tra kết nối trước khi thử lại.';
+
+  @override
+  String get assistantLiveSendUnknown => 'Chưa rõ tin nhắn Live đã được gửi hay chưa. Bản nháp vẫn được giữ lại. Hãy kiểm tra cuộc trò chuyện trước khi gửi lại để tránh trùng lặp.';
 }

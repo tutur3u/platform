@@ -1702,13 +1702,13 @@ Explicit `run` skips the queue only for a few read-only coreutils (`echo`, `pwd`
 
 Node shim classification consumes known runtime option values, including `--diagnostic-dir /tmp`, before identifying a tool entrypoint. Unknown or incomplete Node options queue conservatively, even when later arguments include `--help`. Recognized Vitest entrypoints retain their worker cap after runtime options and the Node `--` separator. Arguments after an ordinary script path remain that script's arguments. The Node 26.4 bare forms of `--experimental-config-file` and `--experimental-specifier-resolution` do not consume the next argv; only their `=` forms are accepted as value options. Any separate option value that itself identifies a tool, ttr launcher, or heavy script makes classification ambiguous and queues conservatively.
 
-The adaptive design requires a CLI release before activation. Optional `maxValidationLanes` accepts an integer from the base count through `8` and defaults to the base count. After release and a full idle drain, `ttr resources setup --max-lanes N` explicitly opts into a higher ceiling. Host capacity never changes the default automatically. Changing base lanes, maximum lanes, or aggregate worker budgets requires idle owners and zero waiters. Use `--workers` only for a justified aggregate budget. A maximum is a ceiling, not a promise of concurrent jobs.
+The adaptive design requires a CLI release before activation. Optional `maxValidationLanes` accepts an integer from the base count through `16` and defaults to the base count. After release and a full idle drain, `ttr resources setup --max-lanes N` explicitly opts into a higher ceiling. Host capacity never changes the default automatically. Changing base lanes, maximum lanes, or aggregate worker budgets requires idle owners and zero waiters. Use `--workers` only for a justified aggregate budget. A maximum is a ceiling, not a promise of concurrent jobs.
 
-Burst admission above the base requires a load-to-CPU ratio below `0.7` and sufficient memory. macOS requires normal memory pressure, reported as `1`. Linux requires at least 25% available memory and enough available memory for the estimated per-lane need. Missing telemetry refuses burst admission while preserving base admission behavior. Burst memory checks still apply with `--ignore-pressure`. FIFO order remains unchanged, and running jobs are never interrupted to shrink occupancy.
+Burst admission above the base requires a load-to-CPU ratio below `0.7` and sufficient memory. macOS requires normal memory pressure, reported as `1`. Linux requires at least 25% available memory and enough available memory for the estimated per-lane need. Missing telemetry refuses burst admission while preserving base admission behavior. Burst memory checks still apply with `--ignore-pressure`. Waiters with readable telemetry keep FIFO order; unreadable burst telemetry leaves that waiter base-only as described below. Running jobs are never interrupted to shrink occupancy.
 
 Shims classify only the program for `node`, `bun`, `bunx` and `npx`: the first positional argument after the runtime's own flags. Its later arguments belong to that program, so `bun /path/ttr resources run -- bunx vitest` is `ttr`, not vitest. The `ttr` CLI is a `#!/usr/bin/env bun` launcher and starts through the bun shim whenever the shims are on PATH (for example from a `~/.zshenv` that adds them for every zsh, including `ssh host 'cmd'` and `zsh -c`). Shims never admit it: `ttr` performs its own admission, and a shim admitting it first would hold the only lane while `ttr run` queued behind its own parent. Inside an admitted job, nested shims (`bunx` → a `#!/usr/bin/env node` vitest entry → the node shim) pass through under the owner once ancestry is verified. `resources-shim-chain.test.ts` reproduces that chain with one lane.
 
-The effective lane count is `max(1, min(maxValidationLanes, host lane ceiling))`, so base lanes above the host ceiling (for example a config copied from a larger machine) are capped as well, where the host lane ceiling is `max(1, min(8, floor(memory GiB / 4), CPUs - 2))` (6 on a 24 GiB / 10 CPU host). Worker totals no longer cap the lane count. Admission subtracts recorded running allocations from each budget. Once the aggregate budget is spent, each further pressure-gated burst lane receives exactly one worker, so the overcommit is bounded to one worker per burst lane. For multi-lane or adaptive configurations, the aggregate worker total is clamped with a warning to the host worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))` when that exceeds the legacy budget. Configured totals are never raised automatically.
+The effective lane count is `max(1, min(maxValidationLanes, host lane ceiling))`, so base lanes above the host ceiling (for example a config copied from a larger machine) are capped as well, where the host lane ceiling is `max(1, min(16, floor(memory GiB / 4), CPUs - 2))` (6 on a 24 GiB / 10 CPU host). Worker totals no longer cap the lane count. Admission subtracts recorded running allocations from each budget. Once the aggregate budget is spent, each further pressure-gated burst lane receives exactly one worker, so the overcommit is bounded to one worker per burst lane. For multi-lane or adaptive configurations, the aggregate worker total is clamped with a warning to the host worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))` when that exceeds the legacy budget. Configured totals are never raised automatically.
 
 Before replacing the installed scheduler, fully drain old brokers, shim processes, and FIFO waiters. An old scheduler encountering `slots/2` fails closed. Never rewrite tickets, remove live locks, or run mixed versions. Source tests/review do not authorize installation or activation, and this design does not change any installed scheduler. Reconcile every legacy `status.owner` consumer first. Status retains `owner`, `owners`, `laneCount`, `waiting`, and `limits`, and adds `baseLanes`, `maxLanes`, `effectiveLanes`, `occupied`, `burst: { eligible, reason }`, `ownerDetails` (PID, child PID, command, cwd, elapsed seconds, current CPU percent, cumulative CPU seconds, idle seconds), `waitingDetails` (command and wait time), and `warnings`. Brokers sample their owned process tree's cumulative CPU every 30 seconds into the slot's `activity.json`. Status warns when an owner has been idle at 0% CPU for more than 10 minutes. It never signals or kills owners. The compatibility `owner` stays populated whenever any owner exists; initializing occupancy is reported separately.
 
@@ -1796,6 +1796,38 @@ Confirm each project's identity from a worktree with a trivial `~/.bun/bin/ttr r
 
 Ramp the base 2 → 4 → 6 → 8 → 10 → 12 only through idle, atomic config updates; `setup --lanes` and `--max-lanes` accept 1 to 16 (`maxResourceLanes`). Bursts above the base still require pressure and load eligibility. Before each step, measure at least 15 minutes of normal load: normal memory pressure, one-minute load below 0.7 × CPU count, at least 30% idle CPU, budget use below its ceiling, and no regression in a fixed probe suite. Count unmanaged runner/SSH fan-out as well. More lanes are a ceiling, not a reason to start heavy work. For any downgrade, follow the canonical rollback below rather than removing the marker first.
 
+### Burst telemetry and minimal PATH
+
+Resource admission and status probes use trusted absolute system executables:
+`/usr/sbin/sysctl` with `/sbin/sysctl` fallback, and `/bin/ps` with `/usr/bin/ps`
+fallback. Probes have bounded time/output and a clean locale-only environment;
+they do not resolve caller PATH binaries or inherit loader variables. Linux
+pressure remains an absolute `/proc/meminfo` read. A minimal PATH can therefore
+use macOS burst admission without adding `/usr/sbin`.
+
+Unreadable load or pressure telemetry makes that ticket base-only for its
+remaining wait. It retains its original owner, queue age and place for base
+capacity. When only burst capacity is available, selection skips only these
+base-only tickets and applies existing FIFO or project-budget ordering to the
+remaining waiters. A real high-load or elevated-pressure reading still holds
+the queue under the existing policy. No telemetry error grants a burst lane.
+Cancellation, liveness, admission mutex and worker-cap checks are unchanged.
+
+Regression coverage: `resources-adaptive.test.ts` reproduces the minimal-PATH
+failure, retains the full-PATH control and high-load FIFO test, and exercises
+an unreadable head followed by a healthy burst waiter. macOS cases execute the
+real probe with deterministic pressure output and fixed host capacity/load;
+Linux CI skips those OS-specific cases. `resources-system-probes.test.ts`
+checks trusted paths, fallback, clean environment and bounded failure.
+
+Mastermind applied Studio's lane change on 2026-10-25: one pool A at 6 base/8
+max, physical ceiling 16; pool B was not created. Linux now has 3 lanes. This
+records the operator change and does not request another drain-window raise.
+The private Studio runbook is `/Users/thanh/Documents/STUDIO_LANES.md`. Read
+current status for worker caps; a declared total is not proof of effective
+admission caps. Future policy changes remain operator-owned and require an
+idle queue, preserved roots/settings and capacity evidence.
+
 ### Multi-host weighted admission
 
 `ttr resources run --hosts -- COMMAND` admits a job across the hosts in `<resources home>/hosts.json`. Without that file, `--hosts` refuses to run and admission stays the single-host lane FIFO. The CLI never writes or activates `hosts.json`; an operator installs it after a reviewed release. The registry decides where code runs, so it is trusted only from the canonical per-user home `~/.tuturuuu/resources`. That directory must be a real 0700 directory owned by you, `hosts.json` a real 0600 file owned by you, and every parent a non-symlink directory writable only by root or you (a root-owned sticky directory such as `/tmp` is allowed). The file is opened with `O_NOFOLLOW` and re-verified through the descriptor. A home inside an opted-in repository root (`roots`, or a `repositories` checkout) is refused too, as is an invalid `config.json`. When `TTR_RESOURCES_HOME` points anywhere else, or any check fails, the registry is ignored and `--hosts` is disabled (`resources-hosts-trust.test.ts`). `ttr resources hosts [--json]` shows each host's budget, reservations and waiters (or the proposed registry when none is installed). `ttr resources hosts --simulate [--json]` is an offline dry run of the measured queue through the same planner.
@@ -1835,6 +1867,105 @@ Regression coverage:
 - `resources-hosts-ledger.test.ts`: concurrent no-double-assignment, process death, cancellation, overlap and stale-runner dispatch;
 - `resources-disk-gate.test.ts`;
 - `resources-hosts-sim.test.ts`.
+
+#### Capability placement and the M4 hub
+
+Multi-host admission is implemented but requires operator activation: a trusted
+registry, eligible registered devbox runners, a pushed clean commit and fresh
+telemetry. SSH reachability alone does not register a runner or admit work.
+The historical simulation above is an offline example, not live fleet capacity.
+
+Set `hubHostname` in `hosts.json` to the M4's exact OS hostname. Registries with
+runner entries refuse dispatch when that field is absent or differs from the
+current machine, before creating a ticket or contacting a runner. Submit fleet
+jobs on the M4; remote hosts use their own canonical `ttr resources run` queue.
+The transport remains the keyed devbox API; it does not SSH between hosts or
+copy local credentials/environment values.
+
+`hubHostname` controls dispatch origin only. It does not prohibit local heavy
+work or inspect commands for builds. The M4 build prohibition remains an
+operator/caller policy; a heavy class also includes permitted focused tests.
+Configure local slots/capabilities for the intended placement policy and submit
+builds only to remote hosts. Do not treat a matching hub hostname as permission
+to build on the M4.
+
+Each host can declare `platform: "darwin" | "linux"` and a `capabilities` array
+containing `ios`, `macos`, `flutter`, `web`, `rust` and/or `docker`. Declared
+platform must match local OS or fresh runner `capabilities.os.platform` telemetry;
+unknown/mismatched platform blocks placement and is rechecked before dispatch.
+Tool capabilities are operator attestations: verify installed tools, daemon
+access and runtime acceptance before advertising them. Missing capability tags
+cannot satisfy a job's requirements. Older untagged registries still admit
+generic jobs, but cannot admit jobs requiring a capability.
+
+```sh
+ttr resources run --hosts --requires ios -- flutter build ios --no-codesign
+ttr resources run --hosts --requires web -- bun run test
+ttr resources run --hosts --requires docker --requires rust -- sh verify.sh
+```
+
+`--requires` is repeatable and augments direct-tool inference. Xcode tools,
+CocoaPods and codesign require `macos`; Flutter requires `flutter` and adds `ios`
+for iOS/IPA targets or `macos` for macOS targets; Cargo/Rust tools require `rust`;
+Docker requires `docker`. Shell/package scripts and arbitrary executables must
+declare their requirements explicitly. Both Apple tags also require a declared
+Darwin host. Configure placement as follows, preserving measured weighted slots,
+worker caps and headroom:
+
+Nested `--hosts` calls validate explicit and inferred requirements against the
+actual local host before reusing either a heavy-lane ancestor or a light host
+reservation. Incompatible nesting errors before spawning or adding another
+ticket; compatible nesting keeps the existing reservation and limits. A nested
+call cannot migrate its already-running wrapper to a different host.
+Requirement parsing and applicable local compatibility checks also run before
+the trusted trivial-command shortcut. Unknown requirements fail closed even
+for `/usr/bin/true`; compatible trivial tools remain admission-free. Explicit
+`TTR_RESOURCES_BYPASS=1` retains its deliberate raw local-execution behavior.
+
+| Host | Declared capabilities | Placement policy |
+| --- | --- | --- |
+| M4 hub | Only verified light tooling, such as `web` | Coordination and focused build-free checks; no release builds. |
+| Linux runner | Verified `flutter`, `web`, `rust`, `docker` | Prefer for compatible work; no `ios` or `macos`. |
+| Studio runner | Verified `ios`, `macos`, `flutter`, `web`, `rust`, `docker` | Apple jobs, or compatible work when Linux has no capacity. |
+
+Set lower `preference` on Linux than Studio for portable work; capability checks
+still send Apple jobs only to Studio. Do not register held hosts. Studio has
+one pool A; the proposed pool B was not created. Do not add a second host entry to count the same machine twice. Mastermind must reconcile all
+resource homes and external CI consumers before declaring available slots.
+
+An incompatible starving waiter holds only hosts it could use, leaving Linux
+available behind an iOS waiter. Existing repository-share ordering, bounded
+bypass and local lane FIFO remain in force. Repeated enqueue preserves the
+original ticket owner, requirements, age and bypass count; a reserved token
+cannot be enqueued or admitted twice. Requeues retain age/bypass, and the ticket
+UUID is the remote create's idempotency key. An unacknowledged write never
+triggers another placement or a local retry; reconcile the original operation
+through `ttr box list` before deciding what happened.
+
+Regression coverage: `resources-hosts-nesting.test.ts`, `resources-hosts-requirements.test.ts`,
+`resources-hosts-dispatch.test.ts` and `resources-hosts-ledger.test.ts` cover
+capability/OS placement, hub refusal before writes, ordering, duplicate tickets,
+stable operation identity and unknown-outcome refusal.
+
+#### Studio operator lane update
+
+Mastermind applied the 2026-10-25 lane change: Studio now has one pool A at
+6 base/8 max lanes, and Linux has 3 lanes. Pool B was not created. The physical
+Studio ceiling remains 16. No further lane raise is proposed by this change;
+configuration and activation remain Mastermind's custody. The Studio source of
+operational detail is `/Users/thanh/Documents/STUDIO_LANES.md`; re-read current
+status before using declared worker totals as capacity evidence.
+
+Future changes require a full idle drain (zero owners, waiters, reservations
+and queued remote runs), saved config/registry/launcher bytes, the same roots
+and shell settings, a compatible pinned CLI and a reviewed `setup --dry-run`.
+Let existing work finish in order; never kill/reorder waiters or create another
+queue. Apply only as the operator, monitor CPU/memory/disk/I/O and effective
+worker caps, and roll back saved settings only after another idle drain.
+
+Operator-owned remaining evidence: reviewed registry installation, actual
+runner registration and runtime capability acceptance. Source tests and offline
+simulation do not activate multi-host admission or prove remote execution.
 
 ### Docker metadata lifecycle diagnostic
 

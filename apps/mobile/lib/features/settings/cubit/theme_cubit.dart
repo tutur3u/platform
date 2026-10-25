@@ -43,25 +43,37 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Sets and persists the user's theme choice.
-  Future<void> setThemeMode(
+  /// Sets and persists the user's theme choice. Returns whether [mode] was
+  /// persisted and applied. [isCurrent] fences the write at the repository's
+  /// linearization point: a stale scope before it skips the write and
+  /// returns false. Once the write is dispatched it cannot be cancelled, so
+  /// the device-wide theme state follows the stored value even if the scope
+  /// ended meanwhile. A failed or throwing platform write returns false and
+  /// keeps the current theme, which the repository restores in storage. Only
+  /// a write that is still the newest saved choice when it returns is
+  /// published; any other completion returns false without emitting, so
+  /// overlapping choices end on the newest saved one.
+  Future<bool> setThemeMode(
     ThemeMode mode, {
     bool Function()? isCurrent,
   }) async {
     bool current() => isCurrent == null || (!isClosed && isCurrent());
-    if (!current()) return;
+    if (!current()) return false;
+    final PreferenceWriteOutcome outcome;
     try {
-      await _settingsRepository.setThemeMode(
+      outcome = await _settingsRepository.setThemeMode(
         mode.name,
         shouldWrite: isCurrent == null ? null : current,
       );
-      if (!current()) return;
-      emit(state.copyWith(themeMode: mode));
     } on Exception catch (e) {
-      if (!current()) return;
+      if (!current()) return false;
       debugPrint('Error setting theme mode: $e');
-      emit(state.copyWith(themeMode: ThemeMode.system));
+      return false;
     }
+    // Superseded, failed and skipped writes never publish.
+    if (outcome != PreferenceWriteOutcome.saved) return false;
+    if (!isClosed) emit(state.copyWith(themeMode: mode));
+    return true;
   }
 
   /// Applies [appearance] immediately without persisting, for live slider

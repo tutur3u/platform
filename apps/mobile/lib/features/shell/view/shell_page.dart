@@ -61,6 +61,7 @@ class ShellPage extends StatefulWidget {
     this.assistantPageBuilder,
     this.homePageBuilder,
     this.notificationsPageBuilder,
+    this.profilePageBuilder,
     super.key,
   });
 
@@ -73,6 +74,8 @@ class ShellPage extends StatefulWidget {
   final Widget Function(int replayToken)? homePageBuilder;
   @visibleForTesting
   final WidgetBuilder? notificationsPageBuilder;
+  @visibleForTesting
+  final Widget Function(int replayToken)? profilePageBuilder;
 
   @override
   State<ShellPage> createState() => _ShellPageState();

@@ -383,7 +383,7 @@ void main() {
           );
           for (
             var attempt = 0;
-            attempt < 60 && find.text('60 min tracked').evaluate().isEmpty;
+            attempt < 60 && find.text('1h').evaluate().isEmpty;
             attempt++
           ) {
             await tester.runAsync(() async {
@@ -392,7 +392,7 @@ void main() {
             await tester.pump(const Duration(milliseconds: 50));
           }
           expect(
-            find.text('60 min tracked'),
+            find.text('1h'),
             findsOneWidget,
             reason: 'Mounted activity must render the fetched value: $requests',
           );

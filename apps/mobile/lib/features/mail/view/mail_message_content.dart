@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_html_body.dart';
 import 'package:mobile/features/mail/view/mail_invitation_card.dart';
+import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 
 /// Inline attachments use the authenticated API, never WebView credentials.
 class MailMessageContent extends StatefulWidget {
@@ -17,6 +18,7 @@ class MailMessageContent extends StatefulWidget {
     this.imagesVisible,
     this.onImagesChanged,
     this.showControls = true,
+    this.renderedDocuments,
     super.key,
   });
 
@@ -28,6 +30,7 @@ class MailMessageContent extends StatefulWidget {
   final bool? imagesVisible;
   final ValueChanged<bool>? onImagesChanged;
   final bool showControls;
+  final MailRenderedDocuments? renderedDocuments;
 
   @override
   State<MailMessageContent> createState() => _MailMessageContentState();
@@ -126,6 +129,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
             imagesVisible: widget.imagesVisible,
             onImagesChanged: widget.onImagesChanged,
             showControls: widget.showControls,
+            renderedDocuments: widget.renderedDocuments,
           );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

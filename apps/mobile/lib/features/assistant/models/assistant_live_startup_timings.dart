@@ -18,7 +18,9 @@ class AssistantLiveStartupTimings {
     }
   }
 
+  /// Records the total once; later calls keep the first measurement.
   void finish() {
+    if (_milliseconds.containsKey(AssistantLiveStartupPhase.total)) return;
     _total.stop();
     _milliseconds[AssistantLiveStartupPhase.total] = _total.elapsedMilliseconds;
   }

@@ -226,6 +226,23 @@ has the measured old to new limits table.
 | skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
 | Sonha, ThanhStudio | none | not registered |
 
+Capability-aware `--hosts` placement uses repeatable `--requires
+ios|macos|flutter|web|rust|docker`, host capability attestations and declared OS
+checked against runtime telemetry. Direct tools infer requirements; wrappers
+must declare them. Registries containing runners require `hubHostname` to match
+the M4 before dispatch. Remote hosts use local admission, never another fleet
+dispatch. This fence controls dispatch origin; it does not prohibit local heavy
+work or builds. Follow the M4 no-build policy separately. Nested `--hosts` must
+validate capabilities and actual OS before reusing a heavy lane or light host
+reservation; incompatible nesting fails before spawning.
+Requirement parsing and local compatibility checks precede the trusted trivial
+command shortcut too; explicit resource bypass retains raw local execution.
+Preserve ticket identity, age and bypass on retries; an unknown remote write
+must be reconciled rather than replayed. See the owning
+[capability and drain-window procedure](../../../../apps/docs/reference/packages/sdk.mdx#capability-placement-and-the-m4-hub).
+Mastermind owns Studio pool A (6 base/8 max; no pool B) and idle-only lane changes. Do not count the
+same physical Studio twice or activate a registry/config from an agent session.
+
 ## SDK supplier updates
 
 For an authorized dev/latest or private-tarball supplier change, use the
@@ -234,6 +251,14 @@ installation and the existing queue, verifies checksums, records rollback, and
 qualifies each host. Source changes never authorize activation.
 
 ## Diagnose and recover
+
+System probes use trusted absolute sysctl/ps paths and bounded platform
+fallbacks; Linux pressure reads `/proc/meminfo`. Unreadable burst telemetry
+marks only that waiter base-only. Its original ticket stays first for base
+capacity; eligible burst waiters follow the existing FIFO/project-share rules.
+Real high load or elevated pressure still blocks under the original policy.
+See [burst probe behavior and regression evidence](../../../../apps/docs/reference/packages/sdk.mdx#burst-telemetry-and-minimal-path).
+
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
 ages. It warns when an owner has been idle at 0% CPU for more than 10 minutes.
 Inspect such an owner and its thread; status never kills anything.

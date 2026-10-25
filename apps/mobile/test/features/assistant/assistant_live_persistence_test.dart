@@ -11,6 +11,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -59,6 +60,9 @@ void main() {
     _updateHistory = null;
     _confirmTurnHistory = null;
     when(() => socket.events).thenAnswer((_) => events.stream);
+    when(
+      () => socket.sendText(any()),
+    ).thenReturn(AssistantLiveSinkAdmission.admitted);
     when(_recorder.stop).thenAnswer((_) async {});
     when(_recorder.dispose).thenAnswer((_) async {});
     when(player.initialize).thenAnswer((_) async {});
