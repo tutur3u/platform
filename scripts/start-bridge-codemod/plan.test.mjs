@@ -16,6 +16,8 @@ const HOLD_FILES = [
 ];
 const plan = (root, options = {}) =>
   planConversion(root, 'demo', { codegen: fakeCodegen(), ...options });
+const generated = (result, file) =>
+  result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
 
 test('dry run reads only and plans the full owned file set', (t) => {
   const root = createFixtureRepo(t);
@@ -154,8 +156,6 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
 
 test('generator inputs come from the app configuration, not hand edits', (t) => {
   const root = createFixtureRepo(t);
-  const generated = (result, file) =>
-    result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
   // Defaults: no proxy config, no Web rewrites, no app-base resolver.
   const plain = plan(root);
   assert.doesNotMatch(generated(plain, 'cloudflare/worker.ts'), /matches:/);
@@ -225,6 +225,30 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
     generated(full, 'src/start-bridge/api-entry.ts'),
     /^import '\.\/app-base';\nexport \{ endpoints \}/m
   );
+});
+
+test('types ASSETS as the portable binding once the bridge exports it (#6753)', (t) => {
+  const root = createFixtureRepo(t);
+  const legacy = generated(plan(root), 'cloudflare/worker.ts');
+  assert.match(
+    legacy,
+    /\n {2}ASSETS: \{ fetch\(request: Request\): Promise<Response> \};\n/
+  );
+  assert.doesNotMatch(legacy, /AssetsBinding/);
+
+  writeTree(root, {
+    'packages/start-bridge/package.json': `${JSON.stringify({
+      name: '@tuturuuu/start-bridge',
+      exports: { './assets': './src/core/assets.ts' },
+    })}\n`,
+  });
+  const worker = generated(plan(root), 'cloudflare/worker.ts');
+  assert.match(
+    worker,
+    /^import type \{ AssetsBinding \} from '@tuturuuu\/start-bridge\/assets';$/m
+  );
+  assert.match(worker, /\n {2}ASSETS: AssetsBinding;\n/);
+  assert.match(worker, /\n {4}assets: \(env\) => env\.ASSETS,\n/);
 });
 
 test('native CI is a thin caller of the reusable template, once it exists', (t) => {

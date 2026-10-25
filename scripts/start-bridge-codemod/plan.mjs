@@ -21,6 +21,7 @@ import {
   API_REGISTRY,
   APP_BASE,
   APP_CONFIG,
+  BRIDGE_DIR,
   CENTRAL_FIRST,
   DEPENDENCIES,
   GENERATED_MARKER,
@@ -65,8 +66,9 @@ const NEXT_CONFIGS = ['next.config.ts', 'next.config.mjs', 'next.config.js'];
  * Generator inputs read from the app's existing configuration, so apps
  * regenerate instead of forking generated files: the proxy's own
  * `config.matcher`, the Web workspace API paths its `next.config` rewrites
- * `beforeFiles` (`centralFirst`), `next/og` use, and whether internal-api
- * offers the default app-base resolver (#6764).
+ * `beforeFiles` (`centralFirst`), `next/og` use, whether internal-api
+ * offers the default app-base resolver (#6764), and whether the bridge
+ * exports the portable `AssetsBinding` (#6753).
  */
 export function detectInputs(repoRoot, appPath, inventory, manifest) {
   const proxySource = inventory.proxy
@@ -81,6 +83,9 @@ export function detectInputs(repoRoot, appPath, inventory, manifest) {
   const internalApi =
     read(repoRoot, 'packages/internal-api/src/internal-api-url.ts') ?? '';
   const deps = { ...manifest.dependencies, ...manifest.devDependencies };
+  const bridgeExports =
+    JSON.parse(read(repoRoot, `${BRIDGE_DIR}/package.json`) ?? '{}').exports ??
+    {};
   return {
     proxyMatcher: /export\s+const\s+config\b/u.test(proxySource),
     workspaceApiCentralFirst: /createTuturuuuWebWorkspaceApiRewrites/u.test(
@@ -90,6 +95,7 @@ export function detectInputs(repoRoot, appPath, inventory, manifest) {
     appBase:
       /export function registerDefaultAppBaseResolver/u.test(internalApi) &&
       '@tuturuuu/internal-api' in deps,
+    assetsBinding: './assets' in bridgeExports,
   };
 }
 
