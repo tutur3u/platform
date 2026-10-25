@@ -16,9 +16,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { extractCliArchive } from './cli-versions-archive';
+import { downloadVerifiedArchive } from './cli-versions-download';
 import {
   filesManifest,
   materializePackage,
+  readVerifiedFile,
   requireDirectory,
 } from './cli-versions-manifest';
 import { acquireUpgradeLock } from './devbox-upgrade-lock';
@@ -86,7 +88,8 @@ export async function resolveRelease(
       'Use an exact version (for example 0.29.0) or a dist-tag such as latest.'
     );
   const response = await fetchImpl(
-    `${registry}/tuturuuu/${encodeURIComponent(spec)}`
+    `${registry}/tuturuuu/${encodeURIComponent(spec)}`,
+    { redirect: 'error' }
   );
   if (!response.ok)
     throw new Error(
@@ -121,11 +124,15 @@ export async function verifyInstalled(dir: string) {
   await requireDirectory(join(dir, 'node_modules'));
   const manifest = await filesManifest(packageDir(dir));
   const release = releaseSchema.parse(
-    JSON.parse(await readFile(join(dir, 'release.json'), 'utf8'))
+    JSON.parse(
+      (await readVerifiedFile(join(dir, 'release.json'))).toString('utf8')
+    )
   );
-  const pkg = JSON.parse(
-    await readFile(join(packageDir(dir), 'package.json'), 'utf8')
-  ) as { version?: string };
+  if (!manifest.packageJson)
+    throw new Error('CLI release package.json is missing.');
+  const pkg = JSON.parse(manifest.packageJson.toString('utf8')) as {
+    version?: string;
+  };
   if (
     pkg.version !== release.version ||
     manifest.sha256 !== release.filesSha256 ||
@@ -186,22 +193,22 @@ export async function installRelease({
       throw new Error(
         `${target} exists but does not verify; inspect it and remove it explicitly before reinstalling.`
       );
-    const response = await fetchImpl(resolved.tarball);
-    if (!response.ok)
-      throw new Error(
-        `Downloading tuturuuu@${resolved.version} failed (${response.status}).`
-      );
-    const bytes = Buffer.from(await response.arrayBuffer());
-    const sha512 = `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
-    if (sha512 !== resolved.integrity)
-      throw new Error(
-        `tuturuuu@${resolved.version} failed its registry integrity check; nothing was installed.`
-      );
     const staging = join(store, 'versions', `.staging-${randomUUID()}`);
+    await mkdir(join(store, 'versions'), { recursive: true, mode: 0o700 });
+    await mkdir(staging, { mode: 0o700 });
     try {
-      await mkdir(join(staging, 'verify'), { recursive: true, mode: 0o700 });
+      const response = await fetchImpl(resolved.tarball, { redirect: 'error' });
+      if (!response.ok)
+        throw new Error(
+          `Downloading tuturuuu@${resolved.version} failed (${response.status}).`
+        );
       const tgz = `tuturuuu-${resolved.version}.tgz`;
-      await writeFile(join(staging, tgz), bytes, { mode: 0o600 });
+      const bytes = await downloadVerifiedArchive(
+        response,
+        join(staging, tgz),
+        resolved.integrity
+      );
+      await mkdir(join(staging, 'verify'), { mode: 0o700 });
       await extractCliArchive(bytes, join(staging, 'verify'));
       const expected = await filesManifest(join(staging, 'verify', 'package'));
       await writeFile(
