@@ -1,6 +1,7 @@
 import { StatusPill } from '@tuturuuu/ui/custom/ops';
 import Link from 'next/link';
 import type { MachineView } from '@/lib/fleet/fleet-view';
+import { UNREACHABLE_MACHINE_STATES } from '@/lib/fleet/run-state';
 import type { FleetTranslator } from './fleet-data';
 import { MachineMeters } from './machine-meters';
 import { MachineRecoveryText } from './machine-recovery';
@@ -52,10 +53,15 @@ export function MachineCard({
       <footer className="flex flex-wrap items-center justify-between gap-2 border-border border-t pt-3 text-muted-foreground text-xs">
         <span className="tabular-nums">
           {machine.activity
-            ? t('work.summary', {
-                queued: machine.activity.queuedRuns,
-                running: machine.activity.runningRuns,
-              })
+            ? t(
+                UNREACHABLE_MACHINE_STATES.has(machine.status.state)
+                  ? 'work.summary_unknown'
+                  : 'work.summary',
+                {
+                  queued: machine.activity.queuedRuns,
+                  running: machine.activity.runningRuns,
+                }
+              )
             : t('resources.unknown')}
         </span>
         {machine.status.telemetry === 'fresh' ? null : (

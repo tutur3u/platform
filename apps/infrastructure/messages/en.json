@@ -7710,6 +7710,14 @@
       "uptime": "Uptime"
     },
     "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Dedicated Docker socket",
+        "dedicatedUser": "Dedicated service user",
+        "gvisorDefault": "gVisor by default",
+        "noGeneralDockerGroup": "Not in the general Docker group",
+        "privateTokenDirectory": "Private token directory",
+        "protectedService": "Protected service"
+      },
       "no": "No",
       "not_attested": "This machine does not report isolation. Enable TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE on the runner to attest it.",
       "yes": "Yes"
@@ -7717,8 +7725,8 @@
     "manage": "Runner admin",
     "recovery": {
       "awaiting_first_heartbeat": "Registered but never reported. Setup may have failed; rerun ttr box connect --service on the host and check its agent service.",
-      "disconnected": "No heartbeat since {age}. Runs that were active here have an unknown outcome and are not rescheduled automatically. Check the agent service on the host.",
-      "draining": "Draining since {age}. Current work finishes; no new work is placed here.",
+      "disconnected": "Last heartbeat {age}. Runs that were active here have an unknown outcome and are not rescheduled automatically. Check the agent service on the host.",
+      "draining": "Drain requested {age}. Current work finishes; no new work is placed here.",
       "heartbeat_disabled": "Heartbeat is turned off, so this machine takes no work. Turn it on in runner admin.",
       "revoked": "Revoked. This machine can no longer authenticate or take work.",
       "telemetry_late": "Last heartbeat {age}. Readings are not current and no new work is placed here.",
@@ -7796,9 +7804,10 @@
       "kept_leases": "Kept leases",
       "lane_ceiling": "Lane ceiling",
       "leases": "Active leases",
-      "queued": "Queued for this machine",
+      "queued": "Queued here",
       "running": "Running",
-      "summary": "{running} running, {queued} queued"
+      "summary": "{running} running, {queued} queued",
+      "summary_unknown": "{running} with unknown outcome, {queued} queued"
     }
   },
   "forms": {

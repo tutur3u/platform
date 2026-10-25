@@ -7710,6 +7710,14 @@
       "uptime": "Thời gian hoạt động"
     },
     "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Socket Docker riêng",
+        "dedicatedUser": "Người dùng dịch vụ riêng",
+        "gvisorDefault": "Mặc định dùng gVisor",
+        "noGeneralDockerGroup": "Không thuộc nhóm Docker chung",
+        "privateTokenDirectory": "Thư mục token riêng tư",
+        "protectedService": "Dịch vụ được bảo vệ"
+      },
       "no": "Không",
       "not_attested": "Máy này không báo cáo cách ly. Bật TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE trên runner để xác nhận.",
       "yes": "Có"
@@ -7717,8 +7725,8 @@
     "manage": "Quản trị runner",
     "recovery": {
       "awaiting_first_heartbeat": "Đã đăng ký nhưng chưa từng báo cáo. Có thể thiết lập đã lỗi; chạy lại ttr box connect --service trên máy và kiểm tra dịch vụ agent.",
-      "disconnected": "Không có nhịp tim từ {age}. Các lượt chạy đang hoạt động ở đây chưa rõ kết quả và không được tự động lên lịch lại. Hãy kiểm tra dịch vụ agent trên máy.",
-      "draining": "Đang rút việc từ {age}. Công việc hiện tại sẽ hoàn tất; không nhận việc mới.",
+      "disconnected": "Nhịp tim cuối {age}. Các lượt chạy đang hoạt động ở đây chưa rõ kết quả và không được tự động lên lịch lại. Hãy kiểm tra dịch vụ agent trên máy.",
+      "draining": "Đã yêu cầu rút việc {age}. Công việc hiện tại sẽ hoàn tất; không nhận việc mới.",
       "heartbeat_disabled": "Nhịp tim đang tắt nên máy không nhận việc. Bật lại trong quản trị runner.",
       "revoked": "Đã thu hồi. Máy này không thể xác thực hay nhận việc.",
       "telemetry_late": "Nhịp tim cuối {age}. Số liệu không còn hiện hành và máy không nhận việc mới.",
@@ -7796,9 +7804,10 @@
       "kept_leases": "Lease được giữ",
       "lane_ceiling": "Giới hạn làn",
       "leases": "Lease đang hoạt động",
-      "queued": "Đang chờ máy này",
+      "queued": "Đang chờ ở đây",
       "running": "Đang chạy",
-      "summary": "{running} đang chạy, {queued} đang chờ"
+      "summary": "{running} đang chạy, {queued} đang chờ",
+      "summary_unknown": "{running} chưa rõ kết quả, {queued} đang chờ"
     }
   },
   "forms": {

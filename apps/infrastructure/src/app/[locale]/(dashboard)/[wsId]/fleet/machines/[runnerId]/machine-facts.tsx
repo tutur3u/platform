@@ -8,6 +8,15 @@ import {
 } from '@/lib/fleet/format';
 import type { FleetTranslator } from '../../_components/fleet-data';
 
+const ISOLATION_KEYS = new Set([
+  'dedicatedDockerSocket',
+  'dedicatedUser',
+  'gvisorDefault',
+  'noGeneralDockerGroup',
+  'privateTokenDirectory',
+  'protectedService',
+]);
+
 interface FactsContext {
   locale: string;
   now: Date;
@@ -124,7 +133,7 @@ export function MachineIsolationFacts({
   return (
     <FactList
       rows={entries.map(([key, value]) => [
-        key,
+        ISOLATION_KEYS.has(key) ? t(`isolation.keys.${key}`) : key,
         value ? t('isolation.yes') : t('isolation.no'),
       ])}
     />

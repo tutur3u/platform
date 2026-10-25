@@ -1,5 +1,6 @@
 import { StatTile } from '@tuturuuu/ui/custom/ops';
 import type { MachineView } from '@/lib/fleet/fleet-view';
+import { UNREACHABLE_MACHINE_STATES } from '@/lib/fleet/run-state';
 import type { FleetTranslator } from '../../_components/fleet-data';
 
 export function MachineWork({
@@ -10,14 +11,22 @@ export function MachineWork({
   t: FleetTranslator;
 }) {
   const { activity } = machine;
+  // Active work on a machine we cannot hear is unconfirmed, not running.
+  const unreachable = UNREACHABLE_MACHINE_STATES.has(machine.status.state);
   const unknownLabel = t('resources.unknown');
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <StatTile
-          label={t('work.running')}
-          tone={activity?.runningRuns ? 'info' : 'neutral'}
+          label={unreachable ? t('stats.outcome_unknown') : t('work.running')}
+          tone={
+            activity?.runningRuns
+              ? unreachable
+                ? 'unknown'
+                : 'info'
+              : 'neutral'
+          }
           unknownLabel={unknownLabel}
           value={activity?.runningRuns ?? null}
         />

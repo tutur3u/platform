@@ -68,6 +68,7 @@ describe('MachineCard', () => {
     expect(screen.getByText('20%')).toBeTruthy();
     expect(screen.getByText('24.0 GiB / 32.0 GiB')).toBeTruthy();
     expect(screen.queryByText(/recovery\./)).toBeNull();
+    expect(screen.getByText(/^work\.summary /)).toBeTruthy();
   });
 
   it('hides old readings and explains recovery for a disconnected machine', () => {
@@ -89,5 +90,7 @@ describe('MachineCard', () => {
     expect(screen.queryByText('20%')).toBeNull();
     expect(screen.queryByText('24.0 GiB / 32.0 GiB')).toBeNull();
     expect(screen.getByText('telemetry.stale')).toBeTruthy();
+    expect(screen.getByText(/^work\.summary_unknown/)).toBeTruthy();
+    expect(screen.queryByText(/^work\.summary /)).toBeNull();
   });
 });

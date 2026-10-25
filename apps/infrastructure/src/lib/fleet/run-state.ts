@@ -38,7 +38,8 @@ export const TERMINAL_RUN_STATES: ReadonlySet<RunState> = new Set([
   'timed_out',
 ]);
 
-const UNREACHABLE_MACHINE_STATES = new Set<MachineState>([
+/** Machines whose reported active work cannot currently be confirmed. */
+export const UNREACHABLE_MACHINE_STATES: ReadonlySet<MachineState> = new Set([
   'disconnected',
   'revoked',
   'telemetry_late',
