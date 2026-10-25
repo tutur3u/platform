@@ -155,4 +155,19 @@ describe('Vite preset', () => {
       /src\/next\/root-params\.ts$/u
     );
   });
+
+  it('adds RSC shims and leaves navigation and intl to the RSC plugin', () => {
+    const preset = startBridgePreset({ appRoot, app: 'tools', rsc: true }, {});
+    const finds = preset.alias.map((alias) => String(alias.find));
+    expect(preset.tanstackStart.rsc).toEqual({ enabled: true });
+    expect(finds.some((find) => find.includes('next\\/navigation'))).toBe(
+      false
+    );
+    expect(finds).not.toContain(String(/^next-intl\/navigation$/u));
+    expect(finds).toContain(String(/^next-intl\/server$/u));
+    expect(finds).toContain(String(/^next\/root-params(?:\.js)?$/u));
+    expect(
+      startBridgePreset({ appRoot, app: 'tools' }, {}).tanstackStart.rsc
+    ).toBeUndefined();
+  });
 });

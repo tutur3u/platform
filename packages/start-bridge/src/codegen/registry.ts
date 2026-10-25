@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { HTTP_METHODS, type HttpMethod } from '../core/endpoints';
 
 /**
  * Pure route-registry generation for App Router source compiled by the
@@ -19,7 +20,24 @@ export interface RegistryConfig {
    * `patternsOut` also emits a client-safe `appApiPatterns` list for
    * `createApiPath` (no route modules imported).
    */
-  api?: { out: string; patternsOut?: string } | null;
+  api?: {
+    out: string;
+    patternsOut?: string;
+    /**
+     * Import each route only when it is first requested
+     * (`lazyRouteModule`), so one route's dependencies cannot fail the whole
+     * Worker at startup. Needs the route sources (`readSource`); a route
+     * whose methods cannot be read statically (`export *`) stays eager.
+     */
+    lazy?: boolean;
+    /**
+     * App-owned API patterns the app forwards rather than handles (e.g.
+     * Storefront's `/api/v1/inventory/[...path]`, which its Worker sends to
+     * Inventory through `apiOrigin`). Merged into `appApiPatterns`, so the
+     * shared app-base resolver mounts them like local routes.
+     */
+    forwarded?: readonly string[];
+  } | null;
   /** Generated page manifest; `null` means no page may be unowned. */
   pages?: { out: string } | null;
   /** Route file (relative to appDir) to the native file that owns it. */
@@ -94,6 +112,39 @@ function importPath(fromFile: string, toFile: string) {
     : `./${withoutExtension}`;
 }
 
+/**
+ * The HTTP methods a route module exports, read statically; `null` when a
+ * re-export (`export *`) hides them. Comments are ignored.
+ */
+export function exportedMethods(source: string): HttpMethod[] | null {
+  const code = source
+    .replace(/\/\*[\s\S]*?\*\//gu, '')
+    .replace(/(^|[^:'"`\\])\/\/[^\n]*/gu, '$1');
+  if (/\bexport\s*\*\s*from\b/u.test(code)) return null;
+  const names = new Set<string>();
+  for (const match of code.matchAll(
+    /\bexport\s+(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/gu
+  ))
+    names.add(match[1] as string);
+  for (const match of code.matchAll(
+    /\bexport\s+(?:const|let|var)\s+([A-Za-z_$][\w$]*)/gu
+  ))
+    names.add(match[1] as string);
+  // `export const { GET, POST } = handlers` and `export { a as GET }`.
+  for (const match of code.matchAll(
+    /\bexport\s+(?:(?:const|let|var)\s*\{([^}]*)\}\s*=|\{([^}]*)\})/gu
+  ))
+    for (const part of (match[1] ?? match[2] ?? '').split(',')) {
+      const name = part
+        .trim()
+        .split(/\s+as\s+|\s*:\s*/u)
+        .at(-1)
+        ?.replace(/^type\s+/u, '');
+      if (name) names.add(name);
+    }
+  return HTTP_METHODS.filter((method) => names.has(method));
+}
+
 function literal(value: Record<string, string>) {
   const entries = Object.entries(value);
   if (entries.length === 0) return '';
@@ -106,31 +157,56 @@ const HEADER =
 export function renderApiRegistry(
   out: string,
   appDir: string,
-  routes: RouteFile[]
+  routes: RouteFile[],
+  /** Route file to its statically read methods, for lazy routes. */
+  lazyMethods: ReadonlyMap<string, HttpMethod[]> = new Map()
 ) {
   const sorted = routes.toSorted((a, b) => a.file.localeCompare(b.file));
-  const imports = sorted.map(
-    (route, index) =>
-      `import * as route${index} from '${importPath(out, posix.join(appDir, route.file))}';`
-  );
-  const entries = sorted.map(
-    (route, index) =>
-      `  { pattern: ${JSON.stringify(route.pattern)}, module: route${index}${literal(route.defaults)} },`
-  );
+  const imports: string[] = [];
+  const entries = sorted.map((route, index) => {
+    const from = importPath(out, posix.join(appDir, route.file));
+    const methods = lazyMethods.get(route.file);
+    let module = `route${index}`;
+    if (methods)
+      module = `lazyRouteModule(() => import('${from}'), ${JSON.stringify(methods)})`;
+    else imports.push(`import * as route${index} from '${from}';`);
+    return `  { pattern: ${JSON.stringify(route.pattern)}, module: ${module}${literal(route.defaults)} },`;
+  });
+  const lazy = lazyMethods.size > 0;
   return `${HEADER}import {
   type BridgeEndpoint,
-  sortEndpoints,
+${lazy ? '  lazyRouteModule,\n' : ''}  sortEndpoints,
 } from '@tuturuuu/start-bridge/endpoints';
-${imports.join('\n')}
-
+${imports.map((line) => `${line}\n`).join('')}
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
 ${entries.join('\n')}
 ]);
 `;
 }
 
-export function renderApiPatterns(routes: RouteFile[]) {
-  const patterns = [...new Set(routes.map((route) => route.pattern))].sort();
+function lazyRouteMethods(
+  config: RegistryConfig,
+  appDir: string,
+  routes: RouteFile[],
+  readSource: ((path: string) => string) | undefined
+) {
+  const methods = new Map<string, HttpMethod[]>();
+  if (!config.api?.lazy || !readSource) return methods;
+  for (const route of routes)
+    if (route.kind === 'route') {
+      const found = exportedMethods(readSource(posix.join(appDir, route.file)));
+      if (found) methods.set(route.file, found);
+    }
+  return methods;
+}
+
+export function renderApiPatterns(
+  routes: RouteFile[],
+  forwarded: readonly string[] = []
+) {
+  const patterns = [
+    ...new Set([...routes.map((route) => route.pattern), ...forwarded]),
+  ].sort();
   return `${HEADER}export const appApiPatterns = [
 ${patterns.map((pattern) => `  ${JSON.stringify(pattern)},`).join('\n')}
 ] as const;
@@ -160,7 +236,9 @@ export type PagePattern = (typeof pages)[number]['pattern'];
 export function planRegistries(
   config: RegistryConfig,
   files: readonly string[],
-  exists: (appRelativePath: string) => boolean
+  exists: (appRelativePath: string) => boolean,
+  /** App-relative source reader; required for `api.lazy`. */
+  readSource?: (appRelativePath: string) => string
 ): RegistryPlan {
   const appDir = config.appDir ?? 'src/app';
   const owned = config.owned ?? {};
@@ -196,6 +274,9 @@ export function planRegistries(
     }
     routes.push(classified);
   }
+  for (const pattern of config.api?.forwarded ?? [])
+    if (!/^\/api(?:\/|$)/u.test(pattern))
+      errors.push(`api.forwarded: ${pattern} is not an /api pattern`);
   for (const file of [...Object.keys(owned), ...Object.keys(ignored)])
     if (!seen.has(file))
       errors.push(`${file}: declared in owned/ignored but no such route file`);
@@ -220,14 +301,16 @@ export function planRegistries(
       content: renderApiRegistry(
         config.api.out,
         appDir,
-        routes.filter((route) => route.kind === 'route')
+        routes.filter((route) => route.kind === 'route'),
+        lazyRouteMethods(config, appDir, routes, readSource)
       ),
     });
   if (config.api?.patternsOut)
     generated.push({
       path: config.api.patternsOut,
       content: renderApiPatterns(
-        routes.filter((route) => route.kind === 'route')
+        routes.filter((route) => route.kind === 'route'),
+        config.api.forwarded
       ),
     });
   if (config.pages)
