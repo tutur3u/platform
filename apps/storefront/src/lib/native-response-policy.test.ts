@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import config from '../../start-bridge.config';
 
-const wrapResponse = config.wrapResponse;
-if (!wrapResponse) throw new Error('Native response policy is required');
-
 function decorate(path: string, headers: HeadersInit = {}) {
+  const wrapResponse = config.wrapResponse;
+  if (!wrapResponse) throw new Error('Native response policy is required');
   return wrapResponse(new Response('body', { headers }), {
     request: new Request(`https://storefront.tuturuuu.com${path}`),
     env: {},
