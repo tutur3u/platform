@@ -65,6 +65,29 @@ Domain and DNS/proxy topology before disabling a candidate. Never replay uncerta
 Mail sends or change ingestion/R2 ownership as a frontend rollback. Rehearse recovery;
 DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 
+## Subdomain cutover tools
+
+Native apps go live on their own subdomain first (root mode). Two read-only
+scripts support gate 4 and the post-deploy check:
+
+- `node scripts/native-cutover/capture.mjs --host <app>.tuturuuu.com --vercel-project <project> [--cf-zone-id <zone>] --out <file>`
+  records DNS, the live edge (`server`, `x-vercel-id`, `cf-ray`, runtime
+  header), Vercel's current production deployment (URL and `dpl_` id) and, with
+  a read-only `CLOUDFLARE_API_TOKEN`, the host's DNS record (proxied flag, TTL)
+  and Worker routes. Run it again immediately before the flip; production
+  deployments keep moving.
+- `node scripts/native-cutover/smoke.mjs --origin https://<app>.tuturuuu.com --app <id> --expect native|legacy`
+  checks robots, the anonymous login handoff (return URL on the app host,
+  `nextUrl` kept), a protected API (401), build-info, the server-function guard,
+  crawler SSR with a working asset, a wildcard `Accept-Language`, the runtime
+  header and the anti-framing headers on every response. Run `--expect legacy`
+  before the flip as the baseline and `--expect native` after it.
+
+Prefer a rollback that does not wait on DNS: once the host's record is proxied
+and serves the Vercel origin correctly, cut over by attaching the Worker route
+and roll back by detaching it. A DNS-only CNAME switch rolls back only as fast as
+its TTL.
+
 Observe Apps for at least 14 days and Meet/Mail/provider-critical Calendar flows for
 30 days or the relevant business cycle before separately authorized decommissioning.
 No hold removal, resource provisioning, deployment or DNS change is authorized by
