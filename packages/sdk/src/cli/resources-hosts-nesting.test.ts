@@ -70,36 +70,32 @@ async function nested(
       },
     ],
   };
-  const marker = join(home, 'nested.ran');
+  const marker = join(home, 'nested \' " $ \u2028 marker.ran');
   const result = join(home, 'nested.result');
   const script = join(home, 'nested.ts');
-  const command = `require('node:fs').writeFileSync(${JSON.stringify(marker)}, process.env.TTR_RESOURCES_ADMITTED || 'ran')`;
-  const argv = trivial ? ['/usr/bin/true'] : [bun, '-e', command];
-  const run =
-    kind === 'heavy lane' || trivial
-      ? `
-      const {mock}=await import('bun:test');
-      const setup=await import(${JSON.stringify(setupModule)}),validate=setup.installedResourceShims;
-      mock.module(${JSON.stringify(setupModule)},()=>({...setup,installedResourceShims:(path)=>validate(path,${JSON.stringify(join(home, 'fixture-shim.ts'))})}));
-      const config=await import(${JSON.stringify(registryModule)});
-      mock.module(${JSON.stringify(registryModule)},()=>({...config,readHostRegistry:async()=>(${JSON.stringify(registry)})}));
-      const {runResourcesCommand}=await import(${JSON.stringify(cliModule)});
-      ${bypass ? "process.env.TTR_RESOURCES_BYPASS='1';" : ''}
-      await runResourcesCommand(['run','--hosts','--requires',${JSON.stringify(requirement)},'--',...${JSON.stringify(argv)}]);
-    `
-      : `
-      const {hostsRun}=await import(${JSON.stringify(dispatchModule)});
-      await hostsRun({home:${JSON.stringify(home)},command:'nested',args:[],requires:[${JSON.stringify(requirement)}],jobClass:'light',registry:${JSON.stringify(registry)},deps:{
-        fleet:async()=>undefined,commitPlan:async()=>undefined,log:()=>{},
-        runLocal:async()=>{writeFileSync(${JSON.stringify(marker)},'ran');return 0},runRemote:async()=>1
-      }});
-    `;
+  const command =
+    "require('node:fs').writeFileSync(process.argv[1], process.env.TTR_RESOURCES_ADMITTED || 'ran')";
+  const argv = trivial ? ['/usr/bin/true'] : [bun, '-e', command, marker];
   await writeFile(
-    script,
-    `import {writeFileSync} from 'node:fs';
-    try { await (async()=>{${run}})(); writeFileSync(${JSON.stringify(result)},'ok'); }
-    catch(error){writeFileSync(${JSON.stringify(result)},String(error.message));}`
+    join(home, 'nested.json'),
+    JSON.stringify({
+      kind,
+      trivial,
+      bypass,
+      requirement,
+      registry,
+      argv,
+      home,
+      marker,
+      result,
+      setupModule,
+      registryModule,
+      cliModule,
+      dispatchModule,
+      shim: join(home, 'fixture-shim.ts'),
+    })
   );
+  await writeFile(script, nestedScript);
   if (kind === 'heavy lane') {
     const outcome = await fixtures.laneLaunch(home, ['run', '--', bun, script])
       .done;
@@ -157,3 +153,31 @@ async function nested(
   expect((await resourceQueueStatus(home)).occupied).toBe(0);
   expect(await hostLedger(home)).toEqual({ tickets: [], reservations: [] });
 }
+
+const nestedScript = `
+import {readFileSync, writeFileSync} from 'node:fs';
+const fixture = JSON.parse(readFileSync(new URL('./nested.json', import.meta.url), 'utf8'));
+try {
+  if (fixture.kind === 'heavy lane' || fixture.trivial) {
+    const {mock} = await import('bun:test');
+    const setup = await import(fixture.setupModule), validate = setup.installedResourceShims;
+    mock.module(fixture.setupModule, () => ({...setup,
+      installedResourceShims: (path) => validate(path, fixture.shim)}));
+    const config = await import(fixture.registryModule);
+    mock.module(fixture.registryModule, () => ({...config, readHostRegistry: async () => fixture.registry}));
+    const {runResourcesCommand} = await import(fixture.cliModule);
+    if (fixture.bypass) process.env.TTR_RESOURCES_BYPASS = '1';
+    await runResourcesCommand(['run', '--hosts', '--requires', fixture.requirement, '--', ...fixture.argv]);
+  } else {
+    const {hostsRun} = await import(fixture.dispatchModule);
+    await hostsRun({home: fixture.home, command: 'nested', args: [],
+      requires: [fixture.requirement], jobClass: 'light', registry: fixture.registry, deps: {
+        fleet: async () => undefined, commitPlan: async () => undefined, log: () => {},
+        runLocal: async () => {writeFileSync(fixture.marker, 'ran'); return 0}, runRemote: async () => 1
+      }});
+  }
+  writeFileSync(fixture.result, 'ok');
+} catch (error) {
+  writeFileSync(fixture.result, String(error.message));
+}
+`;
