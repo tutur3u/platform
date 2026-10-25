@@ -9,11 +9,31 @@ import {
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
+  createAdminClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: async () => ({
+    user: { id: 'actor-a' },
+    authError: null,
+  }),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async ({ wsId }: { wsId: string }) => ({
+    wsId,
+    withoutPermission: () => false,
+  }),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(),
+  createAdminClient: mocks.createAdminClient,
   createClient: mocks.createClient,
+}));
+
+vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+vi.mock('@tuturuuu/auth/api-keys', () => ({
+  validateApiKey: vi.fn(),
+  logApiKeyUsage: vi.fn(),
 }));
 
 import { POST as postCell } from './cells/route';
@@ -32,6 +52,9 @@ describe('dataset cell writes stay inside one dataset', () => {
     vi.clearAllMocks();
     db = seedDb();
     mocks.createClient.mockImplementation(async () => createFakeSupabase(db));
+    mocks.createAdminClient.mockImplementation(async () =>
+      createFakeSupabase(db)
+    );
   });
 
   const cellsFor = (rowId: string) =>
@@ -118,4 +141,9 @@ describe('dataset cell writes stay inside one dataset', () => {
       expect.objectContaining({ column_id: 'col-a', data: 'updated' })
     );
   });
+});
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return { ...actual, connection: async () => undefined };
 });

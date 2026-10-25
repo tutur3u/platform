@@ -440,3 +440,15 @@ the exact check only for the oversized tail in one transaction. The table lock
 lasts through commit; do not drop the check before the regular scan. Preserve
 payload bytes and verify the safe-only path retains the constraint OID. See
 [disposable proof requirements](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#backfills-with-historical-payload-violations).
+
+### Dataset server access
+
+Dataset client grants and RLS policies remain revoked by
+`20260312113000_lock_description_tables_to_server_apis`. Use the shared
+`apps/web/src/lib/datasets/access.ts` authorization flow, which resolves the actor
+and `getPermissions` workspace/`ai_lab` authority before creating a dataset admin
+client. Bind the dataset to the verified workspace, and retain its `dataset_id`
+on all child reads and mutations. Validate row/column ids inside that parent;
+never restore direct client grants as an API repair. See the
+[authorization decision](../../../../../apps/docs/platform/architecture/authorization.mdx)
+and the opt-in dataset `local-chain.test.ts` for full local Auth/PostgREST checks.

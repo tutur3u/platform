@@ -140,7 +140,7 @@ describe('bd3 emitted asset transform review', () => {
           request: new Request('https://tuturuuu.com/meet'),
         })
     );
-    const emitted = preset.base + 'assets/app.js';
+    const emitted = `${preset.base}assets/app.js`;
     expect(transform({ url: emitted, kind: 'script' })).toBe(
       '/meet/assets/app.js'
     );
