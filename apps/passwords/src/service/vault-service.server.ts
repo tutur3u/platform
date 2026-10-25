@@ -199,7 +199,7 @@ export function createPasswordsService(
         return observation;
       }),
     state: (input) =>
-      run(false, async (): Promise<PasswordsState> => {
+      run(false, async (engine): Promise<PasswordsState> => {
         const workspace = await database.resolveWorkspace(input.wsId);
         const vaults = (await engine.vaults(workspace.wsId)).map(summary);
         const selected = input.vaultId
