@@ -75,6 +75,15 @@ localization changes.
   through the navigator key.
 - See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
   and its layout/rail regression tests.
+- Redesigned mini apps compose `package:mobile/core/ui/kit/kit.dart`
+  (`AppSummaryHero`, `AppSectionHeader`, `AppStatTile`, `AppPanel`,
+  `AppRichRow`, `AppFilterBar`, `AppSegmentedControl`, `AppAdaptiveGrid`,
+  `AppGroupedSlice` for lazy grouped lists) and follow the
+  [mobile design language](../../../../../apps/docs/build/development-tools/mobile-design-language.mdx):
+  one hero per root, one `AppTone` per app, no shadows or blur on list
+  content, and render evidence from `test/helpers/design_render_harness.dart`.
+  CMS (`features/cms`) is the reference migration; retire `finance_ui.dart`
+  widgets per app using the mapping table there.
 
 ## Design System And shadcn Removal
 

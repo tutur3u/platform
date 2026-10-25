@@ -185,6 +185,11 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                 return SingleChildScrollView(
                   key: _timelineViewportKey,
                   controller: _scrollController,
+                  // The calendar canvas passes the dock clearance through, so
+                  // the last hour can scroll clear of the dock.
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.paddingOf(context).bottom,
+                  ),
                   child: GestureDetector(
                     onLongPressStart: (details) {
                       if (_zoomBlocked()) return;

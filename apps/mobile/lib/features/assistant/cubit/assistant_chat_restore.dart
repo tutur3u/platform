@@ -10,7 +10,11 @@ extension _AssistantChatRestore on AssistantChatCubit {
         !isClosed &&
         workspaceVersion == _workspaceVersion &&
         _repository.currentActorId == actor;
-    final preserveState = state.workspaceId == wsId && state.hasLoadedOnce;
+    final preserveState =
+        state.workspaceId == wsId &&
+        state.hasLoadedOnce &&
+        _messageActorId == actor;
+    _messageActorId = null;
     await _cancelReplyStream();
     if (!current()) return;
     _queueDebounce?.cancel();
@@ -26,6 +30,8 @@ extension _AssistantChatRestore on AssistantChatCubit {
           fallbackChatId: _repository.generateUuid(),
           composerAttachments: const [],
           queuedMessages: const [],
+          replyTarget: null,
+          reactionResult: null,
           status: AssistantChatStatus.restoring,
           clearError: true,
         ),
@@ -55,6 +61,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
 
       if (storedChatId == null) {
         if (!current()) return;
+        _messageActorId = actor;
         _emitIfOpen(
           state.copyWith(
             status: AssistantChatStatus.idle,
@@ -134,6 +141,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
 
       _publishRestoredSettings(restored.settings);
       if (!current()) return;
+      _messageActorId = actor;
       _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,
@@ -183,6 +191,8 @@ extension _AssistantChatRestore on AssistantChatCubit {
     _emitIfOpen(
       state.copyWith(
         workspaceId: wsId,
+        replyTarget: null,
+        reactionResult: null,
         status:
             forceRefresh &&
                 state.chat?.id == chatId &&
@@ -212,6 +222,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
       }
       _publishRestoredSettings(restored.settings);
       if (!current()) return;
+      _messageActorId = actor;
       _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,

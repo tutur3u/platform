@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(32);
+select plan(35);
 
 -- Privileges and shape.
 select ok(
@@ -81,6 +81,38 @@ insert into auth.users (id, email, email_confirmed_at) values
 insert into public.users (id)
 select id from auth.users where id::text like 'e2000000-%'
 on conflict do nothing;
+
+set local session_replication_role = replica;
+
+insert into public.notifications (id, user_id, email, scope, type, title)
+values (
+  'e2000000-0000-0000-0000-0000000000a2',
+  'e2000000-0000-0000-0000-000000000001',
+  'legacy-copy@example.test',
+  'user',
+  'account_update',
+  'Legacy email copy'
+);
+
+set local session_replication_role = origin;
+
+select is(
+  private.clear_notification_email_copy_batch(500),
+  1,
+  'A bounded cleanup batch clears an existing recipient email copy'
+);
+
+select is(
+  (select email from public.notifications where id = 'e2000000-0000-0000-0000-0000000000a2'),
+  null::text,
+  'The recipient address is removed from the stored notification row'
+);
+
+select is(
+  private.clear_notification_email_copy_batch(500),
+  0,
+  'The cleanup batch is idempotent after the copy is cleared'
+);
 
 -- Normalization on write.
 insert into public.notifications (id, user_id, email, scope, type, title)

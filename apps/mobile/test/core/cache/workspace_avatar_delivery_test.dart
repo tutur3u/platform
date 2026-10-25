@@ -21,11 +21,11 @@ class _WorkspaceAvatarApi extends ApiClient {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     expect(path, WorkspaceEndpoints.avatarUploadUrl('server-ws'));
-    expect(body, {'filename': 'avatar.png'});
+    expect(body, {'filename': 'avatar.jpg'});
     return {
       'uploadUrl': 'https://upload.example.test/logo',
       'token': 'fresh-token',
-      'filePath': 'avatars/server-ws/logo.png',
+      'filePath': 'avatars/server-ws/logo.jpg',
     };
   }
 
@@ -62,12 +62,12 @@ void main() {
           img.encodePng(img.Image(width: 2, height: 2)),
         ),
       );
-      expect(img.decodePng(requests.single.bodyBytes)?.width, 2);
+      expect(img.decodeJpg(requests.single.bodyBytes)?.width, 2);
       expect(requests.single.bodyBytes.length, lessThanOrEqualTo(1000000));
-      expect(requests.single.headers['content-type'], 'image/png');
+      expect(requests.single.headers['content-type'], 'image/jpeg');
       expect(requests.single.headers['authorization'], 'Bearer fresh-token');
       expect(api.updates, [
-        {'filePath': 'avatars/server-ws/logo.png'},
+        {'filePath': 'avatars/server-ws/logo.jpg'},
       ]);
       api.dispose();
       client.close();

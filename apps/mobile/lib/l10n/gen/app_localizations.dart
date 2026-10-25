@@ -3385,6 +3385,90 @@ abstract class AppLocalizations {
   /// **'CMS'**
   String get cmsTitleApp;
 
+  /// No description provided for @cmsPipelineEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing pipeline'**
+  String get cmsPipelineEyebrow;
+
+  /// No description provided for @cmsPublishedOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{published} of {total} published'**
+  String cmsPublishedOfTotal(int published, int total);
+
+  /// No description provided for @cmsPipelineSupporting.
+  ///
+  /// In en, this message translates to:
+  /// **'{drafts} in draft · {scheduled} scheduled'**
+  String cmsPipelineSupporting(int drafts, int scheduled);
+
+  /// No description provided for @cmsEntryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 entry} other{{count} entries}}'**
+  String cmsEntryCount(int count);
+
+  /// No description provided for @cmsCollectionDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get cmsCollectionDisabled;
+
+  /// No description provided for @cmsCollectionsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing by collection'**
+  String get cmsCollectionsProgress;
+
+  /// No description provided for @cmsNoCollectionsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections group one kind of content, such as articles or events. Create one to start writing entries.'**
+  String get cmsNoCollectionsMessage;
+
+  /// No description provided for @cmsNoEntriesMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries match these filters.'**
+  String get cmsNoEntriesMatch;
+
+  /// No description provided for @cmsNoEntriesMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another status or collection, or clear the search.'**
+  String get cmsNoEntriesMatchMessage;
+
+  /// No description provided for @cmsFilterByCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by collection'**
+  String get cmsFilterByCollection;
+
+  /// No description provided for @cmsDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get cmsDetailsSection;
+
+  /// No description provided for @cmsPublishingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing'**
+  String get cmsPublishingSection;
+
+  /// No description provided for @cmsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load content'**
+  String get cmsLoadFailed;
+
+  /// No description provided for @cmsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh. Showing the last loaded content.'**
+  String get cmsRefreshFailed;
+
   /// No description provided for @commonActive.
   ///
   /// In en, this message translates to:
@@ -20629,12 +20713,6 @@ abstract class AppLocalizations {
   /// **'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.'**
   String get assistantSettingsSelectionUnconfirmed;
 
-  /// No description provided for @assistantExpandPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Expand prompt'**
-  String get assistantExpandPrompt;
-
   /// No description provided for @assistantSettingInfo.
   ///
   /// In en, this message translates to:
@@ -21066,6 +21144,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submitted successfully'**
   String get assistantSubmitSuccess;
+
+  /// No description provided for @offlineDownloadsPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads paused. Saved data is still available. We will retry in the background.'**
+  String get offlineDownloadsPaused;
+
+  /// No description provided for @offlineDownloadsRetryLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads are still unavailable. Try again later; saved data is still available.'**
+  String get offlineDownloadsRetryLimit;
+
+  /// No description provided for @mailSettingsReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved settings are read-only until access can be verified.'**
+  String get mailSettingsReadOnly;
+
+  /// No description provided for @calendarSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save calendar preferences. Retry when online.'**
+  String get calendarSettingsError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

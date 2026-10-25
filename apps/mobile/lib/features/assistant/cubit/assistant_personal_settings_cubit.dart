@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
@@ -10,11 +12,16 @@ class AssistantPersonalSettingsState {
     this.loading = true,
     this.busy = false,
     this.failed = false,
+    this.soulFresh = false,
+    this.error,
   });
   final AssistantPersonalSettingsSnapshot? snapshot;
   final bool loading;
   final bool busy;
   final bool failed;
+  final bool soulFresh;
+  bool get canEditSoul => soulFresh && !loading && !busy && snapshot != null;
+  final Object? error;
 }
 
 class AssistantPersonalSettingsCubit
@@ -45,17 +52,57 @@ class AssistantPersonalSettingsCubit
     if (!admitted || state.busy) return;
     final version = ++_generation;
     emit(AssistantPersonalSettingsState(snapshot: state.snapshot));
+    var acceptCache = true;
+    Future<void> restoreCache() async {
+      try {
+        final soul = await repository.readCachedSoul();
+        if (!_current(version) ||
+            !acceptCache ||
+            soul == null ||
+            state.snapshot != null) {
+          return;
+        }
+        emit(
+          AssistantPersonalSettingsState(
+            snapshot: AssistantPersonalSettingsSnapshot(
+              soul: soul,
+              memoryEnabled: null,
+              memories: const [],
+            ),
+            loading: state.loading,
+            failed: state.failed,
+            error: state.error,
+          ),
+        );
+      } on Object {
+        // An unavailable cache cannot gate fresh settings or change their
+        // error.
+      }
+    }
+
     try {
-      final snapshot = await repository.load(workspaceId);
+      final fresh = repository.load(workspaceId);
+      unawaited(restoreCache());
+      final snapshot = await fresh;
+      acceptCache = false;
       if (!_current(version)) return;
-      emit(AssistantPersonalSettingsState(snapshot: snapshot, loading: false));
-    } on Object {
+      emit(
+        AssistantPersonalSettingsState(
+          snapshot: snapshot,
+          loading: false,
+          soulFresh: true,
+        ),
+      );
+    } on Object catch (error) {
+      final denied = isAssistantSettingsDenial(error);
+      if (denied) acceptCache = false;
       if (_current(version)) {
         emit(
           AssistantPersonalSettingsState(
-            snapshot: state.snapshot,
+            snapshot: denied ? null : state.snapshot,
             loading: false,
             failed: true,
+            error: error,
           ),
         );
       }
@@ -68,7 +115,10 @@ class AssistantPersonalSettingsCubit
     )
     action,
   ) async {
-    if (!admitted || state.busy || state.snapshot == null) return false;
+    if (!admitted || state.loading || state.busy || state.snapshot == null) {
+      return false;
+    }
+    final soulFresh = state.soulFresh;
     final version = ++_generation;
     final previous = state.snapshot!;
     emit(
@@ -76,20 +126,29 @@ class AssistantPersonalSettingsCubit
         snapshot: previous,
         loading: false,
         busy: true,
+        soulFresh: soulFresh,
       ),
     );
     try {
       final snapshot = await action(previous);
       if (!_current(version)) return false;
-      emit(AssistantPersonalSettingsState(snapshot: snapshot, loading: false));
+      emit(
+        AssistantPersonalSettingsState(
+          snapshot: snapshot,
+          loading: false,
+          soulFresh: soulFresh,
+        ),
+      );
       return true;
-    } on Object {
+    } on Object catch (error) {
       if (_current(version)) {
         emit(
           AssistantPersonalSettingsState(
-            snapshot: previous,
+            snapshot: isAssistantSettingsDenial(error) ? null : previous,
+            soulFresh: !isAssistantSettingsDenial(error) && soulFresh,
             loading: false,
             failed: true,
+            error: error,
           ),
         );
       }
@@ -97,27 +156,35 @@ class AssistantPersonalSettingsCubit
     }
   }
 
-  Future<bool> saveSoul(AssistantSoul soul) => _write(
-    (previous) async => AssistantPersonalSettingsSnapshot(
-      soul: await repository.saveSoul(soul),
-      memoryEnabled: previous.memoryEnabled,
-      memories: state.snapshot?.memories ?? previous.memories,
-      products: previous.products,
-    ),
-  );
-
-  Future<bool> setMemoryEnabled({required bool enabled}) => _write(
-    (previous) async => AssistantPersonalSettingsSnapshot(
-      soul: previous.soul,
-      memoryEnabled: await repository.setMemoryEnabled(
-        workspaceId,
-        enabled: enabled,
+  Future<bool> saveSoul(AssistantSoul soul) {
+    if (!admitted || !state.canEditSoul) return Future.value(false);
+    return _write(
+      (previous) async => AssistantPersonalSettingsSnapshot(
+        soul: await repository.saveSoul(soul),
+        memoryEnabled: previous.memoryEnabled,
+        memories: state.snapshot?.memories ?? previous.memories,
         products: previous.products,
       ),
-      memories: state.snapshot?.memories ?? previous.memories,
-      products: previous.products,
-    ),
-  );
+    );
+  }
+
+  Future<bool> setMemoryEnabled({required bool enabled}) {
+    if (!admitted || state.snapshot?.memoryEnabled == null) {
+      return Future.value(false);
+    }
+    return _write(
+      (previous) async => AssistantPersonalSettingsSnapshot(
+        soul: previous.soul,
+        memoryEnabled: await repository.setMemoryEnabled(
+          workspaceId,
+          enabled: enabled,
+          products: previous.products,
+        ),
+        memories: state.snapshot?.memories ?? previous.memories,
+        products: previous.products,
+      ),
+    );
+  }
 
   void applyConfirmedMemoryEdit(EditableAssistantMemory memory) {
     if (!admitted || state.snapshot == null) return;
@@ -140,7 +207,9 @@ class AssistantPersonalSettingsCubit
         ),
         loading: false,
         busy: state.busy,
+        soulFresh: state.soulFresh,
         failed: state.failed,
+        error: state.error,
       ),
     );
   }

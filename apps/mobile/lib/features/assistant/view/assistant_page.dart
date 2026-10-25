@@ -43,7 +43,6 @@ import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart'
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
@@ -69,7 +68,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
-import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';

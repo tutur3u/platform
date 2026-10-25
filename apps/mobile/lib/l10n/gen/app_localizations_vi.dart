@@ -1696,6 +1696,59 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cmsTitleApp => 'CMS';
 
   @override
+  String get cmsPipelineEyebrow => 'Quy trình xuất bản';
+
+  @override
+  String cmsPublishedOfTotal(int published, int total) {
+    return 'Đã xuất bản $published/$total';
+  }
+
+  @override
+  String cmsPipelineSupporting(int drafts, int scheduled) {
+    return '$drafts bản nháp · $scheduled đã lên lịch';
+  }
+
+  @override
+  String cmsEntryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mục',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cmsCollectionDisabled => 'Đã tắt';
+
+  @override
+  String get cmsCollectionsProgress => 'Xuất bản theo bộ sưu tập';
+
+  @override
+  String get cmsNoCollectionsMessage => 'Bộ sưu tập nhóm một loại nội dung, như bài viết hoặc sự kiện. Hãy tạo một bộ sưu tập để bắt đầu viết.';
+
+  @override
+  String get cmsNoEntriesMatch => 'Không có mục nội dung nào khớp bộ lọc.';
+
+  @override
+  String get cmsNoEntriesMatchMessage => 'Thử trạng thái hoặc bộ sưu tập khác, hoặc xóa từ khóa tìm kiếm.';
+
+  @override
+  String get cmsFilterByCollection => 'Lọc theo bộ sưu tập';
+
+  @override
+  String get cmsDetailsSection => 'Chi tiết';
+
+  @override
+  String get cmsPublishingSection => 'Xuất bản';
+
+  @override
+  String get cmsLoadFailed => 'Không thể tải nội dung';
+
+  @override
+  String get cmsRefreshFailed => 'Không thể làm mới. Đang hiển thị nội dung đã tải gần nhất.';
+
+  @override
   String get commonActive => 'Đang hoạt động';
 
   @override
@@ -10761,9 +10814,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSettingsSelectionUnconfirmed => 'Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.';
 
   @override
-  String get assistantExpandPrompt => 'Mở rộng lời nhắc';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'Thông tin về $setting';
   }
@@ -11002,4 +11052,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantSubmitSuccess => 'Đã gửi thành công';
+
+  @override
+  String get offlineDownloadsPaused => 'Đã tạm dừng tải xuống. Bạn vẫn có thể dùng dữ liệu đã lưu. Ứng dụng sẽ thử lại trong nền.';
+
+  @override
+  String get offlineDownloadsRetryLimit => 'Hiện vẫn chưa thể tải xuống. Hãy thử lại sau; bạn vẫn có thể dùng dữ liệu đã lưu.';
+
+  @override
+  String get mailSettingsReadOnly => 'Cài đặt đã lưu ở chế độ chỉ đọc cho đến khi xác minh được quyền truy cập.';
+
+  @override
+  String get calendarSettingsError => 'Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng.';
 }

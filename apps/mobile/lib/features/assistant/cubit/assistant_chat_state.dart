@@ -23,6 +23,8 @@ class AssistantChatState extends Equatable {
     this.isComposerCollapsed = false,
     this.error,
     this.diagnostics,
+    this.replyTarget,
+    this.reactionResult,
   });
 
   final String? workspaceId;
@@ -40,6 +42,8 @@ class AssistantChatState extends Equatable {
   final bool isComposerCollapsed;
   final String? error;
   final SafeErrorDiagnostics? diagnostics;
+  final AssistantMessage? replyTarget;
+  final AssistantReactionResult? reactionResult;
 
   bool get isBusy =>
       status == AssistantChatStatus.submitting ||
@@ -62,6 +66,8 @@ class AssistantChatState extends Equatable {
     Object? error = _assistantChatSentinel,
     bool clearError = false,
     Object? diagnostics = _assistantChatSentinel,
+    Object? replyTarget = _assistantChatSentinel,
+    Object? reactionResult = _assistantChatSentinel,
   }) {
     return AssistantChatState(
       workspaceId: workspaceId == _assistantChatSentinel
@@ -85,6 +91,12 @@ class AssistantChatState extends Equatable {
       history: history ?? this.history,
       queuedMessages: queuedMessages ?? this.queuedMessages,
       isComposerCollapsed: isComposerCollapsed ?? this.isComposerCollapsed,
+      replyTarget: replyTarget == _assistantChatSentinel
+          ? this.replyTarget
+          : replyTarget as AssistantMessage?,
+      reactionResult: reactionResult == _assistantChatSentinel
+          ? this.reactionResult
+          : reactionResult as AssistantReactionResult?,
       diagnostics: clearError
           ? null
           : diagnostics == _assistantChatSentinel
@@ -117,5 +129,7 @@ class AssistantChatState extends Equatable {
     isComposerCollapsed,
     error,
     diagnostics,
+    replyTarget,
+    reactionResult,
   ];
 }

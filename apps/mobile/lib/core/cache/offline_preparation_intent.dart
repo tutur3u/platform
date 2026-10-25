@@ -8,9 +8,13 @@ class OfflinePreparationIntent {
   const OfflinePreparationIntent({
     required this.products,
     this.wifiOnly = true,
+    this.retryAt,
+    this.retryAttempts = 0,
   });
   final Set<String> products;
   final bool wifiOnly;
+  final DateTime? retryAt;
+  final int retryAttempts;
 }
 
 abstract interface class OfflinePreparationIntentStore {
@@ -42,6 +46,12 @@ class CachedOfflinePreparationIntentStore
         return OfflinePreparationIntent(
           products: (json['products'] as List).whereType<String>().toSet(),
           wifiOnly: json['wifiOnly'] as bool,
+          retryAt: json['retryAt'] is String
+              ? DateTime.tryParse(json['retryAt'] as String)
+              : null,
+          retryAttempts: json['retryAttempts'] is int
+              ? (json['retryAttempts'] as int).clamp(0, 3)
+              : 0,
         );
       },
     );
@@ -66,6 +76,8 @@ class CachedOfflinePreparationIntentStore
     payload: {
       'products': intent?.products.toList() ?? <String>[],
       'wifiOnly': intent?.wifiOnly ?? true,
+      'retryAt': intent?.retryAt?.toUtc().toIso8601String(),
+      'retryAttempts': intent?.retryAttempts ?? 0,
     },
   );
 }

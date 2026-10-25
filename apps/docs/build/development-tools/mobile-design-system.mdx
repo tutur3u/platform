@@ -56,8 +56,12 @@ Max content width (gutters included) per `AppPageKind`:
 | `form` | auth, create and edit forms | 480 | 480 |
 | `reading` | documents, notes, long text | 640 | 680 |
 
-Compact screens never constrain width. `ResponsivePadding` is a compatibility
-layer that derives from these tokens; its names and values are unchanged.
+Compact screens never constrain width. The max width is the content box, so
+the usable field width is the max width minus both gutters: a `form` at 480dp
+gives 432dp fields on medium bodies and 416dp on expanded bodies. Auth screens
+(`AuthScaffold`) intentionally use that 416–432dp field width.
+`ResponsivePadding` is a compatibility layer that derives from these tokens;
+its names and values are unchanged.
 
 ## Page primitives
 
@@ -299,8 +303,8 @@ Feature screens use the primitives with these page kinds:
 
 | Kind | Screens |
 | --- | --- |
-| `root` | Home dashboard, Apps hub, Assistant transcript and start state, Drive, Meet lobby, Chat surface (two panes), Notes (list and editor), CMS overview, Mobile versions, board timeline, calendar year grid |
-| `detail` | Notifications inbox and archive, task lists, boards, planning, portfolio, estimates, habits, time tracker tabs and requests; finance, inventory and storefront lists and overviews; education, CMS library and CRM; mail organization; Meet ended review; workspace select, accounts, security, reminders |
+| `root` | Home dashboard, Apps hub, Assistant transcript and start state, Drive grid, Meet lobby, Chat surface (two panes), Notes (list and editor), CMS overview, Mobile versions, board timeline, calendar year grid |
+| `detail` | Notifications inbox and archive, Drive list, task lists, boards, planning, portfolio, estimates, habits, time tracker tabs and requests; finance, inventory and storefront lists and overviews; education, CMS library and CRM; mail organization; Meet ended review; workspace select, accounts, security, reminders |
 | `form` | Auth screens (`AuthScaffold`), inventory editors (`InventoryFormScaffold`), mail composer and settings, product feedback, MFA request, required-update gate, Assistant memory and personality editors |
 | `reading` | Documents editor, mail reader |
 
@@ -309,8 +313,10 @@ canvas, chat threads and composers, Assistant Live, the Meet call grid, and
 media/attachment viewers. Their headers, empty states and loading states still
 use the gutter. When a page passes the dock clearance through
 (`consumeBottomClearance: false`), a scrolling canvas pads its own scroll end.
-A fixed, non-scrolling canvas such as the month grid must stop above the dock
-by reserving `MediaQuery.paddingOf(context).bottom` below itself.
+The calendar day, 3-day and week timelines pad their vertical scroll end with
+`MediaQuery.paddingOf(context).bottom`, so the last hour scrolls clear of the
+dock. A fixed, non-scrolling canvas such as the month grid must stop above the
+dock by reserving the same clearance below itself.
 
 Shell detail routes that are not mini-app nav items, such as a portfolio
 project, register `ShellTitleOverride` and a `ShellMiniNav` with a
@@ -327,10 +333,18 @@ Documented exceptions:
   in that footer instead of consuming dock clearance.
 - Settings, Home, Notifications and Profile migrate in their own lanes. The
   full-screen task detail view keeps its own inset math until it is reworked.
+  The Mail and Assistant settings hubs move to the shared insets with their
+  settings stacks.
+- Onboarding is a full-screen flow above the shell with paged slides. Its
+  slides and footer keep their own horizontal padding and system insets.
 
 Layout widths should come from the constraints a widget receives
-(`LayoutBuilder`), not `MediaQuery.sizeOf(context)`. Beside the rail, the
-window is wider than the body.
+(`LayoutBuilder`), not `MediaQuery.sizeOf(context)` or `context.isCompact`.
+Beside the rail, the window is wider than the body. Use
+`AppPageInsets.gutterOf(context, width: constraints.maxWidth)` for a gutter
+outside the page primitives, as the Meet and Assistant Live canvases do.
+Overlays such as `showAdaptiveDrawer` keep the window class, because they
+open above the shell rather than inside the body.
 
 ## Regression coverage
 
@@ -365,7 +379,14 @@ window is wider than the body.
 - `test/core/layout/page_padding_matrix_test.dart`: representative detail and
   form screens at phone, portrait/landscape tablet and desktop widths. It
   checks that the page list uses the resolved insets, the scrollable stays
-  full width, and content stays within the page kind's max width.
+  full width, and the content width equals the body or max width minus both
+  gutters. A rail-narrowed case checks that an expanded window whose body is
+  medium resolves medium insets.
+- `test/features/calendar/widgets/timeline_dock_clearance_test.dart` and
+  `month_view_dock_clearance_test.dart`: the timelines scroll their last hour
+  clear of the dock, and the month grid stops above it.
+- `test/features/drive/drive_page_test.dart`: the Drive list keeps the detail
+  width on a landscape tablet while the grid uses the root width.
   `DESIGN_RENDER_DIR` writes PNG captures.
 
 ### Custom selection and date controls

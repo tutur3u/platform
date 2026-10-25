@@ -266,7 +266,7 @@ so this control denies their stored model/credit edits before PATCH; their
 AI SDK SSE protocol remains supported. A legacy turn binds a top-level
 `persistenceRequestId` to its original user request. Authenticated owner-filtered
 history readback must confirm one durable USER row with that request identity,
-source and original submitted text before the composer clears. The server derives `requestText` metadata from the normalized UI input,
+source and original submitted text before the composer clears. The AI route saves that request-scoped USER row before claiming the persistence lease, including on a first turn whose history holds only that message; only unscoped first turns rely on chat creation having saved them (`packages/ai/src/chat/google/request-scoped-first-turn.test.ts`). The server derives `requestText` metadata from the normalized UI input,
 separately from prepared attachment content; rendered
 file/image markers in stored content are not stripped or guessed by the client.
 Historical text-only receipts without that metadata retain exact-content checks. Text, stream completion and

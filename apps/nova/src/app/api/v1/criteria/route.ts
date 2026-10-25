@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { hasChallengeAccess, requestCookieStore } from '@/lib/challenge-access';
+import {
+  isManagerCatalogAccess,
+  resolveNovaCatalogActor,
+  resolveNovaChallengeCatalogAccess,
+} from '@/lib/challenge-catalog-access';
 import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 import { createCriterionSchema } from '../schemas';
 
@@ -14,18 +20,58 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!challengeId) {
+    return NextResponse.json(
+      { message: 'Challenge ID is required' },
+      { status: 400 }
+    );
+  }
+
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
-    let query = sbAdmin
+    const { data: challenge, error: challengeError } = await sbAdmin
       .schema('private')
-      .from('nova_challenge_criteria')
-      .select('*');
-    if (challengeId) {
-      query = query.eq('challenge_id', challengeId);
+      .from('nova_challenges')
+      .select('id, enabled, previewable_at, whitelisted_only, password_hash')
+      .eq('id', challengeId)
+      .maybeSingle();
+
+    if (challengeError) {
+      console.error('Database Error: ', challengeError);
+      return NextResponse.json(
+        { message: 'Error fetching challenge' },
+        { status: 500 }
+      );
     }
 
-    const { data: criteria, error } = await query;
+    if (!challenge) {
+      return NextResponse.json(
+        { message: 'Challenge not found' },
+        { status: 404 }
+      );
+    }
+
+    const actor = await resolveNovaCatalogActor({ sbAdmin, user });
+    const access = await resolveNovaChallengeCatalogAccess({
+      actor,
+      challenge,
+      sbAdmin,
+    });
+
+    if (
+      access === 'denied' ||
+      (!isManagerCatalogAccess(access) &&
+        !hasChallengeAccess(challenge, requestCookieStore(request), user.id))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const { data: criteria, error } = await sbAdmin
+      .schema('private')
+      .from('nova_challenge_criteria')
+      .select('*')
+      .eq('challenge_id', challengeId);
 
     if (error) {
       console.error('Database Error: ', error);
@@ -56,7 +102,7 @@ export async function POST(request: Request) {
 
   try {
     body = await request.json();
-  } catch (_error) {
+  } catch {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 

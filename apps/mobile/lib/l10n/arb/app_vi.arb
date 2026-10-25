@@ -1741,6 +1741,20 @@
   "cmsSummary": "Tóm tắt",
   "cmsTitle": "Tiêu đề",
   "cmsTitleApp": "CMS",
+  "cmsPipelineEyebrow": "Quy trình xuất bản",
+  "cmsPublishedOfTotal": "Đã xuất bản {published}/{total}",
+  "cmsPipelineSupporting": "{drafts} bản nháp · {scheduled} đã lên lịch",
+  "cmsEntryCount": "{count, plural, other{{count} mục}}",
+  "cmsCollectionDisabled": "Đã tắt",
+  "cmsCollectionsProgress": "Xuất bản theo bộ sưu tập",
+  "cmsNoCollectionsMessage": "Bộ sưu tập nhóm một loại nội dung, như bài viết hoặc sự kiện. Hãy tạo một bộ sưu tập để bắt đầu viết.",
+  "cmsNoEntriesMatch": "Không có mục nội dung nào khớp bộ lọc.",
+  "cmsNoEntriesMatchMessage": "Thử trạng thái hoặc bộ sưu tập khác, hoặc xóa từ khóa tìm kiếm.",
+  "cmsFilterByCollection": "Lọc theo bộ sưu tập",
+  "cmsDetailsSection": "Chi tiết",
+  "cmsPublishingSection": "Xuất bản",
+  "cmsLoadFailed": "Không thể tải nội dung",
+  "cmsRefreshFailed": "Không thể làm mới. Đang hiển thị nội dung đã tải gần nhất.",
   "commonActive": "Đang hoạt động",
   "commonAll": "Tất cả",
   "commonApply": "Áp dụng",
@@ -4622,7 +4636,6 @@
   "assistantNewChatResetCommittedStale": "Việc đặt lại đã được lưu cho ngữ cảnh trước, nhưng màn hình này đã thay đổi. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động thử lại.",
   "assistantSettingsSelectionDenied": "Bạn không thể thay đổi cài đặt cuộc trò chuyện này. Cài đặt trước đó và bản nháp được giữ lại.",
   "assistantSettingsSelectionUnconfirmed": "Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.",
-  "assistantExpandPrompt": "Mở rộng lời nhắc",
   "assistantSettingInfo": "Thông tin về {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4701,5 +4714,9 @@
   "profilePhoto": "Ảnh đại diện",
   "profileCoverBanner": "Ảnh bìa",
   "profileMediaSet": "Đã đặt",
-  "assistantSubmitSuccess": "Đã gửi thành công"
+  "assistantSubmitSuccess": "Đã gửi thành công",
+  "offlineDownloadsPaused": "Đã tạm dừng tải xuống. Bạn vẫn có thể dùng dữ liệu đã lưu. Ứng dụng sẽ thử lại trong nền.",
+  "offlineDownloadsRetryLimit": "Hiện vẫn chưa thể tải xuống. Hãy thử lại sau; bạn vẫn có thể dùng dữ liệu đã lưu.",
+  "mailSettingsReadOnly": "Cài đặt đã lưu ở chế độ chỉ đọc cho đến khi xác minh được quyền truy cập.",
+  "calendarSettingsError": "Không thể tải hoặc lưu tùy chọn lịch. Hãy thử lại khi có mạng."
 }
