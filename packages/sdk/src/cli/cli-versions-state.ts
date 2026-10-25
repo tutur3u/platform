@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { constants } from 'node:fs';
 import { open, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
@@ -56,6 +57,17 @@ export async function writeCliState(store: string, state: CliState) {
       await file.close();
     }
     await rename(temporary, join(store, 'state.json'));
+    if (process.platform !== 'win32') {
+      const directory = await open(
+        store,
+        constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW
+      );
+      try {
+        await directory.sync();
+      } finally {
+        await directory.close();
+      }
+    }
   } finally {
     await rm(temporary, { force: true });
   }

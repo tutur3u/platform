@@ -257,10 +257,13 @@ the previous version. `ttr upgrade list` shows verification state and
 `ttr upgrade prune --keep <n>` never removes the current or previous release.
 
 Verification is not an atomic directory snapshot against concurrent changes by
-the same OS user. Windows filesystem behavior is not qualified; unsupported
-secure-filesystem operations fail closed.
+the same OS user. Pruning can remove a release still used by a long-running older
+CLI process; retain that release until its processes finish. Windows filesystem
+behavior is not qualified; unsupported secure-filesystem operations fail closed.
 Unknown `ttr upgrade` subcommands fail rather than running the global install.
-Regression coverage: `cli-versions.test.ts` and `cli-versions-command.test.ts`.
+Regression coverage: `cli-versions.test.ts`, `cli-versions-command.test.ts`,
+`cli-versions-review.test.ts`, `cli-versions-download.test.ts`,
+`cli-versions-security.test.ts`, and `cli-versions-fd.test.ts`.
 
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT

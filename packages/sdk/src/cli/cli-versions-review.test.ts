@@ -11,10 +11,11 @@ import {
   realpath,
   rename,
   rm,
+  symlink,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   activateRelease,
@@ -111,6 +112,37 @@ const fakeInstall = vi.fn(
 );
 
 describe('review fixes: Bun runtime', () => {
+  it('ignores relative PATH entries and persists the canonical Bun executable', async () => {
+    const f = await fixture();
+    await install(f);
+    const planted = join(f.store, 'node_modules/.bin');
+    await mkdir(planted, { recursive: true });
+    await writeFile(join(planted, 'bun'), '#!/bin/sh\nexit 99\n', {
+      mode: 0o700,
+    });
+    const trusted = join(f.store, 'trusted-bin');
+    await mkdir(trusted);
+    await symlink(bun, join(trusted, 'bun'));
+    vi.stubEnv('PATH', `${relative(process.cwd(), planted)}:${trusted}`);
+    fakeInstall.mockClear();
+    await install(f, {
+      store: join(f.store, 'another-store'),
+      bun: undefined,
+      run: fakeInstall,
+    });
+    const canonical = await realpath(bun);
+    expect(fakeInstall.mock.calls[0]?.[0]).toBe(canonical);
+    const resourcesHome = await temporary();
+    await activateRelease({ version: '9.7.5', store: f.store, resourcesHome });
+    const launcher = await readFile(join(f.store, 'bin/ttr'), 'utf8');
+    expect(launcher).toContain(canonical);
+    expect(launcher).not.toContain(relative(process.cwd(), planted));
+    expect(isAbsolute(realExecutable('bun', '/nonexistent'))).toBe(true);
+    expect(dirname(realExecutable('bun', '/nonexistent'))).toBe(
+      dirname(canonical)
+    );
+  });
+
   it('resolves Bun under Node for installation', async () => {
     const f = await fixture();
     fakeInstall.mockClear();
@@ -288,6 +320,7 @@ describe('review fixes: state and directory identity', () => {
         'node:fs/promises'
       );
     let synced = false;
+    let directorySynced = false;
     vi.mocked(open).mockImplementation(async (...args) => {
       const file = await fs.open(...args);
       if (basename(String(args[0])).startsWith('.state-')) {
@@ -300,6 +333,17 @@ describe('review fixes: state and directory identity', () => {
           await sync();
         });
       }
+      if (String(args[0]) === f.store) {
+        const sync = file.sync.bind(file);
+        vi.spyOn(file, 'sync').mockImplementationOnce(async () => {
+          expect(synced).toBe(true);
+          expect(
+            JSON.parse(await fs.readFile(statePath, 'utf8'))
+          ).toMatchObject({ current: '9.7.5' });
+          directorySynced = true;
+          await sync();
+        });
+      }
       return file;
     });
     await activateRelease({
@@ -309,6 +353,7 @@ describe('review fixes: state and directory identity', () => {
       resourcesHome,
     });
     expect(synced).toBe(true);
+    if (process.platform !== 'win32') expect(directorySynced).toBe(true);
     expect(JSON.parse(await readFile(statePath, 'utf8'))).toMatchObject({
       current: '9.7.5',
     });
