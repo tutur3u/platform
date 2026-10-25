@@ -943,6 +943,7 @@
     "console": "Bảng điều khiển",
     "create": "Tạo dự án",
     "description": "Xây dựng và chạy dự án trên môi trường được quản lý. Tệp thuộc Tuturuuu Drive cá nhân của bạn.",
+    "driveHint": "Lưu nền ghi các tệp đã thay đổi vào Drive cá nhân.",
     "empty": "Dự án của bạn sẽ xuất hiện ở đây.",
     "exitCode": "Kết thúc với mã {code}",
     "failed": "Yêu cầu thất bại. Thay đổi chưa lưu vẫn còn trong phòng. Hãy thử lại.",

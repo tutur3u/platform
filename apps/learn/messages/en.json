@@ -943,6 +943,7 @@
     "console": "Console",
     "create": "Create project",
     "description": "Build and run projects on managed environments. Files belong to your personal Tuturuuu Drive.",
+    "driveHint": "Background saves write changed files to personal Drive.",
     "empty": "Your projects will appear here.",
     "exitCode": "Exited with code {code}",
     "failed": "Request failed. Your unsaved edits remain in this room. Try again.",
