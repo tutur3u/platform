@@ -130,9 +130,9 @@ describe('default app base resolver', () => {
       expect(withBase()).toEqual({ crossAppBaseUrl: expect.any(String) });
     }
     for (const withBase of [withMailApiBaseUrl, withTaskApiBaseUrl]) {
-      expect(
-        withBase({ appBaseResolver: (path: string) => path })
-      ).toEqual({ appBaseResolver: expect.any(Function) });
+      expect(withBase({ appBaseResolver: (path: string) => path })).toEqual({
+        appBaseResolver: expect.any(Function),
+      });
     }
   });
 

@@ -333,7 +333,6 @@ export {
   type InternalApiFetchInit,
   type InternalApiQuery,
   internalApiClient,
-  hasAppBaseResolverFor,
   registerDefaultAppBaseResolver,
   resolveInternalApiUrl,
   withContactsApiBaseUrl,

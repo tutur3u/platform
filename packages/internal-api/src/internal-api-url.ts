@@ -123,7 +123,9 @@ export function resolveInternalApiUrlWithAppBase(
     return new URL(normalizedPath, normalizeBaseUrl(baseUrl)).toString();
   }
 
-  const registration = appBaseResolver ? undefined : defaultAppBaseRegistration();
+  const registration = appBaseResolver
+    ? undefined
+    : defaultAppBaseRegistration();
   const resolver = appBaseResolver ?? registration?.resolver;
 
   if (crossAppBaseUrl) {

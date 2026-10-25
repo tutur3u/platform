@@ -280,7 +280,12 @@ export function getConfiguredMailApiBaseUrl() {
 export function withMailApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  return withAppApiBaseUrl('mail', options, getConfiguredMailApiBaseUrl, isMailAppRuntime);
+  return withAppApiBaseUrl(
+    'mail',
+    options,
+    getConfiguredMailApiBaseUrl,
+    isMailAppRuntime
+  );
 }
 
 function isCurrentBrowserHostname(...hostnames: string[]) {
@@ -341,7 +346,12 @@ export function getConfiguredLearnApiBaseUrl() {
 export function withLearnApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  return withAppApiBaseUrl('learn', options, getConfiguredLearnApiBaseUrl, isLearnAppRuntime);
+  return withAppApiBaseUrl(
+    'learn',
+    options,
+    getConfiguredLearnApiBaseUrl,
+    isLearnAppRuntime
+  );
 }
 
 export function getConfiguredTeachApiBaseUrl() {
@@ -358,7 +368,12 @@ export function getConfiguredTeachApiBaseUrl() {
 export function withTeachApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  return withAppApiBaseUrl('teach', options, getConfiguredTeachApiBaseUrl, isTeachAppRuntime);
+  return withAppApiBaseUrl(
+    'teach',
+    options,
+    getConfiguredTeachApiBaseUrl,
+    isTeachAppRuntime
+  );
 }
 
 function isPayAppRuntime() {
@@ -382,7 +397,12 @@ export function getConfiguredPayApiBaseUrl() {
 export function withPayApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  return withAppApiBaseUrl('pay', options, getConfiguredPayApiBaseUrl, isPayAppRuntime);
+  return withAppApiBaseUrl(
+    'pay',
+    options,
+    getConfiguredPayApiBaseUrl,
+    isPayAppRuntime
+  );
 }
 
 function isContactsAppRuntime() {
@@ -408,7 +428,12 @@ export function getConfiguredContactsApiBaseUrl() {
 export function withContactsApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  return withAppApiBaseUrl('contacts', options, getConfiguredContactsApiBaseUrl, isContactsAppRuntime);
+  return withAppApiBaseUrl(
+    'contacts',
+    options,
+    getConfiguredContactsApiBaseUrl,
+    isContactsAppRuntime
+  );
 }
 
 /**
@@ -453,7 +478,12 @@ export function getConfiguredFinanceApiBaseUrl() {
 export function withFinanceApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  return withAppApiBaseUrl('finance', options, getConfiguredFinanceApiBaseUrl, isFinanceBrowserRuntime);
+  return withAppApiBaseUrl(
+    'finance',
+    options,
+    getConfiguredFinanceApiBaseUrl,
+    isFinanceBrowserRuntime
+  );
 }
 
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
