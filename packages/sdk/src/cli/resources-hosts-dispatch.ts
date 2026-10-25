@@ -32,6 +32,7 @@ import {
 import { canEverHold } from './resources-hosts-plan';
 import {
   assertHostsHub,
+  assertNestedHostRequirements,
   type HostCapability,
   hostsRequirements,
 } from './resources-hosts-requirements';
@@ -143,6 +144,7 @@ export async function hostsRun({
   if (parent) {
     const host = hosts.hosts.find((entry) => entry.id === parent.hostId);
     if (host?.kind === 'local') {
+      assertNestedHostRequirements(hosts, requires);
       log(
         `PID ${process.pid} runs under ancestor reservation ${parent.token.slice(0, 8)}`
       );

@@ -255,6 +255,16 @@ export async function runResourcesCommand(argv: string[]) {
       const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
     }
+    if (!shim && queued && parent && options.includes('--hosts')) {
+      const { assertNestedHostRequirements, hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
+      const { readHostRegistry } = await import('./resources-hosts-config.js');
+      assertNestedHostRequirements(
+        await readHostRegistry(home),
+        hostsRequirements(name, command, options)
+      );
+    }
     if (!shim && queued && !parent && options.includes('--hosts')) {
       if (offload) throw new Error('Use --hosts or --offload, not both.');
       const { hostsRun } = await import('./resources-hosts-dispatch.js');

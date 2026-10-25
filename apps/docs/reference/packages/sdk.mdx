@@ -1850,6 +1850,13 @@ jobs on the M4; remote hosts use their own canonical `ttr resources run` queue.
 The transport remains the keyed devbox API; it does not SSH between hosts or
 copy local credentials/environment values.
 
+`hubHostname` controls dispatch origin only. It does not prohibit local heavy
+work or inspect commands for builds. The M4 build prohibition remains an
+operator/caller policy; a heavy class also includes permitted focused tests.
+Configure local slots/capabilities for the intended placement policy and submit
+builds only to remote hosts. Do not treat a matching hub hostname as permission
+to build on the M4.
+
 Each host can declare `platform: "darwin" | "linux"` and a `capabilities` array
 containing `ios`, `macos`, `flutter`, `web`, `rust` and/or `docker`. Declared
 platform must match local OS or fresh runner `capabilities.os.platform` telemetry;
@@ -1873,6 +1880,12 @@ declare their requirements explicitly. Both Apple tags also require a declared
 Darwin host. Configure placement as follows, preserving measured weighted slots,
 worker caps and headroom:
 
+Nested `--hosts` calls validate explicit and inferred requirements against the
+actual local host before reusing either a heavy-lane ancestor or a light host
+reservation. Incompatible nesting errors before spawning or adding another
+ticket; compatible nesting keeps the existing reservation and limits. A nested
+call cannot migrate its already-running wrapper to a different host.
+
 | Host | Declared capabilities | Placement policy |
 | --- | --- | --- |
 | M4 hub | Only verified light tooling, such as `web` | Coordination and focused build-free checks; no release builds. |
@@ -1893,7 +1906,7 @@ UUID is the remote create's idempotency key. An unacknowledged write never
 triggers another placement or a local retry; reconcile the original operation
 through `ttr box list` before deciding what happened.
 
-Regression coverage: `resources-hosts-requirements.test.ts`,
+Regression coverage: `resources-hosts-nesting.test.ts`, `resources-hosts-requirements.test.ts`,
 `resources-hosts-dispatch.test.ts` and `resources-hosts-ledger.test.ts` cover
 capability/OS placement, hub refusal before writes, ordering, duplicate tickets,
 stable operation identity and unknown-outcome refusal.

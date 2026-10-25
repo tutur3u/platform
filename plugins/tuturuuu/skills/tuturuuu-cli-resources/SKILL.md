@@ -221,7 +221,10 @@ ios|macos|flutter|web|rust|docker`, host capability attestations and declared OS
 checked against runtime telemetry. Direct tools infer requirements; wrappers
 must declare them. Registries containing runners require `hubHostname` to match
 the M4 before dispatch. Remote hosts use local admission, never another fleet
-dispatch. Preserve ticket identity, age and bypass on retries; an unknown remote
+dispatch. This fence controls dispatch origin; it does not prohibit local heavy
+work or builds. Follow the M4 no-build policy separately. Nested `--hosts` must
+validate capabilities and actual OS before reusing a heavy lane or light host
+reservation; incompatible nesting fails before spawning. Preserve ticket identity, age and bypass on retries; an unknown remote
 write must be reconciled rather than replayed. See the owning
 [capability and drain-window procedure](../../../../apps/docs/reference/packages/sdk.mdx#capability-placement-and-the-m4-hub).
 Mastermind owns Studio pool A (6 base/8 max; no pool B) and idle-only lane changes. Do not count the

@@ -1,6 +1,7 @@
 import { hostname } from 'node:os';
 import { basename } from 'node:path';
 import { z } from 'zod';
+import type { HostRegistry } from './resources-hosts-config';
 
 export const hostCapabilitySchema = z.enum([
   'ios',
@@ -64,5 +65,23 @@ export function assertHostsHub(
   if (!registry.hubHostname || registry.hubHostname !== currentHostname)
     throw new Error(
       'Multi-host dispatch must run on the configured hubHostname; submit from the M4 hub. Remote hosts must use their local canonical queue.'
+    );
+}
+
+export function assertNestedHostRequirements(
+  registry: HostRegistry | undefined,
+  required: HostCapability[]
+) {
+  const host = registry?.hosts.find((entry) => entry.kind === 'local');
+  if (!host)
+    throw new Error(
+      'Nested --hosts requires a configured local host to validate its capabilities.'
+    );
+  const blocker = capabilityBlocker(host, required);
+  if (blocker)
+    throw new Error(`Nested --hosts cannot reuse local admission: ${blocker}.`);
+  if (host.platform && host.platform !== process.platform)
+    throw new Error(
+      `Nested --hosts cannot reuse local admission: actual platform differs from ${host.platform}.`
     );
 }
