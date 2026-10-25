@@ -10,11 +10,7 @@
     "declarationMap": false,
     "incremental": false,
     "plugins": [],
-    "types": [
-      "vite/client",
-      "node",
-      "@cloudflare/workers-types"
-    ]
+    "types": ["vite/client", "node", "@cloudflare/workers-types"]
   },
   "include": [
     "src",
@@ -24,10 +20,5 @@
     "vite.config.mts",
     "void.config.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".turbo",
-    ".next"
-  ]
+  "exclude": ["node_modules", "dist", ".turbo", ".next"]
 }

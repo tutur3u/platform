@@ -3,9 +3,11 @@ title: "Finance and Pay Start migration"
 description: "Inventory Finance and Pay before adopting the shared Start bridge and qualifying direct cutover."
 ---
 
-Finance and Pay retain their Next.js entrypoints during preparation. Their Start
-conversion consumes the [frozen Start bridge](/build/devops/start-bridge); neither app owns a copy of its
-Next adapters, request context, proxy, server-function transport. This page records the conversion requirements, not runtime acceptance.
+Finance retains its Next.js entrypoints and has a Start staging candidate.
+Pay remains on its Next.js entrypoints. Both consume the
+[shared Start bridge](/build/devops/start-bridge); neither app owns a copy of
+its Next adapters, request context, proxy, or server-function transport.
+Candidate source and route registration do not qualify hosted runtime behavior.
 
 ## Refresh the source inventory
 
@@ -44,6 +46,16 @@ response. The Next configuration sends selected workspace routes to Web before
 local route matching and forwards unmatched `/api/*` requests to Web afterwards.
 Port that precedence with the bridge's guarded forwarding contract. A page
 catch-all must never capture an API request.
+
+Finance's Worker entrypoint is maintained by the app because it composes the
+reserved Web endpoints before its generated local registry. The endpoint
+composer reads the same shared rewrite definitions as the Next configuration.
+`/api/workspaces/invitations` must reach Web before the local
+`/api/workspaces/[wsId]` wildcard. Forwarding strips the app mount and preserves
+the request method/body/query and every response cookie. Ordinary local routes
+retain their existing handlers. `reserved-api.test.ts` covers that boundary.
+Re-running the codemod must report the Worker as a manual-file conflict instead
+of replacing this adapter.
 
 Keep the existing authorization and mutation behavior for invoices, wallet
 checkpoints and reconciliation, interest, budgets, promotions, inventory, and

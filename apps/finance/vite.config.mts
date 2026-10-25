@@ -12,7 +12,11 @@ const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'finance',
   rsc: true,
-  serverOnlySpecifiers: ['@tuturuuu/satellite/auth', '@tuturuuu/utils/api-proxy-guard', '@tuturuuu/supabase/next/server'],
+  serverOnlySpecifiers: [
+    '@tuturuuu/satellite/auth',
+    '@tuturuuu/utils/api-proxy-guard',
+    '@tuturuuu/supabase/next/server',
+  ],
 });
 
 export default defineConfig(({ command }) => ({
