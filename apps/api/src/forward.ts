@@ -62,7 +62,16 @@ export async function forwardToRetainedOrigin(
   ])
     headers.delete(name);
   for (const name of [...headers.keys()]) {
-    if (/^x-tuturuuu-/i.test(name)) headers.delete(name);
+    if (
+      [
+        'x-tuturuuu-actor',
+        'x-tuturuuu-app-base',
+        'x-tuturuuu-proxy-not-found',
+      ].includes(name) ||
+      name.startsWith('x-tuturuuu-verified-') ||
+      name.startsWith('x-middleware-')
+    )
+      headers.delete(name);
   }
   headers.set(FORWARD_HOP, '1');
   // Manual redirects preserve the legacy Location and never replay a write.

@@ -362,6 +362,12 @@ test('retained origin forwards a write exactly once without redirects or body re
     expect(outgoing.headers.get(FORWARD_HOP)).toBe('1');
     expect(outgoing.headers.get('authorization')).toBe('Bearer fixture');
     expect(outgoing.headers.get('x-tuturuuu-actor')).toBeNull();
+    expect(outgoing.headers.get('x-tuturuuu-verified-user')).toBeNull();
+    expect(outgoing.headers.get('x-tuturuuu-workspace-id')).toBe('A');
+    expect(outgoing.headers.get('x-tuturuuu-integrity-proof')).toBe(
+      'synthetic-proof'
+    );
+    expect(outgoing.headers.get('x-tuturuuu-account-action')).toBe('1');
     expect(await outgoing.text()).toBe('{ "signed": true }');
     return new Response('accepted', {
       status: 202,
@@ -382,6 +388,10 @@ test('retained origin forwards a write exactly once without redirects or body re
       headers: {
         authorization: 'Bearer fixture',
         'x-tuturuuu-actor': 'spoofed',
+        'x-tuturuuu-verified-user': 'spoofed',
+        'x-tuturuuu-workspace-id': 'A',
+        'x-tuturuuu-integrity-proof': 'synthetic-proof',
+        'x-tuturuuu-account-action': '1',
       },
       body: '{ "signed": true }',
     }),
