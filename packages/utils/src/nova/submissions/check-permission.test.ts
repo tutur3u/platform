@@ -17,10 +17,11 @@ beforeEach(() => {
   mocks.createAdminClient.mockResolvedValue(fixture.client);
 });
 afterEach(() => vi.useRealTimers());
-const submit = () =>
+const submit = (sessionId: string | null = 'session-1') =>
   checkPermission({
+    canManageChallenge: fixture.canManageChallenge,
     problemId: 'problem-1',
-    sessionId: 'session-1',
+    sessionId,
     userId: 'user-1',
   });
 
@@ -32,18 +33,44 @@ describe('Nova submission session permission', () => {
       remainingAttempts: 0,
     });
   });
-  it('preserves manager submissions without a session', async () => {
+  it('preserves sessionless submissions for a manager of the problem challenge', async () => {
     fixture.state.manager = true;
+    fixture.state.managedChallenges = ['challenge-1'];
+    expect(await submit(null)).toMatchObject({
+      canSubmit: true,
+      remainingAttempts: -1,
+    });
+  });
+  it('denies sessionless submissions for a manager of a different challenge', async () => {
+    fixture.state.manager = true;
+    fixture.state.managedChallenges = ['challenge-2'];
+    expect(await submit(null)).toMatchObject({
+      canSubmit: false,
+      remainingAttempts: 0,
+    });
+  });
+  it('denies sessionless submissions for a disabled manager role', async () => {
+    fixture.state.manager = true;
+    fixture.state.managerEnabled = false;
+    expect(await submit(null)).toMatchObject({
+      canSubmit: false,
+      remainingAttempts: 0,
+    });
+  });
+  it('denies sessionless submissions for an unknown problem', async () => {
+    fixture.state.managedChallenges = ['challenge-1'];
     expect(
       await checkPermission({
-        problemId: 'problem-1',
+        canManageChallenge: fixture.canManageChallenge,
+        problemId: 'problem-missing',
         sessionId: null,
         userId: 'user-1',
       })
-    ).toMatchObject({ canSubmit: true, remainingAttempts: -1 });
+    ).toMatchObject({ canSubmit: false });
   });
   it('validates supplied sessions for managers too', async () => {
     fixture.state.manager = true;
+    fixture.state.managedChallenges = ['challenge-1'];
     fixture.state.session.user_id = 'user-2';
     expect(await submit()).toMatchObject({ canSubmit: false });
   });

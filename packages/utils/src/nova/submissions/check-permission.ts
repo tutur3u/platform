@@ -1,34 +1,42 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export async function checkPermission({
+  canManageChallenge,
   problemId,
   sessionId,
   userId,
 }: {
+  /**
+   * Resolves whether the caller manages the given challenge. Required so the
+   * manager bypass is always scoped to the challenge resolved from the problem
+   * server-side, never to any challenge the caller happens to manage.
+   */
+  canManageChallenge: (challengeId: string) => Promise<boolean>;
   problemId: string;
   sessionId: string | null;
   userId: string;
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  // Check if the user is an admin
-  const { data: roleData, error: roleError } = await sbAdmin
-    .from('platform_user_roles')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('allow_challenge_management', true)
-    .single();
+  const { data: problem, error: problemError } = await sbAdmin
+    .schema('private')
+    .from('nova_problems')
+    .select('challenge_id')
+    .eq('id', problemId)
+    .maybeSingle();
 
-  if (roleError && roleError.code !== 'PGRST116') {
-    console.error('Database Error when checking role:', roleError);
+  if (problemError || !problem?.challenge_id) {
+    if (problemError) {
+      console.error('Database Error when checking problem:', problemError);
+    }
     return {
       canSubmit: false,
       remainingAttempts: 0,
-      message: 'Error checking user permissions',
+      message: 'Problem not found',
     };
   }
 
-  const isAdmin = roleData?.allow_challenge_management;
+  const isAdmin = await canManageChallenge(problem.challenge_id);
 
   if (isAdmin && !sessionId) {
     return { canSubmit: true, remainingAttempts: -1, message: null };
@@ -62,15 +70,7 @@ export async function checkPermission({
     };
   }
 
-  const { data: problem, error: problemError } = await sbAdmin
-    .schema('private')
-    .from('nova_problems')
-    .select('challenge_id')
-    .eq('id', problemId)
-    .eq('challenge_id', sessionData.challenge_id)
-    .single();
-
-  if (problemError || !problem) {
+  if (sessionData.challenge_id !== problem.challenge_id) {
     return {
       canSubmit: false,
       remainingAttempts: 0,

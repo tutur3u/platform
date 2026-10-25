@@ -1,6 +1,12 @@
 export function permissionFixture() {
   const state = {
+    // Platform role row read by the pre-scoping implementation.
     manager: false,
+    managerEnabled: true,
+    // Challenges the injected canManageChallenge callback reports as managed.
+    managedChallenges: [] as string[],
+    // Assigned-manager membership row read by Nova's canManageNovaChallenge.
+    managerEmail: null as { challenge_id: string; email: string } | null,
     session: {
       id: 'session-1',
       user_id: 'user-1',
@@ -30,9 +36,15 @@ export function permissionFixture() {
                 ? state.challenge
                 : table === 'nova_submissions'
                   ? { id: 'submission-1' }
-                  : table === 'platform_user_roles' && state.manager
-                    ? { user_id: 'user-1', allow_challenge_management: true }
-                    : null;
+                  : table === 'nova_challenge_manager_emails'
+                    ? state.managerEmail
+                    : table === 'platform_user_roles' && state.manager
+                      ? {
+                          user_id: 'user-1',
+                          allow_challenge_management: true,
+                          enabled: state.managerEnabled,
+                        }
+                      : null;
         const matches =
           row &&
           filters.every(
@@ -46,6 +58,7 @@ export function permissionFixture() {
           filters.push([column, value]);
           return builder;
         },
+        maybeSingle: async () => result(),
         select: () => builder,
         insert: (value: unknown) => {
           state.inserts.push(value);
@@ -59,7 +72,9 @@ export function permissionFixture() {
       return builder;
     },
   };
-  return { client, state };
+  const canManageChallenge = async (challengeId: string) =>
+    state.managedChallenges.includes(challengeId);
+  return { canManageChallenge, client, state };
 }
 
 export const deniedSessionCases = [
