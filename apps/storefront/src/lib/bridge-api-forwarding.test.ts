@@ -25,7 +25,7 @@ it('forwards mounted Inventory APIs to Inventory and other APIs to root Web', as
       mountHosts: ['tuturuuu.com'],
       basePath: '/storefront',
     },
-    proxy: () => NextResponse.next(),
+    proxy: async () => NextResponse.next(),
     start: {
       fetch: async () => new Response('unexpected page', { status: 500 }),
     },
