@@ -119,6 +119,13 @@ class AssistantLiveSocketClient {
 
   WebSocketChannel? _channel;
   bool _sinkOpen = false;
+
+  /// Admission for connects still waiting on the previous channel's close.
+  int _connectAdmission = 0;
+
+  /// Synchronously retires connects that have not opened a channel yet. The
+  /// current channel and its event generation are left untouched.
+  void retirePendingConnect() => _connectAdmission++;
   StreamSubscription<dynamic>? _subscription;
   bool _seedHistoryPending = false;
   List<AssistantLiveSeedContent> _pendingSeedHistory = const [];
@@ -129,10 +136,17 @@ class AssistantLiveSocketClient {
     required List<AssistantLiveSeedContent> seedHistory,
     String? sessionHandle,
   }) async {
+    final admission = _connectAdmission;
     final closing = disconnect();
     final generation = _connectionGeneration;
     await closing;
-    if (generation != _connectionGeneration || _events.isClosed) return;
+    // The previous channel's close can be slow; a connect retired meanwhile
+    // (End Call, close, a newer user start) must not open a channel after it.
+    if (generation != _connectionGeneration ||
+        admission != _connectAdmission ||
+        _events.isClosed) {
+      return;
+    }
 
     final uri = Uri.parse(
       'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=$token',
