@@ -9,6 +9,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailCalendarLink } from './mail-calendar-link';
 
 export function MailInvitationCard({
@@ -34,7 +35,8 @@ export function MailInvitationCard({
   } | null>(null);
   const query = useQuery({
     queryKey: ['mail', workspaceId, mailboxId, 'invitation', messageId],
-    queryFn: () => getMailInvitation(workspaceId, mailboxId, messageId),
+    queryFn: () =>
+      getMailInvitation(workspaceId, mailboxId, messageId, mailApiOptions),
     staleTime: 60_000,
     retry: false,
   });
@@ -44,10 +46,16 @@ export function MailInvitationCard({
       requestId: string;
       scope: string;
     }) =>
-      respondToMailInvitation(workspaceId, mailboxId, messageId, {
-        response: value.response,
-        requestId: value.requestId,
-      }),
+      respondToMailInvitation(
+        workspaceId,
+        mailboxId,
+        messageId,
+        {
+          response: value.response,
+          requestId: value.requestId,
+        },
+        mailApiOptions
+      ),
     retry: false,
     onSuccess: (reply, value) =>
       setResult({

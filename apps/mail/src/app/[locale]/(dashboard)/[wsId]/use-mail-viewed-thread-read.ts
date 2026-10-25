@@ -13,6 +13,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { reconcileMailWhenIdle } from './mail-action-coordination';
 import type { MailFolder } from './mail-folders';
 import {
@@ -93,7 +94,8 @@ export function useMailViewedThreadRead({
         target.threadId,
         {
           action: 'mark_read',
-        }
+        },
+        mailApiOptions
       ),
     onMutate: (target) =>
       snapshotMailThreads({

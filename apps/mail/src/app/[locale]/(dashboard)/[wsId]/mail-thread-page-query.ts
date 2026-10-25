@@ -4,6 +4,7 @@ import {
   type MailThreadsResponse,
   type UpdateMailMessageStatePayload,
 } from '@tuturuuu/internal-api';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { updateThreadPages } from './mail-thread-optimistic';
 import {
   MAIL_THREAD_PAGE_SIZE,
@@ -29,14 +30,19 @@ export async function loadMailThreadPage(
       .filter((mutation) => mutation.state.status === 'pending')
       .map((mutation) => mutation.mutationId)
   );
-  const result = await listMailThreads(scope.workspaceId, scope.mailboxId, {
-    folder: scope.folder,
-    folderId: scope.folderId ?? undefined,
-    label: scope.label ?? undefined,
-    page,
-    pageSize: MAIL_THREAD_PAGE_SIZE,
-    query: scope.query || undefined,
-  });
+  const result = await listMailThreads(
+    scope.workspaceId,
+    scope.mailboxId,
+    {
+      folder: scope.folder,
+      folderId: scope.folderId ?? undefined,
+      label: scope.label ?? undefined,
+      page,
+      pageSize: MAIL_THREAD_PAGE_SIZE,
+      query: scope.query || undefined,
+    },
+    mailApiOptions
+  );
   let data: InfiniteData<MailThreadsResponse> = {
     pages: [result],
     pageParams: [page],

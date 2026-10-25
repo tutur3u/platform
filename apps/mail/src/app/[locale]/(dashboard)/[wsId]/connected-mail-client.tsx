@@ -16,6 +16,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMailActor } from '@/components/mail-actor-provider';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { ConnectedMailCompose } from './connected-mail-compose';
 import { ConnectedMailReader } from './connected-mail-reader';
 
@@ -39,7 +40,12 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
   const accounts = useQuery({
     queryKey: [...cacheScope, 'accounts'],
     queryFn: () =>
-      connectedMailRequest<ConnectedMailAccount[]>(workspaceId, []),
+      connectedMailRequest<ConnectedMailAccount[]>(
+        workspaceId,
+        [],
+        undefined,
+        mailApiOptions
+      ),
   });
   const account =
     accounts.data?.find((item) => item.id === chosen) ?? accounts.data?.[0];
@@ -55,9 +61,14 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
       connectedMailRequest<{
         messages: ConnectedMailMessage[];
         nextCursor: string | null;
-      }>(workspaceId, [accountId, 'messages'], {
-        query: { folder, cursor: pageParam, q: search },
-      }),
+      }>(
+        workspaceId,
+        [accountId, 'messages'],
+        {
+          query: { folder, cursor: pageParam, q: search },
+        },
+        mailApiOptions
+      ),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
   const detail = useQuery({
@@ -67,34 +78,50 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
       connectedMailRequest<ConnectedMailMessage>(
         workspaceId,
         [accountId, 'messages', messageId],
-        { query: { draft: folder === 'drafts' ? '1' : undefined } }
+        { query: { draft: folder === 'drafts' ? '1' : undefined } },
+        mailApiOptions
       ),
   });
   const refresh = () => cache.invalidateQueries({ queryKey: cacheScope });
   const connect = useMutation({
     mutationFn: (provider: 'google' | 'microsoft') =>
-      connectedMailRequest<{ authUrl: string }>(workspaceId, ['connect'], {
-        method: 'POST',
-        body: { provider },
-      }),
+      connectedMailRequest<{ authUrl: string }>(
+        workspaceId,
+        ['connect'],
+        {
+          method: 'POST',
+          body: { provider },
+        },
+        mailApiOptions
+      ),
     onSuccess: ({ authUrl }) => window.location.assign(authUrl),
   });
   const markRead = useMutation({
     retry: false,
     mutationFn: (id: string) =>
-      connectedMailRequest(workspaceId, [accountId, 'messages', id], {
-        method: 'POST',
-        body: { action: 'mark_read' },
-      }),
+      connectedMailRequest(
+        workspaceId,
+        [accountId, 'messages', id],
+        {
+          method: 'POST',
+          body: { action: 'mark_read' },
+        },
+        mailApiOptions
+      ),
     onSuccess: () => void refresh(),
   });
   const action = useMutation({
     retry: false,
     mutationFn: (value: string) =>
-      connectedMailRequest(workspaceId, [accountId, 'messages', messageId], {
-        method: 'POST',
-        body: { action: value },
-      }),
+      connectedMailRequest(
+        workspaceId,
+        [accountId, 'messages', messageId],
+        {
+          method: 'POST',
+          body: { action: value },
+        },
+        mailApiOptions
+      ),
     onSuccess: () => {
       setMessageId('');
       void refresh();
@@ -102,7 +129,12 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
   });
   const disconnect = useMutation({
     mutationFn: () =>
-      connectedMailRequest(workspaceId, [accountId], { method: 'DELETE' }),
+      connectedMailRequest(
+        workspaceId,
+        [accountId],
+        { method: 'DELETE' },
+        mailApiOptions
+      ),
     onSuccess: () => {
       setChosen('');
       setMessageId('');

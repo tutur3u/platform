@@ -23,6 +23,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 const fieldClass =
   'outline-none focus-visible:ring-0 focus-visible:outline-none';
@@ -46,7 +47,8 @@ export function MailLabelSettings({
   const [suggestionPrompt, setSuggestionPrompt] = useState('');
   const [suggestions, setSuggestions] = useState<SuggestedMailLabel[]>([]);
   const organization = useQuery({
-    queryFn: () => getMailboxOrganization(workspaceId, mailboxId),
+    queryFn: () =>
+      getMailboxOrganization(workspaceId, mailboxId, mailApiOptions),
     queryKey: ['mail', workspaceId, mailboxId, 'organization'],
   });
   const invalidate = () =>
@@ -60,7 +62,7 @@ export function MailLabelSettings({
       color?: string;
       description?: string;
       name: string;
-    }) => createMailLabel(workspaceId, mailboxId, payload),
+    }) => createMailLabel(workspaceId, mailboxId, payload, mailApiOptions),
     onSuccess: async () => {
       setName('');
       setDescription('');
@@ -70,10 +72,15 @@ export function MailLabelSettings({
   });
   const suggestMutation = useMutation({
     mutationFn: () =>
-      suggestMailLabels(workspaceId, mailboxId, {
-        action: 'suggest_labels',
-        instructions: suggestionPrompt,
-      }),
+      suggestMailLabels(
+        workspaceId,
+        mailboxId,
+        {
+          action: 'suggest_labels',
+          instructions: suggestionPrompt,
+        },
+        mailApiOptions
+      ),
     onSuccess: (result) => setSuggestions(result.suggestions),
   });
   const customLabels = (organization.data?.labels ?? []).filter(
@@ -244,18 +251,25 @@ function LabelEditor({
   const [aiInstructions, setAiInstructions] = useState(label.aiInstructions);
   const save = useMutation({
     mutationFn: () =>
-      updateMailLabel(workspaceId, mailboxId, label.id, {
-        aiAutoApply,
-        aiEnabled,
-        aiInstructions,
-        color,
-        description,
-        name,
-      }),
+      updateMailLabel(
+        workspaceId,
+        mailboxId,
+        label.id,
+        {
+          aiAutoApply,
+          aiEnabled,
+          aiInstructions,
+          color,
+          description,
+          name,
+        },
+        mailApiOptions
+      ),
     onSuccess: onChanged,
   });
   const remove = useMutation({
-    mutationFn: () => deleteMailLabel(workspaceId, mailboxId, label.id),
+    mutationFn: () =>
+      deleteMailLabel(workspaceId, mailboxId, label.id, mailApiOptions),
     onSuccess: onChanged,
   });
   const dirty =

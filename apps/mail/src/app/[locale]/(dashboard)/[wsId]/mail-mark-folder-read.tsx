@@ -1,9 +1,11 @@
 'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCheck, Loader2 } from '@tuturuuu/icons';
 import { markMailFolderRead } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { reconcileMailWhenIdle } from './mail-action-coordination';
 import { MailIconButton } from './mail-icon-button';
 
@@ -37,7 +39,8 @@ export function MailMarkFolderRead({
             folder: target.folder,
             cursor,
             before,
-          }
+          },
+          mailApiOptions
         );
         cursor = result.nextCursor ?? undefined;
         before = result.before;

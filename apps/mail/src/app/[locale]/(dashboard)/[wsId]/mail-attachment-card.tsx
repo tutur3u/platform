@@ -6,6 +6,7 @@ import {
   getMailAttachmentText,
   type MailAttachment,
 } from '@tuturuuu/internal-api';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
   mailAttachmentPreviewType,
   mailAttachmentPreviewUrl,
 } from '@/lib/mail/attachment-preview';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 const PDFViewer = dynamic(
   () =>
@@ -47,10 +49,13 @@ export function MailAttachmentCard({
     attachment.contentType,
     attachment.filename
   );
-  const url = attachment.protectedUrl;
+  const url = attachment.protectedUrl
+    ? withAppBase(attachment.protectedUrl)
+    : undefined;
   const textPreview = useQuery({
     queryKey: ['mail', 'attachment-text', url],
-    queryFn: ({ signal }) => getMailAttachmentText(url!, signal),
+    queryFn: ({ signal }) =>
+      getMailAttachmentText(url!, signal, mailApiOptions),
     enabled: open && preview?.kind === 'text' && Boolean(url),
     retry: false,
     gcTime: 0,

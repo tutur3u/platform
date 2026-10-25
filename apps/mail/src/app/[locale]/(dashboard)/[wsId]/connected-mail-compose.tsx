@@ -11,6 +11,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { connectedReplyDraft } from './connected-mail-reply';
 
 export function ConnectedMailCompose({
@@ -104,7 +105,8 @@ export function ConnectedMailCompose({
                 }
               : {}),
           },
-        }
+        },
+        mailApiOptions
       );
     },
     onSuccess: (_, save) => {

@@ -1,4 +1,5 @@
 'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateMailMailboxSettings } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,6 +18,7 @@ import {
   DEFAULT_GROUP_POLICY,
   type MailGroupPolicy,
 } from '@/lib/mail/groups/policy';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 export function MailGroupSettings({
   mailboxId,
   workspaceId,
@@ -31,7 +33,12 @@ export function MailGroupSettings({
   const [value, setValue] = useState(policy ?? DEFAULT_GROUP_POLICY);
   const save = useMutation({
     mutationFn: () =>
-      updateMailMailboxSettings(workspaceId, mailboxId, { groupPolicy: value }),
+      updateMailMailboxSettings(
+        workspaceId,
+        mailboxId,
+        { groupPolicy: value },
+        mailApiOptions
+      ),
     onSuccess: async () => {
       toast.success(t('settings_saved'));
       await client.invalidateQueries({ queryKey: ['mail', workspaceId] });

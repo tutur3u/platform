@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { LazyFloatingComposer } from './lazy-floating-composer';
 import { MailBulkToolbar } from './mail-bulk-toolbar';
 import type {
@@ -207,7 +208,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     }: {
       nextMailboxId: string;
       payload: SendMailMessagePayload;
-    }) => sendMailMessage(workspaceId, nextMailboxId, payload),
+    }) => sendMailMessage(workspaceId, nextMailboxId, payload, mailApiOptions),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('send_failed')),
     onSuccess: async ({ message }, variables) => {
@@ -249,7 +250,12 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   });
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId: string) =>
-      deleteMailDraft(workspaceId, activeMailboxId ?? '', draftId),
+      deleteMailDraft(
+        workspaceId,
+        activeMailboxId ?? '',
+        draftId,
+        mailApiOptions
+      ),
     onSuccess: async () => {
       await invalidateMailbox();
       await setThreadId(null);

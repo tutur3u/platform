@@ -1,9 +1,11 @@
 'use client';
+
 import { useMutation } from '@tanstack/react-query';
 import { connectedMailRequest } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 export function ConnectedMailSendDraft({
   workspaceId,
   accountId,
@@ -27,10 +29,15 @@ export function ConnectedMailSendDraft({
   const mutation = useMutation({
     retry: false,
     mutationFn: () =>
-      connectedMailRequest(workspaceId, [accountId, 'drafts', draftId], {
-        method: 'POST',
-        body: { requestId },
-      }),
+      connectedMailRequest(
+        workspaceId,
+        [accountId, 'drafts', draftId],
+        {
+          method: 'POST',
+          body: { requestId },
+        },
+        mailApiOptions
+      ),
     onSuccess: () => {
       if (mounted.current) onSent();
     },

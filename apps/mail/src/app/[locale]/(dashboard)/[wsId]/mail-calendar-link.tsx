@@ -1,4 +1,5 @@
 'use client';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type CalendarLinkPreview,
@@ -13,6 +14,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMailActor } from '@/components/mail-actor-provider';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 export function MailCalendarLink(props: {
   workspaceId: string;
@@ -55,7 +57,8 @@ function ScopedLink({
   ];
   const query = useQuery({
     queryKey: key,
-    queryFn: () => getMailCalendarLink(workspaceId, mailboxId, messageId),
+    queryFn: () =>
+      getMailCalendarLink(workspaceId, mailboxId, messageId, mailApiOptions),
     retry: false,
   });
   const mutation = useMutation({
@@ -68,7 +71,8 @@ function ScopedLink({
           workspaceId,
           mailboxId,
           messageId,
-          receipt
+          receipt,
+          mailApiOptions
         );
         setNotice(
           result.status === 'unlinked'
@@ -90,7 +94,8 @@ function ScopedLink({
           workspaceId,
           mailboxId,
           messageId,
-          selection
+          selection,
+          mailApiOptions
         );
         setPreview(result.preview);
         setNotice(result.preview ? '' : 'calendar_link_unavailable');
@@ -105,7 +110,8 @@ function ScopedLink({
           calendarWorkspaceId: preview.target.identity.workspaceId,
           eventId: preview.target.identity.eventId,
           receipt: preview.receipt,
-        }
+        },
+        mailApiOptions
       );
       if (result.status === 'linked') {
         setPreview(null);

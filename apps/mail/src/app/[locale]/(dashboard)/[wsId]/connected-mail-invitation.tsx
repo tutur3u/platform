@@ -1,4 +1,5 @@
 'use client';
+
 import { useMutation } from '@tanstack/react-query';
 import {
   type ConnectedMailMessage,
@@ -7,6 +8,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 export function ConnectedMailInvitation({
   workspaceId,
@@ -30,7 +32,8 @@ export function ConnectedMailInvitation({
       return connectedMailRequest(
         workspaceId,
         [accountId, 'messages', message.id, 'invitation'],
-        { method: 'POST', body: { response, requestId } }
+        { method: 'POST', body: { response, requestId } },
+        mailApiOptions
       );
     },
   });

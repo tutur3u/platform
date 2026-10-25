@@ -3,6 +3,7 @@ import {
   getMailThread,
   type UpdateMailMessageStatePayload,
 } from '@tuturuuu/internal-api';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { updateDetail } from './mail-thread-optimistic';
 
 export function mailThreadDetailQuery(
@@ -23,7 +24,12 @@ export function mailThreadDetailQuery(
           .filter((mutation) => mutation.state.status === 'pending')
           .map((mutation) => mutation.mutationId)
       );
-      let detail = await getMailThread(workspaceId, mailboxId, threadId);
+      let detail = await getMailThread(
+        workspaceId,
+        mailboxId,
+        threadId,
+        mailApiOptions
+      );
       // Initial loads stay alive. Replay newer changes so a slow response cannot undo them.
       for (const mutation of cache.findAll({
         mutationKey: ['mail', workspaceId, mailboxId, 'actions'],

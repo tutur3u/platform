@@ -347,3 +347,62 @@ describe('mounted Mail app-owned redirects', () => {
     }
   );
 });
+
+describe('mounted Mail shared-session boundary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.getRequestHeadersWithResponseCookies.mockImplementation(
+      (request: NextRequest) => request.headers
+    );
+  });
+  it.each([
+    '/mail/not-available',
+    '/mail/api/v1/mail/domains',
+    '/mail/verify-token?token=untrusted',
+  ])('never writes a satellite session while handling %s', async (path) => {
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    const response = await proxy(
+      new NextRequest(`https://tuturuuu.com${path}`, {
+        headers: { cookie: 'sb-fixture-auth-token=shared' },
+        nextConfig: { basePath: '/mail' },
+      })
+    );
+    expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+    expect(
+      response.headers
+        .getSetCookie()
+        .filter((cookie) =>
+          /^(?:tuturuuu_app_session|sb-[^=]+-auth-token)/u.test(cookie)
+        )
+    ).toEqual([]);
+  });
+  it('guards mounted functions without refreshing or clearing the shared session', async () => {
+    const { nativeFunctionProxy } = await import(
+      './runtime/native-function-proxy'
+    );
+    const response = await nativeFunctionProxy(
+      new NextRequest('https://tuturuuu.com/mail/_fn/fixture', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: 'sb-fixture-auth-token=shared',
+        },
+        nextConfig: { basePath: '/mail' },
+      })
+    );
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(expect.anything(), {
+      prefixBase: 'proxy:mail:functions',
+    });
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+});

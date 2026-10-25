@@ -1,9 +1,11 @@
 'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { getMailAttachmentDocx } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { validateMailDocx } from '@/lib/mail/docx-preview-validation';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 export const MAIL_DOCX_FRAME = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; font-src 'none'; form-action 'none'; base-uri 'none'"><style>html,body{margin:0;background:white;color:black}body{overflow-wrap:anywhere}.docx-wrapper{padding:12px!important}section.docx{width:100%;max-width:100%;box-sizing:border-box}img{max-width:100%}</style></head><body></body></html>`;
 
@@ -21,7 +23,7 @@ export function MailDocxPreview({
   const query = useQuery({
     queryKey: ['mail', 'attachment-docx', url],
     queryFn: async ({ signal }) => {
-      const bytes = await getMailAttachmentDocx(url, signal);
+      const bytes = await getMailAttachmentDocx(url, signal, mailApiOptions);
       await validateMailDocx(bytes, signal);
       return bytes;
     },

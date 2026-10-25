@@ -1,7 +1,9 @@
 'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { listWorkspaceMembers } from '@tuturuuu/internal-api';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 
 export function mailParticipantInitials(
   name: string | null | undefined,
@@ -26,7 +28,7 @@ export function MailParticipantAvatar({
 }) {
   const query = useQuery({
     queryKey: ['mail', workspaceId, 'participant-profiles'],
-    queryFn: () => listWorkspaceMembers(workspaceId!),
+    queryFn: () => listWorkspaceMembers(workspaceId!, mailApiOptions),
     enabled: Boolean(workspaceId),
     staleTime: 5 * 60_000,
     retry: false,

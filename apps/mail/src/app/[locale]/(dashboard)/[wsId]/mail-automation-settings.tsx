@@ -19,6 +19,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { useMailBootstrap } from './use-mail-bootstrap';
 
 export function MailAutomationSettings({
@@ -48,7 +49,12 @@ export function MailAutomationSettings({
   );
   const save = useMutation({
     mutationFn: () =>
-      updateMailMailboxSettings(workspaceId, mailbox.id, { automation }),
+      updateMailMailboxSettings(
+        workspaceId,
+        mailbox.id,
+        { automation },
+        mailApiOptions
+      ),
     onError: () => toast.error(t('settings_save_failed')),
     onSuccess: async () => {
       toast.success(t('settings_saved'));

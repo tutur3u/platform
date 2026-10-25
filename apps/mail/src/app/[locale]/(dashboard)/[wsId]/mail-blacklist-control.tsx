@@ -1,4 +1,5 @@
 'use client';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ban, Check, Loader2 } from '@tuturuuu/icons';
 import {
@@ -19,6 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailBlacklistStatus } from './mail-blacklist-status';
 import { MailEmailText } from './mail-email-text';
 import { MailIconButton } from './mail-icon-button';
@@ -51,7 +53,12 @@ export function MailBlacklistControl({
   const query = useQuery({
     queryKey: ['mail', workspaceId, mailboxId, 'blacklist', messageId],
     queryFn: () =>
-      getMailBlacklistRecipients(workspaceId, mailboxId, messageId),
+      getMailBlacklistRecipients(
+        workspaceId,
+        mailboxId,
+        messageId,
+        mailApiOptions
+      ),
     staleTime: 60_000,
   });
   const recipients = query.data?.recipients ?? [];
@@ -73,7 +80,8 @@ export function MailBlacklistControl({
         target.workspaceId,
         target.mailboxId,
         target.messageId,
-        { email: target.email, reason: target.reason }
+        { email: target.email, reason: target.reason },
+        mailApiOptions
       ),
     onSuccess: (result, target) => {
       client.setQueriesData<

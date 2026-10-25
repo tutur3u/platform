@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailAutomationSettings } from './mail-automation-settings';
 import { MailContentState } from './mail-content-state';
 import { MailGroupSettings } from './mail-group-settings';
@@ -65,23 +66,25 @@ export function MailSettingsDialog({
 
   const settingsQuery = useQuery({
     enabled: open && Boolean(mailbox),
-    queryFn: () => getMailMailboxSettings(workspaceId, mailbox?.id ?? ''),
+    queryFn: () =>
+      getMailMailboxSettings(workspaceId, mailbox?.id ?? '', mailApiOptions),
     queryKey: ['mail', workspaceId, mailbox?.id, 'settings'],
   });
   const membersQuery = useQuery({
     enabled: open && Boolean(mailbox) && tab === 'members',
-    queryFn: () => listMailMailboxMembers(workspaceId, mailbox?.id ?? ''),
+    queryFn: () =>
+      listMailMailboxMembers(workspaceId, mailbox?.id ?? '', mailApiOptions),
     queryKey: ['mail', workspaceId, mailbox?.id, 'members'],
   });
   const domainsQuery = useQuery({
     enabled: open,
-    queryFn: () => listMailDomains(),
+    queryFn: () => listMailDomains(mailApiOptions),
     queryKey: ['mail', 'operator-domains'],
     retry: false,
   });
   const catchAllQuery = useQuery({
     enabled: open && Boolean(domainId) && tab === 'delivery',
-    queryFn: () => getMailCatchAllConfiguration(domainId ?? ''),
+    queryFn: () => getMailCatchAllConfiguration(domainId ?? '', mailApiOptions),
     queryKey: ['mail', 'catch-all', domainId],
     retry: false,
   });
@@ -114,17 +117,22 @@ export function MailSettingsDialog({
   const saveSettings = useMutation({
     onError: () => toast.error(t('settings_save_failed')),
     mutationFn: () =>
-      updateMailMailboxSettings(workspaceId, mailbox?.id ?? '', {
-        aiInstructions,
-        autoDraftEnabled,
-        outboundProviderOverride:
-          outboundProvider === 'default'
-            ? null
-            : (outboundProvider as 'cloudflare' | 'ses'),
-        ...(usesManagedIdentity ? {} : { senderName }),
-        signatureHtml: signatureHtml || null,
-        signatureText: signatureText || null,
-      }),
+      updateMailMailboxSettings(
+        workspaceId,
+        mailbox?.id ?? '',
+        {
+          aiInstructions,
+          autoDraftEnabled,
+          outboundProviderOverride:
+            outboundProvider === 'default'
+              ? null
+              : (outboundProvider as 'cloudflare' | 'ses'),
+          ...(usesManagedIdentity ? {} : { senderName }),
+          signatureHtml: signatureHtml || null,
+          signatureText: signatureText || null,
+        },
+        mailApiOptions
+      ),
     onSuccess: async () => {
       toast.success(t('settings_saved'));
       await queryClient.invalidateQueries({ queryKey: ['mail', workspaceId] });
@@ -133,11 +141,15 @@ export function MailSettingsDialog({
   const saveCatchAll = useMutation({
     onError: () => toast.error(t('settings_save_failed')),
     mutationFn: () =>
-      updateMailCatchAllConfiguration(domainId ?? '', {
-        autoDraftEnabled: catchAllAutoDraft,
-        enabled: catchAllEnabled,
-        targetMailboxId,
-      }),
+      updateMailCatchAllConfiguration(
+        domainId ?? '',
+        {
+          autoDraftEnabled: catchAllAutoDraft,
+          enabled: catchAllEnabled,
+          targetMailboxId,
+        },
+        mailApiOptions
+      ),
     onSuccess: async () => {
       toast.success(t('settings_saved'));
       await queryClient.invalidateQueries({

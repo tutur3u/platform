@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailIconButton } from './mail-icon-button';
 
 type Preference = 'snooze' | 'unsnooze' | 'mute' | 'unmute';
@@ -36,11 +37,16 @@ export function MailThreadPreferenceMenu({
       action: Preference;
       snoozedUntil?: string;
     }) =>
-      bulkUpdateMailThreads(target.workspaceId, target.mailboxId, {
-        threadIds: target.threadIds,
-        action,
-        snoozedUntil,
-      }),
+      bulkUpdateMailThreads(
+        target.workspaceId,
+        target.mailboxId,
+        {
+          threadIds: target.threadIds,
+          action,
+          snoozedUntil,
+        },
+        mailApiOptions
+      ),
     onSuccess: async (_data, { action, target }) => {
       setOpen(false);
       await queryClient.invalidateQueries({
@@ -60,7 +66,8 @@ export function MailThreadPreferenceMenu({
                     {
                       threadIds: target.threadIds,
                       action: action === 'snooze' ? 'unsnooze' : 'unmute',
-                    }
+                    },
+                    mailApiOptions
                   )
                     .then(() =>
                       queryClient.invalidateQueries({

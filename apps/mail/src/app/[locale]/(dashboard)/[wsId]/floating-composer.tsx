@@ -9,6 +9,8 @@ import {
   updateMailDraft,
   uploadMailDraftAttachment,
 } from '@tuturuuu/internal-api';
+
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -30,6 +32,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { mailApiOptions } from '../../../../runtime/mail-api-options';
 import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerFooter } from './mail-composer-footer';
@@ -214,9 +217,15 @@ export function FloatingComposer({
                 workspaceId,
                 mailboxId,
                 currentId,
-                nextSnapshot
+                nextSnapshot,
+                mailApiOptions
               )
-            : await createMailDraft(workspaceId, mailboxId, nextSnapshot);
+            : await createMailDraft(
+                workspaceId,
+                mailboxId,
+                nextSnapshot,
+                mailApiOptions
+              );
           draftIdRef.current = response.message.id;
           setDraftId(response.message.id);
           setSaveState('saved');
@@ -271,7 +280,8 @@ export function FloatingComposer({
           workspaceId,
           mailboxId,
           savedDraftId,
-          copy
+          copy,
+          mailApiOptions
         );
         setAttachments((current) => [...current, ...response.attachments]);
       } catch {
@@ -330,12 +340,15 @@ export function FloatingComposer({
           savedDraftId,
           file,
           file.name,
-          { contentId, disposition: inline ? 'inline' : 'attachment' }
+          { contentId, disposition: inline ? 'inline' : 'attachment' },
+          mailApiOptions
         );
         setAttachments((current) => [...current, response.attachment]);
         if (inline) {
           setImageUrlToInsert(
-            `/api/v1/workspaces/${workspaceId}/mail/mailboxes/${mailboxId}/drafts/${savedDraftId}/attachments/${response.attachment.id}`
+            withAppBase(
+              `/api/v1/workspaces/${workspaceId}/mail/mailboxes/${mailboxId}/drafts/${savedDraftId}/attachments/${response.attachment.id}`
+            )
           );
         }
       }
@@ -631,7 +644,8 @@ export function FloatingComposer({
                   workspaceId,
                   mailboxId,
                   draftId,
-                  attachment.id
+                  attachment.id,
+                  mailApiOptions
                 );
                 setAttachments((items) =>
                   items.filter((item) => item.id !== attachment.id)
