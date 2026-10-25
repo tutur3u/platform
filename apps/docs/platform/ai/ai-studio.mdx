@@ -222,9 +222,15 @@ mount, with the configured AI origin retained for the legacy production runtime.
 `src/lib/bridge-routing.test.ts` covers concurrent mounted and root requests.
 
 Run `bun run routes:check`, `bun run type-check:cloudflare`, and
-`bun run build:cloudflare` from `apps/ai` on an admitted validation host. The real
-emitted Worker, mounted browser flows, public credential denials, and staging
-canonical-host rejection must pass before promotion. Hosted provider calls are
+`bun run build:cloudflare` from `apps/ai` on an admitted validation host. The generated `ai-cloudflare.yaml` workflow uses the shared native template to
+check binding types, seal the emitted Worker, and repeat runtime acceptance after
+restoring the archive into a fresh checkout. Run `bun run test:runtime` only
+after a native build, with the exact source identity required by the workflow.
+
+Initial promotion serves `ai.tuturuuu.com` in root mode. Root browser flows,
+public credential denials, and staging canonical-host rejection are required.
+The `/ai` mount remains compatibility coverage; apex cutover waits for the
+shared-session decision and auth-boundary guard. Hosted provider calls are
 separate acceptance; local fixtures do not prove billable provider behavior.
 The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.
 
