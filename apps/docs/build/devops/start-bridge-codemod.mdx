@@ -165,7 +165,11 @@ dependencies (for example a Node-only SDK chain) therefore cannot fail the
 Worker at startup; a route that re-exports with `export *` stays eager. In
 the rsc build, CommonJS `require()` of Node built-ins becomes an ESM import
 served by `nodejs_compat`, and `.wasm`/`.bin` imports become Wrangler
-CompiledWasm/Data modules (as `next/og`'s Workers port needs). A route that
+CompiledWasm/Data modules (as `next/og`'s Workers port needs). An app whose
+Worker code runs in native SSR (`rsc: { enabled: false }`, as Calendar does)
+opts its `ssr` environment into the same conversion by adding
+`startBridgeNodeBuiltinsPlugin()` from `@tuturuuu/start-bridge/vite/rsc` to its
+Vite plugins; rsc apps need nothing. A route that
 needs a Node API workerd does not provide still fails when it is hit; serve it
 from Web (`centralFirst`) or port it.
 

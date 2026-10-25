@@ -32,6 +32,42 @@ const CLOUDFLARE_BUILTINS = [
   'cloudflare:workflows',
 ];
 
+/**
+ * Bundled CommonJS `require('tty')` (googleapis, debug, ...) becomes an ESM
+ * import of the built-in, served by workerd's `nodejs_compat`, instead of a
+ * `require` stub that throws when the Worker loads the module.
+ */
+const nodeBuiltinRequirePlugin = () =>
+  esmExternalRequirePlugin({
+    external: [NODE_BUILTIN],
+    skipDuplicateCheck: true,
+  });
+
+export interface StartBridgeNodeBuiltinsOptions {
+  /** Worker-bundled environments to convert (default `['ssr']`). */
+  environments?: readonly string[];
+}
+
+/**
+ * Opt-in for apps whose Worker code runs in a non-rsc environment (native
+ * SSR, `rsc: { enabled: false }`): applies the rsc environment's built-in
+ * `require` conversion there. `startBridgeRscPlugin` already covers `rsc`.
+ */
+export function startBridgeNodeBuiltinsPlugin(
+  options: StartBridgeNodeBuiltinsOptions = {}
+) {
+  const environments = new Set(options.environments ?? ['ssr']);
+  return {
+    name: 'tuturuuu-start-bridge:node-builtins',
+    configEnvironment(name: string) {
+      if (!environments.has(name)) return null;
+      return {
+        build: { rollupOptions: { plugins: [nodeBuiltinRequirePlugin()] } },
+      };
+    },
+  };
+}
+
 export function importedNames(source: string, specifier: string) {
   const escaped = specifier.replace(/[.*+?^${}()|[\]\\/]/gu, '\\$&');
   const names = new Set<string>();
@@ -144,9 +180,6 @@ export function startBridgeRscPlugin(
       // runtime), resolve Worker export conditions, keep `cloudflare:*`
       // external, and use the neutral platform so no Node `createRequire`
       // runtime is emitted.
-      // Bundled CommonJS `require('child_process')` (e.g. googleapis) becomes
-      // an ESM import of the built-in instead of a neutral-platform `require`
-      // stub that throws at module load.
       return {
         resolve: {
           noExternal: true as const,
@@ -158,12 +191,7 @@ export function startBridgeRscPlugin(
           rollupOptions: {
             ...(Object.keys(input).length > 0 ? { input } : {}),
             platform: 'neutral' as const,
-            plugins: [
-              esmExternalRequirePlugin({
-                external: [NODE_BUILTIN],
-                skipDuplicateCheck: true,
-              }),
-            ],
+            plugins: [nodeBuiltinRequirePlugin()],
             output: { entryFileNames: '[name].js' },
           },
         },
