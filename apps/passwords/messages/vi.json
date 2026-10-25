@@ -8,43 +8,43 @@
     "event": "Sự kiện",
     "time": "Thời gian",
     "type": {
-      "vault": {
-        "create": "Đã tạo kho",
-        "rename": "Đã đổi tên kho",
-        "list": "Đã xem danh sách kho",
-        "rotate": "Đã đổi khóa",
-        "workspace_erased": "Đã ngừng kho của không gian làm việc"
-      },
-      "item": {
-        "read": "Đã đọc mục",
-        "list": "Đã xem danh sách mục",
-        "write": "Đã lưu mục",
-        "delete": "Đã xóa mục"
-      },
-      "key": {
-        "read": "Đã truy cập khóa ghi"
-      },
-      "member": {
-        "set": "Đã thay đổi quyền thành viên",
-        "list": "Đã xem danh sách thành viên",
-        "workspace_revoke": "Đã thu hồi quyền không gian làm việc",
-        "account_erased": "Đã xóa quyền của tài khoản"
-      },
-      "rotation": {
-        "snapshot": "Đã chuẩn bị đổi khóa"
+      "audit": {
+        "list": "Đã xem hoạt động"
       },
       "grant": {
         "create": "Đã cấp quyền cho máy",
         "revoke": "Đã thu hồi quyền của máy"
       },
-      "token": {
-        "issue": "Đã cấp mã truy cập cho máy"
+      "item": {
+        "delete": "Đã xóa mục",
+        "list": "Đã xem danh sách mục",
+        "read": "Đã đọc mục",
+        "write": "Đã lưu mục"
       },
-      "audit": {
-        "list": "Đã xem hoạt động"
+      "key": {
+        "read": "Đã truy cập khóa ghi"
+      },
+      "member": {
+        "account_erased": "Đã xóa quyền của tài khoản",
+        "list": "Đã xem danh sách thành viên",
+        "set": "Đã thay đổi quyền thành viên",
+        "workspace_revoke": "Đã thu hồi quyền không gian làm việc"
       },
       "request": {
         "status": "Đã kiểm tra thao tác"
+      },
+      "rotation": {
+        "snapshot": "Đã chuẩn bị đổi khóa"
+      },
+      "token": {
+        "issue": "Đã cấp mã truy cập cho máy"
+      },
+      "vault": {
+        "create": "Đã tạo kho",
+        "list": "Đã xem danh sách kho",
+        "rename": "Đã đổi tên kho",
+        "rotate": "Đã đổi khóa",
+        "workspace_erased": "Đã ngừng kho của không gian làm việc"
       }
     }
   },
@@ -89,9 +89,9 @@
     "pick": "Thành viên không gian làm việc",
     "restore": "Khôi phục",
     "revoke": "Thu hồi",
-    "revokeTitle": "Thu hồi {name}?",
     "revokeBody": "Họ mất quyền truy cập ngay. Các bí mật họ đã sao chép vẫn nằm trong tay họ.",
     "revoked": "Đã thu hồi",
+    "revokeTitle": "Thu hồi {name}?",
     "role": "Vai trò",
     "saved": "Đã cập nhật quyền truy cập"
   },
@@ -111,6 +111,11 @@
     "body": "Xác nhận bằng MFA để tiếp tục. Xác nhận có hiệu lực trong {minutes} phút.",
     "title": "Cần xác minh"
   },
+  "tabs": {
+    "activity": "Hoạt động",
+    "items": "Mục",
+    "members": "Thành viên"
+  },
   "vault": {
     "create": "Kho mới",
     "created": "Đã tạo kho",
@@ -124,14 +129,9 @@
     },
     "rotate": "Xoay khóa",
     "rotateBody": "Mọi mục được mã hóa lại bằng khóa mới. Các bản thành viên đã lưu vẫn đọc được.",
-    "rotateTitle": "Xoay khóa của {name}?",
     "rotated": "Đã xoay khóa",
-    "select": "Chọn một kho",
-    "rotationRequired": "Chủ sở hữu cần đổi khóa kho để tiếp tục truy cập bí mật."
-  },
-  "tabs": {
-    "activity": "Hoạt động",
-    "items": "Mục",
-    "members": "Thành viên"
+    "rotateTitle": "Xoay khóa của {name}?",
+    "rotationRequired": "Chủ sở hữu cần đổi khóa kho để tiếp tục truy cập bí mật.",
+    "select": "Chọn một kho"
   }
 }

@@ -155,6 +155,9 @@ test('emitted Passwords Worker stops vault and auth work across restart', {
         assert.equal((await manifest.json()).name, 'Tuturuuu Passwords');
         const info = await fetch(`${origin}/api/build-info`);
         assert.equal(info.status, 200);
+        const identity = await info.json();
+        assert.equal(identity.appName, 'passwords');
+        assert.equal(identity.commitHash, process.env.CI_SOURCE_SHA);
       }
       assert.equal(
         network.calls,

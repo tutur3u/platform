@@ -8,43 +8,43 @@
     "event": "Event",
     "time": "Time",
     "type": {
-      "vault": {
-        "create": "Vault created",
-        "rename": "Vault renamed",
-        "list": "Vaults listed",
-        "rotate": "Key rotated",
-        "workspace_erased": "Workspace vault retired"
-      },
-      "item": {
-        "read": "Item read",
-        "list": "Items listed",
-        "write": "Item saved",
-        "delete": "Item deleted"
-      },
-      "key": {
-        "read": "Write key accessed"
-      },
-      "member": {
-        "set": "Member access changed",
-        "list": "Members listed",
-        "workspace_revoke": "Workspace access revoked",
-        "account_erased": "Account access erased"
-      },
-      "rotation": {
-        "snapshot": "Rotation prepared"
+      "audit": {
+        "list": "Activity viewed"
       },
       "grant": {
         "create": "Machine access granted",
         "revoke": "Machine access revoked"
       },
-      "token": {
-        "issue": "Machine token issued"
+      "item": {
+        "delete": "Item deleted",
+        "list": "Items listed",
+        "read": "Item read",
+        "write": "Item saved"
       },
-      "audit": {
-        "list": "Activity viewed"
+      "key": {
+        "read": "Write key accessed"
+      },
+      "member": {
+        "account_erased": "Account access erased",
+        "list": "Members listed",
+        "set": "Member access changed",
+        "workspace_revoke": "Workspace access revoked"
       },
       "request": {
         "status": "Operation checked"
+      },
+      "rotation": {
+        "snapshot": "Rotation prepared"
+      },
+      "token": {
+        "issue": "Machine token issued"
+      },
+      "vault": {
+        "create": "Vault created",
+        "list": "Vaults listed",
+        "rename": "Vault renamed",
+        "rotate": "Key rotated",
+        "workspace_erased": "Workspace vault retired"
       }
     }
   },
@@ -89,9 +89,9 @@
     "pick": "Workspace member",
     "restore": "Restore",
     "revoke": "Revoke",
-    "revokeTitle": "Revoke {name}?",
     "revokeBody": "They lose access now. Secrets they already copied stay exposed to them.",
     "revoked": "Revoked",
+    "revokeTitle": "Revoke {name}?",
     "role": "Role",
     "saved": "Access updated"
   },
@@ -111,6 +111,11 @@
     "body": "Confirm with MFA to continue. The confirmation stays valid for {minutes} minutes.",
     "title": "Verification required"
   },
+  "tabs": {
+    "activity": "Activity",
+    "items": "Items",
+    "members": "Members"
+  },
   "vault": {
     "create": "New vault",
     "created": "Vault created",
@@ -124,14 +129,9 @@
     },
     "rotate": "Rotate key",
     "rotateBody": "Every item is re-encrypted under a new key. Copies members already saved stay readable.",
-    "rotateTitle": "Rotate the key for {name}?",
     "rotated": "Key rotated",
-    "select": "Select a vault",
-    "rotationRequired": "An owner must rotate the vault key to resume secret access."
-  },
-  "tabs": {
-    "activity": "Activity",
-    "items": "Items",
-    "members": "Members"
+    "rotateTitle": "Rotate the key for {name}?",
+    "rotationRequired": "An owner must rotate the vault key to resume secret access.",
+    "select": "Select a vault"
   }
 }
