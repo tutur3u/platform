@@ -15200,6 +15200,413 @@ export type Database = {
           },
         ];
       };
+      password_vault_audit_events: {
+        Row: {
+          actor_type: string;
+          actor_user_id: string;
+          created_at: string;
+          event_type: string;
+          id: string;
+          item_id: string | null;
+          metadata: Json;
+          request_id: string;
+          token_id: string | null;
+          vault_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          actor_type?: string;
+          actor_user_id: string;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          item_id?: string | null;
+          metadata: Json;
+          request_id: string;
+          token_id?: string | null;
+          vault_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_type?: string;
+          actor_user_id?: string;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          item_id?: string | null;
+          metadata?: Json;
+          request_id?: string;
+          token_id?: string | null;
+          vault_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      password_vault_files: {
+        Row: {
+          ciphertext_bytes: number;
+          created_at: string;
+          id: string;
+          item_id: string;
+          object_path: string | null;
+          storage_object_id: string;
+          vault_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Insert: {
+          ciphertext_bytes: number;
+          created_at?: string;
+          id: string;
+          item_id: string;
+          object_path?: string | null;
+          storage_object_id: string;
+          vault_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Update: {
+          ciphertext_bytes?: number;
+          created_at?: string;
+          id?: string;
+          item_id?: string;
+          object_path?: string | null;
+          storage_object_id?: string;
+          vault_id?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_files_ws_id_vault_id_version_fkey';
+            columns: ['ws_id', 'vault_id', 'version'];
+            isOneToOne: false;
+            referencedRelation: 'password_vault_versions';
+            referencedColumns: ['ws_id', 'vault_id', 'version'];
+          },
+        ];
+      };
+      password_vault_items: {
+        Row: {
+          ciphertext_bytes: number;
+          deleted_at: string | null;
+          encrypted_file_id: string | null;
+          encrypted_metadata: string | null;
+          encrypted_payload: string | null;
+          id: string;
+          name: string;
+          revision: number;
+          updated_at: string;
+          vault_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Insert: {
+          ciphertext_bytes: number;
+          deleted_at?: string | null;
+          encrypted_file_id?: string | null;
+          encrypted_metadata?: string | null;
+          encrypted_payload?: string | null;
+          id: string;
+          name: string;
+          revision: number;
+          updated_at?: string;
+          vault_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Update: {
+          ciphertext_bytes?: number;
+          deleted_at?: string | null;
+          encrypted_file_id?: string | null;
+          encrypted_metadata?: string | null;
+          encrypted_payload?: string | null;
+          id?: string;
+          name?: string;
+          revision?: number;
+          updated_at?: string;
+          vault_id?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_items_ws_id_vault_id_version_fkey';
+            columns: ['ws_id', 'vault_id', 'version'];
+            isOneToOne: false;
+            referencedRelation: 'password_vault_versions';
+            referencedColumns: ['ws_id', 'vault_id', 'version'];
+          },
+          {
+            foreignKeyName: 'password_vault_items_ws_id_vault_id_version_id_encrypted_f_fkey';
+            columns: [
+              'ws_id',
+              'vault_id',
+              'version',
+              'id',
+              'encrypted_file_id',
+            ];
+            isOneToOne: false;
+            referencedRelation: 'password_vault_files';
+            referencedColumns: [
+              'ws_id',
+              'vault_id',
+              'version',
+              'item_id',
+              'id',
+            ];
+          },
+        ];
+      };
+      password_vault_machine_grants: {
+        Row: {
+          authorization_epoch: number;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          issuer_user_id: string;
+          item_ids: string[];
+          revoked_at: string | null;
+          scopes: string[];
+          vault_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          authorization_epoch: number;
+          created_at?: string;
+          expires_at: string;
+          id: string;
+          issuer_user_id: string;
+          item_ids: string[];
+          revoked_at?: string | null;
+          scopes: string[];
+          vault_id: string;
+          ws_id: string;
+        };
+        Update: {
+          authorization_epoch?: number;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          issuer_user_id?: string;
+          item_ids?: string[];
+          revoked_at?: string | null;
+          scopes?: string[];
+          vault_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_machine_grants_ws_id_vault_id_fkey';
+            columns: ['ws_id', 'vault_id'];
+            isOneToOne: false;
+            referencedRelation: 'password_vaults';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      password_vault_machine_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          grant_id: string;
+          id: string;
+          revoked_at: string | null;
+          token_digest: string;
+          vault_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          grant_id: string;
+          id: string;
+          revoked_at?: string | null;
+          token_digest: string;
+          vault_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          grant_id?: string;
+          id?: string;
+          revoked_at?: string | null;
+          token_digest?: string;
+          vault_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_machine_tokens_ws_id_vault_id_grant_id_fkey';
+            columns: ['ws_id', 'vault_id', 'grant_id'];
+            isOneToOne: false;
+            referencedRelation: 'password_vault_machine_grants';
+            referencedColumns: ['ws_id', 'vault_id', 'id'];
+          },
+        ];
+      };
+      password_vault_members: {
+        Row: {
+          created_at: string;
+          revoked_at: string | null;
+          role: string;
+          user_id: string;
+          vault_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          revoked_at?: string | null;
+          role: string;
+          user_id: string;
+          vault_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          revoked_at?: string | null;
+          role?: string;
+          user_id?: string;
+          vault_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_members_ws_id_vault_id_fkey';
+            columns: ['ws_id', 'vault_id'];
+            isOneToOne: false;
+            referencedRelation: 'password_vaults';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      password_vault_requests: {
+        Row: {
+          action: string;
+          actor_user_id: string;
+          created_at: string;
+          input: Json;
+          request_id: string;
+          response: Json;
+          token_id: string | null;
+          vault_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          action: string;
+          actor_user_id: string;
+          created_at?: string;
+          input: Json;
+          request_id: string;
+          response: Json;
+          token_id?: string | null;
+          vault_id: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string;
+          created_at?: string;
+          input?: Json;
+          request_id?: string;
+          response?: Json;
+          token_id?: string | null;
+          vault_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_requests_ws_id_vault_id_fkey';
+            columns: ['ws_id', 'vault_id'];
+            isOneToOne: false;
+            referencedRelation: 'password_vaults';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      password_vault_versions: {
+        Row: {
+          algorithm: string;
+          created_at: string;
+          encrypted_data_key: string;
+          vault_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Insert: {
+          algorithm?: string;
+          created_at?: string;
+          encrypted_data_key: string;
+          vault_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Update: {
+          algorithm?: string;
+          created_at?: string;
+          encrypted_data_key?: string;
+          vault_id?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_versions_ws_id_vault_id_fkey';
+            columns: ['ws_id', 'vault_id'];
+            isOneToOne: false;
+            referencedRelation: 'password_vaults';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      password_vaults: {
+        Row: {
+          active_version: number;
+          authorization_epoch: number;
+          created_at: string;
+          created_by: string;
+          id: string;
+          label: string;
+          revision: number;
+          rotation_required: boolean;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          active_version?: number;
+          authorization_epoch?: number;
+          created_at?: string;
+          created_by: string;
+          id: string;
+          label: string;
+          revision?: number;
+          rotation_required?: boolean;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          active_version?: number;
+          authorization_epoch?: number;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          label?: string;
+          revision?: number;
+          rotation_required?: boolean;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'password_vault_active_version_fk';
+            columns: ['ws_id', 'id', 'active_version'];
+            isOneToOne: false;
+            referencedRelation: 'password_vault_versions';
+            referencedColumns: ['ws_id', 'vault_id', 'version'];
+          },
+        ];
+      };
       payroll_run_items: {
         Row: {
           adjustments: Json | null;
@@ -24182,6 +24589,49 @@ export type Database = {
       parley_runtime_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
+      };
+      password_vault_execute: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_input: Json;
+          p_request: string;
+          p_token?: string;
+          p_token_digest?: string;
+          p_vault: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      password_vault_invalidate_workspace_member: {
+        Args: { p_user: string; p_ws: string };
+        Returns: undefined;
+      };
+      password_vault_list: {
+        Args: {
+          p_actor: string;
+          p_after?: string;
+          p_limit?: number;
+          p_request: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      password_vault_register_file: {
+        Args: {
+          p_bytes: number;
+          p_file: string;
+          p_item: string;
+          p_object: string;
+          p_vault: string;
+          p_version: number;
+          p_ws: string;
+        };
+        Returns: undefined;
+      };
+      password_vault_require_workspace_member: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: undefined;
       };
       periodic_report_delivery_contract_ready: {
         Args: Record<PropertyKey, never>;
