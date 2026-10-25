@@ -1,18 +1,22 @@
 ---
 title: "Newsletter provider feasibility"
-description: "Cloudflare policy and domain gates, exclusive newsletter tier sandbox fixtures, and bounded local webhook verification."
+description: "Chosen SES bulk provider, remaining account/identity gates, newsletter tier sandbox fixtures and local webhook verification."
 updatedAt: '2026-10-25'
 ---
 
 ## Verdict and scope
 
-**Newsletter sending is blocked by current Cloudflare policy.** Cloudflare Email
-Service exists and exposes a sending API, but its
-[FAQ explicitly excludes marketing email](https://developers.cloudflare.com/email-service/reference/faq/).
-This is a policy restriction, not merely an untested feature. Do not send a bulk
-campaign to prove that its HTTP request works. Obtain provider-approved terms
-for the actual use case or a user decision about a different delivery provider.
-Cloudflare may still own queues and scheduling if delivery-provider scope changes.
+**Amazon SES is the user-approved newsletter/bulk delivery provider (2026-10-25).**
+Cloudflare continues to own new scheduling, Queues and dispatch compute; Email
+Service remains an option for existing transactional mail only. Its marketing
+restriction no longer blocks the selected newsletter architecture.
+
+AWS documents [marketing email](https://aws.amazon.com/ses/) and
+[third-party sending authorization](https://docs.aws.amazon.com/ses/latest/dg/sending-authorization.html).
+This establishes a documented product fit, not live account enablement or blanket
+approval of any customer content. Sender consent, AWS policies, regional production
+access, identity authority and deliverability controls still apply. No sends or
+production writes are authorized or performed in this update.
 
 This is Phase 1 provider feasibility, following the
 [design draft PR #6719](https://github.com/tutur3u/platform/pull/6719).
@@ -21,7 +25,7 @@ verification tool. It creates no product routes, tables, subscriptions, Workers,
 DNS records, provider products or deployed configuration. Research was checked
 2026-10-25; account access and hosted acceptance remain separate evidence.
 
-## Cloudflare evidence
+## Superseded Cloudflare sending option — retained evidence
 
 | Question | Verified public source | Conclusion / missing evidence |
 | --- | --- | --- |
@@ -36,11 +40,20 @@ DNS records, provider products or deployed configuration. Research was checked
 | Are feedback and suppressions supported? | [Event subscriptions](https://developers.cloudflare.com/email-service/reference/event-subscriptions/) and [suppression management](https://developers.cloudflare.com/email-service/configuration/suppressions/) | Sending-domain delivery/bounce/complaint facts can reach Queues; provider suppressions exist. Need hosted event binding and no-plaintext retention compatibility proof. |
 | Can unknown sends be replayed safely? | [REST guide](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/) | No provider idempotency guarantee established by the inspected guide. Preserve unknown submission and reconcile; no blind automatic resend. |
 
-No provider contact was sent. The release owner must obtain a written answer
-covering marketing/newsletters, resale/multi-tenant use, customer domain authority,
-cross-account token/delegation support, initial aggregate capacity and suppression
-retention/deletion. General Workers-for-Platforms permissions are not Email Service
-resale permission. Technical sending success would not waive transactional-only terms.
+This table explains the rejected bulk-sending option; it is not a request to
+obtain a Cloudflare marketing exception. No provider contact was sent. Existing
+Cloudflare transactional transports remain governed by their own limits and terms.
+
+## SES feasibility and remaining acceptance
+
+| Boundary | Verified source and conclusion | Unverified live evidence |
+| --- | --- | --- |
+| Sending API | [SES v2 SendEmail](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_SendEmail.html) supports simple/raw/templated messages. Reuse the existing `packages/email-service` SES adapter; qualify its Worker boundary and unsubscribe headers. | Actual account/region IAM, configuration set, message identity and adapter/runtime acceptance. |
+| Customer domains | [Create/verify identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html): publish SES DKIM records in customer DNS. [Sending authorization](https://docs.aws.amazon.com/ses/latest/dg/sending-authorization.html) also documents customer-owned identity delegation to a third-party sender. | Chosen platform-account or delegated identity model, ownership proof and least-privilege policies. No mandatory Cloudflare DNS transfer. |
+| Return path | [Custom MAIL FROM](https://docs.aws.amazon.com/ses/latest/dg/mail-from.html) uses a dedicated subdomain with SPF/MX; preserve root MX and customer DMARC. | Aligned DKIM/SPF, identity region, fallback policy and independently approved sender. |
+| Capacity | [SES sandbox](https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html): per-region restrictions, verified recipients, 200 messages/24 hours and one/second. [Quotas](https://docs.aws.amazon.com/ses/latest/dg/manage-sending-quotas.html) include rolling 24-hour volume and rate. | Regional production access and aggregate capacity for all workspaces; application local-day quota is a separate ceiling. |
+| Feedback | [SES event notifications](https://docs.aws.amazon.com/ses/latest/dg/monitor-sending-activity-using-notifications.html): configuration-set publishing including SNS; authenticated bounded ingestion into Cloudflare Queues. | Topic/configuration-set identity, SNS signature verification, event-to-workspace mapping, suppression handling and retention compatibility. |
+| Policy and safety | SES product fit does not waive consent, spam/abuse policy, workspace/domain/sender approval, quota, full-campaign reservation or stop fence. | Independent security review and hosted release acceptance; no sends in this task. |
 
 ## Approved newsletter tier contract
 
@@ -48,7 +61,7 @@ The user clarified that a workspace has exactly one newsletter tier:
 
 | Tier | Price | Daily allowance | Billing-period allowance |
 | --- | --- | --- | --- |
-| Free | $0 | 10 | No separate monthly pool |
+| Free | $0 | 10 only after workspace newsletter approval; otherwise 0 | No separate monthly pool |
 | Tier 1 | $2/month | At most 200 | 2,000 total |
 | Tier 2 | $10/month | 500 | No separate monthly pool |
 
@@ -58,15 +71,20 @@ subscription anniversaries define Tier 1 pool periods. A coupon can discount a
 product without changing its tier. Both paid catalog entries belong to the same
 exclusive newsletter group, independently of the workspace's base subscription.
 
-At $0.00035/email, Tier 1 full pool costs $0.70, leaving $1.30 before other costs;
-Tier 2 full 31-day use costs $5.425, leaving $4.575 before other costs. These are
-calculations at the published marginal email rate, not total margins. Payment,
-compute, queue, storage, database and operational expenses remain excluded.
+[SES pricing](https://aws.amazon.com/ses/pricing/) lists à la carte $0.10/1,000
+and first-band Essentials $0.16/1,000. Email-only Tier 1 cost is $0.20/$0.32;
+full 31-day Tier 2 is $1.55/$2.48. Actual account plan, data, optional features,
+Cloudflare, storage and payment costs remain unverified/excluded; these are not
+net margins. The old Cloudflare $0.35/1,000 estimate is superseded for newsletters.
 
-The design records retention and billing policies as **recommended, pending user
-confirmation**, including full-campaign quota reservation, grace and downgrade
-handling. A quota admission can be all-or-nothing, but external delivery cannot:
+The user approved #6719's retention and billing policies as written on 2026-10-25,
+including full-campaign quota reservation, grace and downgrade handling. All
+unapproved workspaces have **zero newsletter sends**, regardless of tier/payment.
+Free grants 10/day only after newsletter approval. Domain/sender approvals remain
+separate. A quota admission can be all-or-nothing, but external delivery cannot:
 bounces, unsubscribes, outages and Stop still require honest partial outcomes.
+Platform-wide GDPR/PDPD implementation is a separate lane; cite the approved
+newsletter retention standard in #6719 without expanding this feasibility task.
 
 ## Reproducible local proof
 
@@ -136,47 +154,41 @@ API host and credentials. The next authenticated operation must explicitly targe
 6. Stop the local listener, remove only owned ephemeral forwarding resources and
    retain redacted receipts. Do not delete a test product with an unknown outcome.
 
-This run checked presence only for named environment variables; no existing token
-or credential files were read. Sandbox token/webhook secret were absent from the
-execution environment. A `request_secret` card was issued, but its returned
-secret-reference format has no supported consumer in the available shell/HTTP
-execution tools. A private-card value must not be copied into commands or exported
-through chat to work around that boundary. An execution bridge that consumes the
-reference, or a user-managed secure environment injection, is required to proceed.
-No Polar product creation or hosted webhook receipt is claimed.
+## Credential and no-send boundary
 
-## Own-domain proof boundary
+No live SES/Polar checks are part of this update. The earlier run had no usable
+sandbox credential and created no provider products or hosted webhook receipts.
+Do not read credential files, print tokens or infer production domain readiness
+from checked-in Mail configuration. Stop before any authenticated check until
+credentials are supplied privately via `request_secret` (file delivery for an
+approved shell executor where supported), never chat.
 
-No approved disposable test-domain identity, isolated account enablement or sending
-credential is available to this execution. Do not infer that the configured
-`tuturuuu.com` production Mail domain is a sandbox. Enabling sending or editing
-DNS can affect real mail and is outside the no-production-write scope.
+SES read-only checks need `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
+`AWS_SESSION_TOKEN` for temporary credentials, plus pinned `AWS_REGION`, account
+ID, identity ARN/domain and configuration-set name. Prefer short-lived least-
+privilege read-only credentials; no `ses:SendEmail` or provisioning authority is
+needed for account/identity inspection. Polar sandbox needs
+`POLAR_SANDBOX_ACCESS_TOKEN`, `POLAR_SANDBOX_ORGANIZATION_ID` and, for genuine local
+webhook validation, `POLAR_SANDBOX_WEBHOOK_SECRET`. Refer only to variable names
+in public artifacts. The authenticated continuation above remains unexecuted.
 
-An eligible proof uses an already-onboarded disposable domain in an isolated
-account and one recipient the team controls. It is a single explicitly requested
-transactional test, not a newsletter. Check DNS/authentication and account capacity
-read-only first, persist one send intent, submit once, retain unknown outcomes and
-inspect received SPF/DKIM/DMARC/return-path/custom headers. Capture the corresponding
-trusted event and stop/revoke evidence privately. No automatic retries or external
-recipient lists. A provider-approved newsletter test remains separately blocked by
-policy even if this transactional test succeeds.
-
-Local Worker simulated delivery can verify code shape without account access,
-but cannot prove domain ownership, API permission, DKIM, reputation or eligibility.
-The current proof intentionally does not substitute that simulation for an
-own-domain hosted receipt. Continue using the existing provider adapter and
-[Cloudflare cost/stop rules](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance).
+No own-domain send proof is attempted: **no sends and no production writes** is
+the current custody boundary, including SES sandbox/simulator sends. A later
+separately authorized proof must pin a disposable identity/account/region, preserve
+unknown-send fences, and satisfy the existing
+[Cloudflare cost/stop rules](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+for queue/dispatch compute. Provider selection does not authorize that proof.
 
 ## Outstanding acceptance and owners
 
 | Blocker / gap | Owner and resume evidence |
 | --- | --- |
-| Marketing and resale restriction | Release/provider account owner: written Cloudflare terms permitting the actual use case, or explicit provider-scope decision. |
-| Customer zones and cross-account delegation | Provider/platform owner: documented supported account/token model and isolated proof; consent alone is insufficient. |
-| Account API enablement, numeric quota and own test domain | Cloudflare account owner: isolated account, approved domain/recipient and scoped credential through supported private execution. |
-| Two real Polar sandbox products | Billing owner: secure executable sandbox token/organization, bounded create/readback receipts. |
+| SES account access, quotas and pricing | AWS account owner: pinned account/region and private read-only credentials; no sends or production writes. |
+| SES customer identity model | Platform/AWS owner: verified platform identity or explicit customer delegation and scoped policy; domain/sender approvals remain required. |
+| Feedback and suppression | Platform/AWS owner: authenticated configuration-set/SNS ingestion evidence and compatibility with approved retention policy. |
+| Two real Polar sandbox products | Billing owner: private sandbox token/organization and separately executed bounded create/readback receipts. |
 | Genuine local sandbox webhooks | Billing owner: private sandbox forwarding/signing-secret injection and signed provider receipt. |
-| Recommended retention and billing decisions | User/legal/product owners: confirmation or amendments; current legal review and regression plan. |
+| Approved retention and billing implementation | Newsletter implementation owner: regression evidence against #6719; platform-wide data-protection implementation belongs to its separate owner. |
 
 Source research and finite local signature mechanics are complete. Hosted provider
 acceptance and sandbox mutations remain blocked, not complete. Neither draft PR
