@@ -138,6 +138,9 @@ class AssistantAttachmentUploader {
       ..headers.addAll(headers)
       ..contentLength = bytes.length;
     final response = _http.send(request);
+    // A transport failure while the body streams must not surface as an
+    // uncaught async error; the await below still receives it.
+    unawaited(response.then<void>((_) {}, onError: (Object _) {}));
     // Progress advances as the transport pulls each chunk, not when queued.
     Stream<List<int>> chunks() async* {
       onProgress?.call(0);

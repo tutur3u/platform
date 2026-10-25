@@ -58,17 +58,29 @@ extension AssistantChatAttachments on AssistantChatCubit {
     required String attachmentId,
     required String modelId,
     required String timezone,
+    int? expectedWorkspaceVersion,
+    bool Function()? isCurrentActor,
   }) async {
     final picked = _attachmentSources[attachmentId];
     final index = state.composerAttachments.indexWhere(
       (attachment) => attachment.id == attachmentId,
     );
-    if (picked == null || index < 0 || state.workspaceId != wsId) return;
     final workspaceVersion = _workspaceVersion;
     bool isCurrentScope() =>
         !isClosed &&
         state.workspaceId == wsId &&
-        _workspaceVersion == workspaceVersion;
+        _workspaceVersion == workspaceVersion &&
+        (isCurrentActor?.call() ?? true);
+    if (picked == null ||
+        index < 0 ||
+        // A second tap before the rebuild must not start a parallel upload.
+        state.composerAttachments[index].uploadState !=
+            AssistantAttachmentUploadState.error ||
+        (expectedWorkspaceVersion != null &&
+            expectedWorkspaceVersion != workspaceVersion) ||
+        !isCurrentScope()) {
+      return;
+    }
     final previous = state.composerAttachments[index];
     _replaceComposerAttachment(
       attachmentId,

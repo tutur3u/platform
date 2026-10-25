@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -167,6 +168,89 @@ void main() {
       expect(failed.failure!.retryable, isFalse);
     },
   );
+
+  Future<List<Completer<AssistantAttachment>>> failThenHold() async {
+    await cubit.loadWorkspace('ws');
+    var attempts = 0;
+    final held = <Completer<AssistantAttachment>>[];
+    when(
+      () => repository.uploadAttachment(
+        wsId: 'ws',
+        chatId: 'cached',
+        file: any(named: 'file'),
+        onProgress: any(named: 'onProgress'),
+      ),
+    ).thenAnswer((_) {
+      attempts++;
+      if (attempts == 1) {
+        throw const AssistantAttachmentUploadException(
+          AssistantAttachmentFailure.network,
+        );
+      }
+      final completer = Completer<AssistantAttachment>();
+      held.add(completer);
+      return completer.future;
+    });
+    await attachVoiceNote();
+    expect(
+      cubit.state.composerAttachments.single.uploadState,
+      AssistantAttachmentUploadState.error,
+    );
+    return held;
+  }
+
+  test('a double-tapped Retry starts one upload', () async {
+    final held = await failThenHold();
+    Future<void> retry() => cubit.retryComposerAttachment(
+      wsId: 'ws',
+      attachmentId: 'attachment-1',
+      modelId: 'model',
+      timezone: 'UTC',
+    );
+
+    final first = retry();
+    final second = retry();
+    await second;
+    await pumpEventQueue();
+    expect(held, hasLength(1));
+    held.single.complete(
+      const AssistantAttachment(
+        id: 'attachment-1',
+        name: 'voice-message.m4a',
+        size: 4,
+        type: 'audio/mp4',
+        storagePath: 'chats/cached/voice.m4a',
+        uploadState: AssistantAttachmentUploadState.uploaded,
+      ),
+    );
+    await first;
+    expect(cubit.state.composerAttachments.single.isUploaded, isTrue);
+  });
+
+  test('Retry after the actor changed does not upload', () async {
+    final held = await failThenHold();
+
+    await cubit.retryComposerAttachment(
+      wsId: 'ws',
+      attachmentId: 'attachment-1',
+      modelId: 'model',
+      timezone: 'UTC',
+      isCurrentActor: () => false,
+    );
+    await cubit.retryComposerAttachment(
+      wsId: 'ws',
+      attachmentId: 'attachment-1',
+      modelId: 'model',
+      timezone: 'UTC',
+      expectedWorkspaceVersion: cubit.attachmentScopeVersion - 1,
+    );
+
+    expect(held, isEmpty);
+    expect(
+      cubit.state.composerAttachments.single.uploadState,
+      AssistantAttachmentUploadState.error,
+    );
+  });
 
   test('removing an attachment discards its retained source', () async {
     await cubit.loadWorkspace('ws');
