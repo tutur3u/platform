@@ -9,7 +9,7 @@
     "lint": "biome check src scripts vite.config.ts",
     "generate": "bun scripts/generate.ts",
     "registry:check": "bun scripts/generate.ts --check",
-    "test:runtime": "node --test scripts/worker-runtime.test.mjs"
+    "test:runtime": "API_WORKER_RUNTIME_REQUIRED=1 node --test scripts/worker-runtime.test.mjs"
   },
   "dependencies": {
     "@tuturuuu/utils": "workspace:*",

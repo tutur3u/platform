@@ -1233,3 +1233,21 @@ try {
 ```
 
 CI pulls Supabase images anonymously from `public.ecr.aws` through `SUPABASE_INTERNAL_IMAGE_REGISTRY`; no registry login or package-read permission is needed. Seven attempts allow at most 487.5 seconds of backoff, excluding command runtime. Throttling (`toomanyrequests`, `Rate exceeded` or HTTP 429) and classified transient pull transport errors retry; SQL never replays. The baseline fingerprint includes the registry, so a registry change invalidates existing snapshots once.
+
+### Backfills with historical payload violations
+
+A `NOT VALID` check still rejects updates to historical rows, even when the
+checked payload does not change. For notification email-copy cleanup, first
+batch rows that satisfy the exact catalog check expression (SQL NULL also passes).
+If legacy oversized rows remain, capture `pg_get_constraintdef`, drop the check,
+clear only their email copies and restore the same named check `NOT VALID` in
+the same transaction. Preserve payload bytes. Keep `lock_timeout = '1s'`; the
+constraint drop takes `ACCESS EXCLUSIVE` until commit, so perform it only after
+the regular batches finish. With no oversized rows, leave the constraint intact.
+
+On a disposable full chain, reproduce SQLSTATE `23514` with the original
+migration, then verify payload bytes, email removal, byte-identical constraint
+definition, unchanged name, `convalidated = false`, and rejection of a new
+oversized insert. Also compare constraint OIDs on the safe-only path. The batch
+regression is `apps/database/supabase/tests/notification-email-payload-cleanup.sql`;
+run the other notification pgTAP suites after applying the remaining migrations.

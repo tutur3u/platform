@@ -2,7 +2,12 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { fontModule, importedNames, startBridgeRscPlugin } from './rsc';
+import {
+  fontModule,
+  importedNames,
+  startBridgeNodeBuiltinsPlugin,
+  startBridgeRscPlugin,
+} from './rsc';
 
 describe('RSC plugin', () => {
   it('reads imported font names, including default and aliases', () => {
@@ -100,6 +105,27 @@ describe('RSC plugin', () => {
       expect(builtin?.test(name), name).toBe(true);
     expect(builtin?.test('react')).toBe(false);
     expect(config.build.rollupOptions.plugins).toHaveLength(1);
+  });
+
+  it('applies the built-in require conversion to opted-in environments only', () => {
+    const rscPlugins = (
+      startBridgeRscPlugin().configEnvironment('rsc') as {
+        build: { rollupOptions: { plugins: { name: string }[] } };
+      }
+    ).build.rollupOptions.plugins;
+    const plugin = startBridgeNodeBuiltinsPlugin();
+    const ssr = plugin.configEnvironment('ssr') as {
+      build: { rollupOptions: { plugins: { name: string }[] } };
+    };
+    expect(ssr).toEqual({
+      build: { rollupOptions: { plugins: [expect.any(Object)] } },
+    });
+    expect(ssr.build.rollupOptions.plugins[0]?.name).toBe(rscPlugins[0]?.name);
+    expect(plugin.configEnvironment('client')).toBeNull();
+    expect(plugin.configEnvironment('rsc')).toBeNull();
+    const custom = startBridgeNodeBuiltinsPlugin({ environments: ['worker'] });
+    expect(custom.configEnvironment('worker')).not.toBeNull();
+    expect(custom.configEnvironment('ssr')).toBeNull();
   });
 
   it('loads wasm and binary data as Wrangler modules in rsc (next/og)', () => {

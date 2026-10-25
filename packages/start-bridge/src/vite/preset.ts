@@ -55,6 +55,12 @@ export interface StartBridgePresetOptions {
   nuqsAdapter?: boolean;
   /** Resolved `next/og` replacement, e.g. `@cloudflare/pages-plugin-vercel-og/api`. */
   og?: string;
+  /**
+   * Render `@tuturuuu/vercel`'s Analytics and Speed Insights as nothing:
+   * Vercel serves their scripts only on its own hosting (default `true`
+   * unless `shims` is explicit).
+   */
+  inertVercel?: boolean;
   /** Alias `server-only` to Start's server-only marker (default `true`). */
   serverOnly?: boolean;
   /**
@@ -96,6 +102,7 @@ export function startBridgeAliases(
     | 'intlRequestConfig'
     | 'nuqsAdapter'
     | 'og'
+    | 'inertVercel'
     | 'serverOnly'
     | 'rsc'
   >
@@ -148,6 +155,8 @@ export function startBridgeAliases(
   if (options.nuqsAdapter ?? !options.shims)
     exact('nuqs/adapters/next/app', 'nuqs/adapters/tanstack-router');
   if (options.og) exact('next/og', options.og);
+  if (options.inertVercel ?? !options.shims)
+    exact('@tuturuuu/vercel', own('next/vercel.tsx'));
   if (options.serverOnly ?? !options.shims)
     exact('server-only', '@tanstack/react-start/server-only');
   if (options.srcAlias !== false)
