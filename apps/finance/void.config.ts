@@ -10,9 +10,15 @@ export default defineConfig({
     name: 'tuturuuu-finance-vite-staging',
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
-    compatibility_flags: ['nodejs_compat'],
+    compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: true,
-    vars: { TUTURUUU_NOINDEX: '1' },
+    vars: {
+      TUTURUUU_NOINDEX: '1',
+      INTERNAL_WEB_API_ORIGIN: 'https://staging.tuturuuu.com',
+      NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tuturuuu.com',
+      NEXT_PUBLIC_APP_URL: 'https://finance-staging.tuturuuu.com',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://fxefojytwimjiqxseqag.supabase.co',
+    },
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',

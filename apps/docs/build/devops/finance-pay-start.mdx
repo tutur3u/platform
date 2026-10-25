@@ -62,7 +62,15 @@ the incoming request on each call; explicit caller base URLs retain precedence.
 request isolation. App code does not maintain a competing registrar or RSC
 entry wrapper.
 
-`start-bridge.config.ts` owns Finance's staging noindex response wrapper.
+`start-bridge.config.ts` owns Finance's response security policy. Every response
+sends `X-Robots-Tag: noindex, nofollow, nosnippet`, `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, and `Referrer-Policy:
+strict-origin-when-cross-origin`. The CSP includes `frame-ancestors 'none'`.
+Personalized SSR and API responses use `Cache-Control: private, no-store` and
+vary on Cookie, Authorization and Accept-Language. Compiled static assets keep
+their own caching policy. Root hosts are explicitly admitted; unlisted hosts and
+apex mounts fail closed.
+
 The codemod creates that config once and preserves its contents on regeneration.
 The Worker, router, Vite config, lazy API registry and registration remain
 fully generated. API dependencies load on the matching route's first request.
@@ -120,8 +128,16 @@ aliases, invitations, permission denial, and query preservation. Inspect every
 `Set-Cookie` separately. Exercise parallel requests with different users and
 workspaces to detect request-context leakage.
 
-Keep the staging profile noindex and require its exact account, Worker, origin,
-bindings, and rollback mapping before publication. Source configuration alone
+Before any hosted staging publish, declare and admit its exact account, Worker,
+hostname, bindings and rollback mapping. Finance's declared staging profile uses
+`https://finance-staging.tuturuuu.com`, with `INTERNAL_WEB_API_ORIGIN` and
+`NEXT_PUBLIC_WEB_APP_URL` both set to `https://staging.tuturuuu.com`, and
+`NEXT_PUBLIC_SUPABASE_URL` set from the repository's `STAGING_SUPABASE_URL`.
+Never forward staging tokens to production Web. This staging-data artifact
+requires a separately reviewed production profile before the production flip.
+Keep `global_fetch_strictly_public` enabled and verify hosted same-zone SSR
+self-fetches reach the Finance Worker, including its public build identity;
+the retained Vercel origin must not answer those subrequests. Source configuration alone
 does not prove that a hosted staging environment exists. Follow the
 [Apps artifact and runtime contract](/build/devops/apps-viteplus-cloudflare)
 for sealed original/restored artifact and browser acceptance.
@@ -145,7 +161,8 @@ signal that invokes it. Do not flip traffic without a ready rollback.
 Finance's root rollout retains the Vercel CNAME, enables its proxy, and attaches
 only `finance.tuturuuu.com/*` to the admitted Worker. Capture the prior immutable
 Vercel deployment and DNS record ID, content, proxy state, and TTL. The rollback
-restores that deployment if necessary, removes only the new Finance Worker
+assigns only the Finance hostname to that immutable deployment if necessary
+(project-wide promotion is prohibited), removes only the new Finance Worker
 route, and restores the captured DNS payload. Keep apex and shared routes out
 of this transition; a Custom Domain requires a different rollback plan.
 
@@ -153,7 +170,15 @@ Use the zone-scoped DNS credential for DNS reads/edits and the existing Workers
 deploy credential for Worker route reads/edits. Keep the two tokens separate in
 capture and rollback clients. Validate provider identities before any write,
 keep the original route and DNS record IDs, and reconcile ambiguous responses
-with reads before continuing.
+with reads before continuing. Persist mutation intent before dispatch in one
+host-scoped journal, including outcomes that remain unknown across invocations.
+An old or stale read never authorizes replay. Reconcile the original operation
+or stop; preserve a campaign-wide request budget. A DNS-only partial cutover may
+restore DNS without a route ID only after proving no Finance route or Custom
+Domain exists. Require an exclusive provider-writer window and fresh full
+identity reads immediately before each write; send conditional updates where
+the provider exposes a strong revision. These APIs do not guarantee atomic CAS,
+so report that remaining check/write window explicitly.
 
 After cutover, run smoke checks and watch 5xx rates, authentication failures,
 and p95 latency for 30 to 60 minutes. Roll back immediately on regression and
@@ -193,10 +218,17 @@ implementation with Finance's Worker identity, public files and
 `FINANCE_SOURCE_SHA`; its source tests reject drift and a generic SHA fallback.
 The workflow repeats runtime acceptance after restoring the sealed bytes.
 
-The emitted suite covers exact build identity, anonymous API denial, function
+Only exact GET/HEAD `/api/build-info` are public. The proxy strips ambient
+cookies and Authorization before forwarding them and retains the shared API
+guard. Other methods and path lookalikes remain protected. The cutover smoke
+must compare this endpoint's `commitHash` with the sealed artifact's source SHA.
+
+The emitted suite covers public GET/HEAD build identity, negative method/path
+controls, anonymous API denial, signed-in synthetic EN/VI SSR, security headers,
+private response caching, function
 method/content-type admission, reserved Web routing and separate response
-cookies, bilingual auth and verification redirects, wildcard `Accept-Language`, mounted assets and browser
-navigation. Browser redirects use the existing CDP fence because Playwright
+cookies, bilingual auth and verification redirects, wildcard `Accept-Language`, root-mode
+assets and browser navigation. Browser redirects use the existing CDP fence because Playwright
 page routing does not intercept every redirect hop. Every Worker and browser request is bounded and fixture-fenced; the
 suite never authenticates to Cloudflare or a real provider. Production token
 verification runs on the server, so a missing token redirects and does not

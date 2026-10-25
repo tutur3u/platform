@@ -16,7 +16,17 @@ def load():
     spec = importlib.util.spec_from_file_location("finance_artifact_base", source)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.IDENTITY = {**module.IDENTITY, "name": WORKER}
+    module.IDENTITY = {
+        **module.IDENTITY, "name": WORKER,
+        "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+        "vars": {
+            "TUTURUUU_NOINDEX": "1",
+            "INTERNAL_WEB_API_ORIGIN": "https://staging.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://finance-staging.tuturuuu.com",
+            "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+        },
+    }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "finance-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES

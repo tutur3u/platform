@@ -10,28 +10,58 @@ import {
   financeRuntime,
   modes,
 } from './native-runtime-fixture.mjs';
+import {
+  fixtureWorkspaceId,
+  fixtureWorkspaceName,
+  signedSsrFixtureResponse,
+  syntheticSessionHeaders,
+} from './signed-ssr-fixture.mjs';
 
 test('emitted Finance Worker: auth redirects, API ownership and action admission', {
   timeout: 180000,
 }, async (t) => {
-  const runtime = await financeRuntime(t);
+  const signedCalls = [];
+  const runtime = await financeRuntime(t, {
+    fixtureResponse: (request) => signedSsrFixtureResponse(request, signedCalls),
+  });
   for (const { origin, base } of modes) {
     await t.test(
       `exact build and anonymous API admission at ${origin}${base}`,
       async () => {
-        const anonymous = await runtime.fetch(
-          `${origin}${base}/api/build-info`
-        );
-        assert.equal(anonymous.status, 401);
-        await anonymous.text();
-        const info = await runtime.fetch(`${origin}${base}/api/build-info`, {
-          headers: { authorization: 'Bearer ttr_finance_runtime_fixture' },
-        });
+        const info = await runtime.fetch(`${origin}${base}/api/build-info`);
         assert.equal(info.status, 200);
+        const head = await runtime.fetch(`${origin}${base}/api/build-info`, {
+          method: 'HEAD',
+        });
+        assert.equal(head.status, 200);
+        assert.equal(await head.text(), '');
+        for (const [path, method] of [
+          ['/api/build-info', 'POST'],
+          ['/api/build-info/extra', 'GET'],
+          ['/api/build-information', 'GET'],
+        ]) {
+          const denied = await runtime.fetch(`${origin}${base}${path}`, {
+            method,
+          });
+          assert.equal(denied.status, 401);
+          await denied.text();
+        }
         assert.equal(
           info.headers.get('x-robots-tag'),
           'noindex, nofollow, nosnippet'
         );
+        assert.equal(info.headers.get('x-frame-options'), 'DENY');
+        assert.equal(info.headers.get('x-content-type-options'), 'nosniff');
+        assert.equal(
+          info.headers.get('referrer-policy'),
+          'strict-origin-when-cross-origin'
+        );
+        assert.match(
+          info.headers.get('content-security-policy') ?? '',
+          /frame-ancestors 'none'/
+        );
+        assert.equal(info.headers.get('cache-control'), 'private, no-store');
+        assert.match(info.headers.get('vary') ?? '', /Cookie/i);
         const identity = await info.json();
         assert.equal(identity.appName, 'finance');
         assert.equal(identity.commitHash, runtime.source);
@@ -89,7 +119,7 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
           );
           assert.equal(protectedPage.status, 307);
           const login = new URL(protectedPage.headers.get('location'));
-          assert.equal(login.origin, 'https://tuturuuu.com');
+          assert.equal(login.origin, 'https://staging.tuturuuu.com');
           assert.equal(login.pathname, '/login');
         }
         for (const path of [
@@ -133,6 +163,43 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
       }
     });
 
+    await t.test(`signed-in EN/VI root SSR at ${origin}${base}`, async () => {
+      for (const locale of ['en', 'vi']) {
+        const headers = {
+          ...syntheticSessionHeaders(runtime.secret),
+          'accept-language': locale,
+        };
+        let url = `${origin}/${locale}/${fixtureWorkspaceId}?no-redirect=1`;
+        let response;
+        for (let hop = 0; hop < 4; hop++) {
+          response = await runtime.fetch(url, { headers });
+          if (![307, 308].includes(response.status)) break;
+          const next = new URL(response.headers.get('location'), url);
+          assert.equal(next.origin, origin, 'Signed-in SSR must stay on Finance');
+          for (const cookie of response.headers.getSetCookie()) {
+            headers.cookie += `; ${cookie.split(';')[0]}`;
+          }
+          await response.text();
+          url = next.href;
+        }
+        assert.equal(response.status, 200, `Signed-in ${locale} SSR`);
+        assert.equal(response.headers.get('cache-control'), 'private, no-store');
+        assert.match(response.headers.get('vary') ?? '', /Cookie/i);
+        assert.equal(response.headers.get('x-frame-options'), 'DENY');
+        const html = await response.text();
+        assert.match(html, new RegExp(`<html[^>]+lang=["']${locale}["']`));
+        assert.ok(html.includes(fixtureWorkspaceName), 'Workspace shell must render');
+      }
+      assert.ok(signedCalls.some((path) => path.startsWith('/auth/v1/')));
+      assert.ok(signedCalls.includes('/rest/v1/workspaces'));
+      const rejected = await runtime.fetch(`${origin}/en/${fixtureWorkspaceId}`, {
+        headers: syntheticSessionHeaders(`${runtime.secret}-invalid`),
+      });
+      assert.equal(rejected.status, 307, 'Invalid signatures must not reach SSR');
+      assert.equal(new URL(rejected.headers.get('location')).pathname, '/login');
+      await rejected.text();
+    });
+
     await t.test(`emitted static assets at ${origin}${base}`, async () => {
       const files = await readdir(join(app, 'dist/client/assets'));
       const javascript = files.find((file) => file.endsWith('.js'));
@@ -166,7 +233,7 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
         const result = await withNativeBrowserFence(
           browser,
           origin,
-          ['https://tuturuuu.com'],
+          ['https://staging.tuturuuu.com'],
           async (page) => {
             const errors = [];
             page.on('pageerror', (error) => errors.push(error.message));
@@ -175,7 +242,7 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
             });
             await page.waitForURL(
               (url) =>
-                url.origin === 'https://tuturuuu.com' &&
+                url.origin === 'https://staging.tuturuuu.com' &&
                 url.pathname === '/login'
             );
             assert.equal(new URL(page.url()).pathname, '/login');
@@ -190,6 +257,22 @@ test('emitted Finance Worker: auth redirects, API ownership and action admission
       }
     }
   );
+
+  await t.test('unlisted and apex hosts are rejected', async () => {
+    for (const origin of [
+      'https://tuturuuu.com/finance',
+      'https://unknown.example.test',
+    ]) {
+      const rejected = await runtime.fetch(`${origin}/api/build-info`);
+      assert.equal(rejected.status, 404);
+      assert.equal(rejected.headers.get('x-frame-options'), 'DENY');
+      assert.equal(
+        rejected.headers.get('x-robots-tag'),
+        'noindex, nofollow, nosnippet'
+      );
+      await rejected.text();
+    }
+  });
 
   assert.deepEqual(
     runtime.unexpected,

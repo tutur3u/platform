@@ -58,9 +58,18 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -85,6 +94,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return finish(preserveMfaRecoveryCookies(req, guardResponse));
     }
+
+    if (isBuildInfoRead)
+      return finish(NextResponse.next({ request: { headers: req.headers } }));
 
     return finish(
       appSessionRefresh?.response ??

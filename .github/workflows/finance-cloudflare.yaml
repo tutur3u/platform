@@ -149,8 +149,8 @@ jobs:
       public-env: |
         NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://finance-ci.supabase.invalid' }}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_finance_ci_placeholder' }}
-        NEXT_PUBLIC_APP_URL=https://finance.tuturuuu.com
-        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+        NEXT_PUBLIC_APP_URL=https://finance-staging.tuturuuu.com
+        NEXT_PUBLIC_WEB_APP_URL=https://staging.tuturuuu.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts

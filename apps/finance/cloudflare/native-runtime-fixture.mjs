@@ -13,10 +13,10 @@ export const app = await realpath(
 );
 export const modes = [
   { origin: 'https://finance.tuturuuu.com', base: '' },
-  { origin: 'https://tuturuuu.com', base: '/finance' },
+  { origin: 'https://finance-staging.tuturuuu.com', base: '' },
 ];
 
-export async function financeRuntime(t) {
+export async function financeRuntime(t, options = {}) {
   assert.equal(process.env.CI, 'true', 'Requires an emitted native build');
   const source = process.env.CI_SOURCE_SHA;
   assert.match(source ?? '', /^[a-f0-9]{40}$/);
@@ -25,7 +25,17 @@ export async function financeRuntime(t) {
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
   assert.equal(config.assets.not_found_handling, 'none');
-  assert.deepEqual(config.vars, { TUTURUUU_NOINDEX: '1' });
+  assert.deepEqual(config.compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
+  assert.deepEqual(config.vars, {
+    TUTURUUU_NOINDEX: '1',
+    INTERNAL_WEB_API_ORIGIN: 'https://staging.tuturuuu.com',
+    NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tuturuuu.com',
+    NEXT_PUBLIC_APP_URL: 'https://finance-staging.tuturuuu.com',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://fxefojytwimjiqxseqag.supabase.co',
+  });
   const scratch = await realpath(
     await mkdtemp(join(tmpdir(), 'finance-native-'))
   );
@@ -93,6 +103,10 @@ export async function financeRuntime(t) {
           headers.append('Set-Cookie', 'fixture_first=1; Path=/');
           headers.append('Set-Cookie', 'fixture_second=2; Path=/');
           return new Response('reserved Web owner', { status: 202, headers });
+        }
+        if (operations <= 100 && options.fixtureResponse) {
+          const response = await options.fixtureResponse(request);
+          if (response) return response;
         }
         unexpected.push({ method: request.method, url: request.url });
         return new Response('Unadmitted fixture egress', { status: 599 });

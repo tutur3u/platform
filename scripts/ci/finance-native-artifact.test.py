@@ -48,7 +48,11 @@ class FinanceArtifactTest(unittest.TestCase):
         self.assertIn("robots.txt", wrapper.PUBLIC_FILES)
         self.assertEqual(artifact.IDENTITY["name"], WORKER)
         self.assertEqual(artifact.NORMALIZED_DEFAULTS["topLevelName"], WORKER)
-        self.assertEqual(artifact.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "1"})
+        self.assertEqual(artifact.IDENTITY["vars"]["INTERNAL_WEB_API_ORIGIN"], "https://staging.tuturuuu.com")
+        self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_WEB_APP_URL"], "https://staging.tuturuuu.com")
+        self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_SUPABASE_URL"], "https://fxefojytwimjiqxseqag.supabase.co")
+        self.assertEqual(artifact.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
+        self.assertEqual(base.IDENTITY["compatibility_flags"], ["nodejs_compat"])
         self.assertEqual(base.IDENTITY["name"], "tuturuuu-apps-vite-staging")
         self.assertEqual(base.PUBLIC_FILES, ("robots.txt", "sitemap.xml"))
 
