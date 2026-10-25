@@ -71,11 +71,11 @@ class AssistantAttachmentPreview extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        // Retry takes the tap when offered; otherwise a failed local file can
+        // still be previewed before the user decides to remove it.
         onPressed:
             retry ??
-            (failed
-                ? null
-                : canPreview
+            (canPreview
                 ? () => showAppSheet<void>(
                     context: context,
                     builder: (_) => _MediaPreviewDialog(

@@ -119,6 +119,39 @@ void main() {
   });
 
   test(
+    'a legacy ai-chat voice note never touches the conversation route',
+    () async {
+      // Production 2026-10-25 19:27 GMT+7: this exact path answered 400 on the
+      // Chat attachment route and the client never fell back.
+      final api = _UploadApi(
+        (path, _) => path.startsWith('/api/v1/')
+            ? throw const ApiException(message: 'invalid uuid', statusCode: 400)
+            : {
+                'signedUrl': 'https://storage.test/put',
+                'token': 't',
+                'path': 'ws/chats/ai/resources/$_native/1_voice-message.m4a',
+              },
+      );
+      final client = MockClient((_) async => http.Response('', 200));
+
+      final uploaded =
+          await AssistantAttachmentUploader(
+            apiClient: api,
+            httpClient: client,
+          ).upload(
+            wsId: 'ws',
+            chatId: 'ai-chat-$_native',
+            file: _file('voice-message.m4a', 'audio/mp4', 4096),
+          );
+
+      expect(api.calls.map((call) => call.$1), ['/api/ai/chat/upload-url']);
+      expect((api.calls.single.$2! as Map)['chatId'], _native);
+      expect(uploaded.isUploaded, isTrue);
+      expect(uploaded.type, 'audio/mp4');
+    },
+  );
+
+  test(
     'a native preparation failure never falls back to another store',
     () async {
       final api = _UploadApi(
