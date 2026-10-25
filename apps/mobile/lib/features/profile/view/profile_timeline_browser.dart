@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_date_strip.dart';
 import 'package:mobile/features/profile/view/profile_timeline_days.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 typedef TimelineDateConverter = DateTime Function(DateTime instant);
 
@@ -24,6 +24,7 @@ class ProfileTimelineBrowser extends StatefulWidget {
     this.loading = false,
     this.status,
     this.contentTopPadding = 0,
+    this.horizontalPadding = EdgeInsets.zero,
     this.fullSurface = false,
     this.datesOpen,
     this.onDatesChanged,
@@ -43,6 +44,10 @@ class ProfileTimelineBrowser extends StatefulWidget {
   final bool loading;
   final Widget? status;
   final double contentTopPadding;
+
+  /// Page gutters applied to the content slivers; the scroll view itself
+  /// stays full width.
+  final EdgeInsets horizontalPadding;
   final bool fullSurface;
   final bool? datesOpen;
   final ValueChanged<bool>? onDatesChanged;
@@ -100,7 +105,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       textScaler: MediaQuery.textScalerOf(context),
     ).preferredLineHeight;
     final material = Theme.of(context).textTheme;
-    final typography = shad.Theme.of(context).typography;
+    final typography = AppTokens.of(context).typography;
     final tile =
         line(material.titleMedium!) * 2 + line(material.bodyMedium!) * 2 + 32;
     final heading =
@@ -293,6 +298,11 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       MediaQuery.sizeOf(context).height * .72,
       header + 200,
     );
+    // Gutters pad each content sliver, so the scroll view stays full width.
+    final padding = EdgeInsets.only(
+      left: widget.horizontalPadding.left,
+      right: widget.horizontalPadding.right,
+    );
     return SizedBox(
       key: const ValueKey('timeline-browser'),
       height: widget.fullSurface ? null : height,
@@ -306,109 +316,138 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
               child: SizedBox(height: widget.contentTopPadding),
             ),
             SliverToBoxAdapter(
-              child: Column(
-                key: _chromeKey,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (widget.status != null) widget.status!,
-                  ProfileTimelineDateStrip(
-                    open: _dates,
-                    showToggle: widget.datesOpen == null,
-                    selected: _selected,
-                    week: _week,
-                    activityDays: groups.keys.toSet(),
-                    onToggle: _toggle,
-                    onSelect: _select,
-                    onWeek: (delta) => setState(
-                      () => _week = DateTime(
-                        _week.year,
-                        _week.month,
-                        _week.day + delta * 7,
+              child: Padding(
+                padding: padding,
+                child: Column(
+                  key: _chromeKey,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.status != null) widget.status!,
+                    ProfileTimelineDateStrip(
+                      open: _dates,
+                      showToggle: widget.datesOpen == null,
+                      selected: _selected,
+                      week: _week,
+                      activityDays: groups.keys.toSet(),
+                      onToggle: _toggle,
+                      onSelect: _select,
+                      onWeek: (delta) => setState(
+                        () => _week = DateTime(
+                          _week.year,
+                          _week.month,
+                          _week.day + delta * 7,
+                        ),
                       ),
+                      onToday: () => _select(_today),
                     ),
-                    onToday: () => _select(_today),
-                  ),
-                  if (widget.loading ||
-                      (widget.refreshing && widget.items.isEmpty))
-                    Semantics(
-                      label: context.l10n.commonLoading,
-                      liveRegion: true,
-                      child: const FinanceSkeletonBlock(
-                        height: 112,
-                        radius: 20,
-                      ),
-                    )
-                  else if (entries.isEmpty &&
-                      !(widget.statusReportedByParent &&
-                          widget.availability !=
-                              ProfileTimelineAvailability.complete))
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Semantics(
+                    if (widget.loading ||
+                        (widget.refreshing && widget.items.isEmpty))
+                      Semantics(
+                        label: context.l10n.commonLoading,
                         liveRegion: true,
-                        child: Text(switch (widget.availability) {
-                          ProfileTimelineAvailability.unavailable =>
-                            context.l10n.profileTimelineUnavailable,
-                          ProfileTimelineAvailability.partial =>
-                            context.l10n.profileTimelinePartial,
-                          ProfileTimelineAvailability.complete =>
-                            _dates
-                                ? context.l10n.profileTimelineDayEmpty
-                                : context.l10n.profileTimelineEmpty,
-                        }),
+                        child: const AppGroupedCard(
+                          children: [AppSkeletonRows(count: 3)],
+                        ),
+                      )
+                    else if (entries.isEmpty &&
+                        !(widget.statusReportedByParent &&
+                            widget.availability !=
+                                ProfileTimelineAvailability.complete))
+                      Semantics(
+                        liveRegion: true,
+                        child: AppStateMessage(
+                          icon: switch (widget.availability) {
+                            ProfileTimelineAvailability.complete =>
+                              LucideIcons.history,
+                            _ => LucideIcons.cloudOff,
+                          },
+                          title: switch (widget.availability) {
+                            ProfileTimelineAvailability.unavailable =>
+                              context.l10n.profileTimelineUnavailable,
+                            ProfileTimelineAvailability.partial =>
+                              context.l10n.profileTimelinePartial,
+                            ProfileTimelineAvailability.complete =>
+                              _dates
+                                  ? context.l10n.profileTimelineDayEmpty
+                                  : context.l10n.profileTimelineEmpty,
+                          },
+                        ),
                       ),
-                    ),
-                  if (_dates &&
-                      groups.isNotEmpty &&
-                      !groups.containsKey(_selected) &&
-                      !widget.loading &&
-                      widget.availability ==
-                          ProfileTimelineAvailability.complete)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(context.l10n.profileTimelineDayEmpty),
-                    ),
-                ],
+                    if (_dates &&
+                        groups.isNotEmpty &&
+                        !groups.containsKey(_selected) &&
+                        !widget.loading &&
+                        widget.availability ==
+                            ProfileTimelineAvailability.complete)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: AppGroupedCard(
+                          children: [
+                            AppStateMessage.inline(
+                              icon: LucideIcons.calendarX,
+                              title: context.l10n.profileTimelineDayEmpty,
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-            SliverFixedExtentList(
-              itemExtent: _rowExtent(context),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final node = nodes[index];
-                final item = node.item;
-                return ProfileTimelineDays(
-                  key: ValueKey(
-                    item == null
-                        ? ('timeline-group', node.day)
-                        : ('timeline-row', _id(item)),
-                  ),
-                  items: item == null ? groups[node.day]! : [item],
-                  showHeader: item == null,
-                  showItems: item != null,
-                  convertDate: _convert,
-                  now: widget.now,
-                  onOpen: widget.onOpen,
-                  itemKey: (item) =>
-                      _itemKeys.putIfAbsent(_id(item), GlobalKey.new),
-                );
-              }, childCount: nodes.length),
+            SliverPadding(
+              padding: padding,
+              sliver: SliverFixedExtentList(
+                itemExtent: _rowExtent(context),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final node = nodes[index];
+                  final item = node.item;
+                  final first = index > 0 && nodes[index - 1].item == null;
+                  final last =
+                      index == nodes.length - 1 ||
+                      nodes[index + 1].item == null;
+                  return ProfileTimelineDays(
+                    key: ValueKey(
+                      item == null
+                          ? ('timeline-group', node.day)
+                          : ('timeline-row', _id(item)),
+                    ),
+                    items: item == null ? groups[node.day]! : [item],
+                    showHeader: item == null,
+                    showItems: item != null,
+                    segment: item == null ? null : (first: first, last: last),
+                    convertDate: _convert,
+                    now: widget.now,
+                    onOpen: widget.onOpen,
+                    itemKey: (item) =>
+                        _itemKeys.putIfAbsent(_id(item), GlobalKey.new),
+                  );
+                }, childCount: nodes.length),
+              ),
             ),
             SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  if (groups.length > _shown)
-                    shad.OutlineButton(
-                      key: const ValueKey('timeline-more-days'),
-                      onPressed: () =>
-                          setState(() => _shown += widget.pageSize),
-                      child: Text(context.l10n.profileTimelineMoreDays),
-                    ),
-                ],
+              child: Padding(
+                padding: padding,
+                child: Column(
+                  children: [
+                    if (groups.length > _shown)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.lg),
+                        child: AppButton.outline(
+                          key: const ValueKey('timeline-more-days'),
+                          onPressed: () =>
+                              setState(() => _shown += widget.pageSize),
+                          child: Text(context.l10n.profileTimelineMoreDays),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 24 + MediaQuery.paddingOf(context).bottom,
+                height:
+                    AppLayout.scrollEndGap +
+                    MediaQuery.paddingOf(context).bottom,
               ),
             ),
           ],

@@ -280,6 +280,54 @@ visited root tab. The rail paints after the body because routed pages can
 contain `BlockSemantics`, which would otherwise drop the rail from the
 accessibility tree.
 
+## List/detail layouts
+
+`AppMasterDetail` (`core/layout/master_detail.dart`) is the shared list/detail
+primitive. It decides from the width its body receives (after the shell rail),
+never the window:
+
+| Body width | Layout |
+| --- | --- |
+| < 720dp | List only. The feature keeps its pushed detail route. |
+| >= 720dp | List pane beside the detail pane, split by a 1dp divider. |
+
+The list pane is about a third of the body, clamped to 320–400dp. Portrait
+tablets (about 768–834dp) therefore split as well. Each pane resolves its own
+gutters and page-kind width, so a 360dp list uses compact gutters and the
+detail pane centres `reading` content at its own width.
+
+Contract for features:
+
+- **The feature owns the selection.** Keep it in the screen's state, not in
+  the layout, so it survives rotation and resizing. Pass the selected detail
+  as `detail` and its identity as `detailKey`. Without a selection, the pane
+  shows `emptyDetail`; use `AppMasterDetailEmpty` with localized strings.
+- **Crossing the split width moves the selection.** `onSplitChanged` fires after
+  the first layout and on every change. On split → compact, push the usual
+  detail route for the open selection. A covered route is not laid out, so
+  wrap the pushed route's content in `AppMasterDetailRouteBody`; its `onSplit`
+  fires when that route becomes wide enough, and the feature then removes the
+  route (`Navigator.removeRoute`) and shows the selection in the pane.
+- **Deep links** open the selection through the same entry point as a tap, so
+  they land in the pane on split layouts and in the pushed route on phones.
+- **Back.** On phones the detail is a route, so Back pops it. On split layouts
+  the first Back clears the selection: register the list owner's
+  `ShellChromeActions.onBack` while a pane selection is open, and add a
+  `PopScope` for system Back. The next Back leaves the app as usual.
+- **Chrome.** The shell navbar and dock keep the list's title, mini-nav and
+  actions. The detail pane carries the item's title and item actions in a
+  pane header (`AppMasterDetail.inDetailPaneOf(context)`), plus a close
+  button. This is not a second app bar: it belongs to the pane, and phones
+  never show it. Route the pane's child routes (reply, attachment preview)
+  through the owner's push helper, so the list chrome yields while they are
+  open.
+- **Keyboard and focus.** Each pane is a `FocusTraversalGroup`. A new
+  `detailKey` moves focus into the detail pane, and Escape there calls
+  `onCloseDetail`.
+
+Mail is the first adopter; see `mail_master_detail_test.dart` and
+`core/layout/master_detail_test.dart`.
+
 ## Layout audit (October 2026)
 
 Before this foundation:
@@ -303,8 +351,8 @@ Feature screens use the primitives with these page kinds:
 
 | Kind | Screens |
 | --- | --- |
-| `root` | Apps hub, Assistant transcript and start state, Drive grid, Meet lobby, Chat surface (two panes), Notes (list and editor), CMS overview, Mobile versions, board timeline, calendar year grid |
-| `detail` | Drive list, task lists, boards, planning, portfolio, estimates, habits, time tracker tabs and requests; finance, inventory and storefront lists and overviews; education, CMS library and CRM; mail organization; Meet ended review; workspace select, accounts, security, reminders |
+| `root` | Home dashboard, Profile overview, Apps hub, Assistant transcript and start state, Drive grid, Meet lobby, Chat surface (two panes), Notes (list and editor), CMS overview, Mobile versions, board timeline, calendar year grid |
+| `detail` | Notifications inbox and archive, Profile timeline, Drive list, task lists, boards, planning, portfolio, estimates, habits, time tracker tabs and requests; finance, inventory and storefront lists and overviews; education, CMS library and CRM; mail organization; Meet ended review; workspace select, accounts, security, reminders |
 | `form` | Auth screens (`AuthScaffold`), inventory editors (`InventoryFormScaffold`), mail composer and settings, product feedback, MFA request, required-update gate, Assistant memory and personality editors |
 | `reading` | Documents editor, mail reader |
 

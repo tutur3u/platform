@@ -224,6 +224,10 @@ function chooseTicket(
   live: { path: string; owner: ResourceOwner }[],
   owners: ResourceOwner[]
 ) {
+  // A waiter unable to read telemetry stays first for base capacity, but
+  // cannot reserve a burst lane it has no evidence to use.
+  if (owners.length >= resourceLanes(config))
+    live = live.filter((entry) => !entry.owner.burstUnavailable);
   if (!config.budget) return live[0]?.path;
   return selectBudgetTicket(
     config.budget,
@@ -396,6 +400,10 @@ export async function queuedResourceCommand(
               ? await burstProbe(config)
               : undefined;
           if (burst && !burst.eligible) {
+            if (burst.telemetryUnavailable) {
+              owner.burstUnavailable = true;
+              await atomicJson(ticket, owner);
+            }
             pressureBlocked = true;
             pressureReason = burst.reason;
             return undefined;

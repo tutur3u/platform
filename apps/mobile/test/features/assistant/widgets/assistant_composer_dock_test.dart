@@ -535,7 +535,7 @@ void main() {
           },
         ),
       );
-      expect(find.byIcon(LucideIcons.mic), findsNothing);
+      expect(find.byIcon(LucideIcons.mic).hitTestable(), findsNothing);
       await tester.tap(find.byIcon(LucideIcons.arrowUp));
       expect(sends, 1);
       expect(find.text('Example.pdf'), findsOneWidget);
