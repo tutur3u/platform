@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
+import { retainedReplayPolicy } from '../src/route-safety';
 
 const root = resolve(import.meta.dirname, '../../..');
 const sourceRoot = resolve(root, 'apps/web/src/app/api');
@@ -28,6 +29,7 @@ export async function retainedInventory() {
         .replace(/\[([^\]]+)\]/g, '{$1}')}`;
       return {
         path,
+        ...retainedReplayPolicy(path),
         source: relative(root, file),
         sourceSha256: createHash('sha256').update(source).digest('hex'),
         runtime: 'retained-next' as const,

@@ -129,3 +129,51 @@ owned commit using a git bundle, verify its SHA in an isolated Thanh checkout,
 and run the unchanged gate there. Never bypass the disk gate. Independent
 security review, staging contracts, rollback rehearsal and ops approval remain
 required before a direct per-unit production flip.
+
+
+## Retained-route safety and origin attribution
+
+Every retained entry declares `sideEffects` and `shadow`. Unknown operations are
+`shadow: "never"`; `/api/v1/exchange-rates` and `/api/cron/**` explicitly declare
+writes and prohibit shadow/replay. The exchange-rate GET can seed data through a
+cron POST. Any future shadow/replay consumer must call
+`assertShadowReplayAllowed`, which requires both an explicit `shadow: "safe"`
+and `sideEffects: "read-only"` marker plus GET/HEAD. Only the audited health and
+build-info metadata reads initially have that marker.
+
+Generation fails if a broad Worker pattern could capture a more specific retained
+pattern that has no Worker registration, including aliases and intersecting
+parameter patterns. Register the specific path before the generic path. A method
+or requested preflight method owned only by the retained origin is forwarded;
+new Worker-only paths still return 405 for unsupported methods.
+
+The retained inventory covers `apps/web/src/app/api/**/route.ts` source files.
+Rewrite-only and proxy-only destinations are not discovered by that scan. Check
+Next rewrites and proxy ownership separately before selecting a production cohort;
+the filesystem inventory is not a complete routing map.
+
+Worker forwarding requires the existing `TRUSTED_PROXY_ORIGIN_SECRET` and a valid
+Cloudflare ingress `cf-connecting-ip`. It replaces caller-supplied
+`x-tuturuuu-origin-auth` with a versioned HMAC-SHA256 proof of the canonical client
+IP and timestamp. The proof uses the existing origin secret, remains valid for
+60 seconds, and permits at most five seconds of future clock skew. It carries no
+raw key. Missing/weak keys or invalid ingress addresses stop forwarding with 503.
+
+The retained Next origin must use `TRUSTED_PROXY=cloudflare-origin` and the same
+secret. Its shared resolver verifies the proof before deriving rate-limit keys.
+The raw-secret apex Transform Rule and direct-origin Vercel fallback continue to
+work. The proof authenticates client-IP attribution; existing session, permission
+and provider signature verification still run. Rotation changes the existing
+secret on both ends through the origin-trust runbook. Do not activate an operation
+before this contract and the exact retained deployment have passed acceptance.
+
+The build-free `check:changed` gate may discover the emitted-runtime test in a
+cold checkout. When `dist/worker/wrangler.json` is absent, discovery reports a
+clear skip without loading Wrangler or creating a harness. Explicit
+`bun run --cwd apps/api test:runtime` requires the artifact and fails if it is
+missing; CI runs that strict command after the real Worker build. An existing
+artifact always runs the runtime assertions, so a skip is never runtime proof.
+
+Automatic Worker invocation logs are disabled because they can include URLs and
+queries. Application request events retain their allowlisted metadata and request
+IDs. This setting does not make a claim about other platforms' logs.

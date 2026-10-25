@@ -143,11 +143,30 @@ export function createApi(options: PipelineOptions) {
       );
       const method = request.method === 'HEAD' ? 'GET' : request.method;
       const match = matches.find(({ endpoint }) => endpoint.method === method);
-      const selected = match
-        ? enabled.has(match.endpoint.operationId)
-        : matches.some(({ endpoint }) => enabled.has(endpoint.operationId));
+      const retainedMatch = options.retained.some((route) =>
+        matchPath(route.path, pathname)
+      );
+      const requestedPreflightMethod =
+        request.method === 'OPTIONS'
+          ? request.headers.get('access-control-request-method')
+          : null;
+      const dispatchMethod =
+        requestedPreflightMethod === 'HEAD'
+          ? 'GET'
+          : (requestedPreflightMethod ?? method);
+      const dispatchMatch = matches.find(
+        ({ endpoint }) => endpoint.method === dispatchMethod
+      );
+      const hasEnabledPath = matches.some(({ endpoint }) =>
+        enabled.has(endpoint.operationId)
+      );
+      const selected = dispatchMatch
+        ? enabled.has(dispatchMatch.endpoint.operationId)
+        : hasEnabledPath &&
+          (!retainedMatch ||
+            (request.method === 'OPTIONS' && !requestedPreflightMethod));
       if (!matches.length || !selected) {
-        if (!options.retained.some((route) => matchPath(route.path, pathname)))
+        if (!retainedMatch)
           throw new ApiError('not_found', 404, 'Route not found');
         runtime = 'retained-next';
         operationId = 'retainedOrigin';
@@ -326,7 +345,7 @@ export function createApi(options: PipelineOptions) {
       durationMs: Math.round(performance.now() - started),
       runtime,
     };
-    // Only allowlisted metadata reaches logs; paths, identities, bodies and credentials never do.
+    // Application request events contain only allowlisted metadata.
     if (response.status >= 500) console.error('api.request', metric);
     else if (response.status >= 400) console.warn('api.request', metric);
     else console.info('api.request', metric);
