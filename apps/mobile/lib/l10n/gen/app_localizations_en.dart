@@ -6946,8 +6946,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
+  String remindersOccurrenceDetails(String leadTime, String occurrence) {
+    return '$leadTime · $occurrence';
   }
 
   @override

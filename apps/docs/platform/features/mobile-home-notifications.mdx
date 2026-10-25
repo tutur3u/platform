@@ -48,6 +48,20 @@ with the redesign.
   readable column (600dp on tablets, 720dp on desktops). A notification opens
   its destination route, so the list does not use a list-detail split.
 
+## Calendar reminder alerts
+
+Mobile local calendar reminders show the event name in the title and the
+localized lead time plus occurrence date/time in the body. English and Vietnamese
+omit the timezone label by default for both timed and all-day events. Timezone
+resolution and clock conversion remain unchanged; all-day reminders show only
+the occurrence date. This rule applies to mobile scheduled OS alerts, not the
+server-backed inbox or attendee emails, which do not use this formatter. Task
+reminder copy is unchanged.
+
+Regression coverage: `test/features/reminders/reminder_notification_copy_test.dart`
+checks both languages, the Asia/Saigon alias, date-only all-day copy and a timed
+occurrence projected into a different calendar day.
+
 ## Regression coverage
 
 - `test/features/shell/view/appearance_root_tabs_render_test.dart` (parts

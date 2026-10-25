@@ -13180,8 +13180,8 @@ abstract class AppLocalizations {
   /// No description provided for @remindersOccurrenceDetails.
   ///
   /// In en, this message translates to:
-  /// **'{leadTime} · {occurrence} ({timezone})'**
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
+  /// **'{leadTime} · {occurrence}'**
+  String remindersOccurrenceDetails(String leadTime, String occurrence);
 
   /// No description provided for @remindersPermissionOff.
   ///

@@ -794,9 +794,6 @@
       },
       "occurrence": {
         "type": "String"
-      },
-      "timezone": {
-        "type": "String"
       }
     }
   },
@@ -3404,7 +3401,7 @@
   "remindersLastChecked": "Kiểm tra lần cuối: {time}",
   "remindersNeverChecked": "Đang chờ cập nhật lần đầu",
   "remindersNext": "Lời nhắc tiếp theo: {time}",
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence}",
   "remindersPermissionOff": "Đã tắt thông báo trên thiết bị",
   "remindersPermissionOn": "Đã bật thông báo trên thiết bị",
   "remindersRefresh": "Cập nhật ngay",
