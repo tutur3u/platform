@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/profile/view/profile_timeline_date_strip.dart';
@@ -88,7 +89,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Old 0'), findsNothing);
       tester
-          .widget<IconButton>(
+          .widget<AppIconButton>(
             find.byKey(
               const ValueKey('timeline-date-toggle'),
               skipOffstage: false,
@@ -119,7 +120,7 @@ void main() {
       final before = tester.getTopLeft(find.text(title)).dy;
       for (var i = 0; i < 4; i++) {
         tester
-            .widget<IconButton>(
+            .widget<AppIconButton>(
               find.byKey(
                 const ValueKey('timeline-date-toggle'),
                 skipOffstage: false,
@@ -325,7 +326,7 @@ void main() {
 
     await capture('320-3x-agenda');
     tester
-        .widget<IconButton>(
+        .widget<AppIconButton>(
           find.byKey(
             const ValueKey('timeline-date-toggle'),
             skipOffstage: false,

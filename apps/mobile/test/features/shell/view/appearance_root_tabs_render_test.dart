@@ -15,9 +15,11 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/app_notification.dart' as model;
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -31,6 +33,11 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
+import 'package:mobile/features/profile/profile_timeline_repository.dart';
+import 'package:mobile/features/profile/view/profile_activity_section.dart';
+import 'package:mobile/features/profile/view/profile_identity_card.dart';
+import 'package:mobile/features/profile/view/profile_overview_page.dart';
+import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -45,9 +52,11 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 part 'home_render_cases.dart';
 part 'notifications_render_cases.dart';
+part 'profile_render_cases.dart';
 part 'root_tab_render_harness.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
@@ -239,6 +248,7 @@ void main() {
 
   _homeRenderCases();
   _notificationsRenderCases();
+  _profileRenderCases();
 }
 
 Future<void> _capture(WidgetTester tester, String name) async {

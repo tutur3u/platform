@@ -360,7 +360,14 @@ void main() {
                   ? find.byKey(const ValueKey('profile-overview-content'))
                   : find.byKey(const ValueKey('navbar-content')),
             );
-            expect(content.top, closeTo(bar.bottom + 10, .01));
+            // Profile uses the shared page top gap; other fixtures pad by 10.
+            expect(
+              content.top,
+              closeTo(
+                bar.bottom + (profileSection ? AppLayout.pageTop : 10),
+                .01,
+              ),
+            );
           }
           expect(
             floatingShellHeaderInset(

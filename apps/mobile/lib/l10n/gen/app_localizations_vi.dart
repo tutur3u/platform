@@ -6436,6 +6436,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileDisplayNameRequired => 'Tên hiển thị không được để trống';
 
   @override
+  String profileDurationHours(int hours) {
+    return '$hours giờ';
+  }
+
+  @override
+  String profileDurationHoursMinutes(int hours, int minutes) {
+    return '$hours giờ $minutes phút';
+  }
+
+  @override
+  String profileDurationMinutes(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
   String get profileEmail => 'Email';
 
   @override
