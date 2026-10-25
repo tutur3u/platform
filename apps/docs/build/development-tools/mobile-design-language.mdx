@@ -1,0 +1,404 @@
+---
+title: 'Mobile design language'
+description: 'How redesigned mobile mini apps look and behave: type, surfaces, colour roles, motion, page anatomy, patterns, responsive rules and per-app identity, built on the shared composition kit.'
+---
+
+This page is the visual and interaction contract for the mobile app redesign.
+The [design system](/build/development-tools/mobile-design-system) owns the
+layout primitives, tokens, components and overlays; this page says how to
+compose them so every mini app feels like one product without looking like a
+copy of the next one.
+
+The language grew out of the Settings redesign: translucent grouped cards
+over the appearance theme, soft tinted icon tiles, generous rounding and
+muted captions. Home and Notifications extended it with tones, icon tiles,
+grouped rows and shared states. Mini apps now adopt the same vocabulary
+through the composition kit in `package:mobile/core/ui/kit/kit.dart`.
+
+## Principles
+
+1. **Lead with the answer.** A root page opens with what matters now (a
+   balance, the next meeting, today's tasks), not with a toolbar or a list
+   header.
+2. **One surface family.** Content sits on grouped cards, panels and stat
+   tiles that share radii, borders and translucency, so appearance themes
+   (solid, gradient, blobs) show through consistently.
+3. **Theme roles only.** Every colour comes from `AppColorTokens` through an
+   `AppTone`. No hex values, `Colors.*` hues or per-feature palettes.
+4. **Cheap by default.** Static fills and borders, no blur behind scrolling
+   content, no shadows on list items, no layers for opacity.
+5. **Adaptive, not stretched.** Wider bodies get more columns, side panels and
+   two panes, never a phone layout scaled up.
+6. **Accessible without exceptions.** 48dp targets, readable contrast in every
+   theme, unclamped text scaling and complete semantics.
+
+## Typography
+
+Use `AppTokens.of(context).typography` (`context.tokens.typography`). Styles
+carry no colour; apply a role from the colour tokens.
+
+| Role | Style | Use |
+| --- | --- | --- |
+| Hero figure | `x3Large` w700, tabular figures, -0.4 tracking | `AppSummaryHero` headline |
+| Stat value | `x2Large` w700, tabular figures | `AppStatTile` value |
+| Section title | `large` w600 | `AppSectionHeader` |
+| Panel and row title | `base` w600 | `AppPanel`, `AppRichRow` |
+| Grouped row title | `base` w500 | `AppGroupedRow` |
+| Body and supporting | `small`, `mutedForeground`, 1.35–1.4 height | subtitles, messages |
+| Meta and captions | `xSmall` w500, `mutedForeground` | `AppMetaItem`, trends |
+| Grouped caption | `labelLarge` w600 | `AppSectionCaption` |
+
+- Numbers that update or line up (amounts, counts, times) use
+  `FontFeature.tabularFigures()`.
+- Titles wrap to two lines before truncating. Never clamp
+  `MediaQuery.textScaler`; components grow vertically instead.
+- The shell's top navbar owns the page title. Do not repeat it as a heading
+  in the body; the hero or the first section header introduces the content.
+
+## Spacing, radius and elevation
+
+Spacing uses the 4pt `AppSpacing` scale and the page tokens in
+`AppLayout`. Composition rules on top of those tokens:
+
+| Between | Gap |
+| --- | --- |
+| Hero and first section | `AppLayout.sectionGap` (24) |
+| Sections | `AppLayout.sectionGap` (24) |
+| Section header and its content | 12 (built into `AppSectionHeader`) |
+| Tiles in a grid, stacked cards | `AppLayout.itemGap` (12) |
+| Rows inside a card | hairline divider, no gap |
+
+| Surface | Radius | Elevation |
+| --- | --- | --- |
+| Grouped card, panel, hero | `AppRadius.card` (22) | none |
+| Stat tile, grid tile | 20 | none |
+| Filter pill, badge | pill | none |
+| Sheet | `AppRadius.sheet` (24) | overlay shadow from the host |
+| Dock | `AppRadius.dock` (26) | owned by the shell |
+
+Elevation is reserved for floating layers (dock, sheets, dialogs, toasts).
+Cards in lists separate with a border and the surface tint, never with a
+shadow. Legacy `FinancePanel` adds a 28px blurred shadow to every card; new
+code uses `AppPanel` instead.
+
+## Surfaces
+
+| Surface | Fill | Border | When |
+| --- | --- | --- | --- |
+| Page | appearance background (solid, gradient or blobs) | none | owned by the shell |
+| Grouped card (`AppGroupedCard`) | `surface` at 72% | `outlineVariant` 40% | lists of rows |
+| Panel (`AppPanel`) | `card` at 86% | `border` 70% | charts, breakdowns, short lists, inline forms |
+| Stat tile (`AppStatTile`) | `card` at 86% | `border` 70% | key figures |
+| Hero (`AppSummaryHero`) | tone fill blended into `card`, linear gradient | tone at 18% | the opening summary |
+
+All of them become solid when the platform requests high contrast
+(`MediaQuery.highContrastOf`).
+
+## Colour roles
+
+Colours come from `AppColorTokens`, which the appearance theme resolves for
+every theme, accent and brightness. Components choose an `AppTone`, and the
+tone resolves a foreground and a quiet fill:
+
+| Tone | Foreground role | Fill | Meaning |
+| --- | --- | --- | --- |
+| `neutral` | `mutedForeground` | `muted` | default, inactive |
+| `primary` | `primary` (follows the accent) | primary at 12% (20% dark) | the app's main object |
+| `info` | `info` | info tint | time, schedule, links |
+| `success` | `success` | success tint | money in, done, healthy |
+| `warning` | `warning` | warning tint | due soon, attention |
+| `destructive` | `destructive` | destructive tint | overdue, failed, money out over budget |
+
+- Text that carries meaning (values, titles) stays in `foreground`. Tones
+  colour icons, meters, trend labels and small accents, which keeps every
+  theme above WCAG AA for text.
+- Tone tints are fills behind icons, not backgrounds behind body text.
+- `primary` follows the user's accent. Do not assume it is blue; in Classic
+  it is near-black in light mode and near-white in dark mode.
+- Per-module hex palettes (the Apps hub cards, Drive's green, finance
+  positive/negative literals) are migration debt; map them to tones.
+
+## Iconography
+
+- Use the generated Lucide icons (`LucideIcons`, `LucideLabIcons`, `AppIcons`)
+  so mobile matches the web glyph for glyph. Material `Icons.*` are legacy.
+- Icons sit in an `AppIconTile` when they identify an object (a row, a stat,
+  an eyebrow) and stand alone when they decorate metadata (`AppMetaItem`,
+  14dp) or controls (16–20dp).
+- Row tiles are 32dp in grouped rows and 40dp in rich rows. Stat and hero
+  eyebrow tiles are 28dp.
+- Icons never carry meaning alone. Pair them with a label or a semantics
+  label, and give icon buttons a tooltip.
+
+## Motion
+
+Motion explains a change; it never decorates a resting screen.
+
+| Use | Duration | Curve |
+| --- | --- | --- |
+| Press, toggle, selection | `AppMotion.fast` (120ms) | `standard` |
+| Expand, swap content, sheet content | `AppMotion.normal` (220ms) | `standard` |
+| Page-level or large layout change | `AppMotion.slow` (320ms) | `standard` |
+
+**Cheap-animation policy.** These rules keep the kit fast on mid-range
+Android devices; the Android jank lane may add a user-facing "reduce effects"
+switch on top of them.
+
+- Animate transforms and colours of small subtrees. Do not animate
+  `Opacity` over large subtrees; use `FadeTransition` or an animated colour.
+- No live `BackdropFilter` behind scrolling content. Frosted chrome goes
+  through the shell's glass policy, which draws near-opaque fills on Android.
+- No `ShaderMask`, `ColorFiltered` or `Opacity` wrappers that force a
+  `saveLayer` in lists. Fade edges with a painted gradient or not at all.
+- No shadows on list items or tiles. `AppElevation.raised` is for single
+  floating cards only.
+- Wrap independently repainting regions (a ticking timer, a live meter, a
+  chart) in a `RepaintBoundary`. `SliverAppAdaptiveGrid` adds one per tile.
+- Skeletons are static shapes. Do not add shimmer.
+- Respect `MediaQuery.disableAnimationsOf`: skip to the end state.
+
+## Page anatomy
+
+A redesigned mini-app root page reads top to bottom:
+
+1. **Shell header.** Title and actions from the shell. No body AppBar.
+2. **Summary hero** (`AppSummaryHero`) or a **stat row**
+   (`AppAdaptiveGrid` of `AppStatTile`, `equalHeight: true`). Pick one per
+   page, not both stacked at the same weight.
+3. **Filter bar** (`AppFilterBar`) when the list has 2–6 views. Search is the
+   shell search action. More than six filters belong in a sheet.
+4. **Sections.** `AppSectionHeader` plus content: grouped rows, rich rows,
+   panels or a grid.
+5. **End clearance.** Handled by the page primitives.
+
+Detail pages drop the hero, open with the object's title block and use
+`AppPanel` with `AppKeyValueRow`s for properties. Forms use
+`AppGroupedSection`s and open with `showAppSheet` or as a full-screen route
+above the shell.
+
+## Patterns
+
+### Section headers
+
+`AppSectionHeader(title:, count:, subtitle:, actionLabel:, onAction:)` heads
+content sections (lists, grids, panels). The quieter `AppSectionCaption` (via
+`AppGroupedSection.caption`) heads settings-style groups. Use one style per
+page level; never stack a caption under a section header.
+
+### Lists and rows
+
+| Need | Component |
+| --- | --- |
+| Settings, navigation, simple items | `AppGroupedRow` in an `AppGroupedCard` |
+| Entities with metadata (transactions, files, customers, products, courses) | `AppRichRow` with `AppMetaItem`s |
+| Long homogeneous collections | `AppPageListView.builder` of rich rows wrapped in `AppGroupedSlice`s; group by date or status with section headers |
+
+- Rich rows put a value or a status `AppBadge` on the trailing edge and a
+  unit or time in `trailingCaption`.
+- `selected: true` marks the open item when a list drives a detail pane.
+- Show at most three `AppMetaItem`s. Overdue or failing facts take the
+  `destructive` role colour, everything else stays muted.
+- Group long lists by meaning (Today / Yesterday / Earlier, Overdue / Next /
+  Later) instead of one undifferentiated column.
+
+### Cards and grids
+
+- `AppAdaptiveGrid(minTileWidth:, maxColumns:)` lays out summaries and small
+  collections; `SliverAppAdaptiveGrid` lays out long collections lazily with a
+  fixed tile height scaled by text size.
+- Default stat tiles use `minTileWidth: 160` (two per phone, four on a
+  tablet). Catalogues and drives use 120–180 depending on thumbnail size.
+- `AppPanel(title:, subtitle:, actionLabel:)` frames a chart, breakdown or
+  short list. Set `padded: false` when the child brings row insets.
+
+### Stat tiles and charts
+
+- A stat tile shows one label, one value and at most one context line
+  (`trend` or `caption`) plus an optional `progress` meter.
+- `AppStatTrend(positive:)` decides the colour, not the direction: a falling
+  expense is good news.
+- `AppMeter` is the static progress bar for budgets, goals, quotas and
+  streaks.
+- Charts live in an `AppPanel`, use tone foregrounds for series (at most four
+  series per chart), label axes in `xSmall` muted text and keep values in
+  tabular figures. Paint charts with `CustomPainter` inside a
+  `RepaintBoundary`; do not animate them on scroll.
+
+### Filters, search and sort
+
+- `AppFilterBar<T>` is a single-select pill row for views of the same list
+  (All / Open / Done). Counts sit inside the pill.
+- `AppSegmentedControl<T>` switches between two to four modes of the same
+  content (Day / Week / Month, Self / Team). It is not a filter: use it for
+  view modes and scopes, never for more than four choices.
+- Sorting and scopes (a collection, a wallet) use an `AppFilterButton` that
+  names the current choice, opens an `AppOptionTile` sheet and shows `active`
+  while it narrows the list.
+- Search uses the shell search action (`AppSheetSearch` in sheets). Do not put
+  an inline search field above a list inside the shell.
+- Multi-select filters (labels, people, ranges) open a sheet and show their
+  active state as a count on a filter button.
+
+### Empty, loading and error states
+
+- First load: `AppSkeletonRows` inside the same card the rows will occupy, or
+  static tile shapes for grids. No spinners in the middle of a page.
+- Empty: `AppStateMessage` with an icon, a title that says what is missing, a
+  message that says what will appear here and one action that fixes it.
+- Error with no data: `AppStateMessage(tone: AppTone.destructive)` with a
+  retry action.
+- Error with cached data: keep the data and show `AppStateMessage.inline`
+  above it ("Could not refresh, showing data from 10:24").
+- Load more: load automatically at the end of the list. Show a skeleton row,
+  not a "Load more" button.
+
+### Forms and sheets
+
+- Open forms with `showAppSheet` and lay them out with `AppSheetScaffold` and
+  `AppGroupedSection`s of `AppTextField`, `AppSelect`, `AppSwitch`,
+  `AppDatePicker` and `AppTimePicker`. Do not use `AlertDialog`,
+  `SwitchListTile`, `showDatePicker` or raw `showModalBottomSheet`.
+- Confirmations use `showAppDialog` with a destructive `AppButton` for
+  destructive actions.
+- One primary action per sheet, in the sheet's action area.
+
+## Responsive rules
+
+Decisions use the width the page body receives (after the shell rail), via
+`DeviceClass` and the page primitives.
+
+| Body width | Navigation | Layout |
+| --- | --- | --- |
+| compact (< 600) | dock | one column; hero full width; stat grid 2 columns; lists full width |
+| medium (600–839) | dock | hero facts beside the headline; stat grid 3–4 columns; grids 3–4 columns; list/detail stays push-based unless the app needs a split |
+| expanded (≥ 840) | rail | `AppPageKind.root` pages use 2-column section layouts (list plus side panel); entity lists split into list/detail with `AppMasterDetail`; grids 4–6 columns |
+
+- Use the shared list/detail primitive, `AppMasterDetail`
+  (`core/layout/master_detail.dart`), for two-pane screens. Do not build a
+  per-feature split.
+- Side panels (filters, an inspector, a summary) sit on the trailing side at
+  320–360dp and scroll independently.
+- Pointer devices get hover states from `InkWell` and tooltips on icon
+  buttons; keyboard users get focus rings from the core controls.
+
+## Visual identity per app
+
+"Not repetitive" means each app has a recognisable opening and rhythm while
+sharing the same parts. Identity comes from four levers, in this order:
+
+1. **The hero question.** Each root answers its own question in the hero:
+   Finance "How much do I have?", Calendar "What is next?", Habits "Am I on
+   streak?". Never reuse the same eyebrow and layout across apps.
+2. **The app tone.** One `AppTone` per app for the hero, its icon tiles and
+   meters. Other tones only appear for status.
+3. **The dominant pattern.** Pick the layout that fits the data: a timeline
+   for Calendar, a board for Tasks, a ledger of rich rows for Finance, a
+   catalogue grid for Inventory, a gallery for Drive.
+4. **Signature detail.** One small, cheap flourish per app, such as a streak
+   meter in Habits, a live dot on the next meeting in Meet or a storage meter
+   in Drive.
+
+| App | Tone | Hero question | Dominant pattern | Signature detail |
+| --- | --- | --- | --- | --- |
+| Tasks | `primary` | What should I do today? | grouped rich rows, board on wide | due-state meta in role colours |
+| Calendar | `info` | What is next? | agenda timeline | now-line and next-event card |
+| Time tracker | `info` | What am I working on? | running timer hero, session list | single repainting ticker |
+| Habits | `success` | Am I on streak? | tracker cards with meters | streak meter |
+| Notes | `warning` | What was I thinking? | masonry cards | pinned strip |
+| Finance | `success` | How much do I have? | ledger of rich rows | budget meters |
+| Inventory | `primary` | What needs restocking? | catalogue grid | low-stock badges |
+| CRM | `info` | Who needs attention? | people rich rows | relationship meta |
+| Education | `primary` | What do I teach next? | course cards grid | progress meters |
+| Drive | `info` | Where is my file? | file gallery and list | storage meter |
+| Documents | `neutral` | What was I writing? | recent strip and list | reading-width editor |
+| CMS | `info` | What is ready to publish? | pipeline queues and a status-toned library | per-collection publish meters |
+| Chat | `primary` | Who is waiting for me? | conversations list, two-pane | unread emphasis |
+| Meet | `success` | When is my next call? | up-next hero and grid | live dot and Join |
+| Apps hub | per app tone | Where do I go? | launcher grid by category | live badges |
+
+The hub's tiles take each app's tone, so the launcher previews the identity
+users meet inside the app.
+
+## Composition kit
+
+`package:mobile/core/ui/kit/kit.dart` exports:
+
+| Widget | Purpose |
+| --- | --- |
+| `AppSummaryHero`, `AppHeroFact` | opening summary with tone, headline, facts and actions |
+| `AppSectionHeader` | content section title with count, subtitle and action |
+| `AppStatTile`, `AppStatTrend` | key figure with icon, trend, caption and meter |
+| `AppMeter` | static progress bar |
+| `AppPanel` | titled content surface |
+| `AppKeyValueRow` | label and value on detail screens |
+| `AppFilterBar`, `AppFilterOption`, `AppFilterButton` | single-select views, and the trailing sort or scope control |
+| `AppSegmentedControl`, `AppSegment` | two to four equal-width modes of the same content |
+| `AppGroupedSlice`, `AppSlicePosition` | one row's share of a grouped card in a lazy builder list |
+| `AppRichRow`, `AppMetaItem` | entity row with metadata, trailing value and selection |
+| `AppAdaptiveGrid`, `SliverAppAdaptiveGrid` | width-driven columns for summaries and collections |
+
+Rows, tones, icon tiles and states (`AppGroupedRow`, `AppTone`,
+`AppIconTile`, `AppSkeletonRows`, `AppStateMessage`) live in
+`package:mobile/core/layout/layout.dart`.
+
+### Migrating from `finance_ui.dart`
+
+`features/finance/widgets/finance_ui.dart` grew into an informal shared kit
+used by about 30 files outside Finance. Replace it as each app is redesigned:
+
+| Legacy | Kit |
+| --- | --- |
+| `FinancePanel` | `AppPanel` (no shadow) or `AppGroupedCard` |
+| `FinanceSectionHeader` | `AppSectionHeader` |
+| `FinanceStatChip` | `AppStatTile` or `AppHeroFact` |
+| `FinanceEmptyState` | `AppStateMessage` |
+| `FinanceSkeletonBlock` | `AppSkeletonRows` |
+| `FinanceKeyValueRow` | `AppKeyValueRow` |
+| `FinancePalette` colours | `AppTone` roles |
+
+## Pilot: CMS
+
+The CMS mini app is the first app rebuilt entirely on the kit
+(`features/cms`). Use it as the reference when redesigning another app.
+
+- **Overview.** `AppSummaryHero` answers "what is ready to publish?" with
+  the published share, drafts and scheduled counts, three facts and the two
+  create actions. The three queues (needs attention, scheduled soon, archived
+  backlog) are section headers over grouped cards of `AppRichRow`s and sit
+  side by side on wide bodies through `AppAdaptiveGrid`. An `AppPanel`
+  shows publish meters per collection. Tapping a queued item opens its entry.
+- **Library.** A lazy list of `AppGroupedSlice`s: collections first, then
+  entries with an `AppFilterBar` of statuses (with counts) and an
+  `AppFilterButton` that picks the collection. Rows open their editor;
+  delete moved from inline icon buttons into the editor.
+- **States.** First load shows a static skeleton shaped like the overview.
+  A denied workspace shows an `AppStateMessage`; a failed first load shows
+  a destructive message with Retry; a failed refresh keeps the content under
+  an inline notice. Empty queues and empty filters use inline messages.
+- **Editors.** `AppSheetScaffold` forms with captioned sections,
+  `AppTextField`, `AppSelect` and `AppToggleRow`. Save is the primary action
+  and shows progress; Delete appears for existing items and asks for
+  confirmation in an `AppDialog`. The collection Enabled switch appears only
+  when editing, because creation always enables a collection. An entry keeps
+  its collection after creation. Drafts and inline errors survive a failed
+  save, as before.
+- **Status language.** Every entry status has one tone and icon: draft
+  `warning`, scheduled `info`, published `success`, archived `neutral`.
+
+`test/features/cms/view/cms_render_test.dart` renders the overview and the
+library at every review size and theme with the same guidelines as the kit
+gallery. Feature render tests should use the shared harness in
+`test/helpers/design_render_harness.dart` (`DesignRender`,
+`DesignRenderApp`).
+
+## Regression coverage
+
+- `test/core/ui/kit/kit_components_test.dart` covers grid columns, filter
+  and segment selection semantics, section header actions, trend colours,
+  selected rows, slice positions, meter clamping, the hero's wide layout and
+  high-contrast surfaces.
+- `test/core/ui/kit/kit_gallery_test.dart` renders every component on three
+  boards at 390x844, 820x1180 and 1440x900 in light, dark and Aurora blobs.
+  Each render must lay out without exceptions and pass the tap-target,
+  labelled-target and text-contrast guidelines. Set `DESIGN_RENDER_DIR` (and
+  optionally `DESIGN_RENDER_PIXEL_RATIO`) to write the PNGs for review.

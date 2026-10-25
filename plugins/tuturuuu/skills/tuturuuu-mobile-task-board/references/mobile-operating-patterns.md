@@ -31,6 +31,8 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Supabase Logout Required For Account Cleanup**: Multi-account removal and all-account logout must not clear secure account stores or emit unauthenticated auth state unless Supabase `auth.signOut()` succeeds. Treat Google/provider logout and stored refresh-token revocation as best-effort only; surface Supabase logout failures and keep the local account visible for retry.
 - **Workspace-Scoped Async State**: In Flutter screens that can switch workspaces while showing workspace-owned collections, store the collection owner `wsId`, scope loading/loaded flags by workspace, and ignore stale async responses with a request token/version check.
 - **Account-Switch Refresh For User-Scoped Data**: For routes that include user-scoped payloads (for example filters/permissions keyed by current user id), add an `AuthCubit` listener on `previous.user?.id != current.user?.id` and force-refresh the route data/cached reads for the active workspace.
+- **Settings Replay Baselines**: Keep confirmed snapshots separate from pending display overlays. Send only fields edited against the confirmed baseline. If an endpoint accepts full-object saves, keep cached editors read-only until fresh data succeeds. An unresolved settings write needs its own queue ordering scope and must not block unrelated module operations. Keep controls locked through restored pending edits and the post-replay fresh read; queue admission or disappearance is not server confirmation. Mail coverage lives in `mail_settings_cache_ui_regression_test.dart` and `mail_settings_offline_regression_test.dart`.
+
 - **Workspace Permission Reads Must Not Use Local Permission Caches**: Do not memoize `WorkspacePermissionsRepository.getPermissions(...)` results in widget-level static maps keyed only by workspace id. Always resolve permissions from the repository on load/refresh/account switch so user changes cannot reuse stale access grants.
 - **Workspace Resolution Loading Guards**: In workspace-dependent pages, show global loading indicators only while `WorkspaceStatus` is `initial/loading`; when resolved workspace is `null` under `loaded/error`, render a non-loading empty/error fallback instead of an indefinite spinner.
 - **Workspace-Scoped SWR Caches Must Not Cross Workspace Boundaries**: When a mobile settings/detail page reuses stale cached data while revalidating, scope the cache by workspace and clear the rendered payload immediately when the active workspace changes. Do not keep showing the previous workspace's secrets, permissions, or settings while the new workspace is still being authorized or loaded.
@@ -54,6 +56,20 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Flutter initState Inherited Access**: Do not read inherited values (for example `context.l10n`, `Theme.of`, `Localizations.of`) synchronously in helpers triggered from `initState`.
 
 ## 3. Mobile UX & Shell Patterns
+
+- Named settings pages use their route's `GoRouterState` location. Imperative
+  settings editors use the current `GoRouter.state.matchedLocation`; the router
+  configuration URI can still name the earlier root after a push. Modal actions
+  use `AppModalScope` and its owner instead; do not resolve a GoRouter page from
+  a pageless dialog. Exercise dialog open, dock Back and restoration of the
+  underlying Save action (`assistant_settings_dock_route_test.dart`). In shell
+  fixtures, pass `state.uri.path` as the active location through navigation.
+- Bulk download service failures retain the requested modules, network consent,
+  Retry-After deadline and bounded retry budget. Keep ordinary cached reads
+  independent, never drop the bulk marker as an outage workaround, and distinguish
+  source readiness from deployment activation. See the mobile workspace tools
+  feature page for the serving-app map and activation prerequisites.
+
 
 - **Immersive Mobile View Transitions**: When toggling between fullscreen/immersive and overview modes, reset scroll position deliberately and recompute bottom insets for restored nav/FAB chrome.
 - **Single Shell Detail Chrome**: Register dedicated settings/detail destinations in the app router so the shell owns their title and floating-bottom-navbar back behavior. Top navbars never contain Back buttons. Shell bodies inherit its background and header clearance, omit nested AppBars/body topbars and duplicate top SafeAreas, and consume bottom MediaQuery padding inside scrollables for floating-dock clearance. Preserve pushed-route origin on back; direct links use the registered parent fallback. Explicit full-screen forms/system flows use the root navigator above the shell. Verify compact/enlarged-text geometry plus Android system and floating-dock back, including direct links.
@@ -125,9 +141,19 @@ Read only the section relevant to the current feature; paths are repository-rela
 ## 5. Maintainability
 
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+
+After extracting Cubit code, keep protected `emit` access in the subclass or use
+its existing publication helper; extensions do not inherit subclass access.
+Recheck suppressions in both files, search callers of retired APIs, and inspect
+the declared constructor before correcting test fixtures. Qualify the final
+composed source; earlier parent snapshots remain diagnostic evidence. See the
+[formatter context guidance](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx)
+when the local checkout lacks package configuration.
+
 - **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. There is no fullscreen/expand draft action. Keep bounded media/audio previews, upload/removal callbacks and text selection in the inline composer. Limit dock growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. The side action stays 52dp tall. Validate inside `PersistentShellDock` with wrapped drafts, text scale, IME and safe-area variants; a fixed one-line estimate is insufficient.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Assistant Send Recovery**: Distinguish an untouched actor/workspace scope from uncertain creation. Bootstrap a clear envelope under the scope lock only when the envelope, legacy selection/context, creation marker and process authority are all absent; require host acknowledgement before creation. Preserve informed recovery for legacy/pending/held state and retain drafts until a real USER receipt. Exercise first Send, rapid Sends, held ACKs and the first navbar frame (`assistant_send_recovery_test.dart`, `assistant_fresh_scope_test.dart`).
+- **Assistant Reaction Operations**: Use idempotent desired-state PUT with a stable persisted operation ID; never fall back to the legacy POST toggle. Clean exact unsent/acknowledged markers independently of page scope. Logout clears journal metadata but retains operation IDs until server retirement prevents delayed writes; scope admission captures the retirement epoch. Exact-message refresh safely replays the retained intent, then reads its target. See [native reaction decisions](../../../../../apps/docs/platform/features/assistant-live.mdx#native-mobile-reaction-operations) and lifecycle/transport regression suites.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
 ### Offline downloads
@@ -208,6 +234,26 @@ provider/device operation or production delivery.
   cannot report a newer operation's failure.
 
 - **Assistant settings gutters**: Keep embedded live preferences and local-model sections aligned with personal settings at 16px horizontal padding. Preserve standalone sheet padding. Reuse SettingsRouteFrame for the existing branded title and physical safe area; Assistant hub/field/prompt editors opt into its existing CustomNavigationBar/PersistentShellDock Back surface. Keep other consumers unchanged; do not add feature chrome. The settings layout matrix covers 320/390/430px and 1x/2x text plus final-control scroll clearance; widget geometry does not prove an authenticated installed artifact.
+
+## Profile image uploads
+
+Use `core/media/profile_media_optimizer.dart` for selections and offline replay.
+Keep picker dimensions/quality and the native JPEG crop contract: the iOS picker
+converts HEIC through its native image decoder before Dart decoding. Test native
+options separately from real-device HEIC acceptance. Do not encode opaque phone
+photos as lossless PNG; preserve recommended resolution with bounded JPEG quality
+steps before reducing dimensions. Keep orientation and metadata regression checks.
+
+For a 413, trace the real request from `apps/web/src/proxy.ts` through
+`guardApiProxyRequest` before changing route limits: its default body ceiling can
+reject bytes before the profile handler. Profile-specific proxy limits must match
+storage-core's server caps for exact PUT paths while retaining streamed-byte,
+authentication, one-use ticket, budget and server re-encoding enforcement. See
+`@tuturuuu/storage-core/profile-upload-limits` for pure proxy-safe metadata;
+keep server-only budget imports in handlers. Verify the native bridge proxy
+suite without a `server-only` mock when changing this import chain. See
+`apps/web/src/lib/profile-media-proxy.test.ts` and the user-management feature
+page for recommended dimensions and current limits.
 
 ## Profile avatar removal
 

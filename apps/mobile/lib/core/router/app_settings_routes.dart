@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/assistant_settings_route.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/settings/view/apps/app_settings_page.dart';
 
@@ -27,9 +28,11 @@ List<RouteBase> appSettingsRoutes() => [
         Routes.appSettingsLocation(state.pathParameters['appId']) == null
         ? Routes.settings
         : null,
-    builder: (_, state) => AppSettingsPage(
-      appId: state.pathParameters['appId']!,
-      focus: state.uri.queryParameters['focus'],
-    ),
+    builder: (_, state) => state.pathParameters['appId'] == 'assistant'
+        ? const AssistantSettingsRoute()
+        : AppSettingsPage(
+            appId: state.pathParameters['appId']!,
+            focus: state.uri.queryParameters['focus'],
+          ),
   ),
 ];

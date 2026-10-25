@@ -52,7 +52,8 @@ OptimizedProfileMedia _optimize((Uint8List, ProfileMediaKind) input) {
 OptimizedProfileMedia _optimizeImage((Uint8List, ProfileMediaKind) input) {
   final (bytes, kind) = input;
   final avatar = kind == ProfileMediaKind.avatar;
-  if (bytes.isEmpty || bytes.length > profileMediaSourceByteLimit) {
+  if (bytes.isEmpty) throw const FormatException('Empty profile image');
+  if (bytes.length > profileMediaSourceByteLimit) {
     throw const ProfileMediaSizeException(
       'Source image exceeds the size limit',
     );
@@ -94,14 +95,17 @@ OptimizedProfileMedia _optimizeImage((Uint8List, ProfileMediaKind) input) {
       (avatar ? 1024 : 1440) / oriented.height,
     ),
   );
-  for (final scale in [1.0, 0.7, 0.49, 0.34]) {
+  var width = math.max(1, (oriented.width * ratio).round());
+  var height = math.max(1, (oriented.height * ratio).round());
+  final byteLimit = avatar ? 1000000 : 2000000;
+  while (true) {
     final resized = img.copyResize(
       oriented,
-      width: math.max(1, (oriented.width * ratio * scale).round()),
-      height: math.max(1, (oriented.height * ratio * scale).round()),
+      width: width,
+      height: height,
       interpolation: img.Interpolation.average,
     );
-    // Construct pixel-only output to discard EXIF, ICC and text metadata.
+    // Pixel-only output discards EXIF, ICC and text metadata.
     final clean = img.Image.fromBytes(
       width: resized.width,
       height: resized.height,
@@ -109,10 +113,25 @@ OptimizedProfileMedia _optimizeImage((Uint8List, ProfileMediaKind) input) {
       numChannels: 4,
       order: img.ChannelOrder.rgba,
     );
-    final output = img.encodePng(clean);
-    if (output.length <= (avatar ? 1000000 : 2000000)) {
-      return OptimizedProfileMedia(output, 'image/png', '${kind.name}.png');
+    var opaque = clean;
+    if (clean.any((pixel) => pixel.a < 255)) {
+      final png = img.encodePng(clean);
+      if (png.length <= byteLimit) {
+        return OptimizedProfileMedia(png, 'image/png', '${kind.name}.png');
+      }
+      opaque = img.Image(width: width, height: height);
+      img.fill(opaque, color: img.ColorRgb8(255, 255, 255));
+      img.compositeImage(opaque, clean);
     }
+    for (final quality in [90, 82, 72, 60]) {
+      final output = img.encodeJpg(opaque, quality: quality);
+      if (output.length <= byteLimit) {
+        return OptimizedProfileMedia(output, 'image/jpeg', '${kind.name}.jpg');
+      }
+    }
+    if (width == 1 && height == 1) break;
+    width = math.max(1, (width * 0.75).floor());
+    height = math.max(1, (height * 0.75).floor());
   }
   throw const ProfileMediaSizeException(
     'Optimized image exceeds the size limit',
