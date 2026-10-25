@@ -280,9 +280,15 @@ describe('credential issuance', () => {
       })
     );
     expect(denied?.status).toBe(403);
-    const bearerDenied = await d.handle(new Request(`${SECRETS_ORIGIN}${CREDENTIALS_PATH}`, {
-      ...init, headers: { ...init.headers, authorization: 'Bearer signedFixtureCredential' },
-    }));
+    const bearerDenied = await d.handle(
+      new Request(`${SECRETS_ORIGIN}${CREDENTIALS_PATH}`, {
+        ...init,
+        headers: {
+          ...init.headers,
+          authorization: 'Bearer signedFixtureCredential',
+        },
+      })
+    );
     expect(bearerDenied?.status).toBe(403);
     expect(d.human).toHaveBeenCalledTimes(1);
   });

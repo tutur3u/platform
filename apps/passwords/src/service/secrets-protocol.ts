@@ -151,8 +151,10 @@ export function post(request: Request, origin: string, browser = false) {
   )
     throw new PasswordsError('INVALID_INPUT');
   const caller = request.headers.get('origin');
-  if (browser
-    ? caller !== origin || request.headers.has('authorization')
-    : caller !== null || request.headers.has('cookie'))
+  if (
+    browser
+      ? caller !== origin || request.headers.has('authorization')
+      : caller !== null || request.headers.has('cookie')
+  )
     throw new PasswordsError('FORBIDDEN');
 }
