@@ -165,6 +165,9 @@ class _ShareDraftDialogState extends State<_ShareDraftDialog> {
         Text(context.l10n.meetShareHint),
         const SizedBox(height: 12),
         TextField(
+          decoration: InputDecoration(
+            hintText: context.l10n.inputPlaceholderSharedMessage,
+          ),
           controller: _draft,
           maxLength: 2000,
           maxLines: 5,

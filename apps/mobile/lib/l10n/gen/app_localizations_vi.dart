@@ -11243,4 +11243,229 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveSendUnknown => 'Chưa rõ tin nhắn Live đã được gửi hay chưa. Bản nháp vẫn được giữ lại. Hãy kiểm tra cuộc trò chuyện trước khi gửi lại để tránh trùng lặp.';
+
+  @override
+  String get inputPlaceholderAddress => 'VD: 12 Nguyễn Huệ, Quận 1';
+
+  @override
+  String get inputPlaceholderAssistantBoundaries => 'VD: Hỏi trước khi thay đổi hoặc xóa dữ liệu của tôi';
+
+  @override
+  String get inputPlaceholderAssistantMemory => 'VD: Trả lời ngắn';
+
+  @override
+  String get inputPlaceholderAssistantName => 'VD: Mira';
+
+  @override
+  String get inputPlaceholderAssistantPersonality => 'VD: Kiên nhẫn, tò mò và thực tế';
+
+  @override
+  String get inputPlaceholderAssistantTone => 'VD: Thân thiện và chuyên nghiệp';
+
+  @override
+  String get inputPlaceholderAssistantVerbosity => 'VD: Trả lời ngắn gọn với các chi tiết chính';
+
+  @override
+  String get inputPlaceholderCmsCollectionDescription => 'Mô tả nội dung của bộ sưu tập này';
+
+  @override
+  String get inputPlaceholderCmsCollectionTitle => 'VD: Hướng dẫn sản phẩm';
+
+  @override
+  String get inputPlaceholderCmsCollectionType => 'VD: article';
+
+  @override
+  String get inputPlaceholderCmsEntryTitle => 'VD: Bắt đầu sử dụng không gian làm việc';
+
+  @override
+  String get inputPlaceholderCmsSlug => 'VD: huong-dan-bat-dau';
+
+  @override
+  String get inputPlaceholderCmsSubtitle => 'Viết một dòng ngắn giới thiệu bài viết';
+
+  @override
+  String get inputPlaceholderCmsSummary => 'Tóm tắt những ý chính cho người đọc';
+
+  @override
+  String get inputPlaceholderComment => 'Viết bình luận của bạn tại đây';
+
+  @override
+  String get inputPlaceholderCourseDescription => 'Mô tả những gì người học sẽ đạt được';
+
+  @override
+  String get inputPlaceholderCourseName => 'VD: Tiếng Anh hằng ngày';
+
+  @override
+  String get inputPlaceholderDate => 'Nhấn để chọn ngày';
+
+  @override
+  String get inputPlaceholderDays => 'VD: 2';
+
+  @override
+  String get inputPlaceholderDisplayName => 'VD: Linh';
+
+  @override
+  String get inputPlaceholderDocumentName => 'VD: Kế hoạch hằng tuần';
+
+  @override
+  String get inputPlaceholderEmailConfirmation => 'Nhập email của tài khoản để xác nhận';
+
+  @override
+  String get inputPlaceholderFeedback => 'Mô tả điều đã xảy ra và những gì có thể cải thiện';
+
+  @override
+  String get inputPlaceholderFieldKey => 'VD: luong_nuoc';
+
+  @override
+  String get inputPlaceholderFieldLabel => 'VD: Lượng nước uống';
+
+  @override
+  String get inputPlaceholderFieldUnit => 'VD: ml, km hoặc phút';
+
+  @override
+  String get inputPlaceholderFlashcardBack => 'VD: Paris';
+
+  @override
+  String get inputPlaceholderFlashcardFront => 'VD: Thủ đô của Pháp là gì?';
+
+  @override
+  String get inputPlaceholderFullName => 'VD: Nguyễn Minh Linh';
+
+  @override
+  String get inputPlaceholderHabitDescription => 'Mô tả cách bạn sẽ thực hiện thói quen này';
+
+  @override
+  String get inputPlaceholderHabitName => 'VD: Uống nước';
+
+  @override
+  String get inputPlaceholderInventoryManufacturer => 'VD: Acme';
+
+  @override
+  String get inputPlaceholderInventoryName => 'VD: Đồ dùng văn phòng';
+
+  @override
+  String get inputPlaceholderLinkText => 'VD: Sổ tay dự án';
+
+  @override
+  String get inputPlaceholderLinkUrl => 'https://example.com';
+
+  @override
+  String get inputPlaceholderListingTitle => 'VD: Sổ tay thủ công';
+
+  @override
+  String get inputPlaceholderMailCalendarUrl => 'Dán liên kết sự kiện Google Calendar';
+
+  @override
+  String get inputPlaceholderMailDescription => 'Mô tả những thư cần được xếp vào đây';
+
+  @override
+  String get inputPlaceholderMailDraftInstructions => 'VD: Viết thư hỏi thăm thân thiện sau cuộc họp';
+
+  @override
+  String get inputPlaceholderMailLabelInstructions => 'VD: Áp dụng cho hóa đơn và biên nhận thanh toán';
+
+  @override
+  String get inputPlaceholderMailName => 'VD: Hỗ trợ khách hàng';
+
+  @override
+  String get inputPlaceholderMailSubject => 'VD: Trao đổi sau cuộc họp';
+
+  @override
+  String get inputPlaceholderMeetingName => 'VD: Họp nhóm hằng tuần';
+
+  @override
+  String get inputPlaceholderNote => 'Thêm chi tiết bạn muốn ghi nhớ';
+
+  @override
+  String get inputPlaceholderPassphrase => 'Nhập ít nhất 8 ký tự';
+
+  @override
+  String get inputPlaceholderPassphraseConfirmation => 'Nhập lại cụm mật khẩu vừa nhập';
+
+  @override
+  String get inputPlaceholderPassphraseUnlock => 'Nhập cụm mật khẩu của ghi chú này';
+
+  @override
+  String get inputPlaceholderPassword => 'Sử dụng 12–72 ký tự';
+
+  @override
+  String get inputPlaceholderPhone => 'VD: +84 912 345 678';
+
+  @override
+  String get inputPlaceholderPin => 'Nhập mã PIN gồm 6 chữ số';
+
+  @override
+  String get inputPlaceholderPinConfirmation => 'Nhập lại mã PIN gồm 6 chữ số vừa nhập';
+
+  @override
+  String get inputPlaceholderPrice => 'VD: 150000';
+
+  @override
+  String get inputPlaceholderQuantity => 'VD: 10';
+
+  @override
+  String get inputPlaceholderQuizExplanation => 'Giải thích vì sao đáp án này đúng hoặc sai';
+
+  @override
+  String get inputPlaceholderQuizOption => 'VD: Paris';
+
+  @override
+  String get inputPlaceholderQuizQuestion => 'VD: Thủ đô của Pháp là gì?';
+
+  @override
+  String get inputPlaceholderQuizSetName => 'VD: Thủ đô các nước';
+
+  @override
+  String get inputPlaceholderSaleTitle => 'VD: Đơn hàng đồ dùng văn phòng';
+
+  @override
+  String get inputPlaceholderSharedMessage => 'Chỉnh sửa tin nhắn bạn muốn chia sẻ';
+
+  @override
+  String get inputPlaceholderStorefrontCurrency => 'VD: VND';
+
+  @override
+  String get inputPlaceholderStorefrontDescription => 'Mô tả những gì khách hàng có thể tìm thấy tại đây';
+
+  @override
+  String get inputPlaceholderStorefrontName => 'VD: Văn phòng phẩm Linh';
+
+  @override
+  String get inputPlaceholderStorefrontSearch => 'Tìm theo tên cửa hàng';
+
+  @override
+  String get inputPlaceholderStorefrontSlug => 'VD: van-phong-pham-linh';
+
+  @override
+  String get inputPlaceholderTableCell => 'Nhập nội dung ô';
+
+  @override
+  String get inputPlaceholderTargetValue => 'VD: 2000';
+
+  @override
+  String get inputPlaceholderTimeDescription => 'Mô tả công việc bạn đã thực hiện';
+
+  @override
+  String get inputPlaceholderTimeTitle => 'VD: Chuẩn bị đề xuất dự án';
+
+  @override
+  String get inputPlaceholderUpdate => 'Chia sẻ tiến độ, quyết định hoặc bước tiếp theo';
+
+  @override
+  String get inputPlaceholderUserId => 'Dán ID người dùng';
+
+  @override
+  String get inputPlaceholderUsername => 'VD: minh_linh';
+
+  @override
+  String get inputPlaceholderWorkoutExercise => 'VD: Squat';
+
+  @override
+  String get inputPlaceholderWorkoutReps => 'VD: 12';
+
+  @override
+  String get inputPlaceholderWorkoutSets => 'VD: 3';
+
+  @override
+  String get inputPlaceholderWorkoutWeight => 'VD: 20';
 }
