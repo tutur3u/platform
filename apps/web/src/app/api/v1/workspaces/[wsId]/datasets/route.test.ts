@@ -14,6 +14,19 @@ const mocks = vi.hoisted(() => ({
   requestHeaders: new Headers(),
 }));
 
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: async () => ({
+    user: { id: 'actor-a' },
+    authError: null,
+  }),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async ({ wsId }: { wsId: string }) => ({
+    wsId,
+    withoutPermission: () => false,
+  }),
+}));
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
   createClient: mocks.createClient,
@@ -101,7 +114,7 @@ describe('dataset collection GET', () => {
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('keeps session callers on the RLS client with the array response', async () => {
+  it('serves authorized session callers through admin with the array response', async () => {
     mocks.requestHeaders = new Headers();
 
     const response = await GET(request(datasetsUrl('ws-a')), params('ws-a'));
@@ -110,7 +123,12 @@ describe('dataset collection GET', () => {
     await expect(response.json()).resolves.toEqual([
       seedDb().workspace_datasets?.[0],
     ]);
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).toHaveBeenCalled();
     expect(mocks.logApiKeyUsage).not.toHaveBeenCalled();
   });
+});
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return { ...actual, connection: async () => undefined };
 });
