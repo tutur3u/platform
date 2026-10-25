@@ -75,3 +75,12 @@ One artifact supports the Forms subdomain root and `/forms`. Before any
 apex admission, the app needs an enforced CSP policy using the router's
 request nonce, exact-source sealed artifact and runtime acceptance, public
 and authenticated form browser checks, and an immediate rollback.
+
+At `/forms`, middleware uses Web's shared Supabase session without refreshing,
+exchanging or clearing satellite sessions. Legacy session-writing endpoints
+return 409 on that mount; host-root authentication keeps its existing behavior.
+Anonymous share/embed pages and shared-form reads and submissions remain public;
+their route-level access, Turnstile and rate limits still apply. Private page
+loaders and API handlers validate the actor and workspace access. These mount
+and anonymous-respondent cases are covered by
+`apps/forms/src/proxy-refresh.test.ts`.
