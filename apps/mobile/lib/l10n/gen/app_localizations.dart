@@ -21079,6 +21079,18 @@ abstract class AppLocalizations {
   /// **'Submitted successfully'**
   String get assistantSubmitSuccess;
 
+  /// No description provided for @offlineDownloadsPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads paused. Saved data is still available. We will retry in the background.'**
+  String get offlineDownloadsPaused;
+
+  /// No description provided for @offlineDownloadsRetryLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads are still unavailable. Try again later; saved data is still available.'**
+  String get offlineDownloadsRetryLimit;
+
   /// No description provided for @mailSettingsReadOnly.
   ///
   /// In en, this message translates to:

@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
@@ -23,6 +24,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/repositories/workspace_secrets_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -93,6 +95,7 @@ part 'settings_secrets_shell_checks.dart';
 part 'settings_appearance_shell_checks.dart';
 part 'settings_apps_checks.dart';
 part 'settings_mail_visual_checks.dart';
+part 'settings_offline_visual_checks.dart';
 part 'settings_timezone_rows_checks.dart';
 part 'settings_timezone_picker_checks.dart';
 
@@ -108,6 +111,7 @@ void main() {
   registerSettingsAppearanceShellChecks();
   registerSettingsAppsChecks();
   registerSettingsMailVisualChecks();
+  registerSettingsOfflineVisualChecks();
   registerSettingsTimezoneRowsChecks();
   registerTimezonePickerChecks();
   setUpAll(() async {

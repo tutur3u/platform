@@ -11015,5 +11015,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSubmitSuccess => 'Đã gửi thành công';
 
   @override
+  String get offlineDownloadsPaused => 'Đã tạm dừng tải xuống. Bạn vẫn có thể dùng dữ liệu đã lưu. Ứng dụng sẽ thử lại trong nền.';
+
+  @override
+  String get offlineDownloadsRetryLimit => 'Hiện vẫn chưa thể tải xuống. Hãy thử lại sau; bạn vẫn có thể dùng dữ liệu đã lưu.';
+
+  @override
   String get mailSettingsReadOnly => 'Cài đặt đã lưu ở chế độ chỉ đọc cho đến khi xác minh được quyền truy cập.';
 }
