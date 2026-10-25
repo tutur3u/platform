@@ -1,8 +1,16 @@
-import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { resolveNode, withToolDir } from './balancer-host-job';
+import { resolveNode, runCwd, withToolDir } from './balancer-host-job';
 
 const dirs: string[] = [];
 afterEach(async () => {
@@ -78,5 +86,31 @@ describe('balancer host toolchain resolution', () => {
       )
     ).toBe('/h/.tuturuuu/resources/bin:/opt/node/bin:/usr/bin');
     expect(withToolDir('/usr/bin', '/n')).toBe('/n:/usr/bin');
+  });
+});
+
+describe('balancer host run directory', () => {
+  it('rejects a cwd that leaves the checkout through a symlink', async () => {
+    const root = await realpath(await mkdtemp(join(tmpdir(), 'balancer-cwd-')));
+    dirs.push(root);
+    const checkout = join(root, 'checkout');
+    await mkdir(join(checkout, 'packages', 'sdk'), { recursive: true });
+    await mkdir(join(root, 'outside', 'nested'), { recursive: true });
+    // Both a symlinked final component and a symlinked parent component.
+    await symlink(join(root, 'outside'), join(checkout, 'escape'));
+    await symlink('../../outside', join(checkout, 'packages', 'link'));
+    await symlink('sdk', join(checkout, 'packages', 'inside'));
+
+    expect(runCwd(checkout, 'escape')).toBeUndefined();
+    expect(runCwd(checkout, 'escape/nested')).toBeUndefined();
+    expect(runCwd(checkout, 'packages/link/nested')).toBeUndefined();
+    expect(runCwd(checkout, 'packages/missing')).toBeUndefined();
+    expect(runCwd(checkout, 'packages/sdk')).toBe(
+      join(checkout, 'packages', 'sdk')
+    );
+    expect(runCwd(checkout, 'packages/inside')).toBe(
+      join(checkout, 'packages', 'sdk')
+    );
+    expect(runCwd(checkout, '')).toBe(checkout);
   });
 });

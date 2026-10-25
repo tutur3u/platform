@@ -22,7 +22,10 @@ ttr balancer run --sha main --cwd packages/sdk --class light --replicas 2 \
 - `--priority 0-9` places higher priority first when capacity is scarce.
 - `--host`/`--exclude-host` constrain placement. `--request-id` is the
   idempotency key: repeating it resumes the same request, and reusing it with
-  different parameters is refused.
+  different parameters is refused. A retry after an interrupted submit only
+  adds missing runs; it never re-queues a run that was already placed.
+- `--cwd` must resolve inside the exact checkout. A path that leaves it through
+  a symlink component fails setup.
 - `--detach` places once and returns. `ttr balancer reconcile` (no argument)
   places queued runs and settles active ones later.
 

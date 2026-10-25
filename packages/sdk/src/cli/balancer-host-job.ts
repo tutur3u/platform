@@ -6,12 +6,13 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   statSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 import {
   ensureDir,
   home,
@@ -195,9 +196,11 @@ export async function job(runId: string) {
     if (install.status !== 0)
       setupFailed(`dependency install exited ${install.status ?? 'by signal'}`);
   }
-  const cwd = join(checkout, spec.cwd);
-  if (!statSync(cwd, { throwIfNoEntry: false })?.isDirectory())
-    setupFailed(`directory ${spec.cwd || '.'} does not exist at that commit`);
+  const cwd = runCwd(checkout, spec.cwd);
+  if (!cwd)
+    setupFailed(
+      `directory ${spec.cwd || '.'} does not exist inside the checkout at that commit`
+    );
   writeJson(join(dir, 'phase.json'), { phase: 'running', at: now() });
   const command = spawn(spec.command[0]!, spec.command.slice(1), {
     cwd,
@@ -217,6 +220,19 @@ export async function job(runId: string) {
     at: now(),
   });
   process.exit(code);
+}
+
+// The command directory, resolved through every symlink component; a path
+// that resolves outside the exact checkout is rejected.
+export function runCwd(checkout: string, requested: string) {
+  try {
+    const root = realpathSync(checkout);
+    const cwd = realpathSync(join(root, requested));
+    const inside = cwd === root || cwd.startsWith(`${root}${sep}`);
+    return inside && statSync(cwd).isDirectory() ? cwd : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 type Version = [number, number, number];
