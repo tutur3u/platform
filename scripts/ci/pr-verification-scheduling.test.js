@@ -1,6 +1,9 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { evaluateExpression } = require('./github-expression-test-helper');
+const {
+  evaluateExpression,
+  renderTemplate,
+} = require('./github-expression-test-helper');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper');
 const workflows = readAllWorkflows();
 
@@ -12,7 +15,6 @@ const heavy = {
   ],
   'calendar-cloudflare.yaml': ['native-profiles'],
   'calendar-generation-contract.yaml': ['contract'],
-  'codeql.yml': ['analyze'],
   'colab-cloudflare.yaml': ['validate'],
   'connected-mail-accounts-contract.yaml': ['contract'],
   'coordination-cloudflare.yaml': ['validate'],
@@ -47,7 +49,6 @@ const heavy = {
   'programming-database-contract.yaml': ['contract'],
   'report-review-receipts-contract.yaml': ['contract'],
   'sdk-package-qualification.yaml': ['qualify'],
-  'security-egress-contract.yaml': ['contract'],
   'shortener-cloudflare.yaml': ['validate', 'restore-acceptance'],
   'sso-persistence-contract.yaml': ['contract'],
   'time-tracker-control-contract.yaml': ['contract'],
@@ -131,7 +132,7 @@ for (const [file, jobs] of Object.entries(heavy)) {
   });
 }
 
-test('drafts retain light PR checks and the security review classifier', () => {
+test('drafts retain light PR checks and every security job', () => {
   for (const [file, ids] of Object.entries({
     'mobile.yaml': ['quality', 'semantic-pull-request'],
     'discord-python-ci.yml': ['lint', 'type-check', 'security'],
@@ -143,7 +144,8 @@ test('drafts retain light PR checks and the security review classifier', () => {
     ],
     'docs-seo-check.yaml': ['validate'],
     'security-checks.yaml': ['scope', 'secrets'],
-    'codeql.yml': ['scope'],
+    'codeql.yml': ['scope', 'analyze'],
+    'security-egress-contract.yaml': ['check-ci', 'contract'],
     'security-review-classifier.yaml': ['classify'],
   })) {
     for (const id of ids) {
@@ -153,6 +155,48 @@ test('drafts retain light PR checks and the security review classifier', () => {
         `${file}:${id}`
       );
     }
+  }
+});
+
+test('conversion to draft replaces superseded security runs with admitted security jobs', () => {
+  for (const [file, job] of [
+    ['codeql.yml', 'analyze'],
+    ['security-egress-contract.yaml', 'contract'],
+  ]) {
+    const workflow = workflows[file];
+    assert.ok(workflow.on.pull_request.types.includes('converted_to_draft'));
+    const run = (draft, action, runId) => {
+      const scope = context('pull_request', draft);
+      Object.assign(scope.github, {
+        workflow: workflow.name,
+        sha: 'same-head',
+        run_id: runId,
+        run_attempt: 1,
+      });
+      scope.github.event.action = action;
+      scope.github.event.pull_request.number = 42;
+      return scope;
+    };
+    const ready = run(false, 'synchronize', 1);
+    const draft = run(true, 'converted_to_draft', 2);
+    assert.equal(
+      renderTemplate(workflow.concurrency.group, ready),
+      renderTemplate(workflow.concurrency.group, draft)
+    );
+    assert.equal(
+      evaluateExpression(workflow.concurrency['cancel-in-progress'], draft),
+      true
+    );
+    assert.equal(
+      admitted(workflow, job, ready),
+      true,
+      `${file}: initial security run`
+    );
+    assert.equal(
+      admitted(workflow, job, draft),
+      true,
+      `${file}: replacement security run`
+    );
   }
 });
 

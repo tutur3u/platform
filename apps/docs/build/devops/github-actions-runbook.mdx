@@ -329,14 +329,17 @@ not promise a particular hosted queue delay.
 
 ### Draft PR runner admission
 
-Heavy PR verification defers database contracts, platform builds, runtime suites
-and CodeQL analysis until the PR is ready. Heavy-only workflows skip their
+Heavy PR verification defers non-security database contracts, platform builds
+and runtime suites until the PR is ready. Heavy-only workflows skip their
 `check-ci` call before runner allocation. Mixed workflows retain light lint,
-type, translation and security checks. The mobile aggregate skips on drafts and
-still requires every quality, test and realtime result on ready PRs.
+type and translation checks. Security jobs always remain eligible on drafts,
+including CodeQL analysis and the security-egress contract and its preflight.
+The mobile aggregate skips on drafts and still requires every quality, test and
+realtime result on ready PRs.
 
 These workflows listen for `ready_for_review` to run the same checks without a
-new commit. `converted_to_draft` supersedes cancellable PR runs. Existing
+new commit. `converted_to_draft` supersedes cancellable PR runs and starts
+replacement security checks even when the PR becomes a draft. Existing
 workflow/PR concurrency identities, pinned rerun isolation and serialized
 publication, environment, security-classifier and sandbox-cleanup locks remain
 unchanged. Push-only verification keeps its existing behavior.
@@ -359,6 +362,10 @@ all platforms. Matching main pushes retain Android and Linux builds. iOS, macOS
 and Windows development builds run nightly at 01:10, 01:30 and 01:50 (GMT+7),
 respectively, plus published releases and manual dispatch. Store publication and
 production workflows keep their existing triggers and gates.
+
+This is an explicit coverage exception: nightly builds validate the default-branch
+head selected for that run, rather than every merged SHA. Release and manual
+builds validate their selected snapshots.
 
 Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
 skips the heavy job before runner allocation; do not remove a required-check

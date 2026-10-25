@@ -18,7 +18,6 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
