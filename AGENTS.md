@@ -197,11 +197,12 @@ for roles, independent review, publication, receipts and retirement.
     `tuturuuu.com/<app>`). Require exact-commit CI, sealed emitted-Worker
     acceptance and staging acceptance before cutover. Production publication
     stays held per app in `tuturuuu.ci.ts` until an explicit cutover PR; retain
-    the immutable prior deployment and captured routing for rollback. High-traffic
-    apps named in the runbook cut over only through its canary ladder with
-    automatic gates and rollback to 0%. DNS, zone, canonical-route and staging
-    provider changes need release-authority approval; database migrations need
-    explicit user approval.
+    the immutable prior deployment and captured routing for rollback. Every
+    cutover has an instant one-step rollback prepared before the flip and a
+    post-deploy watch with immediate rollback on regression, per the runbook.
+    DNS, zone, canonical-route and staging provider changes need
+    release-authority approval; database migrations need explicit user
+    approval.
   - Live API/page behavior belongs to `apps/web` (Next.js) and the owning
     satellite, whether Next.js or native Start. Keep shared data access in
     `packages/internal-api`, keep domain libraries framework-independent, and
