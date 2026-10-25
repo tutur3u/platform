@@ -1,6 +1,6 @@
 ---
 title: "Customer email domains and newsletters: design proposal"
-description: "Draft architecture for approved customer sending, workspace add-ons, Polar billing and a first-class Mail newsletter workspace."
+description: "Draft architecture for approved customer sending, workspace newsletter tiers, Polar billing and a first-class Mail newsletter workspace."
 updatedAt: '2026-10-25'
 ---
 
@@ -8,7 +8,7 @@ updatedAt: '2026-10-25'
 
 **Draft for decisions; no product implementation or launch authorization.** Add
 customer-owned sending domains and sender identities, independent workspace
-add-ons, and a complete newsletter workspace at `mail.tuturuuu.com`. Infrastructure
+newsletter tiers, and a complete newsletter workspace at `mail.tuturuuu.com`. Infrastructure
 owns platform approval and operations. Supabase remains authoritative; Cloudflare
 owns new schedules, queues and sending compute. Polar owns subscription payments.
 
@@ -45,7 +45,7 @@ No credentials, live catalog, production database or sandbox organization was re
 | Sending | `packages/email-service/src/providers/cloudflare.ts` and `ses.ts`, shared security, audit and workspace rate limits; Mail domain default and mailbox override | Extend portable first-party contracts; Cloudflare newsletter transport is explicitly selected and cannot inherit a mailbox SES override. |
 | Incoming mail Worker | `apps/mail/src/email-worker/index.ts`, `wrangler.email-routing.jsonc`: MIME ingestion, private R2 and authenticated Mail webhook | This is inbound Email Routing, not a newsletter queue or proof of outbound eligibility. Preserve replies and mailbox routing. |
 | Billing | `apps/pay/src/app/api/payment/webhooks/route.ts`, subscription checkout/change/preview/customer portal routes; `packages/payment`, `packages/payment-core` | Keep Pay as billing adapter; share domain logic rather than duplicate webhook processing in Mail. |
-| Products | Private `workspace_subscription_products`, `workspace_subscriptions` evolution; metadata supports FREE/PLUS/PRO/ENTERPRISE and AI credit packs, seat helpers and order classification | Newsletter is an independent add-on product kind, never a new workspace tier or an AI credit pack. Live product IDs/prices were not inspected. |
+| Products | Private `workspace_subscription_products`, `workspace_subscriptions` evolution; metadata supports FREE/PLUS/PRO/ENTERPRISE and AI credit packs, seat helpers and order classification | Newsletter is an independent newsletter product kind, never a base workspace tier or an AI credit pack. Live product IDs/prices were not inspected. |
 | Inventory commerce | `packages/inventory-core/src/lib/inventory/commerce/polar-*`, storefront environment binding, workspace promotions and Polar discount linkage migrations | Reuse verified environment/tenant binding patterns. Storefront sales and workspace platform subscriptions are different merchant contexts. |
 | Limits and secrets | `workspace_secrets`, Infrastructure secrets controls, `packages/email-service/src/workspace-rate-limits.ts` minute/hour/day/user/recipient/IP policies | Preserve abuse ceilings; do not implement purchasable entitlements as arbitrary editable secret values. Provider secrets remain server-only. |
 | Email operations | Infrastructure email blacklist, audit, templates, post-email queue; `email_bounce_complaints`, `email_audit`, `sent_emails` and blacklist migrations | Reuse global safety checks; do not reuse report-recipient approval as newsletter consent or copy full bodies into analytics. |
@@ -176,9 +176,9 @@ Proposed finite consumer limits: 25 recipient IDs/wake, concurrency 2, three dur
 attempts only for proven unsent failures, 24-hour retry age, bounded backoff and a
 DLQ. Configure Queue retries consistently with that budget; redrive preserves
 identity, attempts and deadlines. Provider delivery retries after acceptance are
-provider-owned and do not trigger a second application send. Campaigns larger than
-today's quota show a choice to reduce the audience or schedule explicit daily
-batches; they never silently spill over into later days.
+provider-owned and do not trigger a second application send. Campaigns reserve their full audience against the applicable quota before
+scheduling. An audience that does not fit is rejected or paused, with a choice
+to reduce it; it never silently spills into later days or sends a quota-sized subset.
 
 ### Durable stop fence and total-spend envelope
 
@@ -222,12 +222,12 @@ $0.35/1,000; accepted hard-bounces still count. Marginal reservation is therefor
 $0.00035/message, before compute, storage, queues, database and payment costs.
 For a 31-day month, 500/day is 15,500 emails, costing $5.425 at the
 marginal rate and leaving $4.575 of the $10 price before other costs. The $2
-add-on is a **2,000-email monthly pool**, capped at 200/day: full pool consumption
+tier is a **2,000-email monthly pool**, capped at 200/day: full pool consumption
 costs $0.70 and leaves $1.30 before other costs. These are calculated email-only
 contributions, not measured net margins; payment fees, compute, queues, storage,
 database and support still apply. Free-tier email costs and shared included
-allowances are separate. If the pool stacks with free, its incremental maximum
-is 2,000/month, alongside up to 310 free emails in a 31-local-day period.
+allowances are separate. Tiers are mutually exclusive: the $2 tier includes no additional free daily
+allowance and never grants more than 2,000 emails per billing period.
 No $2-for-2,000/day offer is proposed.
 
 [Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/) bills
@@ -300,6 +300,36 @@ messages, or at least 0.1% complaints / 2% hard bounces over a defined 1,000-mes
 window. These are conservative draft controls, not provider guarantees. Sparse
 samples need review; stale feedback or event ingestion failures pause expansion.
 
+### Retention — recommended, pending user confirmation
+
+These defaults cover GDPR and Vietnam PDPD Decree 13/2023 requirements for legal
+review; they do not establish compliance by themselves. The legal owner must also
+check Vietnam's currently effective successor legislation and shorter statutory
+response deadlines; a product 30-day SLA cannot override a shorter legal duty.
+
+| Data / action | Recommended default |
+| --- | --- |
+| Consent proof | Keep timestamp, source, double-opt-in confirmation, IP, user agent and list for the subscriber relationship's life plus three years after unsubscribe; clarify that this is the audience subscription, not the Polar billing subscription. |
+| Suppression | Keep unsubscribes, hard bounces and complaints indefinitely as a workspace-scoped keyed email HMAC, without plaintext email. |
+| Subscriber profile | Delete profile fields 30 days after unsubscribe. |
+| Events and metrics | Delete raw delivery/open/click events after 90 days; retain PII-free aggregate campaign metrics indefinitely. |
+| Inactivity | Flag subscribers inactive for 12+ months for reviewed re-permission or sunset; no automatic bulk re-permission sends. |
+| Workspace deletion | Purge subscribers, events and suppression within 30 days; billing records remain with Polar under its own obligations. |
+| Subject rights | Fulfil export/erase within 30 days or a shorter applicable legal deadline; erase retains only the suppression HMAC needed to honor opt-out. |
+
+Erasure overrides routine three-year consent retention unless a documented lawful
+exception applies. Workspace deletion overrides indefinite suppression retention;
+recreating a workspace cannot silently restore consent. HMAC is pseudonymous data,
+not anonymous: keep keys outside tenant-visible data, version them, isolate them
+per workspace, and support deletion and bounded key rotation without storing raw
+email. Existing provider account-wide suppressions are a separate safety boundary;
+verify their plaintext retention/deletion capabilities and processor obligations
+before claiming end-to-end no-plaintext suppression. Global local abuse suppression
+must also avoid plaintext recipient storage; its scope is distinct from tenant
+opt-outs. Retention jobs run on Cloudflare with bounded pages, durable deletion
+fences, audit and no resurrection from queues or backups. Document backup expiry
+and processor deletion in the acceptance plan.
+
 ## Proposed data model and authorization
 
 Names below are proposals, not migrations. Use `private` service-only tables with
@@ -366,37 +396,41 @@ Infrastructure. Transactional email, connected accounts, workspace base tiers an
 AI credits retain their current policies. These decisions govern live and future
 migration paths; no older $5/500 or $2/2,000-per-day proposal may be seeded.
 
-| Offer | Entitlement | Billing |
+| Tier | Entitlement | Billing |
 | --- | --- | --- |
 | Free | 10 recipient sends per workspace-local day, after approval | No paid subscription required. |
-| Newsletter 500 | 500 recipient sends per workspace-local day | Separate $10 USD/month recurring Polar product. |
-| Newsletter pool add-on | 2,000 additional recipient sends per subscription billing period, at most 200 per workspace-local day | Separate $2 USD/month recurring Polar product; approved workspaces only. Stacks with free. |
+| Tier 1 | 2,000 recipient sends per subscription billing period, capped at 200 per workspace-local day | Separate $2 USD/month recurring Polar product. |
+| Tier 2 | 500 recipient sends per workspace-local day | Separate $10 USD/month recurring Polar product. |
 
-The prices and pool size are user decisions. Workspace timezone day boundaries,
-billing-anniversary pool reset, free-plus-add-on stacking, exact corporate identity
-plus explicit platform permission for approvers, conservative workspace daily and
-monthly spending caps and a global kill switch are orchestrator-selected defaults
-that the user may override. Numeric spend caps remain a launch configuration gate.
-Whether the pool stacks with Newsletter 500 remains undecided; until decided,
-checkout and entitlement resolution must reject that combination. Newsletter 500
-replaces free daily allowance by default; the $2 pool explicitly stacks with free.
+A workspace has **exactly one newsletter tier**. No stacking, additive free
+allowance, simultaneous paid-tier grants or quota multiplication is permitted.
+The generic workspace add-on catalog remains useful for attaching this newsletter
+capability independently of base workspace billing, but its newsletter entries
+belong to one exclusive tier group. Rename provisional tables if a narrower
+newsletter-specific implementation is clearer. Tier selection must not replace
+the workspace's unrelated FREE/PLUS/PRO/ENTERPRISE base subscription.
+
+The prices, caps and tier exclusivity are user decisions. Workspace timezone day
+boundaries, billing-anniversary pool reset, exact corporate identity plus explicit
+platform permission for approvers, conservative workspace daily/monthly spending
+caps and a global kill switch are orchestrator-selected defaults the user can
+override. Numeric spend caps remain a launch configuration gate.
 
 A Polar discount changes price, **not entitlement**. Coupons remain supported as
-product-restricted Polar discounts on these offers; the $2 add-on does not require
-a coupon. Never infer quota from paid amount or browser coupon text. Do not sum
-duplicate subscriptions, grant the same pool twice, or silently permit an unresolved
-plan/add-on combination. Bind each catalog entry to merchant, environment, product,
-price, currency and immutable entitlement version.
+product-restricted Polar discounts on either paid tier. Never infer quota from
+paid amount or browser coupon text. Bind each catalog entry to merchant,
+environment, product, price, currency and immutable entitlement version. Transition
+an existing paid tier through one subscription change instead of buying a second
+subscription; reconcile duplicate external subscriptions without granting twice.
 
 Entitlement resolution is a pure versioned function over approval, provider
-eligibility, subscriptions and valid promotions. All resulting grants remain
+eligibility, the one effective tier and valid promotions. All grants remain
 constrained by global/provider/domain/abuse/spending ceilings. Workspace secrets
-may lower abuse limits but cannot create grants or bypass approval. An approved
-workspace with only the pool can send up to 210/day while pool balance remains:
-10 free + at most 200 pool-funded, with only 2,000 pool-funded across the billing
-period. Once the pool is exhausted, only free allowance remains. For deterministic
-accounting, consume free first, then pool; record the source on every delivery.
-Newsletter 500 alone permits 500/day. Overlapping purchases never multiply grants.
+may lower abuse limits but cannot create grants or bypass approval. Tier 1 permits
+at most 200/day while its 2,000-period pool remains; exhaustion permits zero sends
+until renewal, not a fallback extra 10/day. Tier 2 permits 500/day. Free permits
+10/day. Tier changes preserve prior usage and cannot reset the day's consumed or
+reserved capacity to zero.
 
 Daily quota uses database time converted through the workspace's persisted IANA
 timezone and resets at local midnight. Store timezone version, period start/end
@@ -414,8 +448,9 @@ at the boundary belongs to exactly one half-open interval. Webhook reconciliatio
 can reveal the new period late, but must never backdate duplicate grants. Period
 renewal and subscription eligibility must be verified before creating new capacity.
 
-In one transaction, claim recipient identity and conditionally reserve the selected
-source's daily allowance, pool balance when applicable, and spending credits.
+In one transaction, freeze the full eligible audience and conditionally reserve the entire campaign
+recipient count against its tier daily allowance, monthly pool when applicable,
+and spending credits. The transaction either admits all recipients or none.
 Store `quota_source`, daily period ID, billing period ID, entitlement revision and
 reservation state. Count accepted and unknown submissions, including accepted
 hard bounces; release only proven unsent attempts to their original source and
@@ -426,18 +461,18 @@ Upgrades do not reset existing use. No rollover or reset on retry, restart, coup
 change or duplicate webhook; no negative balances under concurrency. Tests and
 confirmations have separate bounded budgets and cannot masquerade as campaigns.
 
-Regression requirements for these product decisions: 10-free boundary; 500-plan
-boundary; free-first 210/day with pool; the 2,000-period boundary across many days;
-exhausted pool falling back to free; pending/unapproved denial; unresolved
-plan-plus-pool denial; local-midnight/DST/timezone-edit transitions; billing
+Regression requirements for these product decisions: Free 10/day; Tier 1
+200/day and 2,000/period; exhausted pool denying sends; Tier 2 500/day; exact
+single-tier enforcement; pending/unapproved denial; full-count reservation and
+quota rejection without a partial campaign; local-midnight/DST/timezone-edit transitions; billing
 anniversary/short-month renewal; replay and concurrent reservation races. These
 are required implementation coverage, not tests executed by this documentation PR.
 
 ### Checkout and lifecycle
 
-Use the platform merchant's separate Newsletter 500 ($10) and Newsletter pool
+Use the platform merchant's separate Tier 2 ($10) and Tier 1
 ($2) recurring products, fixed USD minor-unit prices of 1000 and 200 and environment-specific allowlisted IDs. Preserve existing seat/base
-subscription handling and classify `newsletter_addon` separately from tier and
+subscription handling and classify `newsletter_tier` separately from tier and
 credit-pack products. Polar [subscriptions](https://polar.sh/docs/features/subscriptions/introduction)
 and [discounts](https://polar.sh/docs/features/discounts) support recurring offers
 and once, fixed-month or forever discount durations. Restrict codes to the intended
@@ -465,15 +500,41 @@ subscription readback instead of reverting newer state. A durable inbox permits
 fast acknowledgement after persistence and bounded Cloudflare processing; failures
 before persistence return retryable errors. Do not log signatures or whole payloads.
 
-Active confirmed paid state grants quota. Canceled-at-period-end retains paid quota
-to the verified effective end; immediate revocation ends it immediately. Downgrades
-are scheduled for the next paid boundary by default; upgrades activate after the
-verified payment/state transition. Pending/unpaid/expired cannot grant paid quota.
-Past-due behavior remains an open user decision; do not grant unverified renewed
-paid capacity. Preserve content while the policy is resolved. Refunds/chargebacks require
-reconciliation and explicit revocation rules; no automatic subscription deletion
-or retroactive quota refund. Scheduled campaigns revalidate at execution; paused
-campaigns and subscriber exports remain visible within permissions.
+### Billing behavior — recommended, pending user confirmation
+
+Upgrades apply immediately after the verified Polar transition and are prorated
+through Polar. Downgrades/cancellations take effect at period end, then select the
+lower tier or Free; no mid-cycle cut. Prior usage remains charged. Tier 1's pool
+starts only at the verified paid billing-period boundary and never receives an
+unverified extra pool during upgrade/downgrade reconciliation.
+
+On `past_due`, retain the existing full tier limits for seven days from the
+verified first past-due transition. Send bounded idempotent notices on days 0, 3
+and 6 through Cloudflare-owned scheduling. Repeated events cannot restart grace.
+At expiry use Free limits until paid. Canceled (effective ended cancellation) or
+unpaid uses Free until resubscription; a future cancellation flag retains the
+current tier until period end. Non-payment never deletes data, and domain/sender
+approvals remain approved unless independently revoked for security or abuse.
+Refunds/chargebacks need reconciled explicit revocation rules; they never reset
+quota or silently delete content.
+
+Reserve the **full eligible recipient count at scheduling**, including daily
+quota, Tier 1 pool and spend. For future dates, reserve against the intended
+workspace-local day and verified subscription period; do not reserve beyond a
+known paid period or borrow unverified renewal capacity. If a later date's tier
+cannot be established, leave the campaign draft until it can be admitted.
+A tier/grace/approval change revalidates all queued campaigns. If the remaining
+audience no longer fits, pause with a notice; never select a smaller quota-sized
+subset. Require explicit re-admission to resume. When several campaigns compete,
+use deterministic schedule/creation order in one locked allocation transaction.
+
+Full reservation prevents **quota-driven** partial sends; it cannot guarantee
+atomic external delivery. Bounces, withdrawal, abuse suspension, provider failure
+or Stop can still interrupt a campaign after some recipients were accepted. Show
+those partial outcomes truthfully and retain unknown-send fences. Recheck consent
+and suppression per recipient; never send to an unsubscribed person to preserve
+an all-recipient promise. Test downgrade/grace expiry before dispatch and mid-run,
+releasing only proven-unsent reservations and preserving accepted/unknown charges.
 
 ### Sandbox acceptance plan
 
@@ -615,6 +676,7 @@ catalog writes and customer sending need separate release authorization and proo
 
 1. Cloudflare currently documents transactional-only sending. Can Cloudflare approve
    newsletter/resale use and a customer-domain/account delegation path?
-2. What consent evidence, lawful basis, PII retention and legal review are required?
-3. What should downgrade timing and past-due behavior be (including unused pool)?
-4. Should the $2 pool add-on also stack with the $10 Newsletter 500 plan?
+2. Confirm or amend the recommended consent/PII retention policy after GDPR and
+   current Vietnam legal review.
+3. Confirm or amend the recommended downgrade, cancellation, grace and full-campaign
+   reservation behavior, including refund/chargeback treatment.
