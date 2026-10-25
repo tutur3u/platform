@@ -37,6 +37,7 @@ import {
   executeLogHabitEntry,
 } from './executors/habits';
 import { executeGenerateImage } from './executors/image';
+import { executeMailTool } from './executors/mail';
 import { executeConvertFileToMarkdown } from './executors/markitdown';
 import {
   executeDeleteMemory,
@@ -81,6 +82,7 @@ import {
 } from './executors/tasks';
 import {
   executeManageWorkspace,
+  executeOpenApp,
   executeSetSidebar,
   executeSetTheme,
   executeShowWorkspaceArtifact,
@@ -187,6 +189,12 @@ const toolHandlers = {
   delete_event: executeDeleteEvent,
   check_e2ee_status: executeCheckE2EEStatus,
   enable_e2ee: executeEnableE2EE,
+  list_recent_emails: (args, ctx) =>
+    executeMailTool('list_recent_emails', args, ctx),
+  get_email_thread: (args, ctx) =>
+    executeMailTool('get_email_thread', args, ctx),
+  draft_email_reply: (args, ctx) =>
+    executeMailTool('draft_email_reply', args, ctx),
 
   log_transaction: executeLogTransaction,
   get_spending_summary: executeGetSpendingSummary,
@@ -246,6 +254,7 @@ const toolHandlers = {
   update_my_settings: executeUpdateMySettings,
   set_default_currency: executeSetDefaultCurrency,
   set_theme: executeSetTheme,
+  open_app: executeOpenApp,
   set_sidebar: executeSetSidebar,
   manage_workspace: executeManageWorkspace,
   show_workspace_artifact: executeShowWorkspaceArtifact,

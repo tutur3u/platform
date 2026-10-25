@@ -34,6 +34,7 @@ export async function sendAiChatMessage({
   request,
   stream,
   timezone,
+  clientCapabilities,
 }: {
   attachments: ChatMessageAttachmentInput[];
   auth: SessionAuthContext;
@@ -45,6 +46,7 @@ export async function sendAiChatMessage({
   request: NextRequest;
   stream: boolean;
   timezone?: string;
+  clientCapabilities?: string[];
 }) {
   const chatId = getAiChatId(conversationId);
   const trimmedContent = content.trim();
@@ -159,6 +161,7 @@ export async function sendAiChatMessage({
     supabase: auth.supabase,
     thinkingMode: 'fast',
     timezone,
+    clientCapabilities,
     user: auth.user,
     wsId: context.normalizedWsId,
   });

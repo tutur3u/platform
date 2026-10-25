@@ -52,59 +52,74 @@ class ProfileMediaRecovery extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: shad.Alert.destructive(
-            title: Text(context.l10n.profileMediaRecoveryTitle),
+            title: Text(
+              context.l10n.profileMediaRecoveryTitle,
+              style: shad.Theme.of(context).typography.small,
+            ),
             content: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(profileMediaFailureMessage(context.l10n, failure)),
+                Text(
+                  profileMediaFailureMessage(context.l10n, failure),
+                  style: shad.Theme.of(context).typography.small,
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
                     if (target != null)
-                      shad.OutlineButton(
-                        onPressed: state.isLoading
-                            ? null
-                            : () async {
-                                if (!current()) return;
-                                if (target == ProfileMediaTarget.avatar) {
-                                  await pickAndUploadProfileAvatar(
-                                    pickerContext,
-                                    picker: avatarPicker,
-                                  );
-                                } else if (target ==
-                                    ProfileMediaTarget.banner) {
-                                  await pickAndUploadProfileBanner(
-                                    pickerContext,
-                                  );
-                                } else {
-                                  cubit.clearMediaFailure();
-                                  if (target ==
-                                      ProfileMediaTarget.removeAvatar) {
-                                    await cubit.removeAvatar();
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 44),
+                        child: shad.OutlineButton(
+                          size: shad.ButtonSize.small,
+                          onPressed: state.isLoading
+                              ? null
+                              : () async {
+                                  if (!current()) return;
+                                  if (target == ProfileMediaTarget.avatar) {
+                                    await pickAndUploadProfileAvatar(
+                                      pickerContext,
+                                      picker: avatarPicker,
+                                    );
+                                  } else if (target ==
+                                      ProfileMediaTarget.banner) {
+                                    await pickAndUploadProfileBanner(
+                                      pickerContext,
+                                    );
                                   } else {
-                                    await cubit.removeBanner();
+                                    cubit.clearMediaFailure();
+                                    if (target ==
+                                        ProfileMediaTarget.removeAvatar) {
+                                      await cubit.removeAvatar();
+                                    } else {
+                                      await cubit.removeBanner();
+                                    }
                                   }
-                                }
-                              },
-                        child: Text(switch (target) {
-                          ProfileMediaTarget.removeAvatar =>
-                            context.l10n.profileRemoveAvatar,
-                          ProfileMediaTarget.removeBanner =>
-                            context.l10n.profileRemoveBanner,
-                          _ => context.l10n.profileMediaSelectAgain,
-                        }),
+                                },
+                          child: Text(switch (target) {
+                            ProfileMediaTarget.removeAvatar =>
+                              context.l10n.profileRemoveAvatar,
+                            ProfileMediaTarget.removeBanner =>
+                              context.l10n.profileRemoveBanner,
+                            _ => context.l10n.profileMediaSelectAgain,
+                          }),
+                        ),
                       ),
                     InternalDiagnosticsCopy(
                       diagnostics: failure.diagnostics,
                       userId: actor,
                     ),
-                    shad.GhostButton(
-                      onPressed: () {
-                        if (current()) cubit.clearMediaFailure();
-                      },
-                      child: Text(context.l10n.profileMediaDismiss),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      child: shad.GhostButton(
+                        size: shad.ButtonSize.small,
+                        onPressed: () {
+                          if (current()) cubit.clearMediaFailure();
+                        },
+                        child: Text(context.l10n.profileMediaDismiss),
+                      ),
                     ),
                   ],
                 ),

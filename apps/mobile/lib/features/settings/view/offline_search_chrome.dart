@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/settings/view/settings_dock_search.dart';
 
 /// The shell owns the route's search field; isolated previews have a fallback.
 class OfflineSearchChrome extends StatefulWidget {
@@ -26,47 +24,20 @@ class OfflineSearchChrome extends StatefulWidget {
 class _OfflineSearchChromeState extends State<OfflineSearchChrome> {
   bool _active = false;
 
-  void _close() {
-    widget.controller.clear();
-    widget.onChanged('');
-    setState(() => _active = false);
-  }
-
   @override
-  Widget build(BuildContext context) {
-    if (context.read<ShellChromeActionsCubit?>() == null) {
-      return AppSearchField(
-        key: const ValueKey('offline-namespace-search'),
-        controller: widget.controller,
-        placeholder: widget.hint,
-        onChanged: widget.onChanged,
-      );
-    }
-    final location = Routes.settingsOfflineModulePath(widget.moduleId);
-    return ShellChromeActions(
-      ownerId: 'offline-search-${widget.moduleId}',
-      locations: {location},
-      actions: [
-        ShellActionSpec(
-          id: '$location/search',
-          icon: _active ? AppIcons.close : AppIcons.search,
-          tooltip: widget.hint,
-          inDock: true,
-          highlighted: _active || widget.controller.text.isNotEmpty,
-          callbackToken: (_active, widget.controller.text),
-          searchController: _active ? widget.controller : null,
-          searchHint: widget.hint,
-          onSearchChanged: widget.onChanged,
-          onCloseSearch: _close,
-          onPressed: () {
-            if (_active) {
-              _close();
-            } else {
-              setState(() => _active = true);
-            }
-          },
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => SettingsDockSearch(
+    ownerId: 'offline-search-${widget.moduleId}',
+    location: Routes.settingsOfflineModulePath(widget.moduleId),
+    controller: widget.controller,
+    hint: widget.hint,
+    active: _active,
+    onActiveChanged: (active) => setState(() => _active = active),
+    onChanged: widget.onChanged,
+    fallback: AppSearchField(
+      key: const ValueKey('offline-namespace-search'),
+      controller: widget.controller,
+      placeholder: widget.hint,
+      onChanged: widget.onChanged,
+    ),
+  );
 }

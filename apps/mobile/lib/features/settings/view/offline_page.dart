@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -14,7 +15,8 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// Shell owners can embed this body without creating competing app chrome.
 class OfflinePage extends StatelessWidget {
-  const OfflinePage({this.embedded = false, super.key});
+  const OfflinePage({this.embedded = false, this.coordinator, super.key});
+  final OfflinePreparationCoordinator? coordinator;
   final bool embedded;
 
   @override
@@ -22,9 +24,10 @@ class OfflinePage extends StatelessWidget {
     final l10n = context.l10n;
     final body = AppPageListView(
       children: [
-        Text(l10n.offlineSectionDescription),
-        const SizedBox(height: 20),
-        const OfflinePreparationSection(showModuleDetails: true),
+        OfflinePreparationSection(
+          coordinator: coordinator,
+          showModuleDetails: true,
+        ),
         const SizedBox(height: 24),
         SettingsCompactSection(
           title: l10n.offlinePreferencesTitle,

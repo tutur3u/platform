@@ -107,14 +107,13 @@ describe.each([true, false])('O_NOFOLLOW available: %s', (noFollow) => {
 });
 
 it.each(['symlink', 'inode'] as const)(
-  'rejects a %s replacement between fallback lstat and open',
+  'rejects a %s replacement between fallback open and identity check',
   async (kind) => {
     flags.noFollow = false;
     const { path, target, plan } = await fixture();
     const actual = await vi.importActual<typeof fs>('node:fs/promises');
     let swapped = false;
     vi.mocked(fs.lstat).mockImplementationOnce(async (...args) => {
-      const before = await actual.lstat(...args);
       if (kind === 'symlink') {
         await fs.unlink(path);
         await fs.symlink(target, path);
@@ -122,7 +121,7 @@ it.each(['symlink', 'inode'] as const)(
         await fs.rename(target, path);
       }
       swapped = true;
-      return before;
+      return actual.lstat(...args);
     });
     const lines: string[] = [];
     await reportTurboSummary(plan, (line) => lines.push(line));

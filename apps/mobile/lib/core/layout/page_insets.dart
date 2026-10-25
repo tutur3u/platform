@@ -41,6 +41,16 @@ abstract final class AppPageInsets {
     );
   }
 
+  /// Horizontal gutter for the [width] a widget actually receives (usually a
+  /// `LayoutBuilder`'s max width), so canvases beside the shell rail use the
+  /// gutter of their own body. Falls back to the window when unbounded.
+  static double gutterOf(BuildContext context, {required double width}) =>
+      AppLayout.gutter(
+        Breakpoints.fromWidth(
+          width.isFinite ? width : MediaQuery.sizeOf(context).width,
+        ),
+      );
+
   /// Resolves insets for [width] using the ambient [MediaQuery].
   ///
   /// The bottom inset includes the shell's dock clearance (published as

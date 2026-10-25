@@ -61,6 +61,7 @@ export function streamNativeAiConversationResponse({
   miraMode,
   request,
   timezone,
+  clientCapabilities,
   userMessage,
 }: {
   auth: SessionAuthContext;
@@ -69,6 +70,7 @@ export function streamNativeAiConversationResponse({
   miraMode: boolean;
   request: NextRequest;
   timezone?: string;
+  clientCapabilities?: string[];
   userMessage: ChatMessage;
 }) {
   const encoder = new TextEncoder();
@@ -93,6 +95,7 @@ export function streamNativeAiConversationResponse({
           onPart: (part) => write({ part, type: 'assistant_part' }),
           request,
           timezone,
+          clientCapabilities,
           userMessage,
         });
 
@@ -151,6 +154,7 @@ export async function sendNativeAiConversationMessages({
   onPart,
   request,
   timezone,
+  clientCapabilities,
   userMessage,
 }: {
   auth: SessionAuthContext;
@@ -161,6 +165,7 @@ export async function sendNativeAiConversationMessages({
   onPart?: (part: Record<string, unknown>) => void;
   request: NextRequest;
   timezone?: string;
+  clientCapabilities?: string[];
   userMessage: ChatMessage;
 }): Promise<NativeAiMessagePersistence> {
   const settings = await getNativeAiSettings(conversation.id);
@@ -252,6 +257,7 @@ export async function sendNativeAiConversationMessages({
       supabase: auth.supabase,
       thinkingMode: settings.thinking_mode,
       timezone,
+      clientCapabilities,
       user: auth.user,
       wsId: context.normalizedWsId,
     });

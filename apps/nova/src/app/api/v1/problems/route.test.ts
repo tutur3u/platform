@@ -128,9 +128,17 @@ describe('Nova problem catalog eligibility', () => {
     const problems = [{ id: 'problem-1', description: 'Problem content' }];
     mocks.createAdminClient.mockResolvedValue(
       adminClient({
-        nova_challenges: [query({ data: challenge(), error: null })],
+        nova_challenges: [
+          query({ data: challenge(), error: null }),
+          query({ data: { close_at: null, duration: 3600 }, error: null }),
+        ],
         nova_problems: [query({ data: problems, error: null })],
-        nova_sessions: [query({ data: { id: 'session-1' }, error: null })],
+        nova_sessions: [
+          query({
+            data: { start_time: new Date(Date.now() - 60_000).toISOString() },
+            error: null,
+          }),
+        ],
       })
     );
 

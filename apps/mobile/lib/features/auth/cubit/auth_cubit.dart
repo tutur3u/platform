@@ -10,6 +10,8 @@ import 'package:mobile/features/auth/cubit/auth_feature_cache.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+part 'auth_signed_out.dart';
+
 /// Manages authentication state across the app.
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
@@ -94,24 +96,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         } else if (event == supa.AuthChangeEvent.signedOut) {
-          final inAddFlow = state.isAddAccountFlow || _isInAddAccountFlow;
-          if (inAddFlow) {
-            emit(
-              const AuthState.unauthenticated().copyWith(
-                accounts: state.accounts,
-                activeAccountId: state.activeAccountId,
-                isAddAccountFlow: true,
-              ),
-            );
-            unawaited(_reloadStoredAccounts());
-          } else {
-            emit(
-              const AuthState.unauthenticated().copyWith(
-                accounts: const <StoredAuthAccount>[],
-                activeAccountId: null,
-              ),
-            );
-          }
+          _publishSignedOutState(emit);
         }
       },
       onError: (Object error, StackTrace stackTrace) {

@@ -122,7 +122,7 @@ describe.each([true, false])('O_NOFOLLOW available: %s', (noFollow) => {
 });
 
 it.each(['symlink', 'inode'] as const)(
-  'rejects a %s replacement after fallback metadata inspection',
+  'rejects a %s replacement before the fallback identity check',
   async (kind) => {
     flags.noFollow = false;
     const root = await mkdtemp(join(tmpdir(), 'quota-inode-race-'));
@@ -134,7 +134,6 @@ it.each(['symlink', 'inode'] as const)(
     const actual = await vi.importActual<typeof fs>('node:fs/promises');
     let swapped = false;
     vi.mocked(fs.lstat).mockImplementationOnce(async (...args) => {
-      const before = await actual.lstat(...args);
       if (kind === 'symlink') {
         await fs.unlink(path);
         await fs.symlink(target, path);
@@ -142,7 +141,7 @@ it.each(['symlink', 'inode'] as const)(
         await fs.rename(target, path);
       }
       swapped = true;
-      return before;
+      return actual.lstat(...args);
     });
     await expect(files.readJsonlSnapshot(path, 0)).rejects.toThrow();
     expect(swapped).toBe(true);

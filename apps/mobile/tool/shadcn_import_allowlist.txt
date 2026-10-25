@@ -32,7 +32,6 @@ lib/features/chat/widgets/chat_composer.dart
 lib/features/chat/widgets/chat_conversation_list.dart
 lib/features/chat/widgets/chat_sheets.dart
 lib/features/chat/widgets/chat_thread_view.dart
-lib/features/cms/view/cms_page.dart
 lib/features/crm/view/crm_page.dart
 lib/features/dashboard/view/dashboard_page.dart
 lib/features/desktop_update/desktop_update_gate.dart
@@ -81,7 +80,6 @@ lib/features/inventory/widgets/inventory_ui.dart
 lib/features/mail/view/mail_html_body.dart
 lib/features/mail/view/mail_page.dart
 lib/features/mail/view/mail_reader.dart
-lib/features/mail/view/mail_settings_chrome.dart
 lib/features/meet/view/meet_page.dart
 lib/features/mobile_versions/view/mobile_version_settings_page.dart
 lib/features/notes/notes_page.dart

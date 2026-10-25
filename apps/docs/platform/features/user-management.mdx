@@ -235,17 +235,50 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 ### Mobile profile image optimization
 
-Avatar and banner inputs may be up to 20 MiB before optimization. That input
-allowance is separate from the upload limits: the mobile optimizer keeps avatars
-within 1,000,000 bytes and 1024 pixels per side, and banners within 2,000,000
-bytes and 2560 by 1440 pixels. The decoder retains its 20-megapixel ceiling,
-first-frame handling, supported codec checks, orientation correction and
-metadata removal. Signed uploads and server storage quotas remain authoritative.
+Mobile avatars use a square crop; choose 512–1024 pixels per side. Banners use
+web's 3:1 display aspect, for example 2400 by 800 pixels. The mobile optimizer
+preserves aspect and never enlarges small images, fitting avatars within 1024 by
+1024 and banners within the server's 2560 by 1440 canvas.
 
-`apps/mobile/test/core/media/profile_media_optimizer_test.dart` covers source
-files above the old pre-compression limits for both targets, file/byte output
-parity, bounded results and oversized-input rejection. Actor-race and failure
-contract tests cover the surrounding repository path.
+Camera/gallery selection uses the native picker with bounded dimensions and
+quality conversion, including HEIC/HEIF to JPEG on iOS, followed by a native
+JPEG crop. The shared optimizer runs decoding and encoding off the UI isolate,
+bakes EXIF orientation, takes the first animation frame, and strips metadata.
+Opaque photos and screenshots use JPEG quality steps (90, 82, 72, 60), then
+progressively smaller dimensions until they fit. Transparent input retains PNG
+when it fits at the current size; otherwise it is flattened onto white for JPEG.
+The same optimizer handles offline replay and workspace avatars; there is no
+second codec policy. Workspace avatar authorization and its separate storage
+upload protocol retain their existing limits.
+
+The source allowance is 20 MiB with a separate 20-megapixel decode ceiling,
+bounding memory use on mobile devices. Input beyond these safety limits is
+rejected before full pixel decoding, and oversized files before reading their
+bytes. Upload targets remain 1,000,000 bytes for avatars and 2,000,000 for banners,
+below the server's authoritative 2 MiB and 5 MiB caps. Only the exact profile PUT
+paths with a nonempty `token` query parameter receive those proxy limits;
+requests without one retain the generic 512 KiB cap. The handler still validates
+the ticket. Unrelated API payloads retain their normal limit.
+Actual streamed bytes, one-use tickets, upload budgets and server-side
+WebP re-encoding remain authoritative; client sizes do not grant permission.
+Proxy consumers import the dependency-free
+`@tuturuuu/storage-core/profile-upload-limits` module. The server-only budget
+module re-exports the same limits for existing handler callers.
+Empty/corrupt images and native decode failures use invalid-image guidance,
+rather than size guidance. Recovery uses a compact design-system alert and
+retains fresh selection, dismissal and authorized sanitized diagnostics.
+
+![Profile image recovery with a fresh selection and dismissal](/images/mobile-profile-media-recovery-synthetic.png)
+
+Regression coverage: `profile_media_optimizer_test.dart` exercises phone JPEG,
+PNG, tiny and panoramic images, orientation/metadata, transparency, the exact
+20 MiB source boundary and rejection above it. `profile_native_media_options_test.dart`
+covers picker/crop conversion options (real HEIC selection still needs device
+acceptance). `profile_media_failure_mapping_test.dart` and the existing actor,
+delivery and recovery suites cover errors and ownership.
+`apps/web/src/lib/profile-media-proxy.test.ts` exercises the real proxy guard
+and route exports, including valid ticketed images above the old 512 KiB proxy
+ceiling and the generic cap for missing or empty tickets.
 
 
 ### Mobile profile banners

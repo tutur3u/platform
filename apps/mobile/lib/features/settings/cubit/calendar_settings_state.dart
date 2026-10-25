@@ -8,13 +8,27 @@ class CalendarSettingsState extends Equatable {
   const CalendarSettingsState({
     this.userPreference = FirstDayOfWeek.auto_,
     this.workspacePreference = FirstDayOfWeek.auto_,
+    this.userLoaded = false,
+    this.workspaceLoaded = false,
+    this.loading = false,
+    this.revalidating = false,
+    this.saving = false,
+    this.isFromCache = false,
+    this.error,
   });
 
-  /// The user's own preference (from `users.first_day_of_week`).
+  /// The authenticated user's private Calendar preference.
   final FirstDayOfWeek userPreference;
 
   /// The workspace's default (from `workspaces.first_day_of_week`).
   final FirstDayOfWeek workspacePreference;
+  final bool userLoaded;
+  final bool workspaceLoaded;
+  final bool loading;
+  final bool revalidating;
+  final bool saving;
+  final bool isFromCache;
+  final Object? error;
 
   /// Resolves the effective first day of week using priority:
   /// User > Workspace > Auto (Sunday fallback).
@@ -32,13 +46,38 @@ class CalendarSettingsState extends Equatable {
   CalendarSettingsState copyWith({
     FirstDayOfWeek? userPreference,
     FirstDayOfWeek? workspacePreference,
+    bool? userLoaded,
+    bool? workspaceLoaded,
+    bool? loading,
+    bool? revalidating,
+    bool? saving,
+    bool? isFromCache,
+    Object? error,
+    bool clearError = false,
   }) => CalendarSettingsState(
     userPreference: userPreference ?? this.userPreference,
     workspacePreference: workspacePreference ?? this.workspacePreference,
+    userLoaded: userLoaded ?? this.userLoaded,
+    workspaceLoaded: workspaceLoaded ?? this.workspaceLoaded,
+    loading: loading ?? this.loading,
+    revalidating: revalidating ?? this.revalidating,
+    saving: saving ?? this.saving,
+    isFromCache: isFromCache ?? this.isFromCache,
+    error: clearError ? null : error ?? this.error,
   );
 
   @override
-  List<Object?> get props => [userPreference, workspacePreference];
+  List<Object?> get props => [
+    userPreference,
+    workspacePreference,
+    userLoaded,
+    workspaceLoaded,
+    loading,
+    revalidating,
+    saving,
+    isFromCache,
+    error,
+  ];
 }
 
 /// Auto-detect first day of week from locale — mirrors the web's
