@@ -1,0 +1,76 @@
+---
+title: "Tasks native Start on Vite+ and Cloudflare"
+description: "How the native Tasks candidate is built on the start bridge, and what it does and does not yet cover."
+---
+
+Tasks has a native TanStack Start candidate built through
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). `next build` (package
+`build`) remains the production path on Vercel. The native build is
+`build:cloudflare` and nothing publishes it; production stays held until an
+explicit cutover PR.
+
+## Layout
+
+| Piece | File |
+| --- | --- |
+| Route registries | `start-bridge.routes.json` generates `src/runtime/*.bridge.gen.ts`; `bun run routes:check` fails on drift |
+| Worker entry | `cloudflare/worker.ts` → `src/runtime/worker-handler.ts` (bridge handler, build-info, runtime tag, noindex) |
+| Pages | `src/routes/$.tsx` loads `src/runtime/page-model.server.ts`, one loader per manifest pattern (`satisfies Record<PagePattern, …>`), rendered by `page-view.tsx` |
+| Workspace shell | `workspace-model.server.ts` (the `[wsId]` layout guards as data) and `workspace-view.tsx` |
+| Server actions | `src/runtime/action-ports.ts` replaces client-reached `'use server'` modules with server functions in the native build only; each server half re-checks the actor |
+| Types | `tsconfig.json` (Next) excludes the native files; `tsconfig.native.json` covers them. `type-check` runs both |
+
+`build-info` is owned by the Worker. The `serwist/[path]` route builds the
+offline worker with esbuild at request time and stays on the Next build until
+the native offline port; the native shell does not register a service worker.
+
+## Build notes
+
+- Run Vite with `--configLoader runner` (the package scripts do). The bridge's
+  `vite` preset is TypeScript with extensionless imports, which the default
+  native-ESM config loader cannot load.
+- The Worker (`ssr`) bundle sets rolldown `strictExecutionOrder`: circular
+  server chunks otherwise ran a CommonJS interop wrapper before its chunk
+  initialized and the Worker failed at startup.
+- `debug` and `supports-color` 7 are CommonJS and `require('tty')` in their Node
+  entry, which cannot run in the ESM Worker. A resolve plugin uses each
+  package's own `browser` entry; ESM releases with `exports` maps are untouched.
+- Proxy rewrites (crawler link preview, root fallback) reach the page loader
+  through the `x-tuturuuu-page-rewrite` request header, because the bridge
+  renders the browser-visible URL. The Worker strips any client-sent copy.
+- The server reads Supabase public configuration from Worker vars at runtime
+  (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`); build
+  environment only reaches the client bundle.
+
+## basePath and cohort
+
+`TUTURUUU_BASE_PATH=/tasks` builds the `tuturuuu.com/tasks` variant: assets
+under `/tasks/assets`, server functions under `/tasks/_serverFn`, and 404
+outside the base. The bridge scopes the app session cookie as
+`tuturuuu_app_session__tasks` with `Path=/tasks`. Every native response carries
+`x-tuturuuu-runtime: native`; cohort selection belongs to the canary router.
+The staging profile (`void.config.ts`, `tuturuuu-tasks-vite-staging`) sets
+`TUTURUUU_NOINDEX=1` and `TUTURUUU_NATIVE_CANARY_PERCENT=0`.
+
+Known gap under a basePath: the shared `@tuturuuu/auth/proxy` builds its
+`verify-token` return URL without the base, so path-mode sign-in returns to
+the origin root. The subdomain is unaffected.
+
+## Local emitted smoke
+
+On a Studio host, after `bun run build:cloudflare`, run the emitted Worker in
+local workerd with loopback-only fixtures:
+
+```bash
+bunx wrangler dev --config dist/server/wrangler.json --ip 127.0.0.1 \
+  --port 18797 --local \
+  --var NEXT_PUBLIC_SUPABASE_URL:http://127.0.0.1:54321 \
+  --var NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:sb_publishable_fixture_only
+```
+
+Check `/api/build-info`, a static file, an unauthenticated page (redirect to
+the central login with a `verify-token` return URL), an API route without a
+session (401), the server-function base (415 for a non-JSON POST) and the
+runtime header. Repeat with a `TUTURUUU_BASE_PATH=/tasks` build under
+`/tasks/...`. This smoke does not replace exact-commit CI, sealed-artifact
+checks or signed-in acceptance on staging.
