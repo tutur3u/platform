@@ -2,7 +2,8 @@ import { DEV_MODE } from './constants';
 import { isTrustedRealtimeServiceRequest } from './realtime-service-ticket';
 
 export type TrustedProxyBypassRule = {
-  matches: (pathname: string, headers: Headers) => boolean;
+  /** `method` is the request method when the caller knows it; rules that need it must fail closed without it. */
+  matches: (pathname: string, headers: Headers, method?: string) => boolean;
 };
 
 function hasBearerToken(headers: Headers, secrets: Array<string | undefined>) {
@@ -63,7 +64,7 @@ export const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
   // Meet realtime Worker callbacks carry an HMAC service ticket, not a
   // Supabase session; the route verifies the same ticket again.
   {
-    matches: (pathname, headers) =>
-      isTrustedRealtimeServiceRequest(pathname, headers),
+    matches: (pathname, headers, method) =>
+      isTrustedRealtimeServiceRequest(pathname, headers, method),
   },
 ];

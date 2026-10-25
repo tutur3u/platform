@@ -18,7 +18,7 @@ import {
 import {
   guardApiProxyRequest,
   hasSupabaseSessionCookie,
-  isTrustedProxyBypassRequest,
+  isTrustedProxyBypassForRequest,
   type ProxyRoutePolicy,
   type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
@@ -770,7 +770,7 @@ async function blockMalformedApiAuthCookieRequest(
 ): Promise<NextResponse | null> {
   if (
     hasLikelyAuthenticatedApiCredential(req) ||
-    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)
+    isTrustedProxyBypassForRequest(req)
   ) {
     return null;
   }
@@ -842,10 +842,7 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   reason: 'malformed-auth-header' | 'suspicious-anonymous-request';
   status: 400 | 401;
 } | null {
-  if (
-    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
-    hasSupabaseSessionCookie(req)
-  ) {
+  if (isTrustedProxyBypassForRequest(req) || hasSupabaseSessionCookie(req)) {
     return null;
   }
 

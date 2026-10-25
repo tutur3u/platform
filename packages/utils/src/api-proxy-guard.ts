@@ -1015,9 +1015,25 @@ function getRateLimitPrefix(
 export function isTrustedProxyBypassRequest(
   pathname: string,
   headers: Headers,
-  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES
+  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES,
+  method?: string
 ): boolean {
-  return trustedBypassRules.some((rule) => rule.matches(pathname, headers));
+  return trustedBypassRules.some((rule) =>
+    rule.matches(pathname, headers, method)
+  );
+}
+
+/** Same check for a whole request, so method-bound rules see the method. */
+export function isTrustedProxyBypassForRequest(
+  req: Pick<NextRequest, 'nextUrl' | 'headers' | 'method'>,
+  trustedBypassRules?: TrustedProxyBypassRule[]
+): boolean {
+  return isTrustedProxyBypassRequest(
+    req.nextUrl.pathname,
+    req.headers,
+    trustedBypassRules,
+    req.method
+  );
 }
 
 export function clearApiProxyGuardLimiterCache() {
@@ -1029,7 +1045,14 @@ export async function guardApiProxyRequest(
   options: GuardOptions
 ): Promise<NextResponse | null> {
   let authenticatedActor: string | null = null;
-  if (!isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)) {
+  if (
+    !isTrustedProxyBypassRequest(
+      req.nextUrl.pathname,
+      req.headers,
+      undefined,
+      req.method
+    )
+  ) {
     const assurance = await enforceRequiredMfaRequest(
       req,
       options.useVerifiedBearerActor
@@ -1057,7 +1080,8 @@ export async function guardApiProxyRequest(
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
       req.headers,
-      trustedBypassRules
+      trustedBypassRules,
+      req.method
     )
   ) {
     // Credential presence alone never grants an authenticated budget.
