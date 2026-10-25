@@ -48,11 +48,11 @@ Port that precedence with the bridge's guarded forwarding contract. A page
 catch-all must never capture an API request.
 
 Finance's Worker entrypoint is maintained by the app because it composes the
-reserved Web endpoints before its generated local registry. The endpoint
-composer reads the same shared rewrite definitions as the Next configuration.
+reserved Web paths through the shared handler's `centralFirst` option. The app
+reads the same shared rewrite definitions as the Next configuration.
 `/api/workspaces/invitations` must reach Web before the local
-`/api/workspaces/[wsId]` wildcard. Forwarding strips the app mount and preserves
-the request method/body/query and every response cookie. Ordinary local routes
+`/api/workspaces/[wsId]` wildcard. The shared forwarder strips the app mount
+and preserves the request method/body/query and every response cookie. Ordinary local routes
 retain their existing handlers. `reserved-api.test.ts` covers that boundary.
 Re-running the codemod must report the Worker as a manual-file conflict instead
 of replacing this adapter.

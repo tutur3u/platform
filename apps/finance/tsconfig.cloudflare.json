@@ -10,7 +10,7 @@
     "declarationMap": false,
     "incremental": false,
     "plugins": [],
-    "types": ["vite/client", "node", "@cloudflare/workers-types"]
+    "types": ["vite/client", "node"]
   },
   "include": [
     "src",

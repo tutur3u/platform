@@ -23,7 +23,18 @@ export default defineConfig(({ command }) => ({
   base: bridge.base,
   define: bridge.define,
   plugins: [
-    startBridgeRscPlugin(),
+    startBridgeRscPlugin({
+      rscEntries: {
+        'bridge-api': new URL(
+          './src/start-bridge/api-registry.bridge.gen.ts',
+          import.meta.url
+        ),
+        'bridge-pages': new URL(
+          './src/start-bridge/page-modules.bridge.gen.ts',
+          import.meta.url
+        ),
+      },
+    }),
     voidPlugin(),
     tanstackStart(bridge.tanstackStart),
     rsc(),
