@@ -151,7 +151,10 @@ editing and focused source checks; it runs no builds, Docker, or local Supabase.
 If its `check:changed` gate refuses admission, run the same committed source
 through a Thanh bundle. Never bypass the gate.
 
-An independent Claude review is required before integration. Keep Finance and
-Pay publication held in `tuturuuu.ci.ts` and the shared publication-policy
-enforcement until an explicit cutover PR admits them. Preparation cannot stand
+An independent Claude review is required before integration. Conversion runs
+without `--hold`, preserving the existing Vercel publisher. The cutover-prep PR
+adds the Finance or Pay hold in `tuturuuu.ci.ts`, protects its publisher with the
+shared publication policy, and adds the app-specific CSP. Merge that freeze only
+when preparing the flip; keep native publication held until the explicit cutover
+PR admits it. Preparation cannot stand
 in for the real Start build, provider sandbox, hosted acceptance, or cutover.

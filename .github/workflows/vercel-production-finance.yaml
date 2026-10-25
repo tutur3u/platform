@@ -12,25 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  production-policy:
-    name: Report Finance production publication hold
-    if: github.ref == 'refs/heads/production'
-    runs-on: ubuntu-latest
-    outputs:
-      allowed: ${{ steps.policy.outputs.allowed }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-      - id: policy
-        run: node scripts/ci/production-publication-policy.ts vercel-production-finance.yaml "$GITHUB_STEP_SUMMARY"
-
   Deploy-Production:
-    needs: [production-policy]
-    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    if: github.ref == 'refs/heads/production'
     environment: vercel-production-finance
     runs-on: ubuntu-latest
     permissions:
