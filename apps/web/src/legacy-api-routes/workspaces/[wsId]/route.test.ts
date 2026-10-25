@@ -10,7 +10,10 @@ const mocks = vi.hoisted(() => ({
     (
       handler: (
         request: NextRequest,
-        context: { supabase: { from: ReturnType<typeof vi.fn> } },
+        context: {
+          supabase: { from: ReturnType<typeof vi.fn> };
+          user: { id: string };
+        },
         params: { wsId: string }
       ) => unknown,
       options?: { allowAppSessionAuth?: unknown }
@@ -24,7 +27,7 @@ const mocks = vi.hoisted(() => ({
       ) =>
         handler(
           request,
-          { supabase: { from: mocks.from } },
+          { supabase: { from: mocks.from }, user: { id: 'user-1' } },
           routeContext?.params ? await routeContext.params : { wsId: 'team-ws' }
         );
     }
@@ -179,5 +182,36 @@ describe('legacy workspace detail route DELETE', () => {
       request: expect.any(NextRequest),
     });
     expect(mocks.deleteWorkspace).toHaveBeenCalled();
+  });
+});
+
+describe('legacy workspace handle reservations', () => {
+  it.each(['meet', 'calendar', 'ai'])('reserves %s', async (handle) => {
+    const update = vi.fn();
+    mocks.normalizeWorkspaceId.mockResolvedValue(WORKSPACE_ID);
+    mocks.getPermissions.mockResolvedValue({ containsPermission: () => true });
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { id: WORKSPACE_ID, personal: false },
+      error: null,
+    });
+    mocks.from.mockReturnValue({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })),
+      })),
+      update,
+    });
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      new NextRequest(`http://localhost/api/workspaces/${WORKSPACE_ID}`, {
+        method: 'PUT',
+        body: JSON.stringify({ handle, name: 'Workspace' }),
+      }),
+      { params: Promise.resolve({ wsId: WORKSPACE_ID }) }
+    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Workspace handle is reserved',
+    });
+    expect(update).not.toHaveBeenCalled();
   });
 });

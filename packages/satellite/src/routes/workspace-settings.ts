@@ -27,6 +27,9 @@ type RouteContext = { params: Promise<{ wsId: string }> };
 
 const WORKSPACE_HANDLE_PATTERN = /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/;
 const RESERVED_WORKSPACE_HANDLES = new Set([
+  'ai',
+  'calendar',
+  'meet',
   'home',
   'internal',
   'login',
