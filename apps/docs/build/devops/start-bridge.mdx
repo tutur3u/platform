@@ -147,12 +147,11 @@ pass through unchanged.
   The unscoped cookie is never deleted; it may belong to the root app or
   another app. Disable with `legacyCookieFallback: false`.
 - **Subdomain to path:** existing sessions are host-only on
-  `<app>.tuturuuu.com` and cannot be copied to `tuturuuu.com`. A browser with
-  a valid central (root) Supabase session gets a new app session through the
-  existing `supabase-first` refresh on its first request. Users without a root
-  session need a one-time cross-app token handoff from the legacy host; that
-  auth change belongs to the cutover lane with the security reviewer and is
-  not part of v0.
+  `<app>.tuturuuu.com` and cannot be copied to `tuturuuu.com`. Decision
+  (user, 2026-10-25): accept a **one-time re-login at cutover**; there is no
+  cross-host session handoff. A browser that still has a valid central (root)
+  Supabase session gets a new app session through the existing
+  `supabase-first` refresh on its first request, so most users see no prompt.
 
 ## Canary mode (v0.2 interface)
 
