@@ -5,7 +5,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { GENERATED_MARKER } from './contract.mjs';
+import { GENERATED_MARKER, RUNTIME } from './contract.mjs';
 import { pascal } from './templates.mjs';
 
 export const NATIVE_TEMPLATE = '.github/workflows/native-start-app.yaml';
@@ -180,7 +180,12 @@ def load():
     spec = importlib.util.spec_from_file_location(${JSON.stringify(`${app.replace(/-/gu, '_')}_native_artifact_base`)}, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.IDENTITY = {**module.IDENTITY, "name": WORKER}
+    module.IDENTITY = {
+        **module.IDENTITY,
+        "name": WORKER,
+        "compatibility_date": ${JSON.stringify(RUNTIME.compatibilityDate)},
+        "compatibility_flags": ${JSON.stringify(RUNTIME.compatibilityFlags)},
+    }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = ${JSON.stringify(`${app}-native-artifact.json`)}
     module.PUBLIC_FILES = PUBLIC_FILES
@@ -222,7 +227,16 @@ export function runtimeTest({
   const buildInfo = hasBuildInfo
     ? `
   await t.test('build identity is the exact compiled source', async () => {
-    const info = await (await get('/api/build-info')).json();
+    // A public deploy-verification endpoint, read anonymously as production
+    // smoke does (packages/utils/src/build-info-route.ts).
+    const response = await get('/api/build-info');
+    assert.notEqual(
+      response.status,
+      401,
+      'app proxy must admit GET /api/build-info (public deploy verification)'
+    );
+    assert.equal(response.status, 200, \`/api/build-info: \${response.status}\`);
+    const info = await response.json();
     assert.equal(info.appName, ${js(app)});
     assert.equal(info.commitHash, source);
   });
@@ -294,7 +308,7 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
   assert.equal(config.name, WORKER);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
-  assert.ok(config.compatibility_flags.includes('nodejs_compat'));
+  assert.deepEqual(config.compatibility_flags, ${JSON.stringify(RUNTIME.compatibilityFlags)});
   assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
   for (const name of PUBLIC_FILES)
     assert.equal(

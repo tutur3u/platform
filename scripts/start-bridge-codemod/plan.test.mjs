@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -266,6 +267,10 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
       dependencies: { '@tuturuuu/utils': 'workspace:*', react: '^19' },
     }),
     'packages/utils/package.json': JSON.stringify({ name: '@tuturuuu/utils' }),
+    // Added by --apply's `bun add`, not yet in the app manifest.
+    'packages/start-bridge/package.json': JSON.stringify({
+      name: '@tuturuuu/start-bridge',
+    }),
   });
   const manifestPath = path.join(root, 'apps/demo/package.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -279,6 +284,8 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
     "'apps/demo/**',",
     "'packages/ui/**',",
     "'packages/utils/**',",
+    // The first run already covers what the re-run sees after `bun add`.
+    "'packages/start-bridge/**',",
     "'scripts/ci/demo-native-artifact.py',",
     "'.github/workflows/native-start-app.yaml',",
     'uses: ./.github/workflows/native-start-app.yaml',
@@ -295,14 +302,43 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
     content('scripts/ci/demo-native-artifact.py'),
     /WORKER = "tuturuuu-demo-vite-staging"[\s\S]*"favicon\.ico",[\s\S]*DEMO_SOURCE_SHA/
   );
+  // Same-zone self-fetches reach the Worker, not the zone origin (Vercel):
+  // the template, the sealed identity and the runtime check all carry it.
+  const flags = '["nodejs_compat","global_fetch_strictly_public"]';
+  assert.match(
+    content('apps/demo/void.config.ts'),
+    /compatibility_flags: \['nodejs_compat', 'global_fetch_strictly_public'\]/
+  );
+  const helper = content('scripts/ci/demo-native-artifact.py');
+  assert.ok(helper.includes(`"compatibility_flags": ${flags},`));
+  assert.ok(helper.includes('"compatibility_date": "2026-10-12",'));
+  const python = spawnSync(
+    'python3',
+    ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'],
+    {
+      input: helper,
+      encoding: 'utf8',
+    }
+  );
+  if (!python.error) assert.equal(python.status, 0, python.stderr);
   const runtime = content(
     'apps/demo/cloudflare/native-built-worker.runtime.mjs'
   );
   assert.match(runtime, /const WORKER = "tuturuuu-demo-vite-staging";/);
   assert.match(runtime, /build identity is the exact compiled source/);
+  // Anonymous, exact source; a guarding proxy gets a direct remedy.
+  assert.match(
+    runtime,
+    /const response = await get\('\/api\/build-info'\);\s*assert\.notEqual\(\s*response\.status,\s*401,\s*'app proxy must admit GET \/api\/build-info/
+  );
+  assert.match(runtime, /assert\.equal\(info\.commitHash, source\);/);
+  assert.doesNotMatch(runtime, /build-info'[^)]*headers/);
   // A public root must answer 200, not merely "no 5xx" (a login redirect).
   assert.match(runtime, /^const EXPECTED = \{"\/":200\};$/m);
   assert.match(runtime, /^const BASE = "\/demo";$/m);
+  assert.ok(
+    runtime.includes(`assert.deepEqual(config.compatibility_flags, ${flags});`)
+  );
   assert.match(
     runtime,
     /from '\.\.\/\.\.\/\.\.\/scripts\/start-bridge-codemod\/runtime-outcome\.mjs';/
@@ -423,7 +459,25 @@ test('dependencies are installed by package commands, never by edits', (t) => {
     '--dev',
     '--exact',
   ]);
+  assert.ok(
+    result.commands[1].argv.includes('@cloudflare/workers-types@5.20261022.1')
+  );
   assert.ok(result.commands.every((command) => command.cwd === 'apps/demo'));
+  // An app that already pinned it with `bun add --dev --exact` re-applies
+  // without touching it.
+  const manifestPath = path.join(root, 'apps/demo/package.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.devDependencies = {
+    ...manifest.devDependencies,
+    '@cloudflare/workers-types': '5.20261022.1',
+  };
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  assert.equal(
+    plan(root).commands.some((command) =>
+      command.argv.some((arg) => arg.startsWith('@cloudflare/workers-types@'))
+    ),
+    false
+  );
   const calls = [];
   applyPlan(root, result, {
     spawn: (bin, args, options) => {
