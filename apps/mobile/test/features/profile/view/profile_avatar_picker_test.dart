@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -64,8 +65,10 @@ class _Picker extends ProfileAvatarPicker {
   final release = Completer<void>();
   final calls = <String>[];
   String? cancelAt;
+  String? failureAt;
   Future<T?> _step<T>(String name, T value) async {
     calls.add(name);
+    if (name == failureAt) throw PlatformException(code: 'photo_access_denied');
     if (stage == name) {
       entered.complete();
       await release.future;
@@ -122,6 +125,24 @@ Future<(_Auth, _Repository, ProfileCubit, StreamController<AuthState>)> _pump(
 }
 
 void main() {
+  for (final stage in ['picker', 'crop']) {
+    testWidgets('$stage permission error becomes scoped recovery', (
+      tester,
+    ) async {
+      final picker = _Picker('none')..failureAt = stage;
+      final (_, repository, cubit, _) = await _pump(tester, picker);
+      await tester.tap(find.text('Choose avatar'));
+      await tester.pumpAndSettle();
+      expect(repository.writes, isEmpty);
+      expect(cubit.state.mediaTarget, ProfileMediaTarget.avatar);
+      expect(
+        cubit.state.mediaFailure?.kind,
+        ProfileMediaFailureKind.authorization,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final stage in ['source', 'picker', 'crop']) {
     for (final change in ['switch', 'logout', 'ABA']) {
       testWidgets('$stage departure $change never publishes avatar intent', (

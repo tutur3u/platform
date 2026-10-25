@@ -20,6 +20,7 @@ class _CacheRepository extends AssistantRepository {
         chatCacheStore: disk.store,
       );
   final second = Completer<void>();
+  final publications = <AssistantRestoredChat>[];
   int requests = 0;
   @override
   Future<List<AssistantChatRecord>> fetchRecentChats({
@@ -32,6 +33,7 @@ class _CacheRepository extends AssistantRepository {
     required AssistantChatCacheOrigin origin,
     required AssistantRestoredChat restored,
   }) {
+    publications.add(restored);
     if (++requests == 2) second.complete();
     return super.publishAssistantChatSnapshot(
       origin: origin,
@@ -112,7 +114,18 @@ void main() {
         );
         expect(h.sends, hasLength(1));
         expect(errors, isEmpty);
-        expect(snapshots, 1);
+        expect(repository.publications, hasLength(3));
+        expect(repository.publications.first.messages, hasLength(1));
+        expect(repository.publications.first.messages.single.isPersisted, true);
+        expect(
+          repository.publications[1].toJson(),
+          repository.publications[2].toJson(),
+        );
+        expect(
+          snapshots,
+          2,
+          reason: 'One USER receipt and one coalesced completed transcript',
+        );
         expect(h.chat.state.status, AssistantChatStatus.idle);
       } finally {
         if (!release.isCompleted) release.complete();

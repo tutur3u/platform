@@ -1,18 +1,19 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Card;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/cms/cms_models.dart';
 import 'package:mobile/data/repositories/cms_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/cms/widgets/cms_loading_skeleton.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -21,10 +22,11 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'cms_collection_editor.dart';
+part 'cms_editor_form.dart';
 part 'cms_entry_editor.dart';
+part 'cms_library.dart';
 part 'cms_overview.dart';
 part 'cms_owned_overlay.dart';
 part 'cms_page_actions.dart';
@@ -70,7 +72,6 @@ class CmsWorkspace extends StatefulWidget {
 }
 
 class _CmsPageState extends State<CmsWorkspace> {
-  static const _statuses = ['draft', 'scheduled', 'published', 'archived'];
   late final CmsRepository _repository;
   final _searchController = TextEditingController();
   final ValueNotifier<bool> _alive = ValueNotifier(true);

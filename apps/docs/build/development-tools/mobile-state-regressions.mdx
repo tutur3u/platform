@@ -257,6 +257,11 @@ and cannot qualify a patch; missing capture/upload requires another admitted
 source-bound run. Context records hashes of source/lock/analysis/package context,
 resolved analysis includes and actual tool identities, never their raw contents.
 Keep a local formatter result separate when its SDK/package context differs.
+When an owned checkout lacks package configuration, derive its language version
+from `apps/mobile/pubspec.yaml` and pass it explicitly to the formatter, such as
+`dart format --language-version=3.10` for the current package. Limit formatting to
+the owned path manifest; still require analysis and tests in the resolved project
+context before accepting the change.
 After separately reviewed application, require clean exact-head format and
 analysis CI; retain independent compiler, behavior, SQL and delivery gates.
 

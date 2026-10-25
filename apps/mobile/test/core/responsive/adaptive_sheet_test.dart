@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -71,7 +72,7 @@ void main() {
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle();
         expect(
-          tester.getSize(find.byType(BackdropFilter)).width,
+          tester.getSize(find.byKey(const ValueKey('app-dialog-glass'))).width,
           width == 390 ? 366 : 520,
         );
         await tester.tapAt(const Offset(5, 5));
@@ -82,7 +83,11 @@ void main() {
     );
   }
   for (final width in [390.0, 1032.0]) {
-    testWidgets('sheet is translucent at width $width', (tester) async {
+    testWidgets('sheet glass follows the platform at width $width', (
+      tester,
+    ) async {
+      // Android draws a near-opaque fill instead of a live backdrop blur.
+      final blurred = defaultTargetPlatform != TargetPlatform.android;
       tester.view.physicalSize = Size(width, 1376);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -107,12 +112,23 @@ void main() {
           matching: find.byType(Material),
         ),
       );
-      expect(materials.first.color?.a, closeTo(0.88, 0.01));
-      expect(find.byType(BackdropFilter), findsWidgets);
+      expect(materials.first.color?.a, closeTo(blurred ? 0.88 : 0.97, 0.01));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('adaptive-sheet-glass')),
+          matching: find.byType(BackdropFilter),
+        ),
+        blurred ? findsOneWidget : findsNothing,
+      );
       await tester.tapAt(const Offset(5, 5));
       await tester.pumpAndSettle();
       expect(find.text('Task form'), findsNothing);
       expect(tester.takeException(), isNull);
-    });
+    }, variant: _glassPlatforms);
   }
 }
+
+const _glassPlatforms = TargetPlatformVariant({
+  TargetPlatform.iOS,
+  TargetPlatform.android,
+});

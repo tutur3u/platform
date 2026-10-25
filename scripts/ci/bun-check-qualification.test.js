@@ -91,11 +91,15 @@ test('producer inventory recognizes legacy and cf generation without executing c
   for (const [command, emits] of [
     ['wrangler types', true],
     ['cf types', true],
+    ['cf workers types', true],
+    ['node ../../scripts/ci/calendar-cf-types.mjs', true],
     ['bun x --no-install cf types --env preview', true],
     ['tsc --build', true],
     ['tsc --noEmit', false],
     ['scf types', false],
     ['cf typescript', false],
+    ['cf workers typescript', false],
+    ['node not-calendar-cf-types.mjs', false],
   ]) {
     for (const name of ['type-check', 'generate-types']) {
       fs.writeFileSync(
