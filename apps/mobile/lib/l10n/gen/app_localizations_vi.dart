@@ -1029,7 +1029,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSaveAction => 'Lưu';
 
   @override
-  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+  String get assistantScrollToBottomAction => 'Tới tin mới nhất';
 
   @override
   String get assistantSearchModels => 'Tìm mô hình';

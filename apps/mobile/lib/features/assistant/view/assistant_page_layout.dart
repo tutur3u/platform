@@ -295,40 +295,50 @@ extension _AssistantPageLayout on _AssistantPageState {
                                         NotificationListener<Notification>(
                                           onNotification:
                                               onTranscriptNotification,
-                                          child: CustomScrollView(
-                                            controller: _scrollController,
-                                            keyboardDismissBehavior:
-                                                scrollDismissBehavior,
-                                            physics: _AssistantPageState
-                                                ._assistantScrollPhysics,
-                                            slivers: [
-                                              _transcriptPage(
-                                                headerHeight: headerHeight,
-                                                sliver: SliverList.list(
-                                                  children: [
-                                                    if (showLiveStrip) ...[
-                                                      _buildLiveStageCard(
-                                                        currentWorkspace.id,
-                                                        chatState,
-                                                        liveState,
-                                                        liveCameraController,
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
+                                          // A resting finger pauses follow.
+                                          child: Listener(
+                                            onPointerDown: (_) =>
+                                                _transcriptFollower
+                                                    .pointerDown(),
+                                            onPointerUp: (_) =>
+                                                _transcriptFollower.pointerUp(),
+                                            onPointerCancel: (_) =>
+                                                _transcriptFollower.pointerUp(),
+                                            child: CustomScrollView(
+                                              controller: _scrollController,
+                                              keyboardDismissBehavior:
+                                                  scrollDismissBehavior,
+                                              physics: _AssistantPageState
+                                                  ._assistantScrollPhysics,
+                                              slivers: [
+                                                _transcriptPage(
+                                                  headerHeight: headerHeight,
+                                                  sliver: SliverList.list(
+                                                    children: [
+                                                      if (showLiveStrip) ...[
+                                                        _buildLiveStageCard(
+                                                          currentWorkspace.id,
+                                                          chatState,
+                                                          liveState,
+                                                          liveCameraController,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 12,
+                                                        ),
+                                                      ],
+                                                      if (showTranscript)
+                                                        _buildTranscriptSection(
+                                                          chatState,
+                                                          liveState,
+                                                          shellState,
+                                                        )
+                                                      else
+                                                        starterPrompts,
                                                     ],
-                                                    if (showTranscript)
-                                                      _buildTranscriptSection(
-                                                        chatState,
-                                                        liveState,
-                                                        shellState,
-                                                      )
-                                                    else
-                                                      starterPrompts,
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
                                         if (chatState.status ==

@@ -158,7 +158,6 @@ class _AssistantPageState extends State<AssistantPage>
     controller: _scrollController,
     onVisibilityChanged: _setScrollToBottomFabVisible,
   );
-  static const _scrollToBottomFabThreshold = 160.0;
 
   late final AssistantShellCubit _shellCubit = AssistantShellCubit(
     repository: _repository,
@@ -523,10 +522,7 @@ class _AssistantPageState extends State<AssistantPage>
       _setComposerVisible(false);
       _composerVisibilityAnchorOffset = position.pixels;
     }
-    _setScrollToBottomFabVisible(
-      (position.maxScrollExtent - position.pixels) >=
-          _scrollToBottomFabThreshold,
-    );
+    // The follower owns "jump to latest" visibility from user intent.
   }
 
   void _syncComposerVisibilityForBuild({required bool keyboardVisible}) {

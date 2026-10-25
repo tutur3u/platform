@@ -1029,7 +1029,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSaveAction => 'Save';
 
   @override
-  String get assistantScrollToBottomAction => 'Scroll to bottom';
+  String get assistantScrollToBottomAction => 'Jump to latest';
 
   @override
   String get assistantSearchModels => 'Search models';
