@@ -15,6 +15,7 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import Negotiator from 'negotiator';
@@ -200,7 +201,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   if (!pathLocale) return null;
 
   const url = new URL(request.url);
-  url.pathname = stripLocale(request.nextUrl.pathname);
+  url.pathname = withAppBase(
+    stripLocale(request.nextUrl.pathname),
+    request.nextUrl.basePath
+  );
 
   const response = NextResponse.redirect(url);
   setLocaleCookie(response, request, pathLocale);
@@ -208,12 +212,26 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = Boolean(request.nextUrl.basePath);
+  if (
+    mounted &&
+    [
+      '/api/auth/refresh-app-session',
+      '/api/auth/verify-app-token',
+      '/api/auth/logout',
+    ].includes(request.nextUrl.pathname)
+  )
+    return NextResponse.json(
+      { error: 'The shared session is managed by Web' },
+      { status: 409 }
+    );
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
     const isPublicSharedFormApi = isPublicSharedFormApiRequest(request);
     const shouldRefreshAppSession =
+      !mounted &&
       !isLocalAuthApi &&
       (!isPublicSharedFormApi || hasApiSessionCredentials(request));
     const appSessionRefresh = shouldRefreshAppSession
@@ -243,17 +261,45 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     return appSessionRefresh?.ok
       ? appSessionRefresh.response
-      : clearSupabaseAuthCookies(request, NextResponse.next());
+      : mounted
+        ? NextResponse.next()
+        : clearSupabaseAuthCookies(request, NextResponse.next());
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
   if (canonicalLocaleRedirect) {
-    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+    return mounted
+      ? canonicalLocaleRedirect
+      : clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
   }
 
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) {
-    return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+    return mounted
+      ? canonicalPublicRedirect
+      : clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
+
+  if (mounted) {
+    const path = stripLocale(request.nextUrl.pathname);
+    if (
+      path === '/verify-token' ||
+      (!isPublicFormsPath(path) && !hasSupportedSupabaseAuthCookie(request))
+    ) {
+      const url = new URL(
+        withAppBase('/login', request.nextUrl.basePath),
+        request.nextUrl.origin
+      );
+      if (path !== '/verify-token') {
+        const next = getNextValue(request);
+        if (next) url.searchParams.set('next', next);
+      }
+      return NextResponse.redirect(url);
+    }
+    // Page loaders and API handlers validate the shared actor and membership.
+    const response = intlMiddleware(request);
+    setLocaleCookie(response, request, getPreferredLocale(request));
+    return response;
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
