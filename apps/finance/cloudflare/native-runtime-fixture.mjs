@@ -119,9 +119,17 @@ export async function financeRuntime(t, options = {}) {
   await worker.ready;
   let requests = 0;
   const listener = new URL((await worker.url).origin);
-  const fetch = async (url, init = {}) => {
+  const rawFetch = async (url, init = {}) => {
     assert.ok(++requests <= 600, 'Runtime request budget exceeded');
     const input = new Request(url, init);
+    assert.ok(
+      ['GET', 'HEAD'].includes(input.method),
+      'Raw Host probes are public reads'
+    );
+    assert.ok(
+      !input.headers.has('cookie') && !input.headers.has('authorization'),
+      'Raw Host probes must be anonymous'
+    );
     const target = new URL(input.url);
     const body = Buffer.from(await input.arrayBuffer());
     const headers = Object.fromEntries(input.headers);
@@ -178,7 +186,11 @@ export async function financeRuntime(t, options = {}) {
       request.end(body.length ? body : undefined);
     });
   };
-  return { worker, source, fetch, central, unexpected, secret };
+  const fetch = (url, init = {}) => {
+    assert.ok(++requests <= 600, 'Runtime request budget exceeded');
+    return worker.fetch(url, { redirect: 'manual', signal: t.signal, ...init });
+  };
+  return { worker, source, fetch, rawFetch, central, unexpected, secret };
 }
 
 export async function financeBrowserListener(t, runtime, mode) {

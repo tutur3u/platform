@@ -273,21 +273,31 @@ async function qualifyMode(t, mode) {
     }
   );
 
-  await t.test('unlisted and apex hosts are rejected', async () => {
-    for (const origin of [
-      'https://tuturuuu.com/finance',
-      'https://unknown.example.test',
-    ]) {
-      const rejected = await runtime.fetch(`${origin}/api/build-info`);
-      assert.equal(rejected.status, 404);
-      assert.equal(rejected.headers.get('x-frame-options'), 'DENY');
-      assert.equal(
-        rejected.headers.get('x-robots-tag'),
-        'noindex, nofollow, nosnippet'
-      );
-      await rejected.text();
+  await t.test(
+    'raw Host admits configured roots and rejects apex/unlisted hosts',
+    async () => {
+      for (const mode of modes) {
+        const admitted = await runtime.rawFetch(
+          `${mode.origin}/api/build-info`
+        );
+        assert.equal(admitted.status, 200);
+        assert.equal((await admitted.json()).commitHash, runtime.source);
+      }
+      for (const origin of [
+        'https://tuturuuu.com/finance',
+        'https://unknown.example.test',
+      ]) {
+        const rejected = await runtime.rawFetch(`${origin}/api/build-info`);
+        assert.equal(rejected.status, 404);
+        assert.equal(rejected.headers.get('x-frame-options'), 'DENY');
+        assert.equal(
+          rejected.headers.get('x-robots-tag'),
+          'noindex, nofollow, nosnippet'
+        );
+        await rejected.text();
+      }
     }
-  });
+  );
 
   assert.deepEqual(
     runtime.unexpected,
