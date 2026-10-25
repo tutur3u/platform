@@ -15,7 +15,8 @@
     "dev:cloudflare": "vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7828}",
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7828}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
-    "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json"
+    "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
+    "test:runtime": "node --test cloudflare/native-built-worker.test.mjs"
   },
   "packageManager": "bun@1.4.4",
   "dependencies": {

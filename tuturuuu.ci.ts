@@ -119,6 +119,7 @@ export const ci = {
   'cms-cloudflare.yaml': true,
   'storefront-cloudflare.yaml': true,
   'ai-cloudflare.yaml': true,
+  'forms-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
