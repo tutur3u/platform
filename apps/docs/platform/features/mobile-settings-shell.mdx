@@ -552,11 +552,33 @@ header. Adaptive
 sheets, drawers and dialogs restore opaque scaffolds. Solid styles add no layer.
 
 The layer uses radial and linear gradients, not image blur, inside a
-`RepaintBoundary`. Static backgrounds rasterize once. Animated blobs are opt-in
+`RepaintBoundary`, so its picture is recorded once. Impeller has no raster cache:
+the GPU still redraws it every frame, which is cheap for gradients. Animated blobs are opt-in
 and drift on a 48-second loop driven by a 15 fps timer. Only the painter repaints;
 no widget above it rebuilds per tick. Motion stops when the system Reduce Motion
 setting is on or tickers are disabled. The clock stops immediately when the app
 leaves the foreground and resumes from the same phase.
+
+#### Frosted glass on Android
+
+Glass chrome (the dock material, the frosted root-tab header, adaptive sheets
+and dialog scaffolds) goes through `GlassEffects` in
+`lib/core/theme/appearance/glass_effects.dart`. A live `BackdropFilter`
+re-reads and re-blurs the content behind it on every frame that content changes.
+That is every scroll, sheet and transition frame. Each filter also splits the
+GPU render pass. Android GPUs are tile-based and pay heavily for that, so on
+Android (`defaultTargetPlatform`) the same surfaces draw without the blur. Their
+fill closes 75% of the remaining gap to opaque: dock 0.72 becomes 0.93, header
+0.55 becomes 0.89, and sheets and dialogs 0.88 become 0.97. iOS and desktop keep
+the live blur. High contrast is always opaque with no blur. Shapes, borders,
+shadows, colours and the ambient layer are unchanged on every platform.
+
+Coverage: `glass_effects_test.dart` asserts the composited `BackdropFilterLayer`
+count and fill per platform, and `adaptive_sheet_test.dart` checks both
+platforms. The on-device frame benchmark
+`integration_test/perf/glass_effects_benchmark_test.dart` compares blurred and
+flat glass over Solid, Blobs and animated Blobs (`flutter drive --profile`; see
+its header).
 
 Persistence uses `SharedPreferences`: mode keeps the original `theme-mode` key and
 customization is stored as versioned JSON under `appearance-v1`. Installs without
