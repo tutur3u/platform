@@ -16,6 +16,8 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 200
+    "/": {
+      "redirect": "https://tuturuuu.com/login"
+    }
   }
 }
