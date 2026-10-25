@@ -122,8 +122,13 @@ The rules for that content:
   - it is a closure field (no controller) that is not a well-formed `boolean`,
     `date`, `time` or `datetime` value;
   - its input type normalizes to a password, PIN or OTP type;
-  - its key or label looks like a password, PIN, OTP, token, card, CVV, IBAN,
-    account number or API key;
+  - its key or label names a credential or identifier, in English or
+    Vietnamese: password or passphrase, PIN, OTP, token, secret, private or
+    API key, auth, bearer, credential, cookie, session, JWT, seed, mnemonic or
+    recovery phrase, card, CVV, IBAN, account, routing, SWIFT or sort code,
+    tax, national or social security ID and passport (for example
+    `mật khẩu`, `tài khoản`, `xác thực`, `bảo mật`, `khôi phục`). Matching is
+    deliberately broad, since a false match only withholds a value;
   - any recoverable reading of its value contains a secret (below).
 - The whole field is redacted, not just the match, because a match in a
   normalized or decoded reading cannot be mapped back safely.
@@ -227,8 +232,9 @@ separate follow-ups.
   the rupee sign and vulgar fractions), folded and redacted only when the
   folded reading holds a secret, raw and encoded; the depth limit; secrets split across fields, including
   at the end of a bounded long field; custom controls with their own
-  controller; structured closure fields; misleading field names; real-control
-  obscuring and `visiblePassword`.
+  controller; structured closure fields; misleading field names;
+  credential-bearing English and Vietnamese field names while ordinary
+  calendar labels stay shared; real-control obscuring and `visiblePassword`.
 - `apps/mobile/test/features/assistant/bridge/assistant_secret_lookalike_test.dart`:
   keys with combining marks inserted, precomposed accented letters or stroked
   letters, raw and base64; Bearer and GitHub tokens split by each punctuation

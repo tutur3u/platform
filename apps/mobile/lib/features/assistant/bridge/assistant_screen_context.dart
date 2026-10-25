@@ -96,9 +96,17 @@ const _maxValueLength = 500;
 const _crossFieldWindow = 256;
 const _sensitiveTypes = {'password', 'visiblepassword', 'secret', 'pin', 'otp'};
 
+/// Field keys and labels that name a credential or identifier. Matching is
+/// deliberately broad (substrings, English and Vietnamese): a false match
+/// only withholds a value, while a miss can share a secret that no shape scan
+/// recognises, such as a recovery phrase.
 final _sensitiveName = RegExp(
-  'pass(word|code|phrase)?|secret|token|otp|pin|cvv|cvc|card|iban|'
-  'account.?number|ssn|api.?key|private',
+  'pass(word|code|phrase|port)?|secret|token|otp|pin|cvv|cvc|card|iban|'
+  'account.?number|ssn|api.?key|private|auth|bearer|credential|cookie|'
+  'session|jwt|seed|mnemonic|recovery|routing|swift|sort.?code|tax.?id|'
+  'social.?security|national.?id|'
+  'mật.?khẩu|tài.?khoản|xác.?thực|bảo.?mật|bí.?mật|khôi.?phục|'
+  'mã.?số.?thuế|căn.?cước',
   caseSensitive: false,
 );
 
