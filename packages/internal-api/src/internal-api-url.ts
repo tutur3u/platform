@@ -1,8 +1,38 @@
 /**
- * Inject `appPath` from `@tuturuuu/start-bridge/app-url` for app-owned APIs.
- * Leave it unset for central Web API requests.
+ * Resolve an app-owned path to a mounted path or an absolute server URL.
+ * Adapters own request context and route selection for central Web APIs.
  */
 export type InternalApiAppBaseResolver = (path: string) => string;
+
+const defaultAppBaseResolvers = new Map<symbol, InternalApiAppBaseResolver>();
+
+/**
+ * Register once at adapter startup. On servers, read request-local context inside
+ * the resolver on every call; never register a closure over an incoming request.
+ * The latest active registration wins. Cleanup is idempotent and may be unordered.
+ */
+export function registerDefaultAppBaseResolver(
+  resolver: InternalApiAppBaseResolver
+): () => void {
+  const key = Symbol();
+  defaultAppBaseResolvers.set(key, resolver);
+  return () => {
+    defaultAppBaseResolvers.delete(key);
+  };
+}
+
+function defaultAppBaseResolver() {
+  let resolver: InternalApiAppBaseResolver | undefined;
+  for (const registered of defaultAppBaseResolvers.values())
+    resolver = registered;
+  return resolver;
+}
+
+export function hasAppBaseResolver(options: {
+  appBaseResolver?: InternalApiAppBaseResolver;
+}) {
+  return Boolean(options.appBaseResolver ?? defaultAppBaseResolver());
+}
 
 export function normalizeApiPath(path: string) {
   if (/^https?:\/\//.test(path)) {
@@ -12,7 +42,7 @@ export function normalizeApiPath(path: string) {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-function normalizeBaseUrl(baseUrl: string) {
+export function normalizeBaseUrl(baseUrl: string) {
   let end = baseUrl.length;
 
   while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) {
@@ -34,7 +64,13 @@ export function resolveInternalApiUrlWithAppBase(
     return normalizedPath;
   }
 
-  const resolvedPath = appBaseResolver?.(normalizedPath) ?? normalizedPath;
+  const resolver = appBaseResolver ?? defaultAppBaseResolver();
+  const resolvedPath = resolver?.(normalizedPath) ?? normalizedPath;
+
+  if (/^https?:\/\//.test(resolvedPath)) {
+    return resolvedPath;
+  }
+
   const resolvedBaseUrl = baseUrl
     ? normalizeBaseUrl(baseUrl)
     : defaultBaseUrl

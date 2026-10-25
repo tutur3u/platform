@@ -1,7 +1,9 @@
 import { parseInternalApiError } from './internal-api-error';
 import {
+  hasAppBaseResolver,
   type InternalApiAppBaseResolver,
   normalizeApiPath,
+  normalizeBaseUrl,
   resolveInternalApiUrlWithAppBase,
 } from './internal-api-url';
 import { mergeHeaders } from './request-headers';
@@ -85,6 +87,10 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
 ]);
 
 export { InternalApiError } from './internal-api-error';
+export {
+  type InternalApiAppBaseResolver,
+  registerDefaultAppBaseResolver,
+} from './internal-api-url';
 
 function tryParseAbsoluteUrl(value: string): URL | null {
   try {
@@ -158,16 +164,6 @@ function resolveNextPublicAppUrlAsWebOrigin() {
 
 export function encodePathSegment(value: string) {
   return encodeURIComponent(value);
-}
-
-function normalizeBaseUrl(baseUrl: string) {
-  let end = baseUrl.length;
-
-  while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) {
-    end -= 1;
-  }
-
-  return end === baseUrl.length ? baseUrl : baseUrl.slice(0, end);
 }
 
 function isProductionDeployment() {
@@ -260,7 +256,7 @@ export function withTaskApiBaseUrl(
 ): InternalApiClientOptions {
   if (
     options.baseUrl ||
-    options.appBaseResolver ||
+    hasAppBaseResolver(options) ||
     isTasksApiProxyBrowserRuntime()
   ) {
     return options;
@@ -286,7 +282,7 @@ export function getConfiguredMailApiBaseUrl() {
 export function withMailApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver || isMailAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isMailAppRuntime()) {
     return options;
   }
 
@@ -354,7 +350,7 @@ export function getConfiguredLearnApiBaseUrl() {
 export function withLearnApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver || isLearnAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isLearnAppRuntime()) {
     return options;
   }
 
@@ -378,7 +374,7 @@ export function getConfiguredTeachApiBaseUrl() {
 export function withTeachApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver || isTeachAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isTeachAppRuntime()) {
     return options;
   }
 
@@ -409,7 +405,7 @@ export function getConfiguredPayApiBaseUrl() {
 export function withPayApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver || isPayAppRuntime()) {
+  if (options.baseUrl || hasAppBaseResolver(options) || isPayAppRuntime()) {
     return options;
   }
 
@@ -442,7 +438,11 @@ export function getConfiguredContactsApiBaseUrl() {
 export function withContactsApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver || isContactsAppRuntime()) {
+  if (
+    options.baseUrl ||
+    hasAppBaseResolver(options) ||
+    isContactsAppRuntime()
+  ) {
     return options;
   }
 
@@ -461,7 +461,7 @@ export function withContactsApiBaseUrl(
 export function withEducationBootstrapBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver) {
+  if (options.baseUrl || hasAppBaseResolver(options)) {
     return options;
   }
 
@@ -499,7 +499,11 @@ export function getConfiguredFinanceApiBaseUrl() {
 export function withFinanceApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || options.appBaseResolver || isFinanceBrowserRuntime()) {
+  if (
+    options.baseUrl ||
+    hasAppBaseResolver(options) ||
+    isFinanceBrowserRuntime()
+  ) {
     return options;
   }
 
@@ -659,10 +663,6 @@ export function createInternalApiClient(
   };
 }
 
-/**
- * Creates Internal API client options that forward auth-relevant headers
- * from an incoming request context (for example `next/headers()` in RSC).
- */
 export function withForwardedInternalApiAuth(
   requestHeaders: HeaderAccessor,
   options: InternalApiClientOptions = {}

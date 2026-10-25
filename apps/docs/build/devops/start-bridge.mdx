@@ -143,7 +143,7 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 | Next middleware | `NextRequest` carries Next's `basePath`; `nextUrl.pathname` is app-relative and `nextUrl.clone()` redirects keep the base |
 | Links and navigation | `next/link`, `useRouter().push/replace`, `redirect()` prefix path-absolute hrefs with the runtime base |
 | URLs in app code | `appPath('/...')` and `appUrl('/share/...', origin?)` from `app-url` (worklets, Live, preview, download, share) |
-| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` keeps calling Web relatively |
+| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` adapters register the same route-aware resolver for calls without client options |
 | Location headers | Path-relative `Location` not already under the base gains it. Absolute URLs are never rewritten, so `new URL('/login', request.url)` behaves as in Next (it leaves the app) |
 | Central API | Unowned `/<app>/api/*` is forwarded as `/api/*` |
 | Auth return URLs | `appUrl(path, origin)` so the central login returns into the app |
@@ -151,6 +151,49 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 
 `tuturuuu.com/meet` is the Meet app root; product marketing moves to
 `/products/<app>`.
+
+### Internal API resolver registration
+
+`registerDefaultAppBaseResolver(resolver)` is exported from
+`@tuturuuu/internal-api/client` and the package root. The callback receives a
+normalized path and returns a relative mounted path or an absolute URL. Clients,
+the shared singleton, `resolveInternalApiUrl(path, baseUrl?)`, and app-origin
+helpers use the latest active default unless a per-client `appBaseResolver` is
+provided. Absolute input URLs bypass both resolvers. With no registration, the
+existing root and subdomain defaults remain in effect.
+
+Register once in each app adapter entrypoint, before requests or hydration.
+Browser adapters can register `appPath`, or `createApiPath(appApiPatterns,
+centralFirst)` when they also call Web-owned routes. The resolver applies to all
+relative internal-api calls, so mixed consumers must select their app-owned
+routes rather than prefix every route indiscriminately.
+
+Server adapters must return an absolute URL using the incoming request host;
+a mounted relative path alone would still resolve against the configured Web
+origin. Read the bridge context inside the callback on every invocation:
+
+```ts
+import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
+import { appUrl } from '@tuturuuu/start-bridge/app-url';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+
+const unregister = registerDefaultAppBaseResolver((path) =>
+  appUrl(path, bridgeRequest().request.url)
+);
+```
+
+This example addresses all calls to the incoming app host; adapters with central
+Web calls must apply their ownership policy in the callback. Never register a
+new resolver per request or close over one request's URL or base. The portable
+internal-api module stores callbacks only; the bridge owns request isolation.
+The returned unregister function is idempotent, supports out-of-order cleanup,
+and restores the latest registration that is still active. Use it for adapter
+teardown or hot reload.
+
+Regression coverage: `packages/internal-api/src/default-app-base-resolver.test.ts`
+executes root, Meet and Mail mounts, SSR host selection, interleaved bridge
+requests sharing one client, per-client precedence, unregister, absolute bypass
+and prefix-once behavior. Consumer runtime acceptance remains with each app.
 
 ## Shared session on the apex (proposal for security review)
 
