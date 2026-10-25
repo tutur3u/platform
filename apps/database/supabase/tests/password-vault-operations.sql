@@ -245,7 +245,7 @@ SELECT is(pg_temp.pw_op('request.status',jsonb_build_object('request_id','f74000
  'item_id','f7300000-0000-0000-0000-000000000001'),NULL,
  p_token=>'f7600000-0000-0000-0000-000000000001',p_digest=>repeat('a',64))->>'status','committed','read token reconciles its own scoped read');
 SELECT is(pg_temp.pw_op('request.status','{"request_id":"f7400000-0000-0000-0000-000000000012"}',NULL,
- p_token=>'f7600000-0000-0000-0000-000000000001',p_digest=>repeat('a',64))->>'error','42501','machine status requires explicit current item scope');
+ p_token=>'f7600000-0000-0000-0000-000000000001',p_digest=>repeat('a',64))->>'status','committed','machine status derives item scope from its authenticated stored request');
 SELECT is(pg_temp.pw_op(action,'{}',NULL,p_token=>'f7600000-0000-0000-0000-000000000001',p_digest=>repeat('a',64))->>'error',
  '42501','machine cannot call ' || action) FROM (VALUES ('member.list'),('audit.list')) a(action);
 SELECT is(pg_temp.pw_op('vault.rotate',pg_temp.pw_rotate())->>'error',NULL,'rotation succeeds with active grant');
