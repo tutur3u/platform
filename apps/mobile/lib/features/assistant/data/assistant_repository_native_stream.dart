@@ -37,7 +37,9 @@ extension _AssistantNativeStreamAdapter on _AssistantChatRepository {
         );
 
     if (announceAdmission) {
-      yield const AssistantJsonStreamEvent({'type': 'native-dispatch-admitted'});
+      yield const AssistantJsonStreamEvent({
+        'type': 'native-dispatch-admitted',
+      });
     }
     admission?.check();
     await for (final event in events) {
@@ -73,10 +75,7 @@ extension _AssistantNativeStreamAdapter on _AssistantChatRepository {
         continue;
       }
       if (event is ChatStreamMessagesEvent) {
-        requireAssistantMessageReceipts(
-          event.messages,
-          conversationId: chatId,
-        );
+        requireAssistantMessageReceipts(event.messages, conversationId: chatId);
         for (final user in event.messages.where(
           (message) => message.kind == ChatMessageKind.user,
         )) {

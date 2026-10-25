@@ -5,9 +5,9 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_created_chat.dart';
 import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
-import 'package:mobile/features/assistant/data/assistant_settings_selection.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_settings_selection.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
@@ -41,11 +41,16 @@ class _Repository extends AssistantRepository {
   @override
   Stream<AssistantStreamEvent> streamFirstChat({
     required AssistantFirstMessageCreation creation,
-    required String chatId, required String wsId,
-    required List<AssistantMessage> messages, required String timezone,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
     required ApiMutationAdmission admission,
   }) {
-    admission.check(); admitted = admission; firstSends++; dispatchedChat = chatId;
+    admission.check();
+    admitted = admission;
+    firstSends++;
+    dispatchedChat = chatId;
     return events.stream;
   }
 
@@ -145,24 +150,49 @@ void main() {
     },
   );
 
-  test('captured initial settings send the first turn without separate creation', () async {
-    await chat.close();
-    chat = AssistantChatCubit(repository: repository, preferences: preferences,
-      prepareCreationSettings: (ws, model, current) => AssistantCreationSettingsPlan(
-        ChatInitialAiSettings(modelId:model,creditSource:'workspace',creditWsId:null,thinkingMode:'fast'),current),
-      onWorkspaceContextChanged: (_) async {}, onSoulRefreshRequested: () async {},
-      onImmersiveModeChanged: (_) {}, onChatRestored: (_) async {});
-    await chat.loadWorkspace(_ws);
-    final clientId = chat.state.fallbackChatId;
-    await send(); await Future<void>.delayed(Duration.zero);
-    expect(repository.creating,isFalse); expect(repository.sends,0);
-    expect(repository.firstSends,1); expect(repository.dispatchedChat,clientId);
-    expect(chat.state.creationOutcomeUnknown,isTrue);
-    repository.events.add(AssistantChatCreatedStreamEvent(AssistantCreatedChat(id:clientId),chat.state.messages.first.clientRequestId!));
-    await Future<void>.delayed(Duration.zero);
-    expect(chat.state.storedChatId,clientId); expect(chat.state.creationOutcomeUnknown,isFalse);
-    expect(preferences.writes,0);
-  });
+  test(
+    'captured initial settings send the first turn without separate creation',
+    () async {
+      await chat.close();
+      chat = AssistantChatCubit(
+        repository: repository,
+        preferences: preferences,
+        prepareCreationSettings: (ws, model, current) =>
+            AssistantCreationSettingsPlan(
+              ChatInitialAiSettings(
+                modelId: model,
+                creditSource: 'workspace',
+                creditWsId: null,
+                thinkingMode: 'fast',
+              ),
+              current,
+            ),
+        onWorkspaceContextChanged: (_) async {},
+        onSoulRefreshRequested: () async {},
+        onImmersiveModeChanged: (_) {},
+        onChatRestored: (_) async {},
+      );
+      await chat.loadWorkspace(_ws);
+      final clientId = chat.state.fallbackChatId;
+      await send();
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.creating, isFalse);
+      expect(repository.sends, 0);
+      expect(repository.firstSends, 1);
+      expect(repository.dispatchedChat, clientId);
+      expect(chat.state.creationOutcomeUnknown, isTrue);
+      repository.events.add(
+        AssistantChatCreatedStreamEvent(
+          AssistantCreatedChat(id: clientId),
+          chat.state.messages.first.clientRequestId!,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(chat.state.storedChatId, clientId);
+      expect(chat.state.creationOutcomeUnknown, isFalse);
+      expect(preferences.writes, 0);
+    },
+  );
 
   test('a superseded create receipt cannot dispatch a message', () async {
     var current = true;

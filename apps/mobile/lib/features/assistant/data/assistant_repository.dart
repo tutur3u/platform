@@ -16,10 +16,10 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
-import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
-import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
+import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
+import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -101,9 +101,14 @@ class AssistantRepository
     required List<AssistantMessage> messages,
     required String timezone,
     required ApiMutationAdmission admission,
-  }) => _streamFirstChat(creation: creation, chatId: chatId, wsId: wsId,
-    messages: messages, timezone: timezone, admission: admission);
-
+  }) => _streamFirstChat(
+    creation: creation,
+    chatId: chatId,
+    wsId: wsId,
+    messages: messages,
+    timezone: timezone,
+    admission: admission,
+  );
 
   @override
   final CacheStore _chatCacheStore;

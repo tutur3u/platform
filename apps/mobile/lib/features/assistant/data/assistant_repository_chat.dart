@@ -298,15 +298,23 @@ mixin _AssistantChatRepository {
         thinkingMode: thinkingMode.name,
       );
       {
-        final user = messages.reversed.where((m) => m.role == 'user').firstOrNull;
+        final user = messages.reversed
+            .where((m) => m.role == 'user')
+            .firstOrNull;
         yield* _adaptNativeChatEvents(
-          chatId: chatId, wsId: wsId, messages: messages,
-          attachments: attachments, admission: admission,
+          chatId: chatId,
+          wsId: wsId,
+          messages: messages,
+          attachments: attachments,
+          admission: admission,
           events: _chatRepository.sendMessageStream(
-            wsId, chatId, content: _latestUserText(messages),
+            wsId,
+            chatId,
+            content: _latestUserText(messages),
             attachments: _chatAttachmentDrafts(chatId, attachments),
             clientRequestId: user?.clientRequestId ?? user?.id,
-            replyToMessageId: user?.replyToMessageId, miraMode: true,
+            replyToMessageId: user?.replyToMessageId,
+            miraMode: true,
             admission: admission,
           ),
         );

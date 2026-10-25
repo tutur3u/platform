@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:http/http.dart' as http;
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
+import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
@@ -67,14 +67,22 @@ class RepairRepository extends ReplyRepository {
   @override
   Stream<AssistantStreamEvent> streamFirstChat({
     required AssistantFirstMessageCreation creation,
-    required String chatId, required String wsId,
-    required List<AssistantMessage> messages, required String timezone,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
     required ApiMutationAdmission admission,
   }) {
     starts++;
     api.firstChats = chats;
-    return native.streamFirstChat(creation: creation, chatId: chatId, wsId: wsId,
-      messages: messages, timezone: timezone, admission: admission);
+    return native.streamFirstChat(
+      creation: creation,
+      chatId: chatId,
+      wsId: wsId,
+      messages: messages,
+      timezone: timezone,
+      admission: admission,
+    );
   }
 
   @override
@@ -201,33 +209,54 @@ class SettingsApi extends ApiClient {
   RepairChats? firstChats;
   @override
   Future<http.StreamedResponse> sendJsonStreamAcknowledged(
-    String method, String path, Map<String, dynamic> body, {
-    required ApiMutationAdmission admission, String accept = 'text/event-stream',
+    String method,
+    String path,
+    Object? rawBody, {
+    required ApiMutationAdmission admission,
+    String accept = 'text/event-stream',
   }) async {
+    final body = rawBody! as Map<String, dynamic>;
     admission.recordDispatchPossible();
     final chatId = path.split('/')[7];
     final creation = await postJson('/synthetic-first-message', {
-      'id': chatId, 'initialAiSettings': body['initialConversation'],
+      'id': chatId,
+      'initialAiSettings': body['initialConversation'],
     });
     final receipt = {...creation, 'creationRequestId': body['clientRequestId']};
     Stream<List<int>> bytes() async* {
-      final events = firstChats!.sendMessageStream(repairWorkspace, chatId,
-        content: body['content'] as String, clientRequestId: body['clientRequestId'] as String,
-        admission: admission);
+      final events = firstChats!.sendMessageStream(
+        repairWorkspace,
+        chatId,
+        content: body['content'] as String,
+        clientRequestId: body['clientRequestId'] as String,
+        admission: admission,
+      );
       await for (final event in events) {
         final Map<String, dynamic> raw;
         if (event is ChatStreamMessageEvent) {
-          raw = {'type':'message','message':event.message.toJson()};
+          raw = {'type': 'message', 'message': wireMessage(event.message)};
         } else if (event is ChatStreamMessagesEvent) {
-          raw = {'type':'messages','messages':event.messages.map((m)=>m.toJson()).toList()};
-        } else { raw = {'type':'done'}; }
+          raw = {
+            'type': 'messages',
+            'messages': event.messages.map(wireMessage).toList(),
+          };
+        } else {
+          raw = {'type': 'done'};
+        }
         yield utf8.encode('${jsonEncode(raw)}\n');
       }
     }
-    return http.StreamedResponse(bytes(), 200, headers: {
-      'content-type':'application/x-ndjson',
-      'x-mira-chat-creation':base64Url.encode(utf8.encode(jsonEncode(receipt))),
-    });
+
+    return http.StreamedResponse(
+      bytes(),
+      200,
+      headers: {
+        'content-type': 'application/x-ndjson',
+        'x-mira-chat-creation': base64Url.encode(
+          utf8.encode(jsonEncode(receipt)),
+        ),
+      },
+    );
   }
 
   Map<String, dynamic> settings = {};
@@ -323,3 +352,10 @@ class RepairChats extends ChatRepository {
     yield const ChatStreamDoneEvent();
   }
 }
+
+Map<String,dynamic> wireMessage(ChatMessage message) => {
+  'id':message.id,'conversationId':message.conversationId,'kind':message.kind.name,
+  'senderId':message.senderId,'content':message.content,
+  'createdAt':message.createdAt?.toUtc().toIso8601String(), 'metadata':message.metadata,
+  'attachments':<Object>[],
+};

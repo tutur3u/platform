@@ -8,12 +8,24 @@ extension _AssistantChatStreamEvents on AssistantChatCubit {
   }) {
     if (isClosed || state.status == AssistantChatStatus.error) return;
     if (event is AssistantChatCreatedStreamEvent) {
-      final request = state.messages.reversed.where((m) => m.role == 'user').firstOrNull?.clientRequestId;
-      if (event.chat.id != state.fallbackChatId || event.requestId != request ||
+      final request = state.messages.reversed
+          .where((m) => m.role == 'user')
+          .firstOrNull
+          ?.clientRequestId;
+      if (event.chat.id != state.fallbackChatId ||
+          event.requestId != request ||
           (state.storedChatId != null && state.storedChatId != event.chat.id)) {
-        throw const FormatException('First message creation belongs to another turn');
+        throw const FormatException(
+          'First message creation belongs to another turn',
+        );
       }
-      _emitIfOpen(state.copyWith(chat: event.chat, storedChatId: event.chat.id, creationOutcomeUnknown: false));
+      _emitIfOpen(
+        state.copyWith(
+          chat: event.chat,
+          storedChatId: event.chat.id,
+          creationOutcomeUnknown: false,
+        ),
+      );
       unawaited(refreshHistory());
       return;
     }
