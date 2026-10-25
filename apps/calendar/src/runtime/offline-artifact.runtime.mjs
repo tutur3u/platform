@@ -7,7 +7,7 @@ import { runInNewContext } from 'node:vm';
 // Mandatory emitted-artifact acceptance input; keep outside source-only discovery.
 const client = resolve(process.env.CALENDAR_CLIENT_OUTPUT ?? 'dist/client');
 const code = await readFile(resolve(client, 'serwist/sw.js'), 'utf8');
-function worker() {
+function worker(basePath = '') {
   const listeners = new Map();
   const entries = new Map();
   const background = [];
@@ -15,6 +15,7 @@ function worker() {
   let online = true;
   const self = {
     location: { origin: 'https://calendar.test' },
+    registration: { scope: `https://calendar.test${basePath}/` },
     addEventListener: (name, listener) => listeners.set(name, listener),
   };
   const cache = {
@@ -95,6 +96,41 @@ test('actual emitted worker caps concurrent Vite static cache writes at160', asy
     )
   );
   assert.equal(app.entries.size, 160);
+});
+test('mounted emitted worker caches only Calendar assets and uses its own fallback', async () => {
+  const app = worker('/calendar');
+  assert.equal(
+    await app.request('/assets/web-12345678.js', 'cors', 'script'),
+    undefined
+  );
+  assert.equal(
+    await app.request('/calendarish/assets/app-12345678.js', 'cors', 'script'),
+    undefined
+  );
+  assert.equal(
+    await app.request(
+      '/calendar/api/v1/calendar/connections',
+      'cors',
+      'script'
+    ),
+    undefined
+  );
+  assert.equal(
+    await (
+      await app.request('/calendar/assets/app-12345678.js', 'cors', 'script')
+    ).text(),
+    'network'
+  );
+  assert.deepEqual(app.writes, [
+    'https://calendar.test/calendar/assets/app-12345678.js',
+  ]);
+  app.entries.set('/offline.html', new Response('Web Offline'));
+  app.entries.set('/calendar/offline.html', new Response('Calendar Offline'));
+  app.offline();
+  assert.equal(
+    await (await app.request('/calendar/personal', 'navigate')).text(),
+    'Calendar Offline'
+  );
 });
 test('existing offline dependencies are emitted as public deployment assets', async () => {
   for (const name of [
