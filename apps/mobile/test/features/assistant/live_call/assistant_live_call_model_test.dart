@@ -134,6 +134,44 @@ void main() {
       phase(const AssistantLiveState(hasEnded: true)),
       AssistantLiveCallPhase.ended,
     );
+    // A page-initiated disconnect (backgrounding, hidden page) has no
+    // finishTurn, and nothing reconnects it: the call has ended.
+    expect(
+      phase(_at(AssistantLiveConnectionStatus.disconnected)),
+      AssistantLiveCallPhase.ended,
+    );
+  });
+
+  test('a surface awaiting its session start reads as connecting', () {
+    AssistantLiveCallPhase awaiting(AssistantLiveState state) =>
+        assistantLiveCallPhase(state, awaitingStart: true);
+    for (final state in [
+      _at(AssistantLiveConnectionStatus.disconnected),
+      _at(AssistantLiveConnectionStatus.error),
+      const AssistantLiveState(hasEnded: true),
+    ]) {
+      expect(awaiting(state), AssistantLiveCallPhase.connecting);
+    }
+    expect(
+      awaiting(_at(AssistantLiveConnectionStatus.connected)),
+      AssistantLiveCallPhase.connected,
+    );
+    expect(
+      awaiting(_at(AssistantLiveConnectionStatus.reconnecting)),
+      AssistantLiveCallPhase.reconnecting,
+    );
+    expect(
+      assistantLiveCallStarted(AssistantLiveConnectionStatus.preparing),
+      isTrue,
+    );
+    expect(
+      assistantLiveCallStarted(AssistantLiveConnectionStatus.disconnected),
+      isFalse,
+    );
+    expect(
+      assistantLiveCallStarted(AssistantLiveConnectionStatus.error),
+      isFalse,
+    );
   });
 
   test('captions keep the newest turns and live drafts in order', () {

@@ -3,12 +3,19 @@ part of 'assistant_page.dart';
 /// Page states whose full-screen Live call is currently presented.
 final _presentedLiveCalls = Expando<bool>('assistant-live-call-presented');
 
+/// The presented call route's context, so the page can dismiss it.
+final _liveCallRoutes = Expando<BuildContext>('assistant-live-call-route');
+
 extension _AssistantPageLiveCall on _AssistantPageState {
   bool get _isLiveCallPresented => _presentedLiveCalls[this] ?? false;
 
   /// Presents the call above the shell once per page. Minimize or system Back
-  /// returns to the in-shell Live view while the call continues.
-  Future<void> _presentLiveCall(String wsId) async {
+  /// returns to the in-shell Live view while the call continues. A new call
+  /// passes its [startAttempt]; the surface closes if it settles unstarted.
+  Future<void> _presentLiveCall(
+    String wsId, {
+    Future<void>? startAttempt,
+  }) async {
     if (_isLiveCallPresented || !mounted) return;
     _presentedLiveCalls[this] = true;
     try {
@@ -17,13 +24,27 @@ extension _AssistantPageLiveCall on _AssistantPageState {
         cubit: _liveCubit,
         assistantName: _shellCubit.state.soul.name,
         actions: (route) => _liveCallActions(wsId, route),
+        startAttempt: startAttempt,
       );
     } finally {
       _presentedLiveCalls[this] = false;
+      _liveCallRoutes[this] = null;
     }
   }
 
+  /// Closes the call surface when its workspace or actor scope is gone: its
+  /// actions are bound to that workspace, so Call again must not reuse them.
+  /// Workspace sync runs during build, so the pop waits for the frame.
+  void _dismissLiveCall() {
+    final route = _liveCallRoutes[this];
+    if (route == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (route.mounted) unawaited(Navigator.of(route).maybePop());
+    });
+  }
+
   AssistantLiveCallActions _liveCallActions(String wsId, BuildContext route) {
+    _liveCallRoutes[this] = route;
     Future<void> close() async {
       if (route.mounted) await Navigator.of(route).maybePop();
     }

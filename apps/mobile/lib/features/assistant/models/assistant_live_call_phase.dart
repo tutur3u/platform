@@ -13,20 +13,31 @@ enum AssistantLiveCallPhase {
 
 /// Maps connection state to the call surface phase. A first attempt reads as
 /// "Connecting"; a dropped call that is retrying reads as "Reconnecting".
+///
+/// The surface opens before its session starts, so while [awaitingStart] an
+/// idle or previously failed session still reads as "Connecting". After that,
+/// any disconnect ends the call, whether the user hung up or the page stopped
+/// the session (for example on backgrounding): nothing reconnects it.
 AssistantLiveCallPhase assistantLiveCallPhase(
-  AssistantLiveState state,
-) => switch (state.status) {
+  AssistantLiveState state, {
+  bool awaitingStart = false,
+}) => switch (state.status) {
+  AssistantLiveConnectionStatus.disconnected ||
+  AssistantLiveConnectionStatus.error when awaitingStart =>
+    AssistantLiveCallPhase.connecting,
   AssistantLiveConnectionStatus.connected => AssistantLiveCallPhase.connected,
   AssistantLiveConnectionStatus.reconnecting =>
     AssistantLiveCallPhase.reconnecting,
   AssistantLiveConnectionStatus.preparing ||
   AssistantLiveConnectionStatus.connecting => AssistantLiveCallPhase.connecting,
   AssistantLiveConnectionStatus.error => AssistantLiveCallPhase.failed,
-  AssistantLiveConnectionStatus.disconnected =>
-    state.hasEnded
-        ? AssistantLiveCallPhase.ended
-        : AssistantLiveCallPhase.connecting,
+  AssistantLiveConnectionStatus.disconnected => AssistantLiveCallPhase.ended,
 };
+
+/// Whether [status] belongs to a session that has started (or is starting).
+bool assistantLiveCallStarted(AssistantLiveConnectionStatus status) =>
+    status != AssistantLiveConnectionStatus.disconnected &&
+    status != AssistantLiveConnectionStatus.error;
 
 /// Advances the call clock between two states. A fresh attempt
 /// (`preparing`) clears it, the first `connected` starts it, reconnects and

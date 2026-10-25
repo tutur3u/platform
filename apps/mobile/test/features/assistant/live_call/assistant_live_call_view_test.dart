@@ -145,6 +145,40 @@ void main() {
     expect(log.calls, ['again']);
   });
 
+  testWidgets('landscape and large text with captions open scroll safely', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final connected = liveCallStates(DateTime.now())['connected']!;
+    for (final size in const [ui.Size(844, 390), ui.Size(390, 844)]) {
+      setLiveCallViewport(tester, size);
+      final log = LiveCallActionLog();
+      await tester.pumpWidget(
+        liveCallApp(
+          state: connected,
+          actions: log.actions,
+          brightness: Brightness.dark,
+          captionsOpen: true,
+          viewKey: ValueKey('large-text-$size'),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(tester.takeException(), isNull, reason: '$size');
+      final end = find.byKey(const ValueKey('assistant-live-call-end'));
+      await tester.ensureVisible(end);
+      await tester.pump();
+      await tester.tap(end);
+      await tester.pump();
+      expect(log.calls, ['end'], reason: '$size');
+      await renderLiveCall(
+        tester,
+        'large-text-${size.width.toInt()}x${size.height.toInt()}-connected',
+      );
+    }
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('renders the call surface matrix', (tester) async {
     final states = liveCallStates(DateTime.now());
     for (final size in _sizes.entries) {

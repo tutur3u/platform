@@ -280,6 +280,7 @@ class _AssistantPageState extends State<AssistantPage>
   void _resetLocalActor() {
     _syncThemeActor(force: true);
     ++_voiceActorScopeEpoch;
+    _dismissLiveCall();
     unawaited(_localCubit.invalidate());
     setState(() => _loadedWorkspaceId = null);
   }

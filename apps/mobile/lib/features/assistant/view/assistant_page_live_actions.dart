@@ -100,6 +100,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     final epoch = _voiceActorScopeEpoch;
     final attempt = _liveStartGate.begin(epoch);
     if (attempt == null) return;
+    final startSettled = Completer<void>();
     try {
       if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
       _dismissKeyboard();
@@ -113,7 +114,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       );
       // Starting (not unmuting) a call opens the full-screen call surface.
       if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
-        unawaited(_presentLiveCall(wsId));
+        unawaited(_presentLiveCall(wsId, startAttempt: startSettled.future));
       }
       await enableAssistantLiveMicrophone(
         liveCubit: _liveCubit,
@@ -133,6 +134,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
             _loadedWorkspaceId == wsId,
       );
     } finally {
+      startSettled.complete();
       _liveStartGate.finish(attempt);
     }
   }

@@ -63,11 +63,17 @@ class AssistantLiveCallHeader extends StatelessWidget {
               if (phase == AssistantLiveCallPhase.connecting ||
                   phase == AssistantLiveCallPhase.reconnecting)
                 _ConnectingRing(color: colors.primary, size: orbSize),
-              FittedBox(
-                child: AssistantLivePlaybackBlob(
-                  energy: energy,
-                  bands: bands,
-                  active: phase == AssistantLiveCallPhase.connected && speaking,
+              // The Stack loosens constraints, so give the blob a definite
+              // square that scales with the orb on phones and tablets.
+              SizedBox.square(
+                dimension: orbSize * .72,
+                child: FittedBox(
+                  child: AssistantLivePlaybackBlob(
+                    energy: energy,
+                    bands: bands,
+                    active:
+                        phase == AssistantLiveCallPhase.connected && speaking,
+                  ),
                 ),
               ),
             ],

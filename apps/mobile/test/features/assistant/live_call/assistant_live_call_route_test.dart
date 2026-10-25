@@ -210,4 +210,97 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AssistantLiveCallScreen), findsNothing);
   });
+
+  testWidgets('a page disconnect without finishTurn ends the surface', (
+    tester,
+  ) async {
+    final cubit = _cubit();
+    addTearDown(cubit.close);
+    cubit.show(
+      AssistantLiveState(
+        status: AssistantLiveConnectionStatus.connected,
+        callStartedAt: DateTime.now(),
+      ),
+    );
+    await _present(tester, cubit);
+    expect(find.byKey(const ValueKey('assistant-live-call-end')), findsOne);
+
+    // Backgrounding and hidden-page teardown call disconnect() without
+    // finishTurn; the surface must not fall back to "Connecting…".
+    await cubit.disconnect();
+    await tester.pumpAndSettle();
+    expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
+    expect(find.text('Connecting…'), findsNothing);
+    expect(find.textContaining('Call ended'), findsOneWidget);
+    expect(find.byKey(const ValueKey('assistant-live-call-end')), findsNothing);
+    expect(find.byKey(const ValueKey('assistant-live-call-again')), findsOne);
+  });
+
+  testWidgets('a start attempt that never starts dismisses the surface', (
+    tester,
+  ) async {
+    final cubit = _cubit();
+    addTearDown(cubit.close);
+    final attempt = Completer<void>();
+    await _present(tester, cubit, startAttempt: attempt.future);
+    expect(find.text('Connecting…'), findsOneWidget);
+    attempt.complete();
+    await _pumpRoute(tester);
+    expect(find.byType(AssistantLiveCallScreen), findsNothing);
+  });
+
+  testWidgets('a started session keeps the surface after its start settles', (
+    tester,
+  ) async {
+    final cubit = _cubit();
+    addTearDown(cubit.close);
+    final attempt = Completer<void>();
+    await _present(tester, cubit, startAttempt: attempt.future);
+    cubit.show(
+      const AssistantLiveState(status: AssistantLiveConnectionStatus.preparing),
+    );
+    await tester.pump();
+    cubit.show(
+      const AssistantLiveState(status: AssistantLiveConnectionStatus.error),
+    );
+    attempt.complete();
+    await _pumpRoute(tester);
+    expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
+    expect(find.text("Couldn't connect"), findsOneWidget);
+  });
+}
+
+Future<void> _present(
+  WidgetTester tester,
+  AssistantLiveCubit cubit, {
+  Future<void>? startAttempt,
+}) async {
+  late BuildContext host;
+  await tester.pumpWidget(
+    _app(
+      Builder(
+        builder: (context) {
+          host = context;
+          return const SizedBox();
+        },
+      ),
+    ),
+  );
+  unawaited(
+    AssistantLiveCallScreen.show(
+      host,
+      cubit: cubit,
+      assistantName: 'Mira',
+      actions: (_) => LiveCallActionLog().actions,
+      startAttempt: startAttempt,
+    ),
+  );
+  // The connecting ring repeats, so pump the route transition, not settle.
+  await _pumpRoute(tester);
+  expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
+}
+
+Future<void> _pumpRoute(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 600));
 }

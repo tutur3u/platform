@@ -294,4 +294,75 @@ void main() {
     expect(find.byKey(const ValueKey('live-return-to-call')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  Future<_KeyboardHarness> startPresentedCall(
+    WidgetTester tester,
+    LiveStartupCleanup cleanup,
+  ) async {
+    final h = _KeyboardHarness();
+    await h.mount(tester);
+    cleanup(() => h.dispose(tester));
+    final entering = h.tokens.entered(1);
+    await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+    await driveLiveStartupFuture(
+      tester,
+      entering,
+      reason: 'Starting a call must enter its token request.',
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
+    expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+    return h;
+  }
+
+  // Page teardown runs real audio cleanup; release the held token and let
+  // real event-loop turns alternate with frames until the session is idle.
+  Future<void> settleDisconnect(WidgetTester tester, _KeyboardHarness h) async {
+    for (var i = 0; i < h.tokens.requests.length; i++) {
+      if (!h.tokens.requests[i].isCompleted) h.tokens.release(i);
+    }
+    for (var i = 0; i < 40; i++) {
+      if (h.live.state.status == AssistantLiveConnectionStatus.disconnected) {
+        break;
+      }
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  startupTest('backgrounding a presented call shows it ended on resume', (
+    tester,
+    cleanup,
+  ) async {
+    final h = await startPresentedCall(tester, cleanup);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await settleDisconnect(tester, h);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(h.live.state.status, AssistantLiveConnectionStatus.disconnected);
+    expect(h.live.state.hasEnded, isFalse);
+    expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
+    expect(find.text('Connecting…'), findsNothing);
+    expect(find.text('Call ended'), findsOneWidget);
+    expect(find.byKey(const ValueKey('assistant-live-call-end')), findsNothing);
+    expect(find.byKey(const ValueKey('assistant-live-call-again')), findsOne);
+    await minimizeLiveCallSurface(tester);
+    expect(find.byType(AssistantLiveCallScreen), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  startupTest('a workspace switch dismisses the presented call', (
+    tester,
+    cleanup,
+  ) async {
+    final h = await startPresentedCall(tester, cleanup);
+    h.workspace.change('44444444-4444-4444-8444-444444444444');
+    await settleDisconnect(tester, h);
+    expect(find.byType(AssistantLiveCallScreen), findsNothing);
+    expect(h.live.state.status, AssistantLiveConnectionStatus.disconnected);
+    expect(tester.takeException(), isNull);
+  });
 }

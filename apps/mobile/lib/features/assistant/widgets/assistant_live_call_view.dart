@@ -38,6 +38,7 @@ class AssistantLiveCallView extends StatefulWidget {
     required this.assistantName,
     required this.actions,
     this.initialCaptionsOpen = false,
+    this.awaitingStart = false,
     super.key,
   });
 
@@ -45,6 +46,9 @@ class AssistantLiveCallView extends StatefulWidget {
   final String assistantName;
   final AssistantLiveCallActions actions;
   final bool initialCaptionsOpen;
+
+  /// The surface opened for a call whose session has not started yet.
+  final bool awaitingStart;
 
   @override
   State<AssistantLiveCallView> createState() => _AssistantLiveCallViewState();
@@ -62,7 +66,10 @@ class _AssistantLiveCallViewState extends State<AssistantLiveCallView> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final actions = widget.actions;
-    final phase = assistantLiveCallPhase(state);
+    final phase = assistantLiveCallPhase(
+      state,
+      awaitingStart: widget.awaitingStart,
+    );
     final size = MediaQuery.sizeOf(context);
     final orbSize = (size.height * .26).clamp(136.0, 260.0);
     final showCaptions = _captionsOpen && phase.isActive;
@@ -77,12 +84,21 @@ class _AssistantLiveCallViewState extends State<AssistantLiveCallView> {
               AppSpacing.xxl,
               AppSpacing.xxl,
             ),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      child: AssistantLiveCallHeader(
+            // At least full height, so the status sits centred above the
+            // controls; short (landscape) or large-text layouts scroll instead
+            // of overflowing.
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                    minWidth: constraints.maxWidth,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox.shrink(),
+                      AssistantLiveCallHeader(
                         assistantName: widget.assistantName,
                         phase: phase,
                         energy: state.assistantAudioLevel,
@@ -93,38 +109,46 @@ class _AssistantLiveCallViewState extends State<AssistantLiveCallView> {
                         endedDuration: state.lastCallDuration,
                         orbSize: showCaptions ? orbSize * .7 : orbSize,
                       ),
-                    ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: AppSpacing.xxl),
+                          if (showCaptions) ...[
+                            AssistantLiveCallCaptions(
+                              captions: assistantLiveCaptions(state),
+                              assistantName: widget.assistantName,
+                              maxHeight: size.height * .26,
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                          if (phase.isActive)
+                            AssistantLiveCallControlsGrid(
+                              connected:
+                                  phase == AssistantLiveCallPhase.connected,
+                              microphoneOn: state.isMicrophoneActive,
+                              cameraOn: state.isCameraActive,
+                              captionsOpen: _captionsOpen,
+                              onMicrophone: actions.toggleMicrophone,
+                              onCamera: actions.toggleCamera,
+                              onKeyboard: actions.openKeyboard,
+                              onCaptions: () async => setState(
+                                () => _captionsOpen = !_captionsOpen,
+                              ),
+                              onMinimize: actions.minimize,
+                              onEnd: _end,
+                            )
+                          else
+                            AssistantLiveCallEndedActions(
+                              failed: phase == AssistantLiveCallPhase.failed,
+                              onCallAgain: actions.callAgain,
+                              onClose: actions.minimize,
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                if (showCaptions) ...[
-                  AssistantLiveCallCaptions(
-                    captions: assistantLiveCaptions(state),
-                    assistantName: widget.assistantName,
-                    maxHeight: size.height * .26,
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
-                ],
-                if (phase.isActive)
-                  AssistantLiveCallControlsGrid(
-                    connected: phase == AssistantLiveCallPhase.connected,
-                    microphoneOn: state.isMicrophoneActive,
-                    cameraOn: state.isCameraActive,
-                    captionsOpen: _captionsOpen,
-                    onMicrophone: actions.toggleMicrophone,
-                    onCamera: actions.toggleCamera,
-                    onKeyboard: actions.openKeyboard,
-                    onCaptions: () async =>
-                        setState(() => _captionsOpen = !_captionsOpen),
-                    onMinimize: actions.minimize,
-                    onEnd: _end,
-                  )
-                else
-                  AssistantLiveCallEndedActions(
-                    failed: phase == AssistantLiveCallPhase.failed,
-                    onCallAgain: actions.callAgain,
-                    onClose: actions.minimize,
-                  ),
-              ],
+              ),
             ),
           ),
         ),
