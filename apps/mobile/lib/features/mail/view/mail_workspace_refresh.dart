@@ -6,7 +6,6 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
         _accessVerified &&
         !_mutating &&
         !_loading &&
-        _openingId == null &&
         _pendingReaderIds.isEmpty) {
       // The inbox remains alive below its reader: refresh while reading too.
       unawaited(_load());

@@ -12,6 +12,19 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+typedef _DocumentKey = (
+  String html,
+  bool loadImages,
+  MailMessageAppearance appearance,
+  int? backgroundArgb,
+);
+
+/// Recently rendered documents, so reopening a body (or moving it between a
+/// split pane and a pushed reader) skips another isolate round trip. Keys
+/// hold the exact HTML, so a lookup only succeeds for its own message.
+final _renderedDocuments = <_DocumentKey, String>{};
+const _renderedDocumentLimit = 12;
+
 /// Native rendering isolated from the app's authenticated browser state.
 class MailHtmlBody extends StatefulWidget {
   const MailHtmlBody({
@@ -116,20 +129,39 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     _controller = null;
     _failed = false;
     try {
-      final document = await compute(
-        renderMailDocument,
-        MailDocumentRequest(
-          html: widget.html,
-          loadImages: _images,
-          inlineImages: widget.inlineImages,
-          appearance: _appearance ?? MailMessageAppearance.original,
-          backgroundArgb:
-              (_appearance == MailMessageAppearance.dark) ==
-                  (Theme.of(context).brightness == Brightness.dark)
-              ? shad.Theme.of(context).colorScheme.background.toARGB32()
-              : null,
-        ),
+      final request = MailDocumentRequest(
+        html: widget.html,
+        loadImages: _images,
+        inlineImages: widget.inlineImages,
+        appearance: _appearance ?? MailMessageAppearance.original,
+        backgroundArgb:
+            (_appearance == MailMessageAppearance.dark) ==
+                (Theme.of(context).brightness == Brightness.dark)
+            ? shad.Theme.of(context).colorScheme.background.toARGB32()
+            : null,
       );
+      // Inline images arrive later as data URIs; only plain bodies memoize.
+      final key = request.inlineImages.isEmpty
+          ? (
+              request.html,
+              request.loadImages,
+              request.appearance,
+              request.backgroundArgb,
+            )
+          : null;
+      final memo = key == null ? null : _renderedDocuments.remove(key);
+      final document =
+          memo ??
+          await compute<MailDocumentRequest, String>(
+            renderMailDocument,
+            request,
+          );
+      if (key != null) {
+        _renderedDocuments[key] = document;
+        while (_renderedDocuments.length > _renderedDocumentLimit) {
+          _renderedDocuments.remove(_renderedDocuments.keys.first);
+        }
+      }
       if (mounted && generation == _generation) {
         setState(() => _document = document);
       }

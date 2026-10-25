@@ -2756,6 +2756,8 @@
   "mailOpenFailed": "Không thể mở thư này. Vui lòng thử lại.",
   "mailOrganization": "Thành viên tổ chức",
   "mailOwner": "Chủ sở hữu",
+  "mailPreviewEmptyMessage": "Chọn một cuộc hội thoại trong danh sách để đọc tại đây.",
+  "mailPreviewEmptyTitle": "Chọn một cuộc hội thoại",
   "mailRemoveAttachment": "Xóa tệp đính kèm",
   "mailReply": "Trả lời",
   "mailReplyAll": "Trả lời tất cả",

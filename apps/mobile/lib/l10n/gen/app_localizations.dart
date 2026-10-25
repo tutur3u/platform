@@ -9601,6 +9601,18 @@ abstract class AppLocalizations {
   /// **'Owner'**
   String get mailOwner;
 
+  /// No description provided for @mailPreviewEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a conversation from the list to read it here.'**
+  String get mailPreviewEmptyMessage;
+
+  /// No description provided for @mailPreviewEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a conversation'**
+  String get mailPreviewEmptyTitle;
+
   /// No description provided for @mailRemoveAttachment.
   ///
   /// In en, this message translates to:

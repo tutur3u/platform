@@ -45,13 +45,50 @@ smart-label configuration, custom folders/labels and group membership.
 
 Account or workspace changes dispose the entire Mail navigation stack. Attachment
 downloads reject redirects and oversized responses. Original HTML renders in an
-isolated, script-disabled web view; remote images require an explicit action.
+isolated, script-disabled web view. Remote images follow the saved Mail image
+preference, which is on until the user turns it off; notification-opened
+readers suppress them until revealed (see
+[Mail inbound notifications](/platform/applications/mail-inbound-notifications)).
 Downloaded attachments use the device's native share sheet.
 
 Run `ttr resources run -- bun check:mobile` after native changes, and the Mail
 proxy auth tests plus the actual Mail build after auth-routing changes. Unit and
 widget checks do not prove real-provider sending, receiving, or store delivery;
 verify those separately with the intended authenticated account.
+
+### Tablet reading pane and instant open
+
+Scope: the Flutter Mail inbox on every platform. When the Mail body is at
+least 720dp wide (portrait and landscape tablets, desktops), the inbox list and
+the open conversation sit side by side. Without a selection, the pane shows a
+localized empty state. Narrower bodies keep the pushed reader. The open
+conversation survives rotation and window resizing, moving between the pane and
+the pushed reader. Notification deep links open in the pane on wide layouts. On
+wide layouts, the first Back (dock, rail or system) and Escape close the pane;
+the next Back leaves Mail. The pane header carries the subject and message
+actions; the shell navbar and dock keep the inbox title, filters and actions.
+
+Opening never waits for the network. The reader renders the inbox row's
+subject, participants and snippet in the opening frame, then hydrates from the
+in-memory preview store, the encrypted Mail cache, or one detail request (one
+retry on transient failures). A failed load stays in the reader with an inline
+Retry, keeping notification-entry image suppression. Drafts still open the
+composer after their detail loads.
+
+Prefetching is bounded: only threads of verified mailboxes, for rows currently
+built in the list, are fetched after scrolling pauses for 250ms. At most two
+requests run, eight are queued, and each makes one attempt. A failure is not
+retried in the background. The queue is replaced when the visible rows change,
+and the neighbours of an opened conversation are queued next. Prefetching
+fetches message JSON only; images load only when a body is shown, under the
+saved remote-image preference (or the notification-entry suppression). The
+preview store lives in memory for one signed-in workspace view, holds 40
+details, and is cleared on access denial. Rendered HTML documents of plain
+bodies are memoized in memory (12 entries) by their exact HTML and appearance.
+
+Regression coverage: `mail_master_detail_test.dart`,
+`mail_preview_latency_test.dart` and `mail_workspace_test.dart` in
+`apps/mobile/test/features/mail`, and `core/layout/master_detail_test.dart`.
 
 ## Read state and archive actions
 

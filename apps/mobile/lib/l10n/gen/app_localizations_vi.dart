@@ -4961,6 +4961,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailOwner => 'Chủ sở hữu';
 
   @override
+  String get mailPreviewEmptyMessage => 'Chọn một cuộc hội thoại trong danh sách để đọc tại đây.';
+
+  @override
+  String get mailPreviewEmptyTitle => 'Chọn một cuộc hội thoại';
+
+  @override
   String get mailRemoveAttachment => 'Xóa tệp đính kèm';
 
   @override

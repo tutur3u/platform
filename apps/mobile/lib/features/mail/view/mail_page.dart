@@ -12,6 +12,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_optimistic.dart';
+import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
@@ -37,6 +38,7 @@ part 'mail_workspace_controls.dart';
 part 'mail_shell_actions.dart';
 part 'mail_workspace_cache.dart';
 part 'mail_workspace_swipes.dart';
+part 'mail_workspace_open.dart';
 part 'mail_workspace_open_retry.dart';
 part 'mail_workspace_refresh.dart';
 
@@ -125,7 +127,13 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   void _updateState(VoidCallback update) => setState(update);
   bool _childRouteOpen = false;
   bool _pushDestinationHandled = false;
-  final Set<(String, String)> _notificationEntries = {};
+  late final MailPreviewStore _previews = _createPreviewStore();
+  _MailSelection? _selection;
+  bool _split = false;
+  Route<void>? _readerRoute;
+  bool _migratingReader = false;
+  final Set<String> _visibleIds = {};
+  Timer? _prefetchDebounce;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _swipeFeedback;
 
   void _dismissSwipeFeedback() {
@@ -142,7 +150,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     try {
       await Navigator.of(context).push<void>(route);
     } finally {
-      if (mounted) setState(() => _childRouteOpen = false);
+      if (mounted) {
+        setState(() => _childRouteOpen = false);
+        // A rotation while a child route covered Mail is applied on return.
+        if (route != _readerRoute) _syncSelectionWithLayout();
+      }
     }
   }
 
@@ -177,7 +189,6 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   int _bootstrapGeneration = 0;
   int _organizationGeneration = 0;
   String? _visibleListKey;
-  String? _openingId;
   Timer? _searchDebounce;
   Timer? _snoozeRefreshTimer;
   StreamSubscription<PushNotificationEvent>? _mailPushSubscription;
@@ -241,6 +252,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _repository.accessRevoked?.removeListener(_onCacheAccessRevoked);
     _dismissSwipeFeedback();
     _snoozeRefreshTimer?.cancel();
+    _prefetchDebounce?.cancel();
+    _previews.dispose();
     _generation++;
     _bootstrapGeneration++;
     _organizationGeneration++;
@@ -333,7 +346,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             page * 30 < (pagination['total'] as int? ?? 0);
       });
       _saveView();
-      unawaited(_warmVisibleThreads(generation, box));
+      if (!more) _prefetchVisible();
     } on Object catch (error) {
       if (mounted && generation == _generation) {
         setState(() {
@@ -522,122 +535,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     }
   }
 
-  Future<void> _open(
-    Map<String, dynamic> item, {
-    bool notificationEntry = false,
-  }) async {
-    if (_openingId != null || _childRouteOpen) return;
-    _dismissSwipeFeedback();
-    setState(() => _openingId = item['id'] as String);
-    final box = _mailboxId!;
-    final openedFolder = _folder;
-    final entry = (box, item['id'] as String);
-    if (notificationEntry) _notificationEntries.add(entry);
-    try {
-      final cached = _threads && _accessVerified
-          ? await _repository.cachedThread(
-              widget.workspaceId,
-              box,
-              item['id'] as String,
-            )
-          : null;
-      final detail =
-          cached ??
-          await _readOpenDetailWithRetry(box, item['id'] as String, _threads);
-      if (!mounted || box != _mailboxId || openedFolder != _folder) return;
-      if (_folder == 'drafts') {
-        await _compose(detail);
-        return;
-      }
-      if (_threads) {
-        unawaited(_archiveViewedMailThread(box, item['id'] as String));
-      }
-      final beforeRead = _items;
-      setState(
-        () => _items = optimisticMailItems(
-          _items,
-          {item['id'] as String},
-          action: 'mark_read',
-          folder: _folder,
-          query: _search.text,
-        ),
-      );
-      final navigation = _pushChild(
-        MaterialPageRoute(
-          builder: (_) => MailReader(
-            repository: _repository,
-            workspaceId: widget.workspaceId,
-            mailboxId: box,
-            detail: detail,
-            refreshOnOpen: cached != null,
-            notificationEntry: _notificationEntries.contains(entry),
-            onReadFailed: () {
-              if (mounted && box == _mailboxId && openedFolder == _folder) {
-                setState(() => _items = beforeRead);
-              }
-            },
-            onOptimisticAction: (action, id) {
-              if (!mounted || box != _mailboxId) return;
-              _pendingReaderIds[id] = (mailbox: box, action: action);
-              ++_generation;
-              setState(() {
-                _loading = false;
-                _items = optimisticMailItems(
-                  _items,
-                  {id},
-                  action: action,
-                  folder: _folder,
-                  query: _search.text,
-                );
-              });
-              _saveView();
-            },
-            onActionSettled:
-                ({required action, required id, required success}) {
-                  _pendingReaderIds.remove(id);
-                  if (!mounted || box != _mailboxId) return;
-                  if (!success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.l10n.mailActionFailed)),
-                    );
-                  }
-                  if (_pendingReaderIds.isEmpty) unawaited(_load());
-                },
-            thread: _threads,
-            canSend: _canSend,
-            fromAddress: _mailbox['address'] as String,
-            signatureText: _mailbox['signatureText'] as String?,
-            signatureHtml: _mailbox['signatureHtml'] as String?,
-          ),
-        ),
-      );
-      if (mounted) setState(() => _openingId = null);
-      await navigation;
-      _notificationEntries.remove(entry);
-      if (mounted && box == _mailboxId && openedFolder == _folder) {
-        if (_pendingReaderIds.isEmpty) unawaited(_load());
-      }
-    } on Object {
-      if (mounted) _showOpenFailure(item);
-    } finally {
-      if (mounted) setState(() => _openingId = null);
-    }
-  }
-
-  Future<void> _archiveViewedMailThread(
-    String mailboxId,
-    String threadId,
-  ) async {
-    try {
-      final archived = await _notificationsRepository.archiveViewedMailThread(
-        mailboxId: mailboxId,
-        threadId: threadId,
-      );
-      if (archived > 0) PushNotificationService.instance.notifyArchiveChanged();
-    } on Object {
-      // Reading Mail stays immediate if notification sync is unavailable.
-    }
-  }
+  // A stable tear-off, so the shell registration only changes with the pane.
+  Future<void> _onPaneBack() async => _closeSelection();
 
   @override
   Widget build(BuildContext context) => _buildWorkspace(context);
