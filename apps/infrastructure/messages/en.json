@@ -8639,6 +8639,12 @@
         "description": "Email audit, templates, queues, blacklist controls, and push delivery.",
         "title": "Communications"
       },
+      "delivery": {
+        "title": "Delivery"
+      },
+      "integrations": {
+        "title": "Integrations"
+      },
       "monitoring": {
         "description": "Runtime telemetry, deployments, cron health, logs, and resources."
       },
@@ -8662,6 +8668,11 @@
       "calendar_sync": "Calendar Sync",
       "holidays": "Holidays",
       "monitoring_deployments": "Deployment Stages"
+    },
+    "sections": {
+      "fleet": "Fleet",
+      "govern": "Govern",
+      "operate": "Operate"
     }
   },
   "infrastructure-tabs": {
@@ -12711,6 +12722,34 @@
     "reset-password-desc": "Enter the new password for your account",
     "resetting": "Resetting",
     "success-message": "Your password has been reset successfully. You can now log in with your new password."
+  },
+  "satellite-account-settings": {
+    "accounts": "Accounts",
+    "accounts_add": "Add another account",
+    "accounts_description": "Manage multiple accounts and switch between them",
+    "accounts_remove": "Remove an account from this browser",
+    "accounts_switch": "Switch between signed-in accounts",
+    "appearance": "Appearance",
+    "appearance_description": "Theme and language",
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
+    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
+    "managed_centrally_title": "Managed in your Tuturuuu account",
+    "open_in_tuturuuu": "Open in Tuturuuu",
+    "preferences": "Preferences",
+    "profile": "Profile",
+    "profile_description": "Manage your name, avatar and email",
+    "security": "Security",
+    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
+    "security_linked_identities": "Linked sign-in methods",
+    "security_passkeys": "Passkeys",
+    "security_password": "Change or reset your password",
+    "security_two_factor": "Two-factor authentication with an authenticator app",
+    "sessions": "Sessions & Devices",
+    "sessions_description": "Manage your active sessions and devices",
+    "sessions_devices": "See every device signed in to your account",
+    "sessions_revoke": "Sign out other devices",
+    "signed_in_as": "Signed in as {email}",
+    "title": "Account"
   },
   "satellite-workspace-settings": {
     "avatar": "Workspace avatar",
@@ -23634,33 +23673,5 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
-  },
-  "satellite-account-settings": {
-    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
-    "title": "Account",
-    "preferences": "Preferences",
-    "profile": "Profile",
-    "profile_description": "Manage your name, avatar and email",
-    "accounts": "Accounts",
-    "accounts_description": "Manage multiple accounts and switch between them",
-    "security": "Security",
-    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
-    "sessions": "Sessions & Devices",
-    "sessions_description": "Manage your active sessions and devices",
-    "appearance": "Appearance",
-    "appearance_description": "Theme and language",
-    "managed_centrally_title": "Managed in your Tuturuuu account",
-    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
-    "signed_in_as": "Signed in as {email}",
-    "open_in_tuturuuu": "Open in Tuturuuu",
-    "accounts_switch": "Switch between signed-in accounts",
-    "accounts_add": "Add another account",
-    "accounts_remove": "Remove an account from this browser",
-    "security_password": "Change or reset your password",
-    "security_two_factor": "Two-factor authentication with an authenticator app",
-    "security_passkeys": "Passkeys",
-    "security_linked_identities": "Linked sign-in methods",
-    "sessions_devices": "See every device signed in to your account",
-    "sessions_revoke": "Sign out other devices"
   }
 }

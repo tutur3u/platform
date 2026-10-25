@@ -323,6 +323,10 @@
       "types": "./src/components/ui/custom/language-dropdown-wrapper.tsx",
       "import": "./src/components/ui/custom/language-dropdown-wrapper.tsx"
     },
+    "./custom/ops": {
+      "types": "./src/components/ui/custom/ops/index.ts",
+      "import": "./src/components/ui/custom/ops/index.ts"
+    },
     "./custom/locale-preference": {
       "types": "./src/components/ui/custom/locale-preference.ts",
       "import": "./src/components/ui/custom/locale-preference.ts"
