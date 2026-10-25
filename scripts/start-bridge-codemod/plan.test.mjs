@@ -224,6 +224,61 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
   );
 });
 
+test('native CI is a thin caller of the reusable template, once it exists', (t) => {
+  const root = createFixtureRepo(t);
+  assert.equal(
+    pendingWrites(plan(root)).some((write) =>
+      write.path.endsWith('demo-cloudflare.yaml')
+    ),
+    false
+  );
+  writeTree(root, {
+    '.github/workflows/native-start-app.yaml': 'on: workflow_call\n',
+    'packages/ui/package.json': JSON.stringify({
+      name: '@tuturuuu/ui',
+      dependencies: { '@tuturuuu/utils': 'workspace:*', react: '^19' },
+    }),
+    'packages/utils/package.json': JSON.stringify({ name: '@tuturuuu/utils' }),
+  });
+  const manifestPath = path.join(root, 'apps/demo/package.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.dependencies['@tuturuuu/ui'] = 'workspace:*';
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const result = plan(root);
+  const content = (file) =>
+    result.writes.find((write) => write.path === file)?.content ?? '';
+  const caller = content('.github/workflows/demo-cloudflare.yaml');
+  for (const expected of [
+    "'apps/demo/**',",
+    "'packages/ui/**',",
+    "'packages/utils/**',",
+    "'scripts/ci/demo-native-artifact.py',",
+    "'.github/workflows/native-start-app.yaml',",
+    'uses: ./.github/workflows/native-start-app.yaml',
+    "package: '@tuturuuu/demo'",
+    'artifact-script: scripts/ci/demo-native-artifact.py',
+    'env-interface: DemoGeneratedEnv',
+    'worker-environment-type: DemoEnvironment',
+    'workflow_name: demo-cloudflare.yaml',
+    'unit-command: bun x --no-install vitest run --passWithNoTests',
+    'NEXT_PUBLIC_APP_URL=https://demo.tuturuuu.com',
+  ])
+    assert.ok(caller.includes(expected), expected);
+  assert.match(
+    content('scripts/ci/demo-native-artifact.py'),
+    /WORKER = "tuturuuu-demo-vite-staging"[\s\S]*"favicon\.ico",[\s\S]*DEMO_SOURCE_SHA/
+  );
+  const runtime = content('apps/demo/cloudflare/native-built-worker.test.mjs');
+  assert.match(runtime, /const WORKER = "tuturuuu-demo-vite-staging";/);
+  assert.match(runtime, /build identity is the exact compiled source/);
+  assert.match(runtime, /statusFor\('\/demo', 'tuturuuu\.com'\)/);
+  assert.match(content('tuturuuu.ci.ts'), /'demo-cloudflare\.yaml': true,/);
+  assert.equal(
+    JSON.parse(content('apps/demo/package.json')).scripts['test:runtime'],
+    'node --test cloudflare/native-built-worker.test.mjs'
+  );
+});
+
 test('dependencies are installed by package commands, never by edits', (t) => {
   const root = createFixtureRepo(t);
   const result = plan(root);

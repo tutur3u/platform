@@ -6,6 +6,15 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  artifactHelper,
+  callerPath,
+  callerWorkflow,
+  NATIVE_TEMPLATE,
+  RUNTIME_TEST,
+  runtimeTest,
+  workspaceClosure,
+} from './ci-templates.mjs';
+import {
   API_ENTRY,
   API_PATTERNS,
   API_REGISTRY,
@@ -107,6 +116,20 @@ export function routesConfig(existing, inventory, locale) {
   if (existing?.api) merged.api = { ...defaults.api, ...existing.api };
   return merged;
 }
+
+/** Owned app paths the native template's Biome check covers. */
+const NATIVE_FORMAT_PATHS = [
+  'src/start-bridge',
+  'src/routes',
+  'src/router.tsx',
+  'src/start.ts',
+  'cloudflare',
+  'vite.config.mts',
+  'void.config.ts',
+  'tsconfig.json',
+  'package.json',
+  'start-bridge.routes.json',
+];
 
 export function planConversion(repoRoot, app, options = {}) {
   if (!APP_ID.test(app)) throw new Error(`Invalid app id: ${app}`);
@@ -210,9 +233,16 @@ export function planConversion(repoRoot, app, options = {}) {
       owner: 'tool-generated',
     });
 
+  // Native CI: a caller of the reusable template, once the repository has it.
+  const nativeCi = read(repoRoot, NATIVE_TEMPLATE) !== null;
   const scripts = addPackageScripts(
     manifestSource,
-    nativeScripts(devPort(manifest))
+    nativeCi
+      ? {
+          ...nativeScripts(devPort(manifest)),
+          'test:runtime': `node --test ${RUNTIME_TEST}`,
+        }
+      : nativeScripts(devPort(manifest))
   );
   problems.push(
     ...scripts.conflicts.map((item) => `package.json script ${item}`)
@@ -242,7 +272,7 @@ export function planConversion(repoRoot, app, options = {}) {
   // opt-in: conversion PRs leave production alone and each app's cutover-prep
   // PR applies `--hold` just before the flip.
   if (options.hold) ci = addHeldRecord(ci, app);
-  if (options.workflow) ci = addCiWorkflow(ci, `${app}-cloudflare.yaml`);
+  if (nativeCi) ci = addCiWorkflow(ci, `${app}-cloudflare.yaml`);
   edited('tuturuuu.ci.ts', ci);
   if (options.hold) {
     const policyPath = 'scripts/ci/production-publication-policy.ts';
@@ -265,12 +295,35 @@ export function planConversion(repoRoot, app, options = {}) {
     'biome.json',
     addBiomeRouteTreeIgnore(read(repoRoot, 'biome.json'), app)
   );
-  if (options.workflow)
-    writes.push({
-      path: `.github/workflows/${app}-cloudflare.yaml`,
-      content: options.workflow(resolved),
-      owner: 'generated',
-    });
+  if (nativeCi) {
+    owned(
+      RUNTIME_TEST,
+      runtimeTest({
+        ...resolved,
+        hasBuildInfo: inventory.routes.some(
+          (route) => route.file === 'api/build-info/route.ts'
+        ),
+      })
+    );
+    writes.push(
+      {
+        path: callerPath(app),
+        content: callerWorkflow({
+          ...resolved,
+          packageName: manifest.name,
+          closure: workspaceClosure(repoRoot, manifest),
+          hasTestScript: Boolean(manifest.scripts?.test),
+          formatPaths: NATIVE_FORMAT_PATHS,
+        }),
+        owner: 'generated',
+      },
+      {
+        path: `scripts/ci/${app}-native-artifact.py`,
+        content: artifactHelper(resolved),
+        owner: 'generated',
+      }
+    );
+  }
 
   // Void loads exactly one local env file (`.env`) and rejects the rest;
   // the example moves to `env.example` like Calendar and Meet.

@@ -22,7 +22,6 @@ import {
   pendingWrites,
   planConversion,
 } from './plan.mjs';
-import { createWorkflowRenderer } from './workflow.mjs';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -105,7 +104,6 @@ export function main(
     navigation: args.navigation,
     hold: args.hold,
     codegen: createBunCodegen(repoRoot),
-    workflow: createWorkflowRenderer(repoRoot),
     // The codemod repository supplies Biome and its config for formatting.
     format: args.noFormat ? undefined : createBiomeFormatter(REPO_ROOT),
   });

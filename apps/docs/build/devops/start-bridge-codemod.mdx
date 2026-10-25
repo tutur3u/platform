@@ -123,6 +123,29 @@ Conversion PRs therefore run without `--hold`; the app's cutover-prep PR adds
 the hold and merges just before the flip.
 </Warning>
 
+### Native CI
+
+When the repository has the reusable `.github/workflows/native-start-app.yaml`
+(#6753), the codemod also writes the app's qualification CI, modelled on
+Shortener:
+
+- `.github/workflows/<app>-cloudflare.yaml`: a thin `workflow_call` caller with
+  path filters for the app, its transitive workspace dependencies, the template
+  and the shared native CI scripts, and Shortener's inputs. An app without a
+  `test` script runs its Vitest suite with `--passWithNoTests`. Registered in
+  `tuturuuu.ci.ts`.
+- `scripts/ci/<app>-native-artifact.py`: the app's Worker identity and public
+  files over `scripts/ci/apps-native-artifact.py`.
+- `cloudflare/native-built-worker.test.mjs` (`test:runtime`): a generic
+  emitted-Worker smoke run on the sealed artifact, with all egress denied:
+  Worker identity, public-file parity, build identity when the app has
+  `/api/build-info`, and no server error on the root, the `tuturuuu.com/<app>`
+  mount or an unknown path. App-specific acceptance goes in further
+  `cloudflare/*.test.mjs` files.
+
+There is no publisher: production stays with the held record and the
+cutover PR.
+
 ### Generator inputs
 
 The codemod reads app-specific behaviour from the app's existing
