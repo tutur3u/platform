@@ -32,6 +32,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { proxyAppUrl } from './lib/proxy-app-url';
 import { resolveTaskBoardEntrypoint } from './lib/tasks/task-board-entrypoint';
 
 const AUTH_PUBLIC_PATHS = [
@@ -100,8 +101,7 @@ function getTaskLinkPreviewRewrite(req: NextRequest) {
   if (!isTaskLinkPreviewRequest(req)) return null;
 
   const { locale } = getLocale(req);
-  const previewUrl = new URL(`/${locale}/task-link-preview`, req.url);
-  previewUrl.search = '';
+  const previewUrl = proxyAppUrl(req, `/${locale}/task-link-preview`);
   const response = NextResponse.rewrite(previewUrl);
   response.headers.set('Cache-Control', 'private, no-store, max-age=0');
   response.headers.append('Vary', 'User-Agent');
@@ -275,7 +275,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     const loginRedirect = clearSupabaseAuthCookies(
       req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+      NextResponse.redirect(proxyAppUrl(req, nextPath))
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
@@ -320,8 +320,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
-      redirectUrl.search = req.nextUrl.search;
+      const redirectUrl = proxyAppUrl(
+        req,
+        `/${newPathSegments.join('/')}${req.nextUrl.search}`
+      );
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
@@ -341,12 +343,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           const wsIdIndex = hasLocaleInPath ? 1 : 0;
           newPathSegments[wsIdIndex] = 'personal';
 
-          const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
-            req.nextUrl
-          );
           // Preserve query parameters
-          redirectUrl.search = req.nextUrl.search;
+          const redirectUrl = proxyAppUrl(
+            req,
+            `/${newPathSegments.join('/')}${req.nextUrl.search}`
+          );
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
@@ -414,11 +415,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
       if (boardId) {
         const localePrefix = isLocaleRootPath ? `/${locale}` : '';
-        const boardUrl = new URL(
-          `${localePrefix}/${target}/boards/${boardId}`,
-          req.nextUrl
+        const boardUrl = proxyAppUrl(
+          req,
+          `${localePrefix}/${target}/boards/${boardId}${req.nextUrl.search}`
         );
-        boardUrl.search = req.nextUrl.search;
 
         const boardRedirect = NextResponse.redirect(boardUrl, 307);
         boardRedirect.headers.set(
@@ -437,8 +437,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     // This branch returns before next-intl adds its internal locale segment, so
     // the retry rewrite must target the actual localized App Router pathname.
-    const entrypointUrl = new URL(`/${locale}/${target}/tasks`, req.nextUrl);
-    entrypointUrl.search = req.nextUrl.search;
+    const entrypointUrl = proxyAppUrl(
+      req,
+      `/${locale}/${target}/tasks${req.nextUrl.search}`
+    );
     const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
     propagateAuthCookies(authRes, fallbackRewrite);
     return fallbackRewrite;
