@@ -43,9 +43,9 @@ describe('AI chat resource access', () => {
   });
 
   it('parses chat and temp resource paths and rejects traversal', () => {
-    expect(parseAiChatResourcePath(`ws/chats/ai/resources/${OWN}/a.jpg`)).toEqual(
-      { kind: 'chat', chatId: OWN, wsId: 'ws' }
-    );
+    expect(
+      parseAiChatResourcePath(`ws/chats/ai/resources/${OWN}/a.jpg`)
+    ).toEqual({ kind: 'chat', chatId: OWN, wsId: 'ws' });
     expect(
       parseAiChatResourcePath('ws/chats/ai/resources/temp/actor/a.jpg')
     ).toEqual({ kind: 'temp', userId: 'actor', wsId: 'ws' });
@@ -57,7 +57,9 @@ describe('AI chat resource access', () => {
   });
 
   it("denies another member's chat folder and temp folder", async () => {
-    const other = parseAiChatResourcePath(`ws/chats/ai/resources/${OTHER}/a.jpg`);
+    const other = parseAiChatResourcePath(
+      `ws/chats/ai/resources/${OTHER}/a.jpg`
+    );
     const temp = parseAiChatResourcePath('ws/chats/ai/resources/temp/x/a.jpg');
     await expect(
       verifyAiChatResourceScopes({ scopes: [other!], userId: 'actor' })

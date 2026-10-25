@@ -74,7 +74,10 @@ export const POST = withSessionAuth(
         );
       }
       if (access !== 'allowed') {
-        return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Chat not found' },
+          { status: 404 }
+        );
       }
 
       const sbAdmin = await createDynamicAdminClient();

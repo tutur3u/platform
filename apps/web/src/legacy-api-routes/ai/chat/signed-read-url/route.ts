@@ -86,7 +86,10 @@ export const POST = withSessionAuth(
         );
       }
       if (access !== 'allowed') {
-        return NextResponse.json({ message: 'File not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'File not found' },
+          { status: 404 }
+        );
       }
 
       const storageAdmin = await createDynamicAdminClient();
