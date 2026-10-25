@@ -26,7 +26,7 @@ export default defineConfig(({ command }) => ({
     startBridgeRscPlugin({
       rscEntries: {
         'bridge-api': new URL(
-          './src/start-bridge/api-registry.bridge.gen.ts',
+          './src/start-bridge/api-entry.ts',
           import.meta.url
         ),
         'bridge-pages': new URL(
