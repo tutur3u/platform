@@ -25,6 +25,28 @@ export function assertLoopbackOrigin(origin) {
   return url.origin;
 }
 
+/**
+ * The fixture browser's service-worker mode. A registered service worker
+ * answers requests before Playwright routing sees them, so the gate would
+ * measure the worker cache instead of the Worker: routing and acceptance runs
+ * block service workers. Only an explicit offline/service-worker run allows
+ * them, and must say why: `{ mode: 'allow', reason: '...' }`.
+ */
+export function serviceWorkerMode(profile) {
+  const setting = profile?.serviceWorkers;
+  if (setting === undefined || setting === 'block')
+    return { mode: 'block', reason: null };
+  if (
+    typeof setting === 'object' &&
+    setting !== null &&
+    setting.mode === 'allow' &&
+    typeof setting.reason === 'string' &&
+    setting.reason.trim()
+  )
+    return { mode: 'allow', reason: setting.reason.trim() };
+  return null;
+}
+
 /** Problems with an app's `cloudflare/root-browser.profile.mjs`. */
 export function profileProblems(app, profile) {
   const problems = [];
@@ -55,6 +77,10 @@ export function profileProblems(app, profile) {
   )
     problems.push(
       'hydration needs a request(context) path prefix or a text(context) marker'
+    );
+  if (!serviceWorkerMode(profile))
+    problems.push(
+      "serviceWorkers must be 'block' (the default) or { mode: 'allow', reason } for an explicit offline/service-worker run"
     );
   for (const [index, rule] of (profile.browser ?? []).entries()) {
     let origin = null;
