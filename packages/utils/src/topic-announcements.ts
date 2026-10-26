@@ -11,11 +11,10 @@ export const TOPIC_TEACHER_ASSIGNMENTS_SECRET =
 export function isTopicTeacherAssignmentsEnabled(
   secrets: readonly { name?: string | null; value?: string | null }[] | null
 ) {
-  return (
-    secrets?.some(
-      (secret) =>
-        secret.name === TOPIC_TEACHER_ASSIGNMENTS_SECRET &&
-        secret.value === 'true'
-    ) ?? false
+  // Fail closed: every row with this name must be `true` (duplicates with
+  // conflicting values keep the feature off).
+  const rows = (secrets ?? []).filter(
+    (secret) => secret.name === TOPIC_TEACHER_ASSIGNMENTS_SECRET
   );
+  return rows.length > 0 && rows.every((secret) => secret.value === 'true');
 }

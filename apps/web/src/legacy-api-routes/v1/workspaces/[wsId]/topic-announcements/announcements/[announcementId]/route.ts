@@ -1,5 +1,6 @@
 import {
   gateTopicAnnouncementTeacherFields,
+  normalizeTopicAnnouncementTopic,
   type TopicAnnouncementUpdatePayload,
 } from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
@@ -175,6 +176,7 @@ export async function PATCH(request: Request, { params }: Params) {
     );
   }
   const teacherWriteError = validateTeacherTopicAnnouncementWrite({
+    existingStatus: existing.status,
     next: payload,
     scope,
   });
@@ -280,7 +282,7 @@ export async function PATCH(request: Request, { params }: Params) {
     status: payload.status,
     teacher_workspace_user_id: payload.teacherWorkspaceUserId,
     title: payload.title,
-    topic: payload.topic,
+    topic: normalizeTopicAnnouncementTopic(payload.topic),
     video_url: payload.videoUrl,
   };
   let update = sbAdmin
