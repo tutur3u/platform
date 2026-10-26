@@ -9011,7 +9011,14 @@
     "verify_failed": "Failed to send verification",
     "verify_pending_toast": "A verification link is already pending",
     "verify_sent": "Verification email sent",
-    "workspace_timezone_required": "Set a fixed workspace timezone in calendar settings before scheduling sends."
+    "workspace_timezone_required": "Set a fixed workspace timezone in calendar settings before scheduling sends.",
+    "send_blocked_unverified": "Not sent: {count} recipients have not verified their email",
+    "send_blocked_unverified_helper": "The announcement was kept as it was. Send verification to {emails}, then send again once they confirm.",
+    "bulk_send_blocked_unverified": "{blocked} announcements were not sent because {contacts} recipients have not verified their email. They were kept, so you can send them after verification.",
+    "verify_bulk_result": "Verification sent to {sent} contacts; {pending} already had a pending link.",
+    "verify_bulk_rate_limited": "Sending limit reached: {count} contacts were not sent a link. Try again in a few minutes.",
+    "verify_bulk_failed": "{count} contacts could not be sent a link.",
+    "verify_all_unverified": "Send verification to {count} unverified"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Turn topic announcements on to keep a verified contact list and send reusable announcements from this workspace.",
