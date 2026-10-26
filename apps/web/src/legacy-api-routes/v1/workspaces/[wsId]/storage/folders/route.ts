@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   createWorkspaceStorageFolderObject,
   deleteWorkspaceStorageFolderByPath,
@@ -72,7 +72,7 @@ export async function POST(
     const folderPath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedName)
       : sanitizedName;
-    if (isReservedMobileDeploymentDrivePath(normalizedWsId, folderPath)) {
+    if (isExcludedDrivePath(normalizedWsId, folderPath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
@@ -153,7 +153,7 @@ export async function DELETE(
     const folderPath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedName)
       : sanitizedName;
-    if (isReservedMobileDeploymentDrivePath(normalizedWsId, folderPath)) {
+    if (isExcludedDrivePath(normalizedWsId, folderPath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

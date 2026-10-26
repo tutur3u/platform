@@ -26,10 +26,8 @@ import {
   sanitizePath,
 } from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
-import {
-  filterReservedMobileDeploymentDriveEntries,
-  isReservedMobileDeploymentDrivePath,
-} from './mobile-deployment/storage-policy';
+import { filterDriveEntries, isExcludedDrivePath } from './drive-path-policy';
+import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
 import { WorkspaceStorageError } from './storage-download-error';
 import { downloadGuardedSupabaseStorageObject } from './storage-download-object';
@@ -559,10 +557,7 @@ async function getR2Overview(
         continue;
       }
 
-      if (
-        !includeReservedForQuota &&
-        isReservedMobileDeploymentDrivePath(wsId, relativeKey)
-      ) {
+      if (!includeReservedForQuota && isExcludedDrivePath(wsId, relativeKey)) {
         continue;
       }
 
@@ -899,17 +894,15 @@ export async function listWorkspaceStorageDirectory(
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(options.path);
   assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
+  if (isExcludedDrivePath(wsId, relativePath))
+    throw new WorkspaceStorageError('Forbidden', 403);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const result = await listR2Directory(wsId, config, {
       ...options,
       path: relativePath,
     });
-    const data = filterReservedMobileDeploymentDriveEntries(
-      wsId,
-      relativePath,
-      result.data
-    );
+    const data = filterDriveEntries(wsId, relativePath, result.data);
 
     return {
       ...result,
@@ -936,7 +929,7 @@ export async function listWorkspaceStorageDirectory(
     throw new WorkspaceStorageError(error.message || 'Failed to list files');
   }
 
-  const filtered = filterReservedMobileDeploymentDriveEntries(
+  const filtered = filterDriveEntries(
     wsId,
     relativePath,
     (data ?? []).filter(

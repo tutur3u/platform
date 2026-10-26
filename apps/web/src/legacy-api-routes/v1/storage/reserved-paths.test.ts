@@ -86,7 +86,7 @@ describe('API-key storage reserved mobile deployment paths', () => {
   });
 
   it('rejects listing the mobile deployment vault prefix', async () => {
-    const { GET } = await import('./list/route');
+    const { GET } = await import('@/app/api/v1/storage/list/route');
 
     const response = await GET(
       new Request(
@@ -103,7 +103,7 @@ describe('API-key storage reserved mobile deployment paths', () => {
     mocks.createDynamicAdminClient.mockResolvedValue({
       storage: { from: vi.fn(() => ({ list })) },
     });
-    const { GET } = await import('./list/route');
+    const { GET } = await import('@/app/api/v1/storage/list/route');
     const path = 'docs?draft#final';
     const response = await GET(
       new Request(
@@ -400,6 +400,56 @@ describe('API-key storage reserved mobile deployment paths', () => {
     );
 
     await expectReserved(response);
+    expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
+  });
+});
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+
+describe('API-key Drive cannot expose private chat objects', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+  it.each([
+    'chats/ai/resources/member-a-chat/quarantined.html',
+    'chats/ai/resources/member-a-mind-thread/private.pdf',
+    'chats/member-a-conversation/private.png',
+    'external-apps/example/chat/conversation/attachment/private.pdf',
+  ])('rejects list, download, share and batch signing for %s', async (path) => {
+    const list = await import('@/app/api/v1/storage/list/route');
+    const download = await import(
+      '@/app/api/v1/storage/download/[...path]/route'
+    );
+    const share = await import('@/app/api/v1/storage/share/route');
+    const batch = await import('@/app/api/v1/storage/share-batch/route');
+    const responses = [
+      await list.GET(
+        new Request(
+          `http://localhost/api/v1/storage/list?path=${encodeURIComponent(path)}`
+        ) as Parameters<typeof list.GET>[0]
+      ),
+      await download.GET(
+        new Request(
+          'http://localhost/api/v1/storage/download/object'
+        ) as Parameters<typeof download.GET>[0],
+        { params: Promise.resolve({ path: path.split('/') }) }
+      ),
+      await share.POST(
+        createJsonRequest('POST', '/api/v1/storage/share', {
+          path,
+        }) as Parameters<typeof share.POST>[0]
+      ),
+      await batch.POST(
+        createJsonRequest('POST', '/api/v1/storage/share-batch', {
+          paths: ['documents/own.pdf', path],
+        }) as Parameters<typeof batch.POST>[0]
+      ),
+    ];
+    for (const response of responses) expect(response.status).toBe(403);
     expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
   });
 });

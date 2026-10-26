@@ -1,4 +1,4 @@
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   createWorkspaceStorageExportAssetUrl,
   createWorkspaceStorageExportToken,
@@ -93,7 +93,7 @@ export async function POST(
     if (!sanitizedPath) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
-    if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+    if (isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

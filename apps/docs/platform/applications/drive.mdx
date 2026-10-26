@@ -53,6 +53,27 @@ Protected storage APIs remain centralized in `apps/web`:
 When adding new Drive behavior, add the protected route in `apps/web`, expose it
 from `packages/internal-api`, and consume it from `apps/drive`.
 
+## Private attachment boundaries
+
+Drive permissions apply to ordinary Drive files. They do not grant access to
+application-owned chat attachments. In every workspace, Drive share, download,
+list, export, upload, rename, and delete boundaries reject the `chats` namespace
+(including AI chat, private Mind threads, temporary uploads, and native chat
+conversations) and `external-apps` chat storage. Root listings and Drive analytics
+omit those objects; quota accounting continues to count their bytes.
+
+This applies to Web, the Drive satellite, mobile Drive, and API-key storage APIs.
+Even an attachment's owner must use the owning application API for these paths.
+Chat and Mind APIs retain their own ownership and content checks, including
+quarantine; Drive cannot mint an alternate URL for a rejected attachment.
+Normal Drive files and the existing finance/task-specific permission rules stay
+available. Meet files intentionally saved into the owner's personal Drive retain
+that behavior.
+
+Regression coverage: the Web workspace storage share/list route tests,
+`legacy-api-routes/v1/storage/reserved-paths.test.ts`, and storage-core
+`drive-path-policy.test.ts` / `storage-analytics.test.ts`.
+
 ## CI/CD
 
 Preview and production deployments use dedicated Vercel workflows:
