@@ -20,6 +20,19 @@ and its focused regression coverage before adding a reason or changing middlewar
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
   for action/offline parity and separate raw-Host, header and browser acceptance.
 
+- Workspace ID boundary pilot: `@tuturuuu/utils/workspace-id` exports
+  `workspaceIdSchema` and its inferred `WorkspaceId` brand. The schema is the
+  only constructor; it reuses `normalizeWorkspaceContextId` for `personal` and
+  `internal` (the root UUID), accepts UUID literals, and has no framework imports.
+  In template background GET/HEAD, retain authentication and
+  `normalizeWorkspaceId` first so personal workspaces and existing handles keep
+  their resolution behavior, then parse the result inside the existing 400
+  handler. Pass `WorkspaceId` to the downstream `getBackgroundTemplate` query;
+  never cast raw route params into the brand. Parsing does not grant access:
+  preserve membership, workspace filters, visibility and creator checks.
+  Expand one resource at a time with its existing error envelope and regression
+  coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -566,6 +579,18 @@ Docker setup is inactive and the Docker cron runner is retired; local docs use
 
 ## Bounded billing projections
 
+Inventory reconciliation totals use `@tuturuuu/utils/finance-money` at API/database
+and display boundaries. Parse raw minor units once into `Money`, add with
+`addMoney`, and format with `formatMoney`; derive major-unit JSON only when
+serializing. Keep other Finance flows scoped to their existing contracts. See
+`apps/docs/platform/applications/finance.mdx` and the deterministic money/token
+property tests for the supported invariants and the separate #6840 follow-up.
+Inventory allocations retain their distinct Intl unit scale. Use the safe
+`finance-reconciliation-display` boundaries for rendered totals and allocations;
+malformed values render a neutral placeholder. Summary rows must validate every
+affected bucket before mutation; skip invalid/overflowing rows and warn with a
+count so one bad row cannot fail the whole summary or leave partial totals.
+
 Keep subscription group defaults separate from explicit operator choices. An
 empty selection after clearing a paid class is intentional; do not reapply
 select-all defaults during context or membership refetches. Reset that preference
@@ -735,6 +760,18 @@ visible. Load private rubrics only after session-owner and meeting-host checks;
 render the session snapshot. See the Parley product guide and studio setup,
 invitation, review-route and Meet-link regression tests. Keep shared chat mention
 markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
+
+## Calendar OAuth operator alerts
+
+Calendar OAuth spike alerts use the existing `create_notification` queue. Configure
+`CALENDAR_OAUTH_ALERT_RECIPIENTS` on Calendar. Resolve each address to a confirmed
+root-workspace member and pass only p_user_id to create_notification; email-only
+account_update rows are unsupported. Distinguish unresolved, preference-suppressed,
+HTTP-failed and status0/unknown writes. Verify queue acceptance separately from
+actual operator delivery. Keep the five-recipient bound, aggregate-only
+payload, hourly recurring-hold cadence and nonfatal delivery status; never retry
+an unknown notification write in the same run. The Calendar product decision
+and `oauth-spike-notification`/provider-cron tests define this contract.
 
 ## Immediate notification selection
 
@@ -1261,10 +1298,23 @@ assert the once-decoded request pathname and empty URL search/hash, including
 `%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
 section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
 
+
+### Drive and private attachment storage
+
+Use `@tuturuuu/storage-core/drive-path-policy` at Drive boundaries, including
+mutations and export capabilities. `view_drive` and `manage_drive` never authorize
+`chat/**`, `chats/**` (AI chat, Mind, temporary/native/voice resources),
+`external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, or `recordings/**` private
+media. Use the owning application's authorization and content guard for private
+reads. Preserve private-byte quota accounting while
+excluding private filenames/sizes from Drive listings and analytics. Do not put
+this Drive-only denial in the generic storage read signer: authorized native chat
+and Meet callers also use it. See the Drive application's private attachment
+boundaries decision and its route/policy regressions.
+
 ## Standalone API foundation
 
 For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
-
 
 Calendar provider-sync envelopes distinguish productive `ok` runs from a
 provider whose entire nonempty sample failed transiently. Keep the bounded

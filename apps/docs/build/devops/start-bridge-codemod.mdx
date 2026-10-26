@@ -147,16 +147,17 @@ the hold and merges just before the flip.
 ### Worker options
 
 `start-bridge.config.ts` at the app root is app-owned: the codemod creates
-it once (`defineBridgeAppConfig({})`) and never updates or replaces it. The
+it once (with the shared response policy below) and never updates or replaces it. The
 generated `cloudflare/worker.ts` passes its options on, so an app changes
 Worker behaviour without editing generated files:
 
 | Option | Effect |
 | --- | --- |
 | `csp(nonce, { request, response, path })` | `createBridgeHandler({ csp })`: the response's Content-Security-Policy; the generated router already stamps the nonce. Return `null` to keep the response's own policy. Framable paths (`@tuturuuu/utils/framable-paths`, e.g. Web's uploaded WebGL builds with their `sandbox` CSP) always keep the upstream policy untouched |
+| `framablePaths` | App-relative path regexes other origins may frame, beyond the platform list in `@tuturuuu/utils/framable-paths`. The generated Worker passes them to the handler `csp` and the response policy, which leave their upstream CSP untouched and set no `X-Frame-Options` |
 | `mounts` | Overrides the generated hosts, `basePath` or `unknownHost` (`'reject'` answers 404 for unlisted hosts) |
 | `apiOrigin(request, { env, path })` | Origin for one unowned `/api/*` request (e.g. Storefront's `/api/v1/inventory/**` to Inventory); `undefined` keeps the central Web API. Forwarding keeps the central forward's base stripping, loop guard and header removal |
-| `wrapResponse(response, { request, env })` | Decorates every response, e.g. a staging noindex header |
+| `wrapResponse(response, { request, env, mounts, publicAssets })` | Decorates every response; use the shared response policy below. The Worker passes its effective mounts and public files |
 | `worker: { workersDev?, compatibilityFlags? }` | Generated Worker settings, applied when the codemod runs: `workers_dev` (default off when `mounts.unknownHost` is `'reject'`, otherwise on) and flags added to the always-on `nodejs_compat` and `global_fetch_strictly_public` (e.g. AI's `enable_request_signal`). They reach `void.config.ts`, the sealed artifact identity and the runtime test, which fails if the config changed without a re-run. A `workers.dev` root host with `workers_dev` off is a codemod problem |
 
 API paths the app owns but forwards (Storefront's Inventory APIs) are listed
@@ -168,6 +169,51 @@ local routes, and the Worker, finding no local handler, forwards them through
 by the browser. The codemod and the runtime test load it with Node's type
 stripping, so keep its imports strippable (packages, or relative paths with
 their `.ts` extension).
+
+### Response policy
+
+Every app uses one tested policy instead of hand-rolled `wrapResponse` code,
+which in four separate reviews kept repeating the same three bugs:
+- caching set only as a default, so a handler's `public, max-age` survived;
+- an asset exemption that ignored the method, so `POST /assets/x` escaped;
+- an existing CSP passed through without `frame-ancestors`.
+
+```ts
+import {
+  appRobots,
+  createRootResponsePolicy,
+} from '@tuturuuu/start-bridge/response-policy';
+import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+
+export default defineBridgeAppConfig({
+  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
+  framablePaths: [/^\/embed\//u], // only if other origins may frame these paths
+});
+```
+
+- **Every response** gets:
+  - `X-Robots-Tag` from `seo`. `appRobots` reads the app's `seo-policy.json` entry, which the codemod emits into the generated Worker (no runtime JSON). A response is left indexable only on the public allowlist on the canonical origin, outside reserved paths (`api`, `login`, `dashboard`, `embed`, ..., in any letter case, as Next's header sources match). Each path segment is decoded once before both checks, so `/%61uth` is `/auth`, and a malformed escape, an encoded `/` or `\`, or a double encoding stays private. Staging deployments (`TUTURUUU_NOINDEX=1`) are never indexable either. Everything else gets `PRIVATE_ROBOTS_HEADER`. An upstream `noindex` is never overridden;
+  - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`;
+  - outside framable paths, `X-Frame-Options: DENY`, and `frame-ancestors 'none'` in every CSP policy. An existing `frame-ancestors` is replaced in any letter case, each comma-separated or repeated header policy is covered, and a response without a CSP gets `csp` (default `frame-ancestors 'none'`).
+- **Caching:** only `GET`/`HEAD` requests for `/assets/*` or the app's public files keep their own caching, unless they answer HTML. Every other response is set, not defaulted, to `Cache-Control: private, no-store`, and gains `Vary: Cookie`.
+- **Framable paths:** the platform list (`@tuturuuu/utils/framable-paths`, Web's uploaded WebGL builds at `/api/v1/workspaces/*/external-projects/assets/*/webgl`), the app's `framablePaths` and the policy's own `framable`. These keep the upstream CSP byte-for-byte, or its absence, and any upstream `X-Frame-Options` (`DENY`/`SAMEORIGIN`) is removed. Web's `sandbox allow-scripts ...` policy must reach the browser, or uploaded scripts run unsandboxed on the app origin. The handler `csp` skips the platform list and app-config `framablePaths`. The policy-only `framable` option leaves the CSP it receives unchanged and does not bypass the handler; use app-config `framablePaths` when the app sets `csp`. Matching is case-sensitive, unlike Next's header `source` matching; that's harmless because central's routes are case-sensitive. One stateless matcher is shared by the handler and the policy: `g`/`y` patterns are cloned without those flags, so `lastIndex` never changes a result.
+- **Failures:** a throw in the proxy, an endpoint, Start or the route load answers the bridge's generic `500 Internal Server Error`. The details go only to `console.error`, and the response still goes through `wrapResponse`, so it gets no-store, robots and framing headers too. Hand-rolled wrappers that apps keep until they migrate also receive this generic 500, where a handler throw used to escape uncaught. They still run, and still see no error details.
+- **Paths:** framable and asset paths are matched app-relative, so on the `tuturuuu.com/<app>` mount the base is stripped first. WebSocket upgrades (101) pass through untouched.
+
+Migrating an app with a hand-rolled `wrapResponse` (Finance, Tasks, Track,
+Storefront):
+
+1. Replace the function with `createRootResponsePolicy({ seo })`.
+   Put shared framing exceptions in app-config `framablePaths`, as above.
+   Keep the app's robots value as `seo`, for example `'noindex, nofollow, nosnippet'`.
+2. Drop any import of `./src/start-bridge/public-assets.bridge.gen`. The Worker
+   now passes `publicAssets`, and an extensionless relative import cannot be
+   loaded by the codemod or the runtime test, which read the config with Node's
+   type stripping.
+3. Keep `csp` (the nonce policy) as it is. The response policy adds
+   `frame-ancestors 'none'` to it.
+4. Re-run the codemod for the app, so its `cloudflare/worker.ts` passes
+   `mounts` and `publicAssets`, then run `bun check:changed`.
 
 ### Route handlers load lazily
 
@@ -209,7 +255,22 @@ Shortener:
   emitted-Worker smoke run on the sealed artifact, with all egress denied:
   Worker identity, public-file parity, build identity when the app has
   `/api/build-info` (read anonymously, as production smoke does: an app whose
-  proxy guards API routes must admit exact `GET`/`HEAD /api/build-info`), the page outcomes the app declares, and no server error on an unknown path.
+  proxy guards API routes must admit exact `GET`/`HEAD /api/build-info`), the page outcomes the app declares, no server error on an unknown path, and
+  the response policy (no-store, `X-Robots-Tag`, `X-Frame-Options: DENY` and
+  `frame-ancestors 'none'`) on real responses, after checking their status and
+  content: a page rendering 200 HTML (by default the first `runtime` path
+  expecting 200), a 200 JSON API response (`/api/build-info`) and a 404 HTML
+  page (`/__native-smoke-missing__`). `runtimeProbes` in
+  `start-bridge.routes.json` overrides a probe's path, or skips it with
+  `{ "skip": "<reason>" }`. A skipped page or 404 probe must also name the
+  app's own runtime test that covers it, as
+  `"fixture": "cloudflare/<name>.runtime.mjs"`. For example, an auth-only app
+  whose `/` redirects to login names its isolated-auth fixture. The fixture must
+  be a distinct app-owned file that `test:runtime`'s `cloudflare/*.runtime.mjs`
+  glob selects: never the generated gate itself, and never a dotfile, which the
+  glob skips. The codemod and the gate both check this and that the fixture
+  exists, and at least one probe must always run. A probe the codemod can neither default nor find declared, or a
+  set that skips every probe, is a codemod problem.
   The test reads the Worker's effective mounts (the generated defaults plus
   `mounts` in the app-owned `start-bridge.config.ts`, loaded with Node's type
   stripping, so keep that file's imports strippable) and probes with raw
@@ -250,7 +311,11 @@ The gate:
 - Signs a disposable app session with a random coordination secret.
 - Answers every Supabase and Web request in-process: the fixture user, the
   profile's rows and Web responses, empty reads, and 401 for any other Web
-  API read. Any other Worker or browser request fails the run.
+  API read. A request to the app's own root host goes back to the Worker
+  under test, as a same-zone fetch does in production under
+  `global_fetch_strictly_public`. A self-fetch loop (more than 8 nested or
+  200 total) is stopped with `508` and fails the run. Any other Worker or browser request fails
+  the run, and an SSR failure lists it.
 - For each locale, follows the signed-in SSR redirects. They must stay on the
   root host and end on a `200` page with `<html lang>`, emitted assets and
   `private, no-store`. Chromium then loads the same path and must hydrate.
@@ -276,8 +341,9 @@ Each app owns its profile at `apps/<app>/cloudflare/root-browser.profile.mjs`
 | `browser` | Extra browser origins: `{ origin, fulfill: 'image' \| 401 }` (e.g. a default avatar host) |
 | `serviceWorkers` | Omitted or `'block'` (default): the fixture browser blocks service workers, because a registered one answers requests before the gate's routing and would be measured instead of the Worker; the gate also asserts no service worker controls the page. `{ mode: 'allow', reason }` only for an explicit offline/service-worker run. Any other value fails validation. Every `PASS` line and the `ROOT_BROWSER_PASS` receipt record the mode |
 
-Regressions for the profile, session, egress and SSR rules run with
-`node --test scripts/ci/native-root-browser.test.mjs`.
+Regressions for the profile, session, egress, self-fetch and SSR rules, and a
+check that every `apps/*/cloudflare/root-browser.profile.mjs` is valid, run
+with `node --test scripts/ci/native-root-browser.test.mjs`.
 
 ### Generator inputs
 

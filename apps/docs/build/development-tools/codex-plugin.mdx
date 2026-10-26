@@ -82,6 +82,30 @@ representative read, mutation, implementation, and delivery requests for correct
 routing. Record any isolated behavioral evaluation separately. Live product AI
 prompts need their own behavior evaluation before changing their contracts.
 
+## Typed workspace boundaries
+
+`@tuturuuu/utils/workspace-id` owns the framework-free `workspaceIdSchema` and
+its inferred `WorkspaceId` type. Construct the brand only through the schema.
+It accepts UUID literals (including the root UUID), `personal`, and `internal`;
+alias casing and surrounding whitespace use the existing workspace-context
+normalizer. Empty input is invalid, rather than defaulting to a personal workspace.
+
+The first adoption is template background GET/HEAD. Preserve authentication and
+call the existing `normalizeWorkspaceId` before parsing its result: this retains
+personal workspace lookup and custom handle resolution. Keep the existing
+`400 { error: 'Invalid workspace ID' }` error envelope and pass the parsed ID to
+`getBackgroundTemplate`, whose parameter rejects an unparsed string. Membership,
+workspace filtering, creator and visibility checks still enforce authorization.
+Other resource families retain their current types and responses.
+
+Regression coverage lives in `packages/utils/src/__tests__/workspace-id.test.ts`
+(UUID/alias tables, deterministic fast-check properties and type assertions),
+the colocated template background route tests (normalization, error responses,
+HEAD and tenant isolation), and
+`apps/web/src/__tests__/board-template-background-authorization.test.ts`.
+Adopt this pattern one resource at a time, preserving its error contract and
+testing alias resolution and access checks before publication.
+
 ## Discovery
 
 Codex discovers repo-local plugins through

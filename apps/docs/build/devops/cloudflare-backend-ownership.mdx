@@ -1,7 +1,7 @@
 ---
 title: "Cloudflare backend ownership"
 description: "New schedules, queues and heavy background work run on Cloudflare; a shrink-only guard holds the legacy owners."
-updatedAt: '2026-10-23'
+updatedAt: '2026-10-26'
 ---
 
 ## Decision
@@ -12,16 +12,38 @@ not add them as Vercel Cron entries, Next.js `after()` continuations, new
 `/api/cron` processor routes, pg_cron jobs, Supabase Edge Functions or Trigger.dev
 tasks. This applies to all new services and to every legacy owner as it migrates.
 
-Supabase remains the system of record. The rule moves **compute and scheduling**,
-not data: Workers keep using the existing Supabase tables, RPCs, claims and RLS
-through injected credentials. It does not authorize a database migration, a new
-datastore or a production cutover.
-
 Every Cloudflare job must meet the
 [runaway-work and cost acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
 rules: bounded work and retries, idempotent progress, no rescheduling after a
 terminal state, and a tested durable stop fence. Usage alerts and CPU limits are
 not spending caps.
+
+## Target platform
+
+The target platform is **Cloudflare**: Workers, Hyperdrive in front of Postgres,
+R2, Durable Objects, Queues and [Cron Control](/build/devops/cloudflare-cron-control).
+The managed Postgres host is still to be decided.
+
+Supabase (Postgres host and Auth) and Vercel (hosting and crons) are
+**transitional** systems of record. They stay in service until migration phases
+retire them. Until then, Workers keep using the existing Supabase tables, RPCs,
+claims and RLS through injected credentials. This page does not authorize a
+database migration, a new datastore or a production cutover. Each one needs its
+own reviewed change.
+
+Pending user decisions, not settled here: the Postgres host, the auth
+implementation, acceptable user impact (re-login, mobile upgrade, write freeze),
+the RLS end state, the `web` hosting path, and keeping the paused runtimes out of
+scope.
+
+### Stop-list
+
+Effective now. Existing usage keeps working; this list has no retirement dates.
+
+- No new Supabase-only features: Edge Functions, new Realtime channels, new
+  Supabase Storage buckets or new Auth providers.
+- No new Vercel crons and no Vercel edge or middleware-specific configuration.
+- No new direct Supabase calls from the mobile app. Go through the app API.
 
 ## Choose the Cloudflare primitive
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
@@ -10,6 +10,9 @@ import {
   CONSENT_RESTART_WINDOW_MS,
 } from './google-consent-restart';
 
+beforeEach(() => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
 afterEach(() => vi.restoreAllMocks());
 const T0 = Date.UTC(2026, 9, 26, 8, 1);
 const input = {
@@ -74,5 +77,40 @@ describe('Google automatic consent restart admission', () => {
     expect(
       await admitGoogleConsentRestart({ ...input, client: ledger.client })
     ).toEqual({ kind: 'unavailable', retryAfterSeconds: 540 });
+    expect(console.warn).toHaveBeenCalledWith(
+      'calendar.oauth.token_outcome',
+      expect.objectContaining({
+        outcome: 'consent_restart_unavailable',
+        account: expect.any(String),
+        attempts: 0,
+      })
+    );
+    expect(console.error).toHaveBeenCalledWith(
+      'Failed to record calendar OAuth consent restart',
+      expect.anything()
+    );
   });
+});
+
+it('leaves one minute of nonce expiry margin at the window boundary', async () => {
+  const ledger = createFakeCalendarOAuthNonceLedger();
+  const now = Date.UTC(2026, 9, 26, 8, 9, 59);
+  expect(
+    (await admitGoogleConsentRestart({ ...input, now, client: ledger.client }))
+      .kind
+  ).toBe('allowed');
+  expect(ledger.calls.map(({ args }) => Date.parse(args.p_expires_at))).toEqual(
+    [now + 60_000]
+  );
+  expect(
+    (await admitGoogleConsentRestart({ ...input, now, client: ledger.client }))
+      .kind
+  ).toBe('limited');
+  expect(console.warn).toHaveBeenCalledWith(
+    'calendar.oauth.token_outcome',
+    expect.objectContaining({ outcome: 'consent_restart_limited' })
+  );
+  expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toContain(
+    input.account
+  );
 });

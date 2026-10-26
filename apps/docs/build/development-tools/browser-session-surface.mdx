@@ -1,0 +1,62 @@
+---
+title: "Browser session-surface guard"
+description: "The shrink-only check that stops new browser access to session tokens while the shared session moves to a server-held HttpOnly cookie."
+---
+
+The shared session is moving to a server-held `HttpOnly` cookie that page
+script cannot read (shared-session decision (b); see
+[Authentication](/platform/architecture/authentication)).
+Until every browser-side use is migrated, `scripts/check-browser-session-surface.js`
+keeps the existing surfaces from growing. It runs in `bun check:changed`
+whenever app or package source changes, and in `bun check`/`bun validate`.
+
+## Rules
+
+The guard scans `apps/*/src` and `packages/*/src`. It skips tests, stories,
+generated output and the paused `backend` and `tanstack-web` runtimes.
+
+**Limits.**
+- Only `src/` trees are scanned. App-root files such as `next.config.ts`,
+  Worker entries outside `src/`, and `scripts/` are not covered.
+- The Flutter app (Dart) is excluded. It holds bearer tokens in native secure
+  storage by design.
+- The rules are lexical. A token returned through an indirect variable, or a
+  client created through a re-exported helper, needs review rather than this
+  guard.
+
+| Rule | Matches | Baseline |
+| --- | --- | --- |
+| `browserSupabaseClientImports` | Imports, dynamic imports or `require` of `@tuturuuu/supabase/next/client` or `next/auth-browser`; `createBrowserClient` from `@supabase/ssr`; `@supabase/supabase-js` `createClient` in a `'use client'` module | 91 files, including the `packages/supabase` definition sites |
+| `postgresChangesSubscriptions` | A `'postgres_changes'` string literal (a realtime subscription that needs a JS-held session) | 0 |
+| `sessionCookieScriptAccess` | A file that uses `document.cookie` and names `sb-`, `auth-token` or `app_session` anywhere | 0 |
+| `sessionTokenResponses` | An `access_token`/`refresh_token` (or camelCase) key, plain, quoted or shorthand, in a file that builds JSON responses, `{ body: … }` results or `new Response(JSON.stringify(…))`; or a `.json(session)` dump | 41 files, each with a reason |
+
+The allowlist is `scripts/browser-session-surface-allowlist.json`, and it only
+shrinks:
+
+- A new match fails. Fix it by calling a same-origin API through
+  `@tuturuuu/internal-api`, never by adding a browser client.
+- A token response that must exist (native, CLI or provider OAuth) needs an
+  allowlist entry with a `reason` and a security review.
+- An entry that no longer matches also fails until it is removed, so migrated
+  files drop out of the list.
+
+## Short-lived capabilities inventory
+
+Script may hold a capability only when it is scoped to one topic or object,
+lasts at most 5 minutes (15 minutes for private download links) and cannot be
+exchanged for a session. Inventory as of 26 Oct 2026:
+
+| Capability | Where | Lifetime | Status |
+| --- | --- | --- | --- |
+| Realtime channel join ticket | `apps/web/src/app/api/v1/realtime/channels/route.ts` | 60 s, one topic | Within bounds |
+| Meet collaboration-room ticket | `apps/meet-realtime/src/collaboration-room-do.ts` | 30 s | Within bounds |
+| Cross-app handoff token | `generate_cross_app_token` | 60 s (300 s for CLI) once the bounds migration ships | Bounded |
+| Chat file and time-tracking image signed URLs | `ai/chat/file-urls`, `ai/chat/signed-read-url`, `time-tracking/requests/[id]/image-urls` | 3600 s | Clamp to at most 15 min |
+| AI image and QR tool outputs | `packages/ai/src/tools/executors/{image,qr}.ts` | 30 days | Clamp, or serve through an authorized route |
+| User avatar signed URL | `packages/users-core/src/routes/users/avatar.ts` | 1 year | Clamp, or serve public avatars through an authorized route |
+| Task update attachment signed URL | `apps/tasks/.../updates/[updateId]/attachments/route.ts` | 1 year | Clamp |
+
+The Meet `*-check.ts` tickets (600–1800 s) are integration-check fixtures, not
+browser capabilities. The clamps are scheduled with the storage helper
+migration in the shared-session plan.

@@ -26,16 +26,21 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { formatInventoryReconciliationAmount } from '@tuturuuu/utils/finance-reconciliation-display';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
-  formatInventoryReconciliationAmount,
   InventoryReconciliationEntryRow,
   inventoryProviderTranslationKey,
 } from './inventory-reconciliation-entry-row';
 
 const ALL = 'all';
 const NONE = 'none';
+type LinkGroup = {
+  categoryId: string | null;
+  entryIds: string[];
+  walletId: string;
+};
 const providerValues: Array<InventoryFinanceProvider | typeof ALL> = [
   ALL,
   'cash',
@@ -139,10 +144,7 @@ export function InventoryReconciliationPanel({
   const applyDefaultsMutation = useMutation({
     mutationFn: async () => {
       const mappings = mappingsQuery.data?.mappings ?? [];
-      const groups = new Map<
-        string,
-        { categoryId: string | null; entryIds: string[]; walletId: string }
-      >();
+      const groups = new Map<string, LinkGroup>();
       for (const entry of selectedEntries) {
         const mapping = mappings.find(
           (item) =>
@@ -152,7 +154,7 @@ export function InventoryReconciliationPanel({
         );
         if (!mapping?.walletId) throw new Error('missing-mapping');
         const key = `${mapping.walletId}:${mapping.categoryId ?? ''}`;
-        const group = groups.get(key) ?? {
+        const group: LinkGroup = groups.get(key) ?? {
           categoryId: mapping.categoryId,
           entryIds: [],
           walletId: mapping.walletId,
@@ -203,7 +205,7 @@ export function InventoryReconciliationPanel({
         ? pending
             .map(
               (item) =>
-                `${item.count} · ${formatInventoryReconciliationAmount(item.amount, item.currency)}`
+                `${item.count} · ${formatInventoryReconciliationAmount(item.amountMinor, item.currency)}`
             )
             .join(' / ')
         : t('nothing_pending'),

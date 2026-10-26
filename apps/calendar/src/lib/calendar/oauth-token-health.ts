@@ -140,8 +140,8 @@ export function summarizeCalendarTokenOutcomes(
 
 /**
  * Deactivation-spike alert hook. Fires on many quarantines, deferred
- * quarantines, breaker holds, or any systemic failure. Emits one error-level line that the cron log drain stores with
- * its metadata; Infrastructure monitoring filters on the event name.
+ * quarantines, breaker holds, or any systemic failure. Emits an error-level log
+ * and returns whether the provider cron should queue an operator notification.
  */
 export function reportCalendarDeactivationSpike(
   route: string,
@@ -152,11 +152,20 @@ export function reportCalendarDeactivationSpike(
   // Deactivations are new by definition. Holds, deferrals and systemic
   // failures repeat every run, so they alert in the first run of each hour.
   const recurringDue = now % SPIKE_REPEAT_MS < CRON_INTERVAL_MS;
+  const transientProviders = [
+    ...new Set(outcomes.map((entry) => entry.provider)),
+  ].filter((provider) =>
+    outcomes
+      .filter((entry) => entry.provider === provider)
+      .every((entry) => entry.outcome === 'transient')
+  );
   if (
     counts.deactivated < DEACTIVATION_SPIKE_THRESHOLD &&
     !(
       recurringDue &&
-      counts.deactivation_deferred + counts.consensus_hold + counts.systemic > 0
+      (counts.deactivation_deferred + counts.consensus_hold + counts.systemic >
+        0 ||
+        transientProviders.length > 0)
     )
   )
     return false;
@@ -171,6 +180,8 @@ export function reportCalendarDeactivationSpike(
     deferred: counts.deactivation_deferred,
     held: counts.consensus_hold,
     systemic: counts.systemic,
+    transient: counts.transient,
+    transientProviders,
     evaluated: outcomes.length,
     reasons,
   });
