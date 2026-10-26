@@ -9,8 +9,10 @@ import {
   consumeApproval,
   issueApproval,
   loadLedger,
+  MAX_OBJECT_ATTEMPTS,
   mergeSelection,
   planDigest,
+  requeueFailed,
   saveLedger,
   transition,
 } from './ledger.mjs';
@@ -67,7 +69,40 @@ test('terminal states never move and old_deleted cannot be rolled back', () => {
     }
   }
   assert.ok(canTransition('failed', 'rolled_back'));
-  assert.equal(canTransition('failed', 'copied'), false);
+});
+
+test('failed rows resume only to their recorded state, within the attempt bound', () => {
+  const ledger = loadLedger('/nonexistent/ledger.json', scope, { now: 't' });
+  mergeSelection(ledger, [row('a'), row('b'), row('c')], { now: 't' });
+  const { a, b, c } = ledger.objects;
+  for (const entry of [a, b, c]) {
+    transition(entry, 'copied');
+    transition(entry, 'verified');
+    transition(entry, 'refs_updated');
+    entry.attempts = 1;
+    transition(entry, 'failed', {
+      patch: { errorCode: 'delete_http_503', failedFrom: 'refs_updated' },
+    });
+  }
+  assert.throws(() => transition(a, 'copied'), {
+    code: 'ERR_LEDGER_TRANSITION',
+  });
+  c.attempts = MAX_OBJECT_ATTEMPTS;
+  b.failedFrom = null;
+  const result = requeueFailed(ledger, 'chats', { now: 't2' });
+  assert.deepEqual(result, { requeued: ['a'], exhausted: ['b', 'c'] });
+  assert.equal(a.state, 'refs_updated');
+  assert.equal(a.errorCode, null);
+  assert.equal(b.state, 'failed');
+});
+
+test('approvals cover failed rows, so a retry needs a fresh token', () => {
+  const ledger = loadLedger('/nonexistent/ledger.json', scope, { now: 't' });
+  mergeSelection(ledger, [row('a')], { now: 't' });
+  const before = planDigest(ledger, 'chats');
+  ledger.objects.a.attempts = 1;
+  transition(ledger.objects.a, 'failed', { patch: { failedFrom: 'selected' } });
+  assert.notEqual(planDigest(ledger, 'chats'), before);
 });
 
 test('transition records history and rejects illegal moves', () => {

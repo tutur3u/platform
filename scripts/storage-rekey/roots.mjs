@@ -129,6 +129,9 @@ const REF_UPDATES = {
       scope: aiChatScope(from),
     }),
   ],
+  // Mira image keys name no chat, so this rewrite scans ai_chat_messages once
+  // per object. Fine for the current scope (3 objects); scope it by message id
+  // before running on a large Mira set.
   'mira/images': ({ from, to, wsId }) => [
     jsonRewrite({
       name: 'ai_chat_messages',

@@ -4,8 +4,8 @@
 //
 //   node scripts/storage-rekey/cli.mjs --project-ref <ref> --environment <env> \
 //     --ledger <file> --root <chats|mira/images|.tuturuuu> [--dry-run]
-//   ... --execute --approve-token <one-time value>
-//   ... --rollback --approve-token <one-time value>
+//   ... --execute --approve-token-file <mode-600 file> [--retry-failed]
+//   ... --rollback --approve-token-file <mode-600 file>
 //   ... --issue-token   (fresh one-time token for the current pending set)
 //   ... --status
 //
@@ -22,6 +22,7 @@ import {
   issueApproval,
   loadLedger,
   mergeSelection,
+  requeueFailed,
   rowsForRoot,
   saveLedger,
 } from './ledger.mjs';
@@ -52,7 +53,8 @@ export function parseCli(argv) {
       'issue-token': { type: 'boolean' },
       'references-confirmed': { type: 'boolean' },
       'ws-id': { type: 'string' },
-      'approve-token': { type: 'string' },
+      'approve-token-file': { type: 'string' },
+      'retry-failed': { type: 'boolean' },
       'stop-file': { type: 'string' },
       'batch-size': { type: 'string', default: String(MAX_BATCH_SIZE) },
       'max-ops': { type: 'string', default: '500' },
@@ -80,8 +82,16 @@ export function parseCli(argv) {
   if (mode !== 'status' && !ROOTS[values.root]) {
     throw new Error(`--root is required: ${Object.keys(ROOTS).join(', ')}`);
   }
-  if ((mode === 'execute' || mode === 'rollback') && !values['approve-token']) {
-    throw new Error(`--${mode} requires --approve-token`);
+  // The one-time token is read from a mode-600 file, never argv, so it does not
+  // appear in process listings or shell history.
+  if (
+    (mode === 'execute' || mode === 'rollback') &&
+    !values['approve-token-file']
+  ) {
+    throw new Error(`--${mode} requires --approve-token-file`);
+  }
+  if (values['retry-failed'] && mode !== 'execute') {
+    throw new Error('--retry-failed is only valid with --execute');
   }
   if (
     mode === 'execute' &&
@@ -125,7 +135,8 @@ export function parseCli(argv) {
     ledgerFile: values.ledger,
     root: values.root,
     wsId: values['ws-id'] ?? null,
-    approveToken: values['approve-token'],
+    approveTokenFile: values['approve-token-file'],
+    retryFailed: Boolean(values['retry-failed']),
     stopFile: values['stop-file'] ?? `${values.ledger}.STOP`,
     batchSize,
     maxOps,
@@ -222,7 +233,18 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       return 0;
     }
 
-    consumeApproval(ledger, options.root, options.approveToken, { now: now() });
+    consumeApproval(
+      ledger,
+      options.root,
+      readSecretFile(options.approveTokenFile),
+      { now: now() }
+    );
+    if (options.retryFailed) {
+      const { requeued, exhausted } = requeueFailed(ledger, options.root, {
+        now: now(),
+      });
+      log('retry_failed', { root: options.root, requeued, exhausted });
+    }
     save();
     const serviceKey = await fetchServiceRoleKey({
       projectRef: options.projectRef,

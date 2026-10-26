@@ -34,14 +34,15 @@ export const TERMINAL_STATES = new Set([
   'rolled_back',
 ]);
 
-// Forward path plus the explicit escape hatches. `failed` rows stay where an
-// operator can inspect them and roll back; they never resume automatically.
+// Forward path plus the explicit escape hatches. A `failed` row records the
+// state it failed from; it resumes only to that state (`--retry-failed`, under
+// a fresh approval) or is rolled back. // operator can inspect them and roll back; they never resume automatically.
 const TRANSITIONS = Object.freeze({
   selected: ['copied', 'skipped', 'failed'],
   copied: ['verified', 'skipped', 'failed', 'rolled_back'],
   verified: ['refs_updated', 'skipped', 'failed', 'rolled_back'],
   refs_updated: ['old_deleted', 'failed', 'rolled_back'],
-  failed: ['rolled_back'],
+  failed: ['rolled_back', 'selected', 'copied', 'verified', 'refs_updated'],
   old_deleted: [],
   skipped: [],
   rolled_back: [],
@@ -154,6 +155,7 @@ export function mergeSelection(ledger, rows, { now }) {
       state: row.skipReason ? 'skipped' : 'selected',
       skipReason: row.skipReason ?? null,
       errorCode: null,
+      failedFrom: null,
       attempts: 0,
       refs: null,
       probe: null,
@@ -164,8 +166,12 @@ export function mergeSelection(ledger, rows, { now }) {
   return added;
 }
 
+export const MAX_OBJECT_ATTEMPTS = 3;
+
 export function transition(entry, to, { now, patch = {} } = {}) {
-  if (!canTransition(entry.state, to)) {
+  const resumesElsewhere =
+    entry.state === 'failed' && to !== 'rolled_back' && to !== entry.failedFrom;
+  if (!canTransition(entry.state, to) || resumesElsewhere) {
     throw new LedgerError(
       `Illegal ledger transition ${entry.state} -> ${to}`,
       'ERR_LEDGER_TRANSITION'
@@ -193,9 +199,36 @@ export function countByState(entries) {
   return counts;
 }
 
-/** Digest of the exact pending object set an approval covers. */
+/** Rows an approval covers: pending work plus failed rows (retry/rollback). */
+function approvalScope(ledger, root) {
+  return rowsForRoot(ledger, root).filter(
+    (entry) => !TERMINAL_STATES.has(entry.state) || entry.state === 'failed'
+  );
+}
+
+/**
+ * Resumes failed rows at the state they failed from, so a transient failure
+ * (for example at delete, with refs already on the new key) can finish instead
+ * of leaving the old key and its leaked URLs live. Rows that exhausted their
+ * attempts stay failed for rollback.
+ */
+export function requeueFailed(ledger, root, { now } = {}) {
+  const result = { requeued: [], exhausted: [] };
+  for (const entry of rowsForRoot(ledger, root)) {
+    if (entry.state !== 'failed') continue;
+    if (!entry.failedFrom || entry.attempts >= MAX_OBJECT_ATTEMPTS) {
+      result.exhausted.push(entry.id);
+      continue;
+    }
+    transition(entry, entry.failedFrom, { now, patch: { errorCode: null } });
+    result.requeued.push(entry.id);
+  }
+  return result;
+}
+
+/** Digest of the exact object set an approval covers. */
 export function planDigest(ledger, root) {
-  const ids = pendingForRoot(ledger, root)
+  const ids = approvalScope(ledger, root)
     .map((entry) => `${entry.id}:${entry.state}`)
     .sort();
   return createHash('sha256')

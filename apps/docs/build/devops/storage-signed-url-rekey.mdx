@@ -89,9 +89,14 @@ in the same refs step.
 
 ### `mira/images/`
 
-- `public.ai_chat_messages.metadata` `storagePath`: rewritten.
+- `public.ai_chat_messages.metadata` `storagePath`: rewritten. The key names
+  no chat, so each object's update scans `ai_chat_messages`. That is
+  acceptable for the 3 objects in scope. Scope it by message before using the
+  tool on a large Mira set.
 - `private.ai_credit_reservations.metadata` and `public.ai_credit_transactions.metadata` `storagePath`: rewritten, scoped by workspace. These are audit records.
-- The stored 30-day `imageUrl` is a signed URL for the old key, so it stops rendering by design. Signing on read is tracked separately.
+- The stored `imageUrl` is a signed URL for the old key. The chat UI signs
+  `storagePath` on read and falls back to `imageUrl` only when no path is
+  available. That UI change must be deployed before the `mira/images` run.
 
 ### `.tuturuuu/`
 
@@ -132,7 +137,8 @@ REKEY="node scripts/storage-rekey/cli.mjs --project-ref $PROD_PROJECT_REF \
 Run the roots in the approved order. For each root:
 
 1. **Dry run (read-only).** This writes `selected` and `skipped` rows plus a
-   mode-600 approval token file, `<ledger>.<root>.approve-token`.
+   mode-600 approval token file, `<ledger>.<root slug>.approve-token`, where the
+   slug is `chats`, `mira_images` or `_tuturuuu`.
 
    ```bash
    $REKEY --root chats            # then: --root mira/images, --root .tuturuuu
@@ -141,26 +147,41 @@ Run the roots in the approved order. For each root:
    Attach the printed per-state counts and the skipped ids to the approval
    record. Then stop and get the release authority's GO.
 
-2. **Execute.** The token works once and is bound to the exact pending set. If
-   the set changes, the token is rejected.
+2. **Execute.** The token works once and is bound to the exact set of pending
+   and failed rows. If that set changes, the token is rejected. The tool reads
+   the token from its mode-600 file and never accepts it on the command line,
+   so it stays out of process listings and shell history.
 
    ```bash
-   $REKEY --execute --root chats --approve-token "$(cat $LEDGER_DIR/ledger.json.chats.approve-token)"
-   $REKEY --execute --root mira/images --approve-token "$(cat $LEDGER_DIR/ledger.json.mira_images.approve-token)"
+   $REKEY --execute --root chats --approve-token-file $LEDGER_DIR/ledger.json.chats.approve-token
+   $REKEY --execute --root mira/images --approve-token-file $LEDGER_DIR/ledger.json.mira_images.approve-token
    $REKEY --execute --root .tuturuuu --references-confirmed \
-     --approve-token "$(cat $LEDGER_DIR/ledger.json._tuturuuu.approve-token)"
+     --approve-token-file $LEDGER_DIR/ledger.json._tuturuuu.approve-token
    ```
 
    Exit code `3` means the run stopped, either on the `STOP` file or the
    `--max-ops` cap. The ledger is consistent, so you can resume.
 
-3. **Resume after a stop.** Remove the `STOP` file, then run
-   `$REKEY --issue-token --root <root>` and `--execute` again with the new
-   token. Rows already in the `copied`, `verified` or `refs_updated` state
-   continue from where they stopped. A copy that landed before a crash is
-   adopted, never duplicated.
+3. **Resume after a stop.** Remove the `STOP` file, run
+   `$REKEY --issue-token --root <root>` to write a fresh token file, then run
+   `--execute` again. Rows already in the `copied`, `verified` or
+   `refs_updated` state continue from where they stopped. A copy that landed
+   before a crash is adopted, never duplicated.
 
-4. **Report.** Run `$REKEY --status` to print per-root counts for every state,
+4. **Retry failed rows.** A `failed` row records the state it failed from. A
+   failure at delete is the case that matters: refs are already on the new key,
+   but the old key and its leaked URLs are still live. After the cause is
+   fixed, run `$REKEY --issue-token --root <root>` and then:
+
+   ```bash
+   $REKEY --execute --root <root> --retry-failed \
+     --approve-token-file $LEDGER_DIR/ledger.json.<root>.approve-token
+   ```
+
+   Each failed row resumes at its recorded state. A row that has failed 3 times
+   stays `failed` and is listed as `exhausted`. Roll it back or investigate it.
+
+5. **Report.** Run `$REKEY --status` to print per-root counts for every state,
    plus the skipped and failed ids.
 
 ## Stop and rollback
@@ -170,7 +191,7 @@ Run the roots in the approved order. For each root:
   remove the file.
 - **Rollback before `old_deleted`:** this is lossless. Remove `STOP`, run
   `$REKEY --issue-token --root <root>`, then run
-  `$REKEY --rollback --root <root> --approve-token <token>`. For every
+  `$REKEY --rollback --root <root> --approve-token-file $LEDGER_DIR/ledger.json.<root>.approve-token`. For every
   `selected`, `copied`, `verified`, `refs_updated` or `failed` row, the
   rollback reverts the references to the old key, deletes the copy, and marks
   the row `rolled_back`.
@@ -213,16 +234,16 @@ $H seed --project-ref $STAGING_REF --state $R/state.json
 $H seed-vault --project-ref $STAGING_REF --state $R/state.json
 S="node scripts/storage-rekey/cli.mjs --project-ref $STAGING_REF --environment staging --ledger $R/ledger.json"
 $S --root chats --ws-id 00000000-0000-0000-0000-000000000002      # dry run
-$S --execute --root chats --probe-every 1 --approve-token "$(cat $R/ledger.json.chats.approve-token)" &
+$S --execute --root chats --probe-every 1 --approve-token-file $R/ledger.json.chats.approve-token &
 sleep 3; touch $R/ledger.json.STOP; wait                         # stop mid-run: exit 3
 rm $R/ledger.json.STOP; $S --issue-token --root chats             # restart
-$S --execute --root chats --probe-every 1 --approve-token "$(cat $R/ledger.json.chats.approve-token)"
+$S --execute --root chats --probe-every 1 --approve-token-file $R/ledger.json.chats.approve-token
 $H verify --project-ref $STAGING_REF --state $R/state.json
 # Rollback before old_deleted: stop at refs_updated with an op budget, then roll back.
 $S --root mira/images --ws-id 00000000-0000-0000-0000-000000000002
-$S --execute --root mira/images --max-ops 6 --approve-token "$(cat $R/ledger.json.mira_images.approve-token)"
+$S --execute --root mira/images --max-ops 6 --approve-token-file $R/ledger.json.mira_images.approve-token
 $S --issue-token --root mira/images
-$S --rollback --root mira/images --approve-token "$(cat $R/ledger.json.mira_images.approve-token)"
+$S --rollback --root mira/images --approve-token-file $R/ledger.json.mira_images.approve-token
 $H cleanup --project-ref $STAGING_REF --state $R/state.json      # expect zero remaining
 ```
 

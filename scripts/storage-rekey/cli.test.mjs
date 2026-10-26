@@ -19,16 +19,22 @@ test('dry run is the default mode', () => {
 
 test('execute needs a root and a one-time approval token', () => {
   assert.throws(
-    () => parseCli([...base, '--execute', '--approve-token', 't']),
+    () => parseCli([...base, '--execute', '--approve-token-file', '/tmp/t']),
     /--root is required/
   );
   assert.throws(
     () => parseCli([...base, '--execute', '--root', 'chats']),
-    /--approve-token/
+    /--approve-token-file/
   );
   assert.equal(
-    parseCli([...base, '--execute', '--root', 'chats', '--approve-token', 't'])
-      .mode,
+    parseCli([
+      ...base,
+      '--execute',
+      '--root',
+      'chats',
+      '--approve-token-file',
+      '/tmp/t',
+    ]).mode,
     'execute'
   );
   assert.throws(() =>
@@ -38,9 +44,44 @@ test('execute needs a root and a one-time approval token', () => {
       '--execute',
       '--root',
       'chats',
-      '--approve-token',
-      't',
+      '--approve-token-file',
+      '/tmp/t',
     ])
+  );
+});
+
+test('the approval token is never accepted on argv', () => {
+  assert.throws(
+    () =>
+      parseCli([
+        ...base,
+        '--execute',
+        '--root',
+        'chats',
+        '--approve-token',
+        't',
+      ]),
+    { code: 'ERR_PARSE_ARGS_UNKNOWN_OPTION' }
+  );
+  assert.throws(
+    () => parseCli([...base, '--rollback', '--root', 'chats']),
+    /--approve-token-file/
+  );
+  assert.throws(
+    () => parseCli([...base, '--root', 'chats', '--retry-failed']),
+    /only valid with --execute/
+  );
+  assert.equal(
+    parseCli([
+      ...base,
+      '--execute',
+      '--root',
+      'chats',
+      '--approve-token-file',
+      '/tmp/t',
+      '--retry-failed',
+    ]).retryFailed,
+    true
   );
 });
 
@@ -70,8 +111,8 @@ test('.tuturuuu execution requires the reference confirmation flag', () => {
     '--execute',
     '--root',
     '.tuturuuu',
-    '--approve-token',
-    't',
+    '--approve-token-file',
+    '/tmp/t',
   ];
   assert.throws(() => parseCli(args), /references-confirmed/);
   assert.equal(parseCli([...args, '--references-confirmed']).root, '.tuturuuu');

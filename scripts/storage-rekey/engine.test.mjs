@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createEngine, newKeyFor } from './engine.mjs';
-import { loadLedger, mergeSelection } from './ledger.mjs';
+import { loadLedger, mergeSelection, requeueFailed } from './ledger.mjs';
 import { createStopFence } from './stop-fence.mjs';
 import { OperationError } from './supabase.mjs';
 
@@ -293,4 +293,45 @@ test('rollback before old_deleted restores refs and removes the copy; old_delete
   assert.equal(w.objects.has(second.newName), false);
   assert.equal(first.state, 'old_deleted');
   assert.equal(result.oldDeletedNotRolledBack, 1);
+});
+
+test('a delete failure keeps refs on the new key and --retry-failed finishes the re-key', async (t) => {
+  const { w, ledger, make } = setup(t, { names: ['ws/chats/c1/a.txt'] });
+  const [entry] = Object.values(ledger.objects);
+  const realRemove = w.storage.remove;
+  w.storage.remove = async () => {
+    throw new OperationError('delete_http_503', { retryable: true });
+  };
+  await make().run({ root: 'chats' });
+  assert.equal(entry.state, 'failed');
+  assert.equal(entry.failedFrom, 'refs_updated');
+  assert.equal(entry.errorCode, 'delete_http_503');
+  // The dangerous window: refs moved, but the old key (and its leaked URLs) is live.
+  assert.equal(w.refs.get(`ref:${entry.oldName}`), entry.newName);
+  assert.equal(w.objects.has(entry.oldName), true);
+
+  w.storage.remove = realRemove;
+  assert.deepEqual(requeueFailed(ledger, 'chats').requeued, [entry.id]);
+  const copiesBefore = w.calls.filter((c) => c === 'storage.copy').length;
+  const result = await make().run({ root: 'chats' });
+  assert.equal(result.counts.old_deleted, 1);
+  assert.equal(w.objects.has(entry.oldName), false);
+  assert.equal(w.refs.get(`ref:${entry.oldName}`), entry.newName);
+  assert.equal(
+    w.calls.filter((c) => c === 'storage.copy').length,
+    copiesBefore,
+    'no second copy'
+  );
+  assert.deepEqual(
+    entry.history.map((h) => h.state),
+    [
+      'selected',
+      'copied',
+      'verified',
+      'refs_updated',
+      'failed',
+      'refs_updated',
+      'old_deleted',
+    ]
+  );
 });

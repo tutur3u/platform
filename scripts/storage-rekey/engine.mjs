@@ -112,7 +112,11 @@ export function createEngine({
     const sameType =
       created && (created.mimetype ?? null) === (entry.mimetype ?? null);
     if (!sameSize || !sameType) {
-      return move(entry, 'failed', { errorCode: 'verify_mismatch' });
+      entry.attempts += 1;
+      return move(entry, 'failed', {
+        errorCode: 'verify_mismatch',
+        failedFrom: entry.state,
+      });
     }
     move(entry, 'verified');
   }
@@ -172,7 +176,10 @@ export function createEngine({
       } catch (error) {
         if (error instanceof StopRequested) throw error;
         entry.attempts += 1;
-        move(entry, 'failed', { errorCode: error?.code ?? 'unexpected' });
+        move(entry, 'failed', {
+          errorCode: error?.code ?? 'unexpected',
+          failedFrom: entry.state,
+        });
         return;
       }
     }
