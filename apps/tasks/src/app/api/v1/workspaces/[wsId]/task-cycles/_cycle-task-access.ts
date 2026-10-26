@@ -6,6 +6,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 export const OPEN_TASK_LIST_STATUSES = [
   'not_started',
@@ -20,6 +21,13 @@ export const CYCLE_PLANNABLE_LIST_STATUSES = [
 ] as const;
 
 export const MAX_CYCLE_TASKS = 500;
+
+const idSchema = z.guid();
+
+/** Malformed ids are a missing resource, not a database error. */
+export function isValidId(value: string) {
+  return idSchema.safeParse(value).success;
+}
 
 type AccessResult =
   | { ok: true; wsId: string }
@@ -43,6 +51,10 @@ export async function resolveCycleWorkspaceAccess(
   try {
     wsId = await normalizeWorkspaceId(rawWsId, supabase);
   } catch {
+    return failure('Workspace not found', 404);
+  }
+
+  if (!isValidId(wsId)) {
     return failure('Workspace not found', 404);
   }
 
@@ -82,6 +94,10 @@ export async function assertCycleInWorkspace(
   wsId: string,
   cycleId: string
 ): Promise<NextResponse | null> {
+  if (!isValidId(cycleId)) {
+    return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
+  }
+
   const { data: cycle, error } = await sbAdmin
     .from('task_cycles')
     .select('ws_id')

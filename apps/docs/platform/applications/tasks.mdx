@@ -956,6 +956,7 @@ CREATE TABLE public.task_cycle_tasks (
 | One cycle per task | A task belongs to at most one cycle (unique index on `task_cycle_tasks.task_id`). Assigning a task to another cycle moves it. |
 | Backlog | Open tasks with no cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Backlog is derived, not stored. |
 | Excluded | Tasks in `documents` lists cannot join a cycle. |
+| Row cap | The cycle task list and the backlog each return at most 500 tasks, newest first (`?limit=` can lower the backlog cap). There is no pagination yet; larger cycles or backlogs are truncated until pagination ships as a follow-up. |
 | Access | Any workspace member can read cycle tasks and the backlog. Assigning and removing require `manage_projects`. `task_cycles` and `tasks` are not granted to the Data API `authenticated` role, so all reads and writes go through the Tasks API. |
 
 Exceptions: rows that existed before the workspace guard are not rewritten.
@@ -979,6 +980,8 @@ under `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/`.
 | `assignTaskToCycle(wsId, cycleId, taskId)` | `POST …/task-cycles/{cycleId}/tasks` with `{ taskId }` |
 | `unassignTaskFromCycle(wsId, cycleId, taskId)` | `DELETE …/task-cycles/{cycleId}/tasks` with `{ taskId }` |
 | `listWorkspaceTaskBacklog(wsId, { limit })` | `GET …/task-cycles/backlog?limit=` (max 500) |
+
+Malformed `wsId` or `cycleId` values return `404`.
 
 ## Task Estimation
 
