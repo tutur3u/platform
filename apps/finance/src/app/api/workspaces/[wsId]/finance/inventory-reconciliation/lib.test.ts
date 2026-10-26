@@ -93,4 +93,62 @@ describe('Inventory Finance reconciliation helpers', () => {
       }),
     ]);
   });
+
+  it('sums integer minor units and derives major output without float drift', () => {
+    const summary = buildReconciliationSummary(
+      [10, 20, -30].map((amountMinor) => ({
+        amount: amountMinor / 100,
+        amount_minor: String(amountMinor),
+        currency: 'USD',
+        entry_count: '1',
+        kind: 'sale',
+        provider: 'cash',
+        status: 'linked',
+      }))
+    );
+    expect(summary.netSales).toEqual([
+      { amount: 0, amountMinor: 0, currency: 'USD', count: 3 },
+    ]);
+    expect(Object.is(summary.netSales[0]?.amount, -0)).toBe(false);
+  });
+
+  it('rejects malformed database minor amounts before aggregation', () => {
+    for (const amount of ['1.5', 'NaN', '9007199254740992']) {
+      expect(() =>
+        buildReconciliationSummary([
+          {
+            amount: 0,
+            amount_minor: amount,
+            currency: 'USD',
+            entry_count: 1,
+            kind: 'sale',
+            provider: 'cash',
+            status: 'linked',
+          },
+        ])
+      ).toThrow();
+    }
+  });
+
+  it('preserves the database unit scale for currencies that differ from Intl', () => {
+    for (const [currency, amount] of [
+      ['MGA', 123],
+      ['CLF', 1.23],
+    ] as const) {
+      const summary = buildReconciliationSummary([
+        {
+          amount,
+          amount_minor: 123,
+          currency,
+          entry_count: 1,
+          kind: 'sale',
+          provider: 'cash',
+          status: 'linked',
+        },
+      ]);
+      expect(summary.netSales).toEqual([
+        { amount, amountMinor: 123, currency, count: 1 },
+      ]);
+    }
+  });
 });

@@ -4,6 +4,12 @@ import type {
   InventoryFinanceProvider,
   InventoryFinanceReconciliationSummary,
 } from '@tuturuuu/internal-api/finance-reconciliation';
+import {
+  addMoney,
+  type Money,
+  moneyToMajor,
+  parseMoneyFromMinor,
+} from '@tuturuuu/utils/finance-money';
 import { z } from 'zod';
 
 export const providerSchema = z.enum([
@@ -66,32 +72,40 @@ export type SummaryRow = {
   status: string;
 };
 
-function addAmount(
-  target: Map<string, InventoryFinanceCurrencyAmount>,
-  row: SummaryRow
-) {
-  const previous = target.get(row.currency);
-  const amount = Number(row.amount ?? 0);
-  const amountMinor = Number(row.amount_minor ?? 0);
+type CurrencyTotal = { money: Money; count: number };
+
+function addAmount(target: Map<string, CurrencyTotal>, row: SummaryRow) {
+  const money = parseMoneyFromMinor(
+    Number(row.amount_minor ?? 0),
+    row.currency
+  );
+  const previous = target.get(money.currency);
   const count = Number(row.entry_count ?? 0);
-  target.set(row.currency, {
-    amount: (previous?.amount ?? 0) + amount,
-    amountMinor: (previous?.amountMinor ?? 0) + amountMinor,
+  target.set(money.currency, {
+    money: previous ? addMoney(previous.money, money) : money,
     count: (previous?.count ?? 0) + count,
-    currency: row.currency,
   });
 }
 
-function values(map: Map<string, InventoryFinanceCurrencyAmount>) {
-  return [...map.values()].sort((a, b) => a.currency.localeCompare(b.currency));
+function values(
+  map: Map<string, CurrencyTotal>
+): InventoryFinanceCurrencyAmount[] {
+  return [...map.values()]
+    .map(({ money, count }) => ({
+      amount: moneyToMajor(money),
+      amountMinor: money.minorUnits,
+      currency: money.currency,
+      count,
+    }))
+    .sort((a, b) => a.currency.localeCompare(b.currency));
 }
 
 type SummaryMaps = {
-  chargebackHolds: Map<string, InventoryFinanceCurrencyAmount>;
-  chargebackReleases: Map<string, InventoryFinanceCurrencyAmount>;
-  grossSales: Map<string, InventoryFinanceCurrencyAmount>;
-  netSales: Map<string, InventoryFinanceCurrencyAmount>;
-  refunds: Map<string, InventoryFinanceCurrencyAmount>;
+  chargebackHolds: Map<string, CurrencyTotal>;
+  chargebackReleases: Map<string, CurrencyTotal>;
+  grossSales: Map<string, CurrencyTotal>;
+  netSales: Map<string, CurrencyTotal>;
+  refunds: Map<string, CurrencyTotal>;
 };
 
 function createSummaryMaps(): SummaryMaps {
@@ -128,7 +142,7 @@ export function buildReconciliationSummary(
   rows: SummaryRow[]
 ): InventoryFinanceReconciliationSummary {
   const totals = createSummaryMaps();
-  const pending = new Map<string, InventoryFinanceCurrencyAmount>();
+  const pending = new Map<string, CurrencyTotal>();
   const providers = new Map<InventoryFinanceProvider, SummaryMaps>();
 
   for (const row of rows) {

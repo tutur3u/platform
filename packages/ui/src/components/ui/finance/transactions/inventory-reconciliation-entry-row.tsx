@@ -8,19 +8,18 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
-import { minorToMajor } from '@tuturuuu/utils/money';
+import {
+  formatMoney,
+  type Money,
+  parseMoneyFromMinor,
+} from '@tuturuuu/utils/finance-money';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-export function formatInventoryReconciliationAmount(
-  amount: number,
-  currency: string
-) {
-  return new Intl.NumberFormat(getCurrencyLocale(currency), {
-    currency,
-    maximumFractionDigits: currency === 'VND' ? 0 : 2,
-    style: 'currency',
-  }).format(amount);
+export function formatInventoryReconciliationAmount(money: Money) {
+  return formatMoney(money, getCurrencyLocale(money.currency), {
+    maximumFractionDigits: money.currency === 'VND' ? 0 : 2,
+  });
 }
 
 export function inventoryProviderTranslationKey(
@@ -80,11 +79,10 @@ export function InventoryReconciliationEntryRow({
                   </span>
                   <span className="shrink-0 font-medium tabular-nums">
                     {formatInventoryReconciliationAmount(
-                      minorToMajor(
+                      parseMoneyFromMinor(
                         allocation.recognizedRevenueAmount,
                         entry.currency
-                      ),
-                      entry.currency
+                      )
                     )}
                   </span>
                 </div>
@@ -106,7 +104,9 @@ export function InventoryReconciliationEntryRow({
       </div>
       <div className="text-sm">
         <p className="font-semibold">
-          {formatInventoryReconciliationAmount(entry.amount, entry.currency)}
+          {formatInventoryReconciliationAmount(
+            parseMoneyFromMinor(entry.amountMinor, entry.currency)
+          )}
         </p>
         <p className="text-muted-foreground text-xs">
           {entry.wallet?.name ?? t('needs_wallet')}

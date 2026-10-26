@@ -566,6 +566,13 @@ Docker setup is inactive and the Docker cron runner is retired; local docs use
 
 ## Bounded billing projections
 
+Inventory reconciliation uses `@tuturuuu/utils/finance-money` at its API/database
+and display boundaries. Parse raw minor units once into `Money`, add with
+`addMoney`, and format with `formatMoney`; derive major-unit JSON only when
+serializing. Keep other Finance flows scoped to their existing contracts. See
+`apps/docs/platform/applications/finance.mdx` and the deterministic money/token
+property tests for the supported invariants and the separate #6840 follow-up.
+
 Keep subscription group defaults separate from explicit operator choices. An
 empty selection after clearing a paid class is intentional; do not reapply
 select-all defaults during context or membership refetches. Reset that preference
