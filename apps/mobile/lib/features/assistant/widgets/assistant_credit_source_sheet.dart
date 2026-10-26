@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -30,8 +31,8 @@ class AssistantCreditSourceSheet extends StatelessWidget {
                   children: [
                     Align(
                       alignment: Alignment.centerRight,
-                      child: IconButton(
-                        icon: const Icon(Icons.close),
+                      child: AppIconButton(
+                        icon: const Icon(LucideIcons.x),
                         tooltip: MaterialLocalizations.of(
                           context,
                         ).closeButtonTooltip,
@@ -42,7 +43,7 @@ class AssistantCreditSourceSheet extends StatelessWidget {
                     ),
                     if (failed) ...[
                       Text(context.l10n.assistantCreditsUnavailable),
-                      TextButton(
+                      AppButton.ghost(
                         onPressed: state.workspace == null
                             ? null
                             : () => cubit.loadWorkspace(

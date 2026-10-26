@@ -1,0 +1,260 @@
+---
+title: Mira body weight, habits and day overview
+description: How Mira logs body weight and habit entries and builds a one-read plan for a day.
+---
+
+Mira exposes five server-side tools from the shared `@tuturuuu/ai` tool
+registry. Web chat, mobile chat and mobile Live (through the canonical
+`execute_workspace_tool` bridge) use the same definitions and executors.
+
+| Tool | Purpose |
+| --- | --- |
+| `log_body_weight` | Log a weight in kg or lb; create a private Body Weight tracker on first use |
+| `get_body_weight_history` | Entries for the last `days` (default 30, max 365) with latest, change, min and max |
+| `list_habit_trackers` | Active trackers in the current workspace with target, unit, current-period progress and streak |
+| `log_habit_entry` | Log any tracker: `value` maps to the tracker's primary metric, or pass `values` by field key |
+| `get_day_overview` | One bounded read for planning a day: tasks, events, habit progress and the running timer |
+
+## Data ownership and transport
+
+Habit data lives only in `workspace_habit_trackers` and
+`workspace_habit_tracker_entries`. Mira calls the Tasks satellite habit API
+(`/api/v1/workspaces/:wsId/habit-trackers`) with the caller's forwarded
+authorization. The satellite enforces membership, the workspace habits feature
+flag, input sanitising and RLS, so the tools need no extra Mira permission.
+The Tasks origin must use HTTPS outside local development. Sessions without
+forwarded request headers get a truthful "unavailable in this session" result;
+nothing is logged.
+
+Mira does not copy weights or habit entries into AI memory. The tools return
+the stored values to the current conversation only.
+
+## Body weight tracker selection and auto-create
+
+Habit trackers and their entries are visible to every member of a workspace;
+there is no per-user private tracker. Mira therefore resolves the tracker in
+this order:
+
+1. An active `use_case = 'body_weight'` tracker in the current workspace. The
+   user created it there, so Mira logs there.
+2. An active body weight tracker in the user's personal workspace.
+3. Otherwise `log_body_weight` creates a **private** "Body Weight" tracker,
+   always in the personal workspace. If the current workspace is a team
+   workspace, Mira never creates a shared health tracker there. The result
+   reports `trackerCreated: true` and the `workspace` used (`id`, `personal`,
+   `isCurrentWorkspace`), and Mira tells the user. Without a personal
+   workspace, nothing is created or logged.
+
+The release authority approved auto-create on 2026-10-25. One function,
+`createPrivateBodyWeightTracker`, owns creation. `get_body_weight_history` never
+creates a tracker.
+
+The new tracker follows the Tasks `body_weight` template: a daily summary,
+maximum aggregation, `weight` as the primary metric and `kg`/`lb` as supported
+units. Its unit is the logged unit, or kg when none is given. Its name,
+description and field labels use the user's language: Vietnamese ("Cân nặng")
+when the forwarded `NEXT_LOCALE` cookie or, failing that, `Accept-Language`
+prefers Vietnamese, otherwise English. Mobile clients currently send neither,
+so trackers created from mobile are named in English.
+
+## Idempotent writes
+
+Retries and concurrent requests must not duplicate habit data, and a retried
+older operation must not undo a newer one. Migrations
+`20261025125500` through `20261025125800` enforce this in the database:
+
+- **Tracker `creation_key`.** A partial unique index allows one active,
+  unarchived tracker per (workspace, creator, key). Mira creates its Body Weight
+  tracker with the key `mira:body_weight`, so two concurrent first logs converge
+  on one tracker. The Tasks API answers a repeat with the existing tracker and
+  `created: false` (HTTP 200); only the request that inserted it reports
+  `trackerCreated: true`. Archiving or deactivating the tracker releases the key.
+- **Entry receipts.** Every accepted keyed entry operation gets an immutable
+  receipt in `workspace_habit_tracker_entry_receipts`, bound to the tracker,
+  member, key and a SHA-256 of the request body. The function
+  `record_habit_tracker_entry_with_receipt` claims the receipt and writes the
+  entry in one transaction, so a crash leaves neither.
+  - A repeated key with the same body returns the entry with `replayed: true`
+    (HTTP 200) without writing, and Mira reports `alreadyLogged: true`.
+  - Daily summaries keep one mutable row per day, but receipts are separate:
+    after A (70) and B (71), retrying A replays and the day stays 71. The
+    result reports the current stored weight (71), not the old requested 70.
+  - Reusing a key for a different body is rejected with HTTP 409.
+  - Deleting an entry keeps its receipt, so a late retry reports 409 instead
+    of bringing the entry back.
+  - Concurrent calls with the same key wait on the receipt key and replay;
+    concurrent calls with different keys for one day serialize on that day's
+    row, and each keeps its receipt.
+  - Receipts and the function are service-role only.
+
+Mira derives entry keys by hashing the operation scope and normalized input:
+
+- **Body weight:** the conversation (or tool call when there is no
+  conversation), tracker, day, explicit occurrence time when supplied, stored
+  value, unit and note. Re-logging the same weight without an explicit time on
+  the same day in a conversation replays. A different value or explicit instant
+  is a new operation; equivalent time-zone representations normalize to one
+  instant.
+- **Generic entries:** the tool call ID plus tracker, time, values and note.
+  Counters legitimately repeat identical input, so only a retry of the same tool
+  call is deduplicated. Without a tool call ID, no key is sent.
+
+Both executors omit `occurred_at` when no time was supplied, so the server's
+receipt hash stays stable across retries. An explicit time is sent and binds
+the receipt. The cross-boundary regression tests call the real Tasks sanitizer
+and request hasher from both Mira executors in
+`apps/tasks/src/lib/habit-trackers/mira-idempotency.test.ts`.
+
+The tracker column is new and nullable, so existing rows, including duplicate
+trackers already in the data, keep `NULL` keys and cannot violate the index.
+UI writes send no keys and behave as before. The Tasks API ignores keys while
+the column or function is missing, so app and migration rollout order does not
+matter. The migration sequence keeps existing-table scans outside the short DDL
+transaction:
+
+1. `20261025125500` adds the nullable column without a default or table rewrite
+   and adds its check as `NOT VALID`, then commits its exclusive table lock.
+2. `20261025125600` validates the check with `SHARE UPDATE EXCLUSIVE`, which
+   permits ordinary reads and writes.
+3. `20261025125700` contains only `CREATE UNIQUE INDEX CONCURRENTLY`. The pinned
+   Supabase CLI 2.117.0 executes this lone statement outside a transaction batch.
+   Keep it alone; adding transaction-scoped setup statements breaks that path.
+4. `20261025125750` checks `pg_index` and fails if the named unique index is
+   missing or invalid. `IF NOT EXISTS` alone cannot distinguish an invalid
+   leftover from a usable index.
+5. `20261025125800` creates the empty receipt table, its indexes and the RPC.
+   Foreign-key setup briefly locks referenced tables; it does not scan existing
+   tracker or entry rows.
+
+The DDL and validation migrations use a 5-second `lock_timeout` to bound lock
+acquisition waits. That setting does not limit how long an acquired lock is
+held. No index is built on the entries table. The receipt table also has
+leading-column indexes on `user_id` and `ws_id` for cascading parent deletions;
+these are built while the table is new and empty. Columns, constraints and RPCs
+retain the original combined migration's definitions. Regression coverage is in
+`supabase/tests/habit-tracker-idempotency.sql` and the Tasks habit writer and Mira
+habit executor tests.
+
+### Recover a failed concurrent creation-key index
+
+A failed or cancelled concurrent build can leave an `INVALID` index. Retrying
+`20261025125700` can then skip that index because of `IF NOT EXISTS`; the
+`20261025125750` guard stops the chain instead of treating uniqueness as ready.
+The writer already checks for an existing key before inserting, but concurrent
+first writes can still race between column creation and a valid unique index.
+Coordinate recovery and any necessary pause of keyed writes with the release
+owner. Do not delete tracker history or bypass the guard.
+
+1. Inspect the index on the affected database:
+
+   ```sql
+   select indexrelid::regclass, indisvalid, indisunique
+   from pg_catalog.pg_index
+   where indexrelid = to_regclass(
+     'public.idx_workspace_habit_trackers_creation_key_active'
+   );
+   ```
+
+2. Find conflicting active keys. Resolve each group through the supported
+   tracker archive/deactivation flow, retaining the intended active tracker
+   and its history. Do not choose winners automatically.
+
+   ```sql
+   select ws_id, created_by, creation_key, count(*)
+   from public.workspace_habit_trackers
+   where creation_key is not null and created_by is not null
+     and archived_at is null and is_active
+   group by ws_id, created_by, creation_key
+   having count(*) > 1;
+   ```
+
+3. After confirming the index is invalid, run this as a standalone statement
+   outside a transaction. Do not drop a valid index merely to retry a migration.
+
+   ```sql
+   drop index concurrently if exists
+     public.idx_workspace_habit_trackers_creation_key_active;
+   ```
+
+4. If `20261025125700` is still pending, rerun the authorized migration workflow.
+   If an earlier retry already recorded it as applied, execute that file's
+   exact lone `CREATE UNIQUE INDEX CONCURRENTLY` statement through the authorized
+   database operator, outside a transaction, before rerunning pending migrations.
+   For a missing index, skip the drop and use the same rebuild path. Verify
+   `indisvalid` and `indisunique` are both true, then rerun the pending guard and
+   remaining migrations. Do not mark the guard applied or edit the migration
+   ledger to bypass a failure. Production recovery requires release-owner
+   authorization; agent checkouts must not run `sb:push` or `sb:linkpush`.
+
+No automatic preceding drop is included: PostgreSQL cannot conditionally run
+`DROP INDEX CONCURRENTLY` inside a `DO` block, and an unconditional drop could
+remove an already-valid uniqueness fence on a retry.
+
+## Units, bounds and dates
+
+- A weight given in the other unit is converted to the tracker's unit
+  (1 lb = 0.45359237 kg) and rounded to 0.01. The result includes
+  `convertedFrom`. A tracker with any other unit is rejected rather than
+  mislabelled.
+- Accepted weights are 2 to 650 kg (or the same range in lb). Out-of-range
+  values are rejected before any tracker is created.
+- Daily-summary trackers keep one entry per day. A second log on the same day
+  replaces that day's value (Tasks service behaviour).
+- `entry_date` is the calendar date of `occurredAt` (default now) in the user
+  timezone. With a missing or invalid timezone, Mira uses UTC and returns
+  `timezoneAssumed: true`.
+- History reads the caller's own entries from the Tasks entry list, which holds
+  the 50 most recent entries per tracker across all members. When that limit
+  may hide older entries in the window, the result includes
+  `mayBeIncomplete: true`.
+
+## Day overview
+
+`get_day_overview` takes an optional `date` (`YYYY-MM-DD`, default today in the
+user timezone) and computes the day window `[start, end)` in that timezone.
+Sections load in parallel and fail independently: a failed section is `null`,
+its message is under `errors`, and `partial: true` is set. `success` is false
+only when every section fails. No section is filled with guessed data.
+
+| Section | Source | Bound |
+| --- | --- | --- |
+| `tasks` | the `get_my_tasks` feed, re-bucketed into `dueOnDay` and `overdue` (due before the day and still open) | 15 tasks total, with `truncated` and `mayBeIncomplete` flags |
+| `calendar` | workspace events overlapping the day, decrypted like `get_upcoming_events` | 20 events |
+| `habits` | active trackers with the caller's aggregate for that date (`dayTotal`, and `met` for daily targets); see below when history is capped | 10 trackers |
+| `timer` | the caller's running session in the workspace, if any | 1 session |
+
+The Tasks entry list holds only the 50 most recent entries per tracker across all
+members. When a tracker's list is full, entries for the day may be hidden, so
+the tracker reports `progress: "incomplete"`, `dayTotal: null` and the
+`visibleTotal` it could see, never a false zero. `met` is `true` only when the
+visible entries already prove a `gte` target under an aggregation that hidden
+entries cannot lower (`max`, `count_entries`, `boolean_any`); otherwise it is
+`null`. Below the cap, progress is `"complete"` and exact.
+
+The calendar section requires `manage_calendar`, like `get_upcoming_events`. When
+the session cannot verify that permission, the section fails closed.
+
+## Regression coverage
+
+- `packages/ai/src/tools/executors/body-weight.test.ts`: forwarded auth, the
+  missing-header result, find vs create, personal-workspace creation from a
+  team workspace, no-personal-workspace refusal, a retried log storing one
+  entry, racing first logs creating one tracker, Vietnamese and English tracker
+  labels, unit conversion, bounds and the history summary.
+- `packages/ai/src/tools/executors/habits.test.ts`: conversion, Ho Chi Minh
+  City day boundaries, UTC fallback, locale resolution, stable operation keys,
+  list mapping, generic entry logging and a retried tool call storing one
+  entry.
+- `packages/ai/src/tools/executors/day-overview.test.ts`: timezone bucketing,
+  per-section partial failure, calendar fail-closed, caps, date validation and
+  capped habit history reported as incomplete instead of zero.
+- `apps/tasks/src/lib/habit-trackers/writes.test.ts`: keyed tracker replay and
+  races, receipt-function calls, request-body binding, key reuse (409), a
+  deleted entry (409) and the pre-migration fallback.
+- `apps/database/supabase/tests/habit-tracker-idempotency.sql`: the tracker
+  index, key release on archive or deactivation and legacy duplicates; for
+  entry receipts, the A/B/A daily retry, different keys on one day, key reuse,
+  event retries, retry after deletion, workspace binding, key format and
+  service-role-only access.
+- `packages/ai/src/tools/mira-tool-discovery.test.ts`: English and Vietnamese
+  discovery of the health and planning tools.

@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vite-plus/test';
-import { processImmediateNotifications } from './worker';
+import { processImmediateNotifications } from './immediate-notifications';
 
 const env = {
   CRON_CONTROL_DELIVERY_TOKEN: 'test-delivery-token',

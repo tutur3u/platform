@@ -16,6 +16,11 @@ class AssistantTranscriptScrollFollower {
   bool _scheduled = false;
   bool _disposed = false;
 
+  void suspend() {
+    _following = false;
+    _userScrolling = false;
+  }
+
   void resume() {
     _following = true;
     _userScrolling = false;

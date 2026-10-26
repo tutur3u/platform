@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
@@ -404,7 +405,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Hide this app?'), findsOneWidget);
     expect(cubit.state.hiddenAppIds, isEmpty);
-    await tester.tap(find.widgetWithText(FilledButton, 'Hide app'));
+    await tester.tap(find.widgetWithText(AppButton, 'Hide app'));
     await tester.pump(const Duration(milliseconds: 400));
     expect(cubit.state.hiddenAppIds, ['tasks']);
     expect(find.text('Hidden apps'), findsOneWidget);
@@ -466,9 +467,9 @@ void main() {
     expect(unavailableShow, findsOneWidget);
     final showButton = find.descendant(
       of: inventory,
-      matching: find.byType(IconButton),
+      matching: find.byType(AppIconButton),
     );
-    expect(tester.widget<IconButton>(showButton).onPressed, isNull);
+    expect(tester.widget<AppIconButton>(showButton).onPressed, isNull);
     expect(experiments.state.isEnabled('inventory'), isFalse);
   });
 }

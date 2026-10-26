@@ -7,10 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -123,6 +124,9 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
         final ids = widget.productId == null
             ? OfflinePreparationCoordinator.productIds
             : [widget.productId!];
+        final servicePaused = state.retryAt != null;
+        final canDownload =
+            enabled && !state.running && !_starting && !_restoring;
         final completed = ids
             .where(
               (id) =>
@@ -154,26 +158,23 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                onPressed:
-                    enabled && !state.running && !_starting && !_restoring
-                    ? _download
-                    : null,
-                icon: const Icon(LucideIcons.hardDriveDownload),
-                label: Text(
+              child: AppButton.primary(
+                onPressed: canDownload ? _download : null,
+                leading: const Icon(LucideIcons.hardDriveDownload),
+                child: Text(
                   widget.productId == null
                       ? l10n.offlinePreparationCacheAll
                       : l10n.offlineRefreshModule,
                 ),
               ),
             ),
-            if (state.running)
+            if (state.running || servicePaused)
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(
+                child: AppButton.ghost(
                   onPressed: _coordinator.cancel,
-                  icon: const Icon(LucideIcons.pause),
-                  label: Text(l10n.offlinePauseDownloads),
+                  leading: const Icon(LucideIcons.pause),
+                  child: Text(l10n.offlinePauseDownloads),
                 ),
               ),
             if (!state.running &&
@@ -183,11 +184,23 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 widget.productId == null)
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton(
+                child: AppButton.ghost(
                   onPressed: enabled && !_starting && !_restoring
                       ? () => _download(resume: true)
                       : null,
                   child: Text(l10n.offlineResumeDownloads),
+                ),
+              ),
+            if (servicePaused)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    state.retryExhausted
+                        ? l10n.offlineDownloadsRetryLimit
+                        : l10n.offlineDownloadsPaused,
+                  ),
                 ),
               ),
             if (_failed)
@@ -207,35 +220,46 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 ),
               ),
             ],
-            for (final (index, id) in ids.indexed) ...[
-              if (index > 0) const Divider(height: 24),
-              _OfflineProductRow(
-                id: id,
-                product:
-                    state.products[id] ?? const OfflineProductPreparation(),
-                running: state.running,
-                onOpen:
-                    widget.showModuleDetails &&
-                        (id != 'inventory' ||
-                            (context
-                                        .watch<InventoryAccessCubit?>()
-                                        ?.state
-                                        .enabled ==
-                                    true &&
-                                context
-                                        .watch<InventoryAccessCubit?>()
-                                        ?.state
-                                        .wsId ==
-                                    _workspaceId)) &&
-                        state.products[id]?.status !=
-                            OfflinePreparationStatus.unavailable
-                    ? () => context.push(Routes.settingsOfflineModulePath(id))
-                    : null,
-                onRetry: enabled && !state.running && !_starting && !_restoring
-                    ? () => _download(productId: id)
-                    : null,
+            if (ids.any(
+              (id) =>
+                  state.products[id]?.status == OfflinePreparationStatus.failed,
+            ))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(l10n.offlineDownloadRetryHint),
               ),
-            ],
+            SettingsGroup(
+              children: [
+                for (final id in ids)
+                  _OfflineProductRow(
+                    id: id,
+                    product:
+                        state.products[id] ?? const OfflineProductPreparation(),
+                    running: state.running || servicePaused,
+                    onOpen:
+                        widget.showModuleDetails &&
+                            (id != 'inventory' ||
+                                (context
+                                            .watch<InventoryAccessCubit?>()
+                                            ?.state
+                                            .enabled ==
+                                        true &&
+                                    context
+                                            .watch<InventoryAccessCubit?>()
+                                            ?.state
+                                            .wsId ==
+                                        _workspaceId)) &&
+                            state.products[id]?.status !=
+                                OfflinePreparationStatus.unavailable
+                        ? () =>
+                              context.push(Routes.settingsOfflineModulePath(id))
+                        : null,
+                    onRetry: canDownload
+                        ? () => _download(productId: id)
+                        : null,
+                  ),
+              ],
+            ),
           ],
         );
       },
@@ -284,56 +308,47 @@ class _OfflineProductRow extends StatelessWidget {
     final lastSuccess = product.status == OfflinePreparationStatus.unavailable
         ? null
         : product.lastSuccess;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(switch (product.status) {
-            OfflinePreparationStatus.downloading => LucideIcons.cloudDownload,
-            OfflinePreparationStatus.ready => LucideIcons.hardDriveDownload,
-            OfflinePreparationStatus.failed => LucideIcons.circleAlert,
-            OfflinePreparationStatus.unavailable => LucideIcons.cloudOff,
-            OfflinePreparationStatus.queued => LucideIcons.download,
-          }, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final retryable =
+        product.status == OfflinePreparationStatus.failed ||
+        product.status == OfflinePreparationStatus.unavailable;
+    return SettingsTile(
+      key: ValueKey('offline-product-$id'),
+      grouped: true,
+      icon: switch (product.status) {
+        OfflinePreparationStatus.downloading => LucideIcons.cloudDownload,
+        OfflinePreparationStatus.ready => LucideIcons.hardDriveDownload,
+        OfflinePreparationStatus.failed => LucideIcons.circleAlert,
+        OfflinePreparationStatus.unavailable => LucideIcons.cloudOff,
+        OfflinePreparationStatus.queued => LucideIcons.download,
+      },
+      title: title,
+      value: status,
+      subtitle: lastSuccess == null
+          ? null
+          : l10n.offlinePreparationLastSuccess(
+              DateFormat.yMd(
+                Localizations.localeOf(context).toString(),
+              ).add_jm().format(lastSuccess.toLocal()),
+            ),
+      onTap: onOpen,
+      trailing: retryable
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleSmall),
-                Text(status),
-                if (product.errorMessage != null &&
-                    product.status != OfflinePreparationStatus.unavailable) ...[
-                  Text(product.errorMessage!),
-                  Text(l10n.offlineDownloadRetryHint),
-                ],
-                if (lastSuccess != null)
-                  Text(
-                    l10n.offlinePreparationLastSuccess(
-                      DateFormat.yMd(
-                        Localizations.localeOf(context).toString(),
-                      ).add_jm().format(lastSuccess.toLocal()),
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall,
+                if (onOpen != null)
+                  AppIconButton(
+                    tooltip: l10n.offlineModuleDetails,
+                    onPressed: onOpen,
+                    icon: const Icon(LucideIcons.chevronRight),
                   ),
+                AppIconButton(
+                  tooltip: l10n.commonRetry,
+                  onPressed: onRetry,
+                  icon: const Icon(LucideIcons.rotateCw),
+                ),
               ],
-            ),
-          ),
-          if (onOpen != null)
-            IconButton(
-              tooltip: l10n.offlineModuleDetails,
-              onPressed: onOpen,
-              icon: const Icon(LucideIcons.chevronRight),
-            ),
-          if (product.status == OfflinePreparationStatus.failed ||
-              product.status == OfflinePreparationStatus.unavailable)
-            IconButton(
-              tooltip: l10n.commonRetry,
-              onPressed: onRetry,
-              icon: const Icon(LucideIcons.rotateCw),
-            ),
-        ],
-      ),
+            )
+          : null,
     );
   }
 }

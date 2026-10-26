@@ -4,6 +4,11 @@ const { typeCheckProjects } = require('../check-changed/type-check.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
 const PRODUCER_COMMAND = /run-tsc-build|--build|\b(?:wrangler|cf)\s+types\b/;
+const generatesDeclarations = (command) =>
+  PRODUCER_COMMAND.test(command) ||
+  /\bcf\s+workers\s+types\b|(?:^|[\s/])calendar-cf-types\.mjs(?:\s|$)/.test(
+    command
+  );
 
 function inventory(root) {
   const manifests = ['package.json'];
@@ -28,7 +33,7 @@ function inventory(root) {
           name === 'validate:now' ||
           name.startsWith('type-check') ||
           /\b(?:tsc|tsgo|tsrs)\b|run-tsc-build/.test(command) ||
-          PRODUCER_COMMAND.test(command)
+          generatesDeclarations(command)
       )
     );
     const projects =
@@ -45,7 +50,7 @@ function inventory(root) {
       projects,
       emitsOrGenerates:
         Object.values(selected).some((command) =>
-          PRODUCER_COMMAND.test(command)
+          generatesDeclarations(command)
         ) || projects.some((project) => /tsconfig\.build\.json$/.test(project)),
       customProducer: workspace === 'apps/meet',
     };

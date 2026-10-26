@@ -1,6 +1,5 @@
-// Assistant feature parity module: the generic render_ui catalog renderer is
-// intentionally broad, so some style lints are deferred here.
-// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, deprecated_member_use, always_put_required_named_parameters_first, unnecessary_raw_strings, prefer_const_constructors
+// The broad render_ui catalog retains its legacy style exceptions.
+// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, deprecated_member_use, always_put_required_named_parameters_first, unnecessary_raw_strings
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -10,12 +9,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 import '../models/assistant_models.dart';
 
 typedef AssistantSubmitText = Future<void> Function(String text);
@@ -149,8 +148,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         return _sectionCard(
           context,
           padding: const EdgeInsets.all(12),
-          child: ListTile(
-            dense: true,
+          child: AppListTile(
             contentPadding: EdgeInsets.zero,
             leading: Icon(_resolveIcon(props['icon'] as String?)),
             title: Text(props['title'] as String? ?? ''),
@@ -397,8 +395,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final task in allTasks.take(8))
-            ListTile(
-              dense: true,
+            AppListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(task.name),
               subtitle: Text(
@@ -437,7 +434,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: shad.PrimaryButton(
+            child: AppButton.primary(
               onPressed: () async {
                 await _handleFormSubmit(
                   context,
@@ -466,16 +463,14 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
     final controller = TextEditingController(
       text: (_state[key] ?? props['value'] ?? '').toString(),
     );
-    return TextField(
+    return AppTextField(
       controller: controller,
       keyboardType: props['type'] == 'number'
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: props['label'] as String? ?? '',
-        hintText: props['placeholder'] as String?,
-      ),
       onChanged: (value) => _state[key] = value,
+      label: props['label'] as String? ?? '',
+      placeholder: props['placeholder'] as String?,
     );
   }
 
@@ -488,15 +483,13 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
     final controller = TextEditingController(
       text: (_state[key] ?? props['value'] ?? '').toString(),
     );
-    return TextField(
+    return AppTextField(
       controller: controller,
       minLines: (props['rows'] as int?) ?? 3,
       maxLines: (props['rows'] as int?) ?? 6,
-      decoration: InputDecoration(
-        labelText: props['label'] as String? ?? '',
-        hintText: props['placeholder'] as String?,
-      ),
       onChanged: (value) => _state[key] = value,
+      label: props['label'] as String? ?? '',
+      placeholder: props['placeholder'] as String?,
     );
   }
 
@@ -508,15 +501,13 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
     final key = _fieldKey(props, bindings, 'checked');
     final checked =
         (_state[key] as bool?) ?? (props['checked'] as bool? ?? false);
-    return CheckboxListTile(
+    return AppCheckboxRow(
       value: checked,
       title: Text(props['label'] as String? ?? ''),
       subtitle: (props['description'] as String?)?.isNotEmpty == true
           ? Text(props['description'] as String)
           : null,
       onChanged: (value) => setState(() => _state[key] = value ?? false),
-      controlAffinity: ListTileControlAffinity.leading,
-      contentPadding: EdgeInsets.zero,
     );
   }
 
@@ -542,7 +533,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         Text(props['label'] as String? ?? ''),
         const SizedBox(height: 8),
         for (final option in options)
-          CheckboxListTile(
+          AppCheckboxRow(
             value: values.contains(option['value']),
             title: Text(option['label'] as String? ?? ''),
             onChanged: (checked) {
@@ -554,8 +545,6 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
               }
               setState(() => _state[key] = next.toList());
             },
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
           ),
       ],
     );
@@ -641,7 +630,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
             ),
           ),
         const SizedBox(height: 8),
-        shad.SecondaryButton(
+        AppButton.secondary(
           onPressed: () async {
             final result = await FilePicker.pickFiles();
             final paths = result
@@ -659,7 +648,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
             runSpacing: 8,
             children: [
               for (final path in selected)
-                Chip(label: Text(path.split('/').last)),
+                AppChip(label: Text(path.split('/').last)),
             ],
           ),
         ],
@@ -671,7 +660,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
     final action = props['action'] as String?;
     return Align(
       alignment: Alignment.centerLeft,
-      child: shad.SecondaryButton(
+      child: AppButton.secondary(
         onPressed: action == null
             ? null
             : () => _handleUiAction(
@@ -792,17 +781,13 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
       }
 
       if (!context.mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) =>
-            shad.Alert(content: const Text('Submitted successfully')),
-      );
+      showAppToast(context, message: context.l10n.assistantSubmitSuccess);
     } on Exception catch (error) {
       if (!context.mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) =>
-            shad.Alert.destructive(content: Text(error.toString())),
+      showAppToast(
+        context,
+        message: error.toString(),
+        variant: AppAlertVariant.destructive,
       );
     }
   }
@@ -874,23 +859,29 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
     required Widget child,
     EdgeInsets padding = const EdgeInsets.all(16),
   }) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title != null && title.isNotEmpty) ...[
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              if (description != null && description.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(description, style: Theme.of(context).textTheme.bodySmall),
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: Padding(
+          padding: padding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null && title.isNotEmpty) ...[
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                if (description != null && description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+                const SizedBox(height: 12),
               ],
-              const SizedBox(height: 12),
+              child,
             ],
-            child,
-          ],
+          ),
         ),
       ),
     );
@@ -912,10 +903,10 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
     String? variant,
   }) {
     final color = switch (variant) {
-      'success' => Colors.green,
-      'warning' => Colors.orange,
-      'error' => Colors.red,
-      _ => Colors.blue,
+      'success' => AppTokens.of(context).colorScheme.success,
+      'warning' => AppTokens.of(context).colorScheme.warning,
+      'error' => AppTokens.of(context).colorScheme.destructive,
+      _ => AppTokens.of(context).colorScheme.info,
     };
     return Container(
       width: double.infinity,
@@ -938,10 +929,11 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
   }
 
   Widget _badge(BuildContext context, String label, {String? variant}) {
+    final colors = AppTokens.of(context).colorScheme;
     final background = switch (variant) {
-      'success' => Colors.green.withValues(alpha: 0.12),
-      'warning' => Colors.orange.withValues(alpha: 0.12),
-      'error' => Colors.red.withValues(alpha: 0.12),
+      'success' => colors.success.withValues(alpha: 0.12),
+      'warning' => colors.warning.withValues(alpha: 0.12),
+      'error' => colors.destructive.withValues(alpha: 0.12),
       'outline' => Colors.transparent,
       _ => Theme.of(context).colorScheme.surfaceContainerHighest,
     };
@@ -1082,23 +1074,23 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
   IconData _resolveIcon(String? name) {
     switch (name) {
       case 'Calendar':
-        return Icons.calendar_month_outlined;
+        return LucideIcons.calendarDays;
       case 'Wallet':
-        return Icons.account_balance_wallet_outlined;
+        return LucideIcons.wallet;
       case 'Check':
-        return Icons.check_circle_outline;
+        return LucideIcons.circleCheck;
       case 'AlertTriangle':
-        return Icons.warning_amber_outlined;
+        return LucideIcons.triangleAlert;
       case 'Clock':
-        return Icons.schedule_outlined;
+        return LucideIcons.clock;
       case 'TrendingUp':
-        return Icons.trending_up_outlined;
+        return LucideIcons.trendingUp;
       case 'TrendingDown':
-        return Icons.trending_down_outlined;
+        return LucideIcons.trendingDown;
       case 'BookOpen':
-        return Icons.menu_book_outlined;
+        return LucideIcons.bookOpen;
       default:
-        return Icons.auto_awesome_outlined;
+        return LucideIcons.sparkles;
     }
   }
 
@@ -1111,9 +1103,9 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
       }
     }
     return switch (value) {
-      'success' => Colors.green,
-      'warning' => Colors.orange,
-      'error' => Colors.red,
+      'success' => AppTokens.of(context).colorScheme.success,
+      'warning' => AppTokens.of(context).colorScheme.warning,
+      'error' => AppTokens.of(context).colorScheme.destructive,
       'primary' => Theme.of(context).colorScheme.primary,
       _ => null,
     };
@@ -1226,7 +1218,8 @@ class _TimeTrackingStatsCard extends StatelessWidget {
       ),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Card(
+          return const AppCard(
+            padding: EdgeInsets.zero,
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Center(child: NovaLoadingIndicator()),
@@ -1235,7 +1228,8 @@ class _TimeTrackingStatsCard extends StatelessWidget {
         }
 
         final stats = snapshot.data!;
-        return Card(
+        return AppCard(
+          padding: EdgeInsets.zero,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1336,9 +1330,10 @@ class _RenderTabsState extends State<_RenderTabs> {
           runSpacing: 8,
           children: [
             for (final tab in widget.tabs)
-              ChoiceChip(
+              AppChip(
                 label: Text(tab.label),
                 selected: _selectedTabId == tab.id,
+                inMutuallyExclusiveGroup: true,
                 onSelected: (_) => setState(() => _selectedTabId = tab.id),
               ),
           ],
@@ -1367,7 +1362,8 @@ class _FlipCardState extends State<_FlipCard> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => setState(() => _showBack = !_showBack),
-      child: Card(
+      child: AppCard(
+        padding: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(_showBack ? widget.back : widget.front),
@@ -1403,7 +1399,8 @@ class _QuizCardState extends State<_QuizCard> {
         _selected != null &&
         widget.answer != null &&
         _selected == widget.answer;
-    return Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

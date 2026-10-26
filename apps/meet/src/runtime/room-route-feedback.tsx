@@ -2,8 +2,7 @@ import { useRouter } from '@tanstack/react-router';
 import { CallPreparation } from '@tuturuuu/meet-core/features/call/components/call-preparation';
 import { JoinOutcome } from '@tuturuuu/meet-core/features/call/components/join-outcome';
 import { NextIntlClientProvider } from 'next-intl';
-import en from '../../messages/en.json';
-import vi from '../../messages/vi.json';
+import { roomFeedbackMessages } from './room-feedback-messages';
 
 export function isRoomPath(pathname: string) {
   return /^\/(?:en\/|vi\/)?r\/[^/]+\/?$/u.test(pathname);
@@ -23,7 +22,7 @@ export function RoomRouteFeedback({
     <NextIntlClientProvider
       locale={locale}
       timeZone="UTC"
-      messages={locale === 'vi' ? vi : en}
+      messages={roomFeedbackMessages[locale]}
     >
       {state === 'loading' ? (
         <CallPreparation leaveHref="/" />

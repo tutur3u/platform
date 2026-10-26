@@ -77,6 +77,12 @@ export async function resourceStatusDetails(
 
 const round = (value: number) => Math.round(value * 10) / 10;
 export function renderResourceStatus(result: {
+  disk?: {
+    floorGiB: number | null;
+    admit: boolean;
+    freeGiB?: number;
+    reason?: string;
+  };
   enabled: boolean;
   machine: { memoryGiB: number; cpus: number };
   limits: { turboConcurrency: number; vitestWorkers: number };
@@ -98,6 +104,10 @@ export function renderResourceStatus(result: {
     `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs`,
     `Limits: ${result.laneCount} base lane(s), max ${result.maxLanes} (host allows ${result.effectiveLanes}), burst ${result.burst.eligible ? 'eligible' : result.burst.reason}, Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}`,
   ];
+  if (result.disk)
+    lines.push(
+      `Disk: floor ${result.disk.floorGiB === null ? 'invalid' : `${result.disk.floorGiB} GiB`}; ${result.disk.admit ? `${result.disk.freeGiB?.toFixed(1) ?? 'unknown'} GiB free, admitted` : (result.disk.reason ?? 'unavailable')}`
+    );
   if (result.budget) {
     const { ceiling, used } = result.budget;
     lines.push(

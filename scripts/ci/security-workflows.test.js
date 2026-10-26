@@ -83,6 +83,15 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
   // a separate API-only backstop).
   assert.equal(on.schedule, undefined);
   assert.match(codeql.concurrency.group, /^codeql-/u);
+  // Main-push baselines must complete; only PR scans may be cancelled.
+  assert.doesNotMatch(
+    String(codeql.concurrency['cancel-in-progress']),
+    /'push'/u
+  );
+  assert.match(
+    String(codeql.concurrency['cancel-in-progress']),
+    /pull_request/u
+  );
   const analyze = codeql.jobs.analyze;
   assert.equal(analyze.needs, 'scope');
   assert.equal(

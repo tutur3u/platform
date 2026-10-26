@@ -165,6 +165,13 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
           Accept: 'application/json',
           [GATEWAY_HEADER]: secret,
         });
+        for (const name of [
+          'x-tuturuuu-offline-download',
+          'x-tuturuuu-turnstile-token',
+        ]) {
+          const value = request.headers.get(name);
+          if (value !== null) headers.set(name, value);
+        }
         let body: Uint8Array<ArrayBuffer> | undefined;
         if (request.body) {
           if (

@@ -108,3 +108,12 @@ type-check, lint, and build results. Do not run local `bun validate` or builds.
 For SDK package process-drain failures on macOS, inspect the first signal-zero probe after `SIGKILL`. An exiting group can briefly return `EPERM` before disappearing. Continue bounded polling inside the existing deadline; only `ESRCH` establishes disappearance. Do not suppress persistent permission failures or weaken descendant assertions. Use `scripts/ci/sdk-package-process.test.js` for deterministic transient/persistent probe controls, alongside `qualify-sdk-package.test.js` for real descendants.
 
 Retry only EPERM during group drain; rethrow other probe failures and retain the last EPERM as the timeout error's cause. Only the post-leader-close SIGKILL may continue to drain after EPERM. Include sdk-package-process.test.js in both package qualification and release qualification control steps.
+
+## DerivedData prune safety
+
+DerivedData repository-refusal exemptions require a literal, canonical
+`~/Library/Developer/Xcode/DerivedData` root whose complete chain through home
+passes lstat directory and effective-user ownership checks. Skip redirected or
+nonstandard roots and repeat the chain check at removal. Exercise real symlink
+fixtures with `src/cli/storage-derived-data.test.ts`; keep the normal removal
+positive control. See [machine storage health](../../../../../apps/docs/build/development-tools/machine-storage-health.mdx).

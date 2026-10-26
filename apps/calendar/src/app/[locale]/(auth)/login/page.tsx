@@ -4,6 +4,8 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
@@ -37,10 +39,13 @@ export default async function LoginPage({
     (hasWebAppSession || hasSupabaseSession) &&
     !shouldRefreshCrossAppSession
   ) {
-    redirect(nextPath);
+    redirect(withAppBase(nextPath));
   }
 
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const returnUrl = new URL(
+    withAppBase('/verify-token'),
+    maybeBridgeRequest()?.request.url ?? BASE_URL
+  );
   returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', TTR_URL);

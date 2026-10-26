@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   bridge: vi.fn(),
   context: vi.fn(),
   admin: vi.fn(),
+  timezone: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: async () => ({}),
@@ -31,6 +32,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 vi.mock('@tuturuuu/ai/tools/workspace-context', () => ({
   resolveWorkspaceContextState: m.context,
+}));
+vi.mock('@tuturuuu/ai/chat/google/mira-timezone', () => ({
+  resolveMiraTimezone: m.timezone,
 }));
 vi.mock('@tuturuuu/ai/tools/mira-tools', () => ({
   createMiraStreamTools: m.factory,
@@ -63,6 +67,10 @@ beforeEach(() => {
   m.factory.mockReturnValue({ canonical: true });
   m.bridge.mockResolvedValue({ ok: true });
   m.admin.mockResolvedValue({ admin: true });
+  m.timezone.mockResolvedValue({
+    source: 'user',
+    timezone: 'Asia/Ho_Chi_Minh',
+  });
 });
 describe('canonical Live execution authorization', () => {
   it('dispatches only through the permission-aware canonical factory and preserves provider IDs', async () => {
@@ -110,5 +118,30 @@ describe('canonical Live execution authorization', () => {
     expect((await POST(request({ ...body, toolCallId: '' }))).status).toBe(400);
     expect(m.session).not.toHaveBeenCalled();
     expect(m.bridge).not.toHaveBeenCalled();
+  });
+  it('offers canonical clients no UI effects unless they declare them', async () => {
+    await POST(request());
+    const ctx = m.factory.mock.calls[0]![0];
+    expect([...ctx.clientCapabilities]).toEqual([]);
+    expect(ctx.timezone).toBe('Asia/Ho_Chi_Minh');
+    expect(m.timezone).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'actor', wsId: 'workspace' })
+    );
+
+    await POST(
+      request({
+        ...body,
+        clientCapabilities: ['theme', 'navigate', 'unknown'],
+        timezone: 'Asia/Bangkok',
+      })
+    );
+    const declared = m.factory.mock.calls[1]![0];
+    expect([...declared.clientCapabilities].sort()).toEqual([
+      'navigate',
+      'theme',
+    ]);
+    expect(m.timezone).toHaveBeenLastCalledWith(
+      expect.objectContaining({ requestTimezone: 'Asia/Bangkok' })
+    );
   });
 });

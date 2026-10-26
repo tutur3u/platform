@@ -8,7 +8,9 @@ export function providerConfig(provider: MailProvider) {
   const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
   const clientId = process.env[`MAIL_${prefix}_CLIENT_ID`];
   const clientSecret = process.env[`MAIL_${prefix}_CLIENT_SECRET`];
-  const redirectUri = process.env[`MAIL_${prefix}_REDIRECT_URI`];
+  const redirectUri =
+    process.env[`MAIL_${prefix}_REDIRECT_URI`] ??
+    'https://mail.tuturuuu.com/api/v1/mail/connected/callback';
   if (!clientId || !clientSecret || !redirectUri)
     throw new Error('Mail OAuth is not configured');
   const base = 'https://login.microsoftonline.com/common/oauth2/v2.0';

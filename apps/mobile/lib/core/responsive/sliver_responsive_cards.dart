@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 
 /// Content-sized columns that adapt to the available window width.
 /// Each column flows independently so short cards do not create empty rows.
+/// [spacing] separates cards; nothing is added after the last card, so the
+/// page's scroll end gap stays the only trailing space.
 class SliverResponsiveCards extends StatelessWidget {
   const SliverResponsiveCards({
     required this.children,
@@ -42,11 +44,10 @@ class SliverResponsiveCards extends StatelessWidget {
                           var index = column;
                           index < children.length;
                           index += columns
-                        )
-                          Padding(
-                            padding: EdgeInsets.only(bottom: spacing),
-                            child: children[index],
-                          ),
+                        ) ...[
+                          if (index >= columns) SizedBox(height: spacing),
+                          children[index],
+                        ],
                       ],
                     ),
                   ),

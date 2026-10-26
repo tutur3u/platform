@@ -1,6 +1,6 @@
 name: mobile
 description: Tuturuuu Mobile
-version: 0.25.1+100
+version: 0.26.0+101
 publish_to: none
 
 environment:
@@ -86,6 +86,8 @@ dev_dependencies:
   build_runner: ^2.13.1
   flutter_launcher_icons: ^0.14.4
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   json_serializable: ^6.13.1
   leak_tracker_flutter_testing: ^3.0.10

@@ -14,8 +14,30 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Schema And Typegen
 
+- Remote `db reset --linked` retains managed storage tables. Bucket creation
+  defaults must tolerate existing IDs; preserve intentional configuration upserts.
+  See [storage replay verification](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#replaying-migrations-with-existing-storage-buckets).
 - Prepare migrations; do not push production Supabase changes from Codex.
 - Prefer additive migrations and runtime fallbacks when rollout order can vary.
+- Separate short existing-table DDL, `VALIDATE CONSTRAINT`, and concurrent index
+  creation into distinct migration transactions. Earlier `ALTER TABLE` locks
+  otherwise survive through later scans; `lock_timeout` bounds acquisition, not
+  lock lifetime. With pinned CLI 2.117.0, keep `CREATE INDEX CONCURRENTLY` as the
+  only statement in its file so it executes outside the transaction batch. See
+  the [habit migration sequence](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#idempotent-writes)
+  for the schema-preserving split and regression coverage.
+- A failed concurrent index build can leave an invalid index that `IF NOT EXISTS`
+  silently skips. Add a following catalog guard that raises on a missing or
+  invalid required index. Do not conditionally drop concurrently inside `DO`
+  (unsupported), or unconditionally drop a healthy index in a preceding retry.
+  Recovery: inspect `pg_index`, find and resolve conflicting duplicate keys
+  without deleting history, then run `DROP INDEX CONCURRENTLY` on the invalid
+  index outside a transaction and retry the authorized migration workflow. If
+  the create migration was already recorded, rebuild with its exact standalone
+  concurrent-create statement before retrying the guard; never bypass the guard
+  by editing its ledger entry. See the
+  [creation-key recovery runbook](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#recover-a-failed-concurrent-creation-key-index)
+  for SQL, missing-index handling and release authority.
 - Apply local migrations before `bun sb:typegen` when possible. Typegen reads
   the live local schema, not unapplied SQL.
 - Never hand-edit generated type files. Prefer shared DB row aliases from
@@ -90,6 +112,12 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   side effects when no row matched.
 - Membership lookup errors are `500`; successful lookups with no membership are
   `403`.
+- Never filter by a credential value (`access_token`, `refresh_token`):
+  PostgREST puts every filter in the request URL, where gateway logs keep it.
+  Fence by row id and metadata such as `created_at`, compare a sha256
+  fingerprint inside an RPC body (see `quarantine_calendar_auth_token`), or
+  compare in process. `packages/utils/src/oauth-credential-url-filter.test.ts`
+  scans every app and package source for this pattern.
 
 ## Storage
 
@@ -408,3 +436,39 @@ as checking effective privileges. The regression is
 `apps/database/supabase/tests/security-meet-guest-grants.sql`; a socket-only PG14
 fixture can apply the relevant historical view definition and later grant
 migrations against synthetic prerequisite tables without a shared Docker stack.
+
+### Historical NOT VALID checks during backfills
+
+Unchanged payloads are still checked on UPDATE. Audit pending backfills for
+legacy size/length violations before deployment. Notification email-copy cleanup
+uses the catalog expression for safe batches, then temporarily drops/restores
+the exact check only for the oversized tail in one transaction. The table lock
+lasts through commit; do not drop the check before the regular scan. Preserve
+payload bytes and verify the safe-only path retains the constraint OID. See
+[disposable proof requirements](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#backfills-with-historical-payload-violations).
+
+### Dataset server access
+
+Dataset client grants and RLS policies remain revoked by
+`20260312113000_lock_description_tables_to_server_apis`. Use the shared
+`apps/web/src/lib/datasets/access.ts` authorization flow, which resolves the actor
+and `getPermissions` workspace/`ai_lab` authority before creating a dataset admin
+client. Bind the dataset to the verified workspace, and retain its `dataset_id`
+on all child reads and mutations. Validate row/column ids inside that parent;
+never restore direct client grants as an API repair. See the
+[authorization decision](../../../../../apps/docs/platform/architecture/authorization.mdx)
+and the opt-in dataset `local-chain.test.ts` for full local Auth/PostgREST checks.
+
+### Cron maintenance after private-schema moves
+
+When moving a function called by pg_cron, inspect and execute the stored
+`cron.job.command` on the complete disposable migration chain. Function existence
+or direct helper tests do not prove that the schedule still resolves its target.
+For the retained pure-SQL dashboard refresh, alter only the command to call
+`private.refresh_posts_dashboard_view()`; preserve job id, schedule and active state.
+New retention scheduling belongs in Cloudflare Cron Control. Its service-only
+`private.prune_cron_history(integer)` RPC bounds each table's oldest completed
+seven-day history batch; unfinished executions remain for recovery. See the
+[Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
+and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
+regressions. Never add a cleanup pg_cron job to repair an accumulating history table.

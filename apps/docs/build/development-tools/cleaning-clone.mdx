@@ -22,7 +22,9 @@ reproduction notes keep their original versions.
 - Ensure you have [bun](https://bun.sh/) installed. The repository pins a specific
   Bun version via the `packageManager` field in the root `package.json` (currently
   `bun@1.4.4`) — match that version so your local toolchain stays in sync.
-- Node `>=22.13.0` is also required (see the `engines` field in the root `package.json`).
+- Use the Node.js version pinned in the root `.node-version` (currently
+  `26.12.1`). The root `engines` field keeps a `>=22.13.0` support floor; see
+  [Node.js runtime pin](/build/development-tools/node-runtime).
 
 ## Quick Cleanup (Recommended)
 

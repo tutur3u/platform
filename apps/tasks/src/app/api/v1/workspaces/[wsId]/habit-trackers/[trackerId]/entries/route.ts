@@ -6,10 +6,8 @@ import {
   habitTrackerErrorResponse,
 } from '@/lib/habit-trackers/route-utils';
 import { habitTrackerEntryInputSchema } from '@/lib/habit-trackers/schemas';
-import {
-  createHabitTrackerEntry,
-  getHabitTrackerDetail,
-} from '@/lib/habit-trackers/service';
+import { getHabitTrackerDetail } from '@/lib/habit-trackers/service';
+import { createHabitTrackerEntry } from '@/lib/habit-trackers/writes';
 
 interface RouteParams {
   wsId: string;
@@ -55,7 +53,7 @@ export async function POST(
     const body = habitTrackerEntryInputSchema.parse(
       await request.json()
     ) as HabitTrackerEntryInput;
-    const entry = await createHabitTrackerEntry(
+    const { entry, replayed } = await createHabitTrackerEntry(
       sbAdmin,
       wsId,
       trackerId,
@@ -63,7 +61,10 @@ export async function POST(
       body
     );
 
-    return NextResponse.json({ entry }, { status: 201 });
+    return NextResponse.json(
+      { entry, replayed },
+      { status: replayed ? 200 : 201 }
+    );
   } catch (error) {
     return habitTrackerErrorResponse(error);
   }

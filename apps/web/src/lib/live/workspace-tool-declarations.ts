@@ -1,4 +1,5 @@
 import { type FunctionDeclaration, Type } from '@google/genai';
+import { MIRA_APP_DESTINATIONS } from '@tuturuuu/ai/tools/mira-client-capabilities';
 
 const timestamp = {
   type: Type.STRING,
@@ -15,6 +16,18 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
         theme: { type: Type.STRING, enum: ['light', 'dark', 'system'] },
       },
       required: ['theme'],
+    },
+  },
+  {
+    name: 'open_app',
+    description:
+      'Switch to another Tuturuuu app when the user asks to open, go to, or switch to it. This only navigates and may end the current Live session view. Call once.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        destination: { type: Type.STRING, enum: [...MIRA_APP_DESTINATIONS] },
+      },
+      required: ['destination'],
     },
   },
   {

@@ -28,12 +28,15 @@ export const ci = {
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
   'apps-cloudflare.yaml': true,
+  'shortener-cloudflare.yaml': true,
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
+  'native-start-app.yaml': true,
   'wave1-native-publish.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
+  'turbo-cache-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': false,
@@ -80,6 +83,7 @@ export const ci = {
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
   'vercel-production-drive.yaml': true,
+  'finance-cloudflare.yaml': true,
   'vercel-production-finance.yaml': true,
   'vercel-production-inventory.yaml': true,
   'vercel-production-infrastructure.yaml': true,
@@ -112,13 +116,20 @@ export const ci = {
   'desktop-beta.yaml': true,
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
+  'track-cloudflare.yaml': true,
+  'cms-cloudflare.yaml': true,
+  'storefront-cloudflare.yaml': true,
+  'ai-cloudflare.yaml': true,
+  'nova-cloudflare.yaml': true,
+  'inventory-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
-// Admit each app only in an explicitly reviewed wave-1 cutover PR.
+// Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
   calendar: { state: 'held', reason: 'held for wave-1 cutover' },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
+  shortener: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

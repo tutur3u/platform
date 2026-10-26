@@ -11,3 +11,4 @@ export {
   toggleWherePoll,
 } from '@tuturuuu/apis/meet/actions/polls';
 export { removeUserFromPlan } from '@tuturuuu/apis/meet/actions/users';
+export { resetGuestPassword } from './guest-password-reset.server';

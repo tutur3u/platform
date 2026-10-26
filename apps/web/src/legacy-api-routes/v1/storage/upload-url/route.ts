@@ -12,6 +12,7 @@ import {
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
 import {
+  encodeStoragePath,
   sanitizeFilename,
   sanitizePathStrict,
 } from '@tuturuuu/utils/storage-path';
@@ -89,7 +90,7 @@ export const POST = withApiAuth(
       // Generate signed upload URL
       const { data, error } = await supabase.storage
         .from('workspaces')
-        .createSignedUploadUrl(storagePath, {
+        .createSignedUploadUrl(encodeStoragePath(storagePath), {
           upsert,
         });
 

@@ -1,5 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
+import {
+  encodeStoragePath,
+  sanitizePathStrict,
+} from '@tuturuuu/utils/storage-path';
 import {
   commitFixedAiCreditReservation,
   releaseFixedAiCreditReservation,
@@ -446,7 +449,7 @@ export async function executeConvertFileToMarkdown(
       const { data: signedReadData, error: signedReadError } =
         await sbAdmin.storage
           .from('workspaces')
-          .createSignedUrl(targetPath, 120);
+          .createSignedUrl(encodeStoragePath(targetPath), 120);
 
       signedReadUrl = signedReadData?.signedUrl ?? '';
 

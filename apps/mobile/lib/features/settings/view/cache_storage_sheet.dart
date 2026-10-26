@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/cache_storage_chart.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
@@ -25,14 +26,12 @@ Future<void> showCacheStorageSheet(
   if (userId == null) return;
   await showScopedSettingsSheet<void>(
     context: context,
-    builder: (_) => FractionallySizedBox(
-      heightFactor: 0.82,
-      child: CacheStorageSheet(
-        userId: userId,
-        workspaceId: workspaceId,
-        store: store,
-        coordinator: coordinator,
-      ),
+    sheetSize: AppSheetSize.large,
+    builder: (_) => CacheStorageSheet(
+      userId: userId,
+      workspaceId: workspaceId,
+      store: store,
+      coordinator: coordinator,
     ),
   );
 }
@@ -117,17 +116,17 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   Future<void> _clear() async {
     if (widget.workspaceId == null) return;
     if (_coordinator.state.value.running) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.cacheStorageClear),
+      builder: (dialogContext) => AppDialog(
+        title: context.l10n.cacheStorageClear,
         content: Text(context.l10n.offlineClearScopeDescription),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          TextButton(
+          AppButton.destructive(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(context.l10n.cacheStorageClear),
           ),
@@ -169,109 +168,96 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
       scheme.outline,
     ];
     const categories = CacheStorageCategory.values;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: ListView(
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: scheme.outlineVariant,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.cacheStorageTitle,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 6),
-          Text(l10n.cacheStorageDescription),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: scheme.error)),
-          ],
-          if (snapshot == null) ...[
-            const SizedBox(height: 28),
-            const Center(child: CircularProgressIndicator()),
-          ] else ...[
-            if (widget.workspaceId != null) ...[
-              const SizedBox(height: 26),
-              Center(
-                child: CacheStorageChart(
-                  bytes: snapshot.totalBytes,
-                  limitBytes: snapshot.maxBytes,
-                  categoryBytes: [
-                    for (final category in categories)
-                      snapshot.categoryBytes[category] ?? 0,
-                  ],
-                  colors: colors,
-                ),
-              ),
+    return AppSheetScaffold(
+      title: l10n.cacheStorageTitle,
+      description: l10n.cacheStorageDescription,
+      slivers: [
+        SliverList.list(
+          children: [
+            if (_error != null) ...[
               const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  '${_formatBytes(snapshot.totalBytes)} / '
-                  '${_formatBytes(snapshot.maxBytes)}',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Center(
-                child: Text(
-                  '${l10n.cacheStorageEstimateNote}\n'
-                  '${l10n.offlineStorageScope}',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              const SizedBox(height: 22),
-              for (var index = 0; index < categories.length; index++)
-                _CategoryRow(
-                  label: _categoryLabel(context, categories[index]),
-                  bytes: snapshot.categoryBytes[categories[index]] ?? 0,
-                  total: snapshot.totalBytes,
-                  color: colors[index],
-                ),
-            ] else ...[
-              const SizedBox(height: 20),
-              Text(l10n.offlineStorageNeedsWorkspace),
+              Text(_error!, style: TextStyle(color: scheme.error)),
             ],
-            const SizedBox(height: 20),
-            Text(
-              l10n.cacheStorageLimit,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final bytes in CacheStore.allowedMaxBytes)
-                  ChoiceChip(
-                    label: Text(_formatBytes(bytes)),
-                    selected: snapshot.maxBytes == bytes,
-                    onSelected: disabled
-                        ? null
-                        : (_) => unawaited(_setLimit(bytes)),
+            if (snapshot == null) ...[
+              const SizedBox(height: 28),
+              const Center(child: CircularProgressIndicator()),
+            ] else ...[
+              if (widget.workspaceId != null) ...[
+                const SizedBox(height: 26),
+                Center(
+                  child: CacheStorageChart(
+                    bytes: snapshot.totalBytes,
+                    limitBytes: snapshot.maxBytes,
+                    categoryBytes: [
+                      for (final category in categories)
+                        snapshot.categoryBytes[category] ?? 0,
+                    ],
+                    colors: colors,
                   ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    '${_formatBytes(snapshot.totalBytes)} / '
+                    '${_formatBytes(snapshot.maxBytes)}',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Center(
+                  child: Text(
+                    '${l10n.cacheStorageEstimateNote}\n'
+                    '${l10n.offlineStorageScope}',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                for (var index = 0; index < categories.length; index++)
+                  _CategoryRow(
+                    label: _categoryLabel(context, categories[index]),
+                    bytes: snapshot.categoryBytes[categories[index]] ?? 0,
+                    total: snapshot.totalBytes,
+                    color: colors[index],
+                  ),
+              ] else ...[
+                const SizedBox(height: 20),
+                Text(l10n.offlineStorageNeedsWorkspace),
               ],
-            ),
-            const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed:
-                  disabled ||
-                      widget.workspaceId == null ||
-                      snapshot.totalBytes == 0
-                  ? null
-                  : () => unawaited(_clear()),
-              icon: const Icon(Icons.delete_outline_rounded),
-              label: Text(l10n.cacheStorageClear),
-            ),
+              const SizedBox(height: 20),
+              Text(
+                l10n.cacheStorageLimit,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final bytes in CacheStore.allowedMaxBytes)
+                    AppChip(
+                      label: Text(_formatBytes(bytes)),
+                      selected: snapshot.maxBytes == bytes,
+                      inMutuallyExclusiveGroup: true,
+                      onSelected: disabled
+                          ? null
+                          : (_) => unawaited(_setLimit(bytes)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AppButton.outline(
+                onPressed:
+                    disabled ||
+                        widget.workspaceId == null ||
+                        snapshot.totalBytes == 0
+                    ? null
+                    : () => unawaited(_clear()),
+                leading: const Icon(LucideIcons.trash2),
+                child: Text(l10n.cacheStorageClear),
+              ),
+            ],
           ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -295,7 +281,7 @@ class _CategoryRow extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.circle, size: 10, color: color),
+            Icon(LucideIcons.circle, size: 10, color: color),
             const SizedBox(width: 8),
             Expanded(child: Text(label)),
             Text(_formatBytes(bytes)),

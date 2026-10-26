@@ -2,7 +2,10 @@ import { createHash } from 'node:crypto';
 import { channelTicketSchema } from '@tuturuuu/realtime/channels';
 import { verifyRealtimePayload } from '@tuturuuu/realtime/core/token';
 import { richTextDocumentContent } from '@tuturuuu/realtime/documents/server';
-import { accountPrivateRpc } from '@tuturuuu/utils/account-benefits-server';
+import {
+  AccountServiceError,
+  accountPrivateRpc,
+} from '@tuturuuu/utils/account-benefits-server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { noStore } from '../../route-utils';
@@ -65,15 +68,22 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ revision }, { headers: noStore });
   } catch (error) {
+    // A 409 lets the room report a real conflict instead of an endless
+    // "backup delayed" retry; other RPC statuses pass through unchanged.
+    const status =
+      error instanceof z.ZodError || error instanceof SyntaxError
+        ? 400
+        : error instanceof AccountServiceError
+          ? error.status
+          : 503;
+    if (status >= 500)
+      console.error('Meeting document checkpoint failed', {
+        status,
+        reason: error instanceof Error ? error.message : 'unknown',
+      });
     return NextResponse.json(
       { error: 'Document checkpoint failed' },
-      {
-        status:
-          error instanceof z.ZodError || error instanceof SyntaxError
-            ? 400
-            : 503,
-        headers: noStore,
-      }
+      { status, headers: noStore }
     );
   }
 }

@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'morphing_navigation_bar.dart';

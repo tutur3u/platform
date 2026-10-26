@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/ui",
-  "version": "0.39.2",
+  "version": "0.40.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -322,6 +322,10 @@
     "./custom/language-dropdown-wrapper": {
       "types": "./src/components/ui/custom/language-dropdown-wrapper.tsx",
       "import": "./src/components/ui/custom/language-dropdown-wrapper.tsx"
+    },
+    "./custom/ops": {
+      "types": "./src/components/ui/custom/ops/index.ts",
+      "import": "./src/components/ui/custom/ops/index.ts"
     },
     "./custom/locale-preference": {
       "types": "./src/components/ui/custom/locale-preference.ts",

@@ -161,7 +161,12 @@ describe('authenticated native Calendar gateway', () => {
       deps.verifyToken.mockResolvedValue(false);
       const response = await forwardCalendarRequest(
         request(events, {
-          headers: { Authorization: auth, [GATEWAY_HEADER]: secret },
+          headers: {
+            Authorization: auth,
+            [GATEWAY_HEADER]: secret,
+            'x-tuturuuu-offline-download': '1',
+            'x-tuturuuu-turnstile-token': 'synthetic-turnstile-token',
+          },
         }),
         deps
       );
@@ -218,6 +223,36 @@ describe('authenticated native Calendar gateway', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.has(GATEWAY_HEADER)).toBe(false);
   });
+
+  it.each<Record<string, string>>([
+    {},
+    { 'x-tuturuuu-offline-download': '1' },
+    { 'x-tuturuuu-turnstile-token': 'synthetic-turnstile-token' },
+    {
+      'x-tuturuuu-offline-download': '1',
+      'x-tuturuuu-turnstile-token': 'synthetic-turnstile-token',
+    },
+  ])(
+    'preserves offline verification headers when supplied: %j',
+    async (input) => {
+      const deps = dependencies();
+      const response = await forwardCalendarRequest(
+        request(events, { headers: input }),
+        deps
+      );
+      expect(response.status).toBe(200);
+      expect(deps.fetch).toHaveBeenCalledTimes(1);
+      const headers = new Headers(deps.fetch.mock.calls[0]![1]?.headers);
+      const incoming = new Headers(input);
+      for (const name of [
+        'x-tuturuuu-offline-download',
+        'x-tuturuuu-turnstile-token',
+      ]) {
+        expect(headers.get(name)).toBe(incoming.get(name));
+        expect(response.headers.has(name)).toBe(false);
+      }
+    }
+  );
 
   it('preserves workspace denial and rate limit responses without session cookies', async () => {
     for (const status of [401, 403, 429]) {

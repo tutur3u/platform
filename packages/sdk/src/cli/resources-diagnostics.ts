@@ -1,14 +1,11 @@
-import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { totalmem } from 'node:os';
-import { promisify } from 'node:util';
-
-const exec = promisify(execFile);
+import { systemProbe } from './resources-system-probes';
 
 export async function memoryPressure() {
   try {
     if (process.platform === 'darwin') {
-      const { stdout } = await exec(
+      const { stdout } = await systemProbe(
         'sysctl',
         ['-n', 'kern.memorystatus_vm_pressure_level'],
         { timeout: 2000 }
@@ -38,10 +35,14 @@ export async function memoryPressure() {
 }
 
 export async function resourceSnapshot() {
-  const { stdout } = await exec('ps', ['-axo', 'pid=,ppid=,rss=,%cpu=,comm='], {
-    timeout: 3000,
-    maxBuffer: 2 * 1024 * 1024,
-  });
+  const { stdout } = await systemProbe(
+    'ps',
+    ['-axo', 'pid=,ppid=,rss=,%cpu=,comm='],
+    {
+      timeout: 3000,
+      maxBuffer: 2 * 1024 * 1024,
+    }
+  );
   const processes = stdout
     .trim()
     .split('\n')

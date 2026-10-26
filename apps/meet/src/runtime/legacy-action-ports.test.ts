@@ -8,6 +8,9 @@ import { refreshConfirmedAction } from './legacy-action-refresh';
 
 function fixture(authenticated = true) {
   const supplier = {
+    resetGuestPassword: vi
+      .fn<LegacyActionSupplier['resetGuestPassword']>()
+      .mockResolvedValue({ error: 'RESET_FAILED' }),
     guestLogin: vi
       .fn<LegacyActionSupplier['guestLogin']>()
       .mockResolvedValue({ error: 'supplier denial' }),
@@ -48,6 +51,10 @@ function fixture(authenticated = true) {
 
 const mappings: { name: LegacyActionName; args: unknown[] }[] = [
   {
+    name: 'resetGuestPassword',
+    args: ['plan', '00000000-0000-4000-8000-000000000001', 'new password'],
+  },
+  {
     name: 'guestLogin',
     args: ['plan', { name: 'Guest', password: 'fixture' }],
   },
@@ -81,7 +88,10 @@ describe('legacy plan transport ports', () => {
     'maps $name to its original positional supplier and preserves denial',
     async ({ name, args }) => {
       const f = fixture();
-      expect(await f.ports[name](args)).toEqual({ error: 'supplier denial' });
+      expect(await f.ports[name](args)).toEqual({
+        error:
+          name === 'resetGuestPassword' ? 'RESET_FAILED' : 'supplier denial',
+      });
       expect(f.load).toHaveBeenCalledTimes(1);
       for (const [key, supplier] of Object.entries(f.supplier)) {
         expect(supplier).toHaveBeenCalledTimes(key === name ? 1 : 0);
@@ -131,6 +141,7 @@ describe('legacy plan transport ports', () => {
     async ({ name, args }) => {
       const f = fixture(false);
       const errors: Partial<Record<LegacyActionName, string>> = {
+        resetGuestPassword: 'UNAUTHORIZED',
         removeUserFromPlan: 'Not authenticated',
         deletePoll: 'Authentication required',
       };

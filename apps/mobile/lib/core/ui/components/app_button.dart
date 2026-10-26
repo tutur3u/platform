@@ -26,6 +26,7 @@ class AppButton extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     super.key,
   });
 
@@ -43,6 +44,7 @@ class AppButton extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     super.key,
   }) : variant = AppButtonVariant.primary;
 
@@ -60,6 +62,7 @@ class AppButton extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     super.key,
   }) : variant = AppButtonVariant.secondary;
 
@@ -77,6 +80,7 @@ class AppButton extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     super.key,
   }) : variant = AppButtonVariant.outline;
 
@@ -94,6 +98,7 @@ class AppButton extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     super.key,
   }) : variant = AppButtonVariant.ghost;
 
@@ -111,6 +116,7 @@ class AppButton extends StatelessWidget {
     this.onLongPress,
     this.focusNode,
     this.semanticLabel,
+    this.selected,
     super.key,
   }) : variant = AppButtonVariant.destructive;
 
@@ -132,6 +138,7 @@ class AppButton extends StatelessWidget {
   final VoidCallback? onLongPress;
   final FocusNode? focusNode;
   final String? semanticLabel;
+  final bool? selected;
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +167,7 @@ class AppButton extends StatelessWidget {
       onLongPress: active ? onLongPress : null,
       focusNode: focusNode,
       semanticLabel: semanticLabel,
+      selected: selected,
       busy: loading,
       child: DefaultTextStyle.merge(
         style: style.textStyle.copyWith(color: foreground),

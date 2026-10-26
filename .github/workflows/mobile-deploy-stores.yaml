@@ -194,11 +194,9 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-
+            ~/.gradle/wrapper/dists
+            ~/.gradle/caches/modules-2/files-2.1
+          key: gradle-downloads-v2-${{ runner.os }}-${{ runner.arch }}-java17
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache

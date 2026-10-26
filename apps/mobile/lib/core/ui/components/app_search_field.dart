@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_icon_button.dart';
 import 'package:mobile/core/ui/components/app_text_field.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 
@@ -71,7 +72,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
     leading: const Icon(AppIcons.search, size: 18),
     trailing: widget.controller.text.isEmpty
         ? null
-        : IconButton(
+        : AppIconButton(
             tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
             icon: const Icon(AppIcons.close, size: 18),
             onPressed: _clear,

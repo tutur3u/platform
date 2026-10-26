@@ -29,6 +29,7 @@ import {
   MIRA_GATEWAY_MODELS_QUERY_KEY,
   modelSupportsFileInput,
 } from './mira-gateway-models';
+import { WEB_MIRA_CLIENT_CAPABILITIES } from './mira-open-app';
 
 interface UseMiraChatConfigParams {
   wsId: string;
@@ -244,6 +245,7 @@ export function useMiraChatConfig({
       creditSource: activeCreditSource,
       ...(creditWsId ? { creditWsId } : {}),
       ...(taskBoardContext ? { taskBoardContext } : {}),
+      clientCapabilities: WEB_MIRA_CLIENT_CAPABILITIES,
     }),
     [
       activeCreditSource,

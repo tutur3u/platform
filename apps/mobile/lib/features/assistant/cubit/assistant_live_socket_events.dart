@@ -4,6 +4,8 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
   Future<void> _handleSocketEvent(AssistantLiveSocketEvent event) async {
     switch (event) {
       case AssistantLiveSocketConnected():
+        // A session from a retired intent must not report itself as live.
+        if (_sessionEpoch != _intentEpoch) return;
         _emitMicrophoneState(
           state.copyWith(
             status: AssistantLiveConnectionStatus.connecting,
@@ -11,9 +13,12 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
           ),
         );
       case AssistantLiveSocketReady():
+        // Release the ready wait either way; its preparation re-checks intent.
         if (!(_readyCompleter?.isCompleted ?? true)) {
           _readyCompleter?.complete();
         }
+        if (_sessionEpoch != _intentEpoch) return;
+        _readyAt = _now();
         _emitMicrophoneState(
           state.copyWith(
             status: AssistantLiveConnectionStatus.connected,
@@ -22,6 +27,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         );
         unawaited(_drainStartupAudio());
       case AssistantLiveSocketClosed(:final reason):
+        if (!_manualDisconnect) _transportFailureVersion++;
         unawaited(stopScreenSharing());
         if (_manualDisconnect) {
           _emitMicrophoneState(
@@ -40,6 +46,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         );
         _scheduleReconnect();
       case AssistantLiveSocketError(:final message):
+        _transportFailureVersion++;
         unawaited(stopScreenSharing());
         _emitMicrophoneState(
           state.copyWith(
@@ -98,6 +105,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         }
         await _audioPlayer.play(bytes);
       case AssistantLiveSocketInterrupted():
+        _turnGeneration++;
         final interruptedTurn = _finalizeTurn();
         await _audioPlayer.clear();
         _clearAssistantActivity();

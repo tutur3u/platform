@@ -34,3 +34,32 @@ A dead preparation owner without `admission/mutation.json` is reclaimable by
 ordinary admission. For a legacy retained fence, use the operator guide's stale-admission
 procedure: stop new submissions, verify dead owner/child/group and unchanged
 token, preserve the directory, and never clear a mutation fence or live queue.
+
+Integrity regressions live in `scripts/sdk-rollout-descriptor.test.js` and
+`scripts/sdk-rollout-race.test.js`. The filesystem-injected race tests can run
+against historical source with `SDK_ROLLOUT_TEST_REF=<git-ref>`; confirm actual
+swap/assertion failures rather than loader errors. Directory identity checks
+cover enumeration and recursive hashing. Cache manifests deliberately follow
+symlinks and classify/read one descriptor. Run FIFO controls in children with
+an explicit kill deadline so a blocking-open defect cannot hang the test runner.
+
+## Balancer controller lock protocol
+
+Unmarked stores are refused by the descriptor-lock protocol; preserve them for
+reconciliation and choose a fresh `TTR_BALANCER_HOME` after stopping predecessors.
+Do not remove either permanent protocol fence (`.lock` and
+`mutation-lock.sqlite`, both directories) or its mutex. Missing or replaced
+inode identity fails closed without repair. Historical device numbers are not
+pinned across reboots; entry devices must match the live root device.
+Whole-store removal also deletes the identity record, so stop all controllers
+and reconcile in-flight work before removal or restore.
+The published balancer launcher selects Node.js; direct Bun mutations fail
+closed before native binding use. The SDK includes the pinned native lock
+supplier's prebuilt binaries; do not compile replacements or activate an
+unreviewed supplier during validation.
+Registry and host-log operations validate and use one opened descriptor with
+`O_NOFOLLOW`; preserve descriptor ownership when replacing their pathname checks.
+Host JSON publication uses an exclusive temporary file, sync and atomic rename;
+create-only cancellation notices retain the first complete publication.
+The [fleet balancer runbook](../../../../../apps/docs/build/development-tools/fleet-balancer.mdx#controller-ledger-locking)
+owns filesystem admission, cutover, runtime requirements and regression coverage.

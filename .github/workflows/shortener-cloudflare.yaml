@@ -1,0 +1,143 @@
+name: Shortener Cloudflare Source
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    paths:
+      [
+        'apps/shortener/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/turnstile/**',
+        'packages/start-bridge/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/shortener-native-*',
+        'scripts/ci/apps-native-artifact.py',
+        'scripts/ci/apps-native-runtime-pointer.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/native-config-default-probe.mjs',
+        'scripts/ci/native-receipt-layout.mjs',
+        'scripts/ci/production-publication-policy.ts',
+        'bun.lock',
+        '.github/workflows/shortener-cloudflare.yaml',
+        '.github/workflows/native-start-app.yaml',
+        'scripts/ci/native-binding-type-harness*',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
+  push:
+    branches: [main]
+    paths:
+      [
+        'apps/shortener/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/turnstile/**',
+        'packages/start-bridge/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/shortener-native-*',
+        'scripts/ci/apps-native-artifact.py',
+        'scripts/ci/apps-native-runtime-pointer.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/native-config-default-probe.mjs',
+        'scripts/ci/native-receipt-layout.mjs',
+        'scripts/ci/production-publication-policy.ts',
+        'bun.lock',
+        '.github/workflows/shortener-cloudflare.yaml',
+        '.github/workflows/native-start-app.yaml',
+        'scripts/ci/native-binding-type-harness*',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: shortener-cloudflare.yaml
+  # Qualification only: production publication stays HELD by
+  # scripts/ci/production-publication-policy.ts and no staging publisher exists.
+  native:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: shortener
+      package: '@tuturuuu/shortener'
+      artifact-script: scripts/ci/shortener-native-artifact.py
+      env-interface: ShortenerGeneratedEnv
+      worker-environment-type: ShortenerEnvironment
+      helper-tests: python3 scripts/ci/shortener-native-artifact.test.py
+      # Public staging values from repository variables for same-repository
+      # events; fork pull requests (and unset variables) build with fixtures.
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://shortener-ci.supabase.invalid' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_shortener_ci_placeholder' }}
+        NEXT_PUBLIC_APP_URL=https://ttr.gg
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+        TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/shortener/src/link apps/shortener/src/native apps/shortener/src/components apps/shortener/src/routes apps/shortener/src/router.tsx apps/shortener/src/start.ts apps/shortener/cloudflare apps/shortener/vite.config.mts apps/shortener/void.config.ts apps/shortener/vitest.config.ts apps/shortener/tsconfig.json apps/shortener/package.json apps/shortener/start-bridge.routes.json

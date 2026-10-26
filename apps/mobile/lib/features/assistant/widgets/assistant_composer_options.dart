@@ -1,20 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_attachment_menu_entry.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_menu_surface.dart';
+import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 enum _ComposerOption { attach, model, local, source, close }
 
-/// Secondary controls stay in one anchored menu, leaving room for the prompt.
+/// Secondary controls share a sheet so Back returns to the prompt.
 class AssistantComposerOptions extends StatelessWidget {
   const AssistantComposerOptions({
     required this.chatState,
@@ -26,6 +26,7 @@ class AssistantComposerOptions extends StatelessWidget {
     required this.onRemoveAttachment,
     required this.onCloseComposer,
     this.repository,
+    this.chatCubit,
     this.onDismissKeyboard,
     this.localOnly = false,
     this.localModelLabel,
@@ -38,6 +39,7 @@ class AssistantComposerOptions extends StatelessWidget {
   final VoidCallback onCloseComposer;
   final VoidCallback? onDismissKeyboard;
   final AssistantChatState chatState;
+  final AssistantChatCubit? chatCubit;
   final AssistantShellState shellState;
   final AssistantRepository? repository;
   final Future<void> Function() onOpenAttachments;
@@ -57,7 +59,7 @@ class AssistantComposerOptions extends StatelessWidget {
       case _ComposerOption.source:
         if (!localOnly) await onOpenCreditSourceSheet();
       case _ComposerOption.model:
-        final choice = await showAdaptiveSheet<AssistantGatewayModel>(
+        final choice = await showAppSheet<AssistantGatewayModel>(
           context: context,
           builder: (_) => AssistantModelPickerSheet(
             selected: shellState.selectedModel,
@@ -83,91 +85,97 @@ class AssistantComposerOptions extends StatelessWidget {
     final modelLabel =
         '${l10n.assistantModelLabel}: '
         '${localModelLabel ?? shellState.selectedModel.label}';
-    return PopupMenuButton<_ComposerOption>(
+    return AppIconButton(
       key: const ValueKey('assistant-composer-options'),
       tooltip: context.l10n.assistantSettingsTitle,
-      padding: EdgeInsets.zero,
-      onOpened: onDismissKeyboard,
-      color: Colors.transparent,
-      elevation: 0,
-      menuPadding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 220, maxWidth: 300),
-      onSelected: (option) => unawaited(_select(context, option)),
-      itemBuilder: (context) => [
-        AssistantComposerMenuSurface(
-          entries: [
-            if (!localOnly) ...[
-              for (final attachment in chatState.composerAttachments)
-                AssistantComposerAttachmentMenuEntry<_ComposerOption>(
-                  attachment: attachment,
-                  onRemove: onRemoveAttachment,
+      icon: chatState.composerAttachments.isEmpty
+          ? const Icon(LucideIcons.plus)
+          : AppBadge(
+              leading: const Icon(LucideIcons.paperclip),
+              child: Text(chatState.composerAttachments.length.toString()),
+            ),
+      onPressed: () {
+        final owningChat = chatCubit ?? context.read<AssistantChatCubit?>();
+        onDismissKeyboard?.call();
+        unawaited(
+          showAppSheet<void>(
+            context: context,
+            builder: (sheetContext) {
+              Widget option(
+                _ComposerOption value,
+                IconData icon,
+                String title, {
+                bool enabled = true,
+              }) => AppOptionTile(
+                title: title,
+                leading: Icon(icon),
+                onTap: enabled
+                    ? () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_select(context, value));
+                      }
+                    : null,
+              );
+              Widget body(AssistantChatState currentChat) => AppSheetScaffold(
+                title: sheetContext.l10n.assistantSettingsTitle,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!localOnly) ...[
+                      for (final attachment in currentChat.composerAttachments)
+                        AssistantAttachmentPreview(
+                          attachment: attachment,
+                          onRemove: () {
+                            Navigator.of(sheetContext).pop();
+                            unawaited(onRemoveAttachment(attachment.id));
+                          },
+                        ),
+                      option(
+                        _ComposerOption.attach,
+                        LucideIcons.paperclip,
+                        sheetContext.l10n.assistantAttachFilesAction,
+                      ),
+                    ],
+                    option(
+                      _ComposerOption.model,
+                      LucideIcons.sparkles,
+                      modelLabel,
+                      enabled: shellState.availableModels.isNotEmpty,
+                    ),
+                    if (onOpenLocalModels != null)
+                      option(
+                        _ComposerOption.local,
+                        LucideIcons.cpu,
+                        l10n.assistantLocalModeAction,
+                      ),
+                    if (!localOnly)
+                      option(
+                        _ComposerOption.source,
+                        LucideIcons.coins,
+                        '${l10n.assistantSourceLabel}: $source',
+                      ),
+                    const AppDivider(),
+                    option(
+                      _ComposerOption.close,
+                      LucideIcons.keyboardOff,
+                      sheetContext.l10n.assistantCloseComposer,
+                    ),
+                  ],
                 ),
-              _item(
-                _ComposerOption.attach,
-                Icons.attach_file,
-                context.l10n.assistantAttachFilesAction,
-              ),
-            ],
-            _item(
-              _ComposerOption.model,
-              Icons.auto_awesome_outlined,
-              modelLabel,
-              enabled: shellState.availableModels.isNotEmpty,
-            ),
-            if (onOpenLocalModels != null)
-              _item(
-                _ComposerOption.local,
-                Icons.memory_rounded,
-                l10n.assistantLocalModeAction,
-              ),
-            if (!localOnly)
-              _item(
-                _ComposerOption.source,
-                Icons.toll_rounded,
-                '${l10n.assistantSourceLabel}: $source',
-              ),
-            const PopupMenuDivider(),
-            _item(
-              _ComposerOption.close,
-              Icons.keyboard_hide_rounded,
-              context.l10n.assistantCloseComposer,
-            ),
-          ],
-        ),
-      ],
-      child: SizedBox(
-        width: 44,
-        height: 44,
-        child: Center(
-          child: Badge(
-            isLabelVisible: chatState.composerAttachments.isNotEmpty,
-            label: Text('${chatState.composerAttachments.length}'),
-            child: const Icon(Icons.add_rounded),
+              );
+              return owningChat == null
+                  ? body(chatState)
+                  : BlocBuilder<AssistantChatCubit, AssistantChatState>(
+                      bloc: owningChat,
+                      buildWhen: (previous, next) =>
+                          previous.composerAttachments !=
+                          next.composerAttachments,
+                      builder: (_, state) => body(state),
+                    );
+            },
           ),
-        ),
-      ),
+        );
+      },
     );
   }
-
-  PopupMenuItem<_ComposerOption> _item(
-    _ComposerOption value,
-    IconData icon,
-    String label, {
-    bool enabled = true,
-    bool selected = false,
-  }) => PopupMenuItem(
-    value: value,
-    enabled: enabled,
-    child: Row(
-      children: [
-        Icon(icon, size: 20),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label)),
-        if (selected) ...[
-          const SizedBox(width: 8),
-          const Icon(Icons.check_rounded, size: 20),
-        ],
-      ],
-    ),
-  );
 }

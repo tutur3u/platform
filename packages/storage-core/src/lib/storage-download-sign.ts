@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 import { isSecurityEgressEnforcementEnabled } from './security-budget';
 import {
   createStorageDownloadUrl,
@@ -23,7 +24,9 @@ export async function createGuardedSupabaseStorageReadUrl(
   try {
     const { data, error } = await supabase.storage
       .from('workspaces')
-      .createSignedUrl(path, expiresIn, { transform: transform as never });
+      .createSignedUrl(encodeStoragePath(path), expiresIn, {
+        transform: transform as never,
+      });
     if (error || !data?.signedUrl) {
       throw new StorageDownloadError(
         'Failed to generate download URL',

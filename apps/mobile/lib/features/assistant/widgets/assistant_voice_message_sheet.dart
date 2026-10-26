@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:path_provider/path_provider.dart';
@@ -284,10 +285,10 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                 onPressed: () => unawaited(Navigator.of(context).maybePop()),
-                icon: const Icon(Icons.close),
+                icon: const Icon(LucideIcons.x),
               ),
             ],
           ),
@@ -308,22 +309,22 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
             runSpacing: 8,
             children: [
               if (_path == null || _recording)
-                FilledButton.icon(
+                AppButton.primary(
                   onPressed: _busy ? null : (_recording ? _stop : _start),
-                  icon: Icon(
-                    _recording ? Icons.stop_rounded : Icons.mic_rounded,
+                  leading: Icon(
+                    _recording ? LucideIcons.square : LucideIcons.mic,
                   ),
-                  label: Text(_recording ? l10n.voiceStop : l10n.voiceRecord),
+                  child: Text(_recording ? l10n.voiceStop : l10n.voiceRecord),
                 ),
               if (_recording)
-                FilledButton.icon(
+                AppButton.primary(
                   onPressed: _busy ? null : _stopAndSend,
-                  icon: const Icon(Icons.send_rounded),
-                  label: Text(l10n.voiceSendNow),
+                  leading: const Icon(LucideIcons.send),
+                  child: Text(l10n.voiceSendNow),
                 ),
               if (!_recording && _hasRecording) ...[
                 if (preview != null && preview.value.isInitialized)
-                  IconButton(
+                  AppIconButton(
                     tooltip: l10n.voicePreview,
                     onPressed: () async {
                       if (preview.value.isPlaying) {
@@ -334,23 +335,25 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
                       }
                     },
                     icon: Icon(
-                      preview.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                      preview.value.isPlaying
+                          ? LucideIcons.pause
+                          : LucideIcons.play,
                     ),
                   ),
                 const SizedBox(width: 8),
-                IconButton(
+                AppIconButton(
                   tooltip: l10n.voiceRetake,
                   onPressed: _busy ? null : _retake,
-                  icon: const Icon(Icons.restart_alt_rounded),
+                  icon: const Icon(LucideIcons.rotateCcw),
                 ),
-                TextButton(
+                AppButton.ghost(
                   onPressed: _busy ? null : () => _confirm(sendNow: false),
                   child: Text(l10n.voiceAttach),
                 ),
-                FilledButton.icon(
+                AppButton.primary(
                   onPressed: _busy ? null : () => _confirm(sendNow: true),
-                  icon: const Icon(Icons.send_rounded),
-                  label: Text(l10n.voiceSendNow),
+                  leading: const Icon(LucideIcons.send),
+                  child: Text(l10n.voiceSendNow),
                 ),
               ],
             ],

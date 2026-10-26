@@ -29,8 +29,10 @@ This section contains tools, guides, and best practices for developing on the Tu
 
 - Formatting and linting are handled by [Biome](https://biomejs.dev/) (`biome.json`),
   not ESLint or Prettier. Use `bun ff` to format, lint, and check in one pass.
-- Run `bun validate` before opening a PR — it is the repo's verification gate for
-  TypeScript, JavaScript, root-script, and config changes (run focused tests first).
+- Run focused tests, then the build-free `bun check:changed` gate before every
+  push. `bun validate` is not run on agent machines because its Turbo graph can
+  build workspace dependencies; it and app builds run in CI for the exact commit
+  (see [pre-push checks](/build/development-tools/pre-push-checks)).
 - Default to Server Components in `apps/web`; add `'use client'` only for state,
   browser APIs, or interactivity.
 - Prefer typed expected errors and dependency services via `@tuturuuu/utils/effect`
@@ -92,7 +94,8 @@ For a broad refresh, also update Rust (`cargo update` in `apps/backend`), Python
 (`flutter pub upgrade --major-versions` in `apps/mobile`). Keep native CocoaPods
 locks aligned with Flutter plugins and retain stable versions when a registry's
 `latest` tag points at a prerelease. The configured npm release-age policy still
-applies. Run `bun validate` and affected app builds through `ttr resources run`.
+applies. Run `bun check:changed` locally and require `bun validate` and affected
+app builds to pass in CI for the exact commit.
 
 Keep React and React DOM aligned at 19.2.8 while React Three Fiber 9.7.0
 requires versions below 19.3. The root overrides also prevent transitive peer
@@ -172,9 +175,9 @@ bun sb:reset
 
 ### Common Issues
 
-1. **Build / Check Failures**: Run `bun validate` to surface TypeScript and Biome errors, and confirm dependencies are installed with `bun install`
+1. **Build / Check Failures**: Run `bun check:changed` to surface TypeScript and Biome errors in changed files, and confirm dependencies are installed with `bun install`
 2. **Database Issues**: Ensure the local Supabase stack is running (`bun sb:start`) and migrations are applied (`bun sb:up`)
-3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before the full `bun validate` gate
+3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before `bun check:changed`; the full `bun validate` gate runs in CI
 4. **Performance Issues**: Use React DevTools and bundle analyzers
 
 ### Getting Help

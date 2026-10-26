@@ -216,4 +216,27 @@ describe('native SDK deferred Mira discovery', () => {
       })
     );
   });
+
+  it('falls back to discovery when a forced tool is unavailable to this client', async () => {
+    const { runtime } = fixture();
+    const step = await runtime.prepareStep({
+      toolChoice: 'required',
+      activeTools: ['show_workspace_artifact'],
+    });
+    expect(step.toolChoice).toBeUndefined();
+    expect(step.activeTools).toContain('search_tools');
+    expect(step.activeTools).not.toContain('show_workspace_artifact');
+  });
+
+  it('keeps a forced tool that is available', async () => {
+    const { runtime } = fixture();
+    const step = await runtime.prepareStep({
+      toolChoice: 'required',
+      activeTools: ['get_my_tasks'],
+    });
+    expect(step).toMatchObject({
+      toolChoice: 'required',
+      activeTools: ['get_my_tasks'],
+    });
+  });
 });

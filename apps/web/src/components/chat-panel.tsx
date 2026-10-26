@@ -27,6 +27,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -519,9 +520,10 @@ export async function uploadFile(
     }
   }
 
+  const path = `${wsId}/chat/${id}/${newFileName}`;
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .upload(`${wsId}/chat/${id}/${newFileName}`, file.rawFile);
+    .upload(encodeStoragePath(path), file.rawFile);
 
-  return { data, error };
+  return { data: data ? { ...data, path } : null, error };
 }

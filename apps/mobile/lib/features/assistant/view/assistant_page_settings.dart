@@ -6,10 +6,7 @@ extension _AssistantPageSettings on _AssistantPageState {
     final message = result == AssistantSettingsDisposition.denied
         ? context.l10n.assistantSettingsSelectionDenied
         : context.l10n.assistantSettingsSelectionUnconfirmed;
-    shad.showToast(
-      context: context,
-      builder: (_, _) => shad.SurfaceCard(child: Text(message)),
-    );
+    showAppToast(context, message: message);
   }
 
   Future<AssistantSettingsDisposition> _selectRemoteSettings(

@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { passwordRequiresReset } from '@tuturuuu/utils/crypto';
 import { verifyMeetGuestSession } from '@tuturuuu/utils/meet-guest-session';
 
 /**
@@ -23,11 +24,12 @@ export async function resolveMeetGuestFromSession(
 
   const { data: guest, error } = await sbAdmin
     .from('meet_together_guests')
-    .select('id')
+    .select('id, password_hash')
     .eq('plan_id', planId)
     .eq('id', session.guestId)
     .maybeSingle();
 
-  if (error || !guest) return null;
+  if (error || !guest || passwordRequiresReset(guest.password_hash))
+    return null;
   return { id: guest.id };
 }

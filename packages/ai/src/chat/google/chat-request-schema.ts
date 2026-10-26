@@ -2,6 +2,7 @@ import { MAX_ID_LENGTH } from '@tuturuuu/utils/constants';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import type { UIMessage } from 'ai';
 import { z } from 'zod';
+import { miraClientCapabilitiesInputSchema } from '../../tools/mira-client-capabilities';
 
 const ChatRoleSchema = z
   .string()
@@ -58,6 +59,7 @@ export const ChatRequestBodySchema = z.object({
   observabilityContext: z.array(z.record(z.string(), z.unknown())).optional(),
   persistenceRequestId: z.string().trim().uuid().optional(),
   taskBoardContext: TaskBoardContextSchema.optional(),
+  clientCapabilities: miraClientCapabilitiesInputSchema.optional(),
 });
 
 export type ChatRequestBody = z.infer<typeof ChatRequestBodySchema>;

@@ -55,10 +55,11 @@ export function sanitizePathSegments(
       if (next === decoded) break;
       decoded = next;
     }
+    // Escapes that still decode after the pass limit hide their final form.
+    if (decodePercentEscapes(decoded) !== decoded) return null;
     if (
       decoded === '.' ||
       decoded === '..' ||
-      decoded.includes('..') ||
       decoded.includes('/') ||
       UNSAFE_PATH_CHARACTER.test(decoded)
     ) {
@@ -104,6 +105,11 @@ export function sanitizePathStrict(path: string): string | null {
   return segments === null ? null : segments.join('/');
 }
 
+/** Encode URL delimiters in storage keys while preserving path separators. */
+export function encodeStoragePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/');
+}
+
 /**
  * Sanitizes a folder name to prevent directory traversal and invalid characters.
  *
@@ -124,8 +130,10 @@ export function sanitizeFolderName(name: string): string | null {
     .trim()
     .replaceAll('\\', '/')
     .replace(/^\/+|\/+$/g, '');
-  const segments = sanitizePathSegments(normalized);
-  return segments?.length === 1 ? segments[0]! : null;
+  const segments = sanitizePathSegments(normalized, { strict: true });
+  return segments?.length === 1 && !segments[0]!.includes('..')
+    ? segments[0]!
+    : null;
 }
 
 /**

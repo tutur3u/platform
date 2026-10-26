@@ -13,6 +13,11 @@ localization changes.
   commit as the normal branch verification path. A demonstrably stuck CI queue
   can defer that proof; record pending jobs and local results, then resume CI
   before calling the change release-ready.
+- For simulator/emulator validation against a seeded local backend, use the
+  Thanh local E2E environment (`scripts/thanh-e2e/thanh-e2e.mjs`, runbook
+  `apps/docs/build/development-tools/thanh-local-e2e.mdx`). On-device flows
+  belong in `apps/mobile/integration_test/`; `flutter test -d` runs other test
+  files on the host VM.
 - Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
   behavior changes. Release Please owns mobile version updates.
 - Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package
@@ -60,14 +65,35 @@ localization changes.
   window width, and drop widget-level 16dp side margins once the page pads.
   Sheets and dialogs keep their own padding. For `ListView.separated` or grids,
   pass `AppPageInsets.of(context, width: constraints.maxWidth)` as padding.
-- Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
-  the owning feature. Expanded tablet/desktop windows use the leading
+- Group rows with `AppGroupedSection`/`AppGroupedCard`. Build rows from
+  `AppGroupedRow` + `AppIconTile` with an `AppTone`, loading from
+  `AppSkeletonRows`, and empty/error states from `AppStateMessage` (`.inline`
+  inside a card); feature-specific row widgets compose these. Expanded tablet/desktop windows use the leading
   `ShellNavigationRail`, which must keep the mini-app Back item. Switching
   dock and rail must not change the shell body's tree shape; regressions
   assert a visited root tab is not remounted, because routed pages survive
   through the navigator key.
+- List/detail screens use `AppMasterDetail`, which splits at a body width of
+  720dp or more. Keep the selection in feature state. Fold a pushed detail
+  route back into the pane through `AppMasterDetailRouteBody`, because covered
+  routes are not laid out. On split layouts, the first Back closes the pane.
+  Suites that cover the compact push flow call `usePhoneSurface()`: the
+  default 800x600 test view is a split layout.
+- Open details from the row summary in the same frame and hydrate the body
+  afterwards; never await the network before navigating. Keep prefetching
+  bounded and replaceable (Mail: two concurrent requests, eight queued, one
+  attempt, cancelled when the visible rows change).
 - See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
   and its layout/rail regression tests.
+- Redesigned mini apps compose `package:mobile/core/ui/kit/kit.dart`
+  (`AppSummaryHero`, `AppSectionHeader`, `AppStatTile`, `AppPanel`,
+  `AppRichRow`, `AppFilterBar`, `AppSegmentedControl`, `AppAdaptiveGrid`,
+  `AppGroupedSlice` for lazy grouped lists) and follow the
+  [mobile design language](../../../../../apps/docs/build/development-tools/mobile-design-language.mdx):
+  one hero per root, one `AppTone` per app, no shadows or blur on list
+  content, and render evidence from `test/helpers/design_render_harness.dart`.
+  CMS (`features/cms`) is the reference migration; retire `finance_ui.dart`
+  widgets per app using the mapping table there.
 
 ## Design System And shadcn Removal
 
@@ -80,9 +106,11 @@ localization changes.
   conditional and relative import URIs).
 - Use the mapping in `apps/docs/build/development-tools/mobile-shadcn-migration.mdx`:
   `AppTokens.of(context)` for `shad.Theme.of`, `AppGap`, `LucideIcons` from
-  `lucide_icons_flutter`, `AppButton.*`, `AppIconButton(tooltip:)`,
+  `core/ui/icons/app_icons.dart`, `AppButton.*`, `AppIconButton(tooltip:)`,
   `AppTextField`, `AppCard`, `AppBadge`, `AppAlert`, `AppSwitch`,
-  `AppCheckbox`, `AppSelect`, `showAppToast`, `AppScaffold`. Run
+  `AppCheckbox`, `AppToggleRow`, `AppCheckboxRow`, `AppChip`, `AppSlider`,
+  `AppSelect`, `showAppDatePicker`, `showAppTimePicker`, `showAppToast`,
+  `AppScaffold`. Run
   `scripts/mobile-shadcn-codemod.js` for the mechanical Gap/Theme/icon renames
   on whole libraries; part files inherit their library's import.
 - Colours come from `AppColorTokens`, a `ThemeExtension` derived from the
@@ -95,6 +123,9 @@ localization changes.
   with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
   `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
   `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+- Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
+  add a second IME padding layer in their bodies. Verify phone paths with a
+  keyboard open and tap OK/Save; a tablet-only picker test does not cover them.
 - Back must close the topmost overlay first. `AppModalBinding` registers a
   modal entry in `ShellChromeActionsCubit`, so `ShellPage.didPopRoute`, dock
   Back and Android Back resolve to the overlay. A sheet on the shell's nested
@@ -120,6 +151,11 @@ localization changes.
   padding inside scroll content. Verify geometry and scroll-end clearance with
   `settings_compact_navigation_test.dart`; presentation changes must not alter
   timezone cubits or repositories.
+- Settings sub-page forms compose `SettingsSwitchRow`, `SettingsChoiceRow`
+  and `SettingsFieldRow` inside `SettingsCompactSection` cards; see
+  `mobile-settings-shell.mdx#settings-sub-page-forms`. Every text input needs a
+  localized placeholder; `input_placeholder_audit_test.dart` enforces it, with
+  `// input-placeholder: exempt <reason>` for rare deliberate exceptions.
 - Settings groups are rounded cards (`SettingsGroup`, `SettingsCaption`) with
   dividers at `SettingsRowLayout.textColumn`. Use `SettingsRowLayout.groupFill`
   for grouped fills so ambient appearances get the translucent card.
@@ -236,3 +272,27 @@ from invalid images and signed PUT ticket failures separately from API permissio
 denials. See the mobile profile banner section in
 `apps/docs/platform/features/user-management.mdx` and the focused banner lifecycle,
 picker, image-state and repository failure-contract tests.
+
+### Migrating scoped editors to sheets
+
+When a scoped settings route opens as a hosted sheet, forward its captured
+AuthCubit and WorkspaceCubit with value providers even on a nested navigator.
+A navigator does not inherit providers placed inside its sibling page route.
+Retain the original scope-generation invalidation and cancel both parent and
+child sheets on account/workspace transitions, including switching away and back.
+
+Resolve localized titles from the context passed to the editor builder. An
+opening page can be deactivated while a departing sheet rebuilds; a captured
+parent context is unsafe even when the new editor remains mounted. Keep the
+actual actor/workspace ABA tests and late-write assertions when changing the
+presentation.
+
+Toggle and checkbox rows activate from their labels as well as their controls.
+Toast handles cancel their timers when their overlay is disposed. Regression
+coverage lives in app_toast_lifecycle_test.dart,
+assistant_personality_route_scope_test.dart and assistant_routed_editors_test.dart.
+
+A covered ancestor can pause a nested navigator's exit animation. Scope
+invalidation removes the exact owned settings route instead of waiting for a pop
+animation; it must preserve an unrelated covering route. The settings shell ABA
+checks cover this cancellation while the editor is covered.

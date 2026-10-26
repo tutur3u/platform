@@ -1,10 +1,10 @@
 import { fromMarkdown } from 'mdast-util-from-markdown';
 import { describe, expect, it } from 'vitest';
 import {
+  getMeetMentionMarker,
   isMeetAssistant,
   MEET_ASSISTANT_ID,
   MEET_ASSISTANT_PROFILE,
-  MEET_MENTION_MARKER,
   remarkMeetMentions,
 } from './assistant-identity';
 
@@ -34,14 +34,14 @@ describe('Meet assistant identity', () => {
       {
         type: 'link',
         url: MEET_ASSISTANT_PROFILE,
-        title: MEET_MENTION_MARKER,
+        title: getMeetMentionMarker(),
         children: [{ type: 'text', value: '@tuturuuu' }],
       },
       { type: 'text', value: ', ask ' },
       {
         type: 'link',
         url: MEET_ASSISTANT_PROFILE,
-        title: MEET_MENTION_MARKER,
+        title: getMeetMentionMarker(),
         children: [{ type: 'text', value: '@TTR' }],
       },
       { type: 'text', value: ' now. email@Tuturuuu @TuturuuuExtra' },
@@ -102,7 +102,7 @@ it('preserves raw HTML while highlighting a separate normal paragraph', () => {
     children: [
       {
         type: 'link',
-        title: MEET_MENTION_MARKER,
+        title: getMeetMentionMarker(),
         children: [{ type: 'text', value: '@ttr' }],
       },
       { type: 'text', value: ' help' },

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
@@ -123,10 +124,10 @@ class RepairHarness extends BackgroundReplyHarness {
         .onPressed!
         .call();
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.history_rounded));
+    await tester.tap(find.byIcon(LucideIcons.history));
     await tester.pumpAndSettle();
     await tester.tap(
-      find.widgetWithIcon(IconButton, Icons.add_comment_outlined),
+      find.widgetWithIcon(AppIconButton, LucideIcons.messageSquarePlus),
     );
     await tester.pumpAndSettle();
   }
@@ -233,6 +234,7 @@ class SettingsApi extends ApiClient {
 class RepairChats extends ChatRepository {
   RepairChats(ApiClient api) : super(apiClient: api);
   int sends = 0;
+  Completer<void>? acknowledgmentGate;
   @override
   Stream<ChatMessageStreamEvent> sendMessageStream(
     String wsId,
@@ -248,6 +250,7 @@ class RepairChats extends ChatRepository {
     admission?.recordDispatchPossible();
     final sender = admission?.actorId ?? repairActor;
     sends++;
+    await acknowledgmentGate?.future;
     yield ChatStreamMessageEvent(
       ChatMessage.fromJson({
         'id': '66666666-6666-4666-8666-666666666666',

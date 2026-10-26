@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -26,6 +27,63 @@ class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets('service pause is compact without raw errors $brightness', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final workspace = _Workspace();
+      whenListen(
+        workspace,
+        const Stream<WorkspaceState>.empty(),
+        initialState: const WorkspaceState(),
+      );
+      final coordinator = OfflinePreparationCoordinator.forTesting(
+        load: (_, _) async => {},
+        write: (_, _, _) async {},
+      );
+      coordinator.state.value = OfflinePreparationState(
+        retryAt: DateTime.utc(2026, 10, 25),
+        products: {
+          for (final id in OfflinePreparationCoordinator.productIds)
+            id: const OfflineProductPreparation(
+              status: OfflinePreparationStatus.failed,
+              errorMessage:
+                  '503: Download protection is temporarily unavailable.',
+            ),
+        },
+      );
+      await tester.pumpThemedHome(
+        Material(
+          child: SingleChildScrollView(
+            child: OfflinePreparationSection(coordinator: coordinator),
+          ),
+        ),
+        brightness: brightness,
+        wrap: (app) =>
+            BlocProvider<WorkspaceCubit>.value(value: workspace, child: app),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Downloads paused.'), findsOneWidget);
+      expect(find.textContaining('503:'), findsNothing);
+      expect(
+        find.text('Retry downloads to refresh retained data.'),
+        findsOneWidget,
+      );
+      final finance = tester.getRect(
+        find.byKey(const ValueKey('offline-product-finance')),
+      );
+      expect(finance.height, lessThan(120));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      coordinator.state.dispose();
+      await workspace.close();
+    });
+  }
+
   testWidgets(
     'scoped download progress and failure retry fit compact large text',
     (tester) async {
@@ -145,8 +203,8 @@ void main() {
       await tester.pump();
       expect(
         tester
-            .widget<FilledButton>(
-              find.byWidgetPredicate((widget) => widget is FilledButton),
+            .widget<AppButton>(
+              find.byWidgetPredicate((widget) => widget is AppButton),
             )
             .onPressed,
         isNull,

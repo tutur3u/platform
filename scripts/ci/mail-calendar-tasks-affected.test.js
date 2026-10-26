@@ -98,6 +98,8 @@ test('global controls, unknown paths, absent ranges and manual runs fail open', 
     ['tuturuuu.ci.ts'],
     ['tuturuuu.ts'],
     ['scripts/ci/calendar-native-artifact.mjs'],
+    ['scripts/ci/calendar-cf-types.mjs'],
+    ['scripts/ci/calendar-cf-output.mjs'],
     ['packages/deleted/file.ts'],
     ['apps/unknown/package.json'],
   ]) {

@@ -74,6 +74,8 @@ function samePolicy(before, after) {
     JSON.stringify(snapshotConfig(after))
   );
 }
+const readOnlyNoFollow =
+  fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK;
 function launcherHashes(home, install) {
   const result = {};
   if (
@@ -83,10 +85,23 @@ function launcherHashes(home, install) {
   )
     throw new Error('Invalid shim installation manifest');
   for (const name of install.shims) {
+    // Check and hash the same descriptor: O_NOFOLLOW rejects a symlinked
+    // launcher and O_NONBLOCK keeps a FIFO from stalling the open.
     const file = path.join(home, 'bin', name);
-    if (!fs.lstatSync(file).isFile())
+    let fd;
+    try {
+      fd = fs.openSync(file, readOnlyNoFollow);
+    } catch (error) {
+      if (error.code !== 'ELOOP') throw error;
       throw new Error('Resource launchers must be regular files');
-    result[name] = hash(fs.readFileSync(file));
+    }
+    try {
+      if (!fs.fstatSync(fd).isFile())
+        throw new Error('Resource launchers must be regular files');
+      result[name] = hash(fs.readFileSync(fd));
+    } finally {
+      fs.closeSync(fd);
+    }
   }
   return result;
 }
@@ -580,6 +595,7 @@ module.exports = {
   assertIdle,
   snapshotConfig,
   samePolicy,
+  launcherHashes,
   trustedGlobal,
   lease,
   copyMaterialized,

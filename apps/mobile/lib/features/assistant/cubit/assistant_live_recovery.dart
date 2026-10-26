@@ -44,18 +44,22 @@ extension _AssistantLiveRecovery on AssistantLiveCubit {
     }
   }
 
-  Future<void> _stopInputs() async {
+  Future<void> _stopInputs({bool Function()? isCurrent}) async {
+    bool current() => isCurrent?.call() ?? true;
+    if (!current()) return;
     _microphoneVersion++;
     _startingMicrophone = false;
     _startupAudio.clear();
     await stopScreenSharing();
+    if (!current()) return;
     await _stopRecorderSafely();
+    if (!current()) return;
     try {
       await _cameraService.stopStreaming();
     } on Exception {
       // Native media may already have stopped after an interruption.
     }
-    if (isClosed) return;
+    if (isClosed || !current()) return;
     _emitMicrophoneState(
       state.copyWith(
         isMicrophoneActive: false,

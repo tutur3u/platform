@@ -3,7 +3,6 @@ import {
   getFinanceTransactionIdFromStoragePath,
 } from '@tuturuuu/finance-core/storage-access';
 import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
-import type { WorkspaceStorageProvider } from '@tuturuuu/storage-core/workspace-storage-config';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
@@ -121,16 +120,4 @@ export async function authorizeAttachmentSource({
     if (!allowed) throw new Error('Attachment source access denied');
   }
   return { sourceWsId: normalizedWsId, path: normalizedPath };
-}
-
-// The locked Supabase SDK interpolates download paths into a URL. Quote each
-// literal segment so its provider decodes exactly the key we authorized. R2
-// accepts an object key directly and performs its own transport encoding.
-export function attachmentSourceDownloadPath(
-  path: string,
-  provider: WorkspaceStorageProvider
-) {
-  return provider === 'supabase'
-    ? path.split('/').map(encodeURIComponent).join('/')
-    : path;
 }

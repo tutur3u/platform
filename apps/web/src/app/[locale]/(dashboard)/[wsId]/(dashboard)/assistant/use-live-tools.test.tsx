@@ -9,8 +9,12 @@ const mocks = vi.hoisted(() => ({
   workspace: vi.fn(),
   respond: vi.fn(),
   client: null as unknown,
+  push: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({ executeLiveTool: mocks.execute }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mocks.push }),
+}));
 vi.mock('./live-workspace-tools', () => ({
   executeWorkspaceLiveTool: mocks.workspace,
   LIVE_MUTATION_TOOLS: new Set([
@@ -149,5 +153,27 @@ describe('live tool approval and cancellation', () => {
     await act(async () => Promise.resolve());
     expect(mocks.execute).not.toHaveBeenCalled();
     expect(mocks.respond).not.toHaveBeenCalled();
+  });
+  it('switches apps locally and reports the navigation to the model', async () => {
+    renderHook(() => useLiveTools('workspace-a'), { wrapper });
+    act(() => {
+      client.emit('toolcall', {
+        functionCalls: [
+          { id: '6', name: 'open_app', args: { destination: 'finance' } },
+        ],
+      });
+    });
+    await waitFor(() => expect(mocks.respond).toHaveBeenCalledOnce());
+    expect(mocks.push).toHaveBeenCalledWith('/workspace-a/finance');
+    expect(mocks.execute).not.toHaveBeenCalled();
+    expect(mocks.respond.mock.calls[0]?.[0]).toMatchObject({
+      functionResponses: [
+        {
+          id: '6',
+          name: 'open_app',
+          response: { success: true, destination: 'finance' },
+        },
+      ],
+    });
   });
 });

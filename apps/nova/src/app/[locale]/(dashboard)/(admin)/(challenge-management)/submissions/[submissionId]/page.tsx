@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { requireNovaAppSessionUser } from '@/lib/app-session';
+import { canViewNovaSubmission } from '@/lib/submission-access';
 import SubmissionClient from './client';
 
 interface Props {
@@ -42,6 +43,34 @@ export default async function Page({ params }: Props) {
 
     if (error || !submission || !submission.problem_id || !submission.user_id) {
       console.error('Error fetching submission:', error);
+      return notFound();
+    }
+
+    const { data: problem, error: errorProblem } = await sbAdmin
+      .schema('private')
+      .from('nova_problems')
+      .select('*')
+      .eq('id', submission.problem_id)
+      .single();
+
+    if (errorProblem || !problem) {
+      console.error('Error fetching problem:', errorProblem);
+      return notFound();
+    }
+
+    // Admin layouts admit any enabled manager, so scope this page to the
+    // submission's own challenge before loading anything else.
+    if (
+      !(await canViewNovaSubmission(
+        user,
+        {
+          sessionId: submission.session_id,
+          userId: submission.user_id,
+        },
+        problem.challenge_id,
+        sbAdmin
+      ))
+    ) {
       return notFound();
     }
 
@@ -132,22 +161,12 @@ export default async function Page({ params }: Props) {
       return notFound();
     }
 
-    const { data: problem, error: errorProblem } = await sbAdmin
-      .schema('private')
-      .from('nova_problems')
-      .select('*')
-      .eq('id', submission.problem_id)
-      .single();
-
-    if (errorProblem || !problem) {
-      console.error('Error fetching problem:', errorProblem);
-      return notFound();
-    }
-
     const { data: challenge, error: errorChallenge } = await sbAdmin
       .schema('private')
       .from('nova_challenges')
-      .select('*')
+      .select(
+        'id, title, description, duration, enabled, max_attempts, max_daily_attempts, open_at, close_at, previewable_at, whitelisted_only, created_at'
+      )
       .eq('id', problem.challenge_id)
       .single();
 
@@ -163,7 +182,8 @@ export default async function Page({ params }: Props) {
       test_cases: testCases,
       session,
       problem,
-      challenge,
+      // Password verifiers are not selected and never reach client props.
+      challenge: { ...challenge, password_hash: null, password_salt: null },
       user: submissionUser,
     };
 

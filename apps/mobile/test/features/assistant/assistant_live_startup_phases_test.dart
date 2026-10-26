@@ -11,6 +11,8 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_startup_timings.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'live_dispatch_transport.dart';
+
 class _Repository extends Mock implements AssistantLiveRepository {}
 
 class _Player extends Mock implements AssistantLiveAudioPlayer {}
@@ -152,71 +154,163 @@ void main() {
     },
   );
 
-  test('history and audio start together but socket waits for both', () async {
+  test(
+    'chat binding overlaps the provider handshake instead of gating it',
+    () async {
+      final audio = Completer<void>();
+      when(player.initialize).thenAnswer((_) => audio.future);
+      final preparing = cubit.prepareSession(wsId: 'ws');
+      await _tick();
+      expect(historyStarted, isTrue);
+      verify(player.initialize).called(1);
+      expectNoConnection();
+      var settled = false;
+      unawaited(preparing.then((_) => settled = true));
+      audio.complete();
+      for (var i = 0; i < 6; i++) {
+        await _tick();
+      }
+      // Connected while the visible conversation is still binding, but the
+      // caller (a typed send) is held until binding settles.
+      expect(cubit.state.status, AssistantLiveConnectionStatus.connected);
+      verify(
+        () => socket.connect(
+          token: 'token',
+          model: 'model',
+          seedHistory: const [],
+          sessionHandle: any(named: 'sessionHandle'),
+        ),
+      ).called(1);
+      expect(settled, isFalse);
+      history.complete();
+      expect(await preparing, isNotNull);
+      expect(
+        cubit.state.startupTimings.keys.toSet(),
+        AssistantLiveStartupPhase.values.toSet(),
+      );
+      expect(cubit.state.startupTimings.values, everyElement(isNonNegative));
+    },
+  );
+
+  test('chat binding failure never fails a connected call', () async {
+    final preparing = cubit.prepareSession(wsId: 'ws');
+    await _tick();
+    history.completeError(Exception('History unavailable'));
+    await preparing;
+    await _tick();
+    expect(cubit.state.status, AssistantLiveConnectionStatus.connected);
+    expect(
+      cubit.state.startupTimings,
+      contains(AssistantLiveStartupPhase.history),
+    );
+  });
+
+  test('failed audio setup settles without connecting', () async {
     final audio = Completer<void>();
     when(player.initialize).thenAnswer((_) => audio.future);
     final preparing = cubit.prepareSession(wsId: 'ws');
     await _tick();
-    expect(historyStarted, isTrue);
-    verify(player.initialize).called(1);
+    audio.completeError(Exception('Audio unavailable'));
+    await preparing;
     expectNoConnection();
+    expect(cubit.state.status, AssistantLiveConnectionStatus.error);
+    expect(
+      cubit.state.startupTimings.keys,
+      containsAll([
+        AssistantLiveStartupPhase.audio,
+        AssistantLiveStartupPhase.total,
+      ]),
+    );
+    expect(
+      cubit.state.startupTimings,
+      isNot(contains(AssistantLiveStartupPhase.socket)),
+    );
     history.complete();
     await _tick();
-    expectNoConnection();
-    audio.complete();
-    await preparing;
-    expect(cubit.state.status, AssistantLiveConnectionStatus.connected);
-    expect(
-      cubit.state.startupTimings.keys.toSet(),
-      AssistantLiveStartupPhase.values.toSet(),
-    );
-    expect(cubit.state.startupTimings.values, everyElement(isNonNegative));
+    expect(cubit.state.status, AssistantLiveConnectionStatus.error);
   });
-
-  test(
-    'failed startup settles parallel native work without connecting',
-    () async {
-      final audio = Completer<void>();
-      when(player.initialize).thenAnswer((_) => audio.future);
-      var completed = false;
-      final preparing = cubit.prepareSession(wsId: 'ws').then((_) {
-        completed = true;
-      });
-      await _tick();
-      history.completeError(Exception('History unavailable'));
-      await _tick();
-      expect(completed, isFalse);
-      expectNoConnection();
-      audio.complete();
-      await preparing;
-      expect(cubit.state.status, AssistantLiveConnectionStatus.error);
-      expect(
-        cubit.state.startupTimings.keys,
-        containsAll([
-          AssistantLiveStartupPhase.history,
-          AssistantLiveStartupPhase.audio,
-          AssistantLiveStartupPhase.total,
-        ]),
-      );
-      expect(
-        cubit.state.startupTimings,
-        isNot(contains(AssistantLiveStartupPhase.socket)),
-      );
-    },
-  );
 
   test(
     'obsolete scope cannot connect or publish startup measurements',
     () async {
+      final audio = Completer<void>();
+      when(player.initialize).thenAnswer((_) => audio.future);
       final preparing = cubit.prepareSession(wsId: 'ws');
       await _tick();
       scopeToken++;
+      audio.complete();
       history.complete();
       await preparing;
+      await _tick();
       expectNoConnection();
       expect(cubit.state.startupTimings, isEmpty);
     },
   );
+
+  test(
+    'scope change while binding retires the connected provider socket',
+    () async {
+      final preparing = cubit.prepareSession(wsId: 'ws');
+      for (var i = 0; i < 6; i++) {
+        await _tick();
+      }
+      expect(cubit.state.status, AssistantLiveConnectionStatus.connected);
+      verifyNever(socket.disconnect);
+      scopeToken++;
+      history.complete();
+      expect(await preparing, isNull);
+      verify(socket.disconnect).called(1);
+      expect(cubit.state.status, AssistantLiveConnectionStatus.disconnected);
+    },
+  );
+
+  for (final change in ['actor', 'workspace scope']) {
+    test('$change change while binding closes the opened wire', () async {
+      final wire = LiveDispatchTransport()..autoReady = true;
+      final binding = Completer<void>();
+      final recorder = _Recorder();
+      final camera = _Camera();
+      when(recorder.stop).thenAnswer((_) async {});
+      when(recorder.dispose).thenAnswer((_) async {});
+      when(camera.stopStreaming).thenAnswer((_) async {});
+      when(camera.dispose).thenAnswer((_) async {});
+      var actor = 'user';
+      var scope = 0;
+      final live = AssistantLiveCubit(
+        repository: repository,
+        socket: wire.socket,
+        audioPlayer: player,
+        recorder: recorder,
+        cameraService: camera,
+        currentUserId: () => actor,
+        currentScopeToken: () => scope,
+        onChatBound: (_, _) => binding.future,
+        onHistoryUpdated: (_, _) async {},
+      );
+      addTearDown(() async {
+        await live.close();
+        await wire.dispose();
+      });
+      final preparing = live.prepareSession(wsId: 'ws');
+      for (var i = 0; i < 8; i++) {
+        await _tick();
+      }
+      expect(live.state.status, AssistantLiveConnectionStatus.connected);
+      expect(wire.setups, 1);
+      expect(wire.sinkCloses, 0);
+      if (change == 'actor') {
+        actor = 'other-user';
+      } else {
+        scope++;
+      }
+      binding.complete();
+      expect(await preparing, isNull);
+      expect(wire.sinkCloses, 1);
+      expect(wire.setups, 1);
+      expect(wire.textAttempts, 0);
+      expect(live.state.status, AssistantLiveConnectionStatus.disconnected);
+    });
+  }
 
   test(
     'duration snapshots are immutable and contain only completed stages',

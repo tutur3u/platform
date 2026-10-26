@@ -1,6 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { hasChallengeAccess, requestCookieStore } from '@/lib/challenge-access';
+import {
+  isManagerCatalogAccess,
+  resolveNovaCatalogActor,
+  resolveNovaChallengeCatalogAccess,
+} from '@/lib/challenge-catalog-access';
 import {
   canManageNovaChallenge,
   getNovaCriterionChallengeId,
@@ -23,11 +29,67 @@ export async function GET(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
+    const { challengeId, error: lookupError } =
+      await getNovaCriterionChallengeId(criterionId, sbAdmin);
+
+    if (lookupError) {
+      console.error('Database Error: ', lookupError);
+      return NextResponse.json(
+        { message: 'Error fetching criterion' },
+        { status: 500 }
+      );
+    }
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { message: 'Criterion not found' },
+        { status: 404 }
+      );
+    }
+
+    const { data: challenge, error: challengeError } = await sbAdmin
+      .schema('private')
+      .from('nova_challenges')
+      .select('id, enabled, previewable_at, whitelisted_only, password_hash')
+      .eq('id', challengeId)
+      .maybeSingle();
+
+    if (challengeError) {
+      console.error('Database Error: ', challengeError);
+      return NextResponse.json(
+        { message: 'Error fetching challenge' },
+        { status: 500 }
+      );
+    }
+
+    if (!challenge) {
+      return NextResponse.json(
+        { message: 'Criterion not found' },
+        { status: 404 }
+      );
+    }
+
+    const actor = await resolveNovaCatalogActor({ sbAdmin, user });
+    const access = await resolveNovaChallengeCatalogAccess({
+      actor,
+      challenge,
+      sbAdmin,
+    });
+
+    if (
+      access === 'denied' ||
+      (!isManagerCatalogAccess(access) &&
+        !hasChallengeAccess(challenge, requestCookieStore(request), user.id))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const { data: criterion, error } = await sbAdmin
       .schema('private')
       .from('nova_challenge_criteria')
       .select('*')
       .eq('id', criterionId)
+      .eq('challenge_id', challengeId)
       .single();
 
     if (error) {
@@ -80,7 +142,7 @@ export async function PUT(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
-  } catch (_error) {
+  } catch {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
@@ -127,6 +189,7 @@ export async function PUT(request: Request, { params }: Params) {
       .from('nova_challenge_criteria')
       .update(updateData)
       .eq('id', criterionId)
+      .eq('challenge_id', challengeId)
       .select()
       .single();
 
@@ -191,7 +254,8 @@ export async function DELETE(request: Request, { params }: Params) {
       .schema('private')
       .from('nova_challenge_criteria')
       .delete()
-      .eq('id', criterionId);
+      .eq('id', criterionId)
+      .eq('challenge_id', challengeId);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);
