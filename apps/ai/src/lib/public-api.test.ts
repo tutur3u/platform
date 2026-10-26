@@ -219,7 +219,7 @@ describe('AI Studio billing policy', () => {
           outputTokens: 50,
         }
       )
-    ).rejects.toThrow('AI usage requires reconciliation.');
+    ).rejects.toThrow('pricing unavailable');
     expect(mocks.recordAiStudioRunStep).not.toHaveBeenCalled();
   });
   it('does not settle unknown sponsored pricing as zero credits', async () => {
@@ -310,7 +310,8 @@ describe('AI Studio billing policy', () => {
         inputTokens: 100,
         outputTokens: 50,
         reasoningTokens: 30,
-      })
+      }),
+      expect.objectContaining({ fetch: expect.any(Function) })
     );
     expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
       expect.objectContaining({ outputTokens: 80, reasoningTokens: 30 }),
