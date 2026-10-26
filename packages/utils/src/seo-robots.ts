@@ -67,8 +67,9 @@ export function robotsForUrl(
   // Malformed or ambiguous encodings never become indexable.
   if (!segments) return PRIVATE_ROBOTS_HEADER;
   const path = segments.join('/');
+  // Reserved names match in any case, as Next's header sources do.
   if (
-    new RegExp(`^${SEO_LOCALE_PREFIX}${PRIVATE_PATH_PATTERN}`, 'u').test(path)
+    new RegExp(`^${SEO_LOCALE_PREFIX}${PRIVATE_PATH_PATTERN}`, 'iu').test(path)
   )
     return PRIVATE_ROBOTS_HEADER;
   const isPublic = new RegExp(

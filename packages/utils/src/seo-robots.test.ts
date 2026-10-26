@@ -57,7 +57,9 @@ describe('encoded paths decode once before every check', () => {
     expect(at('git', '/auth/repo')).toBe(PRIVATE_ROBOTS_HEADER);
     for (const path of [
       '/%61uth/repo',
-      '/%41UTH/repo'.toLowerCase(),
+      '/%41uth/repo',
+      '/AUTH/repo',
+      '/Vi/Login',
       '/vi/%61uth/repo',
       '/en/%61%75%74%68/repo',
       '/%64ashboard/x',
