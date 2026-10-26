@@ -252,8 +252,8 @@ runtime suite still requires the exact compiled app name and source commit.
 `start-bridge.config.ts` admits only `ai.tuturuuu.com` and
 `ai-staging.tuturuuu.com`. Empty mount hosts and `unknownHost: 'reject'`
 reject apex and unknown hosts before route execution. These allowlist entries
-do not provision DNS or authorize publication. Keep workers.dev disabled in the
-app-owned Worker configuration when the shared generator override is available.
+do not provision DNS or authorize publication. The shared generator derives `workers_dev: false` from this fail-closed
+profile and seals that setting with the app-owned request-signal flag.
 
 Every native response denies framing and content sniffing, sets the strict-origin
 referrer policy, and remains noindex. Documents and APIs default to
