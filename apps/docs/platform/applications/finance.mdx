@@ -463,7 +463,7 @@ row after sync. Never manually push the migration from an agent checkout.
 #### Legacy cutoff before the first exact-month invoice (draft)
 
 Status: proposed in
-`20261026180000_pending_tuition_legacy_floor_before_first_explicit_month.sql`;
+`20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.sql`;
 it needs a product decision and per-workspace migration approval before
 release.
 
@@ -500,7 +500,7 @@ Regression coverage: `apps/database/supabase/tests/pending-tuition-legacy-floor.
 month, exact-only students, standard invoices, Pending row months,
 Ho Chi Minh month boundaries) and `apps/database/supabase/tests/subscription-coverage.sql`.
 Rollback restores the previous definition with
-`apps/database/rollbacks/20261026180000_pending_tuition_legacy_floor_before_first_explicit_month.rollback.sql`.
+`apps/database/rollbacks/20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.rollback.sql`.
 
 ### Exchange-rate session boundary
 

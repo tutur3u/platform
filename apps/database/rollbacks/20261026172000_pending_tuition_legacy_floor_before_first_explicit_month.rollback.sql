@@ -1,4 +1,4 @@
--- Rollback for 20261026180000_pending_tuition_legacy_floor_before_first_explicit_month.sql.
+-- Rollback for 20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.sql.
 -- Restores the 20260929090000 definition verbatim (legacy cutoff ignores
 -- explicit-month invoices; enumeration starts at the cutoff or join date).
 -- Not a migration: apply manually only with release-authority approval.
