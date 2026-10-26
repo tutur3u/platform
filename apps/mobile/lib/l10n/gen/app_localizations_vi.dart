@@ -8676,6 +8676,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
 
   @override
+  String get taskBoardDetailFocusReplaceConfirm => 'Dừng và bắt đầu';
+
+  @override
+  String get taskBoardDetailFocusReplaceMessage => 'Một bộ bấm giờ đang chạy. Bắt đầu tập trung sẽ dừng nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplaceTitle => 'Dừng bộ bấm giờ đang chạy?';
+
+  @override
+  String get taskBoardDetailFocusStarted => 'Đã bắt đầu bấm giờ cho công việc này.';
+
+  @override
   String taskBoardDetailFromList(String list) {
     return 'từ: $list';
   }
@@ -8807,6 +8819,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailOpenRelatedTask => 'Mở công việc liên quan';
 
   @override
+  String get taskBoardDetailOpenTimer => 'Mở bộ bấm giờ';
+
+  @override
   String get taskBoardDetailOverdue => 'Quá hạn';
 
   @override
@@ -8925,6 +8940,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
+
+  @override
+  String get taskBoardDetailStartFocus => 'Bắt đầu tập trung';
 
   @override
   String taskBoardDetailStartsAt(String date) {

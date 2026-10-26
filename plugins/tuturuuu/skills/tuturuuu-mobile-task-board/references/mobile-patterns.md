@@ -202,6 +202,11 @@ localization changes.
   mode disables swipes. Board-page tests whose mutations invalidate caches
   never settle in fake async, so assert on the repository call and the busy
   dialog instead of `pumpAndSettle` after confirming.
+- Pass the page context, not the root navigator's context, to
+  `showAppToast`; the root navigator's element sits above its overlay. Keep the
+  root-navigator context only for legacy `shad.showToast` callers.
+- Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
+  on failure before the server refresh; do not rely on the refresh alone.
 
 ## Finance
 

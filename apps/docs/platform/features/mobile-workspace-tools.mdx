@@ -1939,8 +1939,18 @@ gestures. The same behavior applies on Android and iOS.
   due date lands at the end of the chosen local day), **Priority** (single
   choice) and **Delete** (the existing asynchronous confirmation, which stays
   busy until the mutation finishes).
-- **Long press** opens the row's context menu: Complete or Reopen, Schedule,
-  Change priority, Move task, Select task, Open full details and Delete task.
+- **Long press** opens the row's context menu: Complete or Reopen, Start
+  focus, Schedule, Change priority, Move task, Select task, Open full details
+  and Delete task.
+- **Start focus** starts an ordinary time-tracking session linked to the task.
+  A Pomodoro entry point for tasks is planned for phase 6 of the mobile
+  native pass plan. Starting a
+  session closes any running one on the server, so a timer running for another
+  task is replaced only after confirmation. A timer already running for this
+  task is kept. The confirmation toast offers **Open timer**.
+- **Failures** roll the row back, then show the server's error as a toast:
+  a failed complete returns the task to its list, and a failed priority or due
+  date change restores the previous value.
   **Select task** enters bulk selection. Earlier, a long press entered bulk
   selection directly. In bulk selection, swipes are off and a long press
   toggles the row, as before.
@@ -1950,7 +1960,9 @@ gestures. The same behavior applies on Android and iOS.
 Kanban cards keep their earlier long-press selection behavior; this decision
 covers List view rows only. Regression coverage:
 `task_board_row_actions_test.dart` (mutations, menu, bulk mode, 320dp at 2x
-text), `task_board_bulk_selection_test.dart` and `app_swipe_actions_test.dart`
-(thresholds, reveal, right-to-left, semantics, enlarged text). Widget tests do
+text), `task_board_row_actions_flows_test.dart` (failure rollback and error
+toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
+and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
+right-to-left, semantics, enlarged text). Widget tests do
 not establish gesture feel on devices.
 

@@ -36,6 +36,7 @@ import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -86,6 +87,7 @@ part 'task_board_detail_page_list_view_chips.dart';
 part 'task_board_detail_page_list_view_sort_sheet.dart';
 part 'task_board_detail_page_list_view_sorting.dart';
 part 'task_board_detail_page_list_view_task_card.dart';
+part 'task_board_detail_page_list_view_task_toggles.dart';
 part 'task_board_detail_page_sheet.dart';
 part 'task_board_detail_page_sheet_dialogs.dart';
 part 'task_board_detail_page_sheet_logic.dart';
@@ -93,7 +95,9 @@ part 'task_board_detail_page_sheet_rich_description_editor.dart';
 part 'task_board_detail_page_sheet_widgets.dart';
 part 'task_board_detail_page_states.dart';
 part 'task_board_detail_page_task_actions_sheet.dart';
+part 'task_board_detail_page_task_focus.dart';
 part 'task_board_detail_page_task_row_actions.dart';
+part 'task_board_detail_page_task_row_swipe.dart';
 part 'task_board_detail_page_timeline.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';
@@ -103,19 +107,29 @@ class TaskBoardDetailPage extends StatelessWidget {
     required this.boardId,
     super.key,
     this.taskRepository,
+    this.timeTrackerRepository,
     this.initialTaskId,
     this.initialView,
   });
 
   final String boardId;
   final TaskRepository? taskRepository;
+  final ITimeTrackerRepository? timeTrackerRepository;
   final String? initialTaskId;
   final TaskBoardDetailView? initialView;
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider<TaskRepository>(
-      create: (_) => taskRepository ?? TaskRepository(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<TaskRepository>(
+          create: (_) => taskRepository ?? TaskRepository(),
+        ),
+        // Created on first use, by the row's Start focus action.
+        RepositoryProvider<ITimeTrackerRepository>(
+          create: (_) => timeTrackerRepository ?? TimeTrackerRepository(),
+        ),
+      ],
       child: BlocProvider(
         create: (context) {
           final cubit = TaskBoardDetailCubit(

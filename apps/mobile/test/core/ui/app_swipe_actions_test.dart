@@ -94,6 +94,30 @@ void main() {
     expect(calls.log, isEmpty);
   });
 
+  testWidgets('a fast flick shorter than the fling minimum does not commit', (
+    tester,
+  ) async {
+    final calls = await _pumpRow(tester);
+
+    // 40dp is below 15% of the 360dp row, however fast the flick.
+    await tester.fling(find.text('Row title'), const Offset(40, 0), 3000);
+    await tester.pumpAndSettle();
+
+    expect(calls.log, isEmpty);
+  });
+
+  testWidgets('a fling past the minimum commits before the drag threshold', (
+    tester,
+  ) async {
+    final calls = await _pumpRow(tester);
+
+    // 80dp clears the 54dp fling minimum but not the 126dp drag threshold.
+    await tester.fling(find.text('Row title'), const Offset(80, 0), 3000);
+    await tester.pumpAndSettle();
+
+    expect(calls.log, ['complete']);
+  });
+
   testWidgets('a swipe toward the start edge reveals trailing buttons', (
     tester,
   ) async {
