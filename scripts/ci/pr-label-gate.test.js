@@ -5,6 +5,7 @@ const {
   renderTemplate,
 } = require('./github-expression-test-helper');
 const {
+  ADMISSION_PR_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
@@ -12,6 +13,7 @@ const {
   protectedTriggerDigest,
   PUSH_TO_PR,
   READY_LABEL,
+  UNADMITTED_GROUP_SUFFIX,
   withoutPrLabelGate,
 } = require('./pr-label-gate');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper');
@@ -138,6 +140,7 @@ test('the gate admits only ready-for-ci PRs and never gates other events', () =>
 test('every PR-reachable workflow is classified exactly once', () => {
   const classified = [
     ...HEAVY_PR_WORKFLOWS,
+    ...ADMISSION_PR_WORKFLOWS,
     ...ALWAYS_ON_PR_WORKFLOWS,
     ...PAUSED_PR_WORKFLOWS,
   ];
@@ -182,7 +185,7 @@ for (const file of HEAVY_PR_WORKFLOWS) {
     assert.ok(groups.length, 'PR runs need a superseding group');
     // A label event on a ready PR lands in the push run's group and cancels
     // it, so the newest check per name is always the admitted rerun.
-    const scope = (action, label) => ({
+    const scope = (action, label, labels = [READY_LABEL, 'WIP']) => ({
       github: {
         ...pullRequest([READY_LABEL, 'WIP'], action, label).github,
         workflow: workflow.name,
@@ -194,13 +197,16 @@ for (const file of HEAVY_PR_WORKFLOWS) {
           ...pullRequest([READY_LABEL, 'WIP'], action, label).github.event,
           pull_request: {
             number: 42,
-            labels: [{ name: READY_LABEL }, { name: 'WIP' }],
+            labels: labels.map((name) => ({ name })),
           },
         },
       },
     });
     const push = scope('synchronize');
     const labelled = scope('labeled', 'WIP');
+    // A push whose payload predates the label never shares (or cancels) the
+    // admitted run's group.
+    const unadmitted = scope('synchronize', undefined, ['WIP']);
     for (const policy of workflow.concurrency
       ? [workflow.concurrency]
       : Object.values(workflow.jobs)
@@ -210,6 +216,12 @@ for (const file of HEAVY_PR_WORKFLOWS) {
         renderTemplate(policy.group, labelled),
         renderTemplate(policy.group, push),
         'label events must share the admitted run group'
+      );
+      assert.ok(policy.group.endsWith(UNADMITTED_GROUP_SUFFIX), policy.group);
+      assert.notEqual(
+        renderTemplate(policy.group, unadmitted),
+        renderTemplate(policy.group, labelled),
+        'unadmitted runs must never cancel an admitted run'
       );
       if (policy.queue !== 'max') {
         assert.equal(

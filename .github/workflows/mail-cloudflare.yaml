@@ -16,7 +16,7 @@ permissions:
 # older pending main/manual runs coalesce. Uploads retain the independent
 # queue:max / cancel-in-progress:false lock in wave1-native-publish.yaml.
 concurrency:
-  group: native-mail-cloudflare-${{ github.ref }}
+  group: native-mail-cloudflare-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check-ci:

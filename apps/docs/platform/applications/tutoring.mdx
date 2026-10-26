@@ -217,6 +217,58 @@ teacher's flagged feedback content. Staff can review and edit either draft
 before saving; content is never invented from a class title or an unrelated
 lesson.
 
+### Make-up content follows the missed lesson's notes
+
+Decision (applies to `ABSENT_RECOVERY` sessions in Contacts → Tutoring; default
+on, no setting):
+
+- While a make-up session is **pending**, its content follows the lesson notes
+  recorded for the missed class session. Notes a teacher adds or edits after
+  scheduling appear in the schedule automatically. The schedule marks such
+  sessions with "Follows the missed lesson notes".
+- When the session is **marked done** (row action or session edit), the notes as
+  they stand are stored on the session and are **frozen**. Later edits to the
+  class notes no longer change it.
+- A tutor's **manual edit** of the content stores their own text and stops the
+  updates for that session; a completion never overwrites it. Clearing the
+  content of a pending session links it to the notes again.
+- No-show and cancelled sessions keep whatever content they have.
+- **Which missed class**: each make-up session follows exactly one missed class.
+  Within a learner's class, absences in the lookback window and that learner's
+  pending or done make-up sessions are paired in date order. The oldest
+  absence not yet covered goes to the earliest session dated on or after it.
+  Sessions dated before every open absence follow no class and show no
+  notes. Deleting or rescheduling a session, or editing attendance, can
+  re-pair later pending sessions; completed sessions keep their stored notes.
+- **Content narrows to one date**: the scheduling draft lists notes for every
+  missed date in the queue row (`YYYY-MM-DD: notes`, one line each). Once the
+  session is saved linked, it shows only its own paired date's notes, so a
+  learner with two absences sees one date on each of their two sessions.
+- **Completion stays fast**: storing the notes waits at most three seconds. If
+  the lookup fails or times out, the session is still completed. The response
+  carries `warning: "LINKED_CONTENT_NOT_STORED"`, and the schedule shows a
+  non-blocking warning so staff can check the content. A slow write may still
+  land after the timeout, but only while the content is empty.
+
+Implementation: no schema change. A linked session is one whose stored
+content is blank (empty or whitespace only), so the create form saves an
+unchanged drafted note as empty. The
+sessions list derives the content at read time, pairing each session with its
+missed class through the queue's
+[legacy absence credit matching](#legacy-absence-credit-matching), and reads
+that class session's notes. Completion writes the notes only while the stored
+content is still the blank value it read (a compare-and-set, so a concurrent
+staff edit wins). Completing through the session edit with no content, or with
+blank content, still stores the notes; only real text sent with the completion
+counts as a manual edit. If the lookup fails, the list shows the stored content
+and completion still succeeds. Regression coverage:
+[`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
+(notes filled after scheduling, frozen after completion, manual edit kept,
+lookup failure, whitespace-only content, bounded wait, pairing order),
+[`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
+(completion with absent, empty or blank content, and the completion warning) and
+[`use-tutoring-create.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/use-tutoring-create.test.ts).
+
 ### Homeroom teachers hear when tutoring is completed
 
 Decision (applies to every tutoring reason; always on, no setting):

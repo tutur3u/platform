@@ -9,6 +9,10 @@ import {
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
 import { notifyCompletionSafely } from '@/lib/tutoring/completion-notification';
+import {
+  freezeLinkedLessonContent,
+  LINKED_CONTENT_NOT_STORED,
+} from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
 
@@ -244,13 +248,28 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
 
+  // Completing with no (or blank) content keeps the linked notes; only real
+  // text sent alongside the completion counts as a manual edit.
   if (parsed.data.attendanceStatus === 'DONE') {
+    const frozen = parsed.data.content?.trim()
+      ? 'skipped'
+      : await freezeLinkedLessonContent({
+          sbAdmin,
+          sessionId: id,
+          wsId: normalizedWsId,
+        });
     await notifyCompletionSafely({
       actorUserId: user?.id ?? null,
       sbAdmin,
       sessionId: id,
       wsId: normalizedWsId,
     });
+    // Completion stands; the client warns that the notes may need a check.
+    if (frozen === 'failed')
+      return NextResponse.json({
+        message: 'success',
+        warning: LINKED_CONTENT_NOT_STORED,
+      });
   }
 
   return NextResponse.json({ message: 'success' });

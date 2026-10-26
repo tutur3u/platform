@@ -514,6 +514,11 @@ bun sb:push
 
 ## Rollback Strategy
 
+See the [manual incident rollback runbook](/reference/database/migration-incident-rollbacks)
+for the per-migration inventory, reverse run order, timeout/transaction rules and
+forward-only cross-app token containment. These manual files do not alter the
+hosted migration ledger.
+
 ### Simple Rollback
 
 ```sql
