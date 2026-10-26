@@ -62,6 +62,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
               wsId,
               title: title,
               taskId: task.id,
+              tags: const [pomodoroSessionTag],
             );
           } on Exception {
             // Never lose the paused work silently: put it back as it was,
@@ -97,6 +98,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
             wsId,
             title: title,
             taskId: task.id,
+            tags: const [pomodoroSessionTag],
           );
         }
       } else if (current == null) {
@@ -104,6 +106,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
           wsId,
           title: title,
           taskId: task.id,
+          tags: const [pomodoroSessionTag],
         );
       } else if (paused != null) {
         // Paused on this task: pick it back up.

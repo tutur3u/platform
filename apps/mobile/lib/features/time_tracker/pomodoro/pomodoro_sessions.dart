@@ -20,6 +20,20 @@ class PomodoroSessionConflict implements Exception {
   const PomodoroSessionConflict();
 }
 
+/// Thrown when a focus start failed after its session was created and that
+/// session could not be stopped again, so it may still be running.
+class PomodoroOrphanedSession implements Exception {
+  const PomodoroOrphanedSession({required this.sessionId, required this.cause});
+
+  final String sessionId;
+
+  /// The error that made the start fail.
+  final Exception cause;
+
+  @override
+  String toString() => 'PomodoroOrphanedSession($sessionId): $cause';
+}
+
 /// The tracking session a focus phase is really on: `session` when it is
 /// running or paused; null when it is gone or could not be read.
 typedef FocusSession = ({
@@ -74,18 +88,15 @@ class PomodoroSessions {
     return id != null && (session.id == id || session.parentSessionId == id);
   }
 
-  /// A session for the phase's task that started inside the phase's window,
-  /// so one the user starts by hand after the phase ended or paused is never
-  /// taken for the phase's.
+  /// A session for the phase's task that started while the phase was
+  /// running, so one the user starts by hand during a pause or after the
+  /// phase ended is never taken for the phase's.
   static bool _inWindow(PomodoroState phase, TimeTrackingSession session) {
-    final window = phase.sessionWindow;
     final start = session.startTime;
     return phase.taskId != null &&
         session.taskId == phase.taskId &&
-        window != null &&
         start != null &&
-        !start.isBefore(window.start) &&
-        start.isBefore(window.end);
+        phase.ranAt(start);
   }
 
   /// Stops the phase's session, closing a paused session's break. When the

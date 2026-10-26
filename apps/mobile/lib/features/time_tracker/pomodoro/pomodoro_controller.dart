@@ -133,6 +133,7 @@ class PomodoroController extends Cubit<PomodoroState> {
     TimeTrackingSession? replacingPaused,
   }) => _exclusive(() async {
     final settings = await _loadSettings();
+    final before = state;
     if (replacingPaused != null) {
       await _repository.stopSession(wsId, replacingPaused.id);
     }
@@ -142,6 +143,7 @@ class PomodoroController extends Cubit<PomodoroState> {
         wsId,
         title: title,
         taskId: taskId,
+        tags: const [pomodoroSessionTag],
       );
     } on Exception {
       if (replacingPaused != null) {
@@ -159,16 +161,29 @@ class PomodoroController extends Cubit<PomodoroState> {
         taskId: taskId,
         taskName: taskName,
       );
-    } on Exception {
+    } on Exception catch (original) {
       // Leave nothing half-started: end the new session and put the
-      // replaced one back.
+      // replaced one back. A new session that cannot be stopped is reported,
+      // never swallowed; a failed restore keeps the original error.
+      var orphaned = false;
       try {
         await _repository.stopSession(wsId, session.id);
       } on Exception {
-        // Shown on the Timer page.
+        orphaned = true;
       }
+      // Put the device Pomodoro back as it was before this start.
+      if (!isClosed) emit(before);
+      try {
+        await _store.write(before);
+      } on Exception {
+        // The in-memory state is right; the next save retries.
+      }
+      _armTimer();
       if (replacingPaused != null) {
         await _restorePaused(wsId, replacingPaused);
+      }
+      if (orphaned) {
+        throw PomodoroOrphanedSession(sessionId: session.id, cause: original);
       }
       rethrow;
     }
@@ -228,7 +243,7 @@ class PomodoroController extends Cubit<PomodoroState> {
         taskId: taskId,
         taskName: taskName,
         title: title,
-        startedAt: now,
+        runs: [(start: now, end: null)],
       ),
     );
   }
@@ -273,7 +288,7 @@ class PomodoroController extends Cubit<PomodoroState> {
         deadline: () => null,
         remaining: state.remainingAt(now),
         sessionId: () => sessionId,
-        pausedAt: () => now,
+        runs: state.runsClosedAt(now),
       ),
     );
   });
@@ -283,7 +298,7 @@ class PomodoroController extends Cubit<PomodoroState> {
   Future<void> resume() => _exclusive(() async {
     if (!state.isPaused) return;
     String? sessionId;
-    var startedAt = state.startedAt;
+    var runs = state.runsOpenedAt(_now());
     if (state.isFocus) {
       final wsId = state.wsId!;
       final stored = state.sessionId;
@@ -309,16 +324,16 @@ class PomodoroController extends Cubit<PomodoroState> {
             wsId,
             title: state.title,
             taskId: state.taskId,
+            tags: const [pomodoroSessionTag],
           )).id;
-          startedAt = _now();
+          runs = [(start: _now(), end: null)];
       }
     }
     await _set(
       state.copyWith(
         deadline: () => _now().add(state.remaining),
         sessionId: () => sessionId,
-        startedAt: () => startedAt,
-        pausedAt: () => null,
+        runs: runs,
       ),
     );
   });
@@ -380,6 +395,7 @@ class PomodoroController extends Cubit<PomodoroState> {
           ended.wsId!,
           title: ended.title,
           taskId: ended.taskId,
+          tags: const [pomodoroSessionTag],
         )).id;
       } on Exception {
         sessionId = null;
@@ -391,8 +407,7 @@ class PomodoroController extends Cubit<PomodoroState> {
         remaining: length,
         deadline: () => sessionId == null ? null : _now().add(length),
         sessionId: () => sessionId,
-        startedAt: () => sessionId == null ? null : _now(),
-        pausedAt: () => null,
+        runs: sessionId == null ? const [] : [(start: _now(), end: null)],
       ),
       arm: false,
     );

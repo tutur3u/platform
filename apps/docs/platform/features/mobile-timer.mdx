@@ -146,8 +146,9 @@ does the same for that task.
   (it also does so on every reconcile).
 - **Which session belongs to the phase.** A session is the phase's when it
   has the stored id or was resumed from it. A session for the phase's task
-  also counts, but only if it started inside the phase's window: from the
-  phase start to its deadline, or to the pause. A session the user starts
+  also counts, but only if it started while the phase was running. The phase
+  records each run, from each start or resume to the next pause, so a
+  session started during a pause is never claimed. A session the user starts
   by hand after the phase ended or paused is never stopped, trimmed or
   adopted. The app never stops a stale id or an unrelated session.
 - **Resuming with another timer running.** Resume will not start a session
@@ -162,13 +163,24 @@ does the same for that task.
 - **Starting a phase.** The whole start runs under the Pomodoro's lock, so a
   phase end cannot interleave. Settings load before any session changes,
   and a failure afterwards ends the new session and puts the replaced one
-  back, so no orphan session is left.
+  back, so no orphan session is left. If the new session cannot be stopped
+  again, the start reports that it may still be running instead of failing
+  quietly; a failed restore keeps the original error.
+
+Every focus session the Pomodoro starts carries the `pomodoro` tag. This
+includes Start focus on a task row. The session API accepts `tags`: lowercase
+slugs, at most 10, stored in the existing `tags` column. You's **Focus Time**
+counts only `pomodoro`-tagged sessions. The stats endpoint takes an optional
+`tag`. With a tag, it computes today, the week from Monday, the month, daily
+activity and the streak from the tagged sessions, in the user's timezone.
+This is done in TypeScript, so the stats database function is unchanged and
+there is no migration. One difference from the untagged stats: a session
+counts on the local day it started. Sessions from before tagging was
+introduced do not count. The Timer's own statistics still count all tracked
+time.
 
 Shared, cross-device phases need the database contract flagged in the native
-pass plan. Tagging focus sessions as Pomodoro (for a Pomodoro-only Focus Time)
-needs the session API to accept the existing `tags` column. That is an API
-change, not a migration, and it is not done yet, so Focus Time counts all
-tracked time.
+pass plan (phase 7, a draft PR).
 
 Regression coverage: `pomodoro_controller_test.dart` runs against a fake
 tracker that behaves like the server. It covers:
