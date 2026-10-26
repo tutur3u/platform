@@ -44,6 +44,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         onCreateAndSchedule={actions.createAndSchedule}
         onCreateAndSend={actions.createAndSend}
         onDelete={actions.deleteAnnouncement}
+        onNotifyTeachers={actions.notifyTeachers}
         onPageChange={filters.setPage}
         onQueryChange={filters.setQuery}
         onSaveTemplate={actions.saveTemplateFromForm}

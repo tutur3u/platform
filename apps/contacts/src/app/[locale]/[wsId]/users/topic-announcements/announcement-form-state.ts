@@ -27,20 +27,33 @@ export const ANNOUNCEMENT_STEPS = [
 
 export const DELIVERY_MODES = ['draft', 'send', 'schedule'] as const;
 
+export const NO_TEACHER = '__none__';
+const VIDEO_URL_PATTERN = /^https:\/\/\S+$/u;
+
+/** Mirrors the server and database rule: empty, or an https:// URL. */
+export function isTopicVideoUrlValid(value: string) {
+  const trimmed = value.trim();
+  return !trimmed || VIDEO_URL_PATTERN.test(trimmed);
+}
+
 export const INITIAL_ANNOUNCEMENT_FORM = {
   attachmentDrafts: [] as PreviewableTopicAnnouncementAttachment[],
   classLabel: '',
   contactIds: [] as string[],
+  courseBook: '',
   dayLabel: '',
   endTime: '',
   groupId: NO_GROUP,
+  notifyTeacher: true,
   place: '',
   room: '',
   selectedTemplateId: NO_TEMPLATE,
   sessionDate: '',
   startTime: '',
+  teacherWorkspaceUserId: NO_TEACHER,
   title: '',
   topic: '',
+  videoUrl: '',
 };
 
 export type AnnouncementDeliveryMode = (typeof DELIVERY_MODES)[number];
@@ -56,6 +69,7 @@ export function buildTopicAnnouncementPayload(
     ),
     classLabel: form.classLabel || null,
     contactIds: form.contactIds,
+    courseBook: form.courseBook.trim() || null,
     dayLabel: form.dayLabel || null,
     endTime: form.endTime || null,
     groupId: form.groupId === NO_GROUP ? null : form.groupId,
@@ -64,8 +78,13 @@ export function buildTopicAnnouncementPayload(
     sessionDate: form.sessionDate || null,
     sourceType: 'manual',
     startTime: form.startTime || null,
+    teacherWorkspaceUserId:
+      form.teacherWorkspaceUserId === NO_TEACHER
+        ? null
+        : form.teacherWorkspaceUserId,
     title: form.title.trim(),
     topic: form.topic.trim(),
+    videoUrl: form.videoUrl.trim() || null,
   };
 }
 
@@ -91,16 +110,21 @@ export function createAnnouncementFormFromRecord(
     })),
     classLabel: announcement.class_label ?? '',
     contactIds: announcement.contacts.map((contact) => contact.id),
+    courseBook: announcement.course_book ?? '',
     dayLabel: announcement.day_label ?? '',
     endTime: normalizeTime(announcement.end_time),
     groupId: announcement.group_id ?? NO_GROUP,
+    notifyTeacher: true,
     place: announcement.place ?? '',
     room: announcement.room ?? '',
     selectedTemplateId: NO_TEMPLATE,
     sessionDate: announcement.session_date ?? '',
     startTime: normalizeTime(announcement.start_time),
+    teacherWorkspaceUserId:
+      announcement.teacher_workspace_user_id ?? NO_TEACHER,
     title: announcement.title,
     topic: announcement.topic,
+    videoUrl: announcement.video_url ?? '',
   };
 }
 
@@ -112,7 +136,12 @@ export function createDefaultScheduledDate() {
 
 export function getAnnouncementStepValidity(form: AnnouncementFormValues) {
   const details = form.title.trim().length > 0;
-  const message = form.topic.trim().length > 0;
+  // An assigned teacher writes the topic later, so the supervisor may save a
+  // draft session without one; sending still requires a topic.
+  const message =
+    (form.topic.trim().length > 0 ||
+      form.teacherWorkspaceUserId !== NO_TEACHER) &&
+    isTopicVideoUrlValid(form.videoUrl);
   const recipients = form.contactIds.length > 0;
 
   return {

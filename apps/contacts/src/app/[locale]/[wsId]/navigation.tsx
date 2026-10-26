@@ -153,7 +153,11 @@ export async function getNavigationLinks({
         `/${personalOrWsId}/users/topic-announcements/templates`,
       ],
       icon: <Megaphone className="h-4 w-4" />,
-      disabled: withoutPermission('manage_users'),
+      // Assigned teachers reach a scoped "My topics" view in the same route.
+      disabled:
+        withoutPermission('manage_users') &&
+        withoutPermission('create_user_groups_posts') &&
+        withoutPermission('update_user_groups_posts'),
       experimental: 'beta',
       children: [
         {

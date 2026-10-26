@@ -20,6 +20,7 @@ import {
   type TopicAnnouncementTemplatePayload,
   updateTopicAnnouncementTemplate,
 } from '@tuturuuu/internal-api';
+import { notifyTopicAnnouncementTeachers } from '@tuturuuu/internal-api/topic-announcements';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 
@@ -66,6 +67,22 @@ export function useTopicAnnouncementActions({
     onSuccess: () => {
       toast.success(t('announcement_created'));
       invalidate();
+    },
+  });
+  const notifyTeachersMutation = useMutation({
+    mutationFn: (announcementIds: string[]) =>
+      notifyTopicAnnouncementTeachers(wsId, announcementIds),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('teacher_notify_failed')
+      ),
+    onSuccess: ({ data }) => {
+      toast.success(
+        t('teacher_notify_result', {
+          notified: data.notifiedTeachers,
+          skipped: data.skippedUnlinkedTeachers,
+        })
+      );
     },
   });
   const deleteAnnouncementMutation = useMutation({
@@ -230,6 +247,7 @@ export function useTopicAnnouncementActions({
     deleteTemplateMutation,
     importAndSendMutation,
     importMutation,
+    notifyTeachersMutation,
     scheduleMutation,
     sendMutation,
     updateTemplateMutation,

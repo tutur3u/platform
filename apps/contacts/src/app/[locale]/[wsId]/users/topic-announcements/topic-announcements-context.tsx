@@ -56,9 +56,9 @@ interface TopicAnnouncementActions {
   createAndSchedule: (
     payload: TopicAnnouncementPayload,
     scheduledSendAt: string
-  ) => Promise<void>;
-  createAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
-  createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<void>;
+  ) => Promise<string>;
+  createAndSend: (payload: TopicAnnouncementPayload) => Promise<string>;
+  createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<string>;
   createContact: (payload: TopicAnnouncementContactPayload) => void;
   createTemplate: (payload: TopicAnnouncementTemplatePayload) => void;
   deleteAnnouncement: (announcementId: string) => void;
@@ -66,6 +66,7 @@ interface TopicAnnouncementActions {
   deleteTemplate: (templateId: string) => void;
   importAndSendRows: (payload: TopicAnnouncementImportPayload) => void;
   importRows: (payload: TopicAnnouncementImportPayload) => void;
+  notifyTeachers: (announcementIds: string[]) => Promise<void>;
   requestTimezone: () => void;
   saveTemplateFromForm: (values: TemplateFormValues) => void;
   schedule: (announcementId: string, scheduledSendAt: string) => void;
@@ -390,14 +391,18 @@ function createActions({
         announcementId: result.data.id,
         scheduledSendAt,
       });
+      return result.data.id;
     },
     createAndSend: async (payload) => {
       const result =
         await mutations.createAnnouncementMutation.mutateAsync(payload);
       await mutations.sendMutation.mutateAsync(result.data.id);
+      return result.data.id;
     },
     createAnnouncement: async (payload) => {
-      await mutations.createAnnouncementMutation.mutateAsync(payload);
+      const result =
+        await mutations.createAnnouncementMutation.mutateAsync(payload);
+      return result.data.id;
     },
     createContact: (payload) => mutations.createContactMutation.mutate(payload),
     createTemplate: (payload) =>
@@ -411,6 +416,9 @@ function createActions({
     importAndSendRows: (payload) =>
       mutations.importAndSendMutation.mutate(payload),
     importRows: (payload) => mutations.importMutation.mutate(payload),
+    notifyTeachers: async (announcementIds) => {
+      await mutations.notifyTeachersMutation.mutateAsync(announcementIds);
+    },
     requestTimezone: () => setTimezoneDialogOpen(true),
     saveTemplateFromForm: (values) => {
       mutations.createTemplateMutation.mutate({

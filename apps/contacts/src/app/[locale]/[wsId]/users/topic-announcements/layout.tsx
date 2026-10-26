@@ -9,6 +9,7 @@ import {
 } from '@/components/feature-gate/workspace-feature-access';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getContactsWorkspacePermissions } from '@/lib/workspace';
+import { TeacherTopicsView } from './teacher-topics-view';
 import {
   TopicAnnouncementsDisabledGate,
   TopicAnnouncementsForbiddenGate,
@@ -40,6 +41,18 @@ export default async function TopicAnnouncementsLayout({
           getSecrets({ forceAdmin: true, wsId }),
         ]);
 
+        const isSupervisor = Boolean(
+          permissions?.containsPermission('manage_users')
+        );
+        // Assignment-scoped teachers see only their topics; the API enforces
+        // the assignment on every read and write.
+        const isTeacher =
+          !isSupervisor &&
+          Boolean(
+            permissions?.containsPermission('create_user_groups_posts') ||
+              permissions?.containsPermission('update_user_groups_posts')
+          );
+
         const access = resolveWorkspaceFeatureAccess({
           canEnableFeature: Boolean(
             permissions?.containsPermission('manage_workspace_secrets')
@@ -47,7 +60,7 @@ export default async function TopicAnnouncementsLayout({
           canManageFeature: Boolean(
             permissions?.containsPermission('send_user_group_post_emails')
           ),
-          canView: Boolean(permissions?.containsPermission('manage_users')),
+          canView: isSupervisor || isTeacher,
           // The module has always required an explicit opt-in secret, so shared
           // workspaces keep defaulting to off; only the 404 changes.
           enabled: isWorkspaceFeatureEnabled({
@@ -73,6 +86,10 @@ export default async function TopicAnnouncementsLayout({
               wsId={wsId}
             />
           );
+        }
+
+        if (isTeacher) {
+          return <TeacherTopicsView canSend={access.canManage} wsId={wsId} />;
         }
 
         return (
