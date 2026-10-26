@@ -30,6 +30,11 @@ export interface TutoringPolicy {
   reassessmentDays: number;
   followUpDays: number;
   weakContentReviewDays: number;
+  /**
+   * When true, only members with class-management permission
+   * (`update_user_groups`) set, edit or end weak-support tutoring content.
+   */
+  restrictWeakContentEditors: boolean;
   schedulingHorizonDays: number;
   timeRules: TutoringTimeRule[];
   groupExclusions: TutoringGroupExclusion[];
@@ -54,6 +59,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   reassessmentDays: 14,
   followUpDays: 7,
   weakContentReviewDays: 0,
+  restrictWeakContentEditors: false,
   schedulingHorizonDays: 56,
   timeRules: [],
   groupExclusions: [],
@@ -259,6 +265,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
       : STANDARD_TUTORING_POLICY;
   const candidate: Record<string, unknown> = {
     weakContentReviewDays: defaults.weakContentReviewDays,
+    restrictWeakContentEditors: defaults.restrictWeakContentEditors,
     groupExclusions: defaults.groupExclusions,
     shiftByGroupId: {},
     ...saved,
@@ -313,6 +320,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     if (!isIntegerInRange(candidate[field], min, max)) return null;
   }
   if (
+    typeof candidate.restrictWeakContentEditors !== 'boolean' ||
     typeof candidate.parentMessageTemplate !== 'string' ||
     candidate.parentMessageTemplate.trim().length < 1 ||
     candidate.parentMessageTemplate.length > 2000 ||
@@ -409,6 +417,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     reassessmentDays: candidate.reassessmentDays as number,
     followUpDays: candidate.followUpDays as number,
     weakContentReviewDays: candidate.weakContentReviewDays as number,
+    restrictWeakContentEditors: candidate.restrictWeakContentEditors,
     schedulingHorizonDays: candidate.schedulingHorizonDays as number,
     timeRules: rules,
     groupExclusions,

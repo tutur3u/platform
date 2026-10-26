@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Camera actions only appear on platforms implemented by image_picker.
@@ -17,34 +17,32 @@ class AssistantCaptureSheet extends StatelessWidget {
   final Future<void> Function() onVideo;
   final Future<void> Function() onAudio;
   @override
-  Widget build(BuildContext context) => AssistantDockSurface(
-    child: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (cameraSupported) ...[
-              AppListTile(
-                leading: const Icon(LucideIcons.camera),
-                title: Text(context.l10n.assistantCapturePhoto),
-                onTap: onPhoto,
-              ),
-              AppListTile(
-                leading: const Icon(LucideIcons.video),
-                title: Text(context.l10n.assistantCaptureVideo),
-                onTap: onVideo,
-              ),
-            ],
-            AppListTile(
-              leading: const Icon(LucideIcons.mic),
-              title: Text(context.l10n.assistantCaptureAudio),
-              onTap: onAudio,
-            ),
-          ],
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppActionSheet<void>(
+      title: l10n.assistantAttachCaptureAction,
+      actions: [
+        if (cameraSupported) ...[
+          AppSheetAction(
+            icon: LucideIcons.camera,
+            tone: AppTone.primary,
+            label: l10n.assistantCapturePhoto,
+            onPressed: onPhoto,
+          ),
+          AppSheetAction(
+            icon: LucideIcons.video,
+            tone: AppTone.primary,
+            label: l10n.assistantCaptureVideo,
+            onPressed: onVideo,
+          ),
+        ],
+        AppSheetAction(
+          icon: LucideIcons.mic,
+          tone: AppTone.primary,
+          label: l10n.assistantCaptureAudio,
+          onPressed: onAudio,
         ),
-      ),
-    ),
-  );
+      ],
+    );
+  }
 }

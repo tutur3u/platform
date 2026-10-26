@@ -452,7 +452,7 @@ class _RequestsViewState extends State<_RequestsView> {
               builder: (context) {
                 if (workspaceState.status == WorkspaceStatus.initial ||
                     workspaceState.status == WorkspaceStatus.loading) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
 
                 if (workspaceState.currentWorkspace == null) {
@@ -473,7 +473,7 @@ class _RequestsViewState extends State<_RequestsView> {
                             state.status ==
                                 TimeTrackerRequestsStatus.loading) &&
                         state.requests.isEmpty) {
-                      return const Center(child: NovaLoadingIndicator());
+                      return const AppLoadingIndicator.page();
                     }
 
                     if (state.status == TimeTrackerRequestsStatus.error &&

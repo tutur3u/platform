@@ -129,7 +129,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
           ),
           const shad.Gap(12),
           if (_isLoading)
-            const Center(child: NovaLoadingIndicator())
+            const AppLoadingIndicator()
           else if (_updates.isEmpty)
             Text(
               context.l10n.taskPortfolioNoProjectUpdates,

@@ -64,7 +64,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
@@ -153,7 +153,7 @@ jobs:
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Mail route tree evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: mail-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/mail-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/
@@ -337,7 +337,7 @@ jobs:
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Calendar route tree evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-route-tree-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/calendar-route-tree-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
@@ -363,7 +363,7 @@ jobs:
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-calendar.json"
       - name: Retain calendar diagnostic config receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-native-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config-calendar.json
@@ -385,7 +385,7 @@ jobs:
           node ../../scripts/ci/calendar-cf-types.mjs --config "$CALENDAR_EMITTED_CONFIG" --reference "$typegen_file" --sha "$SOURCE_SHA" > "$typegen_dir/cf-types.json"
           cp -- "$typegen_dir/cf-types.json" "$RUNNER_TEMP/calendar-cf-types.json"
       - name: Retain Calendar binding type parity receipt
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-cf-types-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/calendar-cf-types.json
@@ -411,7 +411,7 @@ jobs:
         run: node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"
       - name: Retain sanitized Calendar SSR fixture diagnostics
         if: ${{ always() && steps.calendar-runtime.outputs.ssr_diagnostic != '' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-ssr-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
           path: ${{ steps.calendar-runtime.outputs.ssr_diagnostic }}
@@ -430,7 +430,7 @@ jobs:
             pointer=.void/preview-deploy-config.json
           fi
           tar -czf "$RUNNER_TEMP/calendar-worker.tar.gz" -C apps/calendar dist "$pointer" cloudflare-env.d.ts calendar-artifact.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-worker.tar.gz
@@ -440,7 +440,7 @@ jobs:
       - name: Pack verified Calendar cf comparison output
         run: tar -czf "$RUNNER_TEMP/calendar-cf-output.tar.gz" -C "$RUNNER_TEMP/calendar-cf-output" .
       - name: Retain Calendar cf comparison output
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-cf-output-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-cf-output.tar.gz
@@ -471,7 +471,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" "apps/calendar/calendar-artifact.json" >> "$RUNNER_TEMP/calendar-debug-sealed-source.txt"
       - name: Retain failed-job sealed source for debugging
         if: ${{ failure() && steps.calendar-canonical-seal.outcome == 'success' && steps.calendar-debug-pack.outcome == 'success' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-debug-sealed-source-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -538,7 +538,7 @@ jobs:
         run: node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"
       - name: Retain sanitized Calendar SSR fixture diagnostics
         if: ${{ always() && steps.calendar-runtime.outputs.ssr_diagnostic != '' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: calendar-ssr-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
           path: ${{ steps.calendar-runtime.outputs.ssr_diagnostic }}

@@ -12,6 +12,7 @@ const {
 const {
   buildReleaseNotesDocument,
 } = require('./release-please-overflow-recovery-core');
+const { labelExpressionToJs } = require('./pr-label-gate');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 // These policy expressions use the shared JavaScript/GitHub boolean subset.
@@ -19,7 +20,7 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 function evaluatePolicy(value, github) {
   const expression = value.replace(/^\$\{\{([\s\S]*)\}\}$/u, '$1').trim();
   return runInNewContext(
-    expression,
+    labelExpressionToJs(expression),
     {
       github,
       startsWith: (value, prefix) => value.startsWith(prefix),

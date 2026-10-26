@@ -119,3 +119,62 @@ Observe Apps for at least 14 days and Meet/Mail/provider-critical Calendar flows
 30 days or the relevant business cycle before separately authorized decommissioning.
 No hold removal, resource provisioning, deployment or DNS change is authorized by
 this runbook alone.
+
+## Shared-origin mount flags
+
+Meet and Mail move from their subdomains to `tuturuuu.com/meet` and
+`tuturuuu.com/mail`. Meet's Worker entry and Mail's request handler run
+`decideOneOriginRequest` (`@tuturuuu/utils/one-origin-routing`) before anything
+else. It reads two per-app
+Worker variables:
+
+| Variable | Values | Effect |
+| --- | --- | --- |
+| `TTR_ONE_ORIGIN_MEET` / `TTR_ONE_ORIGIN_MAIL` | `off` (default and any unknown value), `shadow`, `on` | `off`: the shared origin returns 404. `shadow`: both hosts serve; shared-origin responses carry `X-Robots-Tag: noindex`. `on`: subdomain navigations redirect to the shared origin. |
+| `TTR_ONE_ORIGIN_<APP>_REDIRECT_STATUS` | `307` (default), `301` | Use `307` (`Cache-Control: no-store`) through observation: 3 days for Meet, 7 days for Mail. Promote to `301` only after that window, because a cached 301 cannot be revoked by a route rollback. |
+
+Redirects apply only to subdomain GET/HEAD navigations: `Sec-Fetch-Mode: navigate`,
+or an HTML `Accept` header without Fetch Metadata. They keep the raw path and query
+bytes, and the subdomain root maps to the canonical `/<app>/` (the bare `/<app>`
+is canonicalized by a zone redirect, because Worker routes cannot match it once a
+query string is present). Machine traffic is always served on the subdomain and never redirected.
+That covers `/api/*` (webhooks, OAuth callbacks), `/assets/*`, `/.well-known/*`,
+WebSocket upgrades, server functions (`/_serverFn` and the legacy app bases) and
+Meet's `/live-connect`. The decision never rewrites URLs. The Start bridge
+resolves the base per request, serving the subdomain at its root and the shared
+origin under `/<app>` from one artifact.
+
+Each app's `basePathReady` constant (`apps/meet/cloudflare/one-origin.ts`,
+`apps/mail/src/runtime/one-origin.ts`)
+stays `false` until its Start bridge build routes under `/<app>`. While false, the
+shared origin is refused in every mode and the subdomain behaves exactly as before.
+Setting the variables, attaching zone routes and changing the redirect status are
+release actions that need user approval.
+
+### Document security headers
+
+Same-origin apps form one trust domain, so each app carries its own document
+policy (`@tuturuuu/utils/security-headers`). Meet's Worker entry and Mail's
+request handler apply it to `text/html` responses only. They never replace a
+header the route already set.
+
+- **Enforced now:**
+  - `X-Content-Type-Options: nosniff`.
+  - `Referrer-Policy: strict-origin-when-cross-origin`.
+  - An explicit `Permissions-Policy`. Meet allows `camera`, `microphone` and
+    `display-capture` for itself. Mail denies all three, so a camera grant made to
+    Meet on the shared origin cannot be used from a Mail document.
+- **Report-only:** `Content-Security-Policy-Report-Only` sets no `'unsafe-inline'` or
+  `'unsafe-eval'` for scripts, plus `require-trusted-types-for 'script'`,
+  `object-src 'none'`, `base-uri 'none'` and `frame-ancestors 'none'`. On the
+  shared origin, "self" is path-scoped to `https://tuturuuu.com/<app>/` plus
+  `https://tuturuuu.com/api/`, so Meet's policy reports a fetch to `/mail/...`.
+  Violations stay in the browser console unless the Worker variable
+  `TTR_CSP_REPORT_URI` names a report endpoint.
+
+Report-only is burn-in on the subdomain, not admission. Every app shares one
+session on `tuturuuu.com`, so the CSP and Trusted Types must be **enforced** before
+an app is routed onto the shared origin in any mode, `shadow` included.
+Enforcement needs a per-request script nonce passed to the Start router
+(`ssr.nonce`) through the Start bridge request context, and zero remaining
+violations for each app. Inline scripts are expected to report until then.

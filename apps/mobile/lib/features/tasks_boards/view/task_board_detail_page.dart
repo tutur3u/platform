@@ -19,7 +19,7 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/form_dirty_utils.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';

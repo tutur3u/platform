@@ -58,7 +58,8 @@ from `packages/internal-api`, and consume it from `apps/drive`.
 Drive permissions apply to ordinary Drive files. They do not grant access to
 application-owned chat attachments. In every workspace, Drive share, download,
 list, export, upload, rename, and delete boundaries reserve the root names `chat`,
-`chats`, `external-apps`, `AI Agent Imports`, and `recordings` for their owning
+`chats`, `external-apps`, `AI Agent Imports`, `recordings`, and
+`topic-announcements` for their owning
 applications. Only the two-segment prefix `mira/images` is reserved for Mira image
 results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
 Root/directory listings and Drive analytics omit private objects; quota accounting
@@ -96,6 +97,7 @@ These source locations are the upload contracts for the separate Storage RLS lan
 | `AI Agent Imports/<adapter>/<channel>/<thread>/` | Chat external-channel imports | `apps/web/src/lib/ai-agents/external-chat-attachments.ts:143` (upload at 58) |
 | `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:109` (upload at 123) |
 | `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:91`; sibling `chunks/route.ts:112` |
+| `topic-announcements/attachments/` | Contacts topic announcement attachments | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts` (topic branch: feature flag and `manage_users`, signed upload) |
 
 Mobile voice attachments use the same AI/native upload flow through
 `apps/mobile/lib/features/assistant/data/assistant_repository.dart:513` and 540;
@@ -272,8 +274,9 @@ commit; do not run `bun validate` or app builds on the shared machine.
 - **Private roots:** `chat/**` and `chats/ai/resources/**` are private to the
   chat creator (or, for `temp/<userId>/**`, the uploader). Owners can read and
   delete their own objects, but nobody writes them directly. Other `chats/**`,
-  `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`
-  and `.tuturuuu/**` objects have no direct client access.
+  `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`,
+  `topic-announcements/**` and `.tuturuuu/**` objects have no direct client
+  access.
 - **Affected surfaces:** Web, Rewise and Mind AI chat attachments now upload
   through `POST /api/ai/chat/upload-url`. It enforces chat ownership and issues
   a signed upload URL. Meeting recording routes use the service role after

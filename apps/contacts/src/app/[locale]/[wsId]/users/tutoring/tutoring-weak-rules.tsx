@@ -9,6 +9,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 
 interface Props {
@@ -81,6 +82,24 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
         <p className="text-muted-foreground text-xs">
           {t('policy_weak_review_help')}
         </p>
+      </div>
+      <div className="flex max-w-xl items-start justify-between gap-3 rounded-lg border p-3">
+        <div className="space-y-1">
+          <Label htmlFor="policy-restrictWeakContentEditors">
+            {t('policy_restrict_weak_content')}
+          </Label>
+          <p className="text-muted-foreground text-xs">
+            {t('policy_restrict_weak_content_help')}
+          </p>
+        </div>
+        <Switch
+          checked={policy.restrictWeakContentEditors}
+          disabled={!canConfigure}
+          id="policy-restrictWeakContentEditors"
+          onCheckedChange={(checked) =>
+            onChange({ restrictWeakContentEditors: checked })
+          }
+        />
       </div>
       {policy.groupExclusions.length === 0 ? (
         <p className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-sm">

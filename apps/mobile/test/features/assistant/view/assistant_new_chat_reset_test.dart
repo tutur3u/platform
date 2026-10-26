@@ -112,9 +112,7 @@ void main() {
     final draft = h.controller.value;
     await h.openHistory(tester);
     final newConversation = tester
-        .widget<AppIconButton>(
-          find.widgetWithIcon(AppIconButton, LucideIcons.messageSquarePlus),
-        )
+        .widget<AppButton>(find.byKey(const ValueKey('assistant-history-new')))
         .onPressed!;
     // Invoke the actual drawer caller twice before presentation can mask it.
     newConversation();

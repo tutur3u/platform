@@ -4,7 +4,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showUserSheet({CrmUser? user}) async {
     final result = await _showOwnedSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _UserFormSheet(
         wsId: _wsId!,
         repository: _repository,
@@ -47,8 +46,8 @@ extension _CrmPageActions on _CrmPageState {
 
     final confirmed = await _showOwnedDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.l10n.crmImportUsers),
+      builder: (dialogContext) => AppDialog(
+        title: dialogContext.l10n.crmImportUsers,
         content: SizedBox(
           width: 420,
           child: Column(
@@ -71,11 +70,11 @@ extension _CrmPageActions on _CrmPageState {
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(dialogContext.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(dialogContext.l10n.commonImport),
           ),
@@ -150,15 +149,15 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _deleteUser(CrmUser user) async {
     final confirmed = await _showOwnedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
         content: Text(context.l10n.crmDeleteUserConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
@@ -181,7 +180,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showFeedbackSheet(CrmUser user) async {
     await _showOwnedSheet<void>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => FractionallySizedBox(
         heightFactor: 0.88,
         child: _FeedbackSheet(
@@ -204,7 +202,6 @@ extension _CrmPageActions on _CrmPageState {
       if (!mounted) return;
       await _showOwnedSheet<void>(
         context: context,
-        isScrollControlled: true,
         builder: (context) => FractionallySizedBox(
           heightFactor: 0.88,
           child: _DuplicateUsersSheet(
@@ -228,7 +225,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showUsersFilterSheet() async {
     final result = await _showOwnedSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _UsersFilterSheet(
         groups: _groups,
         status: _status,
@@ -257,7 +253,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showAuditFilterSheet() async {
     final result = await _showOwnedSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _AuditFilterSheet(
         range: _auditRange,
         eventKind: _auditEventKind,

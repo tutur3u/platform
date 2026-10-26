@@ -17723,6 +17723,99 @@ export type Database = {
         };
         Relationships: [];
       };
+      tutoring_notification_receipts: {
+        Row: {
+          created_at: string;
+          group_id: string | null;
+          id: string;
+          kind: string;
+          notification_id: string | null;
+          recipient_user_id: string;
+          review_cycle_started_at: string | null;
+          student_user_id: string | null;
+          tutoring_session_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          kind: string;
+          notification_id?: string | null;
+          recipient_user_id: string;
+          review_cycle_started_at?: string | null;
+          student_user_id?: string | null;
+          tutoring_session_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          kind?: string;
+          notification_id?: string | null;
+          recipient_user_id?: string;
+          review_cycle_started_at?: string | null;
+          student_user_id?: string | null;
+          tutoring_session_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_notification_receipts_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_tutoring_session_id_fkey';
+            columns: ['tutoring_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_tutoring_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tutoring_weak_support_reviews: {
+        Row: {
+          group_id: string;
+          last_reviewed_at: string;
+          student_user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          group_id: string;
+          last_reviewed_at?: string;
+          student_user_id: string;
+        };
+        Update: {
+          group_id?: string;
+          last_reviewed_at?: string;
+          student_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_weak_support_reviews_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
+      };
       unmanaged_internal_profile_operations: {
         Row: {
           actor_id: string;
@@ -19307,6 +19400,7 @@ export type Database = {
           start_time: string;
           student_user_id: string;
           teacher_user_id: string | null;
+          tutor_comment: string | null;
           updated_at: string;
           ws_id: string;
         };
@@ -19328,6 +19422,7 @@ export type Database = {
           start_time: string;
           student_user_id: string;
           teacher_user_id?: string | null;
+          tutor_comment?: string | null;
           updated_at?: string;
           ws_id: string;
         };
@@ -19348,6 +19443,7 @@ export type Database = {
           start_time?: string;
           student_user_id?: string;
           teacher_user_id?: string | null;
+          tutor_comment?: string | null;
           updated_at?: string;
           ws_id?: string;
         };
