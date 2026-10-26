@@ -8,6 +8,8 @@ const {
   getChangelogPath,
   getComponent,
   parseManifestVersionChanges,
+  notesBranchFor,
+  overflowRecoveryTarget,
   recoverReleasePleaseOverflowNotes,
 } = require('./release-please-overflow-recovery.js');
 
@@ -104,7 +106,11 @@ function createFakeGitHub(overrides = {}) {
       return [
         {
           body: 'This release is too large to preview in the pull request body. View the full release notes here: https://github.com/tutur3u/platform/blob/release-please--branches--production--release-notes/release-notes.md',
-          head: { ref: 'release-please--branches--production' },
+          base: { ref: 'production', repo: { full_name: 'tutur3u/platform' } },
+          head: {
+            ref: 'release-please--branches--production',
+            repo: { full_name: 'tutur3u/platform' },
+          },
           merged_at: '2026-06-08T18:53:19Z',
           number: 4767,
         },
@@ -354,8 +360,10 @@ test('restores missing notes for an open overflow release PR from its head', asy
       return [
         {
           body: 'This release is too large to preview in the pull request body. View the full release notes here: https://github.com/tutur3u/platform/blob/release-please--branches--production--release-notes/release-notes.md',
+          base: { ref: 'production', repo: { full_name: 'tutur3u/platform' } },
           head: {
             ref: 'release-please--branches--production',
+            repo: { full_name: 'tutur3u/platform' },
             sha: 'head-sha',
           },
           number: 6623,
@@ -400,8 +408,10 @@ test('leaves an open overflow release PR alone while its notes exist', async () 
       return [
         {
           body: 'This release is too large to preview in the pull request body. View the full release notes here: https://github.com/tutur3u/platform/blob/release-please--branches--production--release-notes/release-notes.md',
+          base: { ref: 'production', repo: { full_name: 'tutur3u/platform' } },
           head: {
             ref: 'release-please--branches--production',
+            repo: { full_name: 'tutur3u/platform' },
             sha: 'head-sha',
           },
           number: 6623,
@@ -432,4 +442,97 @@ test('reads files above the contents API size limit through the blob API', async
 
   assert.equal(await client.getTextFile('CHANGELOG.md', 'head'), '# Changelog');
   assert.deepEqual(routes, ['/contents/CHANGELOG.md', '/git/blobs/blob-sha']);
+});
+
+const overflowBody = (branch) =>
+  `This release is too large to preview in the pull request body. View the full release notes here: https://github.com/tutur3u/platform/blob/${branch}/release-notes.md`;
+
+function releasePullRequest({ body, headRef, headRepository } = {}) {
+  return {
+    base: { ref: 'production', repo: { full_name: 'tutur3u/platform' } },
+    body:
+      body ??
+      overflowBody('release-please--branches--production--release-notes'),
+    head: {
+      ref: headRef ?? 'release-please--branches--production',
+      repo: { full_name: headRepository ?? 'tutur3u/platform' },
+      sha: 'head-sha',
+    },
+    merged_at: '2026-06-08T18:53:19Z',
+    number: 6623,
+  };
+}
+
+// Every file read or write, so a refusal can prove it touched nothing.
+function trackedGitHub(pullRequests, { merged = false } = {}) {
+  const reads = [];
+  const base = createFakeGitHub();
+  const github = createFakeGitHub({
+    async getTextFile(filePath, ref, options) {
+      reads.push([filePath, ref]);
+      return base.getTextFile(filePath, ref, options);
+    },
+    async listClosedPullRequests() {
+      return merged ? pullRequests : [];
+    },
+    async listOpenPullRequests() {
+      return merged ? [] : pullRequests;
+    },
+  });
+  return { github, reads };
+}
+
+test('a fork or lookalike head never selects admin-token overflow recovery', async () => {
+  for (const pullRequest of [
+    releasePullRequest({ headRepository: 'attacker/platform' }),
+    releasePullRequest({ headRef: 'release-please--branches--production-x' }),
+    releasePullRequest({ headRef: 'release-please--branches--main' }),
+  ]) {
+    const { github, reads } = trackedGitHub([pullRequest]);
+    const result = await recoverReleasePleaseOverflowNotes({ github });
+
+    assert.equal(result.status, 'skipped');
+    assert.deepEqual(github.calls, []);
+    assert.deepEqual(reads, []);
+  }
+});
+
+test('an open release PR body naming production or main is never written to', async () => {
+  for (const branch of [
+    'production',
+    'main',
+    'release-please--branches--main--release-notes',
+  ]) {
+    const { github, reads } = trackedGitHub([
+      releasePullRequest({ body: overflowBody(branch) }),
+    ]);
+    const result = await recoverReleasePleaseOverflowNotes({ github });
+
+    assert.equal(result.status, 'skipped', branch);
+    assert.deepEqual(github.calls, [], branch);
+    assert.deepEqual(reads, [], branch);
+  }
+});
+
+test('an edited merged release PR body naming production is refused', async () => {
+  const { github, reads } = trackedGitHub(
+    [releasePullRequest({ body: overflowBody('production') })],
+    { merged: true }
+  );
+  const result = await recoverReleasePleaseOverflowNotes({ github });
+
+  assert.equal(result.status, 'skipped');
+  assert.deepEqual(github.calls, []);
+  assert.deepEqual(reads, []);
+  assert.equal(
+    overflowRecoveryTarget(
+      releasePullRequest({ body: overflowBody('production') }),
+      'production'
+    ),
+    undefined
+  );
+  assert.equal(
+    notesBranchFor('production'),
+    'release-please--branches--production--release-notes'
+  );
 });
