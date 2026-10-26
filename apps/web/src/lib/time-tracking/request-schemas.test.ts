@@ -49,3 +49,26 @@ describe('statsQuerySchema daysBack', () => {
     expect(statsQuerySchema.parse(base).daysBack).toBe(365);
   });
 });
+
+describe('statsQuerySchema filters', () => {
+  const base = {
+    userId: '00000000-0000-4000-8000-000000000001',
+    isPersonal: 'false',
+  };
+
+  it('reads taskLinked as a boolean, off by default', () => {
+    expect(statsQuerySchema.parse(base).taskLinked).toBe(false);
+    expect(
+      statsQuerySchema.parse({ ...base, taskLinked: 'true' }).taskLinked
+    ).toBe(true);
+    expect(
+      statsQuerySchema.safeParse({ ...base, taskLinked: 'yes' }).success
+    ).toBe(false);
+  });
+
+  it('keeps the tag filter', () => {
+    expect(statsQuerySchema.parse({ ...base, tag: 'pomodoro' }).tag).toBe(
+      'pomodoro'
+    );
+  });
+});

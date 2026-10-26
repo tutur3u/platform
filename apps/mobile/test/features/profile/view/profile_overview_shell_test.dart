@@ -382,6 +382,12 @@ void main() {
             maxScrolls: 15,
           );
           expect(find.byKey(const ValueKey('you-focus-time')), findsOne);
+          // Focus Time is all task-linked tracked time, not Pomodoro only.
+          final focus = tester.widget<ProfileActivitySection>(
+            find.byType(ProfileActivitySection),
+          );
+          expect(focus.taskLinked, isTrue);
+          expect(focus.tag, isNull);
           for (
             var attempt = 0;
             attempt < 60 && find.text('1h').evaluate().isEmpty;

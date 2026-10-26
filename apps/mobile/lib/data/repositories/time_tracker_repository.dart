@@ -114,13 +114,14 @@ abstract class ITimeTrackerRepository {
 
   Future<TimeTrackingBreak?> getActiveBreak(String wsId, String sessionId);
 
-  /// With [tag], only sessions with that tag count (e.g. Focus Time).
+  /// Counts only sessions with [tag] or, with [taskLinked], a task.
   Future<TimeTrackerStats> getStats(
     String wsId,
     String? userId, {
     bool isPersonal = false,
     String? timezone,
     String? tag,
+    bool taskLinked = false,
   });
 
   Future<TimeTrackingPeriodStats> getPeriodStats(
@@ -487,6 +488,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     bool isPersonal = false,
     String? timezone,
     String? tag,
+    bool taskLinked = false,
   }) async {
     final resolvedTimezone = (timezone != null && timezone.isNotEmpty)
         ? timezone
@@ -498,6 +500,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
         'isPersonal': isPersonal.toString(),
         'timezone': resolvedTimezone,
         if (tag != null) 'tag': tag,
+        if (taskLinked) 'taskLinked': 'true',
       }),
     );
 
