@@ -15,21 +15,43 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import {
   mountedPath,
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
+import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/worker-config.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
 const WORKER = 'tuturuuu-storefront-vite-staging';
 const PUBLIC_FILES = ['robots.txt'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = { '/': 200 };
-const BASE = '/storefront';
+const EXPECTED = { '/': { redirect: '/demo' } };
+// The Worker's mounts: the generated defaults plus the app-owned
+// start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
+// them (loaded with Node's type stripping).
+const DEFAULT_MOUNTS = {
+  rootHosts: ['storefront.tuturuuu.com'],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/storefront',
+};
+const { default: appConfig } = await import(
+  pathToFileURL(join(app, 'start-bridge.config.ts')).href
+);
+const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
+// The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
+const WORKER_CONFIG = {
+  workersDev: false,
+  compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
+};
+const APEX = 'tuturuuu.com';
+const MOUNTED = (MOUNTS.mountHosts ?? []).some(
+  (host) => host.toLowerCase() === APEX
+);
+const BASE = (MOUNTS.basePath ?? '/storefront').replace(/\/+$/u, '');
 
 async function sha256(path) {
   return createHash('sha256')
@@ -76,10 +98,16 @@ test('emitted storefront Worker serves its root, mount and unknown paths', {
   assert.equal(config.name, WORKER);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
-  assert.deepEqual(config.compatibility_flags, [
-    'nodejs_compat',
-    'global_fetch_strictly_public',
-  ]);
+  assert.deepEqual(
+    effectiveWorkerConfig(appConfig, DEFAULT_MOUNTS),
+    WORKER_CONFIG,
+    'start-bridge.config.ts changed since the codemod ran: re-run it'
+  );
+  assert.deepEqual(
+    config.compatibility_flags,
+    WORKER_CONFIG.compatibilityFlags
+  );
+  assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
   for (const name of PUBLIC_FILES)
     assert.equal(
@@ -129,31 +157,31 @@ test('emitted storefront Worker serves its root, mount and unknown paths', {
   t.after(() => worker.dispose());
   await worker.ready;
   const origin = (await worker.url).origin;
-  const get = (path, init = {}) =>
-    fetch(`${origin}${path}`, { redirect: 'manual', ...init });
-  // fetch() drops a custom Host header; the apex mount needs one.
-  const MOUNT_ORIGIN = 'http://tuturuuu.com';
-  const mountedGet = (path) =>
+  // Every probe sends a raw Host header (node:http; fetch() drops it), so no
+  // dev origin or canonical-host default can turn an apex or unknown-host
+  // probe into a canonical-root request.
+  const call = (path, host) =>
     new Promise((resolve, reject) => {
-      const target = new URL(path, origin);
+      const target = new URL(origin);
       httpRequest(
-        {
-          host: target.hostname,
-          port: target.port,
-          path: `${target.pathname}${target.search}`,
-          headers: { host: new URL(MOUNT_ORIGIN).host },
-        },
+        { host: target.hostname, port: target.port, path, headers: { host } },
         (response) => {
-          response.resume();
-          resolve({
-            status: response.statusCode ?? 0,
-            location: response.headers.location ?? null,
-          });
+          const chunks = [];
+          response.on('data', (chunk) => chunks.push(chunk));
+          response.on('end', () =>
+            resolve({
+              status: response.statusCode ?? 0,
+              location: response.headers.location ?? null,
+              body: Buffer.concat(chunks).toString('utf8'),
+            })
+          );
         }
       )
         .on('error', reject)
         .end();
     });
+  const ROOT_HOST = MOUNTS.rootHosts[0];
+  const get = (path) => call(path, ROOT_HOST);
 
   await t.test('build identity is the exact compiled source', async () => {
     // A public deploy-verification endpoint, read anonymously as production
@@ -165,7 +193,7 @@ test('emitted storefront Worker serves its root, mount and unknown paths', {
       'app proxy must admit GET /api/build-info (public deploy verification)'
     );
     assert.equal(response.status, 200, `/api/build-info: ${response.status}`);
-    const info = await response.json();
+    const info = JSON.parse(response.body);
     assert.equal(info.appName, 'storefront');
     assert.equal(info.commitHash, source);
   });
@@ -179,28 +207,78 @@ test('emitted storefront Worker serves its root, mount and unknown paths', {
         const failure = runtimeOutcomeFailure({
           path,
           expected,
-          status: response.status,
-          location: response.headers.get('location'),
-          origin,
+          ...response,
+          origin: `http://${ROOT_HOST}`,
         });
         assert.equal(failure, null, failure ?? '');
       }
     }
   );
 
-  await t.test('the apex mount serves every declared page alike', async () => {
-    for (const [path, expected] of Object.entries(EXPECTED)) {
-      const response = await mountedGet(mountedPath(BASE, path));
+  await t.test('every configured root host serves the root page', async () => {
+    for (const host of MOUNTS.rootHosts) {
       const failure = runtimeOutcomeFailure({
-        path,
-        expected,
-        ...response,
-        origin: MOUNT_ORIGIN,
-        base: BASE,
+        path: '/',
+        expected: EXPECTED['/'],
+        ...(await call('/', host)),
+        origin: `http://${host}`,
       });
-      assert.equal(failure, null, failure ?? '');
+      assert.equal(failure, null, `${host}: ${failure}`);
     }
   });
+
+  if (MOUNTED) {
+    await t.test(
+      'the apex mount serves every declared page alike',
+      async () => {
+        for (const [path, expected] of Object.entries(EXPECTED)) {
+          const response = await call(mountedPath(BASE, path), APEX);
+          const failure = runtimeOutcomeFailure({
+            path,
+            expected,
+            ...response,
+            origin: `http://${APEX}`,
+            base: BASE,
+          });
+          assert.equal(failure, null, failure ?? '');
+        }
+      }
+    );
+  } else {
+    await t.test(
+      'a root-only app rejects the apex before any app code runs',
+      async () => {
+        assert.equal(
+          MOUNTS.unknownHost,
+          'reject',
+          'a root-only app (no tuturuuu.com mount) must set mounts.unknownHost to "reject"'
+        );
+        const probes = [
+          ...new Set(
+            Object.keys(EXPECTED).map((path) => mountedPath(BASE, path))
+          ),
+          '/',
+        ].map((path) => [APEX, path]);
+        probes.push(['unknown-host.invalid', '/']);
+        for (const [host, path] of probes) {
+          const before = egress.length;
+          const response = await call(path, host);
+          // The bridge's own rejection, not an app page or an app 404.
+          assert.equal(
+            response.status,
+            404,
+            `${host}${path}: ${response.status}`
+          );
+          assert.equal(
+            response.body,
+            'Not Found',
+            `${host}${path}: app content`
+          );
+          assert.equal(egress.length, before, `${host}${path}: egress`);
+        }
+      }
+    );
+  }
 
   await t.test('an unknown path is not a server error', async () => {
     const response = await get('/__native-smoke-missing__');

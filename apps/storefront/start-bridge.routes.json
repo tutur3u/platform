@@ -4,9 +4,7 @@
     "out": "src/start-bridge/api-registry.bridge.gen.ts",
     "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts",
     "lazy": true,
-    "forwarded": [
-      "/api/v1/inventory/[...path]"
-    ]
+    "forwarded": ["/api/v1/inventory/[...path]"]
   },
   "pages": {
     "out": "src/start-bridge/page-registry.bridge.gen.ts"
