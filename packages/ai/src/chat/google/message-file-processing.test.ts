@@ -150,6 +150,20 @@ describe('processMessagesWithFiles attachment guard', () => {
     return Array.isArray(message?.content) ? message.content : [];
   }
 
+  it.each([
+    new Uint8Array([0xff, 0xfe, 0x41, 0, 0x42, 0]),
+    new Uint8Array([0xfe, 0xff, 0, 0x41, 0, 0x42]),
+  ])('decodes BOM-marked UTF-16 text for the model', async (bytes) => {
+    const parts = await partsFor('notes.txt', bytes);
+    expect(parts).toContainEqual(
+      expect.objectContaining({
+        type: 'file',
+        mediaType: 'text/plain',
+        data: new TextEncoder().encode('AB'),
+      })
+    );
+  });
+
   it('drops a renamed non-image .jpg before it reaches the model', async () => {
     const parts = await partsFor(
       '1_photo.jpg',

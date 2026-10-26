@@ -61,7 +61,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 // Stored-object verification has its own tests; these cover routing only.
-vi.mock('@/legacy-api-routes/ai/chat/_lib/chat-resource-object-guard', () => ({
+vi.mock('@/app/api/ai/chat/_lib/chat-resource-object-guard', () => ({
   verifyAiChatStoredObjects: async ({
     objects,
   }: {
@@ -132,9 +132,7 @@ describe('chat file-urls route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
-    );
+    const { POST } = await import('@/app/api/ai/chat/file-urls/route');
     const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',
@@ -196,9 +194,7 @@ describe('chat file-urls route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
-    );
+    const { POST } = await import('@/app/api/ai/chat/file-urls/route');
     const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',

@@ -70,8 +70,8 @@ async function verifyObject(
 /**
  * Signed upload URLs cannot bound size or content, so an uploaded object only
  * becomes readable once its stored size and leading bytes match its extension.
- * Client-uploadable objects that fail are deleted; ones that cannot be
- * inspected stay unreadable. Other extensions only need to fit the size cap.
+ * Rejected or unavailable objects stay unreadable. Verification never deletes:
+ * a read cannot establish that an object belongs to a new upload lifecycle.
  */
 export async function verifyAiChatStoredObjects({
   admin,
@@ -101,17 +101,5 @@ export async function verifyAiChatStoredObjects({
     )
   );
 
-  const rejected = [...verdicts]
-    .filter(([, verdict]) => verdict === 'rejected')
-    .map(([path]) => path);
-  if (rejected.length) {
-    const { error } = await admin.storage.from('workspaces').remove(rejected);
-    if (error) {
-      console.error('Failed to remove rejected AI chat uploads', {
-        count: rejected.length,
-        error,
-      });
-    }
-  }
   return verdicts;
 }

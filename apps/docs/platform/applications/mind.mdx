@@ -109,8 +109,13 @@ uploads for them (a thread not yet persisted) go to the actor's
 `temp/{actorId}/` folder instead. Signed upload URLs cannot bound size or type,
 so an uploaded object is readable through these routes, and eligible for the
 model, only after its stored size (32 MiB cap) and leading bytes match its
-extension; failing objects are deleted. Coverage:
-`apps/web/src/legacy-api-routes/ai/chat/_lib/resource-routes-access.test.ts`
+extension. Read/list verification never deletes objects, including historical
+33–50 MiB attachments that exceed the new limit. Rejected or unavailable
+objects remain stored but are not served. UTF-16 text with a little-endian or
+big-endian BOM is accepted. Upload requests exceeding the new limit are
+rejected before signing; only an explicit authorized delete removes objects.
+Coverage:
+`apps/web/src/app/api/ai/chat/_lib/resource-routes-access.test.ts`
 and `packages/ai/src/chat/attachment-content-guard.test.ts`.
 
 The separate `/api/v1/hive/servers/:serverId/mind-simulations` integration is

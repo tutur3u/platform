@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 // Stored-object verification has its own tests; these cover routing only.
-vi.mock('@/legacy-api-routes/ai/chat/_lib/chat-resource-object-guard', () => ({
+vi.mock('@/app/api/ai/chat/_lib/chat-resource-object-guard', () => ({
   verifyAiChatStoredObjects: async ({
     objects,
   }: {
@@ -95,7 +95,7 @@ describe('Mind chat file routes', () => {
   it.each<[string, () => Promise<unknown>, Record<string, unknown>]>([
     [
       'upload-url',
-      () => import('@/legacy-api-routes/ai/chat/upload-url/route'),
+      () => import('@/app/api/ai/chat/upload-url/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -104,7 +104,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'delete-file',
-      () => import('@/legacy-api-routes/ai/chat/delete-file/route'),
+      () => import('@/app/api/ai/chat/delete-file/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -113,7 +113,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'file-urls',
-      () => import('@/legacy-api-routes/ai/chat/file-urls/route'),
+      () => import('@/app/api/ai/chat/file-urls/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -161,7 +161,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/upload-url/route'
+      '@/app/api/ai/chat/upload-url/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -211,7 +211,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/delete-file/route'
+      '@/app/api/ai/chat/delete-file/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -266,7 +266,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
+      '@/app/api/ai/chat/file-urls/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
