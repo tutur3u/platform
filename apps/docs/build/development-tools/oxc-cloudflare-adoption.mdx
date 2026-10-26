@@ -340,6 +340,22 @@ Existing tests and code must be inspected per service; this foundation establish
 review gates and does not assert that every deployed alarm is protected or that
 account alerts are configured.
 
+### Hive maintenance and native migration
+
+The Hive maintenance module (`apps/hive/maintenance/worker.mjs`) returns one
+fixed response per request with zero upstream calls, bindings, body reads or
+background jobs. Focused tests cover HTTP methods, WebSocket rejection and zero
+external work. Request volume can still incur charges. Hosted route removal and
+script deletion are its durable stop procedure; that control-plane rehearsal is
+pending separately approved staging access, not proven by source tests.
+See the [maintenance runbook](/build/devops/hive-cloudflare-maintenance).
+
+The [native migration plan](/build/devops/hive-cloudflare-migration) requires
+persisted budgets and generation/stop fences before simulation, queues, alarms
+or model calls can be enabled. Operation-count, crash/restart and stop-versus-
+reschedule evidence remains pending implementation. No Hive native scheduler or
+paid storage/AI resource is enabled by this plan.
+
 ### Wave-1 staging publishers: publication and serving envelope
 
 Calendar, Mail and Apps staging publishers require an exact owner-reviewed

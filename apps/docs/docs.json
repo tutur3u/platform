@@ -361,6 +361,8 @@
                   "build/devops/chat-realtime-runbook",
                   "build/devops/programming-realtime-runbook",
                   "build/devops/hive-realtime-runbook",
+                  "build/devops/hive-cloudflare-maintenance",
+                  "build/devops/hive-cloudflare-migration",
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
