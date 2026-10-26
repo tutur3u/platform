@@ -1,8 +1,9 @@
 -- Rollback for 20261026191000_tutoring_follow_up_notification_foundation.sql.
 -- Drops the review clock, the receipts, and the tutor comment column (their
--- data is lost), and restores the previous notification type list. Existing
--- tutoring notifications are kept: the restored constraint stays NOT VALID
--- while any remain, so new rows of the removed types are still rejected.
+-- data is lost), and restores the previous notification type list. The
+-- restored constraint stays NOT VALID, so existing tutoring notifications are
+-- kept, new rows of the removed types are rejected, and no validation scan
+-- runs while ACCESS EXCLUSIVE is held on public.notifications.
 -- Not a migration: apply manually only with release-authority approval.
 begin;
 set local lock_timeout = '5s';
@@ -56,19 +57,6 @@ alter table public.notifications
     'chat_message',
     'mail_received'
   )) not valid;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from public.notifications
-    where type in ('tutoring_weak_content_review_due', 'tutoring_session_completed')
-  ) then
-    alter table public.notifications
-      validate constraint notifications_type_check;
-  end if;
-end;
-$$;
 
 comment on constraint notifications_type_check on public.notifications is
   'Validates notification types for task activity, workspace/system notices, approvals, time tracking request workflows, chat messages, and incoming Mail.';

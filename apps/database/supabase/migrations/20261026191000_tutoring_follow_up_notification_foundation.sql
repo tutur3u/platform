@@ -22,8 +22,9 @@ set local statement_timeout = '30s';
 alter table public.notifications
   drop constraint if exists notifications_type_check;
 
--- The new list is a superset of the previous one, so validation cannot fail;
--- NOT VALID keeps the ACCESS EXCLUSIVE window free of the table scan.
+-- The new list is a strict superset of the previous one, so existing rows
+-- already satisfy it. The constraint stays NOT VALID: new writes are still
+-- checked, and no validation scan runs while ACCESS EXCLUSIVE is held.
 alter table public.notifications
   add constraint notifications_type_check check (type in (
     'task_assigned',
@@ -65,9 +66,6 @@ alter table public.notifications
     'tutoring_weak_content_review_due',
     'tutoring_session_completed'
   )) not valid;
-
-alter table public.notifications
-  validate constraint notifications_type_check;
 
 comment on constraint notifications_type_check on public.notifications is
   'Validates notification types for task activity, workspace/system notices, approvals, time tracking request workflows, chat messages, incoming Mail, and tutoring follow-ups.';

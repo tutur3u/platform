@@ -267,6 +267,13 @@ enables them.
   repeated marks, and deleted notifications never send twice; delivery is at
   most once per recipient. Both private tables are service-role only, with RLS
   enabled and no client policies.
+- **Residual risk (accepted for v1).** `user_feedbacks` is writable by any
+  workspace member over the Data API. A member who adds a new
+  `require_attention` feedback for the student restarts the clock and so
+  postpones the office alert by up to one review period. Each postponement
+  leaves a visible feedback row, and the alert fires one period after the
+  last one, so it cannot be suppressed without repeated inserts. Only the
+  service role can write `last_reviewed_at`.
 
 Regression coverage:
 `apps/database/supabase/tests/tutoring-follow-up-notification-foundation.sql`.
