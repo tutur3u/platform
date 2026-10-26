@@ -15,6 +15,20 @@ export type ProcessorTarget =
 // must be removed before this job is enabled, and failures are not retried.
 export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
+export type WorkerProcessorId =
+  | 'checkout-expiry'
+  | 'cron-history-retention'
+  | 'storage-access-audit-retention';
+
+// Native database maintenance: the Worker calls this private RPC with the
+// service key; there is no legacy HTTP owner to opt in or fall back to.
+export const DATABASE_MAINTENANCE_RPCS: Partial<
+  Record<WorkerProcessorId, string>
+> = {
+  'cron-history-retention': 'prune_cron_history',
+  'storage-access-audit-retention': 'prune_storage_access_events',
+};
+
 export interface CronJob {
   cron: string;
   id: string;
@@ -25,7 +39,7 @@ export interface CronJob {
   timeoutMs: number;
   // Legacy ports require CRON_CONTROL_WORKER_PROCESSORS selection. Native
   // maintenance always uses its Worker processor once the job is enabled.
-  workerProcessor?: 'checkout-expiry' | 'cron-history-retention';
+  workerProcessor?: WorkerProcessorId;
 }
 
 export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
@@ -68,6 +82,14 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/prune_cron_history',
     'idempotent',
     { workerProcessor: 'cron-history-retention', timeoutMs: 30_000 }
+  ),
+  job(
+    'database-storage-access-audit-retention',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/prune_storage_access_events',
+    'idempotent',
+    { workerProcessor: 'storage-access-audit-retention', timeoutMs: 30_000 }
   ),
   job(
     'tasks-cleanup-media',
