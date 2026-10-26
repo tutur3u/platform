@@ -103,7 +103,9 @@ Preserve any exclusion that predates this cutover instead of deleting another
 operator's route. `calendarRollbackRoutes` validates both handles and deletion
 order; its `createdAcmeRouteId` must match the ID returned by this cutover's
 route-creation operation. Record that creation receipt with the capture. Without
-that proof, rollback preserves the existing ACME exclusion. API observations must
+that proof, rollback preserves the existing ACME exclusion. If its captured handle
+is missing during an emergency, rollback may still remove the verified main route
+and preserve all ACME exclusions. API observations must
 confirm the captured pattern and owner before each delete. The accepted proxied
 baseline avoids a DNS propagation wait.
 The rollback target is Vercel serving the same legacy behavior as before cutover.

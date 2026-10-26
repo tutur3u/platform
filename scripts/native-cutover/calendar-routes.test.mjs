@@ -35,10 +35,7 @@ test('capture accepts a provider-omitted script on the ACME exclusion', () => {
 });
 test('pre-flip capture can record just the scriptless route', () => {
   assert.deepEqual(calendarRouteHandles([acme]), { native: null, acme });
-  assert.throws(
-    () => calendarRollbackRoutes({ acme }),
-    /Both Calendar route IDs/
-  );
+  assert.throws(() => calendarRollbackRoutes({ acme }), /native route ID/);
 });
 for (const [name, routes] of [
   ['scripted ACME', [native, { ...acme, script: 'tuturuuu-calendar' }]],
@@ -70,4 +67,13 @@ test('rollback preserves an ACME exclusion without a cutover creation receipt', 
       ),
     /creation receipt must match/
   );
+});
+
+test('emergency rollback can remove only the main route without an ACME handle', () => {
+  assert.deepEqual(calendarRollbackRoutes({ native }), [native]);
+  assert.deepEqual(
+    calendarRollbackRoutes({ native }, { createdAcmeRouteId: acme.id }),
+    [native]
+  );
+  assert.throws(() => calendarRollbackRoutes({}), /native route ID/);
 });

@@ -15,6 +15,7 @@ import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../data/assistant_chat_persistence_contract.dart';
+import '../data/assistant_created_chat.dart';
 import '../data/assistant_media_optimizer.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_reaction_intent.dart';

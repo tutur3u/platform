@@ -2080,7 +2080,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantScrollToBottomAction.
   ///
   /// In en, this message translates to:
-  /// **'Scroll to bottom'**
+  /// **'Jump to latest'**
   String get assistantScrollToBottomAction;
 
   /// No description provided for @assistantSearchModels.

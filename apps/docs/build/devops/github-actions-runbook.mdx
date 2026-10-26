@@ -1740,6 +1740,14 @@ published only after their notes blob, tree, and final commit exist: recovery
 never first creates a ref at the production SHA. This prevents a second notes
 push from cancelling duplicate checks on the production commit.
 
+Release Please's own overflow rewrite is not atomic: it resets the notes branch
+to the target branch, then commits `release-notes.md`. If it fails in between,
+the still-open release PR points at a missing file and every later run fails
+with `Failed to find file: release-notes.md` while parsing that PR, freezing the
+release PR and its checks on a stale head. When no merged pending PR needs
+recovery, the script therefore also restores the notes of an open overflow
+release PR, reading its changelog entries from the PR head.
+
 For the exact production overflow-notes ref, CI verifies the committed delta
 against production history with `scripts/ci/overflow-notes-ci.js`. An ancestor
 bootstrap with no new work, or a generated notes-only addition/change, skips
@@ -1868,8 +1876,9 @@ cannot complete a release: the `Protected branches` ruleset covers `main` and
 `production` and its only bypass actor is `OrganizationAdmin`, so a run on
 `github.token` merges cleanly and then dies on
 `GH013: Changes must be made through a pull request`. `RELEASE_PLEASE_TOKEN`
-must therefore hold a personal access token (`repo` + `workflow` scopes) owned
-by an organization admin. It is an environment secret of `release-please`
+must therefore hold a fine-grained personal access token for this repository
+(Contents, Pull requests, Issues and Workflows read/write; Actions and Commit
+statuses read) owned by an organization admin. It is an environment secret of `release-please`
 (branches `main` and `production`, admin bypass off), which both
 `release-please.yaml` and this job declare, so a workflow on any other branch
 cannot read it. Granting the Actions app a ruleset bypass is **not**
@@ -1878,7 +1887,9 @@ workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
-`bun validate`.
+`bun validate`. Read-only gates (release PR readiness and exact-main CI waits) use the job's
+`github.token` with `checks: read` and `statuses: read`: a fine-grained PAT
+cannot be granted the Checks permission, so it cannot see check runs.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. When a release includes
@@ -2047,6 +2058,8 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 
   Keep the list to the current blob plus blobs from `main`'s history, and drop
   blobs from rejected or intermediate branch heads.
+  `bun check:changed` runs these contract tests whenever a pinned producer file
+  changes, but it is no substitute for the exact-head CI result before merge.
 - Every enabled admitted target, including app-only commits, links staging and runs
   `supabase db push --include-all` before emitting its exact-target marker. The
   exception is a target whose migrations a descendant `main` commit has already

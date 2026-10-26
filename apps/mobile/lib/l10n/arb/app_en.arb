@@ -1553,7 +1553,7 @@
   "assistantRenameTitle": "Rename assistant",
   "assistantReplyFailed": "Mira's reply stopped. Your message is still here. Retry",
   "assistantSaveAction": "Save",
-  "assistantScrollToBottomAction": "Scroll to bottom",
+  "assistantScrollToBottomAction": "Jump to latest",
   "assistantSearchModels": "Search models",
   "assistantSeeLessLabel": "See less",
   "assistantSeeMoreLabel": "See more",

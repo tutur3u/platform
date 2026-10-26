@@ -28,7 +28,8 @@ export function calendarRollbackRoutes(handles, { createdAcmeRouteId } = {}) {
   const routes = Object.values(
     calendarRouteHandles(Object.values(handles).filter(Boolean))
   );
-  assert.ok(routes.every(Boolean), 'Both Calendar route IDs must be captured');
+  assert.ok(routes[0], 'Calendar native route ID must be captured');
+  if (!routes[1]) return [routes[0]];
   assert.notEqual(routes[0].id, routes[1].id, 'Calendar route IDs must differ');
   if (createdAcmeRouteId === undefined) return [routes[0]];
   assert.equal(

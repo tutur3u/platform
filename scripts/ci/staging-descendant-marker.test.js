@@ -38,7 +38,14 @@ function git(cwd, ...args) {
 // applied `remoteVersions`.
 function run(
   t,
-  { listFails = false, localVersions, mainVersions, remoteVersions }
+  {
+    listFails = false,
+    localVersions,
+    mainVersions,
+    // The step fails closed unless this is the public staging project ref.
+    projectId = 'fxefojytwimjiqxseqag',
+    remoteVersions,
+  }
 ) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'staging-marker-'));
   t.after(() => fs.rmSync(root, { force: true, recursive: true }));
@@ -93,7 +100,7 @@ esac
       HOME: process.env.HOME,
       PATH: `${bin}${path.delimiter}${process.env.PATH}`,
       PUSH_LOG: pushLog,
-      STAGING_PROJECT_ID: 'synthetic-project',
+      STAGING_PROJECT_ID: projectId,
     },
   });
   return {
@@ -157,4 +164,19 @@ test('an unreadable migration list falls back to the ordinary push', (t) => {
   });
   assert.equal(result.status, 0, result.output);
   assert.equal(result.pushed, true);
+});
+
+test('a non-staging project ref fails closed before linking or pushing', (t) => {
+  const result = run(t, {
+    localVersions: [v(1), v(4)],
+    mainVersions: [v(1), v(4)],
+    projectId: 'synthetic-project',
+    remoteVersions: [v(1)],
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(result.pushed, false);
+  assert.match(
+    result.output,
+    /STAGING_PROJECT_ID does not match the staging project ref/u
+  );
 });

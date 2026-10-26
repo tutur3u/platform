@@ -279,8 +279,13 @@ New TestFlight and Play summaries exclude every multi-parent merge commit and
 typed chore, ci, test, docs, and refactor entries. Mobile feat/fix summaries come
 first, with sentence case, duplicate removal, and no PR numbers or task branch
 names. Product merge actions remain valid. Play English notes use the exact
-prepared build history and fail closed above 500 characters; TestFlight retains
-its 4,000-character limit and original-build provenance checks. Existing manual
+prepared build history. The Play CLI selects complete bullets in priority order,
+stopping before the next bullet would exceed 500 Unicode characters (including
+separating newlines). If the first bullet alone exceeds the limit, it emits no
+text and the unchanged nonempty guard fails; shorten that source summary before
+retrying. The exact-version and 500-character guards remain in place. Shared
+release history stays complete, and TestFlight retains its 4,000-character limit
+and original-build provenance checks. Existing manual
 TestFlight prose and other locales retain the metadata-retry policy above.
 Regression coverage: `normalize-release-notes.test.js`,
 `mobile-store-workflow.test.js`, `release-note-policy.test.js`, `release-history.test.mjs`,

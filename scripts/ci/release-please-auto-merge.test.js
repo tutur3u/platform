@@ -588,3 +588,21 @@ test('release automation reads its admin PAT only from the branch-restricted env
     );
   }
 });
+
+test('release readiness gates read with the job token, not the admin PAT', () => {
+  // A fine-grained PAT cannot be granted Checks, so check runs must be read
+  // with the job token; the PAT stays on the checkout and push paths.
+  assert.match(workflow, /^ {6}checks: read$/mu);
+  assert.match(workflow, /^ {6}statuses: read$/mu);
+  for (const script of ['wait-release-pr.mjs', 'wait-release-main.mjs']) {
+    for (const { index } of workflow.matchAll(
+      new RegExp(`node scripts/ci/${script}`, 'gu')
+    )) {
+      const step = workflow.slice(
+        workflow.lastIndexOf('- name:', index),
+        index
+      );
+      assert.match(step, /GH_TOKEN: \$\{\{ github\.token \}\}/u, script);
+    }
+  }
+});
