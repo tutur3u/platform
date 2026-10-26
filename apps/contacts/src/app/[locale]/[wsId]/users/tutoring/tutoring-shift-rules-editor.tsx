@@ -1,14 +1,16 @@
 'use client';
 
 import { Plus, Trash2 } from '@tuturuuu/icons';
-import type {
-  TutoringPolicy,
-  TutoringTimeRule,
+import {
+  carryTutoringShiftAssignments,
+  type TutoringPolicy,
+  type TutoringTimeRule,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 function WeekdayToggles({
   days,
@@ -61,12 +63,36 @@ export function TutoringShiftRulesEditor({
   policy: TutoringPolicy;
 }) {
   const t = useTranslations('ws-tutoring');
-  const editRule = (index: number, next: Partial<TutoringTimeRule>) =>
+  // The editor mounts per edit session: remember where each rule started.
+  const [origin, setOrigin] = useState(() => ({
+    assignments: policy.shiftByGroupId,
+    labels: policy.timeRules.map((rule) => rule.label?.trim()),
+  }));
+  const carried = carryTutoringShiftAssignments(
+    origin.assignments,
+    origin.labels,
+    policy.timeRules
+  );
+  const commit = (
+    timeRules: TutoringTimeRule[],
+    labels: (string | undefined)[] = origin.labels
+  ) => {
+    if (labels !== origin.labels) setOrigin({ ...origin, labels });
     onChange({
-      timeRules: policy.timeRules.map((rule, ruleIndex) =>
-        ruleIndex === index ? { ...rule, ...next } : rule
-      ),
+      timeRules,
+      shiftByGroupId: carryTutoringShiftAssignments(
+        origin.assignments,
+        labels,
+        timeRules
+      ).assignments,
     });
+  };
+  const editRule = (index: number, next: Partial<TutoringTimeRule>) =>
+    commit(
+      policy.timeRules.map((rule, ruleIndex) =>
+        ruleIndex === index ? { ...rule, ...next } : rule
+      )
+    );
   const timeField = (
     index: number,
     field: 'classStartTime' | 'classEndTime' | 'tutoringStartTime',
@@ -105,8 +131,8 @@ export function TutoringShiftRulesEditor({
           <Button
             disabled={policy.timeRules.length >= 30}
             onClick={() =>
-              onChange({
-                timeRules: [
+              commit(
+                [
                   ...policy.timeRules,
                   {
                     weekdays: [0, 6],
@@ -115,7 +141,8 @@ export function TutoringShiftRulesEditor({
                     durationMinutes: 60,
                   },
                 ],
-              })
+                [...origin.labels, undefined]
+              )
             }
             size="sm"
             variant="outline"
@@ -125,6 +152,14 @@ export function TutoringShiftRulesEditor({
           </Button>
         ) : null}
       </div>
+      {carried.orphaned ? (
+        <p
+          className="rounded-lg border border-dynamic-orange/25 bg-dynamic-orange/10 p-3 text-dynamic-orange text-sm"
+          role="alert"
+        >
+          {t('policy_group_shift_orphaned', { count: carried.orphaned })}
+        </p>
+      ) : null}
       {policy.timeRules.length === 0 ? (
         <p className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-sm">
           {t('policy_no_exceptions')}
@@ -158,11 +193,12 @@ export function TutoringShiftRulesEditor({
               <Button
                 aria-label={t('policy_remove_exception')}
                 onClick={() =>
-                  onChange({
-                    timeRules: policy.timeRules.filter(
+                  commit(
+                    policy.timeRules.filter(
                       (_, ruleIndex) => ruleIndex !== index
                     ),
-                  })
+                    origin.labels.filter((_, ruleIndex) => ruleIndex !== index)
+                  )
                 }
                 size="icon"
                 variant="ghost"

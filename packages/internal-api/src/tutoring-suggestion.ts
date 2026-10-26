@@ -104,9 +104,7 @@ export function suggestTutoringSlots(
 
     try {
       const local = localParts(classStart, session.startTimezone);
-      if (local.date <= missedDate || seen.has(`${local.date}:${local.time}`))
-        continue;
-      seen.add(`${local.date}:${local.time}`);
+      if (local.date <= missedDate) continue;
 
       // A group assigned to a shift follows that shift on its tutoring days,
       // even when its calendar holds placeholder clock times.
@@ -122,6 +120,9 @@ export function suggestTutoringSlots(
         );
       if (!rule && usesEasyCenterPresetShifts(policy)) continue;
       const classTime = assigned?.classStartTime ?? local.time;
+      // Placeholder times differ per row; one class slot per date and shift.
+      if (seen.has(`${local.date}:${classTime}`)) continue;
+      seen.add(`${local.date}:${classTime}`);
       const duration = rule?.durationMinutes ?? policy.durationMinutes;
       const anchor = rule
         ? minutesOf(rule.tutoringStartTime)

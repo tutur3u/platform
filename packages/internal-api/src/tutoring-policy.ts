@@ -74,7 +74,7 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
     { scope: 'all', match: 'contains', value: 'Kindergarten' },
   ],
   parentMessageTemplate: EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
-  // The seven class shifts supplied by Easy Center. Shift 4 is after class.
+  // The eight class shifts supplied by Easy Center. Shift 4 is after class.
   // Shift 1 classes meet Monday/Wednesday/Friday but tutor Wednesday/Friday.
   timeRules: [
     {
@@ -140,6 +140,14 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       tutoringStartTime: '17:15',
       durationMinutes: 45,
     },
+    {
+      label: 'Shift 8',
+      weekdays: [0, 6],
+      classStartTime: '19:00',
+      classWeekdays: [0, 6],
+      tutoringStartTime: '18:15',
+      durationMinutes: 45,
+    },
   ],
 };
 
@@ -168,13 +176,21 @@ function matchesTimeRules(value: unknown, expected: TutoringTimeRule[]) {
   );
 }
 
-const LEGACY_EASY_CENTER_TIME_RULES = EASY_CENTER_TUTORING_POLICY.timeRules.map(
-  (rule) => ({
+/** Untouched saved presets from before Shift 8 was added. */
+const SEVEN_SHIFT_EASY_CENTER_TIME_RULES =
+  EASY_CENTER_TUTORING_POLICY.timeRules.filter(
+    (rule) => rule.label !== 'Shift 8'
+  );
+
+const LEGACY_EASY_CENTER_TIME_RULE_SETS = [
+  // First release: Monday tutoring for Shift 1 and a 50-minute Shift 4.
+  SEVEN_SHIFT_EASY_CENTER_TIME_RULES.map((rule) => ({
     ...rule,
     ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
     ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
-  })
-);
+  })),
+  SEVEN_SHIFT_EASY_CENTER_TIME_RULES,
+];
 
 /** The canonical preset must not fall back to Monday or an unlisted shift. */
 export function usesEasyCenterPresetShifts(policy: TutoringPolicy) {
@@ -242,7 +258,9 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   };
   if (
     saved.preset === 'easy_center' &&
-    (matchesTimeRules(saved.timeRules, LEGACY_EASY_CENTER_TIME_RULES) ||
+    (LEGACY_EASY_CENTER_TIME_RULE_SETS.some((rules) =>
+      matchesTimeRules(saved.timeRules, rules)
+    ) ||
       matchesTimeRules(saved.timeRules, EASY_CENTER_TUTORING_POLICY.timeRules))
   ) {
     candidate.timeRules = EASY_CENTER_TUTORING_POLICY.timeRules;
@@ -430,6 +448,36 @@ export function getAssignedTutoringShift(
   const label = groupId ? policy.shiftByGroupId[groupId] : undefined;
   if (!label) return null;
   return policy.timeRules.find((rule) => rule.label === label) ?? null;
+}
+
+/**
+ * Carry group assignments across shift renames made in one edit. Labels are
+ * matched by rule position against the labels the edit started with; a label
+ * still used by another rule keeps its groups.
+ */
+export function carryTutoringShiftAssignments(
+  assignments: Record<string, string>,
+  originalLabels: (string | undefined)[],
+  rules: TutoringTimeRule[]
+) {
+  const live = new Set(
+    rules.map((rule) => rule.label?.trim()).filter((label) => label)
+  );
+  const renames = new Map<string, string>();
+  originalLabels.forEach((from, index) => {
+    const to = rules[index]?.label?.trim();
+    if (from && to && from !== to && !live.has(from)) renames.set(from, to);
+  });
+  const next = Object.fromEntries(
+    Object.entries(assignments).map(([groupId, label]) => [
+      groupId,
+      renames.get(label) ?? label,
+    ])
+  );
+  const orphaned = Object.values(next).filter(
+    (label) => !live.has(label)
+  ).length;
+  return { assignments: next, orphaned };
 }
 
 export function getTutoringCampus(

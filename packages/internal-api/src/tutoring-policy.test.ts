@@ -12,7 +12,7 @@ import {
 
 describe('Easy Center tutoring shifts', () => {
   it('keeps the latest weekend morning shift names and times', () => {
-    expect(EASY_CENTER_TUTORING_POLICY.timeRules).toHaveLength(7);
+    expect(EASY_CENTER_TUTORING_POLICY.timeRules).toHaveLength(8);
     expect(
       EASY_CENTER_TUTORING_POLICY.timeRules.find(
         (rule) => rule.label === 'Shift 4'
@@ -42,11 +42,13 @@ describe('Easy Center tutoring shifts', () => {
   });
 
   it('upgrades untouched legacy shifts without overwriting staff changes', () => {
-    const oldRules = EASY_CENTER_TUTORING_POLICY.timeRules.map((rule) => ({
-      ...rule,
-      ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
-      ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
-    }));
+    const oldRules = EASY_CENTER_TUTORING_POLICY.timeRules
+      .filter((rule) => rule.label !== 'Shift 8')
+      .map((rule) => ({
+        ...rule,
+        ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
+        ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
+      }));
     expect(
       parseTutoringPolicy({
         ...EASY_CENTER_TUTORING_POLICY,
@@ -69,6 +71,25 @@ describe('Easy Center tutoring shifts', () => {
         timeRules: staffRules,
       })?.timeRules
     ).toEqual(staffRules);
+  });
+
+  it('adds Shift 8 to an untouched seven-shift preset only', () => {
+    const sevenShifts = EASY_CENTER_TUTORING_POLICY.timeRules.filter(
+      (rule) => rule.label !== 'Shift 8'
+    );
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        timeRules: sevenShifts,
+      })?.timeRules
+    ).toEqual(EASY_CENTER_TUTORING_POLICY.timeRules);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+        timeRules: sevenShifts,
+      })?.timeRules
+    ).toEqual(sevenShifts);
   });
 
   it('accepts editable labels and the attendance lookback', () => {

@@ -9243,6 +9243,7 @@
     "policy_exceptions_description": "Ví dụ, lớp 08:00 cuối tuần có thể kèm lúc 09:30 thay vì trước giờ học.",
     "policy_followUpDays": "Nhắc lại sau (ngày)",
     "policy_group_name_pattern": "Chữ trong tên lớp, ví dụ DDT",
+    "policy_group_shift_orphaned": "{count} nhóm lớp đang được gán vào ca không còn quy tắc nào. Khi lưu, các nhóm này sẽ không khớp ca cho đến khi được gán lại trong Ca học theo nhóm.",
     "policy_group_shift_select": "Ca",
     "policy_group_shift_unknown": "Không tìm thấy ca: {label}",
     "policy_group_shifts": "Ca học theo nhóm",

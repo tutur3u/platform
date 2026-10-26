@@ -1,6 +1,7 @@
 import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
+  carryTutoringShiftAssignments,
   EASY_CENTER_TUTORING_POLICY,
   getAssignedTutoringShift,
   parseTutoringPolicy,
@@ -86,6 +87,69 @@ describe('group shift assignment policy', () => {
   });
 });
 
+describe('English center weekend evening shift', () => {
+  it('places 45 minutes before a Saturday 19:00 class (Shift 8)', () => {
+    expect(
+      suggestTutoringSlots(
+        [
+          {
+            groupId: GROUP,
+            startTimezone: 'Asia/Ho_Chi_Minh',
+            startsAt: '2026-10-31T12:00:00Z',
+            status: 'scheduled',
+          } as WorkspaceUserGroupSession,
+        ],
+        '2026-10-25',
+        1,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toEqual([
+      {
+        classStartsAt: '19:00',
+        durationMinutes: 45,
+        sessionDate: '2026-10-31',
+        startTime: '18:15',
+      },
+    ]);
+  });
+});
+
+describe('carrying assignments across shift renames', () => {
+  const rules = EASY_CENTER_TUTORING_POLICY.timeRules;
+  const labels = rules.map((rule) => rule.label);
+
+  it('moves groups to the renamed shift', () => {
+    const renamed = rules.map((rule) =>
+      rule.label === 'Shift 2' ? { ...rule, label: 'Ca 2' } : rule
+    );
+    expect(
+      carryTutoringShiftAssignments({ [GROUP]: 'Shift 2' }, labels, renamed)
+    ).toEqual({ assignments: { [GROUP]: 'Ca 2' }, orphaned: 0 });
+  });
+
+  it('keeps groups on a label another rule still uses', () => {
+    const renamed = rules.map((rule) =>
+      rule.label === 'Shift 2' ? { ...rule, label: 'Shift 1' } : rule
+    );
+    expect(
+      carryTutoringShiftAssignments({ [GROUP]: 'Shift 1' }, labels, renamed)
+        .assignments
+    ).toEqual({ [GROUP]: 'Shift 1' });
+  });
+
+  it('counts groups left on a removed shift', () => {
+    expect(
+      carryTutoringShiftAssignments(
+        { [GROUP]: 'Shift 2' },
+        labels.filter((label) => label !== 'Shift 2'),
+        rules.filter((rule) => rule.label !== 'Shift 2')
+      )
+    ).toEqual({ assignments: { [GROUP]: 'Shift 2' }, orphaned: 1 });
+  });
+});
+
 describe('shift-assigned make-up suggestions', () => {
   const calendar = ['2026-10-28', '2026-10-30', '2026-11-02', '2026-11-04'].map(
     placeholder
@@ -115,6 +179,23 @@ describe('shift-assigned make-up suggestions', () => {
         startTime: '17:15',
       }),
     ]);
+  });
+
+  it('suggests one slot per date when placeholder times differ', () => {
+    const sameDay = {
+      ...placeholder('2026-10-28'),
+      startsAt: '2026-10-28T00:30:00Z',
+    };
+    expect(
+      suggestTutoringSlots(
+        [placeholder('2026-10-28'), sameDay, placeholder('2026-10-30')],
+        '2026-10-05',
+        2,
+        assigned('Shift 1'),
+        'separate',
+        now
+      ).map((slot) => slot.sessionDate)
+    ).toEqual(['2026-10-28', '2026-10-30']);
   });
 
   it('finds nothing for placeholder times without an assignment', () => {

@@ -6,6 +6,20 @@ import {
 } from '@tuturuuu/internal-api/tutoring-suggestion';
 import type { TutoringFormValues } from './tutoring-types';
 
+/** Calendar date of a class in its own time zone (center default if unset). */
+export function localClassDate(session: WorkspaceUserGroupSession) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      day: '2-digit',
+      month: '2-digit',
+      timeZone: session.startTimezone || 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+    }).format(new Date(session.startsAt));
+  } catch {
+    return null;
+  }
+}
+
 export type TutoringSuggestionMessage =
   | { key: 'smart_suggestion_applied'; values: { count: number } }
   | { key: 'suggestion_partial'; values: { found: number; total: number } }
@@ -63,7 +77,7 @@ export function applyTutoringSuggestions({
     const upcoming = schedule.filter(
       (session) =>
         session.status === 'scheduled' &&
-        session.startsAt.slice(0, 10) > fromDate
+        (localClassDate(session) ?? '') > fromDate
     ).length;
     return {
       form: null,

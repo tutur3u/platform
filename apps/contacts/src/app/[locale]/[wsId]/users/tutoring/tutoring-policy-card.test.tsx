@@ -72,6 +72,48 @@ describe('tutoring section settings', () => {
     expect(screen.getByText('09:30 – 10:30')).toBeInTheDocument();
     expect(screen.getByText('policy_no_group_shifts')).toBeInTheDocument();
   });
+  it('carries group assignments when a shift is renamed', () => {
+    render(
+      <TutoringPolicyCard
+        canConfigure
+        groups={[{ id: GROUP, name: 'Class A' }] as never}
+        policy={{
+          ...EASY_CENTER_TUTORING_POLICY,
+          shiftByGroupId: { [GROUP]: 'Shift 2' },
+        }}
+        wsId="workspace"
+      />
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'policy_edit' })[2]!);
+    fireEvent.change(screen.getByDisplayValue('Shift 2'), {
+      target: { value: 'Ca 2' },
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'policy_save' }));
+    expect(state.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ shiftByGroupId: { [GROUP]: 'Ca 2' } })
+    );
+  });
+  it('warns in-app before saving a removed shift that groups still use', () => {
+    render(
+      <TutoringPolicyCard
+        canConfigure
+        groups={[]}
+        policy={{
+          ...EASY_CENTER_TUTORING_POLICY,
+          shiftByGroupId: { [GROUP]: 'Shift 2' },
+        }}
+        wsId="workspace"
+      />
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'policy_edit' })[2]!);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'policy_remove_exception' })[1]!
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'policy_group_shift_orphaned'
+    );
+  });
   it('shows each group with its assigned shift', () => {
     render(
       <TutoringPolicyCard

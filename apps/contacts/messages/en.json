@@ -9243,6 +9243,7 @@
     "policy_exceptions_description": "For example, a weekend 08:00 class can have tutoring at 09:30 instead of before class.",
     "policy_followUpDays": "Follow up after (days)",
     "policy_group_name_pattern": "Group name text, e.g. DDT",
+    "policy_group_shift_orphaned": "{count, plural, one {# class group is} other {# class groups are}} assigned to a shift that no rule uses. Saving keeps them unmatched until you assign them again in Group shifts.",
     "policy_group_shift_select": "Shift",
     "policy_group_shift_unknown": "Shift not found: {label}",
     "policy_group_shifts": "Group shifts",

@@ -58,7 +58,7 @@ export function TutoringPolicyCard({
     (keyof TutoringPolicy)[]
   > = {
     timing: NUMERIC_FIELDS.map(([field]) => field),
-    exceptions: ['timeRules'],
+    exceptions: ['timeRules', 'shiftByGroupId'],
     groupShifts: ['shiftByGroupId'],
     weak: ['weakContentReviewDays', 'groupExclusions'],
     campuses: ['campusByGroupId'],

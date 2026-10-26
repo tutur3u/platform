@@ -3,6 +3,7 @@ import { EASY_CENTER_TUTORING_POLICY } from '@tuturuuu/internal-api/tutoring-pol
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyTutoringSuggestions,
+  localClassDate,
   resolveTutoringClassSchedule,
 } from './tutoring-suggestion-apply';
 import type { TutoringFormValues } from './tutoring-types';
@@ -67,6 +68,20 @@ describe('applying make-up suggestions', () => {
       form: null,
       message: { key: 'suggestion_unmatched', values: { count: 1 } },
     });
+  });
+
+  it('compares class dates in the center time zone', () => {
+    // 01:00 on 28 October in Asia/Ho_Chi_Minh is still 27 October in UTC.
+    const lateUtc = classAt('2026-10-27T18:00:00Z');
+    expect(localClassDate(lateUtc)).toBe('2026-10-28');
+    expect(
+      applyTutoringSuggestions({
+        form,
+        fromDate: '2026-10-27',
+        policy: EASY_CENTER_TUTORING_POLICY,
+        schedule: [lateUtc],
+      }).message
+    ).toEqual({ key: 'suggestion_unmatched', values: { count: 1 } });
   });
 
   it('reports an empty calendar separately', () => {
