@@ -269,6 +269,33 @@ lookup failure, whitespace-only content, bounded wait, pairing order),
 (completion with absent, empty or blank content, and the completion warning) and
 [`use-tutoring-create.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/use-tutoring-create.test.ts).
 
+### Homeroom teachers hear when tutoring is completed
+
+Decision (applies to every tutoring reason; always on, no setting):
+
+- When a tutoring session is marked **done** (row action or session edit), the
+  class's homeroom teachers (GVCN) get an in-app notification. These are group
+  members with role `TEACHER` whose workspace user is linked to a platform
+  account. Teachers without a linked account are skipped. The person who
+  completed the session is not notified of their own action.
+- The notice is sent after the completion is saved and never blocks or fails it.
+  Errors are logged, and a notice slower than three seconds is abandoned.
+- At most one notice per session and recipient. Retries, and re-completing a
+  session after reopening it, do not send another.
+- It uses the existing `create_notification` path with type
+  `system_announcement`, code `tutoring_session_completed` and entity
+  `tutoring_session`, so recipients' notification preferences for system
+  announcements apply. Apps render the code in the viewer's language; the stored
+  English text names the learner, class and date.
+
+Limitation: without a receipts table, de-duplication checks for an existing
+notification before sending. Two completions of the same session at the same
+instant can both send. A unique receipt (the planned tutoring notification
+migration) would make it exact. Regression coverage:
+[`completion-notification.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/completion-notification.test.ts)
+and
+[`sessions/[id]/mark/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/mark/route.test.ts).
+
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
 and stored under `TUTORING_POLICY` with bounded `TUTORING_POLICY_PART_*` rows in
 `workspace_configs`. The table enforces a 1,000-character limit per value, so
