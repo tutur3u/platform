@@ -253,6 +253,19 @@ policy, so sheets look and behave the same in every app.
 - Explicit full-screen forms and system-owned flows still open above the shell
   with `useRootNavigator: true` and `AppScaffold(headers: [AppTopBar(...)])`.
 
+**Row swipe actions.** `AppSwipeActions` gives a list row one leading
+full-swipe action (for example Complete) and up to three trailing buttons that
+stay open until one is tapped or the row is tapped. Each `AppSwipeAction` has a
+label, a Lucide icon, an `AppTone` and a callback that runs the feature's
+existing mutation; the widget owns no data. Every action is also a custom
+semantics action, so screen-reader users never need the gesture. Gestures
+mirror in right-to-left layouts, settle without animation under Reduce Motion,
+and play the selection haptic when a leading swipe arms. Buttons widen with
+enlarged text up to 75% of the row width, keep at least 44dp targets, and scale
+their labels down instead of overflowing. Disable the row (`enabled: false`)
+in selection modes. Pair it with a long-press `showAppActionSheet` that lists
+the same actions plus the rest of the row's commands.
+
 The Personal and Workspace timezone pickers
 (`features/settings/view/timezone_picker_sheet.dart`) are the reference
 implementation.

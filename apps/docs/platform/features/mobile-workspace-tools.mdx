@@ -1926,3 +1926,31 @@ content/dock padding are unchanged. Actual-shell regression coverage in
 `settings_secrets_shell_checks.dart` checks English/Vietnamese, narrow layouts and
 large text, including denial visibility and dock Back. This scoped correction
 does not establish the cause of the reported Assistant Settings TestFlight issue.
+
+### Task board row gestures
+
+In the board **List** view, task rows take native swipe and long-press
+gestures. The same behavior applies on Android and iOS.
+
+- **Swipe toward the end edge** (right in left-to-right locales) completes an
+  open task or reopens a done one, through the existing move-to-status
+  mutation. Rows in closed lists offer no completion swipe.
+- **Swipe toward the start edge** reveals **Schedule** (due-date picker; the
+  due date lands at the end of the chosen local day), **Priority** (single
+  choice) and **Delete** (the existing asynchronous confirmation, which stays
+  busy until the mutation finishes).
+- **Long press** opens the row's context menu: Complete or Reopen, Schedule,
+  Change priority, Move task, Select task, Open full details and Delete task.
+  **Select task** enters bulk selection. Earlier, a long press entered bulk
+  selection directly. In bulk selection, swipes are off and a long press
+  toggles the row, as before.
+- Tapping a row still opens its quick actions. Every swipe action is also
+  exposed as a screen-reader action.
+
+Kanban cards keep their earlier long-press selection behavior; this decision
+covers List view rows only. Regression coverage:
+`task_board_row_actions_test.dart` (mutations, menu, bulk mode, 320dp at 2x
+text), `task_board_bulk_selection_test.dart` and `app_swipe_actions_test.dart`
+(thresholds, reveal, right-to-left, semantics, enlarged text). Widget tests do
+not establish gesture feel on devices.
+
