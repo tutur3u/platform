@@ -49,6 +49,8 @@ on:
         'turbo.json',
         'tuturuuu.ts',
         'tuturuuu.ci.ts',
+        '!**/*.md',
+        '!**/*.mdx',
       ]
   push:
     branches: [main]

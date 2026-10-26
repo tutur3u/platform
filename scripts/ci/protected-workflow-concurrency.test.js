@@ -74,10 +74,6 @@ const serialized = [
 // the production-only deploy job holds the serialized lock.
 const prExceptions = {
   'desktop-beta.yaml': 'Production publication shares the workflow lock',
-  'calendar-cloudflare.yaml':
-    'Staging publication consumes the durable attempt ledger',
-  'mail-cloudflare.yaml':
-    'Staging publication consumes the durable attempt ledger',
   'playground-runtime-acceptance.yaml':
     'Real sandbox must finish bounded cleanup',
   'docker-setup-check.yaml': 'Docker runtime is paused',
@@ -89,6 +85,11 @@ const mainExceptions = {
   ...prExceptions,
   'release-sdk-dev.yaml':
     'Dev publication retains its serial npm dist-tag lock',
+  // PR revisions supersede; main never cancels an active staging upload.
+  'calendar-cloudflare.yaml':
+    'Staging publication consumes the durable attempt ledger',
+  'mail-cloudflare.yaml':
+    'Staging publication consumes the durable attempt ledger',
   'biome-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
@@ -586,4 +587,32 @@ test('Cloudflare app PR validation never shares the production deploy lock', () 
       render(workflow.concurrency.group, production)
     );
   }
+});
+
+test('Calendar and Mail PR revisions supersede while main staging uploads never cancel', () => {
+  for (const file of ['calendar-cloudflare.yaml', 'mail-cloudflare.yaml']) {
+    const c = workflows[file].concurrency;
+    assert.notEqual(c.queue, 'max', file);
+    const pr = context('refs/pull/7/merge', 'a', 1, 'pull_request', 7);
+    assert.equal(render(c['cancel-in-progress'], pr), true, file);
+    for (const [ref, event] of [
+      ['refs/heads/main', 'push'],
+      ['refs/heads/main', 'workflow_dispatch'],
+      ['refs/heads/production', 'push'],
+    ]) {
+      const run = context(ref, 'b', 2, event);
+      assert.equal(render(c['cancel-in-progress'], run), false, file);
+      assert.notEqual(render(c.group, run), render(c.group, pr), file);
+    }
+    // The upload itself keeps its own serialized, non-cancelling lock.
+    const publish = workflows['wave1-native-publish.yaml'].concurrency;
+    assert.equal(publish['cancel-in-progress'], false);
+    assert.equal(publish.queue, 'max');
+  }
+});
+
+test('PR path filters never apply to CodeQL main baselines', () => {
+  const push = events(workflows['codeql.yml']).push;
+  assert.deepEqual(push, { branches: ['main'] });
+  assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
 });
