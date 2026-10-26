@@ -62,6 +62,45 @@ describe('executeConvertFileToMarkdown', () => {
     });
   });
 
+  it('resolves a re-keyed chat attachment by its original filename', async () => {
+    const rekeyed = '0b046a4f-8fc5-41bf-8b2b-1ec94abd0362-123456_report.docx';
+    const list = vi.fn().mockResolvedValue({
+      data: [{ id: 'file-1', name: rekeyed }],
+      error: null,
+    });
+    const createSignedUrl = vi.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.test/signed-report' },
+      error: null,
+    });
+    createAdminClientMock.mockResolvedValue({
+      rpc: vi.fn(),
+      storage: { from: vi.fn().mockReturnValue({ createSignedUrl, list }) },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ ok: true, markdown: '# Converted', title: 'Report' }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = (await executeConvertFileToMarkdown(
+      { storagePath: 'report.docx' },
+      createContext()
+    )) as Record<string, unknown>;
+
+    expect(result.ok).toBe(true);
+    expect(result.storagePath).toBe(
+      `workspace-1/chats/ai/resources/chat-1/${rekeyed}`
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://markitdown:8000/markitdown',
+      expect.objectContaining({
+        body: expect.stringContaining('"filename":"report.docx"'),
+      })
+    );
+  });
+
   it('treats a filename passed as storagePath as a current chat attachment', async () => {
     const list = vi.fn().mockResolvedValue({
       data: [{ id: 'file-1', name: '123456_report.docx' }],

@@ -176,11 +176,15 @@ export const POST = withSessionAuth(
   }
 );
 
-/** Strip the leading `{timestamp}_` prefix from a storage filename. */
+// Signed-URL remediation re-keys objects to `{uuidv4}-{original name}`.
+const REKEY_PREFIX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-/i;
+
+/** Strip the re-key and leading `{timestamp}_` prefixes from a storage filename. */
 function stripTimestampPrefix(name: string): string {
+  const original = name.replace(REKEY_PREFIX, '');
   // Pattern: digits followed by underscore at the start
-  const match = name.match(/^\d+_(.+)$/);
-  return match?.[1] ?? name;
+  const match = original.match(/^\d+_(.+)$/);
+  return match?.[1] ?? original;
 }
 
 /** Map common file extensions to MIME types. */
