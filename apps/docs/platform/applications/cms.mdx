@@ -151,6 +151,15 @@ shared-session decision and auth guard are admitted; the same artifact can
 support a mount after that separate review. This policy is covered by
 `apps/cms/src/runtime/root-host-policy.test.ts` and the emitted Worker gate.
 Hosted staging uses `cms-staging.tuturuuu.com`; `workers.dev` hosts are not admitted.
+Every response is noindex, nofollow and nosnippet. Non-assets force private,
+no-store and vary by Cookie, Authorization and Accept-Language; static cache
+exemptions require GET/HEAD, status 200 and non-HTML without cookies.
+The response wrapper preserves upstream CSP restrictions and denies framing.
+Only the exact workspace external-project asset `/webgl` path and descendants
+retain their upstream sandbox CSP unchanged and omit X-Frame-Options. A
+handler-level CSP would replace that sandbox, so this app uses the response
+wrapper instead. `response-policy.test.ts` covers both the sandbox exception
+and its neighbouring paths, cache overrides, indexing and response preservation.
 Production remains on its existing publisher until an explicit cutover-preparation PR. That PR
 requires an app-specific enforced CSP policy, exact-source sealed artifact,
 runtime and authenticated browser acceptance, and an immediate rollback.
