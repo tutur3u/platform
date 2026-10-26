@@ -165,6 +165,14 @@ canonical-route admission. Keep production publication held until the release ow
 the exact artifact, independent review, provider/webhook/attachment acceptance,
 mount/session acceptance and rollback evidence.
 
+Under `/mail`, Web owns shared-session writes: Mail rejects logout, token
+verification and session refresh before middleware or endpoint dispatch. The
+fence uses the bridge's route matcher, so trailing and repeated slash variants
+receive the same rejection without calling handlers or providers or emitting
+session cookies. Subdomain endpoints retain their existing methods and cookie
+behavior. `mounted-session-endpoints.test.ts` exercises this boundary through the
+real bridge dispatcher, including canonical paths and subdomain controls.
+
 
 - `apps/mail` owns the mailbox UI and protected app-local APIs under
   `/api/v1/workspaces/:wsId/mail/*`.

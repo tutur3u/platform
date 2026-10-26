@@ -1,5 +1,6 @@
 import { forwardToCentralApi } from '@tuturuuu/start-bridge/api-forward';
 import { retarget } from '@tuturuuu/start-bridge/base-path';
+import { matchRoute } from '@tuturuuu/start-bridge/route-match';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
@@ -60,7 +61,7 @@ export async function handleMailRequest(
       '/api/auth/refresh-app-session',
       '/api/auth/verify-app-token',
       '/api/auth/logout',
-    ].includes(path)
+    ].some((pattern) => matchRoute(pattern, path) !== null)
   )
     return applyMailResponsePolicy(
       request,
