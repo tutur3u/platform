@@ -37,6 +37,7 @@
     "../meet-realtime/src/turn-credentials.ts",
     "../meet-realtime/src/worker.ts",
     "cloudflare/live/session.ts",
+    "cloudflare/one-origin.ts",
     "cloudflare/provider.ts",
     "cloudflare/worker.ts",
     "../../packages/realtime/src/channels/schema.ts",
@@ -82,6 +83,7 @@
     "../../packages/realtime/src/meet/room.ts",
     "../../packages/realtime/src/meet/sfu.ts",
     "../../packages/realtime/src/meet/token.ts",
+    "../../packages/utils/src/one-origin-routing.ts",
     "../../packages/utils/src/playground-schema.ts"
   ],
   "exclude": ["node_modules", "dist", ".turbo"]

@@ -1,10 +1,15 @@
 import start from '@tanstack/react-start/server-entry';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
+import {
+  applyOneOriginNoindex,
+  decideOneOriginRequest,
+} from '@tuturuuu/utils/one-origin-routing';
 import { proxy } from '../proxy';
 import { dispatchMailEndpoint } from './api-registry.server';
 import { MAIL_FUNCTION_BASE } from './mail-api-policy';
 import { boundNativeFunctionRequest } from './native-function-body';
 import { nativeFunctionProxy } from './native-function-proxy';
+import { mailOneOriginConfig } from './one-origin';
 import { dispatchThroughMailProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
 import { applyMailResponsePolicy } from './response-policy';
@@ -70,12 +75,16 @@ async function dispatchMailRequest(
 }
 
 export async function handleMailRequest(
-  request: Request,
+  incoming: Request,
   env: MailRuntimeEnv,
   ctx: MailExecutionContext
 ) {
-  return applyMailResponsePolicy(
+  const decision = decideOneOriginRequest(incoming, mailOneOriginConfig(env));
+  if (decision.action !== 'serve') return decision.response;
+  const { request } = decision;
+  const response = applyMailResponsePolicy(
     request,
     await dispatchMailRequest(request, env, ctx)
   );
+  return decision.noindex ? applyOneOriginNoindex(response) : response;
 }
