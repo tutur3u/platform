@@ -129,7 +129,9 @@ describe('classifyWorkspaceStoragePath', () => {
       wsId: WS,
     });
     expect(
-      classifyWorkspaceStoragePath(`${WS}/Topic-Announcements/attachments/a.pdf`)
+      classifyWorkspaceStoragePath(
+        `${WS}/Topic-Announcements/attachments/a.pdf`
+      )
     ).toEqual({ kind: 'private', wsId: WS });
     expect(
       classifyWorkspaceStoragePath(
