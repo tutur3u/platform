@@ -85,6 +85,16 @@ describe('Google Calendar auth route', () => {
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
   });
 
+  it('forces consent when the reconnect prompt asks for it', async () => {
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/calendar/auth?wsId=personal&reconnect=1'
+      )
+    );
+    const { authUrl } = (await response.json()) as { authUrl: string };
+    expect(new URL(authUrl).searchParams.get('prompt')).toBe('consent');
+  });
+
   it('forces consent only when reconnecting a quarantined account', async () => {
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,

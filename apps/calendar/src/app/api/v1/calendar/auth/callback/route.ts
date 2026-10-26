@@ -10,6 +10,7 @@ import {
   verifyCalendarOAuthState,
 } from '@/lib/calendar/calendar-oauth-state';
 import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-reconnect';
+import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import {
@@ -201,6 +202,26 @@ export async function GET(request: Request) {
       typeof tokens.refresh_token === 'string' && tokens.refresh_token.trim()
         ? tokens.refresh_token
         : null;
+    // A quarantined row's stored refresh token is the one Google rejected.
+    // Without a fresh one, keep the quarantine and ask again with consent,
+    // which makes Google issue a new refresh token.
+    if (
+      !receivedRefreshToken &&
+      existingToken?.is_active === false &&
+      existingToken.deactivated_reason
+    ) {
+      return NextResponse.redirect(
+        buildGoogleCalendarAuthUrl({
+          request,
+          userId: user.id,
+          wsId,
+          clientId: oauthConfig.config.clientId,
+          clientSecret: oauthConfig.config.clientSecret,
+          consent: true,
+        })
+      );
+    }
+
     const refreshToken =
       receivedRefreshToken ||
       (typeof existingToken?.refresh_token === 'string' &&

@@ -240,3 +240,15 @@ it('keeps the quarantine when the notification cannot be created', async () => {
     )
   ).toBe('deactivated');
 });
+
+it('sends no notification when the breaker holds', async () => {
+  const db = database(2);
+  expect(
+    await quarantineCalendarAuthToken(
+      db,
+      { ...token, user_id: 'owner', provider: 'google' },
+      'google_invalid_grant'
+    )
+  ).toBe('consensus_hold');
+  expect(db.rpc).not.toHaveBeenCalled();
+});

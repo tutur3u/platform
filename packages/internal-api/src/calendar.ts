@@ -606,11 +606,14 @@ export async function disconnectCalendarAccount(
 
 export async function getGoogleCalendarAuthUrl(
   wsId: string,
-  options?: InternalApiClientOptions
+  options?: InternalApiClientOptions,
+  // Reconnecting a rejected account: Google must show consent to issue a
+  // fresh refresh token.
+  reconnect = false
 ) {
   const client = getInternalApiClient(options);
   return client.json<CalendarAuthUrlResponse>('/api/v1/calendar/auth', {
-    query: { wsId },
+    query: { wsId, ...(reconnect ? { reconnect: '1' } : {}) },
     cache: 'no-store',
   });
 }

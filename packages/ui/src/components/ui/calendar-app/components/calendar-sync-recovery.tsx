@@ -175,7 +175,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
         )}
         {reconnectAccounts.map((account) => (
           <p key={account.id} className="break-all text-xs">
-            {account.account_email}
+            {account.account_email ?? account.account_name}
           </p>
         ))}
         <div className="flex flex-wrap gap-2">
@@ -200,7 +200,9 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             <Button
               size="sm"
               disabled={state.googleAuthMutation.isPending}
-              onClick={() => state.googleAuthMutation.mutate()}
+              onClick={() =>
+                state.googleAuthMutation.mutate({ reconnect: true })
+              }
             >
               {t('sync_recovery.reconnect_google')}
             </Button>

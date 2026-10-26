@@ -69,8 +69,8 @@ describe('calendar sync recovery actions', () => {
         {
           id: 'quarantined',
           provider: 'microsoft',
-          account_email: 'owner@example.com',
-          account_name: null,
+          account_email: null,
+          account_name: 'Owner Outlook',
           deactivated_reason: 'microsoft_consent_revoked',
           deactivated_at: '2026-10-26T03:00:00Z',
         },
@@ -81,7 +81,7 @@ describe('calendar sync recovery actions', () => {
     expect(screen.getByRole('alert').textContent).toContain(
       'sync_recovery.reconnect_description'
     );
-    expect(screen.getByText('owner@example.com')).toBeTruthy();
+    expect(screen.getByText('Owner Outlook')).toBeTruthy();
     expect(screen.queryByText('sync_recovery.reconnect_google')).toBeNull();
     fireEvent.click(
       screen.getByRole('button', { name: 'sync_recovery.reconnect_microsoft' })
@@ -106,6 +106,9 @@ describe('calendar sync recovery actions', () => {
       screen.getByRole('button', { name: 'sync_recovery.reconnect_google' })
     );
     expect(value.googleAuthMutation.mutate).toHaveBeenCalledOnce();
+    expect(value.googleAuthMutation.mutate).toHaveBeenCalledWith({
+      reconnect: true,
+    });
   });
   it('does not send users through OAuth for a temporary provider outage', () => {
     const value = state({

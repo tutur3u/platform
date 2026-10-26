@@ -321,4 +321,44 @@ describe('Microsoft Calendar OAuth callback route', () => {
       'microsoft',
     ]);
   });
+
+  it('reactivates a quarantined account and clears its reason in the same update', async () => {
+    const update = vi.fn(() => ({ eq: vi.fn(async () => ({ error: null })) }));
+    const query = {
+      eq: () => query,
+      insert: vi.fn(async () => ({ error: null })),
+      select: () => query,
+      single: vi.fn(async () => ({
+        data: {
+          id: 'existing-token-id',
+          is_active: false,
+          deactivated_reason: 'microsoft_consent_revoked',
+          deactivated_at: '2026-10-26T03:00:00Z',
+        },
+        error: null,
+      })),
+      update,
+      upsert: vi.fn(async () => ({ error: null })),
+    };
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: { from: vi.fn(() => query) },
+      user: { id: 'user-1' },
+    });
+
+    const response = await GET(callback(`code=abc&state=${signedState()}`));
+
+    expect(response.status).toBe(302);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refresh_token: 'refresh-credential',
+        is_active: true,
+        deactivated_reason: null,
+        deactivated_at: null,
+        created_at: expect.any(String),
+      })
+    );
+    expect(query.insert).not.toHaveBeenCalled();
+  });
 });

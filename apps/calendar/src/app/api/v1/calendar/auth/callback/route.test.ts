@@ -16,9 +16,14 @@ vi.mock('@tuturuuu/google', () => ({
   OAuth2Client: vi.fn(function OAuth2Client(this: {
     getToken: typeof getTokenMock;
     setCredentials: (tokens: unknown) => void;
+    generateAuthUrl: (input: Record<string, unknown>) => string;
   }) {
     this.getToken = getTokenMock;
     this.setCredentials = vi.fn();
+    this.generateAuthUrl = (input) =>
+      `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams(
+        Object.entries(input).map(([key, value]) => [key, String(value)])
+      )}`;
   }),
   google: {
     calendar: vi.fn(() => ({
@@ -362,6 +367,31 @@ describe('Google Calendar OAuth callback route', () => {
       })
     );
     expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a quarantined account and asks again with consent when Google omits the refresh token', async () => {
+    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    const supabase = createSupabaseClient({
+      existingToken: {
+        id: 'existing-token-id',
+        refresh_token: 'rejected-refresh-token',
+        is_active: false,
+        deactivated_reason: 'google_invalid_grant',
+        deactivated_at: '2026-10-26T03:00:00Z',
+      },
+    });
+    mockResolvedAuthContext(supabase.client);
+
+    const response = await GET(callbackRequest(signedState()));
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect([302, 307]).toContain(response.status);
+    expect(location.host).toBe('accounts.google.com');
+    expect(location.searchParams.get('prompt')).toBe('consent');
+    expect(location.searchParams.get('access_type')).toBe('offline');
+    expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
+    expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
   it('does not save an active Google connection without any refresh token', async () => {
