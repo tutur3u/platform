@@ -4,6 +4,9 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
+// Private attachment links last at most 15 minutes.
+const ATTACHMENT_SIGNED_URL_TTL_SECONDS = 15 * 60;
+
 export async function POST(
   request: NextRequest,
   {
@@ -153,11 +156,12 @@ export async function POST(
       );
     }
 
-    // Generate signed URL for the file
+    // A short-lived link for the uploader's immediate preview; readers list
+    // attachments by file_path, so nothing persists this URL.
     const { data: signedUrlData, error: signedUrlError } =
       await supabase.storage
         .from('workspaces')
-        .createSignedUrl(uploadData.path, 31536000); // 1 year expiry
+        .createSignedUrl(uploadData.path, ATTACHMENT_SIGNED_URL_TTL_SECONDS);
 
     if (signedUrlError) {
       console.error('Error generating signed URL:', signedUrlError);
