@@ -21,6 +21,15 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     mocks.verifyWorkspaceMembershipType(...args),
 }));
 
+// Stored-object verification has its own tests; these cover authorization.
+vi.mock('./_lib/chat-resource-object-guard', () => ({
+  verifyAiChatStoredObjects: async ({
+    objects,
+  }: {
+    objects: { path: string }[];
+  }) => new Map(objects.map(({ path }) => [path, 'valid'])),
+}));
+
 type RoutePost = (
   request: Request,
   context: { supabase: unknown; user: { id: string } }
