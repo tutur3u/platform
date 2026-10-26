@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_form_dialog.dart';
@@ -65,7 +64,7 @@ void main() {
     expect(find.byType(AppDialog), findsOneWidget);
   });
 
-  for (final launcher in ['showAppDialog', 'legacy shad.showDialog']) {
+  for (final launcher in ['showAppDialog', 'legacy Material showDialog']) {
     testWidgets('board form opened by $launcher draws one dialog surface', (
       tester,
     ) async {
@@ -88,9 +87,7 @@ void main() {
                     ),
                   );
                 } else {
-                  unawaited(
-                    shad.showDialog<void>(context: context, builder: form),
-                  );
+                  unawaited(showDialog<void>(context: context, builder: form));
                 }
               },
               child: const Text('Open'),
@@ -102,7 +99,7 @@ void main() {
       await tester.pumpAndSettle();
       _expectOneBoundedSurface(
         tester,
-        find.widgetWithText(AppButton, 'Create board'),
+        find.byKey(const ValueKey('task-board-form-submit')),
       );
     });
   }

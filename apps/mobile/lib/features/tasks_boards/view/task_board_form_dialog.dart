@@ -79,18 +79,20 @@ class _TaskBoardFormDialogState extends State<TaskBoardFormDialog> {
             searchPlaceholder: l10n.taskBoardsIconPickerSearch,
             emptyText: l10n.taskBoardsIconPickerEmpty,
           ),
-          const shad.Gap(20),
-          shad.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.commonCancel),
-          ),
-          const shad.Gap(8),
-          shad.PrimaryButton(
-            onPressed: _submit,
-            child: Text(widget.confirmLabel),
-          ),
         ],
       ),
+      // Actions stay pinned below the scrolling fields, above the keyboard.
+      actions: [
+        AppButton.ghost(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        AppButton.primary(
+          key: const ValueKey('task-board-form-submit'),
+          onPressed: _submit,
+          child: Text(widget.confirmLabel),
+        ),
+      ],
     );
   }
 

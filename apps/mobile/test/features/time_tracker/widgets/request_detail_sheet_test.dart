@@ -439,20 +439,24 @@ void main() {
 
       await tester.tap(find.text('Approve'));
       await tester.pump();
+      // The approval spinner keeps animating, so pump fixed frames.
       await tester.tap(find.text('Edit'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 600));
       expect(find.text('Edit request'), findsOneWidget);
       await tester.enterText(find.byType(EditableText).first, 'Draft title');
       await tester.pump();
 
       approval.complete();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
 
       // The Edit sheet, its draft and the page underneath all survive.
       expect(find.text('Edit request'), findsOneWidget);
       expect(find.text('Draft title'), findsOneWidget);
-      expect(find.text('Open request'), findsOneWidget);
+      expect(find.text('Open request', skipOffstage: false), findsOneWidget);
       expect(tester.takeException(), isNull);
+      // Let the approval toast expire before the tree is torn down.
+      await tester.pump(const Duration(seconds: 10));
     });
 
     testWidgets('approval finishing during the exit animation pops nothing', (
@@ -468,11 +472,14 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pump(const Duration(milliseconds: 50));
       approval.complete();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Open request'), findsOneWidget);
       expect(find.text('Approve'), findsNothing);
       expect(tester.takeException(), isNull);
+      // Let the approval toast expire before the tree is torn down.
+      await tester.pump(const Duration(seconds: 10));
     });
   });
 }
