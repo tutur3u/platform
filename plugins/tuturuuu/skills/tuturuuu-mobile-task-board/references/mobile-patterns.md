@@ -179,6 +179,11 @@ localization changes.
   full-screen modal content must use the adaptive sheet helpers or
   `AppearanceScope.opaqueScaffolds`. Ambient motion must stay opt-in, timer-driven
   and painter-only, and must stop under reduced motion.
+- Interface style, density and corners are `AppInterfaceTokens` on the
+  Material theme. Read radii and row heights through
+  `AppTokens.of(context).interface`, never by platform checks. The Settings
+  shell harness pumps once, so assert a stored appearance by pumping with it,
+  not by changing it mid-test.
 
 ## Task Board
 

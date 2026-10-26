@@ -13987,6 +13987,60 @@ abstract class AppLocalizations {
   /// **'Background'**
   String get appearanceBackgroundTitle;
 
+  /// No description provided for @appearanceCornersRounded.
+  ///
+  /// In en, this message translates to:
+  /// **'Rounded'**
+  String get appearanceCornersRounded;
+
+  /// No description provided for @appearanceCornersSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft'**
+  String get appearanceCornersSoft;
+
+  /// No description provided for @appearanceCornersSquare.
+  ///
+  /// In en, this message translates to:
+  /// **'Square'**
+  String get appearanceCornersSquare;
+
+  /// No description provided for @appearanceCornersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners'**
+  String get appearanceCornersTitle;
+
+  /// No description provided for @appearanceDensityComfortable.
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable'**
+  String get appearanceDensityComfortable;
+
+  /// No description provided for @appearanceDensityCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get appearanceDensityCompact;
+
+  /// No description provided for @appearanceDensityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Density'**
+  String get appearanceDensityTitle;
+
+  /// No description provided for @appearanceFeedbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback and motion'**
+  String get appearanceFeedbackTitle;
+
+  /// No description provided for @appearanceHapticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Light vibrations when you choose, swipe or confirm.'**
+  String get appearanceHapticsDescription;
+
   /// No description provided for @appearanceIntensity.
   ///
   /// In en, this message translates to:
@@ -14011,6 +14065,18 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get appearancePreviewTitle;
 
+  /// No description provided for @appearanceReduceMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce motion'**
+  String get appearanceReduceMotion;
+
+  /// No description provided for @appearanceReduceMotionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Always reduce animations on this device, even when the system setting is off.'**
+  String get appearanceReduceMotionDescription;
+
   /// No description provided for @appearanceReset.
   ///
   /// In en, this message translates to:
@@ -14028,6 +14094,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Softness'**
   String get appearanceSoftness;
+
+  /// No description provided for @appearanceStyleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes how pages slide and lists scroll. Colors and layout stay the same on every device.'**
+  String get appearanceStyleDescription;
+
+  /// No description provided for @appearanceStyleIos.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS-like'**
+  String get appearanceStyleIos;
+
+  /// No description provided for @appearanceStyleMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material-like'**
+  String get appearanceStyleMaterial;
+
+  /// No description provided for @appearanceStyleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get appearanceStyleTitle;
+
+  /// No description provided for @appearanceStyleTuturuuu.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu'**
+  String get appearanceStyleTuturuuu;
 
   /// No description provided for @appearanceSurfaceOpacity.
   ///

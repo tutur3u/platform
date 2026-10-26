@@ -93,6 +93,7 @@ part 'settings_design_checks.dart';
 part 'settings_assistant_shell_checks.dart';
 part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
+part 'settings_appearance_interface_checks.dart';
 part 'settings_appearance_shell_checks.dart';
 part 'settings_apps_checks.dart';
 part 'settings_mail_visual_checks.dart';
@@ -110,6 +111,7 @@ void main() {
   registerSettingsAssistantEntrypointChecks();
   registerSettingsSecretsShellChecks();
   registerSettingsAppearanceShellChecks();
+  registerSettingsAppearanceInterfaceChecks();
   registerSettingsAppsChecks();
   registerSettingsMailVisualChecks();
   registerSettingsOfflineVisualChecks();
