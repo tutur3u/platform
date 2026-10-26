@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
+import { existsSync, readdirSync } from 'node:fs';
 import test from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   assertLoopbackOrigin,
   browserDecision,
   createWorkerEgress,
   NO_STORE,
   profileProblems,
+  serviceWorkerMode,
   sessionCookies,
   signAppSession,
   ssrProblems,
@@ -195,6 +198,88 @@ test('Worker egress is answered in-process and anything else is denied', async (
   assert.equal(egress.seen.length, 13);
 });
 
+test('same-host requests go back to the Worker under test', async () => {
+  const forwarded = [];
+  const egress = createWorkerEgress(profile, context, {
+    self: async (request) => {
+      forwarded.push(`${request.method} ${new URL(request.url).pathname}`);
+      return new Response('from the worker');
+    },
+  });
+  const response = await egress.handle(
+    new Request('https://track.tuturuuu.com/api/v1/workspaces/ws-1/boards', {
+      method: 'POST',
+    })
+  );
+  assert.equal(await response.text(), 'from the worker');
+  assert.deepEqual(forwarded, ['POST /api/v1/workspaces/ws-1/boards']);
+  assert.deepEqual(egress.unexpected, []);
+
+  const without = createWorkerEgress(profile, context);
+  const denied = await without.handle(
+    new Request('https://track.tuturuuu.com/x')
+  );
+  assert.equal(denied.status, 599);
+  assert.deepEqual(without.unexpected, [
+    'worker GET https://track.tuturuuu.com/x',
+  ]);
+  const otherApp = await egress.handle(
+    new Request('https://tasks.tuturuuu.com/x')
+  );
+  assert.equal(otherApp.status, 599);
+});
+
+test('a self-fetch loop is stopped by nesting and total limits', async () => {
+  const limits = { inFlight: 2, total: 5 };
+  let egress;
+  egress = createWorkerEgress(profile, context, {
+    limits,
+    // Every self-fetch issues another one: an unbounded loop.
+    self: (request) => egress.handle(new Request(request.url)),
+  });
+  const looped = await egress.handle(
+    new Request('https://track.tuturuuu.com/x')
+  );
+  assert.equal(looped.status, 508);
+  assert.deepEqual(egress.unexpected, [
+    'self-fetch loop GET https://track.tuturuuu.com/x',
+  ]);
+
+  let calls = 0;
+  const fanOut = createWorkerEgress(profile, context, {
+    limits,
+    self: async () => {
+      calls += 1;
+      return new Response('ok');
+    },
+  });
+  const statuses = [];
+  for (let i = 0; i < 7; i++)
+    statuses.push(
+      (await fanOut.handle(new Request(`https://track.tuturuuu.com/${i}`)))
+        .status
+    );
+  assert.deepEqual(statuses, [200, 200, 200, 200, 200, 508, 508]);
+  assert.equal(calls, 5);
+});
+
+test('every app root-browser profile is valid', async () => {
+  const apps = fileURLToPath(new URL('../../apps/', import.meta.url));
+  const profiled = readdirSync(apps, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((app) =>
+      existsSync(`${apps}${app}/cloudflare/root-browser.profile.mjs`)
+    );
+  assert.ok(profiled.includes('tasks'), 'the Tasks profile exists');
+  for (const app of profiled) {
+    const { default: appProfile } = await import(
+      pathToFileURL(`${apps}${app}/cloudflare/root-browser.profile.mjs`).href
+    );
+    assert.deepEqual(profileProblems(app, appProfile), [], app);
+  }
+});
+
 test('the browser loads only the Worker, Web fixtures and the profile allowlist', () => {
   const origin = 'http://127.0.0.1:9000';
   const decide = (method, url) => browserDecision(profile, origin, method, url);
@@ -253,4 +338,45 @@ test('signed-in SSR must be a no-store 200 page in the locale with emitted asset
       'x-robots-tag is null',
     ]
   );
+});
+
+test('service workers are blocked unless a profile explicitly allows them', () => {
+  assert.deepEqual(serviceWorkerMode(profile), { mode: 'block', reason: null });
+  assert.deepEqual(serviceWorkerMode({ ...profile, serviceWorkers: 'block' }), {
+    mode: 'block',
+    reason: null,
+  });
+  const offline = {
+    ...profile,
+    serviceWorkers: { mode: 'allow', reason: ' offline fallback cache ' },
+  };
+  assert.deepEqual(serviceWorkerMode(offline), {
+    mode: 'allow',
+    reason: 'offline fallback cache',
+  });
+  assert.deepEqual(profileProblems('track', offline), []);
+
+  for (const serviceWorkers of [
+    'allow',
+    true,
+    false,
+    { mode: 'allow' },
+    { mode: 'allow', reason: '   ' },
+    { mode: 'allow', reason: 42 },
+    { mode: 'off', reason: 'x' },
+    null,
+  ]) {
+    const silent = { ...profile, serviceWorkers };
+    assert.equal(
+      serviceWorkerMode(silent),
+      null,
+      JSON.stringify(serviceWorkers)
+    );
+    assert.ok(
+      profileProblems('track', silent).some((problem) =>
+        problem.startsWith('serviceWorkers must be')
+      ),
+      JSON.stringify(serviceWorkers)
+    );
+  }
 });

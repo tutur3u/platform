@@ -1,0 +1,25 @@
+{
+  "staging": {
+    "workerName": "tuturuuu-finance-vite-staging",
+    "rootHost": "finance-staging.tuturuuu.com",
+    "vars": {
+      "TUTURUUU_NOINDEX": "1",
+      "INTERNAL_WEB_API_ORIGIN": "https://staging.tuturuuu.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tuturuuu.com",
+      "NEXT_PUBLIC_APP_URL": "https://finance-staging.tuturuuu.com",
+      "FINANCE_APP_URL": "https://finance-staging.tuturuuu.com",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co"
+    }
+  },
+  "production": {
+    "workerName": "tuturuuu-finance",
+    "rootHost": "finance.tuturuuu.com",
+    "vars": {
+      "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+      "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
+      "FINANCE_APP_URL": "https://finance.tuturuuu.com",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+    }
+  }
+}

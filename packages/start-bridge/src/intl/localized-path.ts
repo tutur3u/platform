@@ -20,7 +20,7 @@ export function createLocalizedPaths<const Locales extends readonly string[]>(
 ) {
   const mode = localePrefixMode(routing);
   const prefixPattern = new RegExp(
-    `^/(?:${routing.locales.map((l) => l.replace(/[-]/gu, '\\-')).join('|')})(?=/|$)`,
+    `^/(?:${routing.locales.map((l) => l.replace(/[\\^$.*+?()[\]{}|/]/gu, '\\$&')).join('|')})(?=/|$)`,
     'u'
   );
   const strip = (path: string) => path.replace(prefixPattern, '') || '/';

@@ -1,0 +1,96 @@
+name: Turbo Cache Cloudflare
+on:
+  pull_request:
+    paths:
+      - 'apps/turbo-cache/**'
+      - '.github/workflows/turbo-cache-cloudflare.yaml'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/setup-bun-with-retry/**'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/turbo-cache-workflow.test.js'
+      - 'scripts/ci/run-with-backoff.sh'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - 'bun.lock'
+      - 'package.json'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/turbo-cache/**'
+      - '.github/workflows/turbo-cache-cloudflare.yaml'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/setup-bun-with-retry/**'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/turbo-cache-workflow.test.js'
+      - 'scripts/ci/run-with-backoff.sh'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - 'bun.lock'
+      - 'package.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+  deployments: read
+concurrency:
+  group: turbo-cache-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: turbo-cache-cloudflare.yaml
+  build-acceptance:
+    name: Build and accept Turbo Cache Worker
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CF_SEND_TELEMETRY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Check qualification wiring
+        run: node --test scripts/ci/turbo-cache-workflow.test.js
+      - run: bun run type-check
+        working-directory: apps/turbo-cache
+      - run: bun run lint
+        working-directory: apps/turbo-cache
+      - run: bun run format:check
+        working-directory: apps/turbo-cache
+      - run: bun run test --maxWorkers=2
+        working-directory: apps/turbo-cache
+      - name: Accept source Worker and durable R2 fence in workerd
+        run: node --test apps/turbo-cache/scripts/verify-worker-runtime.mjs
+      - name: Build the Worker without restoring compiled artifacts
+        run: bun run build
+        working-directory: apps/turbo-cache
+      - name: Accept emitted Worker and durable R2 fence in workerd
+        run: node --test apps/turbo-cache/scripts/verify-worker-runtime.mjs
+        env:
+          TURBO_CACHE_TEST_BUILD_OUTPUT: '1'
+      - name: Stage the accepted cf Build Output
+        run: cp -R apps/turbo-cache/.cloudflare/output "$RUNNER_TEMP/turbo-cache-build-output"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: turbo-cache-worker-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/turbo-cache-build-output
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true

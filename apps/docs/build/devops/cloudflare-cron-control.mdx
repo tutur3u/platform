@@ -93,12 +93,19 @@ state. It has no alarms, so only Cron Triggers start work.
   `ok: false` is failed; malformed, truncated, unreadable or oversized summaries
   are unknown and consume the failure budget without a retry. An absent `ok`
   field preserves existing JSON-object processor contracts. Bytes exceeding the
-  remaining cap are rejected before retaining the chunk.
+  remaining cap are rejected before retaining the chunk. Calendar provider sync
+  also reports `degraded` for a valid `ok: true` response whose sampled provider
+  accounts all failed transiently. This outcome applies only to
+  `calendar-provider-sync`; other jobs ignore the Calendar degradation fields.
+  `lastOutcome: degraded` survives a ledger restart and is visible in
+  `GET /control/jobs`, while `lastCompletedAt` retains the last `ok` completion.
 - **Failure budget.** Five consecutive failed or unknown slots stop the job
   (`failure-budget-exhausted`). A run terminated before it completes leaves an
   expired lease; the next claim charges it as unknown before admitting a
   replacement, so repeated terminations exhaust the budget too. The counter
-  survives restarts and resets only on success or operator resume. Settled
+  survives restarts and resets on an `ok` run, a nonfatal Calendar `degraded`
+  run, or operator resume. Degradation does not spend the fatal budget or advance
+  the timestamp of the last `ok` completion. Settled
   claims reject late completions, including after reconciliation exhausts the
   budget; late success cannot overwrite the unknown outcome. The dispatch and
   ledger unit regressions cover these cases across a simulated restart.

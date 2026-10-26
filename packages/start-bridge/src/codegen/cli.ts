@@ -21,11 +21,22 @@ function walk(root: string, directory = root): string[] {
   });
 }
 
+/** Reads a file, or `null` when it does not exist (no check-then-use race). */
+function readIfPresent(path: string): string | null {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 /** Generates (`write`) or verifies the registries of one app directory. */
 export function runRegistries(appRoot: string, mode: 'generate' | 'check') {
   const configPath = join(appRoot, CONFIG_FILE);
-  if (!existsSync(configPath)) return [`${appRoot}: missing ${CONFIG_FILE}`];
-  const config = JSON.parse(readFileSync(configPath, 'utf8')) as RegistryConfig;
+  const configSource = readIfPresent(configPath);
+  if (configSource === null) return [`${appRoot}: missing ${CONFIG_FILE}`];
+  const config = JSON.parse(configSource) as RegistryConfig;
   const errors: string[] = [];
   let files: string[] = [];
   if (config.appDir !== null) {
@@ -46,7 +57,7 @@ export function runRegistries(appRoot: string, mode: 'generate' | 'check') {
   errors.push(...plan.errors);
   for (const output of plan.generated) {
     const path = join(appRoot, output.path);
-    const current = existsSync(path) ? readFileSync(path, 'utf8') : null;
+    const current = readIfPresent(path);
     if (current === output.content) continue;
     if (mode === 'generate') writeFileSync(path, output.content);
     else

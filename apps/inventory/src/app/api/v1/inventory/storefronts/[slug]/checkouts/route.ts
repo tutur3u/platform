@@ -27,6 +27,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { authorizeSquareCheckoutStaff } from '@/lib/square-checkout-access';
 import { resolveSquareCheckoutMethod } from '@/lib/square-checkout-method';
 import { getCheckoutBuyerPayload } from './checkout-buyer';
+import { getStorefrontUrl } from './storefront-url';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -57,21 +58,6 @@ type RpcClient = {
 };
 
 type PrivateInventoryClient = ReturnType<RpcClient['schema']>;
-
-function getStorefrontUrl(request: Request) {
-  const configured =
-    process.env.NEXT_PUBLIC_STOREFRONT_APP_URL ||
-    process.env.STOREFRONT_APP_URL;
-
-  if (configured) return configured;
-
-  const url = new URL(request.url);
-  if (url.hostname.includes('storefront.')) return url.origin;
-
-  return process.env.NODE_ENV === 'production'
-    ? 'https://storefront.tuturuuu.com'
-    : 'http://localhost:7822';
-}
 
 async function recordCheckoutAnalyticsEvent(
   privateInventory: PrivateInventoryClient,

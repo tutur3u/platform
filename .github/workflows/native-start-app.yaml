@@ -49,6 +49,16 @@ on:
         type: string
         required: false
         default: bun run test:runtime
+      profile-env:
+        description: Optional VITE_<APP>_NATIVE_PROFILE=<name> selector applied to build, runtime and restore
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: Optional suffix that keeps artifacts apart when an app qualifies several profiles
+        type: string
+        required: false
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -67,6 +77,8 @@ jobs:
       HELPER_TESTS: ${{ inputs.helper-tests }}
       UNIT_COMMAND: ${{ inputs.unit-command }}
       RUNTIME_COMMAND: ${{ inputs.runtime-command }}
+      PROFILE_ENV: ${{ inputs.profile-env }}
+      ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       WRANGLER_SEND_METRICS: 'false'
@@ -94,6 +106,13 @@ jobs:
         # Artifact helpers read <APP>_SOURCE_SHA (e.g. SHORTENER_SOURCE_SHA)
         # and refuse a generic fallback, so export the exact checkout under it.
         run: echo "$(printf '%s' "$APP" | tr 'a-z-' 'A-Z_')_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+      - name: Admit the native profile selector
+        run: |
+          [[ "$ARTIFACT_SUFFIX" =~ ^(-[a-z][a-z0-9-]*)?$ ]]
+          if [ -n "$PROFILE_ENV" ]; then
+            [[ "$PROFILE_ENV" =~ ^VITE_[A-Z0-9_]+_NATIVE_PROFILE=[a-z]+$ ]]
+            echo "$PROFILE_ENV" >> "$GITHUB_ENV"
+          fi
       - name: Admit only public build fixtures
         run: |
           while IFS= read -r line; do
@@ -160,7 +179,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ inputs.app }}-native-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ inputs.app }}-native-config-receipt-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config.json
           retention-days: 7
           if-no-files-found: error
@@ -202,7 +221,7 @@ jobs:
           python3 "$ARTIFACT_SCRIPT" pack "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json" --archive "$RUNNER_TEMP/native.tar.gz"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}
+          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
           path: ${{ runner.temp }}/native.tar.gz
           retention-days: 7
           if-no-files-found: error
@@ -215,6 +234,8 @@ jobs:
       APP_DIR: apps/${{ inputs.app }}
       ARTIFACT_SCRIPT: ${{ inputs.artifact-script }}
       RUNTIME_COMMAND: ${{ inputs.runtime-command }}
+      PROFILE_ENV: ${{ inputs.profile-env }}
+      ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       WRANGLER_SEND_METRICS: 'false'
@@ -235,10 +256,17 @@ jobs:
           [[ "$APP" =~ ^[a-z0-9][a-z0-9-]*$ ]]
       - name: Export the app's own source SHA channel
         run: echo "$(printf '%s' "$APP" | tr 'a-z-' 'A-Z_')_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+      - name: Admit the native profile selector
+        run: |
+          [[ "$ARTIFACT_SUFFIX" =~ ^(-[a-z][a-z0-9-]*)?$ ]]
+          if [ -n "$PROFILE_ENV" ]; then
+            [[ "$PROFILE_ENV" =~ ^VITE_[A-Z0-9_]+_NATIVE_PROFILE=[a-z]+$ ]]
+            echo "$PROFILE_ENV" >> "$GITHUB_ENV"
+          fi
       - run: bun install --frozen-lockfile --ignore-scripts
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}
+          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
           path: ${{ runner.temp }}/native-download
       - name: Restore into clean output with member/hash/source checks
         run: python3 "$ARTIFACT_SCRIPT" restore "$APP_DIR" --archive "$RUNNER_TEMP/native-download/native.tar.gz" --receipt "$RUNNER_TEMP/native-artifact.json"
