@@ -4,10 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
   stream: vi.fn(),
+  waitUntil: vi.fn(),
   summaries: vi.fn(),
   prepare: vi.fn(),
   settle: vi.fn(),
   capture: vi.fn(),
+}));
+vi.mock('@tuturuuu/start-bridge/request-context/core', () => ({
+  maybeBridgeRequest: () => ({ waitUntil: mocks.waitUntil }),
 }));
 vi.mock('./observed-text-agent', () => ({
   createObservedTextAgent: () => ({
@@ -221,8 +225,12 @@ describe('interrupted AI streaming settlement', () => {
     expect(new TextDecoder().decode((await reader.read()).value)).toContain(
       'partial output'
     );
+    expect(mocks.waitUntil).toHaveBeenCalledTimes(1);
+    const completion = mocks.waitUntil.mock.calls[0]?.[0];
+    expect(completion).toBeInstanceOf(Promise);
     abort.abort();
     await expect(reader.read()).rejects.toThrow('Disconnected');
+    await completion;
     expect(mocks.stream).toHaveBeenCalledWith(
       expect.objectContaining({ abortSignal: request.signal })
     );

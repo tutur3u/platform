@@ -270,7 +270,9 @@ hosted auth, provider behavior or checkout. Keep credentials out of artifacts
 and receipts; record only variable names and verification outcomes.
 
 AI additionally requires `enable_request_signal` so an incoming disconnect
-aborts the provider operation. Cloudflare documents this as an explicit opt-in
+aborts the provider operation. Retain the stream completion and metering
+settlement with the bridge request context's `waitUntil`; otherwise the Worker
+invocation can end before settlement finishes after a disconnect. Cloudflare documents this as an explicit opt-in
 [compatibility flag](https://developers.cloudflare.com/workers/configuration/compatibility-flags/#enable-requestsignal-for-incoming-requests).
 `cloudflare/stream-cancellation.runtime.mjs` drives the emitted public streaming
 route with disposable API credentials, synthetic provider and database responses,
