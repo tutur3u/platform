@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_collaboration_page.dart';

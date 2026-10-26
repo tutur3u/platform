@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';

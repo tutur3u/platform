@@ -11,7 +11,6 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';

@@ -8,7 +8,6 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/workspace_secret.dart';
 import 'package:mobile/data/models/workspace_storage_rollout.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';

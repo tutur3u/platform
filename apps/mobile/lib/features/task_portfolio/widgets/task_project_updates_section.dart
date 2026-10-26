@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Card;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_project_update.dart';
 import 'package:mobile/data/repositories/task_repository.dart';

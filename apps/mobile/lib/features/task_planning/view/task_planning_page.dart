@@ -7,7 +7,6 @@ import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';

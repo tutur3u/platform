@@ -19,7 +19,6 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
     show AppSheetHandle;

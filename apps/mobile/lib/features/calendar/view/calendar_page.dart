@@ -9,7 +9,6 @@ import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/app_page.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';

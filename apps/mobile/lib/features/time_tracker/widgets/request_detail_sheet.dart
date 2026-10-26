@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
