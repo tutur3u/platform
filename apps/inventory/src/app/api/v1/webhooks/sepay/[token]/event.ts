@@ -21,7 +21,7 @@ export async function claimRetriableWebhookEvent(input: {
       created_transaction_id: null,
       endpoint_id: input.endpointId,
       failure_reason: null,
-      payload: input.payload.raw as Json,
+      payload: input.payload.raw as NonNullable<Json>,
       processed_at: null,
       received_at: new Date().toISOString(),
       reference_code: input.payload.referenceCode,

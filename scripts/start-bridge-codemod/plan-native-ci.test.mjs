@@ -114,7 +114,7 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   const worker = content('apps/demo/cloudflare/worker.ts');
   assert.match(worker, /rootHosts: \['demo\.tuturuuu\.com'\],/);
   assert.match(worker, /mountHosts: \['tuturuuu\.com'\],/);
-  assert.match(worker, /basePath: '\/demo',\n {6}\.\.\.appConfig\.mounts,/);
+  assert.match(worker, /basePath: '\/demo',\n {2}\.\.\.appConfig\.mounts,/);
   assert.match(
     runtime,
     /pathToFileURL\(join\(app, 'start-bridge\.config\.ts'\)\)[\s\S]*const MOUNTS = \{ \.\.\.DEFAULT_MOUNTS, \.\.\.appConfig\.mounts \};/
@@ -317,5 +317,155 @@ test('app-owned Worker options shape the generated Worker config', (t) => {
       (write) => write.path
     ),
     []
+  );
+});
+
+test('the generated Worker states its effective mounts and fails safely', (t) => {
+  const root = createFixtureRepo(t);
+  writeTree(root, {
+    '.github/workflows/native-start-app.yaml': 'on: workflow_call\n',
+  });
+  const files = (config) => {
+    const result = plan(root, { loadAppConfig: () => ({ config }) });
+    const content = (file) =>
+      result.writes.find((write) => write.path === file)?.content ?? '';
+    return {
+      result,
+      worker: content('apps/demo/cloudflare/worker.ts'),
+      runtime: content('apps/demo/cloudflare/native-built-worker.runtime.mjs'),
+    };
+  };
+
+  // Default: the subdomain root and the apex mount.
+  const mounted = files({}).worker;
+  assert.match(
+    mounted,
+    /\/\/ One artifact: the subdomain root and the tuturuuu\.com\/demo mount\.\nconst mounts = \{\n {2}app: 'demo',\n {2}rootHosts: \['demo\.tuturuuu\.com'\],\n {2}mountHosts: \['tuturuuu\.com'\],\n {2}basePath: '\/demo',\n {2}\.\.\.appConfig\.mounts,\n\};/
+  );
+
+  // Root-only: no apex mount is claimed in the generated source.
+  const rootOnly = {
+    mounts: {
+      rootHosts: ['demo.tuturuuu.com', 'demo-staging.tuturuuu.com'],
+      mountHosts: [],
+      unknownHost: 'reject',
+    },
+  };
+  const { worker, runtime } = files(rootOnly);
+  assert.match(
+    worker,
+    /\/\/ Root-only: served at demo\.tuturuuu\.com, demo-staging\.tuturuuu\.com; no apex mount, and unknown hosts are rejected\.\nconst mounts = \{\n {2}app: 'demo',\n {2}rootHosts: \['demo\.tuturuuu\.com', 'demo-staging\.tuturuuu\.com'\],\n {2}mountHosts: \[\],\n {2}unknownHost: 'reject' as const,\n {2}\.\.\.appConfig\.mounts,\n\};/
+  );
+  assert.doesNotMatch(worker, /tuturuuu\.com\/demo|basePath: '\/demo'/);
+
+  // A failed route load still answers through the response policy.
+  assert.match(
+    worker,
+    /try \{\n\s*response = await \(await handler\)\(request, env, ctx\);\n\s*\} catch \(error\) \{[\s\S]*?console\.error\('\[start-bridge\] worker failed', error\);\n\s*response = bridgeErrorResponse\(\);/
+  );
+  assert.match(
+    worker,
+    /bridgeErrorResponse,\n\s*createBridgeHandler,\n\} from '@tuturuuu\/start-bridge\/start\/handler';/
+  );
+
+  // Each built Worker proves the policy on a rendered page, a JSON API
+  // response and a 404 page; status and content come before the headers.
+  assert.match(
+    runtime,
+    /^const POLICY_PROBES = \[\{"kind":"page","path":"\/"\},\{"kind":"api","path":"\/api\/build-info"\},\{"kind":"notFound","path":"\/__native-smoke-missing__"\}\];$/m
+  );
+  for (const check of [
+    /assert\.equal\(status, 200, where\);\s*assert\.match\(type, \/application\\\/json\/u, where\);/,
+    /assert\.equal\(status, probe\.kind === 'page' \? 200 : 404, where\);\s*assert\.match\(type, \/text\\\/html\/u, where\);\s*assert\.match\(body, \/<html\[\\s>\]\/iu/,
+    /assert\.ok\(executed > 0, 'no response-policy probe ran'\);/,
+    /assert\.ok\(existsSync\(join\(app, probe\.fixture\)\)/,
+    /assert\.match\(probe\.fixture, FIXTURE,/,
+    /assert\.notEqual\(probe\.fixture, RUNTIME_GATE,/,
+    /no-store/,
+    /headers\['x-robots-tag'\]/,
+    /headers\['x-frame-options'\], 'DENY'/,
+    /frame-ancestors 'none'/,
+  ])
+    assert.match(runtime, check);
+
+  // Re-applying with the same configuration changes nothing.
+  applyPlan(root, files(rootOnly).result, { spawn: () => ({ status: 0 }) });
+  assert.deepEqual(
+    pendingWrites(
+      plan(root, { loadAppConfig: () => ({ config: rootOnly }) })
+    ).map((write) => write.path),
+    []
+  );
+});
+
+test('policy probes are real pages, never a redirect standing in', (t) => {
+  const root = createFixtureRepo(t);
+  writeTree(root, {
+    '.github/workflows/native-start-app.yaml': 'on: workflow_call\n',
+  });
+  const routesPath = path.join(root, 'apps/demo/start-bridge.routes.json');
+  const withRoutes = (extra) => {
+    applyPlan(root, plan(root), { spawn: () => ({ status: 0 }) });
+    const routes = JSON.parse(fs.readFileSync(routesPath, 'utf8'));
+    fs.writeFileSync(
+      routesPath,
+      `${JSON.stringify({ ...routes, ...extra })}\n`
+    );
+    return plan(root);
+  };
+  // Finance/Track: "/" redirects to login, so no anonymous page is declared.
+  const redirecting = withRoutes({ runtime: { '/': { redirect: '/login' } } });
+  assert.match(
+    redirecting.problems.join('\n'),
+    /runtimeProbes\.page: declare an anonymous page rendering 200 HTML/
+  );
+  // An explicit page probe, or an explicit reason to skip it, is accepted.
+  writeTree(path.join(root, 'apps/demo'), {
+    'cloudflare/signed-ssr.runtime.mjs': '// isolated-auth SSR fixture\n',
+  });
+  for (const page of [
+    '/pricing',
+    { skip: 'auth-only', fixture: 'cloudflare/signed-ssr.runtime.mjs' },
+  ]) {
+    const result = withRoutes({
+      runtime: { '/': { redirect: '/login' } },
+      runtimeProbes: { page },
+    });
+    assert.deepEqual(result.problems, [], JSON.stringify(page));
+    const runtime = result.writes.find((write) =>
+      write.path.endsWith('native-built-worker.runtime.mjs')
+    ).content;
+    assert.ok(
+      runtime.includes(
+        typeof page === 'string'
+          ? `{"kind":"page","path":"${page}"}`
+          : `{"kind":"page","skip":"${page.skip}","fixture":"${page.fixture}"}`
+      )
+    );
+  }
+  // A skip without its fixture, or every probe skipped, is a problem.
+  assert.match(
+    withRoutes({
+      runtime: { '/': { redirect: '/login' } },
+      runtimeProbes: { page: { skip: 'auth-only' } },
+    }).problems.join('\n'),
+    /runtimeProbes\.page: declare/
+  );
+  assert.match(
+    withRoutes({
+      runtime: { '/': { redirect: '/login' } },
+      runtimeProbes: {
+        page: {
+          skip: 'auth-only',
+          fixture: 'cloudflare/signed-ssr.runtime.mjs',
+        },
+        api: { skip: 'no anonymous API' },
+        notFound: {
+          skip: 'auth-only',
+          fixture: 'cloudflare/signed-ssr.runtime.mjs',
+        },
+      },
+    }).problems.join('\n'),
+    /at least one probe must run/
   );
 });

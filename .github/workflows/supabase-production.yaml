@@ -493,7 +493,7 @@ jobs:
           }
 
           const contracts = [
-            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', 'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da', 'd880c279f37b63628706b195e5397be1cf25acd5']],
+            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', 'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da', 'd880c279f37b63628706b195e5397be1cf25acd5', '40f1cc37c1b4c0ed2b9976019c95eb145311c77d']],
             ['scripts/ci/record-deployment-marker.ts', ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c']],
           ];
           async function checkContracts(producerHead) {
@@ -607,6 +607,9 @@ jobs:
     name: Migrate production database
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    # Branch-restricted (main for workflow_run, production for dispatch) so
+    # other branches cannot read the Management API token or DB password.
+    environment: supabase-production-migrations
     needs: [evaluate-prerequisites]
     if: needs.evaluate-prerequisites.outputs.trusted_trigger == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
     permissions:
@@ -633,6 +636,11 @@ jobs:
           if [ "$ALLOW_CLOUDFLARE_VERIFICATION_FAILURES" = "true" ] && \
              { [ -z "$EXPECTED_PROJECT_REF" ] || [ "$PRODUCTION_PROJECT_ID" != "$EXPECTED_PROJECT_REF" ]; }; then
             echo "::error::Migration recovery production project binding does not match."
+            exit 1
+          fi
+          # Fail closed unless the environment targets the production project.
+          if [ "$PRODUCTION_PROJECT_ID" != "nzamlzqfdwaaxdefwraj" ]; then
+            echo "::error::PRODUCTION_PROJECT_ID does not match the production project ref."
             exit 1
           fi
           cd apps/database

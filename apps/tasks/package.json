@@ -6,6 +6,7 @@
     "type-check": "node ../../scripts/run-tsc-build.js --build && bun run type-check:native",
     "type-check:native": "tsc --noEmit --project tsconfig.native.json && tsc --noEmit --project tsconfig.config.json",
     "build:cloudflare": "vp build --configLoader runner",
+    "test:runtime": "node --test cloudflare/*.runtime.mjs",
     "dev:cloudflare": "vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7809}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
     "dev": "node ../../scripts/portless-safe-dev.js",

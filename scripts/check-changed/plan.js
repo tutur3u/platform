@@ -3,6 +3,7 @@
 
 const path = require('node:path');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
+const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
 const BIOME_VERSION = '2.5.13';
@@ -29,11 +30,20 @@ const WORKFLOW_POLICY_TESTS = [
   'scripts/ci/bun-workflow-pins.test.js',
   'scripts/ci/check-workflow-config.test.js',
 ];
-const AUTH_GUARDS = [
-  ['internal-app-auth', 'scripts/check-internal-app-auth.js'],
-  ['satellite-cookie-auth', 'scripts/check-satellite-cookie-auth.js'],
-  ['server-console', 'scripts/check-server-console.js'],
+// The production migration gate pins the exact Git blobs of these producer
+// files. Changing one without extending its allowlist silently rejects the
+// next staging marker, so any change runs the contract tests.
+const STAGING_CONTRACT_TESTS = [
+  'scripts/ci/staging-contract-allowlist.test.js',
+  'scripts/ci/production-migration-target.test.js',
+  'scripts/ci/staging-descendant-marker.test.js',
 ];
+const PINNED_CONTRACT_FILES = new Set([
+  '.github/workflows/supabase-production.yaml',
+  '.github/workflows/supabase-staging.yaml',
+  'scripts/ci/fixtures/supabase-staging-legacy.yaml',
+  'scripts/ci/record-deployment-marker.ts',
+]);
 
 function isPausedPath(file) {
   const match = /^apps\/([^/]+)\//.exec(file);
@@ -264,8 +274,8 @@ function planChecks(changes, context) {
   }
 
   if (any(/^(apps|packages)\/[^/]+\/.*\.[cm]?[jt]sx?$/)) {
-    for (const [id, script] of AUTH_GUARDS) {
-      steps.push(nodeStep(id, id, [script]));
+    for (const { name, script } of AUTH_GUARDS) {
+      steps.push(nodeStep(name, name, [script]));
     }
   }
   if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
@@ -340,6 +350,9 @@ function planChecks(changes, context) {
         .filter(([, runner]) => runner === 'node')
         .map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
+      ...(all.some((file) => PINNED_CONTRACT_FILES.has(file))
+        ? STAGING_CONTRACT_TESTS
+        : []),
     ]),
   ].filter(exists);
   if (nodeTests.length) {
@@ -474,6 +487,8 @@ function planChecks(changes, context) {
 module.exports = {
   BIOME_VERSION,
   BRANCH_NAME_PATTERN,
+  PINNED_CONTRACT_FILES,
+  STAGING_CONTRACT_TESTS,
   WORKFLOW_POLICY_TESTS,
   isBranchNameValid,
   isPausedPath,

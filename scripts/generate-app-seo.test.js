@@ -40,7 +40,8 @@ test('stable single-URL apps do not invent language alternatives', () => {
   assert.doesNotMatch(sitemap(policy.tools), /<xhtml:link/);
   const xml = sitemap(policy.nova);
   assert.match(xml, /hreflang="x-default"/);
-  assert.match(xml, /<loc>https:\/\/nova\.tuturuuu\.com\/vi\/learn<\/loc>/);
+  // Nova owns nova.ai.vn after its canonical-domain migration.
+  assert.match(xml, /<loc>https:\/\/nova\.ai\.vn\/vi\/learn<\/loc>/);
 });
 
 test('robots permits crawling noindex and canonical redirects', () => {

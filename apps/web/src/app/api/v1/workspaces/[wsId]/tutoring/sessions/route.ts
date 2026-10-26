@@ -19,6 +19,10 @@ import {
   type TutoringSessionSlotInput,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
 import {
+  isLinkedContentSession,
+  loadLinkedLessonContent,
+} from '@/lib/tutoring/linked-content';
+import {
   createTutoringRequestClient,
   resolveTutoringRouteAccess,
 } from '@/lib/tutoring/route-access';
@@ -157,6 +161,19 @@ async function getTutoringData(request: Request, { params }: Params) {
     );
   }
 
+  // Linked make-up content is display-only: a lookup failure keeps the list.
+  const linkedContent = await loadLinkedLessonContent({
+    sbAdmin,
+    sessions,
+    wsId: normalizedWsId,
+  }).catch((linkedError: unknown) => {
+    console.error('Failed to load linked tutoring lesson content', {
+      error: linkedError,
+      wsId: normalizedWsId,
+    });
+    return new Map<string, string>();
+  });
+
   const groupMap = new Map(
     (groupsResult.data ?? []).map((group) => [group.id, group])
   );
@@ -167,6 +184,8 @@ async function getTutoringData(request: Request, { params }: Params) {
   return NextResponse.json({
     data: sessions.map((session) => ({
       ...session,
+      content: linkedContent.get(session.id) ?? session.content,
+      content_linked: isLinkedContentSession(session),
       group: session.group_id ? (groupMap.get(session.group_id) ?? null) : null,
       student: session.student_user_id
         ? (userMap.get(session.student_user_id) ?? null)

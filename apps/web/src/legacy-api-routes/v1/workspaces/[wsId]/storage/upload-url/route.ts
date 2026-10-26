@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
 import { validateFinanceTransactionAttachmentUploadRequest } from '@tuturuuu/finance-core/storage-limits';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -227,8 +227,14 @@ export async function POST(
     const requestedStoragePath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
+    // Topic Announcement attachments live in a private root that Drive
+    // excludes; they are authorized below by the feature gate and
+    // manage_users instead of Drive permissions.
+    const isTopicAnnouncementUpload =
+      isReservedTopicAnnouncementPath(sanitizedPath);
     if (
-      isReservedMobileDeploymentDrivePath(normalizedWsId, requestedStoragePath)
+      !isTopicAnnouncementUpload &&
+      isExcludedDrivePath(normalizedWsId, requestedStoragePath)
     ) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
@@ -244,7 +250,7 @@ export async function POST(
     }
 
     let uploadContentType: typeof parsed.data.contentType;
-    const topicUploadAccess = isReservedTopicAnnouncementPath(sanitizedPath)
+    const topicUploadAccess = isTopicAnnouncementUpload
       ? await resolveTopicAnnouncementAttachmentUploadAccess({
           contentType: parsed.data.contentType,
           filename: sanitizedFilename,

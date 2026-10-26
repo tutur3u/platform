@@ -40,6 +40,7 @@ async function calendarFixture(run) {
       directory: '../client',
       run_worker_first: true,
       not_found_handling: 'none',
+      html_handling: 'none',
     },
   };
   async function put(path, value) {

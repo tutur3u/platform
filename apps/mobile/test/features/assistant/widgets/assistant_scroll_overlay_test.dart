@@ -67,7 +67,7 @@ void main() {
         await mount(visible: false);
         expect(button.hitTestable(), findsNothing);
         final tree = tester.getSemantics(find.byType(Scaffold)).toStringDeep();
-        expect(tree, isNot(contains('Scroll to bottom')));
+        expect(tree, isNot(contains('Jump to latest')));
         semantics.dispose();
         expect(tester.takeException(), isNull);
       });
