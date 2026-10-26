@@ -3,7 +3,8 @@
  *
  * This is the server-side mirror of the database helper
  * `workspace_storage.object_access` (migration
- * 20261026100000_least_privilege_workspace_storage_rls.sql). Service-role
+ * 20261026170000_least_privilege_workspace_storage_rls.sql, last redefined by
+ * 20261026192000_topic_announcements_private_storage_root.sql). Service-role
  * routes that sign or list objects on a user's behalf must apply the same
  * rules, otherwise they widen what RLS allows. Keep both in sync: a change
  * to a root here needs the same change in SQL and in the pgTAP matrix
@@ -55,6 +56,7 @@ const SERVICE_ONLY_ROOTS = new Set([
   'external-apps',
   'ai agent imports',
   'recordings',
+  'topic-announcements',
   '.tuturuuu',
 ]);
 
