@@ -1,5 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FilePart, ImagePart, ModelMessage, TextPart } from 'ai';
+import {
+  AI_CHAT_ATTACHMENT_EXTENSIONS,
+  aiChatAttachmentExtension,
+  aiChatAttachmentTextEncoding,
+  inspectAiChatAttachment,
+  MAX_AI_CHAT_UPLOAD_BYTES,
+} from '../attachment-content-guard';
 
 type ChatFile = {
   fileName: string;
@@ -170,6 +177,15 @@ async function getAllChatFiles(
               (file.metadata?.mimetype as string | undefined)
           );
 
+          const declaredSize = Number(file.metadata?.size ?? 0);
+          if (declaredSize > MAX_AI_CHAT_UPLOAD_BYTES) {
+            console.warn('[Google Chat Files] skipped oversized file', {
+              fileName,
+              sizeBytes: declaredSize,
+            });
+            continue;
+          }
+
           const { data: fileData, error: downloadError } = await sbAdmin.storage
             .from('workspaces')
             .download(`${storagePath}/${file.name}`);
@@ -184,10 +200,32 @@ async function getAllChatFiles(
             continue;
           }
 
+          // Client uploads go through an unconstrained signed URL, so the
+          // real bytes decide eligibility, not the extension or declared size.
+          const bytes = await fileData.arrayBuffer();
+          if (
+            AI_CHAT_ATTACHMENT_EXTENSIONS.has(
+              aiChatAttachmentExtension(fileName)
+            ) &&
+            !inspectAiChatAttachment({
+              fileName,
+              head: new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 64)),
+              sizeBytes: bytes.byteLength,
+            }).ok
+          ) {
+            console.warn('[Google Chat Files] skipped unverified file', {
+              fileName,
+              sizeBytes: bytes.byteLength,
+            });
+            continue;
+          }
+
           const content =
             mediaType.startsWith('text/') || mediaType === 'application/json'
-              ? await fileData.text()
-              : await fileData.arrayBuffer();
+              ? new TextDecoder(
+                  aiChatAttachmentTextEncoding(new Uint8Array(bytes))
+                ).decode(bytes)
+              : bytes;
 
           results[currentIndex] = {
             fileName,

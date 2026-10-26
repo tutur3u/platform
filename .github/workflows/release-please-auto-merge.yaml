@@ -48,7 +48,10 @@ jobs:
     permissions:
       contents: write
       actions: read
+      # Readiness reads check runs, which a fine-grained PAT cannot be granted.
+      checks: read
       pull-requests: read
+      statuses: read
     steps:
       - name: Checkout main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,7 +152,8 @@ jobs:
       - name: Wait for generated release PR readiness
         if: steps.plan.outputs.should_merge == 'true'
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          # Read-only gates use the job token; the admin PAT only writes.
+          GH_TOKEN: ${{ github.token }}
           MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
         run: node scripts/ci/wait-release-pr.mjs
 
@@ -204,7 +208,7 @@ jobs:
         id: merge
         if: steps.plan.outputs.should_merge == 'true'
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
           MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
         run: |
           node scripts/ci/wait-release-pr.mjs
@@ -264,7 +268,7 @@ jobs:
       - name: Wait for exact main CI before production
         if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/wait-release-main.mjs
 
       - name: Sync main and production
