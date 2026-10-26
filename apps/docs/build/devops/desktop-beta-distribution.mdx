@@ -8,6 +8,19 @@ plus verified desktop packages from GitHub Releases. Every distribution is beta
 and may not be production-ready. Mobile users may need an invitation using their
 Apple or Google account; installing TestFlight alone does not grant access.
 
+The page leads with one recommended download for the visitor's platform,
+detected from the request user agent (iPadOS desktop agents are corrected on
+the client), and lists every other platform compactly. Desktop visitors also
+get a QR code to the same page, which then leads with their phone's store. A
+desktop OS without a published package falls back to opening the web app.
+Versions are never guessed: desktop versions and checksums come from the cached
+GitHub Releases parse, and mobile store links and versions come from the
+`MOBILE_*_STORE_URL` and `MOBILE_*_EFFECTIVE_VERSION` root workspace configs
+(only `apps.apple.com`, `testflight.apple.com` and `play.google.com` links are
+accepted). Without a policy, Android shows its Play listing without a version
+and iOS offers an early-access request. Platform rules are covered by
+`apps/web/src/lib/download-platform.test.ts`.
+
 ## Release workflow
 
 `.github/workflows/desktop-beta.yaml` runs on relevant production pushes or an
