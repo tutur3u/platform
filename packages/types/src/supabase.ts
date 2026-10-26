@@ -16532,7 +16532,6 @@ export type Database = {
       time_tracker_controls: {
         Row: {
           actor_id: string;
-          completed_focus: number;
           config: NonNullable<Json>;
           created_at: string;
           deadline_at: string | null;
@@ -16541,17 +16540,13 @@ export type Database = {
           mode: string;
           phase: string;
           prepared_session_id: string | null;
-          remaining_ms: number;
           revision: number;
-          task_id: string | null;
-          title: string | null;
           updated_at: string;
           ws_id: string;
         };
         ComputedFields: never;
         Insert: {
           actor_id: string;
-          completed_focus?: number;
           config: NonNullable<Json>;
           created_at?: string;
           deadline_at?: string | null;
@@ -16560,16 +16555,12 @@ export type Database = {
           mode?: string;
           phase?: string;
           prepared_session_id?: string | null;
-          remaining_ms?: number;
           revision?: number;
-          task_id?: string | null;
-          title?: string | null;
           updated_at?: string;
           ws_id: string;
         };
         Update: {
           actor_id?: string;
-          completed_focus?: number;
           config?: NonNullable<Json>;
           created_at?: string;
           deadline_at?: string | null;
@@ -16578,10 +16569,7 @@ export type Database = {
           mode?: string;
           phase?: string;
           prepared_session_id?: string | null;
-          remaining_ms?: number;
           revision?: number;
-          task_id?: string | null;
-          title?: string | null;
           updated_at?: string;
           ws_id?: string;
         };
@@ -21535,18 +21523,6 @@ export type Database = {
           override_id: string;
           token_id: string;
         }[];
-      };
-      command_time_tracker_pomodoro: {
-        Args: {
-          p_actor_id: string;
-          p_command: Json;
-          p_command_id: string;
-          p_effects: Json;
-          p_expected_revision: number;
-          p_next: Json;
-          p_ws_id: string;
-        };
-        Returns: Json;
       };
       consume_calendar_oauth_state_nonce: {
         Args: {
