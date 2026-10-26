@@ -72,6 +72,7 @@
     "@streamdown/mermaid": "^1.0.3",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@vercel/sandbox": "^3.8.0",
