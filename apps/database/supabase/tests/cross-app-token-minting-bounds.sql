@@ -636,6 +636,8 @@ select is(
       ),
       'calendar'
     ) v
+    -- The validator also emits a trailing (null, null) row after a hit.
+    where v.user_id is not null
   ),
   '00000000-0000-0000-0000-0000000c1a50'::uuid,
   'a clamped, unrevoked token is still redeemable once (control)'
