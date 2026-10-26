@@ -138,21 +138,31 @@ describe('Calendar provider cron ownership', () => {
     const response = await GET(cronRequest());
     expect(response.status).toBe(200);
     const body = await response.json();
+    // The run completed: account failures are reported, not job failures.
     expect(body).toMatchObject({
-      ok: false,
+      ok: true,
+      partialFailure: true,
       processed: 3,
       successful: 1,
       failed: 2,
+      failures: [
+        { ws_id: 'workspace-a', error: 'Calendar sync partially failed' },
+        { ws_id: 'workspace-b', error: 'Calendar sync partially failed' },
+      ],
       tokens: {
         counts: { ok: 2, deactivated: 1, transient: 1, systemic: 0 },
+        attentionOmitted: 0,
       },
     });
-    expect(body.tokens.outcomes).toHaveLength(4);
-    expect(body.tokens.outcomes[0]).toMatchObject({
-      provider: 'google',
-      outcome: 'deactivated',
-      reason: 'google_invalid_grant',
-    });
+    expect(body.tokens.attention).toEqual([
+      expect.objectContaining({
+        provider: 'google',
+        outcome: 'deactivated',
+        reason: 'google_invalid_grant',
+      }),
+      expect.objectContaining({ outcome: 'transient' }),
+    ]);
+    expect(body).not.toHaveProperty('results');
     expect(JSON.stringify(body)).not.toContain('token-0');
     expect(error).not.toHaveBeenCalledWith(
       'calendar.oauth.deactivation_spike',
@@ -200,6 +210,7 @@ describe('Calendar provider cron ownership', () => {
     workspacesWithOutcomes({
       'workspace-a': [
         google('systemic'),
+        google('systemic'),
         google('consensus_hold', { reason: 'google_unauthorized_client' }),
       ],
       'workspace-b': [google('systemic')],
@@ -210,11 +221,11 @@ describe('Calendar provider cron ownership', () => {
       ok: false,
       error: 'Calendar OAuth client failure',
       providers: ['google'],
-      tokens: { counts: { systemic: 2, consensus_hold: 1 } },
+      tokens: { counts: { systemic: 3, consensus_hold: 1 } },
     });
     expect(error).toHaveBeenCalledWith(
       'calendar.oauth.deactivation_spike',
-      expect.objectContaining({ held: 1, systemic: 2 })
+      expect.objectContaining({ held: 1, systemic: 3 })
     );
   });
 
@@ -303,18 +314,27 @@ describe('Calendar provider cron ownership', () => {
     );
   });
 
-  it('keeps one tenant that removed our Entra app from stopping other tenants', async () => {
+  it('keeps one tenant that removed our Entra app from failing the job', async () => {
     quietLogs();
+    // Five accounts in one tenant: two quarantined, three held by the
+    // breaker, and no fresh Microsoft refresh anywhere in the run.
     const tenantRemoved = { reason: 'microsoft_unauthorized_client' as const };
     workspacesWithOutcomes({
       'tenant-a': [
         microsoft('deactivated', tenantRemoved),
         microsoft('deactivated', tenantRemoved),
         microsoft('consensus_hold', tenantRemoved),
+        microsoft('consensus_hold', tenantRemoved),
+        microsoft('consensus_hold', tenantRemoved),
       ],
-      'tenant-b': [microsoft('ok', { refreshed: true })],
+      'workspace-b': [google('ok', { refreshed: true })],
     });
-    expect((await GET(cronRequest())).status).toBe(200);
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      partialFailure: true,
+    });
   });
 
   it('does not fail the job for systemic outcomes below the threshold', async () => {
@@ -393,9 +413,11 @@ describe('Calendar provider cron ownership', () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      ok: false,
+      ok: true,
+      partialFailure: true,
       successful: 0,
       failed: 1,
+      failures: [{ ws_id: 'workspace-a', error: 'auth' }],
     });
   });
   it('short circuits without dispatch when no active inbound connections are due', async () => {
@@ -444,7 +466,7 @@ describe('Calendar provider cron ownership', () => {
     expect(response.status).toBe(200);
     expect(sync).toHaveBeenCalledTimes(2);
     const body = await response.json();
-    expect(body).toMatchObject({ ok: false, failed: 1, successful: 1 });
+    expect(body).toMatchObject({ ok: true, failed: 1, successful: 1 });
     expect(JSON.stringify(body)).not.toContain('private-provider-detail');
   });
 
@@ -481,8 +503,10 @@ describe('Calendar provider cron ownership', () => {
     const body = await response.json();
     expect(sync.mock.calls.length).toBeGreaterThan(0);
     expect(sync.mock.calls.length).toBeLessThanOrEqual(3);
+    // Nothing completed before the deadline: the run itself failed.
     expect(body).toMatchObject({
       ok: false,
+      error: 'No workspace sync completed',
       processed: sync.mock.calls.length,
       failed: sync.mock.calls.length,
       deferred: 10 - sync.mock.calls.length,

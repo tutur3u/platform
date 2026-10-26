@@ -3,11 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { POST as syncWorkspaceCalendar } from '@/app/api/v1/workspaces/[wsId]/calendar/sync/route';
 import {
   reportCalendarDeactivationSpike,
-  summarizeCalendarTokenOutcomes,
-  systemicProviders,
   withCalendarTokenHealthRun,
 } from '@/lib/calendar/oauth-token-health';
-import { CONSENSUS_ACCOUNTS } from '@/lib/calendar/oauth-token-quarantine';
 import {
   CRON_BUDGET_MS,
   checkProviderSyncBudget,
@@ -17,6 +14,10 @@ import {
   rotatingSyncBatch,
   withProviderSyncBudget,
 } from '@/lib/calendar/provider-sync-budget';
+import {
+  buildProviderSyncEnvelope,
+  type WorkspaceDispatchResult,
+} from '@/lib/calendar/provider-sync-envelope';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 export const maxDuration = 300;
@@ -74,22 +75,8 @@ async function handleGET(request: NextRequest) {
     );
     if (dispatch instanceof NextResponse) return dispatch;
     reportCalendarDeactivationSpike(ROUTE, outcomes);
-    const tokenCounts = summarizeCalendarTokenOutcomes(outcomes);
-    // Fail the job only when a provider's OAuth client looks broken for
-    // everyone. Account-level failures, including breaker holds amid healthy
-    // refreshes, return 200 so the scheduler's failure budget is not spent.
-    const broken = systemicProviders(outcomes, CONSENSUS_ACCOUNTS);
-    return NextResponse.json(
-      {
-        ...dispatch,
-        ok: dispatch.ok && broken.length === 0,
-        ...(broken.length
-          ? { error: 'Calendar OAuth client failure', providers: broken }
-          : {}),
-        tokens: { counts: tokenCounts, outcomes },
-      },
-      { status: broken.length ? 500 : 200 }
-    );
+    const { body, status } = buildProviderSyncEnvelope(dispatch, outcomes);
+    return NextResponse.json(body, { status });
   } catch (error) {
     console.error(
       'Calendar provider sync dispatch failed',
@@ -141,12 +128,7 @@ function dispatchWorkspaces(request: NextRequest, cronSecret: string) {
         MAX_SYNC_WORKSPACES
       );
 
-      const results: Array<{
-        ws_id: string;
-        success: boolean;
-        summary?: unknown;
-        error?: string;
-      }> = [];
+      const results: WorkspaceDispatchResult[] = [];
 
       let notStarted = 0;
       await Effect.runPromise(
@@ -191,7 +173,7 @@ function dispatchWorkspaces(request: NextRequest, cronSecret: string) {
                 results.push({
                   ws_id: wsId,
                   success: body?.ok !== false,
-                  summary: body?.summary ?? null,
+                  completed: true,
                   ...(body?.ok === false
                     ? { error: body.code || 'Calendar sync partially failed' }
                     : {}),
@@ -204,6 +186,7 @@ function dispatchWorkspaces(request: NextRequest, cronSecret: string) {
                 results.push({
                   ws_id: wsId,
                   success: false,
+                  completed: false,
                   error:
                     syncError instanceof Error &&
                     syncError.name === 'TimeoutError'
@@ -217,11 +200,8 @@ function dispatchWorkspaces(request: NextRequest, cronSecret: string) {
       );
 
       return {
-        ok: results.every((result) => result.success),
         processed: results.length,
         deferred: workspaceSet.size - workspaceIds.length + notStarted,
-        successful: results.filter((result) => result.success).length,
-        failed: results.filter((result) => !result.success).length,
         results,
       };
     }

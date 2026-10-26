@@ -184,3 +184,29 @@ it('skips without retrying when a reconnect fenced the refresh', async () => {
   expect(outcome.outcome).toBe('fenced');
   expect(credentialSyncErrorType(result)).toBe('network');
 });
+
+it('records a fresh refresh as proof the client works', async () => {
+  refresh.mockResolvedValueOnce({
+    accessToken: 'fresh',
+    expiresAt: null,
+    refreshed: true,
+  });
+  const fresh = await ensureHealthyCalendarCredential(
+    { from: vi.fn() },
+    token,
+    { sleep }
+  );
+  expect(fresh.outcome).toMatchObject({ outcome: 'ok', refreshed: true });
+
+  refresh.mockResolvedValueOnce({
+    accessToken: 'unexpired',
+    expiresAt: null,
+    refreshed: false,
+  });
+  const unexpired = await ensureHealthyCalendarCredential(
+    { from: vi.fn() },
+    token,
+    { sleep }
+  );
+  expect(unexpired.outcome).not.toHaveProperty('refreshed');
+});
