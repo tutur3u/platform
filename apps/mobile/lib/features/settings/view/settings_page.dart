@@ -25,9 +25,9 @@ import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/link_browser_settings_tile.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
+import 'package:mobile/features/settings/view/settings_account_section.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_dock_search.dart';
-import 'package:mobile/features/settings/view/settings_profile_header.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_search.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
@@ -36,7 +36,6 @@ import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/settings/view/workspace_timezone_settings_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -218,12 +217,6 @@ class _SettingsViewState extends State<_SettingsView>
       case SettingsSectionDestination.overview:
         final searching = _searchQuery.trim().isNotEmpty;
         return [
-          // Results replace the page, header included, so they sit directly
-          // under the search field.
-          if (!searching) ...[
-            const SettingsProfileHeader(),
-            const SizedBox(height: SettingsRowLayout.groupGap),
-          ],
           SettingsDockSearch(
             ownerId: 'settings-root-search',
             location: Routes.settings,
@@ -256,18 +249,24 @@ class _SettingsViewState extends State<_SettingsView>
           else ...[
             StaggeredEntry(
               index: 0,
+              playOnceKey: 'settings-root-account',
+              child: SettingsAccountSection(key: _anchor('account')),
+            ),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+            StaggeredEntry(
+              index: 1,
               playOnceKey: 'settings-root-preferences',
               child: _buildPreferencesSection(context),
             ),
             const SizedBox(height: SettingsRowLayout.groupGap),
             StaggeredEntry(
-              index: 1,
+              index: 2,
               playOnceKey: 'settings-root-apps',
               child: ProductSettingsSection(key: _anchor('apps')),
             ),
             const SizedBox(height: SettingsRowLayout.groupGap),
             StaggeredEntry(
-              index: 2,
+              index: 3,
               playOnceKey: 'settings-section-overview',
               child: _SettingsOverviewSection(
                 showInfrastructure: _canManageMobileVersions,

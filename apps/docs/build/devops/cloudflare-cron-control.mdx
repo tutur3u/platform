@@ -303,3 +303,43 @@ spending cap. Worker unit tests cover stalled first/second phases, a stalled loo
 body and redirect short-circuiting with controlled fetch/abort behavior. Require
 exact-head CI lint, types, tests and real emitted Worker checks; hosted scheduled
 recovery and database/provider acceptance remain separate gates.
+
+## Seven-day database cron history
+
+`database-cron-history-retention` is a default-off Cron Control Worker processor
+on the existing ten-minute trigger. Enable only this job id in
+`CRON_CONTROL_ENABLED_JOBS` after the approved migration is applied. It always
+uses its Worker processor; it needs `SUPABASE_URL` and `SUPABASE_SECRET_KEY`,
+not a web origin, web cron secret or `CRON_CONTROL_WORKER_PROCESSORS` entry.
+No new pg_cron schedule or Next route is added.
+
+Each slot calls `private.prune_cron_history(1000)` once. The RPC deletes at most
+1,000 terminal `cron.job_run_details` rows and 1,000 completed
+`public.workspace_cron_executions` rows whose end time is older than seven days.
+Rows without an end time stay available for execution recovery. The pg_cron run-id primary key and managed-history end-time index, `SKIP LOCKED`, a ten-second statement timeout and a one-second lock
+timeout bound each transaction. A backlog takes multiple slots; this is eventual
+retention, not a promise that all expired rows disappear immediately. Do not
+raise the batch size to catch up without reviewing database load.
+
+The existing ledger deduplicates slots and preserves operator stop and failure
+budgets across restarts. There is no in-slot retry or drain loop, including after
+an ambiguous database outcome. At most 144 slots/day add 144 database requests,
+432 ledger requests (claim, stop-fence check and completion) and 288,000 deleted rows/day across both tables.
+A failed or unknown job stops after five slots. These are configured operation
+bounds, not billing estimates. Use the authenticated stop endpoint before changing
+or disabling maintenance; an in-flight SQL transaction can still finish its
+bounded batch. Removing the enabled id prevents future claims.
+
+The separate retired Docker log-drain database has a `cron_runs` table under its
+existing summary-retention policy; it is outside this Supabase cleanup. Domain
+audit history such as task and finance history is also excluded. No hosted row
+counts are inferred from the disposable fixtures.
+
+The existing `refresh-posts-dashboard` pg_cron job remains pure database
+maintenance at its ten-minute cadence. Its command must explicitly call
+`private.refresh_posts_dashboard_view()` after the private-schema migration
+removed the public helper. Test the stored `cron.job.command`, since calling the
+private helper alone misses a stale scheduled command. The migration changes
+only that command with `cron.alter_job`, retaining job id, cadence and active state.
+Regression coverage: `supabase/tests/cron-history-retention.sql` and
+`apps/cron-control/src/cron-history-retention.test.ts`.

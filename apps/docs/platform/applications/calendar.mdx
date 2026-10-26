@@ -1270,3 +1270,28 @@ No description conversion is saved. Regression coverage:
 `apps/mobile/test/features/calendar/widgets/calendar_description_test.dart`
 checks the actual detail and agenda widgets, formatted Markdown spans, mixed and
 malformed content, links, image exclusion, light/dark themes and enlarged text.
+
+## Native Start runtime
+
+Calendar consumes `@tuturuuu/start-bridge` for its request context, Next
+protocol adapters, function guard and generated App Router route registry.
+Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`
+after changing a route, then run the same command with `check` for validation.
+
+One artifact supports the Calendar subdomain root and `/calendar` on the
+apex. Its assets, public offline fallback, service worker scope and `/_fn`
+transport remain inside the serving mount. The retained
+`/_calendar/functions` transport is internally retargeted without replaying
+request bodies. Web and Tasks retain their API ownership and Calendar keeps
+its request telemetry and locale preference fallback.
+
+The offline worker caches bounded public hashed assets and public fallback
+files. It never persists private navigation HTML or API responses, and a
+mounted worker cannot cache assets belonging to the root or another app.
+The regression coverage is in `offline-assets.test.ts` and
+`handler-start-handoff.test.ts`.
+
+Existing Calendar crons remain on Infrastructure's Vercel gateway, pointing
+at Calendar's canonical URL. Moving a browser mount does not migrate those
+schedules. Production traffic remains held pending exact-source build,
+artifact, browser, shared-session security and provider acceptance.

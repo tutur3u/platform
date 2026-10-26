@@ -11,6 +11,11 @@ by `productionPublicationPolicy` in `tuturuuu.ci.ts`: the legacy
 and the canonical domains keep serving the last Vercel deployment. **Held** is
 not delivery, and no staging publisher exists yet.
 
+Its request context, `next/headers`/`next/server` ports, Vite preset and central
+API forwarding come from [`@tuturuuu/start-bridge`](/build/devops/start-bridge);
+the app keeps only its Worker router, page model and API guard. CI runs
+`start-bridge-routes check apps/shortener` (Shortener has no App Router source).
+
 ## Request ownership
 
 The Worker owns the request policy before Start runs:

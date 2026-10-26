@@ -1416,6 +1416,7 @@
   "assistantLiveOpenMode": "Open live mode",
   "assistantLivePermissionDenied": "Camera or microphone access is blocked. Enable permissions to use the full live mode.",
   "assistantLiveReconnectBanner": "Session rotation detected. Reconnecting with about {timeLeft} remaining.",
+  "assistantLiveReconnectExhausted": "The connection kept dropping. Check your network, then retry the live session.",
   "assistantLiveRetryAction": "Retry live session",
   "assistantLiveReturnToChat": "Return to chat",
   "assistantLiveScreenActive": "Your screen is shared with Live",
@@ -4736,7 +4737,6 @@
   "assistantPreviewPlay": "Play preview",
   "assistantPreviewPause": "Pause preview",
   "feedbackTitle": "Send feedback",
-  "feedbackPrivate": "Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.",
   "feedbackSubject": "Subject",
   "feedbackDetails": "Details",
   "feedbackAttach": "Attach screenshot",
@@ -4900,5 +4900,151 @@
   "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending.",
   "assistantReplyChangedBeforeSend": "The reply changed before sending. Your draft was kept. Review it and send again.",
   "assistantLiveSendRefused": "Live did not accept this message. Your draft was kept. Check the connection before trying again.",
-  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates."
+  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.",
+  "inputPlaceholderAddress": "e.g. 12 Nguyen Hue, District 1",
+  "inputPlaceholderAssistantBoundaries": "e.g. Ask before changing or deleting my data",
+  "inputPlaceholderAssistantMemory": "e.g. Brief answers",
+  "inputPlaceholderAssistantName": "e.g. Mira",
+  "inputPlaceholderAssistantPersonality": "e.g. Patient, curious, and practical",
+  "inputPlaceholderAssistantTone": "e.g. Warm and professional",
+  "inputPlaceholderAssistantVerbosity": "e.g. Brief answers with key details",
+  "inputPlaceholderCmsCollectionDescription": "Describe what this collection contains",
+  "inputPlaceholderCmsCollectionTitle": "e.g. Product guides",
+  "inputPlaceholderCmsCollectionType": "e.g. article",
+  "inputPlaceholderCmsEntryTitle": "e.g. Getting started with your workspace",
+  "inputPlaceholderCmsSlug": "e.g. getting-started",
+  "inputPlaceholderCmsSubtitle": "Add a short line introducing this entry",
+  "inputPlaceholderCmsSummary": "Summarize the main points for readers",
+  "inputPlaceholderComment": "Write your comment here",
+  "inputPlaceholderCourseDescription": "Describe what learners will achieve",
+  "inputPlaceholderCourseName": "e.g. Everyday English",
+  "inputPlaceholderDate": "Tap to choose a date",
+  "inputPlaceholderDays": "e.g. 2",
+  "inputPlaceholderDisplayName": "e.g. Linh",
+  "inputPlaceholderDocumentName": "e.g. Weekly planning",
+  "inputPlaceholderEmailConfirmation": "Enter the account email to confirm",
+  "inputPlaceholderFeedback": "Describe what happened and what could improve",
+  "inputPlaceholderFieldKey": "e.g. water_intake",
+  "inputPlaceholderFieldLabel": "e.g. Water intake",
+  "inputPlaceholderFieldUnit": "e.g. ml, km, or minutes",
+  "inputPlaceholderFlashcardBack": "e.g. Paris",
+  "inputPlaceholderFlashcardFront": "e.g. What is the capital of France?",
+  "inputPlaceholderFullName": "e.g. Nguyen Minh Linh",
+  "inputPlaceholderHabitDescription": "Describe how you will practice this habit",
+  "inputPlaceholderHabitName": "e.g. Drink water",
+  "inputPlaceholderInventoryManufacturer": "e.g. Acme",
+  "inputPlaceholderInventoryName": "e.g. Office supplies",
+  "inputPlaceholderLinkText": "e.g. Project handbook",
+  "inputPlaceholderLinkUrl": "https://example.com",
+  "inputPlaceholderListingTitle": "e.g. Handmade notebook",
+  "inputPlaceholderMailCalendarUrl": "Paste a Google Calendar event link",
+  "inputPlaceholderMailDescription": "Describe which messages belong here",
+  "inputPlaceholderMailDraftInstructions": "e.g. Write a friendly follow-up about our meeting",
+  "inputPlaceholderMailLabelInstructions": "e.g. Apply to invoices and payment receipts",
+  "inputPlaceholderMailName": "e.g. Customer support",
+  "inputPlaceholderMailSubject": "e.g. Follow-up on our meeting",
+  "inputPlaceholderMeetingName": "e.g. Weekly team check-in",
+  "inputPlaceholderNote": "Add details you want to remember",
+  "inputPlaceholderPassphrase": "Enter at least 8 characters",
+  "inputPlaceholderPassphraseConfirmation": "Enter the same passphrase again",
+  "inputPlaceholderPassphraseUnlock": "Enter the passphrase for this note",
+  "inputPlaceholderPassword": "Use 12–72 characters",
+  "inputPlaceholderPhone": "e.g. +84 912 345 678",
+  "inputPlaceholderPin": "Enter a 6-digit PIN",
+  "inputPlaceholderPinConfirmation": "Enter the same 6-digit PIN again",
+  "inputPlaceholderPrice": "e.g. 150000",
+  "inputPlaceholderQuantity": "e.g. 10",
+  "inputPlaceholderQuizExplanation": "Explain why this answer is correct or incorrect",
+  "inputPlaceholderQuizOption": "e.g. Paris",
+  "inputPlaceholderQuizQuestion": "e.g. What is the capital of France?",
+  "inputPlaceholderQuizSetName": "e.g. World capitals",
+  "inputPlaceholderSaleTitle": "e.g. Office supplies order",
+  "inputPlaceholderSharedMessage": "Edit the message you want to share",
+  "inputPlaceholderStorefrontCurrency": "e.g. VND",
+  "inputPlaceholderStorefrontDescription": "Describe what customers can find here",
+  "inputPlaceholderStorefrontName": "e.g. Linh’s stationery",
+  "inputPlaceholderStorefrontSearch": "Search by storefront name",
+  "inputPlaceholderStorefrontSlug": "e.g. linh-stationery",
+  "inputPlaceholderTableCell": "Enter cell content",
+  "inputPlaceholderTargetValue": "e.g. 2000",
+  "inputPlaceholderTimeDescription": "Describe what you worked on",
+  "inputPlaceholderTimeTitle": "e.g. Prepare project proposal",
+  "inputPlaceholderUpdate": "Share progress, decisions, or next steps",
+  "inputPlaceholderUserId": "Paste the user ID",
+  "inputPlaceholderUsername": "e.g. minh_linh",
+  "inputPlaceholderWorkoutExercise": "e.g. Squats",
+  "inputPlaceholderWorkoutReps": "e.g. 12",
+  "inputPlaceholderWorkoutSets": "e.g. 3",
+  "inputPlaceholderWorkoutWeight": "e.g. 20",
+  "mailSenderNamePlaceholder": "e.g. Alex Nguyen",
+  "mailSignaturePlaceholder": "e.g. Best regards,\nAlex Nguyen\nProduct team",
+  "mailDraftInstructionsPlaceholder": "e.g. Keep replies short and friendly. Sign off with my first name.",
+  "mailForwardToPlaceholder": "name@example.com",
+  "feedbackSubjectPlaceholder": "e.g. Calendar doesn't sync on Wi-Fi",
+  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there.",
+  "settingsWorkspaceCountValue": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@settingsWorkspaceCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStoredOnDevice": "Stored on this device",
+  "offlineStorageUsed": "Storage used",
+  "offlineQueuedChanges": "{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@offlineQueuedChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineCollectionSummary": "{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}",
+  "@offlineCollectionSummary": {
+    "placeholders": {
+      "items": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineManageData": "Manage data",
+  "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
+  "offlineTechnicalDetails": "Technical details",
+  "mailSettingsReadingGroup": "Reading",
+  "mailSettingsComposeGroup": "Sender and signature",
+  "mailSettingsAiGroup": "AI drafts",
+  "mailSettingsDeliveryGroup": "Delivery and routing",
+  "mailSettingsGroupPermissions": "Group permissions",
+  "mailSettingsOrganizeGroup": "Organize",
+  "mailSenderNameHelper": "Recipients see this name next to your address.",
+  "mailSignatureHelper": "Added to the end of new messages and replies.",
+  "mailAutoDraftDescription": "Prepare reply drafts for you to review before sending.",
+  "mailDraftInstructions": "Draft instructions",
+  "mailDraftInstructionsHelper": "Tells the assistant how to write your reply drafts.",
+  "feedbackIntro": "Tell us what works and what doesn't. Only the Tuturuuu team reads your feedback.",
+  "feedbackYourFeedback": "Your feedback",
+  "feedbackDetailsHelper": "Do not include passwords or other secrets.",
+  "feedbackScreenshotGroup": "Screenshot (optional)",
+  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB",
+  "workspacePickerCount": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@workspacePickerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workspacePickerCreateDescription": "Start a new space for a team or project",
+  "workspacePickerCurrentLabel": "Current workspace",
+  "workspacePickerDefaultDescription": "Opens first when you launch the app",
+  "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
+  "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
+  "workspacePickerTeamBadge": "Team"
 }

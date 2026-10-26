@@ -1,6 +1,7 @@
 name: Parley Cloudflare
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
   push:
     branches: [main]
@@ -18,6 +19,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read

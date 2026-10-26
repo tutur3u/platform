@@ -1,0 +1,87 @@
+---
+title: "Personal data protection standard"
+description: "Platform-wide purpose, retention, subject-rights and deletion requirements, with current gaps and an approval-gated implementation plan."
+updatedAt: "2026-10-25"
+---
+
+## Decision and implementation status
+
+The retention principles in the [newsletter retention design](https://github.com/tutur3u/platform/blob/7223dacd7110bebf3ffc941135d6666646394b0a/apps/docs/platform/features/email-domains-newsletter-design.mdx#retention--recommended-pending-user-confirmation) are the platform-wide personal-data standard by user decision on 2026-10-25. The source design was reviewed at `7223dacd7110bebf3ffc941135d6666646394b0a`, including its retention section. This page records the standard. It does not certify current enforcement or legal compliance.
+
+Phase 1 changes documentation only. The [inventory](/platform/data-protection/inventory) describes checked-in code, the [gap register and delivery plan](/platform/data-protection/delivery-plan) defines subsequent work, and the schema appendices list candidate stores. Phase 2 requires the integration owner's go-ahead. Every database migration requires separate explicit user approval through that owner before implementation or execution.
+
+## Scope and responsibility
+
+This standard covers personal data processed by Tuturuuu across Web, registered satellites, mobile, desktop and CLI clients, APIs, internal services, AI and memory, meetings, customer integrations and operator tooling. It includes guest and non-account contacts, children and learners, employees, health data, customer content, identifiers, derived embeddings, free-text fields and pseudonymous identifiers. Publicly shared content remains personal data when identifiable.
+
+It also covers Supabase Auth, Postgres, Storage, caches, browser and device offline stores, Cloudflare Workers, Durable Objects, D1, KV and R2 where used, queues, replicas, backups, logs, analytics and processors. Paused runtimes retain their source and stored-data obligations. This decision does not resume Docker, Rust or TanStack Start.
+
+A workspace administrator's product permissions do not automatically authorize disclosure of another person's private records. Platform operators and service credentials remain accountable for access even when they bypass RLS. Each product owner records purpose, lawful basis, subject/workspace scope, allowed readers, processors, retention clock, export adapter, erasure adapter and regression evidence for each store. The integration owner coordinates rollout. The legal owner approves applicable-law interpretations, exceptions, processor terms and transfer requirements.
+
+## Legal baseline and unresolved Vietnam law review
+
+The design targets [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) and Vietnam's [Decree 13/2023/ND-CP, official government text](https://xaydungchinhsach.chinhphu.vn/toan-van-nghi-dinh-13-2023-nd-cp-bao-ve-du-lieu-ca-nhan-119230516104357809.htm). GDPR Article 12(3) uses one month for rights responses. Article 17 requires erasure without undue delay where applicable. The product's 30-day maximum never replaces an earlier legal deadline or authorizes avoidable delay.
+
+Decree 13 Articles 14(3) and 16(5) specify 72-hour provision and erasure deadlines, subject to their terms and exceptions. These historical provisions demonstrate why a universal 30-day queue is insufficient. **Legal-owner confirmation is outstanding for Vietnam's currently effective successor legislation, implementing instruments, transitional rules and applicable shorter deadlines. This page does not assert that Decree 13 remains the current governing law.** Until that mapping is confirmed, requests involving Vietnam require immediate legal triage and the shorter applicable deadline must be preserved.
+
+The legal owner also confirms controller/processor roles, sensitive-data and children's-data rules, impact assessments, cross-border transfer obligations, breach procedures and any statutory recordkeeping. Neither consent nor the rules below establish compliance by themselves. Existing [legal publications and subprocessor registry](https://github.com/tutur3u/platform/tree/8d6a13e58762aedff6b1ea5eabb6de474a257e99/packages/legal/src) must be reconciled before customer-facing compliance claims change.
+
+## Purpose and consent
+
+Record a specific purpose and lawful basis before collection. Where consent is the basis, record the actor, workspace, purpose, notice/policy version, source, grant and withdrawal timestamps, evidence reference and the scope of processing. A terms/privacy acceptance is not blanket marketing, AI-training, meeting-recording or memory consent. Do not infer consent from an import, continued use, billing status or a recreated workspace.
+
+Keep collection optional and separate where the purposes differ. Withdrawal stops future processing based on that consent, including admitted background jobs. Consent evidence must be minimal and must not become a permanent raw IP or user-agent history. Hashes and keyed HMACs remain personal data when linkable.
+
+Memory retains source provenance and explicit preferences, actor/workspace consent and deletion fences. Recalled text is untrusted context, never action authority. Reuse the existing product memory service. Meet's separately opted-in memory stays separate. Consolidation deletes originals only after the replacement is durably confirmed, with truthful partial failures and revision conflicts. Disabling collection does not remove access, export or deletion rights.
+
+## Retention defaults and precedence
+
+These are platform policy defaults derived from the approved retention principles, not statutory retention claims. A shorter purpose period or legal deadline wins. A documented lawful exception can retain only the necessary subset for its approved duration. Each implementation must name its clock and prove expiry.
+
+| Category or action | Default and precedence |
+| --- | --- |
+| Consent evidence | Relationship lifetime plus three years after withdrawal or the relationship ends. Retain purpose/version/source/timestamps and minimal proof. Erasure overrides this routine period unless the legal owner documents an applicable exception. Raw network identifiers do not inherit the three-year period. |
+| Opt-out and abuse suppression | Retain only the minimum necessary keyed HMAC or equivalent tombstone under an approved lawful basis. Newsletter workspace opt-out HMACs may persist indefinitely to prevent reimport, subject to review, key rotation and erasure rules. This is not authority for indefinite general-purpose tracking. |
+| Profiles after purpose ends | Remove unnecessary profile fields within 30 days after unsubscribe or the equivalent end of that profile's purpose. A user's active account and a separate subscription have different purposes and clocks. |
+| Raw delivery, interaction and analytics events | At most 90 days, with a shorter period where feasible. Strip unnecessary identifiers at ingestion. This ceiling is not permission to collect content or raw IP/user-agent for 90 days. |
+| Aggregate metrics | May persist indefinitely only after verified anonymization. No stable person identifier, email hash, subject-level join key, free text or identifying small cohort. Otherwise the aggregate remains personal data with a bounded schedule. |
+| IP address and user agent | Do not collect by default outside a documented security or operational need. Reduce or discard at the boundary where possible. An approved, short, service-specific TTL is required for raw values. No platform-wide raw-IP retention period is approved by this page. |
+| Runtime and diagnostic logs | Native `console.*` preserves severity and carries redacted, allowlisted diagnostic fields. No raw PII, tokens, authorization headers, full URLs with private query values, message content or unfiltered provider errors. Retention must be bounded in every sink, including local dev and CI artifacts. |
+| Subject access, export and erasure | Fulfil without undue delay and no later than 30 days, or the shorter applicable legal deadline. Track receipt time, due time, identity verification, scope, each store and processor, exceptions and completion evidence. |
+| Workspace deletion | Fence processing immediately and purge personal data across all covered stores within 30 days, or an earlier applicable deadline. This overrides workspace suppression and routine retention. A new workspace must not restore prior consent. |
+| Dormant marketing profiles | At 12 months of inactivity, require reviewed re-permission or sunset. Do not send automatic bulk re-permission messages. Other products need purpose-specific inactivity rules. |
+| Backups and replicas | Include them in the purge deadline and deletion-fence contract. If immutable provider backups cannot meet it, record the exact expiry and obtain a lawful, scoped exception before claiming compliance. Restrict access and prevent restoration into service before replaying deletions. |
+
+## Subject rights and deletion contract
+
+A request has one durable identifier and an absolute due time. Verification must prevent another person's export or erasure and must not collect unnecessary identity documents. Subject discovery includes account IDs, workspace-user/contact IDs, guest identities, integration IDs, pseudonyms and records embedded in content. Multiple-workspace membership requires scoped decisions, not disclosure of other tenants' data.
+
+Exports include the applicable personal data and provenance in an understandable, machine-readable form, with separate files where needed. Authorization applies both when creating and downloading an export. Use private, short-lived delivery and expire export artifacts. Remove third-party personal information where required. A product CSV or memory export alone is not a platform-wide rights response.
+
+Erasure must distinguish withdrawal, soft deletion, suppression, hard erasure and legally required retention. Removing a UI row, marking a memory forgotten, deleting an Auth user or revoking a subscription is not proof of complete erasure. Existing billing blockers do not remove the right to submit a privacy request.
+
+Persist a deletion fence before cancelling queued work or purging copies. Fence by immutable subject/workspace identity and generation, not a reusable email alone. Check the fence when admitting work, after awaited preparation, immediately before a write/send, on retries and replays, and on backfill, sync, consolidation and restore. Disconnect streams and prevent stale clients from publishing cached copies. Resolve in-flight unknown provider writes using their original operation identity. A later rejection does not settle an earlier unknown write.
+
+Purge live rows, embeddings, object bytes, temporary uploads, multipart leftovers, indexes, search documents, device caches where controllable, queues and dead letters, Worker state, provider copies and export artifacts. Cascades and `SET NULL` references need explicit coverage. Cache invalidation must reach replicas and CDNs. Keep only minimal non-content completion receipts and legally justified tombstones, with their own retention and key lifecycle.
+
+Backups need a published expiry and a restore procedure that reapplies the durable deletion ledger before any restored system serves traffic or runs jobs. A restored old consent value cannot supersede a newer withdrawal. Erasure and workspace purge remain incomplete while a required adapter or provider outcome is unknown. Report retained exceptions and expected expiry honestly.
+
+## Intentional exceptions
+
+| Exception | Required boundary |
+| --- | --- |
+| Financial and statutory records | Retain only the legally required subset for the legal owner's approved period and purpose, with restricted access. Polar may have independent merchant-of-record obligations. Keeping billing records does not justify retaining unrelated profiles or AI content. |
+| Suppression and security evidence | Use the minimum pseudonymous record necessary for an approved purpose. A hash is not anonymization. Tenant suppression and provider account-wide suppression have different scopes. Workspace deletion still applies unless a separate lawful exception is documented. |
+| Shared workspace content | Resolve the subject's rights against other persons' rights and the controller's duties. Restrict or redact the subject's data where deletion of the whole shared object is inappropriate. Do not silently keep all shared content forever. |
+| Public content | Publication is not a blanket retention exemption. Remove controlled copies and request processor/cache removal where applicable. Clearly state limits on third-party copies outside Tuturuuu's control. |
+| Existing AI Studio trace settings | Current source defaults are 30 days for captured content and 365 days for metadata, with wider configurable bounds. This is an implementation gap, not an approved exception for identifiable raw events. Classify metadata, shorten identifiable data or approve a narrowly justified exception before enforcement claims. |
+
+Every exception records the approving legal authority, legal basis, data subset, purpose, scope, expiry/review date, restricted readers and effect on the request. A generic error, billing debt or backup inconvenience is not a lawful exception.
+
+## Enforcement and acceptance
+
+New scheduled purges run on Cloudflare under the [backend ownership guard](/build/devops/cloudflare-backend-ownership). Reuse Cron Control where appropriate. Do not add Vercel Cron, pg_cron, Edge Functions or Next `after()` jobs. Retained legacy maintenance is inventoried, not expanded by this standard.
+
+Purge jobs use bounded keyset pages, finite retries, idempotent progress, durable cursors, a tested stop fence and no rescheduling after a terminal state. Respect the request's deadline without unlimited cost or retries. Queue and DLQ retention, backup expiry and processor limits belong in acceptance, not only application counters.
+
+The [delivery plan](/platform/data-protection/delivery-plan) pairs each rule with behavioral coverage: cross-tenant exports, withdrawal during a send, deletion versus retries and consolidation, restore from stale backup, raw-log canaries, expiry boundaries and truthful partial failure. CI and isolated staging must prove the exact source and approved migrations. Hosted processor settings and end-to-end purge receipts remain separate evidence.

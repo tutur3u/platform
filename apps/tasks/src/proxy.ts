@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -15,24 +14,25 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import {
-  getCurrentUserDefaultWorkspace,
-  getUserConfig,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
+import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
-import { resolveTaskBoardEntrypoint } from './lib/tasks/task-board-entrypoint';
+import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
+import { proxyAppUrl } from './lib/proxy-app-url';
+import {
+  isRootRedirectExcluded,
+  resolveTasksRootEntry,
+} from './lib/tasks/root-entry';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -100,12 +100,26 @@ function getTaskLinkPreviewRewrite(req: NextRequest) {
   if (!isTaskLinkPreviewRequest(req)) return null;
 
   const { locale } = getLocale(req);
-  const previewUrl = new URL(`/${locale}/task-link-preview`, req.url);
-  previewUrl.search = '';
-  const response = NextResponse.rewrite(previewUrl);
+  const previewUrl = proxyAppUrl(req, `/${locale}/task-link-preview`);
+  const response = NextResponse.rewrite(previewUrl, {
+    request: { headers: withPageRewrite(req, previewUrl) },
+  });
   response.headers.set('Cache-Control', 'private, no-store, max-age=0');
   response.headers.append('Vary', 'User-Agent');
   return response;
+}
+
+/** Names a page rewrite for the native Start loader (see `page-rewrite`). */
+function withPageRewrite(req: NextRequest, destination: URL) {
+  const base = req.nextUrl.basePath;
+  const { pathname, search } = destination;
+  const appPath =
+    base && (pathname === base || pathname.startsWith(`${base}/`))
+      ? pathname.slice(base.length) || '/'
+      : pathname;
+  const headers = new Headers(req.headers);
+  headers.set(PAGE_REWRITE_HEADER, `${appPath}${search}`);
+  return headers;
 }
 
 function getNonTasksWorkspaceRedirect(req: NextRequest) {
@@ -180,9 +194,20 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    // Release identity is public (the native Worker serves it before any
+    // session work): no refresh, and no ambient identity reaches the handler.
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -212,6 +237,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         preserveMfaRecoveryCookies(req, guardResponse)
       );
     }
+
+    if (isBuildInfoRead)
+      return withTaskApiCors(
+        req,
+        NextResponse.next({ request: { headers: req.headers } })
+      );
 
     return withTaskApiCors(
       req,
@@ -275,7 +306,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     const loginRedirect = clearSupabaseAuthCookies(
       req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+      NextResponse.redirect(proxyAppUrl(req, nextPath))
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
@@ -320,8 +351,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
-      redirectUrl.search = req.nextUrl.search;
+      const redirectUrl = proxyAppUrl(
+        req,
+        `/${newPathSegments.join('/')}${req.nextUrl.search}`
+      );
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
@@ -341,12 +374,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           const wsIdIndex = hasLocaleInPath ? 1 : 0;
           newPathSegments[wsIdIndex] = 'personal';
 
-          const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
-            req.nextUrl
-          );
           // Preserve query parameters
-          redirectUrl.search = req.nextUrl.search;
+          const redirectUrl = proxyAppUrl(
+            req,
+            `/${newPathSegments.join('/')}${req.nextUrl.search}`
+          );
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
@@ -366,80 +398,31 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     pathSegments.length === 1 &&
     supportedLocales.includes(pathSegments[0] as Locale);
 
-  const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
-  const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
-  const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
-
   if (
     (isRootPath || isLocaleRootPath) &&
-    !skipWorkspaceRedirect &&
-    !isHashNavigation &&
-    !isMultiAccountFlow
+    !isRootRedirectExcluded(req.nextUrl.searchParams)
   ) {
-    const { locale } = getLocale(req);
-    const internalApiAuth = withForwardedInternalApiAuth(authRequestHeaders);
-    let target = 'personal';
+    const entry = await resolveTasksRootEntry({
+      auth: withForwardedInternalApiAuth(authRequestHeaders),
+      locale: getLocale(req).locale,
+      localePrefixed: isLocaleRootPath,
+      search: req.nextUrl.search,
+    });
+    const entryUrl = proxyAppUrl(req, entry.path);
 
-    try {
-      const config = await getUserConfig(
-        'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
-        internalApiAuth
+    if (entry.kind === 'board') {
+      const boardRedirect = NextResponse.redirect(entryUrl, 307);
+      boardRedirect.headers.set(
+        'Cache-Control',
+        'private, no-store, max-age=0'
       );
-
-      if (config?.value === 'true') {
-        const defaultWorkspace =
-          await getCurrentUserDefaultWorkspace(internalApiAuth);
-
-        if (defaultWorkspace) {
-          target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-        }
-      }
-    } catch (error) {
-      console.warn(
-        'Could not resolve the preferred Tasks workspace; using personal:',
-        error
-      );
+      propagateAuthCookies(authRes, boardRedirect);
+      return boardRedirect;
     }
 
-    try {
-      const boardId = await resolveTaskBoardEntrypoint(
-        target,
-        internalApiAuth,
-        { locale }
-      );
-
-      if (boardId) {
-        const localePrefix = isLocaleRootPath ? `/${locale}` : '';
-        const boardUrl = new URL(
-          `${localePrefix}/${target}/boards/${boardId}`,
-          req.nextUrl
-        );
-        boardUrl.search = req.nextUrl.search;
-
-        const boardRedirect = NextResponse.redirect(boardUrl, 307);
-        boardRedirect.headers.set(
-          'Cache-Control',
-          'private, no-store, max-age=0'
-        );
-        propagateAuthCookies(authRes, boardRedirect);
-        return boardRedirect;
-      }
-    } catch (error) {
-      console.warn(
-        'Could not resolve the Tasks board at the app root; using the task entrypoint:',
-        error
-      );
-    }
-
-    // This branch returns before next-intl adds its internal locale segment, so
-    // the retry rewrite must target the actual localized App Router pathname.
-    const entrypointUrl = new URL(`/${locale}/${target}/tasks`, req.nextUrl);
-    entrypointUrl.search = req.nextUrl.search;
-    const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
+    const fallbackRewrite = NextResponse.rewrite(entryUrl, {
+      request: { headers: withPageRewrite(req, entryUrl) },
+    });
     propagateAuthCookies(authRes, fallbackRewrite);
     return fallbackRewrite;
   }
@@ -509,21 +492,13 @@ const getDefaultLocale = (
   req: NextRequest
 ): {
   locale: Locale;
-} => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
-  return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
-  };
-};
+} => ({
+  locale: negotiateAcceptLanguage(
+    req.headers.get('accept-language'),
+    supportedLocales,
+    defaultLocale
+  ),
+});
 
 const getLocale = (
   req: NextRequest

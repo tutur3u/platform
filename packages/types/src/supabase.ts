@@ -23530,6 +23530,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      prune_cron_history: { Args: { p_limit?: number }; Returns: Json };
       prune_discord_interaction_claims: {
         Args: { p_limit?: number };
         Returns: number;
@@ -25937,6 +25938,8 @@ export type Database = {
           account_email: string | null;
           account_name: string | null;
           created_at: string;
+          deactivated_at: string | null;
+          deactivated_reason: string | null;
           expires_at: string | null;
           id: string;
           is_active: boolean;
@@ -25950,6 +25953,8 @@ export type Database = {
           account_email?: string | null;
           account_name?: string | null;
           created_at?: string;
+          deactivated_at?: string | null;
+          deactivated_reason?: string | null;
           expires_at?: string | null;
           id?: string;
           is_active?: boolean;
@@ -25963,6 +25968,8 @@ export type Database = {
           account_email?: string | null;
           account_name?: string | null;
           created_at?: string;
+          deactivated_at?: string | null;
+          deactivated_reason?: string | null;
           expires_at?: string | null;
           id?: string;
           is_active?: boolean;
@@ -50565,6 +50572,16 @@ export type Database = {
       profile_banner_operation_status: {
         Args: { p_operation_id: string; p_user_id: string };
         Returns: Json;
+      };
+      quarantine_calendar_auth_token: {
+        Args: {
+          p_credential_fingerprint: string;
+          p_observed_created_at: string;
+          p_reason: string;
+          p_token_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       reattach_platform_entity_creation_limit_trigger: {
         Args: { p_target_table: string };

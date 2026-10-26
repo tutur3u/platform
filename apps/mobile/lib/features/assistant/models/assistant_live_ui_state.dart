@@ -212,5 +212,6 @@ String assistantLiveErrorLabel(AppLocalizations l10n, String error) =>
     switch (error) {
       'microphone_unavailable' => l10n.assistantMicrophoneUnavailable,
       'live_audio_unavailable' => l10n.assistantAudioUnavailable,
+      'live_reconnect_exhausted' => l10n.assistantLiveReconnectExhausted,
       _ => l10n.assistantLiveDescriptionError,
     };

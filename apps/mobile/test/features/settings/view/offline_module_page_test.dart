@@ -196,6 +196,16 @@ void main() {
     'ordinary cached data shows unique counts and honest unknown totals',
     (tester) async {
       await pump(tester);
+      expect(find.text('Products'), findsOneWidget);
+      // Caveats and raw counts stay behind the collapsed technical details.
+      expect(
+        find.text('1 unique indexed item across 2 stored snapshots'),
+        findsNothing,
+      );
+      final details = find.text('Technical details');
+      await tester.ensureVisible(details);
+      await tester.tap(details);
+      await tester.pumpAndSettle();
       expect(find.text('inventory.products'), findsOneWidget);
       expect(
         find.text('1 unique indexed item across 2 stored snapshots'),
@@ -216,7 +226,7 @@ void main() {
         'not-present',
       );
       await tester.pumpAndSettle();
-      expect(find.text('inventory.products'), findsNothing);
+      expect(find.text('Products'), findsNothing);
       expect(find.text('No stored collections match.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -227,7 +237,12 @@ void main() {
   ) async {
     final chrome = ShellChromeActionsCubit();
     await pump(tester, chrome: chrome);
-    tester.view.physicalSize = const Size(390, 600);
+    tester.view.physicalSize = const Size(390, 420);
+    await tester.pumpAndSettle();
+    // Expanded details make the list long enough to scroll.
+    final details = find.text('Technical details');
+    await tester.ensureVisible(details);
+    await tester.tap(details);
     await tester.pumpAndSettle();
     const location = '/settings/offline/inventory';
     expect(chrome.state.resolveForLocation(location), hasLength(1));
@@ -264,7 +279,12 @@ void main() {
   });
 
   Future<void> browseItems(WidgetTester tester) async {
-    await tester.tap(find.text('Browse stored items'));
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('offline-collection-inventory.products')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('offline-collection-inventory.products')),
+    );
     await tester.pump();
     await tester.runAsync(
       () => store.queryReplica(
@@ -350,7 +370,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Synthetic stored product'), findsNothing);
     expect(find.text('Item ID: synthetic-item'), findsNothing);
-    expect(find.text('Browse stored items'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('offline-collection-inventory.products')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -369,7 +392,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Synthetic stored product'), findsNothing);
     expect(find.text('Item ID: synthetic-item'), findsNothing);
-    expect(find.text('Browse stored items'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('offline-collection-inventory.products')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -393,7 +419,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Synthetic stored product'), findsNothing);
-    expect(find.text('Browse stored items'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('offline-collection-inventory.products')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -402,7 +431,7 @@ void main() {
     (tester) async {
       await coordinator.setScope();
       await pump(tester);
-      expect(find.text('inventory.products'), findsOneWidget);
+      expect(find.text('Products'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -417,7 +446,7 @@ void main() {
       ),
     );
     await pump(tester);
-    expect(find.text('inventory.products'), findsNothing);
+    expect(find.text('Products'), findsNothing);
     expect(
       find.byKey(const ValueKey('offline-namespace-search')),
       findsNothing,

@@ -100,8 +100,10 @@ describe('native app and Worker type boundaries', () => {
           readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
         )
       );
-    expect(pkg.scripts['type-check']).toBe('node scripts/type-check.cjs');
-    expect(pkg.scripts['cf:typecheck']).toBe(pkg.scripts['type-check']);
+    expect(pkg.scripts['type-check']).toBe(
+      'node scripts/type-check.cjs && bun run type-check:config'
+    );
+    expect(pkg.scripts['cf:typecheck']).toBe('node scripts/type-check.cjs');
   });
 
   it('keeps both real projects checked without mixing Worker and browser globals', () => {

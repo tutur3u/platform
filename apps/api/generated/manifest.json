@@ -1,0 +1,56 @@
+[
+  {
+    "operationId": "getHealth",
+    "method": "GET",
+    "path": "/api/health",
+    "aliases": [],
+    "policy": {
+      "kind": "public"
+    },
+    "guard": "metadata",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 3000,
+      "ratePolicy": "metadata-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getBuildInfo",
+    "method": "GET",
+    "path": "/api/build-info",
+    "aliases": [],
+    "policy": {
+      "kind": "public"
+    },
+    "guard": "metadata",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 3000,
+      "ratePolicy": "metadata-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getMobileVersion",
+    "method": "GET",
+    "path": "/api/v1/mobile/version",
+    "aliases": [],
+    "policy": {
+      "kind": "public"
+    },
+    "guard": "metadata",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 3000,
+      "ratePolicy": "metadata-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  }
+]
