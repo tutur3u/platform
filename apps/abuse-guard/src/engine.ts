@@ -268,6 +268,36 @@ export function createGuardEngine(sql: SqlRunner) {
     }
   }
 
+  function runCommands(
+    cmds: ParsedGuardCommand[],
+    now: number,
+    operation?: GuardOperation
+  ): GuardResult[] {
+    purgeExpired(now, REQUEST_PURGE_LIMIT);
+    if (operation) {
+      const prior = read(operation.key, now);
+      if (prior) {
+        const recorded = JSON.parse(prior.v) as {
+          h: string;
+          r: GuardResult[];
+        };
+        if (recorded.h !== operation.hash) {
+          throw new GuardCommandError('operation id reused');
+        }
+        return recorded.r;
+      }
+    }
+    const results = cmds.map((cmd) => execute(cmd, now));
+    if (operation && isMutatingStep(cmds)) {
+      write(
+        operation.key,
+        JSON.stringify({ h: operation.hash, r: results }),
+        now + GUARD_OPERATION_RETENTION_MS
+      );
+    }
+    return results;
+  }
+
   function purgeExpired(now: number, limit: number) {
     ensureSchema();
     return sql
@@ -292,35 +322,24 @@ export function createGuardEngine(sql: SqlRunner) {
       now: number,
       operation?: GuardOperation
     ): GuardResult[] {
+      // Inside a transaction a failed step also rolls back a CREATE TABLE
+      // issued here, so a schema created by this call is forgotten on error.
+      const createdHere = !schemaReady;
       ensureSchema();
-      purgeExpired(now, REQUEST_PURGE_LIMIT);
-      if (operation) {
-        const prior = read(operation.key, now);
-        if (prior) {
-          const recorded = JSON.parse(prior.v) as {
-            h: string;
-            r: GuardResult[];
-          };
-          if (recorded.h !== operation.hash) {
-            throw new GuardCommandError('operation id reused');
-          }
-          return recorded.r;
-        }
+      try {
+        return runCommands(cmds, now, operation);
+      } catch (error) {
+        if (createdHere) schemaReady = false;
+        throw error;
       }
-      const results = cmds.map((cmd) => execute(cmd, now));
-      if (operation && isMutatingStep(cmds)) {
-        write(
-          operation.key,
-          JSON.stringify({ h: operation.hash, r: results }),
-          now + GUARD_OPERATION_RETENTION_MS
-        );
-      }
-      return results;
     },
 
     purgeExpired,
 
-    /** Call after `deleteAll()`: the next use recreates the schema. */
+    /** Creates the schema if missing; call outside any transaction. */
+    ensureSchema,
+
+    /** Call before `deleteAll()`: the next use recreates the schema. */
     markStorageCleared() {
       schemaReady = false;
     },

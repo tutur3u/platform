@@ -39,6 +39,8 @@ export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
 /** Thrown when the budget configuration is invalid; RPCs return 503. */
 export class GuardConfigError extends Error {}
 
+let configErrorLogged = false;
+
 function strictPositiveInteger(value: string) {
   if (!/^\d{1,10}$/u.test(value)) return null;
   const parsed = Number(value);
@@ -63,8 +65,17 @@ export function resolveFamilyBudgets(
     'ABUSE_GUARD_DAILY_OP_BUDGET' | 'ABUSE_GUARD_FAMILY_BUDGETS'
   >
 ): FamilyBudgets | null {
-  const totalRaw = env.ABUSE_GUARD_DAILY_OP_BUDGET?.trim() ?? '';
-  const splitRaw = env.ABUSE_GUARD_FAMILY_BUDGETS?.trim() ?? '';
+  const totalSource = env.ABUSE_GUARD_DAILY_OP_BUDGET ?? '';
+  const splitSource = env.ABUSE_GUARD_FAMILY_BUDGETS ?? '';
+  // A set but blank value is malformed; only an absent or empty one defaults.
+  if (
+    (totalSource !== '' && !totalSource.trim()) ||
+    (splitSource !== '' && !splitSource.trim())
+  ) {
+    return null;
+  }
+  const totalRaw = totalSource.trim();
+  const splitRaw = splitSource.trim();
   const cacheKey = `${totalRaw}|${splitRaw}`;
   if (budgetCache.has(cacheKey)) return budgetCache.get(cacheKey) ?? null;
 
@@ -148,6 +159,13 @@ async function refreshFence(env: FenceEnv, family: AbuseGuardFamily) {
   try {
     const budgets = resolveFamilyBudgets(env);
     if (!budgets) {
+      if (!configErrorLogged) {
+        configErrorLogged = true;
+        // Fixed text: the configuration values are never logged.
+        console.error(
+          '[abuse-guard] invalid budget configuration; every RPC returns 503'
+        );
+      }
       throw new GuardConfigError('invalid abuse-guard budget configuration');
     }
     const state = await controlStub(env).report(family, delta, budgets[family]);

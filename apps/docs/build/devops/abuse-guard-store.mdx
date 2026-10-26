@@ -121,7 +121,9 @@ Unassigned families keep their legacy behavior.
   commands. At 80% of a family's budget the control object logs a warning once.
   When a family exhausts its budget, the control object persists a stop for that
   family only. The stop survives restarts and clears at the next UTC day, so the
-  daily cost cap holds without one flood becoming an open-ended outage. An
+  daily cost cap holds without one flood becoming an open-ended outage. The cap
+  applies per calendar UTC day, not per rolling 24 hours, so a burst across UTC
+  midnight can admit up to about twice a family's budget within a short span. An
   operator resume clears it earlier. Rejected requests are never counted, so a
   family admits its budget plus a bounded overshoot of isolates × 200 commands and
   the 5-second refresh lag. Each caller of a stopped family applies its own fail

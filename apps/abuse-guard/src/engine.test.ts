@@ -440,6 +440,34 @@ describe('cleanup planning', () => {
     expect(engine.alarmFailures()).toBe(1);
   });
 
+  it('forgets a schema created by a step that rolls back', () => {
+    const { engine, run, db } = setup();
+    db.exec('DROP TABLE entries');
+    db.exec('DROP TABLE meta');
+    engine.markStorageCleared();
+    // The step recreates the schema inside its transaction, then fails, so the
+    // rollback removes the tables again.
+    expect(() =>
+      run(
+        1,
+        { op: 'kv.set', k: K('t'), v: 'text', ttlMs: 60_000, mode: 'always' },
+        { op: 'kv.incr', k: K('t'), by: 1, ttlMsOnCreate: 60_000 }
+      )
+    ).toThrow('not an integer');
+    expect(
+      run(2, {
+        op: 'kv.set',
+        k: K('u'),
+        v: 'ok',
+        ttlMs: 60_000,
+        mode: 'always',
+      })
+    ).toEqual([{ op: 'kv.set', set: true }]);
+    expect(run(3, { op: 'kv.get', k: K('u') })).toEqual([
+      { op: 'kv.get', v: 'ok' },
+    ]);
+  });
+
   it('keeps a usable schema after an idle cleanup', () => {
     const { engine, run } = setup();
     run(0, { op: 'kv.set', k: K('c'), v: 'x', ttlMs: 1000, mode: 'always' });

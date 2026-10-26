@@ -43,6 +43,9 @@ export class GuardSubject extends DurableObject {
     operation?: GuardOperation
   ): Promise<SubjectRunResult> {
     const now = Date.now();
+    // Recreate a wiped schema outside the transaction, so a failing step
+    // cannot roll the tables back while the engine believes they exist.
+    this.engine.ensureSchema();
     let results: GuardResult[];
     try {
       results = this.ctx.storage.transactionSync(() =>
@@ -92,8 +95,8 @@ export class GuardSubject extends DurableObject {
         // partition stores nothing. No abort(): throwing from an alarm would
         // trigger the runtime's retries. The engine recreates its schema
         // lazily if this warm instance is used again.
-        await this.ctx.storage.deleteAll();
         this.engine.markStorageCleared();
+        await this.ctx.storage.deleteAll();
         return;
       }
       this.engine.setAlarmFailures(0);

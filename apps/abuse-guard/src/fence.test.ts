@@ -49,6 +49,12 @@ describe('resolveFamilyBudgets', () => {
     ['empty entry', '100000', 'replay=5,'],
     ['entries above the total', '1000000', 'offline=999999'],
     ['a share rounding to zero', '5', undefined],
+    ['total above the maximum', '1000000001', undefined],
+    ['signed total', '+5', undefined],
+    ['whitespace-only total', '   ', undefined],
+    ['whitespace-only split', '100000', '  '],
+    ['newline-separated entries', '100000', 'replay=5\noffline=3'],
+    ['signed value', '100000', 'replay=+5'],
   ])('rejects a %s', (_, total, split) => {
     expect(resolve(total, split)).toBeNull();
   });
