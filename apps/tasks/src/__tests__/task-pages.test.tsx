@@ -457,9 +457,10 @@ describe('tasks app task pages', () => {
       ],
       children: [
         { href: '/workspace-1/tasks/new' },
+        { href: '/workspace-1/cycles', matchExact: true, disabled: true },
         {
-          href: '/workspace-1/cycles',
-          aliases: ['/workspace-1/cycles/*'],
+          href: '/workspace-1/cycles/planning',
+          aliases: ['/workspace-1/cycles/planning/*'],
           disabled: true,
         },
       ],
@@ -499,6 +500,10 @@ describe('tasks app task pages', () => {
 
     expect(links[0]?.children?.[1]).toMatchObject({
       href: '/workspace-1/cycles',
+      disabled: false,
+    });
+    expect(links[0]?.children?.[2]).toMatchObject({
+      href: '/workspace-1/cycles/planning',
       disabled: false,
     });
   });
