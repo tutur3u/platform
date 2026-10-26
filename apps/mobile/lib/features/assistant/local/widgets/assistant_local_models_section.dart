@@ -129,6 +129,17 @@ class _AssistantLocalModelsSectionState
         children: [
           AppGroupedSection.spaced(
             caption: l10n.assistantModelSourceTitle,
+            captionTrailing: AssistantSettingsInfo(
+              title: l10n.assistantLocalTitle,
+              description: [
+                l10n.assistantLocalBudgetDescription,
+                l10n.assistantLocalHardware,
+                if (_models.supportsBackgroundDownloads)
+                  l10n.assistantDownloadBackgroundNotice,
+                l10n.assistantLocalModeSwitch,
+                l10n.assistantLocalHistoryNotice,
+              ].join('\n\n'),
+            ),
             footer: l10n.assistantLocalHelp,
             children: [
               _SourceRow(
@@ -163,17 +174,6 @@ class _AssistantLocalModelsSectionState
           if (models.isNotEmpty || state.error != null)
             AppGroupedSection.spaced(
               caption: l10n.assistantLocalTitle,
-              captionTrailing: AssistantSettingsInfo(
-                title: l10n.assistantLocalTitle,
-                description: [
-                  l10n.assistantLocalBudgetDescription,
-                  l10n.assistantLocalHardware,
-                  if (_models.supportsBackgroundDownloads)
-                    l10n.assistantDownloadBackgroundNotice,
-                  l10n.assistantLocalModeSwitch,
-                  l10n.assistantLocalHistoryNotice,
-                ].join('\n\n'),
-              ),
               children: [
                 for (final model in models)
                   AssistantLocalModelTile(
