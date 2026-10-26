@@ -381,6 +381,7 @@ void main() {
             scrollable: overviewScroll.first,
             maxScrolls: 15,
           );
+          expect(find.byKey(const ValueKey('you-focus-time')), findsOne);
           for (
             var attempt = 0;
             attempt < 60 && find.text('1h').evaluate().isEmpty;

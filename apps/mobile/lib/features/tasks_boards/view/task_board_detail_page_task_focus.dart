@@ -69,9 +69,14 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
             if (!toastContext.mounted) return;
             showAppToast(
               toastContext,
-              message: restored
-                  ? l10n.taskBoardDetailFocusStartFailedRestored
-                  : l10n.taskBoardDetailFocusStartFailedPausedEnded,
+              message: switch (restored) {
+                _PausedRestore.paused =>
+                  l10n.taskBoardDetailFocusStartFailedRestored,
+                _PausedRestore.running =>
+                  l10n.taskBoardDetailFocusStartFailedRunning,
+                _PausedRestore.failed =>
+                  l10n.taskBoardDetailFocusStartFailedPausedEnded,
+              },
               variant: AppAlertVariant.destructive,
               actionLabel: l10n.taskBoardDetailOpenTimer,
               onAction: router == null
@@ -106,19 +111,39 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
   }
 
   /// Resumes the stopped [paused] session (the server links the new one to
-  /// it) and pauses it again, so the timer looks as it did before. Returns
-  /// whether that worked.
-  Future<bool> _restorePausedSession(
+  /// it) and pauses it again, retrying the pause once, so the timer looks as
+  /// it did before. Reports how far that got.
+  Future<_PausedRestore> _restorePausedSession(
     ITimeTrackerRepository repository,
     String wsId,
     TimeTrackingSession paused,
   ) async {
+    final TimeTrackingSession resumed;
     try {
-      final resumed = await repository.resumeSession(wsId, paused.id);
-      await repository.pauseSession(wsId, resumed.id);
-      return true;
+      resumed = await repository.resumeSession(wsId, paused.id);
     } on Exception {
-      return false;
+      return _PausedRestore.failed;
     }
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        await repository.pauseSession(wsId, resumed.id);
+        return _PausedRestore.paused;
+      } on Exception {
+        // One retry, then report the timer as running.
+      }
+    }
+    return _PausedRestore.running;
   }
+}
+
+/// Outcome of putting a stopped paused session back.
+enum _PausedRestore {
+  /// Resumed and paused again: as it was.
+  paused,
+
+  /// Resumed, but the pause failed twice: the timer is running.
+  running,
+
+  /// Not resumed: the paused session stays ended.
+  failed,
 }

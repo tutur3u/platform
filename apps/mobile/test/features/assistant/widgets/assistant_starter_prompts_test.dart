@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/grouped_rows.dart';
+import 'package:mobile/core/layout/grouped_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -85,20 +87,23 @@ void main() {
           ];
           Finder card(String label) => find.ancestor(
             of: find.text(label),
-            matching: find.byType(InkWell),
+            matching: find.byType(AppGroupedRow),
           );
+          // One grouped card: the starters stack in a single column at
+          // every width, each row at least the 44dp touch target.
           final first = tester.getRect(card(labels.first));
           final second = tester.getRect(card(labels[1]));
-          final twoColumns = viewport.value.width >= 720 && scale == 1;
-          if (twoColumns) {
-            expect(second.top, first.top);
-            expect(second.left, greaterThan(first.right));
-          } else {
-            expect(second.top, greaterThan(first.bottom));
-            expect(second.left, first.left);
+          expect(second.top, greaterThanOrEqualTo(first.bottom));
+          expect(second.left, first.left);
+          expect(find.byType(AppGroupedCard), findsOneWidget);
+          for (final label in labels) {
+            expect(
+              tester.getSize(card(label)).height,
+              greaterThanOrEqualTo(44),
+            );
           }
 
-          // At normal tablet dimensions all four cards fit above navigation
+          // At normal tablet dimensions all four rows fit above navigation
           // immediately, without requiring an initial scroll.
           final navigation = tester.getRect(
             find.byKey(const ValueKey('floating-navigation')),
