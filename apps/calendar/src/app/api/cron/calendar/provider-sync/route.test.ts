@@ -91,6 +91,7 @@ describe('Calendar provider cron ownership', () => {
         outcome: CalendarTokenOutcome;
         provider: 'google' | 'microsoft';
         reason?: CalendarOAuthReasonCode;
+        refreshed?: boolean;
       };
   function workspacesWithOutcomes(perWorkspace: Record<string, Outcome[]>) {
     page.mockResolvedValue({
@@ -176,12 +177,32 @@ describe('Calendar provider cron ownership', () => {
     );
   });
 
-  it('fails the job when an OAuth client is broken for every account', async () => {
+  // The first run of an hour, when recurring holds and systemic failures alert.
+  const FIRST_RUN_OF_HOUR = Date.UTC(2026, 9, 26, 4, 5);
+  const LATER_RUN = Date.UTC(2026, 9, 26, 4, 35);
+  const google = (
+    outcome: CalendarTokenOutcome,
+    extra: Partial<{ reason: CalendarOAuthReasonCode; refreshed: boolean }> = {}
+  ) => ({ provider: 'google' as const, outcome, ...extra });
+  const microsoft = (
+    outcome: CalendarTokenOutcome,
+    extra: Partial<{ reason: CalendarOAuthReasonCode; refreshed: boolean }> = {}
+  ) => ({ provider: 'microsoft' as const, outcome, ...extra });
+  function quietLogs() {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    return vi.spyOn(console, 'error').mockImplementation(() => {});
+  }
+
+  it('fails the job when an OAuth client is broken for every account', async () => {
+    const error = quietLogs();
+    vi.spyOn(Date, 'now').mockReturnValue(FIRST_RUN_OF_HOUR);
     workspacesWithOutcomes({
-      'workspace-a': ['systemic', 'consensus_hold'],
-      'workspace-b': ['consensus_hold'],
+      'workspace-a': [
+        google('systemic'),
+        google('consensus_hold', { reason: 'google_unauthorized_client' }),
+      ],
+      'workspace-b': [google('systemic')],
     });
     const response = await GET(cronRequest());
     expect(response.status).toBe(500);
@@ -189,21 +210,51 @@ describe('Calendar provider cron ownership', () => {
       ok: false,
       error: 'Calendar OAuth client failure',
       providers: ['google'],
-      tokens: { counts: { systemic: 1, consensus_hold: 2 } },
+      tokens: { counts: { systemic: 2, consensus_hold: 1 } },
     });
     expect(error).toHaveBeenCalledWith(
       'calendar.oauth.deactivation_spike',
-      expect.objectContaining({ held: 2, systemic: 1 })
+      expect.objectContaining({ held: 1, systemic: 2 })
     );
   });
 
+  it('judges each provider on its own fresh refreshes', async () => {
+    quietLogs();
+    workspacesWithOutcomes({
+      'workspace-a': [google('ok', { refreshed: true })],
+      'workspace-b': [
+        microsoft('systemic'),
+        microsoft('systemic'),
+        microsoft('systemic'),
+      ],
+    });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({ providers: ['microsoft'] });
+  });
+
+  it('does not count unexpired credentials as proof the client works', async () => {
+    quietLogs();
+    const systemic = [
+      google('systemic'),
+      google('systemic'),
+      google('systemic'),
+    ];
+    workspacesWithOutcomes({ 'workspace-a': [...systemic, google('ok')] });
+    expect((await GET(cronRequest())).status).toBe(500);
+    workspacesWithOutcomes({
+      'workspace-a': [...systemic, google('ok', { refreshed: true })],
+    });
+    expect((await GET(cronRequest())).status).toBe(200);
+  });
+
   it('keeps ordinary revocation churn at 200 so the scheduler keeps running', async () => {
-    vi.spyOn(console, 'info').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = quietLogs();
+    vi.spyOn(Date, 'now').mockReturnValue(FIRST_RUN_OF_HOUR);
+    const held = google('consensus_hold', { reason: 'google_invalid_grant' });
     workspacesWithOutcomes({
       'workspace-a': ['deactivated', 'ok'],
-      'workspace-b': ['deactivated', 'consensus_hold', 'consensus_hold'],
+      'workspace-b': ['deactivated', held, held],
       'workspace-c': ['ok'],
     });
     const response = await GET(cronRequest());
@@ -211,35 +262,63 @@ describe('Calendar provider cron ownership', () => {
     expect(await response.json()).toMatchObject({
       tokens: { counts: { deactivated: 2, consensus_hold: 2, ok: 2 } },
     });
-    // The hold still alerts.
     expect(error).toHaveBeenCalledWith(
       'calendar.oauth.deactivation_spike',
       expect.objectContaining({ held: 2 })
     );
   });
 
+  it('never fails the job for a provider whose only accounts are revoked', async () => {
+    quietLogs();
+    const revoked = microsoft('consensus_hold', {
+      reason: 'microsoft_invalid_grant',
+    });
+    workspacesWithOutcomes({
+      'workspace-a': [
+        microsoft('deactivated', { reason: 'microsoft_invalid_grant' }),
+        microsoft('deactivated', { reason: 'microsoft_invalid_grant' }),
+        revoked,
+        revoked,
+        revoked,
+      ],
+      'workspace-b': [google('ok', { refreshed: true })],
+    });
+    expect((await GET(cronRequest())).status).toBe(200);
+  });
+
+  it('repeats hold and systemic alerts once an hour, not every run', async () => {
+    const error = quietLogs();
+    vi.spyOn(Date, 'now').mockReturnValue(LATER_RUN);
+    workspacesWithOutcomes({
+      'workspace-a': [
+        google('consensus_hold', { reason: 'google_invalid_grant' }),
+        google('systemic'),
+        google('ok', { refreshed: true }),
+      ],
+    });
+    expect((await GET(cronRequest())).status).toBe(200);
+    expect(error).not.toHaveBeenCalledWith(
+      'calendar.oauth.deactivation_spike',
+      expect.anything()
+    );
+  });
+
   it('keeps one tenant that removed our Entra app from stopping other tenants', async () => {
-    vi.spyOn(console, 'info').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    const tenantRemoved = {
-      provider: 'microsoft' as const,
-      reason: 'microsoft_unauthorized_client' as const,
-    };
+    quietLogs();
+    const tenantRemoved = { reason: 'microsoft_unauthorized_client' as const };
     workspacesWithOutcomes({
       'tenant-a': [
-        { ...tenantRemoved, outcome: 'deactivated' },
-        { ...tenantRemoved, outcome: 'deactivated' },
-        { ...tenantRemoved, outcome: 'consensus_hold' },
+        microsoft('deactivated', tenantRemoved),
+        microsoft('deactivated', tenantRemoved),
+        microsoft('consensus_hold', tenantRemoved),
       ],
-      'tenant-b': [{ provider: 'microsoft', outcome: 'ok' }],
+      'tenant-b': [microsoft('ok', { refreshed: true })],
     });
     expect((await GET(cronRequest())).status).toBe(200);
   });
 
   it('does not fail the job for systemic outcomes below the threshold', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    quietLogs();
     workspacesWithOutcomes({ 'workspace-a': ['systemic', 'systemic'] });
     expect((await GET(cronRequest())).status).toBe(200);
   });

@@ -24,10 +24,21 @@ export interface CalendarTokenOutcomeEntry {
   reason?: CalendarOAuthReasonCode;
   providerCode?: string | null;
   attempts: number;
+  // True only when the provider issued a fresh credential in this run.
+  refreshed?: boolean;
 }
 
 export const WORKSPACE_SYNC_ROUTE = '/api/v1/workspaces/[wsId]/calendar/sync';
 export const DEACTIVATION_SPIKE_THRESHOLD = 5;
+const SPIKE_REPEAT_MS = 60 * 60 * 1000;
+const CRON_INTERVAL_MS = 15 * 60 * 1000;
+// Reasons a broken OAuth client can produce. Revocation reasons
+// (invalid_grant, access or consent revoked) are per-account by nature.
+const CLIENT_SUSPECT_REASONS = new Set<CalendarOAuthReasonCode>([
+  'google_unauthorized_client',
+  'microsoft_unauthorized_client',
+  'unknown_permanent',
+]);
 
 interface ConsensusBreakerState {
   // Account id -> arrival order, so concurrent workspaces admit first-come.
@@ -87,6 +98,7 @@ export function recordCalendarTokenOutcome(args: {
   reason?: CalendarOAuthReasonCode;
   providerCode?: string | null;
   attempts: number;
+  refreshed?: boolean;
 }): CalendarTokenOutcomeEntry {
   const run = runScope.getStore();
   const entry: CalendarTokenOutcomeEntry = {
@@ -96,8 +108,16 @@ export function recordCalendarTokenOutcome(args: {
     attempts: args.attempts,
     ...(args.reason ? { reason: args.reason } : {}),
     ...(args.providerCode ? { providerCode: args.providerCode } : {}),
+    ...(args.refreshed ? { refreshed: true } : {}),
   };
-  run?.outcomes.push(entry);
+  // One outcome per account per run: a later failure replaces an earlier ok.
+  if (run) {
+    const previous = run.outcomes.findIndex(
+      (item) => item.account === entry.account
+    );
+    if (previous >= 0) run.outcomes[previous] = entry;
+    else run.outcomes.push(entry);
+  }
   const line = {
     event: 'calendar.oauth.token_outcome',
     route: run?.route ?? WORKSPACE_SYNC_ROUTE,
@@ -132,14 +152,19 @@ export function summarizeCalendarTokenOutcomes(
  */
 export function reportCalendarDeactivationSpike(
   route: string,
-  outcomes: CalendarTokenOutcomeEntry[]
+  outcomes: CalendarTokenOutcomeEntry[],
+  now = Date.now()
 ): boolean {
   const counts = summarizeCalendarTokenOutcomes(outcomes);
+  // Deactivations are new by definition. Holds, deferrals and systemic
+  // failures repeat every run, so they alert in the first run of each hour.
+  const recurringDue = now % SPIKE_REPEAT_MS < CRON_INTERVAL_MS;
   if (
     counts.deactivated < DEACTIVATION_SPIKE_THRESHOLD &&
-    counts.deactivation_deferred === 0 &&
-    counts.consensus_hold === 0 &&
-    counts.systemic === 0
+    !(
+      recurringDue &&
+      counts.deactivation_deferred + counts.consensus_hold + counts.systemic > 0
+    )
   )
     return false;
   const reasons: Record<string, number> = {};
@@ -160,9 +185,11 @@ export function reportCalendarDeactivationSpike(
 }
 
 /**
- * True when a provider's OAuth client looks broken for everyone in this run:
- * several accounts failed systemically or were held, and none refreshed.
- * Ordinary revocation churn alongside healthy accounts does not qualify.
+ * Providers whose OAuth client looks broken for everyone in this run: at
+ * least `threshold` accounts failed systemically or were held for a reason a
+ * broken client can cause, and no account obtained a fresh credential.
+ * Revocation holds never count, so a provider whose only accounts are revoked
+ * does not fail the job, and one provider never fails it for another.
  */
 export function systemicProviders(
   outcomes: CalendarTokenOutcomeEntry[],
@@ -171,10 +198,18 @@ export function systemicProviders(
   const providers = new Set(outcomes.map((entry) => entry.provider));
   return [...providers].filter((provider) => {
     const own = outcomes.filter((entry) => entry.provider === provider);
-    const failing = own.filter(
+    const clientSuspect = own.filter(
       (entry) =>
-        entry.outcome === 'systemic' || entry.outcome === 'consensus_hold'
+        entry.outcome === 'systemic' ||
+        (entry.outcome === 'consensus_hold' &&
+          !!entry.reason &&
+          CLIENT_SUSPECT_REASONS.has(entry.reason))
     ).length;
-    return failing >= threshold && !own.some((entry) => entry.outcome === 'ok');
+    // An unexpired credential used without a refresh proves nothing about
+    // the client; only a fresh one does.
+    const refreshedOk = own.some(
+      (entry) => entry.outcome === 'ok' && entry.refreshed
+    );
+    return clientSuspect >= threshold && !refreshedOk;
   });
 }

@@ -237,6 +237,27 @@ it('records a mid-sync OAuth client failure as systemic without writing', async 
   });
 });
 
+it('reports a mid-sync credential rejection as auth whatever its status', async () => {
+  const db = database();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  sync
+    .mockRejectedValueOnce(
+      Object.assign(new Error('unauthorized_client'), {
+        response: { status: 400, data: { error: 'unauthorized_client' } },
+      })
+    )
+    .mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
+  expect(result.failureType).toBe('auth');
+  expect(result.failedCalendars).toContainEqual(
+    expect.objectContaining({ connectionId: 'a', code: 'auth' })
+  );
+  expect(result.tokenOutcomes[0]).toMatchObject({
+    outcome: 'deactivated',
+    reason: 'google_unauthorized_client',
+  });
+});
+
 it('skips every calendar of an account whose credential check failed', async () => {
   const db = database();
   vi.spyOn(console, 'warn').mockImplementation(() => {});

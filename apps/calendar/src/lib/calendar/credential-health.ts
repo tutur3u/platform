@@ -95,6 +95,7 @@ export async function ensureHealthyCalendarCredential(
       result.failure?.kind === 'permanent' ? result.failure.reason : undefined,
     providerCode: result.failure?.providerCode ?? null,
     attempts,
+    refreshed: !result.error && result.refreshed,
   });
   return { result, outcome };
 }

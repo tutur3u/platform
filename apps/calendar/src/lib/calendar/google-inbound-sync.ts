@@ -222,19 +222,25 @@ export async function syncGoogleInbound(args: {
         if (previous >= 0) tokenOutcomes[previous] = entry;
         else tokenOutcomes.push(entry);
       }
+      // A permanently rejected credential needs a reconnect, whatever HTTP
+      // status carried it, so the calendar reports auth.
+      const code =
+        oauthFailure?.kind === 'permanent'
+          ? 'auth'
+          : classifyCalendarSyncError(error);
       failedConnections += 1;
       failedCalendars.push({
         connectionId: connection.id,
         calendarName: connection.calendar_name,
-        code: classifyCalendarSyncError(error),
+        code,
       });
       firstConnectionError ??= error;
-      if (classifyCalendarSyncError(error) === 'auth') authError ??= error;
+      if (code === 'auth') authError ??= error;
       console.warn('Google calendar connection sync failed', {
         wsId: args.wsId,
         authTokenId: connection.auth_token_id,
         connectionId: connection.id,
-        code: classifyCalendarSyncError(error),
+        code,
       });
     }
   }
@@ -249,7 +255,9 @@ export async function syncGoogleInbound(args: {
     failedConnections,
     failedCalendars,
     failureType: firstConnectionError
-      ? classifyCalendarSyncError(authError ?? firstConnectionError)
+      ? authError
+        ? ('auth' as const)
+        : classifyCalendarSyncError(firstConnectionError)
       : null,
     tokenOutcomes,
   };
