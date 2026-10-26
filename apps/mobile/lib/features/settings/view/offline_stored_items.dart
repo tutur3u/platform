@@ -18,6 +18,7 @@ class OfflineStoredItems extends StatefulWidget {
     required this.namespace,
     required this.revision,
     this.loadItems,
+    this.triggerBuilder,
     super.key,
   });
 
@@ -29,6 +30,10 @@ class OfflineStoredItems extends StatefulWidget {
 
   /// Injectable scoped local source; production reads the encrypted store.
   final Future<List<ReplicaEntityRecord>> Function()? loadItems;
+
+  /// Row that opens the browser; defaults to a "Browse stored items" tile.
+  final Widget Function(BuildContext context, VoidCallback open)?
+  triggerBuilder;
 
   @override
   State<OfflineStoredItems> createState() => _OfflineStoredItemsState();
@@ -83,11 +88,13 @@ class _OfflineStoredItemsState extends State<OfflineStoredItems> {
   }
 
   @override
-  Widget build(BuildContext context) => AppListTile(
-    title: Text(context.l10n.offlineBrowseStoredItems),
-    trailing: const Icon(LucideIcons.chevronRight),
-    onTap: _open,
-  );
+  Widget build(BuildContext context) =>
+      widget.triggerBuilder?.call(context, () => unawaited(_open())) ??
+      AppListTile(
+        title: Text(context.l10n.offlineBrowseStoredItems),
+        trailing: const Icon(LucideIcons.chevronRight),
+        onTap: _open,
+      );
 }
 
 class _OfflineStoredItemsBrowser extends StatefulWidget {

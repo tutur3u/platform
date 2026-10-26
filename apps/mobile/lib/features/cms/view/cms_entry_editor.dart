@@ -96,6 +96,7 @@ extension _CmsEntryEditor on _CmsPageState {
                 l10n.cmsDetailsSection,
                 [
                   AppTextField(
+                    placeholder: context.l10n.inputPlaceholderCmsEntryTitle,
                     controller: titleController,
                     autofocus: true,
                     label: l10n.cmsTitle,
@@ -105,12 +106,18 @@ extension _CmsEntryEditor on _CmsPageState {
                       }
                     },
                   ),
-                  AppTextField(controller: slugController, label: l10n.cmsSlug),
                   AppTextField(
+                    placeholder: context.l10n.inputPlaceholderCmsSlug,
+                    controller: slugController,
+                    label: l10n.cmsSlug,
+                  ),
+                  AppTextField(
+                    placeholder: context.l10n.inputPlaceholderCmsSubtitle,
                     controller: subtitleController,
                     label: l10n.cmsSubtitle,
                   ),
                   AppTextField(
+                    placeholder: context.l10n.inputPlaceholderCmsSummary,
                     controller: summaryController,
                     label: l10n.cmsSummary,
                     minLines: 3,

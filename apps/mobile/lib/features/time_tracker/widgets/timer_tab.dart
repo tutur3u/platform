@@ -101,6 +101,7 @@ class _TimerTabState extends State<TimerTab> {
                 key: const shad.FormKey<String>(#sessionTitle),
                 label: Text(l10n.timerSessionTitle),
                 child: shad.TextField(
+                  placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
                   selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   onChanged: cubit.setTitle,

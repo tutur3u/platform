@@ -249,6 +249,7 @@ class _MeetPageState extends State<MeetPage> {
                   controller: nameController,
                   autofocus: true,
                   decoration: InputDecoration(
+                    hintText: context.l10n.inputPlaceholderMeetingName,
                     labelText: context.l10n.meetMeetingName,
                   ),
                 ),

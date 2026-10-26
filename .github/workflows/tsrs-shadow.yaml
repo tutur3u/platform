@@ -19,6 +19,7 @@ on:
       - 'scripts/ci/tsrs-shadow.js'
       - '.github/workflows/tsrs-shadow.yaml'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'scripts/ts-diagnostics.js'
       - 'scripts/ts-diagnostics.test.js'
@@ -39,6 +40,7 @@ env:
 
 jobs:
   shadow:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: tsrs shadow (advisory)
     runs-on: ubuntu-latest
     timeout-minutes: 25
