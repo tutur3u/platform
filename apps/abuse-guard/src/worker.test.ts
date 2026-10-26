@@ -454,6 +454,33 @@ describe('daily operation budget', () => {
     await second.dispose();
   });
 
+  it('does not bill steps skipped after a sequential denial', async () => {
+    const mf = createRuntime();
+    const client = httpClient(mf, 'offline');
+    const window = [
+      { key: '1m', limit: 1, windowMs: 60_000, algo: 'sliding' as const },
+    ];
+    // Two admitted commands: both subjects charged.
+    await expect(
+      client.hitWindows([
+        { partition: 'ip:203.0.113.50', windows: window },
+        { partition: 'session:first', windows: window },
+      ])
+    ).resolves.toMatchObject({ ok: true });
+    // The IP denies, so the session step is skipped and refunded.
+    await expect(
+      client.hitWindows([
+        { partition: 'ip:203.0.113.50', windows: window },
+        { partition: 'session:second', windows: window },
+      ])
+    ).resolves.toMatchObject({ ok: false, subjectIndex: 0 });
+    // One more command flushes the buffered usage.
+    await expect(client.get('flush')).resolves.toBeNull();
+    await expect(client.get('flush-again')).resolves.toBeNull();
+    expect((await control(mf, 'state')).body.families.offline.used).toBe(4);
+    await mf.dispose();
+  });
+
   it('keeps other families serving when one exhausts its budget', async () => {
     const mf = createRuntime({ familyBudgets: 'offline=3' });
     const offline = httpClient(mf, 'offline');

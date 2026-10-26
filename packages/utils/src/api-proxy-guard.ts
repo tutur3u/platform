@@ -1149,7 +1149,7 @@ export async function guardApiProxyRequest(
               'X-RateLimit-Remaining': `${remaining}`,
               'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
               'X-RateLimit-Caller-Class': effectiveCallerClass,
-              'X-RateLimit-Window': window,
+              'X-RateLimit-Window': result.window ?? window,
               'X-RateLimit-Policy':
                 options.diagnosticPolicyName ?? routePolicy.key,
             },

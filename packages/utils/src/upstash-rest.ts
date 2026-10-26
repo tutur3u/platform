@@ -29,6 +29,53 @@ export function hasUpstashRestEnv(): boolean {
 }
 
 /**
+ * Replay-fence cutover: until ABUSE_GUARD_REPLAY_LEGACY_UNTIL (an ISO date set
+ * to cutover + the longest refresh-token TTL), fence keys consumed in the
+ * legacy Upstash store still count as used, so tokens spent before the cutover
+ * cannot be replayed against the new store. Legacy errors fail like store
+ * errors (callers fail closed once `replay` is assigned).
+ */
+function replayLegacyReadsActive(now = Date.now()) {
+  const until = Date.parse(
+    (typeof process === 'undefined'
+      ? undefined
+      : process.env.ABUSE_GUARD_REPLAY_LEGACY_UNTIL
+    )?.trim() ?? ''
+  );
+  return Number.isFinite(until) && until > now && hasUpstashRestEnv();
+}
+
+type ReplayView = {
+  get<T = unknown>(key: string): Promise<T | null>;
+  set(
+    key: string,
+    value: unknown,
+    options?: { ex?: number; px?: number; nx?: boolean; xx?: boolean }
+  ): Promise<'OK' | null>;
+};
+
+export function withLegacyReplayReads<TView extends ReplayView>(
+  view: TView,
+  legacy: Pick<UpstashRestRedisClient, 'get'>
+): TView {
+  return {
+    ...view,
+    async get<T = unknown>(key: string) {
+      const current = await view.get<T>(key);
+      return current ?? ((await legacy.get<T>(key)) as T | null);
+    },
+    async set(
+      key: string,
+      value: unknown,
+      options?: { ex?: number; px?: number; nx?: boolean; xx?: boolean }
+    ) {
+      if (options?.nx && (await legacy.get(key)) !== null) return null;
+      return view.set(key, value, options);
+    },
+  };
+}
+
+/**
  * Returns the Redis-shaped client for abuse-protection state. A caller that
  * names its `family` is served by the Durable Object guard store once that
  * family is assigned to it, and gets null (store unavailable, so its own fail
@@ -43,11 +90,20 @@ export async function getUpstashRestRedisClient(options?: {
     if (selection.kind === 'off') return null;
     if (selection.kind === 'durable-object') {
       // Covers GET/MGET/SET/DEL/INCR/DECR/EXPIRE/TTL; SCAN throws.
-      return createGuardRedisView(
-        selection.client
-      ) as unknown as UpstashRestRedisClient;
+      const view = createGuardRedisView(selection.client);
+      const legacy =
+        options.family === 'replay' && replayLegacyReadsActive()
+          ? await legacyRestClient()
+          : null;
+      return (legacy
+        ? withLegacyReplayReads(view, legacy)
+        : view) as unknown as UpstashRestRedisClient;
     }
   }
+  return legacyRestClient();
+}
+
+async function legacyRestClient(): Promise<UpstashRestRedisClient | null> {
   if (!hasUpstashRestEnv()) {
     return null;
   }

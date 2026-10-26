@@ -108,6 +108,9 @@ describe('cross-app app-session refresh route', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
+      family: 'replay',
+    });
     expect(body).toMatchObject({
       appSessionRefreshEarlySeconds: 900,
       sessionData: { email: 'agent@example.com' },

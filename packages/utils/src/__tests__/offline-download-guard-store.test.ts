@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AbuseGuardUnavailableError } from '../abuse-guard/client';
+import {
+  AbuseGuardUnavailableError,
+  createAbuseGuardClient,
+} from '../abuse-guard/client';
 
 const mocks = vi.hoisted(() => ({
   select: vi.fn(),
@@ -39,12 +42,12 @@ import {
   OFFLINE_DOWNLOAD_HEADER,
 } from '../offline-download-guard';
 
-function request(token?: string) {
+function request(token?: string, bearer = 'synthetic-session') {
   return new NextRequest(
     'https://example.test/api/v1/workspaces/workspace/inventory/products',
     {
       headers: {
-        authorization: 'Bearer synthetic-session',
+        authorization: `Bearer ${bearer}`,
         [OFFLINE_DOWNLOAD_HEADER]: '1',
         ...(token ? { 'x-tuturuuu-turnstile-token': token } : {}),
       },
@@ -98,19 +101,53 @@ describe('offline download guard on the Durable Object store', () => {
     expect(mocks.limiterRedis).not.toHaveBeenCalled();
   });
 
-  it('returns 429 with a positive Retry-After on denial', async () => {
+  it('returns 429 and answers repeats from a local deny cache', async () => {
     mocks.hitWindows.mockResolvedValue({
       ok: false,
       resetAt: Date.now() + 30_500,
       subjectIndex: 1,
+      windows: [],
     });
-    const response = await guardOfflineDownloadRequest(request());
+    // A dedicated session: the deny cache is per process.
+    const response = await guardOfflineDownloadRequest(
+      request(undefined, 'denied-session')
+    );
     expect(response?.status).toBe(429);
     expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
     expect(response?.headers.get('X-RateLimit-Policy')).toBe(
       'offline-capable-read'
     );
     expect(mocks.get).not.toHaveBeenCalled();
+
+    const repeat = await guardOfflineDownloadRequest(
+      request(undefined, 'denied-session')
+    );
+    expect(repeat?.status).toBe(429);
+    // The repeat cost no store operation.
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed on a malformed reply from a real client', async () => {
+    mocks.select.mockReturnValue({
+      kind: 'durable-object',
+      client: createAbuseGuardClient({
+        family: 'offline',
+        pepper: 'p'.repeat(40),
+        transport: async () => ({ v: 1, steps: [{ unexpected: true }] }),
+      }),
+    });
+    const response = await guardOfflineDownloadRequest(
+      request(undefined, 'malformed-session')
+    );
+    expect(response?.status).toBe(503);
+  });
+
+  it('fails closed when reading clearance fails', async () => {
+    mocks.get.mockRejectedValue(new AbuseGuardUnavailableError('timeout'));
+    const response = await guardOfflineDownloadRequest(
+      request(undefined, 'clearance-read-session')
+    );
+    expect(response?.status).toBe(503);
   });
 
   it('challenges, then grants a 15-minute reusable clearance', async () => {

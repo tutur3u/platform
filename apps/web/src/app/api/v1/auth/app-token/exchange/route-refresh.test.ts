@@ -3,7 +3,8 @@ import {
   createAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
-import { describe, expect, it, vi } from 'vitest';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 import {
   createAdminClientMock,
@@ -18,6 +19,9 @@ import {
 
 describe('app token exchange route', () => {
   registerExchangeTestSetup();
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
   it('refreshes workspace session app tokens without a fresh cross-app token', async () => {
     mockRegisteredApp([], 'workspace-app', [workspaceId]);
     const { token: refreshToken } = createAppCoordinationToken(
@@ -122,6 +126,9 @@ describe('app token exchange route', () => {
         'app-token:refresh',
       ]);
     }
+    expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
+      family: 'replay',
+    });
     expect(mocks.redisSet).toHaveBeenCalledWith(
       expect.stringMatching(
         /^app-token:refresh:used:11111111-1111-4111-8111-111111111111:/u
@@ -197,7 +204,6 @@ describe('app token exchange route', () => {
 
     expect(response.status).toBe(503);
     expect(response.headers.get('Retry-After')).toBe('30');
-    vi.unstubAllEnvs();
   });
 
   it('rejects refresh requests with non-refresh app tokens', async () => {

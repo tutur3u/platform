@@ -5,8 +5,8 @@
  *   store is configured (HTTP env, or a native Worker's injected binding).
  * - `legacy`: keep today's Upstash path (or its missing-store behavior).
  *   This is the default for every unassigned family.
- * - `off`: ABUSE_GUARD_BACKEND=off, or an assigned family whose configuration
- *   is incomplete. Callers treat the store as unavailable and apply their own
+ * - `off`: an assigned family under ABUSE_GUARD_BACKEND=off, or whose
+ *   configuration is incomplete. Callers treat the store as unavailable and apply their own
  *   fail policy, without falling back to Upstash.
  */
 import {
@@ -173,8 +173,13 @@ export function selectAbuseGuard(
   env: AbuseGuardEnv = processEnv()
 ): AbuseGuardSelection {
   const backend = env.ABUSE_GUARD_BACKEND?.trim().toLowerCase();
-  if (backend === 'off') return { kind: 'off' };
   if (backend === 'upstash') return { kind: 'legacy' };
+  const assigned =
+    runtimeOverride?.families.has(family) === true ||
+    parseAbuseGuardFamilies(env.ABUSE_GUARD_FAMILIES).has(family);
+  // `off` switches only assigned families off; unassigned ones keep legacy.
+  if (!assigned) return { kind: 'legacy' };
+  if (backend === 'off') return { kind: 'off' };
 
   if (runtimeOverride?.families.has(family)) {
     const usable = runtimeOverride.usable;
@@ -191,9 +196,6 @@ export function selectAbuseGuard(
     };
   }
 
-  if (!parseAbuseGuardFamilies(env.ABUSE_GUARD_FAMILIES).has(family)) {
-    return { kind: 'legacy' };
-  }
   const url = resolveGuardOrigin(env.ABUSE_GUARD_URL);
   const secret = strong(env.ABUSE_GUARD_SECRET);
   const pepper = strong(env.ABUSE_GUARD_KEY_PEPPER);

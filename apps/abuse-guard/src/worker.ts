@@ -25,7 +25,11 @@ import {
   isGuardDenial,
   type ParsedGuardRpc,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { admit, controlStub, type FenceEnv } from './fence';
+import {
+  admit,
+  controlStub,
+  type FenceEnv,
+} from './fence';
 import type { GuardControl, GuardSubject } from './objects';
 
 export { GuardControl, GuardSubject } from './objects';
@@ -115,6 +119,7 @@ export async function executeRpc(
       for (const step of rpc.steps) {
         if (denied) {
           outcomes.push(null);
+          // Skipped steps never run, so they are not billed.
           continue;
         }
         const outcome = await runStep(step, outcomes.length);

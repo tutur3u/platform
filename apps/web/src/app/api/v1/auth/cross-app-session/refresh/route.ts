@@ -7,6 +7,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
+  isKnownReplay,
+  preLimitReplayAttempt,
+  rememberReplay,
+} from '@tuturuuu/utils/abuse-guard/replay-guard';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
+import {
   type AppName,
   getAppDomainMap,
 } from '@tuturuuu/utils/internal-domains';
@@ -27,7 +33,12 @@ const refreshSchema = z.object({
   targetApp: z.string().trim().toLowerCase().min(1).max(64),
 });
 
-type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
+type RefreshConsumeResult =
+  | 'consumed'
+  | 'grace'
+  | 'limited'
+  | 'replayed'
+  | 'unavailable';
 type RefreshVerificationResult =
   | {
       kind: 'verified';
@@ -37,6 +48,7 @@ type RefreshVerificationResult =
       >['claims'];
     }
   | { kind: 'invalid' }
+  | { kind: 'limited' }
   | { kind: 'unavailable' };
 
 function isRegisteredAppName(value: string): value is AppName {
@@ -56,11 +68,13 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
 async function consumeRefreshTokenWithGrace({
   exp,
   graceSeconds,
+  ip,
   jti,
   sub,
 }: {
   exp: number;
   graceSeconds: number;
+  ip: string;
   jti: string;
   sub: string;
 }): Promise<RefreshConsumeResult> {
@@ -71,14 +85,17 @@ async function consumeRefreshTokenWithGrace({
     return 'replayed';
   }
 
+  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
+  // Known replays and over-limit callers cost no store operation.
+  if (isKnownReplay(key)) return 'replayed';
+  if (preLimitReplayAttempt(sub, ip) !== null) return 'limited';
+
   const redis = await getUpstashRestRedisClient({
     family: 'replay',
   }).catch(() => null);
   if (!redis) {
     return 'unavailable';
   }
-
-  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
 
   try {
     const firstUsedAt = await redis.get<number | string>(key);
@@ -88,9 +105,9 @@ async function consumeRefreshTokenWithGrace({
         : Number.parseInt(firstUsedAt ?? '', 10);
 
     if (Number.isFinite(firstUsedAtSeconds)) {
-      return firstUsedAtSeconds + graceSeconds >= nowSeconds
-        ? 'grace'
-        : 'replayed';
+      if (firstUsedAtSeconds + graceSeconds >= nowSeconds) return 'grace';
+      rememberReplay(key, exp);
+      return 'replayed';
     }
 
     const consumed = await redis.set(key, String(nowSeconds), {
@@ -98,7 +115,9 @@ async function consumeRefreshTokenWithGrace({
       nx: true,
     });
 
-    return consumed === 'OK' ? 'consumed' : 'replayed';
+    if (consumed === 'OK') return 'consumed';
+    rememberReplay(key, exp);
+    return 'replayed';
   } catch {
     console.warn('App-session refresh replay check failed');
     return 'unavailable';
@@ -106,10 +125,12 @@ async function consumeRefreshTokenWithGrace({
 }
 
 async function verifyRefreshToken({
+  ip,
   refreshToken,
   replayGraceSeconds,
   targetApp,
 }: {
+  ip: string;
   refreshToken: string;
   replayGraceSeconds: number;
   targetApp: AppName;
@@ -125,6 +146,7 @@ async function verifyRefreshToken({
   const consumeResult = await consumeRefreshTokenWithGrace({
     exp: verification.claims.exp,
     graceSeconds: replayGraceSeconds,
+    ip,
     jti: verification.claims.jti,
     sub: verification.claims.sub,
   });
@@ -135,6 +157,8 @@ async function verifyRefreshToken({
       return { kind: 'verified', claims: verification.claims };
     case 'replayed':
       return { kind: 'invalid' };
+    case 'limited':
+      return { kind: 'limited' };
     case 'unavailable':
       return { kind: 'unavailable' };
     default: {
@@ -166,6 +190,7 @@ async function refreshCrossAppSession(request: NextRequest) {
 
   const { policy } = await getAppCoordinationSessionPolicy();
   const verification = await verifyRefreshToken({
+    ip: extractIPFromRequest(request.headers),
     refreshToken,
     replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
     targetApp,
@@ -176,6 +201,11 @@ async function refreshCrossAppSession(request: NextRequest) {
       return jsonNoStore(
         { error: 'Invalid or expired app session refresh credentials' },
         { status: 401 }
+      );
+    case 'limited':
+      return jsonNoStore(
+        { error: 'Too many refresh attempts' },
+        { status: 429, headers: { 'Retry-After': '60' } }
       );
     case 'unavailable':
       return jsonNoStore(

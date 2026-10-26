@@ -8,7 +8,13 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  isKnownReplay,
+  preLimitReplayAttempt,
+  rememberReplay,
+} from '@tuturuuu/utils/abuse-guard/replay-guard';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
@@ -70,7 +76,12 @@ type CrossAppValidationRow = {
   user_id?: string | null;
 };
 
-type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
+type RefreshConsumeResult =
+  | 'consumed'
+  | 'grace'
+  | 'limited'
+  | 'replayed'
+  | 'unavailable';
 
 function getValidationRow(value: unknown): CrossAppValidationRow | null {
   if (Array.isArray(value)) {
@@ -320,11 +331,13 @@ function createPendingInvitationResponse({
 async function consumeRefreshTokenWithGrace({
   exp,
   graceSeconds,
+  ip,
   jti,
   sub,
 }: {
   exp: number;
   graceSeconds: number;
+  ip: string;
   jti: string;
   sub: string;
 }): Promise<RefreshConsumeResult> {
@@ -335,14 +348,17 @@ async function consumeRefreshTokenWithGrace({
     return 'replayed';
   }
 
+  const key = `${APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
+  // Known replays and over-limit callers cost no store operation.
+  if (isKnownReplay(key)) return 'replayed';
+  if (preLimitReplayAttempt(sub, ip) !== null) return 'limited';
+
   const redis = await getUpstashRestRedisClient({
     family: 'replay',
   }).catch(() => null);
   if (!redis) {
     return 'unavailable';
   }
-
-  const key = `${APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
 
   try {
     const firstUsedAt = await redis.get<number | string>(key);
@@ -352,9 +368,9 @@ async function consumeRefreshTokenWithGrace({
         : Number.parseInt(firstUsedAt ?? '', 10);
 
     if (Number.isFinite(firstUsedAtSeconds)) {
-      return firstUsedAtSeconds + graceSeconds >= nowSeconds
-        ? 'grace'
-        : 'replayed';
+      if (firstUsedAtSeconds + graceSeconds >= nowSeconds) return 'grace';
+      rememberReplay(key, exp);
+      return 'replayed';
     }
 
     const consumed = await redis.set(key, String(nowSeconds), {
@@ -362,7 +378,9 @@ async function consumeRefreshTokenWithGrace({
       nx: true,
     });
 
-    return consumed === 'OK' ? 'consumed' : 'replayed';
+    if (consumed === 'OK') return 'consumed';
+    rememberReplay(key, exp);
+    return 'replayed';
   } catch (error) {
     console.warn('External app refresh replay check failed', {
       error: error instanceof Error ? error.message : String(error),
@@ -372,14 +390,16 @@ async function consumeRefreshTokenWithGrace({
 }
 
 async function verifyExchangeRefreshToken({
+  ip,
   replayGraceSeconds,
   refreshToken,
   targetApp,
 }: {
+  ip: string;
   replayGraceSeconds: number;
   refreshToken: string;
   targetApp: string;
-}): Promise<AppCoordinationTokenClaims | 'unavailable' | null> {
+}): Promise<AppCoordinationTokenClaims | 'limited' | 'unavailable' | null> {
   let verification: ReturnType<typeof verifyAppCoordinationToken>;
 
   try {
@@ -404,12 +424,16 @@ async function verifyExchangeRefreshToken({
   const consumeResult = await consumeRefreshTokenWithGrace({
     exp: claims.exp,
     graceSeconds: replayGraceSeconds,
+    ip,
     jti: claims.jti,
     sub: claims.sub,
   });
 
   if (consumeResult === 'replayed') {
     return null;
+  }
+  if (consumeResult === 'limited') {
+    return 'limited';
   }
   // Legacy policy continues without the fence; once the guard store owns
   // replay fences, an unavailable store fails closed.
@@ -484,11 +508,18 @@ async function exchangeAppToken(request: NextRequest) {
 
   if (refreshToken) {
     const refreshClaims = await verifyExchangeRefreshToken({
+      ip: extractIPFromRequest(request.headers),
       replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
       refreshToken,
       targetApp: resolvedTarget.targetApp,
     });
 
+    if (refreshClaims === 'limited') {
+      return NextResponse.json(
+        { error: 'Too many refresh attempts' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      );
+    }
     if (refreshClaims === 'unavailable') {
       return NextResponse.json(
         { error: 'Refresh temporarily unavailable' },

@@ -3,6 +3,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { AbuseGuardClient } from './abuse-guard/client';
+import { createExpiringMap } from './abuse-guard/local-cache';
 import { selectAbuseGuard } from './abuse-guard/select';
 import { extractIPFromRequest } from './abuse-protection/edge';
 import { getCachedTrustEntries } from './abuse-protection/edge-trust';
@@ -90,10 +91,18 @@ type OfflineGuardStore = {
   grantClearance(key: string): Promise<void>;
 };
 
+/** Subjects denied by the store, remembered per instance until their reset. */
+const deniedSubjects = createExpiringMap<number>();
+
 function durableObjectStore(client: AbuseGuardClient): OfflineGuardStore {
   return {
     async limit(subjects) {
       if (subjects.length === 0) return null;
+      // A subject still inside a known denial costs no store operation.
+      for (const subject of subjects) {
+        const reset = deniedSubjects.get(subject.key);
+        if (reset !== undefined) return { reset };
+      }
       // One RPC: each subject's minute and hour windows are all-or-nothing,
       // and later subjects are not charged after a denial.
       const outcome = await client.hitWindows(
@@ -115,7 +124,11 @@ function durableObjectStore(client: AbuseGuardClient): OfflineGuardStore {
           ],
         }))
       );
-      return outcome.ok ? null : { reset: outcome.resetAt };
+      if (outcome.ok) return null;
+      const denied = subjects[outcome.subjectIndex];
+      if (denied)
+        deniedSubjects.set(denied.key, outcome.resetAt, outcome.resetAt);
+      return { reset: outcome.resetAt };
     },
     async hasClearance(key) {
       return Boolean(await client.get(key));

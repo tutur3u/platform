@@ -178,9 +178,24 @@ export type GuardWindowSubject = {
   windows: GuardWindowInput[];
 };
 
+/** One window's state, in the order the subject listed its windows. */
+export type GuardWindowState = { remaining: number; resetAt: number };
+
 export type GuardWindowOutcome =
-  | { ok: true; remaining: number; resetAt: number }
-  | { ok: false; resetAt: number; subjectIndex: number };
+  | {
+      ok: true;
+      remaining: number;
+      resetAt: number;
+      /** Every subject's window states, flattened in request order. */
+      windows: GuardWindowState[];
+    }
+  | {
+      ok: false;
+      resetAt: number;
+      subjectIndex: number;
+      /** The denied subject's window states; denied ones report 0 remaining. */
+      windows: GuardWindowState[];
+    };
 
 /**
  * The client never retries. A caller that retries a mutating call after an
@@ -347,23 +362,31 @@ export function createAbuseGuardClient(options: {
       const results = await run(steps, true, callOptions?.operationId);
       let remaining = Number.POSITIVE_INFINITY;
       let resetAt = 0;
+      const windows: GuardWindowState[] = [];
       for (const [index, step] of results.entries()) {
         const hit = step?.[0];
         if (hit?.op !== 'win.hit') {
           throw new AbuseGuardUnavailableError('invalid_response');
         }
         if (!hit.ok) {
-          return { ok: false, resetAt: hit.resetAt, subjectIndex: index };
+          return {
+            ok: false,
+            resetAt: hit.resetAt,
+            subjectIndex: index,
+            windows: hit.windows,
+          };
         }
         for (const window of hit.windows) {
           remaining = Math.min(remaining, window.remaining);
           resetAt = Math.max(resetAt, window.resetAt);
+          windows.push(window);
         }
       }
       return {
         ok: true,
         remaining: Number.isFinite(remaining) ? remaining : 0,
         resetAt,
+        windows,
       };
     },
 

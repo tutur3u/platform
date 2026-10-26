@@ -99,7 +99,7 @@ describe('createHttpGuardTransport', () => {
           ],
         },
       ])
-    ).resolves.toEqual({ ok: true, remaining: 4, resetAt: 120_000 });
+    ).resolves.toMatchObject({ ok: true, remaining: 4, resetAt: 120_000 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -335,7 +335,7 @@ describe('hitWindows', () => {
           windows: [{ key: '1m', limit: 1, windowMs: 60_000, algo: 'fixed' }],
         },
       ])
-    ).resolves.toEqual({ ok: false, resetAt: 90_000, subjectIndex: 1 });
+    ).resolves.toMatchObject({ ok: false, resetAt: 90_000, subjectIndex: 1 });
   });
 });
 
@@ -423,6 +423,13 @@ describe('selectAbuseGuard', () => {
     expect(
       selectAbuseGuard('offline', { ...env, ABUSE_GUARD_BACKEND: 'off' }).kind
     ).toBe('off');
+    // `off` never touches unassigned families: they keep the legacy path.
+    expect(
+      selectAbuseGuard('replay', { ...env, ABUSE_GUARD_BACKEND: 'off' }).kind
+    ).toBe('legacy');
+    expect(selectAbuseGuard('proxy', { ABUSE_GUARD_BACKEND: 'off' }).kind).toBe(
+      'legacy'
+    );
   });
 
   it.each([
