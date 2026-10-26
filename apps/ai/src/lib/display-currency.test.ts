@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ createAdminClient: vi.fn() }));
 
+vi.mock('server-only', () => ({}));
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
 }));
@@ -9,8 +11,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 import {
   DEFAULT_DISPLAY_CURRENCY,
   normalizeDisplayCurrency,
-  resolveDisplayCurrency,
 } from './display-currency';
+import { resolveDisplayCurrency } from './display-currency.server';
 
 function ratesClientReturning(row: { rate: number } | null, error?: unknown) {
   return {

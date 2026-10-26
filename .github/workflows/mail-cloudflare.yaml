@@ -1,7 +1,8 @@
 name: Native Mail Cloudflare
 on:
   pull_request:
-    paths: ['apps/mail/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/mail-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+    paths: ['apps/mail/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/mail-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json', '!**/*.md', '!**/*.mdx']
   push:
     branches: [main]
     paths: ['apps/mail/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/mail-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
@@ -11,13 +12,15 @@ permissions:
   contents: read
   actions: read
   deployments: read
-# Staging publication consumes a durable attempt ledger; never cancel an upload.
+# PR revisions supersede. Running main/production/manual jobs never cancel;
+# older pending main/manual runs coalesce. Uploads retain the independent
+# queue:max / cancel-in-progress:false lock in wave1-native-publish.yaml.
 concurrency:
-  group: native-mail-cloudflare-${{ github.ref }}
-  cancel-in-progress: false
-  queue: max
+  group: native-mail-cloudflare-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check-ci:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -26,7 +29,7 @@ jobs:
       workflow_name: mail-cloudflare.yaml
   native-profiles:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       actions: read
@@ -42,7 +45,7 @@ jobs:
 
   native-publish-staging:
     needs: native-profiles
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-profiles.outputs.staging_allowed == 'true'
+    if: (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-profiles.outputs.staging_allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       actions: read

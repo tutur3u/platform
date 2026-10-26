@@ -327,14 +327,45 @@ Cache archive restoration is separate from Turbo task reuse. Compare exact-head
 hosted runs before claiming push-to-green savings; removing runner demand does
 not promise a particular hosted queue delay.
 
+### Draft PR runner admission
+
+Heavy PR verification defers non-security database contracts, platform builds
+and runtime suites until the PR is ready. Heavy-only workflows skip their
+`check-ci` call before runner allocation. Mixed workflows retain light lint,
+type and translation checks. Security jobs always remain eligible on drafts,
+including CodeQL analysis and the security-egress contract and its preflight.
+The mobile aggregate skips on drafts and still requires every quality, test and
+realtime result on ready PRs.
+
+These workflows listen for `ready_for_review` to run the same checks without a
+new commit. `converted_to_draft` supersedes cancellable PR runs and starts
+replacement security checks even when the PR becomes a draft. Existing
+workflow/PR concurrency identities, pinned rerun isolation and serialized
+publication, environment, security-classifier and sandbox-cleanup locks remain
+unchanged. Push-only verification keeps its existing behavior.
+
+Draft PRs cannot merge. Before adding a required check, verify that its workflow
+reports on every merge-eligible PR. Keep path relevance in the existing
+`ci-check` switchboard or trusted security selectors instead of adding trigger
+filters that leave a required check pending. Regression coverage:
+`scripts/ci/pr-verification-scheduling.test.js` and
+`scripts/ci/protected-workflow-concurrency.test.js`. Supersession and draft
+admission reduce demand; they do not reserve hosted capacity for production.
+
 ### Mobile PR build selection
 
 Ordinary mobile PRs build Android as the portable application smoke. iOS, macOS,
 Linux and Windows builds run when their native directory changes. Dependency
 manifests, localization configuration, workflow/tooling inputs and unrecognized
 paths retain every platform build. Missing or empty changed-file data also runs
-all platforms. Every matching main push retains all five builds; release and
-production workflows are unchanged.
+all platforms. Matching main pushes retain Android and Linux builds. iOS, macOS
+and Windows development builds run nightly at 01:10, 01:30 and 01:50 (GMT+7),
+respectively, plus published releases and manual dispatch. Store publication and
+production workflows keep their existing triggers and gates.
+
+This is an explicit coverage exception: nightly builds validate the default-branch
+head selected for that run, rather than every merged SHA. Release and manual
+builds validate their selected snapshots.
 
 Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
 skips the heavy job before runner allocation; do not remove a required-check
@@ -397,6 +428,126 @@ because the pull request closed.
 Inspect the actual conclusion of each run when reporting validation. A cancelled
 run is not a successful check and does not by itself establish a repository
 failure. Cache retention continues to follow GitHub Actions retention settings.
+
+### Hosted runner reservation and PR queue pressure
+
+GitHub-hosted runners are reserved for `main`, `production` and release work.
+When PR CI fans out across many workflows, production deployments wait behind
+it in the same account queue. Concurrency serializes or replaces runs but never
+reserves capacity. Keep PR load small:
+
+- Verify PRs primarily with local or remote-fleet runs. An exact-head local
+  pass is green evidence under the delivery speed grant; hosted PR CI is a
+  backstop, not the primary gate.
+- Batch pushes. Push a reviewable head once instead of pushing WIP commits in
+  rapid succession. Each push still allocates a `check-ci` runner per workflow,
+  even when the newer head immediately supersedes the older one.
+- Every `pull_request` and `pull_request_target` workflow uses a PR-scoped
+  group with `cancel-in-progress` enabled, except the explicit exceptions in
+  `scripts/ci/protected-workflow-concurrency.test.js`. Calendar and Mail
+  Cloudflare cancel superseded PR revisions. Running main/manual jobs never
+  cancel; an older pending main/manual run is superseded by a newer one.
+  Uploads keep their independent, non-cancelling `queue: max` lock inside
+  `wave1-native-publish.yaml`.
+- Heavy PR workflows are path-filtered. The Cloudflare Source workflows, Mail
+  Calendar Tasks builds and Programming app builds exclude `**/*.md` and
+  `**/*.mdx` from their PR `paths`. i18n Check and CodeQL use PR `paths-ignore`
+  for docs and agent-instruction content. Their `main` push triggers stay
+  unchanged, so promotion baselines and CodeQL new-alert comparisons stay
+  complete.
+- No ruleset or branch protection requires a status check (verify with
+  `gh api repos/tutur3u/platform/rulesets`). If a filtered workflow becomes
+  required, replace its trigger filter with a job-level `check-ci` skip that
+  still reports success. A trigger-filtered required check never reports.
+
+### Label-gated heavy PR CI (`ready-for-ci`)
+
+Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
+label. These include Test, Type Check, Biome, CodeQL, i18n, docs/SEO, coverage,
+the per-app and Cloudflare Source builds, mobile builds and database contracts.
+`scripts/ci/pr-label-gate.js` is the inventory of record. On an unlabelled PR,
+every job is skipped by a job-level `if:`. The checks show as skipped rather
+than pending, and no runner is allocated. The gate sits on top-level caller
+jobs, including each `check-ci` switchboard call, so a skipped caller never
+starts its reusable callee.
+
+- **Add the label only when the PR is ready to merge.** Before that, verify
+  locally or on the remote fleet. An exact-head local pass (`bun check:changed`
+  plus the focused suites) still counts as green under the speed grant, so a
+  PR can merge on that evidence without hosted CI.
+- **Trigger CI** with `gh pr edit <number> --add-label ready-for-ci`. The
+  `labeled` event starts every heavy workflow immediately.
+- **Retrigger.** A new push to a labelled PR (`synchronize`) runs again, and
+  PR concurrency cancels the superseded run. To retrigger without a push,
+  remove and re-add the label (`gh pr edit <n> --remove-label ready-for-ci`,
+  then `--add-label ready-for-ci`). Do not use `gh run rerun` for this: a
+  rerun replays its original event, so a run started before the label was
+  added is skipped again. Use `gh run rerun` only to retry an admitted run,
+  for example after a flaky failure.
+- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+  is present, so any later `labeled` event on a labelled PR is a real admitted
+  run on the same SHA. It joins the same PR group and supersedes the
+  in-progress run. The newest check per name is therefore always genuine
+  evidence, never a skipped run masking an earlier red one. Labels added with
+  `GITHUB_TOKEN` (such as `security-review-required`) start no run.
+- **Masking caveat.** Skipped is not evidence. While a PR carries no
+  `ready-for-ci`, every later run skips its heavy jobs. GitHub shows only the
+  newest run per check name, so those skipped checks replace earlier results;
+  merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
+  label is removed, the PR has no hosted evidence. Re-add the label for a fresh
+  admitted run, or rely on the exact-head local pass.
+- **CI Admitted check (`ci-admitted.yaml`, always on).** One small job per PR
+  event reads the PR's *current* labels with a read-only token and runs the
+  admission script from the base commit. Using the base commit protects the
+  *script* from PR edits, but not the workflow file: on `pull_request` the
+  workflow YAML comes from the PR. The check is advisory, not a security
+  boundary. If the base commit lacks the script, it fails red as "admission
+  unverifiable" rather than passing. It is **red** when `ready-for-ci` is
+  missing, so skipped heavy checks never read as passing. It is also red when
+  the label is present now but was absent from this event's payload (the
+  push/label race). Draft and WIP PRs show it red, but it blocks nothing,
+  because no ruleset requires checks. Green means this event's heavy runs were
+  admitted.
+- **Push/label race.** A `synchronize` payload carries the labels present at
+  push time. PR runs whose payload lacks the label use a separate
+  `-unadmitted` concurrency group (`UNADMITTED_GROUP_SUFFIX`), so a late
+  unlabelled push run can never cancel the admitted `labeled` run. Its skipped
+  checks can still be the newest shown under the same names. CI Admitted then
+  turns red with "re-add" guidance: remove and re-add the label to admit the
+  current head. Adding the label only after the PR shows the new head SHA
+  avoids the race entirely.
+- **Residual ordering false green.** CI Admitted evaluates its own event, and
+  GitHub shows the newest run per check name. A green CI Admitted run (for
+  example from the `labeled` event) can therefore coexist with a heavy
+  workflow whose newest run on the same head is a skipped run from an earlier,
+  unlabelled event. Before treating the head as hosted-green, confirm that
+  its heavy checks are not skipped. If any are, remove and re-add
+  `ready-for-ci`.
+- **Why not a per-workflow admission job:** reading current labels in each of
+  the 57 heavy workflows would allocate a hosted job on every unlabelled PR
+  push. One admission check per event keeps unlabelled pushes runner-free for
+  heavy workflows.
+- **Always on for every PR push:** Branch Name Check, Check Migration
+  Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
+  Check, Security Checks (gitleaks, dependency review and audit) and Security
+  Review Classification. These are script-only or security checks. Paused
+  Docker, Rust, TanStack and E2E workflows keep their retained policy.
+- **Unchanged:** `main`, `production` and release-please pushes,
+  `workflow_dispatch`, schedules and `workflow_call`. Test, Type Check, Biome,
+  Discord Python CI and the Supabase baseline previously validated every branch
+  push. They now push-validate only protected and generated refs, and validate
+  feature branches through the gated `pull_request` trigger. Biome's
+  auto-format PR and outdated-PR cleanup stay push-only. Its PR comment is
+  limited to same-repository PRs.
+- `scripts/ci/pr-label-gate.test.js` enforces this. It checks that every heavy
+  job is gated, that always-on and paused checks carry no gate, and that every
+  PR-reachable workflow is classified. It also pins digests of each heavy
+  workflow's push, schedule, manual and reusable triggers. When adding a PR
+  workflow, classify it there and gate every job with `PR_LABEL_GATE`.
+
+A possible follow-up is to move PR CI onto self-hosted fleet runners so hosted
+capacity serves only protected refs. That needs runner custody, untrusted-fork
+isolation and secret-scoping review first, and is not implemented.
 
 ## Authorized CI Queue Cleanup
 
@@ -568,9 +719,11 @@ failure, timeout, or output-buffer exhaustion. Other failures retain the generic
 diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
 Active Supabase-starting jobs run `.github/actions/cache-supabase-images` after
 the owning dependency install. Image versions come from the installed pinned CLI's
-`services -o json`, which includes local version overrides. The CLI omits Kong,
-Mailpit and imgproxy there; the helper carries their reviewed 2.117.0 Dockerfile
-pins and rejects a different CLI until those pins are reviewed. Registry rewriting
+`services -o json`, which includes local version overrides. CLI 2.121.0 omits Kong,
+Mailpit and imgproxy there; the helper carries their reviewed Dockerfile pins
+(2.8.1, v1.31.3 and v3.26.0) and rejects a different CLI until those pins are
+reviewed. Catalog entries take precedence over fallback pins, including local
+overrides; repeated catalog image names fail rather than silently choosing a tag. Registry rewriting
 matches the CLI, including `postgrest/postgrest` becoming `supabase/postgrest`.
 
 The exact image list, registry, OS and architecture form the SHA256 cache key;

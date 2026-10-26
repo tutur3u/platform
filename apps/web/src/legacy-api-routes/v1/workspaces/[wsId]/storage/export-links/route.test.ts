@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
 
 const mocks = vi.hoisted(() => ({
   createWorkspaceStorageExportAssetUrl: vi.fn(
@@ -188,5 +189,28 @@ describe('workspace storage export-links route', () => {
     expect(
       mocks.listWorkspaceStorageRawObjectsForProvider
     ).toHaveBeenCalledTimes(1);
+  });
+  it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
+    'denies private export %s before scanning or minting a token',
+    async (path) => {
+      const response = await postExportLinks(path);
+      expect(response.status).toBe(403);
+      expect(
+        mocks.listWorkspaceStorageRawObjectsForProvider
+      ).not.toHaveBeenCalled();
+      expect(mocks.createWorkspaceStorageExportToken).not.toHaveBeenCalled();
+    }
+  );
+  it('exports ordinary mira files without private image descendants', async () => {
+    mocks.listWorkspaceStorageRawObjectsForProvider.mockResolvedValue([
+      createRawObject('mira/notes.txt'),
+      createRawObject('mira/images/private.png'),
+    ]);
+    const response = await postExportLinks('mira');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      files: [{ path: 'mira/notes.txt' }],
+    });
+    expect(mocks.createWorkspaceStorageExportAssetUrl).toHaveBeenCalledTimes(1);
   });
 });

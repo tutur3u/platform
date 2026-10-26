@@ -14,7 +14,11 @@ import { fileURLToPath } from 'node:url';
 import { readRegularFileSync, writeExclusiveFileSync } from '../safe-fs.js';
 import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 import { assertMailNodeImports } from './mail-node-imports.mjs';
-import { profileFor, publicationConfig } from './wave1-native-profile.mjs';
+import {
+  profileFor,
+  profiles,
+  publicationConfig,
+} from './wave1-native-profile.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -134,7 +138,9 @@ export function verify(appRoot, app, environment, sha) {
   assert.equal(receipt.profile.app, app);
   assert.equal(receipt.profile.environment, environment);
   const subdomain =
-    environment === 'staging' ? receipt.profile.host.split('.')[1] : undefined;
+    environment === 'staging' && !profiles.apps[app].stagingHost
+      ? receipt.profile.host.split('.')[1]
+      : undefined;
   assert.deepEqual(receipt.profile, profileFor(app, environment, subdomain));
   assert.equal(
     receipt.lockSha256,

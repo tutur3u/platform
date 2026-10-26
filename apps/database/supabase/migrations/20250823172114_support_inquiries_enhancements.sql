@@ -53,7 +53,8 @@ VALUES (
   false,
   1048576,
   ARRAY['image/*']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- POLICY: Allow creators to upload files to their own inquiry folder.
 -- This policy applies to the 'support_inquiries' storage bucket.

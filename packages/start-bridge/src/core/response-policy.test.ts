@@ -1,0 +1,470 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import {
+  appRobots,
+  createRootResponsePolicy,
+  denyFrameAncestors,
+  type ResponsePolicyContext,
+} from './response-policy';
+
+const policy = createRootResponsePolicy({ seo: 'noindex, nofollow' });
+const publicAssets = new Set(['/robots.txt', '/favicon.ico']);
+
+function apply(
+  url: string,
+  init: { method?: string; headers?: HeadersInit; status?: number } = {},
+  context: Partial<ResponsePolicyContext> = {},
+  run = policy
+) {
+  const response = new Response(init.status === 204 ? null : 'body', {
+    status: init.status ?? 200,
+    headers: init.headers,
+  });
+  return run(response, {
+    request: new Request(url, { method: init.method ?? 'GET' }),
+    publicAssets,
+    ...context,
+  }).headers;
+}
+
+describe('cache policy', () => {
+  it('overrides a handler cache header on app responses (not a default)', () => {
+    const headers = apply('https://finance.tuturuuu.com/en/wallets', {
+      headers: {
+        'Cache-Control': 'public, max-age=3600',
+        Vary: 'Accept-Encoding',
+      },
+    });
+    expect(headers.get('Cache-Control')).toBe('private, no-store');
+    expect(headers.get('Vary')).toBe('Accept-Encoding, Cookie');
+  });
+
+  it('exempts only GET/HEAD asset and public-file requests', () => {
+    const immutable = {
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    };
+    for (const method of ['GET', 'HEAD', 'get'])
+      expect(
+        apply('https://finance.tuturuuu.com/assets/app-1.js', {
+          method,
+          headers: immutable,
+        }).get('Cache-Control'),
+        method
+      ).toBe('public, max-age=31536000, immutable');
+    expect(
+      apply('https://finance.tuturuuu.com/robots.txt', {
+        method: 'HEAD',
+        headers: { 'Cache-Control': 'public, max-age=60' },
+      }).get('Cache-Control')
+    ).toBe('public, max-age=60');
+    // The method matters: POST /assets/x is not a static file request.
+    for (const method of ['POST', 'PUT', 'DELETE', 'OPTIONS'])
+      expect(
+        apply('https://finance.tuturuuu.com/assets/app-1.js', {
+          method,
+          headers: immutable,
+        }).get('Cache-Control'),
+        method
+      ).toBe('private, no-store');
+    expect(
+      apply('https://finance.tuturuuu.com/robots.txt', {
+        method: 'POST',
+      }).get('Cache-Control')
+    ).toBe('private, no-store');
+    // Not an asset: a lookalike path, an unlisted file, or HTML under /assets.
+    for (const path of ['/assetsx/a.js', '/en/assets', '/sitemap.xml'])
+      expect(
+        apply(`https://finance.tuturuuu.com${path}`, {
+          headers: immutable,
+        }).get('Cache-Control'),
+        path
+      ).toBe('private, no-store');
+    expect(
+      apply('https://finance.tuturuuu.com/assets/missing', {
+        headers: { ...immutable, 'Content-Type': 'text/html; charset=utf-8' },
+      }).get('Cache-Control')
+    ).toBe('private, no-store');
+  });
+
+  it('adds Cookie to Vary once and keeps a wildcard', () => {
+    expect(
+      apply('https://finance.tuturuuu.com/', {
+        headers: { Vary: 'cookie, Accept' },
+      }).get('Vary')
+    ).toBe('cookie, Accept');
+    expect(
+      apply('https://finance.tuturuuu.com/', { headers: { Vary: '*' } }).get(
+        'Vary'
+      )
+    ).toBe('*');
+    expect(apply('https://finance.tuturuuu.com/').get('Vary')).toBe('Cookie');
+  });
+
+  it('strips the apex mount before matching assets and public files', () => {
+    const mounts = { mountHosts: ['tuturuuu.com'], basePath: '/finance' };
+    const immutable = { 'Cache-Control': 'public, max-age=31536000' };
+    expect(
+      apply(
+        'https://tuturuuu.com/finance/assets/a.js',
+        { headers: immutable },
+        { mounts }
+      ).get('Cache-Control')
+    ).toBe('public, max-age=31536000');
+    expect(
+      apply(
+        'https://tuturuuu.com/finance/robots.txt',
+        { headers: immutable },
+        { mounts }
+      ).get('Cache-Control')
+    ).toBe('public, max-age=31536000');
+    // On a root host the base is an ordinary path, not a mount.
+    expect(
+      apply(
+        'https://finance.tuturuuu.com/finance/assets/a.js',
+        { headers: immutable },
+        { mounts }
+      ).get('Cache-Control')
+    ).toBe('private, no-store');
+    expect(
+      apply(
+        'https://tuturuuu.com/finance/en',
+        { headers: immutable },
+        { mounts }
+      ).get('Cache-Control')
+    ).toBe('private, no-store');
+  });
+});
+
+describe('framing and document headers', () => {
+  it('sets the fixed security headers on every response, assets included', () => {
+    for (const url of [
+      'https://finance.tuturuuu.com/',
+      'https://finance.tuturuuu.com/assets/a.js',
+    ]) {
+      const headers = apply(url);
+      expect(headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+      expect(headers.get('X-Content-Type-Options')).toBe('nosniff');
+      expect(headers.get('Referrer-Policy')).toBe(
+        'strict-origin-when-cross-origin'
+      );
+      expect(headers.get('X-Frame-Options')).toBe('DENY');
+      expect(headers.get('Content-Security-Policy')).toBe(
+        "frame-ancestors 'none'"
+      );
+    }
+  });
+
+  it('enforces frame-ancestors in an existing CSP, replacing any given', () => {
+    expect(
+      apply('https://finance.tuturuuu.com/', {
+        headers: {
+          'Content-Security-Policy': "default-src 'self'; script-src 'nonce-a'",
+        },
+      }).get('Content-Security-Policy')
+    ).toBe("default-src 'self'; script-src 'nonce-a'; frame-ancestors 'none'");
+    expect(denyFrameAncestors("frame-ancestors *; default-src 'self';")).toBe(
+      "default-src 'self'; frame-ancestors 'none'"
+    );
+    // Directive names are case-insensitive.
+    expect(
+      denyFrameAncestors(
+        "default-src 'self'; FRAME-ANCESTORS https://evil.test; Frame-Ancestors *"
+      )
+    ).toBe("default-src 'self'; frame-ancestors 'none'");
+  });
+
+  it('enforces it in every policy of a multi-policy CSP', () => {
+    const headers = new Headers();
+    headers.append('Content-Security-Policy', "default-src 'self'");
+    headers.append(
+      'Content-Security-Policy',
+      "script-src 'nonce-b'; frame-ancestors https://partner.test"
+    );
+    const csp = apply('https://finance.tuturuuu.com/', { headers }).get(
+      'Content-Security-Policy'
+    );
+    expect(csp).toBe(
+      "default-src 'self'; frame-ancestors 'none', script-src 'nonce-b'; frame-ancestors 'none'"
+    );
+    expect(
+      csp?.split(',').every((p) => p.includes("frame-ancestors 'none'"))
+    ).toBe(true);
+  });
+
+  it('leaves explicitly framable paths framable', () => {
+    const framable = createRootResponsePolicy({
+      seo: 'noindex',
+      framable: [/^\/embed\//u],
+    });
+    const embed = apply(
+      'https://forms.tuturuuu.com/embed/f1',
+      {
+        headers: {
+          'Content-Security-Policy': 'frame-ancestors https://partner.test',
+        },
+      },
+      {},
+      framable
+    );
+    expect(embed.get('X-Frame-Options')).toBeNull();
+    expect(embed.get('Content-Security-Policy')).toBe(
+      'frame-ancestors https://partner.test'
+    );
+    // Still private, still noindex/nosniff.
+    expect(embed.get('Cache-Control')).toBe('private, no-store');
+    expect(embed.get('X-Content-Type-Options')).toBe('nosniff');
+    // Matched on the app path, so the apex mount is framable too.
+    expect(
+      apply(
+        'https://tuturuuu.com/forms/embed/f1',
+        {},
+        { mounts: { mountHosts: ['tuturuuu.com'], basePath: '/forms' } },
+        framable
+      ).get('X-Frame-Options')
+    ).toBeNull();
+    // Everything else is not.
+    expect(
+      apply('https://forms.tuturuuu.com/en/embed', {}, {}, framable).get(
+        'X-Frame-Options'
+      )
+    ).toBe('DENY');
+  });
+
+  it('uses a custom fallback CSP, still without ancestors', () => {
+    const custom = createRootResponsePolicy({
+      seo: 'noindex',
+      csp: "default-src 'self'; frame-ancestors *",
+    });
+    expect(
+      apply('https://cms.tuturuuu.com/', {}, {}, custom).get(
+        'Content-Security-Policy'
+      )
+    ).toBe("default-src 'self'; frame-ancestors 'none'");
+  });
+
+  it('computes X-Robots-Tag from the request context', () => {
+    const seo = createRootResponsePolicy<{ TUTURUUU_NOINDEX?: string }>({
+      seo: ({ env }) =>
+        env?.TUTURUUU_NOINDEX === '1' ? 'noindex, nofollow' : 'index, follow',
+    });
+    const run = (env: { TUTURUUU_NOINDEX?: string }) =>
+      seo(new Response('x'), {
+        request: new Request('https://cms.tuturuuu.com/'),
+        env,
+      }).headers.get('X-Robots-Tag');
+    expect(run({ TUTURUUU_NOINDEX: '1' })).toBe('noindex, nofollow');
+    expect(run({})).toBe('index, follow');
+  });
+
+  it('keeps status and body, and passes a WebSocket upgrade through', async () => {
+    const response = new Response('payload', {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    const secured = policy(response, {
+      request: new Request('https://finance.tuturuuu.com/x'),
+    });
+    expect(secured.status).toBe(404);
+    expect(await secured.text()).toBe('payload');
+    const upgrade = { status: 101, headers: new Headers() } as Response;
+    expect(policy(upgrade, { request: new Request('https://a.test/ws') })).toBe(
+      upgrade
+    );
+  });
+
+  it('has no relative runtime imports, so Node type stripping can load configs', () => {
+    const source = readFileSync(
+      new URL('./response-policy.ts', import.meta.url),
+      'utf8'
+    );
+    expect(source).not.toMatch(/^import (?!type)[^;]*from '\.\.?\//mu);
+    // Its package imports are themselves import-free (no runtime JSON).
+    for (const file of ['framable-paths.ts', 'seo-robots.ts'])
+      expect(
+        readFileSync(
+          new URL(`../../../utils/src/${file}`, import.meta.url),
+          'utf8'
+        ),
+        file
+      ).not.toMatch(/^import /mu);
+  });
+});
+
+describe('framable paths (uploaded WebGL builds)', () => {
+  const sandbox =
+    'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
+  const webgl = '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webgl';
+
+  it('passes the upstream sandbox CSP through untouched', () => {
+    for (const path of [webgl, `${webgl}/`, `${webgl}/Build/game.js`]) {
+      const headers = apply(`https://cms.tuturuuu.com${path}`, {
+        headers: { 'Content-Security-Policy': sandbox },
+      });
+      expect(headers.get('Content-Security-Policy'), path).toBe(sandbox);
+      expect(headers.get('X-Frame-Options'), path).toBeNull();
+      // Robots, sniffing and private caching still apply.
+      expect(headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+      expect(headers.get('X-Content-Type-Options')).toBe('nosniff');
+      expect(headers.get('Cache-Control')).toBe('private, no-store');
+    }
+    // On the apex mount too (matched app-relative).
+    expect(
+      apply(
+        `https://tuturuuu.com/cms${webgl}/index.html`,
+        { headers: { 'Content-Security-Policy': sandbox } },
+        { mounts: { mountHosts: ['tuturuuu.com'], basePath: '/cms' } }
+      ).get('Content-Security-Policy')
+    ).toBe(sandbox);
+  });
+
+  it('adds no replacement CSP when the upstream sent none', () => {
+    const headers = apply(`https://cms.tuturuuu.com${webgl}`);
+    expect(headers.get('Content-Security-Policy')).toBeNull();
+    expect(headers.get('X-Frame-Options')).toBeNull();
+  });
+
+  it('denies framing next to it, after URL normalization', () => {
+    for (const path of [
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1',
+      `${webgl}x`,
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1/x/webgl',
+      // `..` is resolved before matching, so it cannot reach in or out.
+      `${webgl}/../x`,
+      // An encoded slash is not a path separator.
+      `${webgl}%2Fx`,
+      // Case-sensitive, like central's route.
+      webgl.toUpperCase(),
+    ]) {
+      const headers = apply(`https://cms.tuturuuu.com${path}`, {
+        headers: { 'Content-Security-Policy': sandbox },
+      });
+      expect(headers.get('Content-Security-Policy'), path).toBe(
+        `${sandbox}; frame-ancestors 'none'`
+      );
+      expect(headers.get('X-Frame-Options'), path).toBe('DENY');
+    }
+  });
+
+  it("uses the app's framablePaths from the generated Worker", () => {
+    const headers = apply(
+      'https://forms.tuturuuu.com/embed/f1',
+      {},
+      { framablePaths: [/^\/embed\//u] }
+    );
+    expect(headers.get('X-Frame-Options')).toBeNull();
+    expect(headers.get('Content-Security-Policy')).toBeNull();
+  });
+});
+
+describe('app robots from seo-policy.json', () => {
+  const seoPolicy = {
+    origin: 'https://forms.tuturuuu.com',
+    publicPaths: [''],
+    publicPatterns: ['f/[^/]+'],
+  };
+  const robotsPolicy = createRootResponsePolicy({ seo: appRobots });
+  const robotsOf = (
+    url: string,
+    env: { TUTURUUU_NOINDEX?: string } = {},
+    headers?: HeadersInit
+  ) =>
+    robotsPolicy(new Response('x', { headers }), {
+      request: new Request(url),
+      env,
+      seoPolicy,
+    }).headers.get('X-Robots-Tag');
+
+  it('leaves the public allowlist on the canonical host indexable', () => {
+    expect(robotsOf('https://forms.tuturuuu.com/')).toBeNull();
+    expect(robotsOf('https://forms.tuturuuu.com/vi/f/abc')).toBeNull();
+  });
+
+  it('keeps private paths, other hosts and staging private', () => {
+    for (const url of [
+      'https://forms.tuturuuu.com/api/v1/forms',
+      'https://forms.tuturuuu.com/login',
+      'https://forms.tuturuuu.com/f/abc/edit',
+      'https://forms-staging.tuturuuu.com/',
+    ])
+      expect(robotsOf(url), url).toBe('noindex, nofollow, nosnippet');
+    expect(
+      robotsOf('https://forms.tuturuuu.com/', { TUTURUUU_NOINDEX: '1' })
+    ).toBe('noindex, nofollow, nosnippet');
+    // No policy entry: private.
+    expect(
+      createRootResponsePolicy({ seo: appRobots })(new Response('x'), {
+        request: new Request('https://forms.tuturuuu.com/'),
+        seoPolicy: null,
+      }).headers.get('X-Robots-Tag')
+    ).toBe('noindex, nofollow, nosnippet');
+  });
+
+  it('never overrides an upstream noindex', () => {
+    expect(
+      robotsOf('https://forms.tuturuuu.com/', {}, { 'X-Robots-Tag': 'noindex' })
+    ).toBe('noindex');
+    const index = createRootResponsePolicy({ seo: 'index, follow' });
+    expect(
+      apply(
+        'https://forms.tuturuuu.com/',
+        { headers: { 'X-Robots-Tag': 'NoIndex, follow' } },
+        {},
+        index
+      ).get('X-Robots-Tag')
+    ).toBe('NoIndex, follow');
+    // A private decision still replaces an indexable upstream value.
+    expect(
+      robotsOf(
+        'https://forms.tuturuuu.com/login',
+        {},
+        { 'X-Robots-Tag': 'index, follow' }
+      )
+    ).toBe('noindex, nofollow, nosnippet');
+  });
+});
+
+describe('framable responses and stateful patterns', () => {
+  const sandbox = 'sandbox allow-scripts';
+  const webgl = '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webgl';
+
+  it('removes an upstream X-Frame-Options and keeps the CSP byte-for-byte', () => {
+    for (const xfo of ['DENY', 'SAMEORIGIN']) {
+      const headers = apply(`https://cms.tuturuuu.com${webgl}`, {
+        headers: {
+          'X-Frame-Options': xfo,
+          'Content-Security-Policy': `${sandbox};  FRAME-ANCESTORS https://a.test`,
+        },
+      });
+      expect(headers.get('X-Frame-Options'), xfo).toBeNull();
+      expect(headers.get('Content-Security-Policy')).toBe(
+        `${sandbox};  FRAME-ANCESTORS https://a.test`
+      );
+    }
+  });
+
+  it('matches g/y app patterns the same on every request', () => {
+    for (const pattern of [/^\/embed\//gu, /^\/embed\//uy]) {
+      const framablePaths = [pattern];
+      for (let attempt = 0; attempt < 4; attempt += 1)
+        expect(
+          apply(
+            'https://forms.tuturuuu.com/embed/f1',
+            {},
+            { framablePaths }
+          ).get('X-Frame-Options'),
+          `${pattern} #${attempt}`
+        ).toBeNull();
+      expect(pattern.lastIndex).toBe(0);
+    }
+    const own = createRootResponsePolicy({
+      seo: 'noindex',
+      framable: [/^\/widget\//gu],
+    });
+    for (let attempt = 0; attempt < 3; attempt += 1)
+      expect(
+        apply('https://forms.tuturuuu.com/widget/w', {}, {}, own).get(
+          'X-Frame-Options'
+        )
+      ).toBeNull();
+  });
+});

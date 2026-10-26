@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/theme/appearance/brand_accents.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -43,6 +44,22 @@ String displayWorkspacePickerName(BuildContext context, Workspace workspace) {
   }
 
   return displayWorkspaceName(context, workspace);
+}
+
+/// Stable brand identity colour of [workspace], derived from its id so it
+/// survives renames and is the same on every device.
+BrandAccent workspaceAccent(Workspace workspace) =>
+    BrandAccents.forKey(workspace.id);
+
+/// Up to two initials from the first two words of [label], upper-cased.
+String workspaceInitials(String label) {
+  final words = label
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((word) => word.isNotEmpty)
+      .take(2);
+  final initials = words.map((word) => word.characters.first).join();
+  return initials.isEmpty ? 'W' : initials.toUpperCase();
 }
 
 String humanizeWorkspaceLabel(String value) {

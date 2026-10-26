@@ -1,3 +1,6 @@
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -9,8 +12,7 @@ export const metadata: Metadata = {
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  if (!rawValue?.startsWith('/') || rawValue.startsWith('//')) return '/home';
-  return rawValue;
+  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/home');
 }
 
 export default async function Login({
@@ -19,7 +21,13 @@ export default async function Login({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const context = maybeBridgeRequest();
+  const returnUrl = context
+    ? new URL(
+        withAppBase('/verify-token', context.appBase ?? ''),
+        context.request.url
+      )
+    : new URL('/verify-token', BASE_URL);
   returnUrl.searchParams.set(
     'nextUrl',
     normalizeNextPath(params.nextUrl ?? params.next)

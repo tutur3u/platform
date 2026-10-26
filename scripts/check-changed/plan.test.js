@@ -79,9 +79,10 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
     'app-seo',
     'biome',
     'oxlint',
+    'server-console',
     'internal-app-auth',
     'satellite-cookie-auth',
-    'server-console',
+    'browser-session-surface',
     'vitest:packages/utils',
     'type-check:apps/web',
     'type-check:packages/utils',
@@ -95,6 +96,53 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
   assert.equal(vitest.cwd, 'packages/utils');
   assert.deepEqual(vitest.args.slice(-1), ['src/date.test.ts']);
   assert.equal(vitest.heavy, true);
+});
+
+test('bun:test suites run with bun test from their workspace, never Vitest or node --test', () => {
+  const source = {
+    'apps/meet-realtime/src/channel-room-do.test.ts':
+      "import { test } from 'bun:test';\nimport assert from 'node:assert/strict';",
+    'apps/meet-realtime/src/worker.test.ts':
+      "import { test } from 'node:test';",
+    'apps/meet-realtime/src/token.test.ts': "import { it } from 'vitest';",
+  };
+  const plan = planChecks(
+    changed(
+      'apps/meet-realtime/src/channel-room-do.ts',
+      'apps/meet-realtime/src/worker.ts',
+      'apps/meet-realtime/src/token.ts'
+    ),
+    context(Object.keys(source), {
+      readSource: (file) => source[file] ?? '',
+      workspaces: [{ workspace: 'apps/meet-realtime', testScript: '' }],
+    })
+  );
+  const bun = plan.steps.find(
+    (step) => step.id === 'bun-test:apps/meet-realtime'
+  );
+  assert.equal(bun.command, 'bun');
+  assert.equal(bun.cwd, 'apps/meet-realtime');
+  assert.deepEqual(bun.args, ['test', 'src/channel-room-do.test.ts']);
+  assert.equal(bun.heavy, true);
+  const node = plan.steps.find((step) => step.id === 'script-tests');
+  assert.deepEqual(
+    node.args.filter((arg) => arg.endsWith('.test.ts')),
+    ['apps/meet-realtime/src/worker.test.ts']
+  );
+  const vitest = plan.steps.find(
+    (step) => step.id === 'vitest:apps/meet-realtime'
+  );
+  assert.deepEqual(vitest.args.slice(-1), ['src/token.test.ts']);
+  // A workspace without a Vitest config still runs its Bun suites.
+  const bare = planChecks(
+    changed('apps/no-vitest/src/room.ts'),
+    context(['apps/no-vitest/src/room.test.ts'], {
+      readSource: () => "import { test } from 'bun:test';",
+      workspaces: [{ workspace: 'apps/no-vitest', testScript: '' }],
+    })
+  );
+  assert.ok(ids(bare).includes('bun-test:apps/no-vitest'));
+  assert.equal(ids(bare).includes('vitest:apps/no-vitest'), false);
 });
 
 test('falls back to pinned npx Biome when the local version differs', () => {

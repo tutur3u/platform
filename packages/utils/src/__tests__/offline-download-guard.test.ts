@@ -148,6 +148,9 @@ describe('offline download guards', () => {
         request({ bulk: true, token: 'captcha' })
       );
       expect(response?.status).toBe(503);
+      expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+        'offline-download-inactive'
+      );
       expect(response?.headers.get('Cache-Control')).toBe('no-store');
       expect(response?.headers.get('Retry-After')).toBe('30');
       expect(mocks.redis).not.toHaveBeenCalled();
@@ -218,12 +221,18 @@ describe('offline download guards', () => {
       request({ bulk: true, token: 'captcha' })
     );
     expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'offline-download-rate-limited'
+    );
     expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
     expect(mocks.verify).not.toHaveBeenCalled();
   });
   it('issues an explicit challenge, not a permission denial', async () => {
     const response = await guardOfflineDownloadRequest(request({ bulk: true }));
     expect(response?.status).toBe(403);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'offline-download-challenge-required'
+    );
     expect(response?.headers.get('X-Abuse-Challenge')).toBe('turnstile');
     expect(mocks.set).not.toHaveBeenCalled();
   });
@@ -336,5 +345,54 @@ describe('offline download guards', () => {
     input.headers.set('authorization', 'Bearer   synthetic-session');
     expect(await guardOfflineDownloadRequest(input)).toBeNull();
     expect(mocks.limit).toHaveBeenCalledTimes(4);
+  });
+
+  it.each(['missing-store', 'limiter-error', 'unknown-address'])(
+    'distinguishes activated runtime failures from inactive protection: %s',
+    async (failure) => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', 'true');
+      mocks.redis.mockResolvedValue({ get: mocks.get, set: mocks.set });
+      mocks.limiterRedis.mockResolvedValue({});
+      mocks.limit.mockResolvedValue({
+        success: true,
+        reset: Date.now() + 1000,
+      });
+      if (failure === 'missing-store') mocks.redis.mockResolvedValue(null);
+      if (failure === 'limiter-error')
+        mocks.limit.mockRejectedValue(new Error('offline'));
+      if (failure === 'unknown-address')
+        mocks.ip.mockReturnValueOnce('unknown');
+      try {
+        const response = await guardOfflineDownloadRequest(
+          request({ bulk: true, bearer: null })
+        );
+        expect(response?.status).toBe(503);
+        expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+          'offline-download-unavailable'
+        );
+        expect(response?.headers.get('Retry-After')).toBe('30');
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
+  );
+  it('identifies offline downloads missing authentication after the IP budget', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', 'true');
+    mocks.redis.mockResolvedValue({});
+    mocks.limiterRedis.mockResolvedValue({});
+    mocks.limit.mockResolvedValue({ success: true, reset: Date.now() + 1000 });
+    try {
+      const response = await guardOfflineDownloadRequest(
+        request({ bulk: true, bearer: null })
+      );
+      expect(response?.status).toBe(401);
+      expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+        'offline-download-authentication-required'
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

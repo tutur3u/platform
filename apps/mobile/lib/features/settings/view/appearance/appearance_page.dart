@@ -18,7 +18,7 @@ import 'package:mobile/features/settings/view/appearance/appearance_labels.dart'
 import 'package:mobile/features/settings/view/appearance/appearance_pickers.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_preview.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_theme_gallery.dart';
-import 'package:mobile/features/settings/view/settings_profile_header.dart';
+import 'package:mobile/features/settings/view/settings_profile_parts.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
