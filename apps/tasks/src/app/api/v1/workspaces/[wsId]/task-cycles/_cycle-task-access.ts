@@ -1,5 +1,5 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
