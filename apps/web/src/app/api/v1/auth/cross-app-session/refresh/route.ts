@@ -71,7 +71,9 @@ async function consumeRefreshTokenWithGrace({
     return 'replayed';
   }
 
-  const redis = await getUpstashRestRedisClient().catch(() => null);
+  const redis = await getUpstashRestRedisClient({
+    family: 'replay',
+  }).catch(() => null);
   if (!redis) {
     return 'unavailable';
   }

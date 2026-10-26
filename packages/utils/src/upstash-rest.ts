@@ -1,4 +1,7 @@
 import type { Redis } from '@upstash/redis';
+import type { AbuseGuardFamily } from './abuse-guard/protocol';
+import { createGuardRedisView } from './abuse-guard/redis-view';
+import { selectAbuseGuard } from './abuse-guard/select';
 
 export type UpstashRestRedisClient = Pick<
   Redis,
@@ -25,7 +28,26 @@ export function hasUpstashRestEnv(): boolean {
   );
 }
 
-export async function getUpstashRestRedisClient(): Promise<UpstashRestRedisClient | null> {
+/**
+ * Returns the Redis-shaped client for abuse-protection state. A caller that
+ * names its `family` is served by the Durable Object guard store once that
+ * family is assigned to it, and gets null (store unavailable, so its own fail
+ * policy applies) when the assignment is misconfigured or switched off.
+ * Without a family, or for an unassigned one, this is the Upstash client.
+ */
+export async function getUpstashRestRedisClient(options?: {
+  family?: AbuseGuardFamily;
+}): Promise<UpstashRestRedisClient | null> {
+  if (options?.family) {
+    const selection = selectAbuseGuard(options.family);
+    if (selection.kind === 'off') return null;
+    if (selection.kind === 'durable-object') {
+      // Covers GET/MGET/SET/DEL/INCR/DECR/EXPIRE/TTL; SCAN throws.
+      return createGuardRedisView(
+        selection.client
+      ) as unknown as UpstashRestRedisClient;
+    }
+  }
   if (!hasUpstashRestEnv()) {
     return null;
   }

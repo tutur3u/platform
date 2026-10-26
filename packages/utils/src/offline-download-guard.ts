@@ -2,6 +2,8 @@ import { verifyTurnstileToken } from '@tuturuuu/turnstile/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type { AbuseGuardClient } from './abuse-guard/client';
+import { selectAbuseGuard } from './abuse-guard/select';
 import { extractIPFromRequest } from './abuse-protection/edge';
 import { getCachedTrustEntries } from './abuse-protection/edge-trust';
 import {
@@ -16,6 +18,8 @@ import {
 
 export const OFFLINE_DOWNLOAD_HEADER = 'x-tuturuuu-offline-download';
 const CLEARANCE_SECONDS = 15 * 60;
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
 const READ_PATH =
   /^\/api\/(?:v1\/)?workspaces\/[^/]+\/(?:finance|inventory|transactions|wallets|tags|members|products|product-categories|product-units|product-warehouses|tasks|task-boards|boards|labels|task-projects|task-initiatives|habit-trackers|habits|calendar)(?:[-/]|$)/u;
 const USER_READ_PATH =
@@ -76,6 +80,83 @@ function challenge(request: NextRequest) {
   );
 }
 
+type OfflineSubject = { key: string; minute: number; hour: number };
+
+/** Storage operations of the offline guard; every failure throws. */
+type OfflineGuardStore = {
+  /** Charges each subject in order; returns the first denial, if any. */
+  limit(subjects: OfflineSubject[]): Promise<{ reset: number } | null>;
+  hasClearance(key: string): Promise<boolean>;
+  grantClearance(key: string): Promise<void>;
+};
+
+function durableObjectStore(client: AbuseGuardClient): OfflineGuardStore {
+  return {
+    async limit(subjects) {
+      if (subjects.length === 0) return null;
+      // One RPC: each subject's minute and hour windows are all-or-nothing,
+      // and later subjects are not charged after a denial.
+      const outcome = await client.hitWindows(
+        subjects.map((subject) => ({
+          partition: subject.key,
+          windows: [
+            {
+              key: '1m',
+              limit: subject.minute,
+              windowMs: MINUTE_MS,
+              algo: 'sliding' as const,
+            },
+            {
+              key: '1h',
+              limit: subject.hour,
+              windowMs: HOUR_MS,
+              algo: 'sliding' as const,
+            },
+          ],
+        }))
+      );
+      return outcome.ok ? null : { reset: outcome.resetAt };
+    },
+    async hasClearance(key) {
+      return Boolean(await client.get(key));
+    },
+    async grantClearance(key) {
+      await client.set(key, 'passed', { ttlMs: CLEARANCE_SECONDS * 1000 });
+    },
+  };
+}
+
+async function upstashStore(): Promise<OfflineGuardStore | null> {
+  const redis = await getUpstashRestRedisClient();
+  const limiterRedis = await getUpstashRatelimitRedisClient();
+  if (!redis || !limiterRedis) return null;
+  return {
+    async limit(subjects) {
+      for (const subject of subjects) {
+        for (const [window, limit] of [
+          ['1 m', subject.minute],
+          ['1 h', subject.hour],
+        ] as const) {
+          const limiter = new Ratelimit({
+            redis: limiterRedis,
+            limiter: Ratelimit.slidingWindow(limit, window),
+            prefix: `offline:read:${window}`,
+          });
+          const result = await limiter.limit(subject.key);
+          if (!result.success) return { reset: result.reset };
+        }
+      }
+      return null;
+    },
+    async hasClearance(key) {
+      return Boolean(await redis.get(key));
+    },
+    async grantClearance(key) {
+      await redis.set(key, 'passed', { ex: CLEARANCE_SECONDS });
+    },
+  };
+}
+
 /** Additional protection is scoped to explicitly marked offline bulk downloads.
  * Ordinary enterprise reads retain their existing API/auth protections.
  * Clearance never satisfies authentication, authorization, IP blocks, required
@@ -91,9 +172,13 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
     return unavailable(request, 'offline-download-inactive');
   }
   try {
-    const redis = await getUpstashRestRedisClient();
-    const limiterRedis = await getUpstashRatelimitRedisClient();
-    if (!redis || !limiterRedis) return unavailable(request);
+    const selection = selectAbuseGuard('offline');
+    if (selection.kind === 'off') return unavailable(request);
+    const store =
+      selection.kind === 'durable-object'
+        ? durableObjectStore(selection.client)
+        : await upstashStore();
+    if (!store) return unavailable(request);
     const bearer = request.headers
       .get('authorization')
       ?.match(/^Bearer\s+([^\s]+)$/i)?.[1];
@@ -114,38 +199,25 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
         : []),
       ...(sessionKey ? [{ key: sessionKey, minute: 600, hour: 12000 }] : []),
     ];
-    for (const subject of subjects) {
-      for (const [window, limit] of [
-        ['1 m', subject.minute],
-        ['1 h', subject.hour],
-      ] as const) {
-        const limiter = new Ratelimit({
-          redis: limiterRedis,
-          limiter: Ratelimit.slidingWindow(limit, window),
-          prefix: `offline:read:${window}`,
-        });
-        const result = await limiter.limit(subject.key);
-        if (!result.success) {
-          return guardRejection(
-            request,
-            NextResponse.json(
-              {
-                message:
-                  'Read limit reached. Try again after the indicated delay.',
-              },
-              {
-                status: 429,
-                headers: {
-                  'Cache-Control': 'no-store',
-                  'Retry-After': `${Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))}`,
-                  'X-RateLimit-Policy': 'offline-capable-read',
-                },
-              }
-            ),
-            'offline-download-rate-limited'
-          );
-        }
-      }
+    const denial = await store.limit(subjects);
+    if (denial) {
+      return guardRejection(
+        request,
+        NextResponse.json(
+          {
+            message: 'Read limit reached. Try again after the indicated delay.',
+          },
+          {
+            status: 429,
+            headers: {
+              'Cache-Control': 'no-store',
+              'Retry-After': `${Math.max(1, Math.ceil((denial.reset - Date.now()) / 1000))}`,
+              'X-RateLimit-Policy': 'offline-capable-read',
+            },
+          }
+        ),
+        'offline-download-rate-limited'
+      );
     }
     if (!sessionKey)
       return guardRejection(
@@ -161,7 +233,7 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
     if (trust?.verified && (trust.m > 1 || trust.mode === 'unlimited'))
       return null;
     const clearanceKey = `offline:clearance:${sessionKey}`;
-    if (await redis.get(clearanceKey)) return null;
+    if (await store.hasClearance(clearanceKey)) return null;
     const token = request.headers.get('x-tuturuuu-turnstile-token');
     if (!token) return challenge(request);
     try {
@@ -171,7 +243,7 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
     } catch {
       return challenge(request);
     }
-    await redis.set(clearanceKey, 'passed', { ex: CLEARANCE_SECONDS });
+    await store.grantClearance(clearanceKey);
     return null;
   } catch {
     // A distributed guard must not silently fall back to per-process limits.

@@ -39,14 +39,28 @@ export type AbuseGuardSelection =
 
 export const ABUSE_GUARD_DEFAULT_TIMEOUT_MS = 750;
 
+const warnedFamilyNames = new Set<string>();
+
+/**
+ * Parses a family list. Unknown names (typos, wrong case) are ignored, so the
+ * family stays on its legacy path; each one is reported once per process.
+ */
 export function parseAbuseGuardFamilies(value: string | undefined) {
   const known = new Set<string>(ABUSE_GUARD_FAMILIES);
-  return new Set(
-    (value ?? '')
-      .split(',')
-      .map((family) => family.trim())
-      .filter((family): family is AbuseGuardFamily => known.has(family))
-  );
+  const families = new Set<AbuseGuardFamily>();
+  for (const raw of (value ?? '').split(',')) {
+    const name = raw.trim();
+    if (!name) continue;
+    if (known.has(name)) {
+      families.add(name as AbuseGuardFamily);
+    } else if (!warnedFamilyNames.has(name) && warnedFamilyNames.size < 32) {
+      warnedFamilyNames.add(name);
+      console.warn(
+        `[abuse-guard] Ignoring unknown family "${name.slice(0, 32)}"; expected one of ${ABUSE_GUARD_FAMILIES.join(', ')}`
+      );
+    }
+  }
+  return families;
 }
 
 export function parseAbuseGuardTimeout(value: string | undefined) {

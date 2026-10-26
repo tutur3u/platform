@@ -47,6 +47,13 @@ reserving or refunding again. An id reused with different commands is rejected.
 Read-only steps record nothing. The Worker verifies the signature over the raw
 body and path before parsing JSON.
 
+Clients never retry. A caller that retries a mutating call after an unknown
+outcome, such as a timeout, must pass the same `operationId` (from
+`createGuardOperationId()`). The retry then returns the original result instead
+of charging twice. Unknown names in `ABUSE_GUARD_FAMILIES`, including
+wrong-case names, are ignored with a one-time warning. Their family stays on the
+legacy path.
+
 ### Bounds
 
 One RPC is limited to 16 steps (partitions), 8 commands per step, 32 commands,

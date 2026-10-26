@@ -4,6 +4,7 @@ import {
   AbuseGuardUnavailableError,
   createAbuseGuardClient,
   createBindingGuardTransport,
+  createGuardOperationId,
   createHttpGuardTransport,
 } from '../client';
 import { verifyGuardRequest } from '../crypto';
@@ -195,6 +196,50 @@ describe('createHttpGuardTransport', () => {
     await expect(client.get('k')).rejects.toMatchObject({ code: 'network' });
   });
 
+  it('refuses a weak signing secret before anything is sent', () => {
+    expect(() =>
+      createHttpGuardTransport({
+        url: 'https://guard.example.test',
+        secret: 'short',
+        timeoutMs: 500,
+      })
+    ).toThrow(AbuseGuardUnavailableError);
+  });
+
+  it('reuses a caller-supplied operation id so a retry cannot double-charge', async () => {
+    const ids: string[] = [];
+    const client = createAbuseGuardClient({
+      family: 'password',
+      pepper: PEPPER,
+      transport: async (rpc) => {
+        ids.push(rpc.id);
+        return {
+          v: 1,
+          steps: [
+            {
+              results: [
+                { op: 'res.reserve', ok: true, remaining: 1, retryAfterMs: 0 },
+              ],
+            },
+          ],
+        };
+      },
+    });
+    const operationId = createGuardOperationId();
+    const input = {
+      partition: 'pwd:meet-guest',
+      budgets: [{ key: 'target', limit: 2, ttlMs: 60_000 }],
+      receipt: 'r1',
+      operationId,
+    };
+    await client.reserve(input);
+    await client.reserve(input);
+    expect(ids).toEqual([operationId, operationId]);
+    await expect(
+      client.incr('k', 1, 60_000, { operationId: 'bad id' })
+    ).rejects.toMatchObject({ code: 'bad_request' });
+  });
+
   it('sends a fresh operation id with every call', async () => {
     const ids: string[] = [];
     const client = createAbuseGuardClient({
@@ -351,6 +396,16 @@ describe('selectAbuseGuard', () => {
   it('keeps every family on the legacy path by default', () => {
     expect(selectAbuseGuard('offline', configured).kind).toBe('legacy');
     expect(selectAbuseGuard('offline', {}).kind).toBe('legacy');
+  });
+
+  it('warns once about unknown family names and keeps them on legacy', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const env = { ...configured, ABUSE_GUARD_FAMILIES: 'Offline,ofline' };
+    expect(selectAbuseGuard('offline', env).kind).toBe('legacy');
+    expect(selectAbuseGuard('offline', env).kind).toBe('legacy');
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"Offline"');
+    warn.mockRestore();
   });
 
   it('serves only the families named in ABUSE_GUARD_FAMILIES', () => {
