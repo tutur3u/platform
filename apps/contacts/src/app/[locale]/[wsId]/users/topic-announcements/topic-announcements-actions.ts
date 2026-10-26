@@ -23,6 +23,11 @@ import {
 import { notifyTopicAnnouncementTeachers } from '@tuturuuu/internal-api/topic-announcements';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import {
+  getUnverifiedRecipientsFromError,
+  type TopicAnnouncementUnverifiedRecipient,
+  useTopicAnnouncementVerificationRequests,
+} from './topic-announcements-verification-requests';
 
 interface Options {
   invalidate: () => void;
@@ -36,6 +41,20 @@ export function useTopicAnnouncementActions({
   wsId,
 }: Options) {
   const t = useTranslations('ws-topic-announcements');
+  const verifyManyMutation = useTopicAnnouncementVerificationRequests({
+    invalidate,
+    wsId,
+  });
+  const verificationAction = (
+    contacts: TopicAnnouncementUnverifiedRecipient[]
+  ) =>
+    contacts.length > 0
+      ? {
+          label: t('send_verification'),
+          onClick: () =>
+            verifyManyMutation.mutate(contacts.map((contact) => contact.id)),
+        }
+      : undefined;
 
   const createContactMutation = useMutation({
     mutationFn: (payload: TopicAnnouncementContactPayload) =>
@@ -110,8 +129,27 @@ export function useTopicAnnouncementActions({
   const sendMutation = useMutation({
     mutationFn: (announcementId: string) =>
       sendTopicAnnouncement(wsId, announcementId),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('send_failed')),
+    onError: (error) => {
+      const unverifiedContacts = getUnverifiedRecipientsFromError(error);
+      if (unverifiedContacts) {
+        toast.error(
+          t('send_blocked_unverified', {
+            count: unverifiedContacts.length.toString(),
+          }),
+          {
+            action: verificationAction(unverifiedContacts),
+            description: t('send_blocked_unverified_helper', {
+              emails: unverifiedContacts
+                .map((contact) => contact.email)
+                .join(', '),
+            }),
+          }
+        );
+        invalidate();
+        return;
+      }
+      toast.error(error instanceof Error ? error.message : t('send_failed'));
+    },
     onSuccess: () => {
       toast.success(t('sent'));
       invalidate();
@@ -224,14 +262,33 @@ export function useTopicAnnouncementActions({
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('send_failed')),
     onSuccess: ({ importResult, sendResult }) => {
-      const sentCount =
-        sendResult?.results.filter((result) => !result.error).length ?? 0;
-      toast.success(
-        t('bulk_created_and_sent', {
-          created: importResult.createdAnnouncements.toString(),
-          sent: sentCount.toString(),
-        })
+      const results = sendResult?.results ?? [];
+      const sentCount = results.filter((result) => !result.error).length;
+      const blocked = results.filter(
+        (result) => result.error === 'EMAIL_NOT_VERIFIED'
       );
+      const summary = t('bulk_created_and_sent', {
+        created: importResult.createdAnnouncements.toString(),
+        sent: sentCount.toString(),
+      });
+      if (blocked.length > 0) {
+        const unverifiedContacts = [
+          ...new Map(
+            blocked
+              .flatMap((result) => result.unverifiedContacts ?? [])
+              .map((contact) => [contact.id, contact])
+          ).values(),
+        ];
+        toast.warning(summary, {
+          action: verificationAction(unverifiedContacts),
+          description: t('bulk_send_blocked_unverified', {
+            blocked: blocked.length.toString(),
+            contacts: unverifiedContacts.length.toString(),
+          }),
+        });
+      } else {
+        toast.success(summary);
+      }
       onImportSuccess?.(importResult);
       invalidate();
     },
@@ -251,6 +308,7 @@ export function useTopicAnnouncementActions({
     scheduleMutation,
     sendMutation,
     updateTemplateMutation,
+    verifyManyMutation,
     verifyMutation,
   };
 }

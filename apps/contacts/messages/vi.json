@@ -9049,7 +9049,14 @@
     "topic_pending_teacher": "Để trống chủ đề nếu muốn giáo viên phụ trách soạn. Cần có chủ đề trước khi gửi.",
     "video_url_invalid": "Dùng liên kết https:// và không chứa khoảng trắng.",
     "video_url_label": "Liên kết video",
-    "video_url_placeholder": "https://"
+    "video_url_placeholder": "https://",
+    "send_blocked_unverified": "Chưa gửi: {count} người nhận chưa xác minh email",
+    "send_blocked_unverified_helper": "Thông báo được giữ nguyên. Hãy gửi xác minh tới {emails}, rồi gửi lại sau khi họ xác nhận.",
+    "bulk_send_blocked_unverified": "{blocked} thông báo chưa được gửi vì {contacts} người nhận chưa xác minh email. Các thông báo được giữ lại để gửi sau khi xác minh.",
+    "verify_bulk_result": "Đã gửi xác minh tới {sent} liên hệ; {pending} liên hệ đã có liên kết đang chờ.",
+    "verify_bulk_rate_limited": "Đã đạt giới hạn gửi: {count} liên hệ chưa được gửi liên kết. Vui lòng thử lại sau vài phút.",
+    "verify_bulk_failed": "Không thể gửi liên kết cho {count} liên hệ.",
+    "verify_all_unverified": "Gửi xác minh cho {count} liên hệ chưa xác minh"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Bật thông báo chủ đề để duy trì danh sách liên hệ đã xác minh và gửi các thông báo dùng lại được từ không gian làm việc này.",
@@ -9163,7 +9170,7 @@
     "conflict_teacher_slots": "Buổi {slotA} bị trùng lịch với buổi {slotB} cho giáo viên đã chọn",
     "content": "Nội dung",
     "content_placeholder": "Giáo viên cần dạy nội dung gì trong các buổi này?",
-    "content_rule_absent": "Dùng nội dung buổi học đã nghỉ. Nội dung được điền sẵn nếu lớp đã ghi nhận; kiểm tra trước khi lưu.",
+    "content_rule_absent": "Dùng ghi chú của buổi học đã nghỉ. Giữ nguyên nội dung điền sẵn để nội dung tự cập nhật theo ghi chú lớp cho đến khi hoàn thành buổi kèm.",
     "content_rule_weak": "Dùng nội dung cần kèm do giáo viên chủ nhiệm đã điền. Kiểm tra trước khi lưu.",
     "content_update_failed": "Không thể lưu nội dung buổi học. Hãy thử lại.",
     "content_updated": "Đã lưu nội dung buổi học",
@@ -9410,7 +9417,21 @@
     "unavailable_title": "Không tải được không gian làm việc này",
     "weak_content_review_due": "Văn phòng kiểm tra: nội dung chưa đổi",
     "weak_support": "Cần hỗ trợ",
-    "when": "Thời gian"
+    "when": "Thời gian",
+    "content_linked_badge": "Theo ghi chú buổi học đã nghỉ",
+    "content_linked_hint": "Cho đến khi hoàn thành buổi kèm, nội dung tự cập nhật theo ghi chú của buổi học đã nghỉ. Lưu nội dung riêng sẽ ngừng tự cập nhật; xóa trống để liên kết lại với ghi chú.",
+    "end_weak_support": "Thoát kèm",
+    "end_weak_support_confirm": "Thoát kèm",
+    "end_weak_support_description": "{student} sẽ thoát kèm yếu ở lớp {group}: bỏ đánh dấu cần chú ý và không gợi ý xếp buổi mới. Nội dung kèm vẫn được giữ trong lịch sử nhận xét, các buổi đã xếp vẫn còn trên lịch.",
+    "end_weak_support_done": "Đã cho học viên thoát kèm",
+    "end_weak_support_failed": "Không thể thoát kèm. Hãy thử lại.",
+    "end_weak_support_title": "Cho học viên thoát kèm yếu?",
+    "linked_content_not_stored": "Đã hoàn thành buổi kèm nhưng chưa lưu được ghi chú của buổi học đã nghỉ. Hãy kiểm tra lại nội dung.",
+    "policy_restrict_weak_content": "Chỉ người quản lý lớp được điền nội dung kèm",
+    "policy_restrict_weak_content_help": "Khi bật, chỉ thành viên có quyền quản lý lớp (cập nhật nhóm người dùng) mới được điền, sửa hoặc kết thúc nội dung kèm yếu.",
+    "policy_restrict_weak_content_off": "Tắt",
+    "policy_restrict_weak_content_on": "Bật",
+    "tutoring_content": "Nội dung kèm"
   },
   "ws-user-attendance": {
     "absent": "Vắng mặt",
@@ -9514,7 +9535,8 @@
     "title": "Nhận xét người dùng",
     "unknown_group": "Nhóm không xác định",
     "unknown_user": "Người dùng không xác định",
-    "user_group_required": "Người dùng và nhóm là bắt buộc"
+    "user_group_required": "Người dùng và nhóm là bắt buộc",
+    "tutoring_content_hint": "Học viên sẽ được đưa vào danh sách kèm yếu. Nội dung bên trên là nội dung kèm mà giáo viên kèm sẽ dạy."
   },
   "ws-user-fields": {
     "value": "Giá trị"

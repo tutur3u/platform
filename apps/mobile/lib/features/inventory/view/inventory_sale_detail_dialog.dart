@@ -171,7 +171,7 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
         if (sale == null &&
             !snapshot.hasError &&
             snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: NovaLoadingIndicator());
+          return const AppLoadingIndicator.page();
         }
 
         if (sale == null) {

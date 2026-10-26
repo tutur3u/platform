@@ -10,6 +10,11 @@ const READY_LABEL = 'ready-for-ci';
 // workflow run at all.)
 const PR_LABEL_GATE = `github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, '${READY_LABEL}')`;
 
+// PR runs whose payload lacks the label land in their own group, so a push
+// created just before the label was added (push/label race) can never cancel
+// the admitted run. Renders empty for push, schedule and manual events.
+const UNADMITTED_GROUP_SUFFIX = `\${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, '${READY_LABEL}') && '-unadmitted' || '' }}`;
+
 // Branch-push validators moved their non-protected pushes to the gated
 // pull_request trigger; protected and generated refs keep push validation.
 const PROTECTED_PUSH_BRANCHES = [
@@ -96,6 +101,9 @@ const ALWAYS_ON_PR_WORKFLOWS = [
   'security-review-classifier.yaml',
 ];
 
+// Always-on admission check: red unless ready-for-ci admitted this event.
+const ADMISSION_PR_WORKFLOWS = ['ci-admitted.yaml'];
+
 // Paused runtimes keep their retained policy and are neither gated nor run.
 const PAUSED_PR_WORKFLOWS = [
   'docker-setup-check.yaml',
@@ -132,6 +140,15 @@ function withoutWorkflowLabelGate(workflow) {
   return { ...workflow, jobs };
 }
 
+// Rewrites the label `contains(...labels.*.name, '...')` into plain
+// JavaScript for tests that evaluate GitHub expressions with vm/Function.
+function labelExpressionToJs(expression) {
+  return expression.replace(
+    /contains\(github\.event\.pull_request\.labels\.\*\.name, ('[^']*')\)/gu,
+    '((github.event?.pull_request?.labels ?? []).some((label) => label.name === $1))'
+  );
+}
+
 // Digest of every non-PR trigger. Converted workflows drop only the push
 // branch selector, so their paths and other triggers must stay identical.
 function protectedTriggerDigest(file, on) {
@@ -162,6 +179,8 @@ function protectedTriggerDigest(file, on) {
 }
 
 module.exports = {
+  labelExpressionToJs,
+  ADMISSION_PR_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
@@ -170,6 +189,7 @@ module.exports = {
   PROTECTED_PUSH_BRANCHES,
   PUSH_TO_PR,
   READY_LABEL,
+  UNADMITTED_GROUP_SUFFIX,
   withoutPrLabelGate,
   withoutWorkflowLabelGate,
 };

@@ -132,7 +132,7 @@ Future<void> _pickTaskRelationship(
     return;
   }
 
-  final selectedTaskId = await shad.showDialog<String>(
+  final selectedTaskId = await _showBoardDialog<String>(
     context: state.context,
     builder: (context) => _TaskRelationshipPickerDialog(
       title: _relationshipPickerTitle(state.context, role),
@@ -696,7 +696,7 @@ Future<void> _moveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
     return;
   }
 
-  final targetListId = await shad.showDialog<String>(
+  final targetListId = await _showBoardDialog<String>(
     context: state.context,
     builder: (context) => _MoveTaskListDialog(lists: availableLists),
   );
@@ -790,7 +790,7 @@ Future<void> _deleteTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
 Future<void> _pickTaskList(_TaskBoardTaskEditorSheetState state) async {
   if (state.widget.lists.length < 2) return;
 
-  final selectedListId = await shad.showDialog<String>(
+  final selectedListId = await _showBoardDialog<String>(
     context: state.context,
     builder: (context) => _TaskListPickerDialog(
       title: state.context.l10n.taskBoardDetailTaskListSelect,

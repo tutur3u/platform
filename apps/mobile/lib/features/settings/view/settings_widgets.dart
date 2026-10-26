@@ -157,6 +157,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
           playOnceKey: 'settings-workspace-context',
           child: SettingsSection(
             title: '',
+            grouped: true,
             children: [
               PendingSyncFrame(
                 workspaceId: currentWorkspace?.id ?? 'personal',
@@ -236,6 +237,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
             playOnceKey: 'settings-workspace-access',
             child: SettingsSection(
               title: l10n.settingsWorkspaceAccessTitle,
+              grouped: true,
               children: [
                 SettingsTile(
                   icon: LucideIcons.group,

@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:share_plus/share_plus.dart';
 
 bool canPreviewMailAttachment(Map<String, dynamic> file) =>
@@ -109,7 +109,7 @@ class _MailAttachmentPreviewState extends State<MailAttachmentPreview> {
               ),
             )
           : bytes == null
-          ? const Center(child: NovaLoadingIndicator(size: 20))
+          ? const AppLoadingIndicator.page()
           : image
           ? Center(
               child: InteractiveViewer(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -39,107 +41,90 @@ class GoalDetailSheet extends StatelessWidget {
       fallback: theme.colorScheme.primary,
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppSheetHandle(),
+            const shad.Gap(20),
+            Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.4,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
+                    color: categoryColor,
+                    borderRadius: BorderRadius.circular(999),
                   ),
                 ),
-              ),
-              const shad.Gap(20),
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: categoryColor,
-                      borderRadius: BorderRadius.circular(999),
+                const shad.Gap(8),
+                Expanded(
+                  child: Text(
+                    categoryName,
+                    style: theme.typography.h4.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Text(
-                      categoryName,
-                      style: theme.typography.h4.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: goal.isActive
-                          ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                          : theme.colorScheme.muted,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      goal.isActive
-                          ? l10n.timerGoalsActive
-                          : l10n.timerGoalsInactive,
-                      style: theme.typography.textSmall,
-                    ),
+                  decoration: BoxDecoration(
+                    color: goal.isActive
+                        ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                        : theme.colorScheme.muted,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                ],
-              ),
-              const shad.Gap(16),
-              _InfoRow(
-                label: l10n.timerGoalsDailyTarget,
-                value: _formatMinutes(context, goal.dailyGoalMinutes),
-                theme: theme,
-              ),
-              if (goal.weeklyGoalMinutes != null) ...[
-                const shad.Gap(6),
-                _InfoRow(
-                  label: l10n.timerGoalsWeeklyTarget,
-                  value: _formatMinutes(context, goal.weeklyGoalMinutes!),
-                  theme: theme,
+                  child: Text(
+                    goal.isActive
+                        ? l10n.timerGoalsActive
+                        : l10n.timerGoalsInactive,
+                    style: theme.typography.textSmall,
+                  ),
                 ),
               ],
-              const shad.Gap(24),
-              Row(
-                children: [
-                  Expanded(
-                    child: shad.OutlineButton(
-                      onPressed: () =>
-                          Navigator.of(context).pop(GoalDetailAction.edit),
-                      child: Text(l10n.timerGoalsEdit),
-                    ),
-                  ),
-                  const shad.Gap(10),
-                  Expanded(
-                    child: shad.DestructiveButton(
-                      onPressed: () =>
-                          Navigator.of(context).pop(GoalDetailAction.delete),
-                      child: Text(l10n.timerGoalsDelete),
-                    ),
-                  ),
-                ],
+            ),
+            const shad.Gap(16),
+            _InfoRow(
+              label: l10n.timerGoalsDailyTarget,
+              value: _formatMinutes(context, goal.dailyGoalMinutes),
+              theme: theme,
+            ),
+            if (goal.weeklyGoalMinutes != null) ...[
+              const shad.Gap(6),
+              _InfoRow(
+                label: l10n.timerGoalsWeeklyTarget,
+                value: _formatMinutes(context, goal.weeklyGoalMinutes!),
+                theme: theme,
               ),
             ],
-          ),
+            const shad.Gap(24),
+            Row(
+              children: [
+                Expanded(
+                  child: shad.OutlineButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(GoalDetailAction.edit),
+                    child: Text(l10n.timerGoalsEdit),
+                  ),
+                ),
+                const shad.Gap(10),
+                Expanded(
+                  child: shad.DestructiveButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(GoalDetailAction.delete),
+                    child: Text(l10n.timerGoalsDelete),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -22,7 +22,6 @@ import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
@@ -315,7 +314,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           builder: (context, state) {
             if (state.status == TimeTrackerStatus.loading &&
                 !state.hasVisibleContent) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
 
             if (state.status == TimeTrackerStatus.error &&

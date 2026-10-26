@@ -82,9 +82,7 @@ void main() {
       expect(find.byKey(const ValueKey('assistant')), findsOneWidget);
     },
   );
-  testWidgets('long live explanation opens an accessible dialog', (
-    tester,
-  ) async {
+  testWidgets('live explanation is the toggle supporting line', (tester) async {
     final semantics = tester.ensureSemantics();
 
     await tester.pumpApp(
@@ -97,13 +95,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     final l = tester.element(find.byType(AssistantLiveBrowsingSetting)).l10n;
-    expect(find.text(l.assistantKeepLiveBrowsingDescription), findsNothing);
-    await tester.tap(
-      find.byTooltip(l.assistantSettingInfo(l.assistantKeepLiveBrowsingTitle)),
-    );
-    await tester.pumpAndSettle();
     expect(find.text(l.assistantKeepLiveBrowsingDescription), findsOneWidget);
-    expect(find.byType(AppDialog), findsOneWidget);
+    expect(
+      find.byTooltip(l.assistantSettingInfo(l.assistantKeepLiveBrowsingTitle)),
+      findsNothing,
+    );
+    expect(find.byType(AppDialog), findsNothing);
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });

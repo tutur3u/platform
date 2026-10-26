@@ -101,9 +101,16 @@ export function renderAnnouncementEmail({
   });
 }
 
+export type TopicAnnouncementUnverifiedContact = {
+  email: string;
+  id: string;
+  name: string;
+};
+
 export async function sendTopicAnnouncement({
   actorUserId,
   announcementId,
+  markSkippedWhenUnverified = false,
   normalizedWsId,
   request,
   resend,
@@ -111,6 +118,9 @@ export async function sendTopicAnnouncement({
 }: {
   actorUserId: string;
   announcementId: string;
+  /** Queue sends have no one to tell, so they record the skip on the row.
+   * Interactive sends leave the row unchanged and return the contacts. */
+  markSkippedWhenUnverified?: boolean;
   normalizedWsId: string;
   request: Request;
   resend: boolean;
@@ -167,16 +177,28 @@ export async function sendTopicAnnouncement({
   });
 
   if (unverified.length > 0) {
-    await sbAdmin
-      .from('topic_announcements')
-      .update({
-        last_error: `EMAIL_NOT_VERIFIED: ${unverified.map((contact: any) => contact.email).join(', ')}`,
-        status: 'skipped',
-        updated_by: actorUserId,
-      })
-      .eq('id', announcementId)
-      .eq('ws_id', normalizedWsId);
-    return { error: 'EMAIL_NOT_VERIFIED', status: 409 };
+    if (markSkippedWhenUnverified) {
+      await sbAdmin
+        .from('topic_announcements')
+        .update({
+          last_error: `EMAIL_NOT_VERIFIED: ${unverified.map((contact: any) => contact.email).join(', ')}`,
+          status: 'skipped',
+          updated_by: actorUserId,
+        })
+        .eq('id', announcementId)
+        .eq('ws_id', normalizedWsId);
+    }
+    return {
+      error: 'EMAIL_NOT_VERIFIED',
+      status: 409,
+      unverifiedContacts: unverified.map(
+        (contact: any): TopicAnnouncementUnverifiedContact => ({
+          email: contact.email,
+          id: contact.id,
+          name: contact.name,
+        })
+      ),
+    };
   }
 
   const { data: attachmentRows, error: attachmentError } = await sbAdmin

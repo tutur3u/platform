@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/l10n/l10n.dart';
 
 Future<void> showOrderEditorSheet(
@@ -18,24 +20,16 @@ class OrderEditorSheet extends StatelessWidget {
   final Widget child;
 
   @override
+  // The shared sheet host draws the surface and handle.
   Widget build(BuildContext context) => Material(
-    color: Theme.of(context).colorScheme.surface,
-    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+    type: MaterialType.transparency,
     child: SafeArea(
       top: false,
       child: SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.75,
         child: Column(
           children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const AppSheetHandle(),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 16, 8),
               child: Row(

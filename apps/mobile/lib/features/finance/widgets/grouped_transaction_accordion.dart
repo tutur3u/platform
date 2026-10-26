@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart' as lucide;
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -9,7 +10,6 @@ import 'package:mobile/features/finance/utils/transaction_icon.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -168,14 +168,14 @@ class _GroupedTransactionAccordionState
 
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: NovaLoadingIndicator(size: 20)),
+              child: AppLoadingIndicator(),
             );
           }
 
           if (bodyIndex >= groups.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: NovaLoadingIndicator(size: 20)),
+              child: AppLoadingIndicator(),
             );
           }
 
@@ -224,7 +224,7 @@ class _GroupedTransactionAccordionState
         if (widget.showLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: NovaLoadingIndicator(size: 20)),
+            child: AppLoadingIndicator(),
           ),
       ],
     );
