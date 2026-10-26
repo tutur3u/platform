@@ -6602,6 +6602,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
 
   @override
+  String get profileFocusTime => 'Thời gian tập trung';
+
+  @override
   String get profileFullName => 'Tên đầy đủ';
 
   @override
@@ -8589,6 +8592,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailFocusStartFailedRestored => 'Không thể bắt đầu tập trung. Bộ bấm giờ đang tạm dừng đã được giữ nguyên.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRunning => 'Không thể bắt đầu tập trung. Bộ bấm giờ trước đó đang chạy lại.';
 
   @override
   String get taskBoardDetailFocusStarted => 'Đã bắt đầu bấm giờ cho công việc này.';
@@ -11280,6 +11286,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Đã đặt';
+
+  @override
+  String get profileYouWorkspaces => 'Không gian làm việc';
 
   @override
   String get assistantSubmitSuccess => 'Đã gửi thành công';

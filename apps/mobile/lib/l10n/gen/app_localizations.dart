@@ -12733,6 +12733,12 @@ abstract class AppLocalizations {
   /// **'Confirmation emails will be sent to both addresses'**
   String get profileEmailUpdateNote;
 
+  /// No description provided for @profileFocusTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus Time'**
+  String get profileFocusTime;
+
   /// No description provided for @profileFullName.
   ///
   /// In en, this message translates to:
@@ -16548,6 +16554,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t start focus. Your paused timer is back as it was.'**
   String get taskBoardDetailFocusStartFailedRestored;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus. Your previous timer is running again.'**
+  String get taskBoardDetailFocusStartFailedRunning;
 
   /// No description provided for @taskBoardDetailFocusStarted.
   ///
@@ -21600,6 +21612,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set'**
   String get profileMediaSet;
+
+  /// No description provided for @profileYouWorkspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get profileYouWorkspaces;
 
   /// No description provided for @assistantSubmitSuccess.
   ///

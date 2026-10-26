@@ -6676,6 +6676,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileEmailUpdateNote => 'Confirmation emails will be sent to both addresses';
 
   @override
+  String get profileFocusTime => 'Focus Time';
+
+  @override
   String get profileFullName => 'Full name';
 
   @override
@@ -8676,6 +8679,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailFocusStartFailedRestored => 'Couldn\'t start focus. Your paused timer is back as it was.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRunning => 'Couldn\'t start focus. Your previous timer is running again.';
 
   @override
   String get taskBoardDetailFocusStarted => 'Timer started for this task.';
@@ -11392,6 +11398,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Set';
+
+  @override
+  String get profileYouWorkspaces => 'Workspaces';
 
   @override
   String get assistantSubmitSuccess => 'Submitted successfully';

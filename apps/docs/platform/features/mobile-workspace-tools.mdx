@@ -1946,7 +1946,9 @@ gestures. The same behavior applies on Android and iOS.
   for another task is replaced only after confirmation. A paused one is stopped
   first, which closes its break. If the new start then fails, the paused work
   is resumed and paused again, so it looks as it did. If that also fails, the
-  toast says the paused timer ended and offers **Open timer**. A timer running
+  timer is resumed but cannot be paused again (after one retry), the toast
+  says it is running. Only when nothing could be restored does the toast say
+  the paused timer ended. Both offer **Open timer**. A timer running
   for this task is kept, and one paused on this task is resumed. The success
   toast offers **Open timer**.
 - **Failures** roll the row back, then show the server's error as a toast:
@@ -1975,13 +1977,32 @@ The names are the tabs' accessible labels and the shell titles of their root
 pages. The dock stays icon-only (no captions), and Back stays on the dock;
 there is no top-left back button.
 
+The Inbox tab is the dock's bell-icon tab, formerly labelled Notifications;
+it opens the same notifications inbox. "Notifications" now survives only as
+the item in the shell's overflow menu, which opens that same page. Whether
+Inbox should also lose the bell icon is still an open decision.
+
 Home, Inbox and You show a **Search** dock action that opens Apps with its
 search field focused (`AppTabCubit.openWithSearch`). Apps keeps its own search
-action, and Mira's dock belongs to its composer. The notifications bell stays
-beside the Inbox tab until the Inbox-versus-bell decision is made, and it keeps
-the "Notifications" name.
+action, and Mira's dock belongs to its composer.
+
+**Mira** opens on its starter suggestions when no conversation is shown:
+Today's focus, Day plan, Backlog cleanup and Team update. They are one grouped
+card of icon rows (title and caption, no shadows or gradients), and a tap puts
+the prompt in the composer, as before. A Recent conversations section is
+deferred until the open Mira chat PRs that own the Assistant page land; the
+history sheet remains the way to reopen a conversation.
+
+**You** shows the identity card, then **Focus Time**: the tracked-time totals
+(today, this week, this month) and the recent-activity chart. Focus Time is
+time tracking, and its **See all** opens Timer statistics. Below that are
+rows for **Workspaces** (with the workspace count, opening the workspace
+picker), **Timeline** (switching the page to Timeline) and **Settings**.
 
 Regression coverage: `shell_viewport_checks.dart` (icon-only dock and labels
-across phone, tablet and rail sizes) and `apps_search_submit_test.dart` (Home
-search opens Apps search).
+across phone, tablet and rail sizes), `apps_search_submit_test.dart` (Home
+search opens Apps search), `assistant_starter_prompts_test.dart` (grouped rows
+at phone and tablet sizes, 2x text, English and Vietnamese),
+`profile_you_rows_test.dart`, `profile_render_cases.dart` and
+`profile_overview_shell_test.dart` (Focus Time beside identity on desktop).
 

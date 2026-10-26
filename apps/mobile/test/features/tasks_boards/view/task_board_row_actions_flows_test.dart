@@ -22,6 +22,9 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
   bool failStart = false;
   bool failResume = false;
 
+  /// Pauses that fail before one succeeds.
+  int failPauses = 0;
+
   @override
   Future<TimeTrackingSession?> getRunningSession(String wsId) async => running;
 
@@ -52,6 +55,10 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
     String? breakTypeName,
   }) async {
     pauses.add(sessionId);
+    if (failPauses > 0) {
+      failPauses--;
+      throw Exception('offline');
+    }
     return TimeTrackingSession(id: sessionId);
   }
 
@@ -263,6 +270,50 @@ void main() {
         find.text("Couldn't start focus. Your paused timer is back as it was."),
         findsOneWidget,
       );
+      await drainToasts(tester);
+    });
+
+    testWidgets('retries the re-pause once before giving up', (tester) async {
+      final timer =
+          _TimerRepository(
+              paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+            )
+            ..failStart = true
+            ..failPauses = 1;
+      await pumpBoard(tester, timer: timer);
+
+      await replacePaused(tester);
+
+      expect(timer.pauses, ['paused-resumed', 'paused-resumed']);
+      expect(
+        find.text("Couldn't start focus. Your paused timer is back as it was."),
+        findsOneWidget,
+      );
+      await drainToasts(tester);
+    });
+
+    testWidgets('says the timer is running when it cannot be re-paused', (
+      tester,
+    ) async {
+      final timer =
+          _TimerRepository(
+              paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+            )
+            ..failStart = true
+            ..failPauses = 2;
+      await pumpBoard(tester, timer: timer);
+
+      await replacePaused(tester);
+
+      expect(timer.resumes, ['paused']);
+      expect(timer.pauses, hasLength(2));
+      expect(
+        find.text(
+          "Couldn't start focus. Your previous timer is running again.",
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('was ended'), findsNothing);
       await drainToasts(tester);
     });
 
