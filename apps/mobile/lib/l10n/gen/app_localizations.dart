@@ -1207,12 +1207,6 @@ abstract class AppLocalizations {
   /// **'Hide camera'**
   String get assistantLiveHideCamera;
 
-  /// No description provided for @assistantLiveIdleHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready to talk'**
-  String get assistantLiveIdleHeading;
-
   /// No description provided for @assistantLiveInfoAccessHeading.
   ///
   /// In en, this message translates to:
@@ -1387,6 +1381,12 @@ abstract class AppLocalizations {
   /// **'Tap the mic to speak again'**
   String get assistantLiveStageYouMuted;
 
+  /// No description provided for @assistantLiveStartTalking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start talking'**
+  String get assistantLiveStartTalking;
+
   /// No description provided for @assistantLiveStartupAudio.
   ///
   /// In en, this message translates to:
@@ -1519,23 +1519,11 @@ abstract class AppLocalizations {
   /// **'Mira Live'**
   String get assistantLiveTitle;
 
-  /// No description provided for @assistantLiveTranscriptEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'Start talking or type a message. Your conversation appears here.'**
-  String get assistantLiveTranscriptEmpty;
-
   /// No description provided for @assistantLiveTranscriptPending.
   ///
   /// In en, this message translates to:
   /// **'Transcript changes are not yet synchronized.'**
   String get assistantLiveTranscriptPending;
-
-  /// No description provided for @assistantLiveTranscriptTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Live transcript'**
-  String get assistantLiveTranscriptTitle;
 
   /// No description provided for @assistantLiveTypeMessage.
   ///

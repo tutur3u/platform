@@ -581,9 +581,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveHideCamera => 'Hide camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Ready to talk';
-
-  @override
   String get assistantLiveInfoAccessHeading => 'Current access';
 
   @override
@@ -673,6 +670,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveStageYouMuted => 'Tap the mic to speak again';
 
   @override
+  String get assistantLiveStartTalking => 'Start talking';
+
+  @override
   String get assistantLiveStartupAudio => 'Audio initialization';
 
   @override
@@ -741,13 +741,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveTitle => 'Mira Live';
 
   @override
-  String get assistantLiveTranscriptEmpty => 'Start talking or type a message. Your conversation appears here.';
-
-  @override
   String get assistantLiveTranscriptPending => 'Transcript changes are not yet synchronized.';
-
-  @override
-  String get assistantLiveTranscriptTitle => 'Live transcript';
 
   @override
   String get assistantLiveTypeMessage => 'Type';

@@ -581,9 +581,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveHideCamera => 'Ẩn camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Sẵn sàng trò chuyện';
-
-  @override
   String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
 
   @override
@@ -673,6 +670,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
 
   @override
+  String get assistantLiveStartTalking => 'Bắt đầu nói';
+
+  @override
   String get assistantLiveStartupAudio => 'Khởi tạo âm thanh';
 
   @override
@@ -741,13 +741,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTitle => 'Mira Live';
 
   @override
-  String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
-
-  @override
   String get assistantLiveTranscriptPending => 'Các thay đổi trong bản ghi chưa được đồng bộ.';
-
-  @override
-  String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
 
   @override
   String get assistantLiveTypeMessage => 'Gõ';
