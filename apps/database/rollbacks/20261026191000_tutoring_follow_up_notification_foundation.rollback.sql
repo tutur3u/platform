@@ -15,48 +15,37 @@ drop table if exists private.tutoring_weak_support_reviews;
 alter table private.workspace_tutoring_sessions
   drop column if exists tutor_comment;
 
-alter table public.notifications
-  drop constraint if exists notifications_type_check;
+do $$
+declare
+  current_types text[];
+begin
+  select array_agg(match[1] order by ordinality)
+    into current_types
+  from pg_constraint constraint_row
+  cross join lateral regexp_matches(
+    pg_get_constraintdef(constraint_row.oid),
+    '''([a-z0-9_]+)''',
+    'g'
+  ) with ordinality as matches(match, ordinality)
+  where constraint_row.conrelid = 'public.notifications'::regclass
+    and constraint_row.conname = 'notifications_type_check';
 
-alter table public.notifications
-  add constraint notifications_type_check check (type in (
-    'task_assigned',
-    'task_updated',
-    'task_mention',
-    'task_label_added',
-    'task_label_removed',
-    'task_title_changed',
-    'task_description_changed',
-    'task_priority_changed',
-    'task_due_date_changed',
-    'task_start_date_changed',
-    'task_estimation_changed',
-    'task_assignee_added',
-    'task_assignee_removed',
-    'task_project_linked',
-    'task_project_unlinked',
-    'task_moved',
-    'task_completed',
-    'task_reopened',
-    'task_deleted',
-    'task_restored',
-    'deadline_reminder',
-    'workspace_invite',
-    'system_announcement',
-    'account_update',
-    'security_alert',
-    'report_approved',
-    'report_rejected',
-    'post_approved',
-    'post_rejected',
-    'time_tracking_request_submitted',
-    'time_tracking_request_resubmitted',
-    'time_tracking_request_approved',
-    'time_tracking_request_rejected',
-    'time_tracking_request_needs_info',
-    'chat_message',
-    'mail_received'
-  )) not valid;
+  if current_types is null or cardinality(current_types) = 0 then
+    raise exception 'notifications_type_check is missing or has no types';
+  end if;
+
+  alter table public.notifications
+    drop constraint notifications_type_check;
+
+  execute format(
+    'alter table public.notifications add constraint notifications_type_check check (type in (%s)) not valid',
+    (
+      select string_agg(quote_literal(type_name), ', ' order by position)
+      from unnest(array_remove(array_remove(current_types, 'tutoring_weak_content_review_due'), 'tutoring_session_completed')) with ordinality as types(type_name, position)
+    )
+  );
+end;
+$$;
 
 comment on constraint notifications_type_check on public.notifications is
   'Validates notification types for task activity, workspace/system notices, approvals, time tracking request workflows, chat messages, and incoming Mail.';
