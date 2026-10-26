@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-04'
+updatedAt: '2026-10-26'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -216,6 +216,42 @@ content, the field stays empty for staff to fill. A weak-support draft uses the
 teacher's flagged feedback content. Staff can review and edit either draft
 before saving; content is never invented from a class title or an unrelated
 lesson.
+
+### Make-up content follows the missed lesson's notes
+
+Decision (applies to `ABSENT_RECOVERY` sessions in Contacts → Tutoring; default
+on, no setting):
+
+- While a make-up session is **pending**, its content follows the lesson notes
+  recorded for the missed class session. Notes a teacher adds or edits after
+  scheduling appear in the schedule automatically. The schedule marks such
+  sessions with "Follows the missed lesson notes".
+- When the session is **marked done** (row action or session edit), the notes as
+  they stand are stored on the session and are **frozen**. Later edits to the
+  class notes no longer change it.
+- A tutor's **manual edit** of the content stores their own text and stops the
+  updates for that session; a completion never overwrites it. Clearing the
+  content of a pending session links it to the notes again.
+- No-show and cancelled sessions keep whatever content they have.
+
+Implementation: no schema change. A linked session is one whose stored
+content is blank (empty or whitespace only), so the create form saves an
+unchanged drafted note as empty. The
+sessions list derives the content at read time, pairing each session with its
+missed class through the queue's
+[legacy absence credit matching](#legacy-absence-credit-matching), and reads
+that class session's notes. Completion writes the notes only while the stored
+content is still the blank value it read (a compare-and-set, so a concurrent
+staff edit wins). Completing through the session edit with no content, or with
+blank content, still stores the notes; only real text sent with the completion
+counts as a manual edit. If the lookup fails, the list shows the stored content
+and completion still succeeds. Regression coverage:
+[`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
+(notes filled after scheduling, frozen after completion, manual edit kept,
+lookup failure, whitespace-only content),
+[`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
+(completion with absent, empty or blank content) and
+[`use-tutoring-create.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/use-tutoring-create.test.ts).
 
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
 and stored under `TUTORING_POLICY` with bounded `TUTORING_POLICY_PART_*` rows in
