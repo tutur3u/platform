@@ -121,12 +121,55 @@ inventory that prefix, distinguish meeting/session objects from user-created
 files, and plan reference-preserving relocation for any collisions. Do not infer
 ownership from the folder name or automatically move/delete matching objects.
 
+### Signed URL lifetime decision
+
+- **Scope:** every signed read URL that an app-side signer issues for
+  workspace storage:
+  - the workspace share route (POST and the GET redirect);
+  - the SDK share and share-batch routes;
+  - `storage-core`'s `createGuardedSupabaseStorageReadUrl`, which every
+    Supabase read URL from `createWorkspaceStorageSignedReadUrl` passes through;
+  - the managed-contact avatar read route.
+- **Default:** one hour (3,600 seconds). Explicit requests are capped at seven
+  days (604,800 seconds).
+  - Older clients that ask for more (up to the previous one-year maximum) are
+    clamped, not rejected.
+  - The rule lives in `@tuturuuu/storage-core/signed-url-policy`
+    (`clampSignedUrlTtl`).
+  - R2 presigned URLs keep their shorter 15-minute default. SigV4 presigning
+    cannot exceed seven days either.
+- **No stored bearer URLs:** anything that must stay readable longer stores the
+  object path and signs on read.
+  - Embedded images use the share route's GET redirect
+    (`/api/v1/workspaces/<wsId>/storage/share?path=…`), which re-checks access
+    and issues a fresh one-hour URL. Task media and document images both work
+    this way.
+  - Task/project-update attachments store `file_path` and return a 15-minute
+    URL.
+  - Managed-contact avatars return the stable public URL of the `avatars`
+    bucket (no token). Legacy avatars in the private bucket get a one-hour URL
+    and must not be stored.
+- **Existing stored URLs:** documents rewrite stored signed `workspaces` image
+  URLs to the share redirect when they load, so images stay readable after the
+  old token expires.
+  - Stored avatar URLs and other copies stay valid until their original expiry.
+  - Nothing is revoked or re-keyed by this change.
+- **Affected surfaces:** Drive share links, SDK share APIs, Web documents,
+  Tasks attachments and media, and Contacts and mobile CRM avatars.
+- **Regression coverage:**
+  - `packages/storage-core/src/lib/signed-url-policy.test.ts`
+  - `packages/storage-core/src/lib/storage-download-sign.test.ts`
+  - `apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.test.ts`
+  - `packages/users-core/src/routes/users/avatar.test.ts`
+  - `apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/document-image-sources.test.ts`
+
 ### Previously issued signed URLs
 
-The workspace share route defaults to 31,536,000 seconds (one year); this change
-preserves that TTL. Denying new requests does not revoke bearer URLs already
-issued for private objects, and this PR does not close direct Supabase Storage
-access governed by existing RLS. The separate Storage RLS lane owns that fix.
+The workspace share route used to default to 31,536,000 seconds (one year), so
+some issued URLs may stay valid for up to a year. A shorter default does not
+revoke them. Denying new requests does not revoke bearer URLs already issued for
+private objects, and direct Supabase Storage access is governed by the
+workspace storage RLS.
 
 Remediation is an approval-required operator action: inventory exposed object
 keys and references, copy/re-key or move each object to a new unpredictable key,

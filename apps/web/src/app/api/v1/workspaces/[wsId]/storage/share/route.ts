@@ -1,5 +1,6 @@
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
 import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
+import { clampSignedUrlTtl } from '@tuturuuu/storage-core/signed-url-policy';
 import {
   createWorkspaceStorageSignedReadUrl,
   WorkspaceStorageError,
@@ -15,6 +16,9 @@ import {
   resolveWorkspaceStorageRouteAuth,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth';
 
+// Requests above 7 days are accepted for older clients but clamped by
+// clampSignedUrlTtl; the default is 1 hour. Long-lived embeds use this route's
+// GET redirect (sign on read) instead of a stored signed URL.
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.number().int().min(60).max(31_536_000).optional(),
@@ -112,7 +116,7 @@ async function resolveSignedUrl(
       normalizedWsId,
       sanitizedPath,
       {
-        expiresIn: input.expiresIn ?? 31_536_000,
+        expiresIn: clampSignedUrlTtl(input.expiresIn),
         transform: input.transform,
       }
     );

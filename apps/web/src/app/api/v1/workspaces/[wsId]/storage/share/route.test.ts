@@ -186,10 +186,45 @@ describe('Drive sharing does not authorize private chat resources', () => {
       expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
         'ws-123',
         path,
-        expect.objectContaining({ expiresIn: 31_536_000 })
+        expect.objectContaining({ expiresIn: 3600 })
       );
     }
   );
+
+  it.each([
+    ['clamps a one-year request to seven days', 31_536_000, 604_800],
+    ['keeps an explicit lifetime under the cap', 7200, 7200],
+    ['keeps exactly seven days', 604_800, 604_800],
+  ])('%s', async (_, expiresIn, expected) => {
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+        method: 'POST',
+        body: JSON.stringify({ path: 'mira/notes.txt', expiresIn }),
+      }),
+      params
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenLastCalledWith(
+      'ws-123',
+      'mira/notes.txt',
+      expect.objectContaining({ expiresIn: expected })
+    );
+  });
+
+  it('clamps GET redirect lifetimes too', async () => {
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-123/storage/share?path=mira%2Fnotes.txt&expiresIn=31536000'
+      ),
+      params
+    );
+    expect(response.status).toBe(307);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenLastCalledWith(
+      'ws-123',
+      'mira/notes.txt',
+      expect.objectContaining({ expiresIn: 604_800 })
+    );
+  });
 });
 
 vi.mock('next/server', async (importOriginal) => ({
