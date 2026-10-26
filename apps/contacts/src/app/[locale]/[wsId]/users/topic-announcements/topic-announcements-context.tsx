@@ -55,9 +55,13 @@ interface TopicAnnouncementActions {
   cancelSchedule: (announcementId: string) => void;
   createAndSchedule: (
     payload: TopicAnnouncementPayload,
-    scheduledSendAt: string
+    scheduledSendAt: string,
+    onCreated?: (announcementId: string) => void
   ) => Promise<string>;
-  createAndSend: (payload: TopicAnnouncementPayload) => Promise<string>;
+  createAndSend: (
+    payload: TopicAnnouncementPayload,
+    onCreated?: (announcementId: string) => void
+  ) => Promise<string>;
   createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<string>;
   createContact: (payload: TopicAnnouncementContactPayload) => void;
   createTemplate: (payload: TopicAnnouncementTemplatePayload) => void;
@@ -384,18 +388,20 @@ function createActions({
   return {
     cancelSchedule: (announcementId) =>
       mutations.cancelScheduleMutation.mutate(announcementId),
-    createAndSchedule: async (payload, scheduledSendAt) => {
+    createAndSchedule: async (payload, scheduledSendAt, onCreated) => {
       const result =
         await mutations.createAnnouncementMutation.mutateAsync(payload);
+      onCreated?.(result.data.id);
       await mutations.scheduleMutation.mutateAsync({
         announcementId: result.data.id,
         scheduledSendAt,
       });
       return result.data.id;
     },
-    createAndSend: async (payload) => {
+    createAndSend: async (payload, onCreated) => {
       const result =
         await mutations.createAnnouncementMutation.mutateAsync(payload);
+      onCreated?.(result.data.id);
       await mutations.sendMutation.mutateAsync(result.data.id);
       return result.data.id;
     },

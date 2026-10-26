@@ -1,5 +1,6 @@
 import type { TopicAnnouncementUpdatePayload } from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
+import { notifyTopicAnnouncementTeachers } from '@/lib/topic-announcement-teacher-notifications';
 import {
   buildTopicAnnouncementTeacherFilter,
   computeTopicAnnouncementSendDueAt,
@@ -65,6 +66,36 @@ function errorResponse(error: { message: string; status: number }) {
     { message: error.message },
     { status: error.status }
   );
+}
+
+/**
+ * Drops drafts already attached to the announcement (same storage path) and
+ * duplicates within the request, so a client retry cannot attach, and later
+ * email, the same file twice.
+ */
+async function dropSavedAttachmentDrafts({
+  announcementId,
+  attachmentDrafts,
+  sbAdmin,
+}: {
+  announcementId: string;
+  attachmentDrafts: TopicAnnouncementUpdatePayload['attachmentDrafts'];
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+}) {
+  if (!attachmentDrafts?.length) return attachmentDrafts;
+  const { data, error } = await sbAdmin
+    .from('topic_announcement_attachments')
+    .select('storage_path')
+    .eq('announcement_id', announcementId);
+  if (error) throw error;
+  const seen = new Set(
+    ((data ?? []) as { storage_path: string }[]).map((row) => row.storage_path)
+  );
+  return attachmentDrafts.filter((draft) => {
+    if (seen.has(draft.storagePath)) return false;
+    seen.add(draft.storagePath);
+    return true;
+  });
 }
 
 async function validateAttachmentAdditions({
@@ -151,6 +182,7 @@ export async function PATCH(request: Request, { params }: Params) {
   });
   if (loaded.response) return loaded.response;
   const existing = loaded.row;
+  const previousTeacherId = existing.teacher_workspace_user_id;
   const isTeacher = scope?.kind === 'teacher';
 
   if (isTeacher && !TEACHER_EDITABLE_STATUSES.includes(existing.status)) {
@@ -214,8 +246,13 @@ export async function PATCH(request: Request, { params }: Params) {
     }
   }
 
+  const attachmentDrafts = await dropSavedAttachmentDrafts({
+    announcementId,
+    attachmentDrafts: payload.attachmentDrafts,
+    sbAdmin,
+  });
   if (
-    payload.attachmentDrafts?.length &&
+    attachmentDrafts?.length &&
     ATTACHMENT_LOCKED_STATUSES.includes(existing.status)
   ) {
     return NextResponse.json(
@@ -226,7 +263,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const invalidAttachments = await validateAttachmentAdditions({
     announcementId,
-    attachmentDrafts: payload.attachmentDrafts,
+    attachmentDrafts,
     normalizedWsId,
     sbAdmin,
   });
@@ -301,12 +338,34 @@ export async function PATCH(request: Request, { params }: Params) {
   await insertTopicAnnouncementAttachmentDrafts({
     actorUserId,
     announcementId,
-    attachmentDrafts: payload.attachmentDrafts ?? [],
+    attachmentDrafts: attachmentDrafts ?? [],
     normalizedWsId,
     sbAdmin,
   });
 
-  return NextResponse.json({ data });
+  // A supervisor reassigning the topic notifies the new teacher. A failed
+  // notification does not undo the saved assignment.
+  let teacherNotification = null;
+  if (
+    payload.teacherWorkspaceUserId &&
+    payload.teacherWorkspaceUserId !== previousTeacherId
+  ) {
+    try {
+      teacherNotification = await notifyTopicAnnouncementTeachers({
+        actorUserId,
+        announcementIds: [announcementId],
+        normalizedWsId,
+        sbAdmin,
+      });
+    } catch (cause) {
+      console.error('Failed to notify the reassigned topic teacher', {
+        announcementId,
+        cause,
+      });
+    }
+  }
+
+  return NextResponse.json({ data, teacherNotification });
 }
 
 export async function DELETE(request: Request, { params }: Params) {

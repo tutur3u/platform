@@ -1,18 +1,15 @@
 'use client';
 
-import type { WorkspaceBasicUserRecord } from '@tuturuuu/internal-api';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
 import {
   type AnnouncementFormValues,
   isTopicVideoUrlValid,
   NO_TEACHER,
 } from './announcement-form-state';
-import { getWorkspaceUserDisplayName } from './workspace-user-display';
+import { TeacherUserPicker } from './teacher-user-picker';
 
 type SetForm = (
   updater: (current: AnnouncementFormValues) => AnnouncementFormValues
@@ -23,24 +20,14 @@ export function AnnouncementTeacherFields({
   disabled,
   form,
   setForm,
-  workspaceUsers,
+  wsId,
 }: {
   disabled: boolean;
   form: AnnouncementFormValues;
   setForm: SetForm;
-  workspaceUsers: WorkspaceBasicUserRecord[];
+  wsId: string;
 }) {
   const t = useTranslations('ws-topic-announcements');
-  const options = useMemo<ComboboxOption[]>(
-    () => [
-      { label: t('teacher_none'), muted: true, value: NO_TEACHER },
-      ...workspaceUsers.map((user) => ({
-        label: getWorkspaceUserDisplayName(user),
-        value: user.id,
-      })),
-    ],
-    [t, workspaceUsers]
-  );
   const hasTeacher = form.teacherWorkspaceUserId !== NO_TEACHER;
 
   return (
@@ -53,19 +40,14 @@ export function AnnouncementTeacherFields({
           {t('teacher_assignment_helper')}
         </p>
       </div>
-      <Combobox
+      <TeacherUserPicker
         disabled={disabled}
-        mode="single"
-        onChange={(value) =>
-          setForm((current) => ({
-            ...current,
-            teacherWorkspaceUserId:
-              typeof value === 'string' && value ? value : NO_TEACHER,
-          }))
+        noneValue={NO_TEACHER}
+        onChange={(teacherWorkspaceUserId) =>
+          setForm((current) => ({ ...current, teacherWorkspaceUserId }))
         }
-        options={options}
-        placeholder={t('teacher_select_placeholder')}
         selected={form.teacherWorkspaceUserId}
+        wsId={wsId}
       />
       {hasTeacher ? (
         <div className="flex items-center gap-2">

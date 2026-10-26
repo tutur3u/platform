@@ -292,6 +292,48 @@ describe('supervisor PATCH', () => {
     expect(row(OTHER_TOPIC).send_due_at).toBe('2026-11-09T11:30:00.000Z');
   });
 
+  it('notifies the newly assigned teacher on reassignment', async () => {
+    const response = await patch(OTHER_TOPIC, {
+      teacherWorkspaceUserId: TEACHER_WU,
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      teacherNotification: { notifiedTeachers: 1 },
+    });
+    expect(mocks.admin.rpc).toHaveBeenCalledWith(
+      'create_notification',
+      expect.objectContaining({
+        p_entity_id: OTHER_TOPIC,
+        p_type: 'topic_assigned',
+        p_user_id: TEACHER_PLATFORM_ID,
+      })
+    );
+  });
+
+  it('does not notify when the teacher is unchanged', async () => {
+    const response = await patch(OTHER_TOPIC, {
+      teacherWorkspaceUserId: OTHER_TEACHER_WU,
+      title: 'Renamed',
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.admin.rpc).not.toHaveBeenCalled();
+  });
+
+  it('does not attach a file that is already attached', async () => {
+    mocks.admin.tables.topic_announcement_attachments.push({
+      announcement_id: OTHER_TOPIC,
+      id: 'attachment-1',
+      size_bytes: 100,
+      storage_path: ATTACHMENT_DRAFT.storagePath,
+      ws_id: WS_ID,
+    });
+    const response = await patch(OTHER_TOPIC, {
+      attachmentDrafts: [ATTACHMENT_DRAFT, ATTACHMENT_DRAFT],
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.admin.tables.topic_announcement_attachments).toHaveLength(1);
+  });
+
   it.each(['sent', 'processing'])(
     'refuses new attachments on a %s topic',
     async (status) => {

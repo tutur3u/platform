@@ -30,7 +30,18 @@ vi.mock('@tuturuuu/ui/date-time-picker', () => ({
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
+  getWorkspaceUser: vi.fn(async (_wsId: string, id: string) => ({
+    display_name: null,
+    email: null,
+    full_name: `User ${id}`,
+    id,
+  })),
+  listWorkspaceBasicUsers: vi.fn(async () => ({ count: 0, data: [] })),
   previewTopicAnnouncementEmail: mocks.previewTopicAnnouncementEmail,
+}));
+
+vi.mock('@tuturuuu/ui/hooks/use-debounce', () => ({
+  useDebounce: (value: string) => [value],
 }));
 
 const verifiedContact = {
@@ -229,7 +240,8 @@ describe('AnnouncementForm', () => {
         expect.objectContaining({
           contactIds: ['contact-1'],
           title: 'Unit 3 speaking practice',
-        })
+        }),
+        expect.any(Function)
       )
     );
     expect(props.onCreate).not.toHaveBeenCalled();
@@ -314,6 +326,73 @@ describe('AnnouncementForm', () => {
     );
   });
 
+  it('resets the form after create when the send then fails', async () => {
+    const onCreateAndSend = vi.fn(
+      async (_payload: unknown, onCreated?: (id: string) => void) => {
+        onCreated?.('announcement-new');
+        throw new Error('send failed');
+      }
+    );
+    renderForm({ onCreateAndSend });
+
+    completeRequiredSteps();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_delivery_send' })
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_submit_send' })
+    );
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('announcement_title')).toHaveValue('')
+    );
+    expect(onCreateAndSend).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the saved topic and resets the form when notifying fails', async () => {
+    const onNotifyTeachers = vi.fn().mockRejectedValue(new Error('down'));
+    const onCreate = vi.fn().mockResolvedValue('announcement-new');
+    renderForm({
+      forkSeedId: 1,
+      forkSource: {
+        attachments: [],
+        class_label: null,
+        contacts: [verifiedContact],
+        course_book: null,
+        day_label: null,
+        end_time: null,
+        group_id: null,
+        place: null,
+        room: null,
+        session_date: '2026-11-05',
+        start_time: '18:30:00',
+        teacher_workspace_user_id: 'teacher-wu',
+        title: 'Monday session',
+        topic: '',
+        video_url: null,
+      } as never,
+      onCreate,
+      onNotifyTeachers,
+    });
+    expect(screen.getByLabelText('announcement_title')).toHaveValue(
+      'Monday session'
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_submit_draft' })
+    );
+
+    await waitFor(() =>
+      expect(onNotifyTeachers).toHaveBeenCalledWith(['announcement-new'])
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText('announcement_title')).toHaveValue('')
+    );
+    expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+
   it('blocks a non-https video link on the message step', () => {
     renderForm();
     fireEvent.change(screen.getByLabelText('announcement_title'), {
@@ -350,7 +429,8 @@ describe('AnnouncementForm', () => {
           contactIds: ['contact-1'],
           title: 'Unit 3 speaking practice',
         }),
-        expect.any(String)
+        expect.any(String),
+        expect.any(Function)
       )
     );
   });

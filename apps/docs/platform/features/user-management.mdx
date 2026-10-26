@@ -316,6 +316,21 @@ teacher, no deadline, existing behavior unchanged.
   Sent / Late / Not sent badges, and a form for course book, topic and
   objectives, page images, and video link. "Save draft" and "Save & send" (shown
   with `send_user_group_post_emails`) use the update and send routes above.
+- **No duplicate topics or emails on partial failure.** The composer resets as
+  soon as the topic is created, so a later send, schedule, or notify failure
+  cannot lead to a second topic; a notify failure has its own message. In the
+  teacher form, saved attachment drafts are cleared right after the save, before
+  any send, and the update route ignores drafts whose storage path is already
+  attached, so a retried "Save & send" never attaches or emails a file twice.
+- **Teacher picker.** The teacher-in-charge picker searches workspace users on
+  the server (name or email) instead of a fixed first page, so any user in a
+  large workspace can be assigned. The schedule import resolves teacher names
+  with the same search.
+- **Reassignment notifies.** When a supervisor changes `teacherWorkspaceUserId`
+  through the update route, the new teacher gets a `topic_assigned`
+  notification (a notify failure does not undo the change).
+- **My topics** pages past 50 topics and shows deadlines in the workspace's
+  calendar timezone (the browser zone if none is set).
 
 Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`,
 `packages/utils/src/topic-announcement-deadline.test.ts`,
@@ -325,8 +340,10 @@ Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-as
 `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/teacher-writes.test.ts`,
 the Contacts satellite list in
 `apps/contacts/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.test.ts`,
-and the Contacts UI in `announcement-form.test.tsx` and
-`teacher-topics-view.test.tsx` under
+the notification labels in
+`apps/web/src/components/notifications/notification-type-messages.test.ts`,
+and the Contacts UI in `announcement-form.test.tsx`,
+`teacher-topics-view.test.tsx`, and `teacher-user-picker.test.tsx` under
 `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/`.
 Rollback: `apps/database/rollbacks/20261026193000_topic_announcement_teacher_assignment.rollback.sql`,
 proven by

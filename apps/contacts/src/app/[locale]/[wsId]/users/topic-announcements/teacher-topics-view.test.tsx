@@ -1,9 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TeacherTopicsView } from './teacher-topics-view';
+import {
+  formatTeacherDeadline,
+  TeacherTopicsView,
+} from './teacher-topics-view';
 
 const mocks = vi.hoisted(() => ({
+  getWorkspaceCalendarSettings: vi.fn(),
   listTopicAnnouncements: vi.fn(),
   sendTopicAnnouncement: vi.fn(),
   updateTopicAnnouncement: vi.fn(),
@@ -61,6 +65,18 @@ beforeEach(() => {
         topic: 'Done',
       }),
     ],
+  });
+  mocks.getWorkspaceCalendarSettings.mockResolvedValue({
+    timezone: 'Asia/Ho_Chi_Minh',
+  });
+  mocks.uploadTopicAnnouncementAttachment.mockResolvedValue({
+    data: {
+      contentType: 'image/png',
+      fileName: 'page.png',
+      sizeBytes: 4,
+      storagePath: 'workspace-1/topic-announcements/attachments/page.png',
+      storageProvider: 'supabase',
+    },
   });
   mocks.updateTopicAnnouncement.mockResolvedValue({ data: {} });
   mocks.sendTopicAnnouncement.mockResolvedValue({ auditId: 'audit-1' });
@@ -126,6 +142,81 @@ describe('TeacherTopicsView', () => {
       expect(mocks.updateTopicAnnouncement).toHaveBeenCalled()
     );
     expect(mocks.sendTopicAnnouncement).not.toHaveBeenCalled();
+  });
+
+  it('does not re-attach saved files when a send is retried', async () => {
+    mocks.sendTopicAnnouncement
+      .mockRejectedValueOnce(new Error('send failed'))
+      .mockResolvedValueOnce({ auditId: 'audit-1' });
+    renderView();
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'teacher_write_topic' })
+    );
+    fireEvent.change(screen.getByLabelText('teacher_topic_label'), {
+      target: { value: 'Food and drinks' },
+    });
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: {
+        files: [new File(['page'], 'page.png', { type: 'image/png' })],
+      },
+    });
+    await waitFor(() =>
+      expect(mocks.uploadTopicAnnouncementAttachment).toHaveBeenCalled()
+    );
+    await screen.findByText('page.png');
+
+    const saveAndSend = screen.getByRole('button', {
+      name: 'teacher_save_and_send',
+    });
+    fireEvent.click(saveAndSend);
+    await waitFor(() =>
+      expect(mocks.sendTopicAnnouncement).toHaveBeenCalledTimes(1)
+    );
+    expect(mocks.updateTopicAnnouncement.mock.calls[0]?.[2]).toHaveProperty(
+      'attachmentDrafts'
+    );
+
+    await waitFor(() => expect(saveAndSend).not.toBeDisabled());
+    fireEvent.click(saveAndSend);
+    await waitFor(() =>
+      expect(mocks.sendTopicAnnouncement).toHaveBeenCalledTimes(2)
+    );
+    expect(mocks.updateTopicAnnouncement).toHaveBeenCalledTimes(2);
+    expect(mocks.updateTopicAnnouncement.mock.calls[1]?.[2]).not.toHaveProperty(
+      'attachmentDrafts'
+    );
+  });
+
+  it('pages past the first page of topics', async () => {
+    mocks.listTopicAnnouncements.mockResolvedValue({
+      count: 60,
+      data: [topic({})],
+      totalPages: 2,
+    });
+    renderView();
+    fireEvent.click(await screen.findByRole('button', { name: 'next' }));
+    await waitFor(() =>
+      expect(mocks.listTopicAnnouncements).toHaveBeenLastCalledWith(
+        'workspace-1',
+        expect.objectContaining({ page: 2 })
+      )
+    );
+  });
+
+  it('formats the deadline in the workspace timezone', () => {
+    const value = '2026-11-04T11:30:00.000Z';
+    expect(formatTeacherDeadline(value, 'Asia/Ho_Chi_Minh')).toContain(
+      new Date(value).toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Ho_Chi_Minh',
+      })
+    );
+    expect(formatTeacherDeadline(value, 'Asia/Ho_Chi_Minh')).toMatch(/6:30/u);
+    expect(formatTeacherDeadline(null, 'Asia/Ho_Chi_Minh')).toBeNull();
   });
 
   it('blocks sending without a topic', async () => {
