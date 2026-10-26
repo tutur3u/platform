@@ -39,7 +39,7 @@ jobs:
   root-script-tests:
     name: Root script tests (24)
     needs: [check-ci]
-    if: ${{ (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
+    if: (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -86,7 +86,7 @@ jobs:
   backend-source-qualification:
     name: Rust source qualification (1.95)
     needs: [check-ci]
-    if: ${{ (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012')) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
+    if: (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012')) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

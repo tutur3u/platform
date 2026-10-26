@@ -102,6 +102,34 @@ const PAUSED_PR_WORKFLOWS = [
   'tanstack-route-manifest.yaml',
 ];
 
+// Exact inverse of the gate wrapper: plain `X` became `(X) && (GATE)`,
+// `${{ X }}` became `${{ (X) && (GATE) }}` and a missing `if` became `GATE`.
+// Lets older workflow tests keep asserting their original job conditions.
+function withoutPrLabelGate(condition) {
+  if (typeof condition !== 'string') return condition;
+  if (condition === PR_LABEL_GATE) return undefined;
+  const tail = `) && (${PR_LABEL_GATE})`;
+  if (condition.startsWith('${{ (') && condition.endsWith(`${tail} }}`)) {
+    return `\${{ ${condition.slice(5, -(tail.length + 3))} }}`;
+  }
+  if (condition.startsWith('(') && condition.endsWith(tail)) {
+    return condition.slice(1, -tail.length);
+  }
+  return condition;
+}
+
+function withoutWorkflowLabelGate(workflow) {
+  if (!workflow?.jobs) return workflow;
+  const jobs = Object.fromEntries(
+    Object.entries(workflow.jobs).map(([id, job]) => {
+      const condition = withoutPrLabelGate(job?.if);
+      const { if: _gated, ...rest } = job;
+      return [id, condition === undefined ? rest : { ...rest, if: condition }];
+    })
+  );
+  return { ...workflow, jobs };
+}
+
 // Digest of every non-PR trigger. Converted workflows drop only the push
 // branch selector, so their paths and other triggers must stay identical.
 function protectedTriggerDigest(file, on) {
@@ -141,4 +169,6 @@ module.exports = {
   PROTECTED_PUSH_BRANCHES,
   PUSH_TO_PR,
   READY_LABEL,
+  withoutPrLabelGate,
+  withoutWorkflowLabelGate,
 };

@@ -27,7 +27,7 @@ jobs:
       workflow_name: security-egress-contract.yaml
   contract:
     needs: check-ci
-    if: ${{ (always() && needs.check-ci.result == 'success') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
+    if: (always() && needs.check-ci.result == 'success') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
     permissions:
       contents: read
     runs-on: ubuntu-latest

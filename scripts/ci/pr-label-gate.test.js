@@ -10,17 +10,12 @@ const {
   protectedTriggerDigest,
   PUSH_TO_PR,
   READY_LABEL,
+  withoutPrLabelGate,
 } = require('./pr-label-gate');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper');
 
-const workflows = readAllWorkflows();
+const workflows = readAllWorkflows(undefined, { raw: true });
 const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
-const GATED_JOB = (gate) =>
-  new RegExp(
-    `^\\$\\{\\{ \\(.+\\) && \\(${gate.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\) \\}\\}$`,
-    'u'
-  );
-
 // Trigger digests on origin/main when the gate landed. Update a digest only
 // with a reviewed push, schedule or manual trigger change.
 const PROTECTED_TRIGGERS = {
@@ -164,7 +159,8 @@ for (const file of HEAVY_PR_WORKFLOWS) {
       const condition = String(job.if ?? '');
       if (PAUSED_JOB.test(condition)) continue;
       assert.ok(
-        condition === PR_LABEL_GATE || GATED_JOB(PR_LABEL_GATE).test(condition),
+        condition === PR_LABEL_GATE ||
+          withoutPrLabelGate(condition) !== condition,
         // Gating callers (not callees) means a skipped caller never starts
         // its reusable workflow, so no callee check is left pending.
         `${id}: job-level gate missing or not ANDed at top level`
@@ -223,4 +219,15 @@ test('main, production, schedule and manual triggers are untouched', () => {
     assert.deepEqual(push.branches, branches, file);
     assert.equal(push['branches-ignore'], undefined, file);
   }
+});
+
+test('the unwrap is exact for plain, expression and missing conditions', () => {
+  const plain = "needs.check-ci.outputs.should_run == 'true'";
+  assert.equal(withoutPrLabelGate(`(${plain}) && (${PR_LABEL_GATE})`), plain);
+  assert.equal(
+    withoutPrLabelGate(`\${{ (${plain}) && (${PR_LABEL_GATE}) }}`),
+    `\${{ ${plain} }}`
+  );
+  assert.equal(withoutPrLabelGate(PR_LABEL_GATE), undefined);
+  assert.equal(withoutPrLabelGate(plain), plain);
 });
