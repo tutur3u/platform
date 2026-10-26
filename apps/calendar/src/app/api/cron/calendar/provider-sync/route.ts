@@ -4,8 +4,10 @@ import { POST as syncWorkspaceCalendar } from '@/app/api/v1/workspaces/[wsId]/ca
 import {
   reportCalendarDeactivationSpike,
   summarizeCalendarTokenOutcomes,
+  systemicProviders,
   withCalendarTokenHealthRun,
 } from '@/lib/calendar/oauth-token-health';
+import { CONSENSUS_ACCOUNTS } from '@/lib/calendar/oauth-token-quarantine';
 import {
   CRON_BUDGET_MS,
   checkProviderSyncBudget,
@@ -73,17 +75,20 @@ async function handleGET(request: NextRequest) {
     if (dispatch instanceof NextResponse) return dispatch;
     reportCalendarDeactivationSpike(ROUTE, outcomes);
     const tokenCounts = summarizeCalendarTokenOutcomes(outcomes);
-    // A systemic OAuth failure (our client configuration) fails every
-    // account alike, so it fails the job; account-level failures do not.
-    const systemic = tokenCounts.systemic > 0;
+    // Fail the job only when a provider's OAuth client looks broken for
+    // everyone. Account-level failures, including breaker holds amid healthy
+    // refreshes, return 200 so the scheduler's failure budget is not spent.
+    const broken = systemicProviders(outcomes, CONSENSUS_ACCOUNTS);
     return NextResponse.json(
       {
         ...dispatch,
-        ok: dispatch.ok && !systemic,
-        ...(systemic ? { error: 'Calendar OAuth client failure' } : {}),
+        ok: dispatch.ok && broken.length === 0,
+        ...(broken.length
+          ? { error: 'Calendar OAuth client failure', providers: broken }
+          : {}),
         tokens: { counts: tokenCounts, outcomes },
       },
-      { status: systemic ? 500 : 200 }
+      { status: broken.length ? 500 : 200 }
     );
   } catch (error) {
     console.error(

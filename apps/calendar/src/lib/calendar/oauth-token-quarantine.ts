@@ -8,9 +8,9 @@ export type QuarantineOutcome =
   | 'fenced'
   // Not written: the schema or the breaker history could not be read.
   | 'deactivation_deferred'
-  // Not written: too many accounts failed the same way, which points at our
-  // OAuth client or the provider rather than at this account.
-  | 'systemic';
+  // Not written: too many accounts failed the same way, which may point at
+  // our OAuth client or the provider. The account stays active and alerts.
+  | 'consensus_hold';
 
 export interface QuarantineCandidate {
   id: string;
@@ -25,7 +25,9 @@ type QuarantineClient = {
 };
 
 // Distinct accounts failing with one reason, in this run plus the recent
-// window, at which quarantine stops and the failure is treated as systemic.
+// window, at which quarantine holds instead of writing. The window counts rows
+// still quarantined: a reconnect clears its row and frees a slot, which is
+// fine because a working reconnect shows the client is healthy.
 export const CONSENSUS_ACCOUNTS = 3;
 export const CONSENSUS_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -76,7 +78,7 @@ export async function quarantineCalendarAuthToken(
   breaker.recent ??= recentQuarantines(client, reason);
   const recent = await breaker.recent;
   if (recent === null) return 'deactivation_deferred';
-  if (recent + arrival >= CONSENSUS_ACCOUNTS) return 'systemic';
+  if (recent + arrival >= CONSENSUS_ACCOUNTS) return 'consensus_hold';
   if (!client.rpc) return 'deactivation_deferred';
 
   const { data, error } = await client.rpc('quarantine_calendar_auth_token', {

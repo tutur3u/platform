@@ -35,6 +35,8 @@ describe('Google refresh failures', () => {
     ],
     [gaxios(400, 'access_denied'), 'google_access_revoked'],
     [gaxios(400, 'brand_new_code'), 'unknown_permanent'],
+    [gaxios(400, 'invalid_scope'), 'unknown_permanent'],
+    [gaxios(401, 'unauthorized_client'), 'google_unauthorized_client'],
   ])('quarantines %o as %s', (error, reason) => {
     expect(classifyCalendarOAuthFailure('google', error)).toMatchObject({
       kind: 'permanent',
@@ -60,8 +62,8 @@ describe('Google refresh failures', () => {
   it.each([
     gaxios(401, 'invalid_client'),
     gaxios(400, 'invalid_request'),
-    gaxios(401, 'unauthorized_client'),
-    gaxios(400, 'invalid_scope'),
+    gaxios(401, 'deleted_client'),
+    gaxios(401, 'disabled_client'),
   ])('treats our own client configuration %o as systemic', (error) => {
     expect(classifyCalendarOAuthFailure('google', error)?.kind).toBe(
       'systemic'
@@ -86,6 +88,9 @@ describe('Microsoft refresh failures', () => {
     [msal('invalid_grant', '70008'), 'microsoft_invalid_grant'],
     [msal('invalid_grant', '50173'), 'microsoft_invalid_grant'],
     [msal('interaction_required', '50076'), 'microsoft_invalid_grant'],
+    // Tenant-scoped: one customer's admin removed or disabled our app.
+    [msal('unauthorized_client', '700016'), 'microsoft_unauthorized_client'],
+    [msal('invalid_grant', '7000112'), 'microsoft_unauthorized_client'],
     [msal('invalid_grant', '65001'), 'microsoft_consent_revoked'],
     [
       msal('invalid_grant', undefined, { subError: 'consent_required' }),
@@ -116,13 +121,9 @@ describe('Microsoft refresh failures', () => {
   it.each([
     msal('invalid_client', '7000222'),
     msal('invalid_client', '7000215'),
-    msal('invalid_grant', '700016'),
-    msal('unauthorized_client', '700016'),
     msal('invalid_grant', '700027'),
     msal('invalid_grant', '50012'),
-    msal('invalid_grant', '7000112'),
-    msal('invalid_scope', '70011'),
-  ])('treats application-level failure %o as systemic', (error) => {
+  ])('treats a client-credential failure %o as systemic', (error) => {
     expect(classifyCalendarOAuthFailure('microsoft', error)).toMatchObject({
       kind: 'systemic',
     });

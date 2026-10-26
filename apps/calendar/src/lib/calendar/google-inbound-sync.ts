@@ -206,10 +206,7 @@ export async function syncGoogleInbound(args: {
         }
         reportedAccounts.add(token.id);
         if (oauthFailure.kind === 'permanent')
-          rejectedAccounts.set(
-            token.id,
-            outcome === 'systemic' ? 'configuration' : 'auth'
-          );
+          rejectedAccounts.set(token.id, 'auth');
         const entry = recordCalendarTokenOutcome({
           tokenId: token.id,
           provider: 'google',

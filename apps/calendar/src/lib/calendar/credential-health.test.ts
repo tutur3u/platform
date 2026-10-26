@@ -7,6 +7,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 import {
+  credentialSyncErrorType,
   ensureHealthyCalendarCredential,
   MAX_TRANSIENT_RETRIES,
   transientBackoffMs,
@@ -144,4 +145,42 @@ it('logs one structured line with a hashed account and the route', async () => {
     account: expect.stringMatching(/^[0-9a-f]{16}$/),
   });
   expect(JSON.stringify(line)).not.toMatch(/token-id|refresh-credential/);
+});
+
+it('reports a breaker hold as a reconnect-worthy auth failure', async () => {
+  refresh.mockResolvedValue({
+    ...transient,
+    error: 'invalid_grant',
+    failure: {
+      kind: 'permanent',
+      reason: 'google_invalid_grant',
+      providerCode: 'invalid_grant/http_400',
+    },
+    quarantine: 'consensus_hold',
+  });
+  const { result, outcome } = await ensureHealthyCalendarCredential(
+    { from: vi.fn() },
+    token,
+    { sleep }
+  );
+  expect(outcome.outcome).toBe('consensus_hold');
+  expect(credentialSyncErrorType(result)).toBe('auth');
+});
+
+it('skips without retrying when a reconnect fenced the refresh', async () => {
+  refresh.mockResolvedValue({
+    accessToken: 'stale',
+    expiresAt: null,
+    refreshed: true,
+    error: 'Credential replaced by a reconnect',
+    fenced: true,
+  });
+  const { result, outcome } = await ensureHealthyCalendarCredential(
+    { from: vi.fn() },
+    token,
+    { sleep }
+  );
+  expect(refresh).toHaveBeenCalledTimes(1);
+  expect(outcome.outcome).toBe('fenced');
+  expect(credentialSyncErrorType(result)).toBe('network');
 });

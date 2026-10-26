@@ -13,7 +13,9 @@ export type CalendarTokenOutcome =
   | 'already_inactive'
   | 'fenced'
   // Permanent failure left active because its history could not be read.
-  | 'deactivation_deferred';
+  | 'deactivation_deferred'
+  // Permanent failure left active by the consensus breaker.
+  | 'consensus_hold';
 
 export interface CalendarTokenOutcomeEntry {
   account: string;
@@ -117,6 +119,7 @@ export function summarizeCalendarTokenOutcomes(
     already_inactive: 0,
     fenced: 0,
     deactivation_deferred: 0,
+    consensus_hold: 0,
   };
   for (const entry of outcomes) counts[entry.outcome] += 1;
   return counts;
@@ -124,8 +127,7 @@ export function summarizeCalendarTokenOutcomes(
 
 /**
  * Deactivation-spike alert hook. Fires on many quarantines, deferred
- * quarantines, or any systemic failure (including a tripped consensus
- * breaker). Emits one error-level line that the cron log drain stores with
+ * quarantines, breaker holds, or any systemic failure. Emits one error-level line that the cron log drain stores with
  * its metadata; Infrastructure monitoring filters on the event name.
  */
 export function reportCalendarDeactivationSpike(
@@ -136,6 +138,7 @@ export function reportCalendarDeactivationSpike(
   if (
     counts.deactivated < DEACTIVATION_SPIKE_THRESHOLD &&
     counts.deactivation_deferred === 0 &&
+    counts.consensus_hold === 0 &&
     counts.systemic === 0
   )
     return false;
@@ -148,9 +151,30 @@ export function reportCalendarDeactivationSpike(
     route,
     deactivated: counts.deactivated,
     deferred: counts.deactivation_deferred,
+    held: counts.consensus_hold,
     systemic: counts.systemic,
     evaluated: outcomes.length,
     reasons,
   });
   return true;
+}
+
+/**
+ * True when a provider's OAuth client looks broken for everyone in this run:
+ * several accounts failed systemically or were held, and none refreshed.
+ * Ordinary revocation churn alongside healthy accounts does not qualify.
+ */
+export function systemicProviders(
+  outcomes: CalendarTokenOutcomeEntry[],
+  threshold: number
+): CalendarOAuthProvider[] {
+  const providers = new Set(outcomes.map((entry) => entry.provider));
+  return [...providers].filter((provider) => {
+    const own = outcomes.filter((entry) => entry.provider === provider);
+    const failing = own.filter(
+      (entry) =>
+        entry.outcome === 'systemic' || entry.outcome === 'consensus_hold'
+    ).length;
+    return failing >= threshold && !own.some((entry) => entry.outcome === 'ok');
+  });
 }

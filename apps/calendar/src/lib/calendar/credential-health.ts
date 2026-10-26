@@ -41,13 +41,14 @@ function wait(ms: number): Promise<void> {
 export function credentialSyncErrorType(
   result: TokenRefreshResult
 ): CalendarSyncErrorType {
-  if (result.failure?.kind === 'systemic' || result.quarantine === 'systemic')
-    return 'configuration';
+  if (result.failure?.kind === 'systemic') return 'configuration';
+  // Held accounts are still rejected: the owner should reconnect them.
   return result.failure?.kind === 'permanent' ? 'auth' : 'network';
 }
 
 function outcomeOf(result: TokenRefreshResult): CalendarTokenOutcome {
   if (!result.error) return 'ok';
+  if (result.fenced) return 'fenced';
   if (result.failure?.kind === 'permanent')
     // A failed quarantine write leaves the row active for the next run.
     return result.quarantine ?? 'transient';

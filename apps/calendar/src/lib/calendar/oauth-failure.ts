@@ -1,10 +1,10 @@
 // Classifies provider credential failures. Only permanent failures may
 // quarantine a credential; transient and systemic failures never do.
-// Anything that can mean our OAuth client is wrong is systemic: one
-// misconfiguration must never look like many individually revoked accounts.
+// Systemic means our OAuth client itself is wrong for everyone (bad secret,
+// deleted client). Codes that can also be one account's or one tenant's
+// problem stay permanent; the quarantine consensus breaker bounds them.
 
-// Mirrors the database CHECK. The two *_unauthorized_client codes are
-// reserved there but never emitted: that error means our client is wrong.
+// Mirrors the database CHECK.
 export const CALENDAR_OAUTH_REASON_CODES = [
   'google_invalid_grant',
   'google_unauthorized_client',
@@ -37,10 +37,10 @@ const TRANSIENT_OAUTH_CODES = new Set([
   'slow_down',
 ]);
 const SYSTEMIC_OAUTH_CODES = new Set([
+  'deleted_client',
+  'disabled_client',
   'invalid_client',
   'invalid_request',
-  'invalid_scope',
-  'unauthorized_client',
   'unsupported_grant_type',
 ]);
 const NETWORK_CODES = new Set([
@@ -63,16 +63,16 @@ const MSAL_NETWORK_CODES = new Set([
 ]);
 // Entra ID returns these numbers under invalid_grant/interaction_required.
 const MICROSOFT_CONSENT_ERRORS = new Set(['65001', '65004']);
-// Application-level Entra ID errors: unknown or disabled app, bad or
-// expired client secret or assertion, invalid client credentials.
+// Entra ID client-credential errors: bad or expired secret or assertion.
 const MICROSOFT_APPLICATION_ERRORS = new Set([
   '50012',
-  '700016',
   '700027',
-  '7000112',
   '7000215',
   '7000222',
 ]);
+// Tenant-scoped for a multi-tenant app: one customer's admin removed or
+// disabled our enterprise application.
+const MICROSOFT_TENANT_APP_ERRORS = new Set(['700016', '7000112']);
 const MICROSOFT_THROTTLED_ERRORS = new Set(['50196']);
 
 type ProviderErrorFields = {
@@ -173,6 +173,9 @@ function googleReason(
         : 'google_invalid_grant';
     case 'access_denied':
       return 'google_access_revoked';
+    // Typically a credential issued to an earlier client ID.
+    case 'unauthorized_client':
+      return 'google_unauthorized_client';
     default:
       return null;
   }
@@ -187,6 +190,11 @@ function microsoftReason(
     fields.subError === 'consent_required'
   )
     return 'microsoft_consent_revoked';
+  if (
+    fields.oauthCode === 'unauthorized_client' ||
+    (fields.aadsts && MICROSOFT_TENANT_APP_ERRORS.has(fields.aadsts))
+  )
+    return 'microsoft_unauthorized_client';
   if (
     fields.oauthCode === 'invalid_grant' ||
     fields.oauthCode === 'interaction_required'

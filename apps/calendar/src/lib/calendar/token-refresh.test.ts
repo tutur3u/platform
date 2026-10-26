@@ -35,9 +35,13 @@ const token: CalendarAuthToken = {
   is_active: true,
   created_at: '2020-01-01T00:00:00Z',
 };
-function database(error: unknown = null) {
+function database(error: unknown = null, savedRows = 1) {
   const query = Object.assign(Promise.resolve({ error }), {
     eq: vi.fn(() => query),
+    select: vi.fn(async () => ({
+      data: error ? null : Array.from({ length: savedRows }, () => ({})),
+      error,
+    })),
   });
   const eq = query.eq;
   const update = vi.fn(() => query);
@@ -114,6 +118,11 @@ describe('server-side calendar credential refresh', () => {
     );
     expect(db.eq).toHaveBeenCalledWith('id', 'token');
     expect(db.eq).toHaveBeenCalledWith('created_at', token.created_at);
+  });
+  it('skips the account when a reconnect replaced the credential mid-refresh', async () => {
+    const result = await ensureValidToken(database(null, 0), token);
+    expect(result).toMatchObject({ fenced: true });
+    expect(result.error).toBeDefined();
   });
   it('does not call the provider when the old callback stored no offline credential', async () => {
     const result = await ensureValidToken(database(), {

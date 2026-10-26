@@ -52,6 +52,8 @@ export interface TokenRefreshResult {
   error?: string;
   failure?: CalendarOAuthFailure;
   quarantine?: QuarantineOutcome;
+  // A reconnect replaced the credential while this refresh was in flight.
+  fenced?: boolean;
 }
 
 function refreshFailure(
@@ -275,7 +277,7 @@ export async function ensureValidToken(
     // A reconnect rewrites created_at; never overwrite its newer credential.
     if (authToken.created_at)
       save = save.eq('created_at', authToken.created_at);
-    const { error: updateError } = await save;
+    const { data: saved, error: updateError } = await save.select('id');
 
     if (updateError) {
       console.error('[TokenRefresh] Failed to persist refreshed credential');
@@ -283,6 +285,13 @@ export async function ensureValidToken(
         ...result,
         error: 'Failed to persist refreshed credential',
         failure: { kind: 'transient', providerCode: 'persist_failed' },
+      };
+    } else if (Array.isArray(saved) && saved.length === 0) {
+      // Keep the reconnect's credential; skip this account for this run.
+      return {
+        ...result,
+        error: 'Credential replaced by a reconnect',
+        fenced: true,
       };
     } else {
       console.log(

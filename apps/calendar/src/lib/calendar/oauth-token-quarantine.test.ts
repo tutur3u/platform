@@ -128,8 +128,8 @@ it('trips the in-run breaker on the third account with the same reason', async (
     'deactivated',
     'deactivated',
     'deactivated',
-    'systemic',
-    'systemic',
+    'consensus_hold',
+    'consensus_hold',
     'deactivated',
   ]);
   // One history read per reason per run.
@@ -149,13 +149,13 @@ it('admits concurrent workspaces in arrival order', async () => {
       )
     )
   );
-  expect(result).toEqual(['deactivated', 'deactivated', 'systemic']);
+  expect(result).toEqual(['deactivated', 'deactivated', 'consensus_hold']);
 });
 
 it.each([
-  [2, ['systemic']],
-  [1, ['deactivated', 'systemic']],
-  [0, ['deactivated', 'deactivated', 'systemic']],
+  [2, ['consensus_hold']],
+  [1, ['deactivated', 'consensus_hold']],
+  [0, ['deactivated', 'deactivated', 'consensus_hold']],
 ])(
   'keeps the breaker open across runs while %i recent quarantines share the reason',
   async (recent, expected) => {
@@ -187,7 +187,7 @@ it('applies the cross-run breaker to interactive calls outside a run', async () 
       token,
       'google_invalid_grant'
     )
-  ).toBe('systemic');
+  ).toBe('consensus_hold');
   expect(
     await quarantineCalendarAuthToken(
       database(1),

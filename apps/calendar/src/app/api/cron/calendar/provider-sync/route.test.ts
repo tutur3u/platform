@@ -14,6 +14,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   withCronLogDrain: (_: unknown, run: () => unknown) => run(),
 }));
 
+import type { CalendarOAuthReasonCode } from '@/lib/calendar/oauth-failure';
 import {
   type CalendarTokenOutcome,
   recordCalendarTokenOutcome,
@@ -84,9 +85,14 @@ describe('Calendar provider cron ownership', () => {
       ['calendar_connections.sync_inbound_enabled', true],
     ]);
   });
-  function workspacesWithOutcomes(
-    perWorkspace: Record<string, CalendarTokenOutcome[]>
-  ) {
+  type Outcome =
+    | CalendarTokenOutcome
+    | {
+        outcome: CalendarTokenOutcome;
+        provider: 'google' | 'microsoft';
+        reason?: CalendarOAuthReasonCode;
+      };
+  function workspacesWithOutcomes(perWorkspace: Record<string, Outcome[]>) {
     page.mockResolvedValue({
       data: Object.keys(perWorkspace).map((ws_id) => ({ ws_id })),
       error: null,
@@ -94,19 +100,26 @@ describe('Calendar provider cron ownership', () => {
     sync.mockImplementation(async (_request, context) => {
       const { wsId } = await context.params;
       const outcomes = perWorkspace[wsId] ?? [];
-      outcomes.forEach((outcome, index) => {
+      outcomes.forEach((item, index) => {
+        const entry =
+          typeof item === 'string'
+            ? {
+                outcome: item,
+                provider: 'google' as const,
+                reason:
+                  item === 'deactivated'
+                    ? ('google_invalid_grant' as const)
+                    : undefined,
+              }
+            : item;
         recordCalendarTokenOutcome({
           tokenId: `${wsId}-token-${index}`,
-          provider: 'google',
-          outcome,
-          ...(outcome === 'deactivated'
-            ? { reason: 'google_invalid_grant' as const }
-            : {}),
-          attempts: outcome === 'transient' ? 3 : 1,
+          ...entry,
+          attempts: entry.outcome === 'transient' ? 3 : 1,
         });
       });
       return NextResponse.json({
-        ok: outcomes.every((outcome) => outcome === 'ok'),
+        ok: outcomes.every((item) => item === 'ok'),
         summary: {},
       });
     });
@@ -163,16 +176,72 @@ describe('Calendar provider cron ownership', () => {
     );
   });
 
-  it('fails the job only for a systemic OAuth client failure', async () => {
+  it('fails the job when an OAuth client is broken for every account', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    workspacesWithOutcomes({ 'workspace-a': ['systemic', 'systemic'] });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    workspacesWithOutcomes({
+      'workspace-a': ['systemic', 'consensus_hold'],
+      'workspace-b': ['consensus_hold'],
+    });
     const response = await GET(cronRequest());
     expect(response.status).toBe(500);
     expect(await response.json()).toMatchObject({
       ok: false,
       error: 'Calendar OAuth client failure',
-      tokens: { counts: { systemic: 2 } },
+      providers: ['google'],
+      tokens: { counts: { systemic: 1, consensus_hold: 2 } },
     });
+    expect(error).toHaveBeenCalledWith(
+      'calendar.oauth.deactivation_spike',
+      expect.objectContaining({ held: 2, systemic: 1 })
+    );
+  });
+
+  it('keeps ordinary revocation churn at 200 so the scheduler keeps running', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    workspacesWithOutcomes({
+      'workspace-a': ['deactivated', 'ok'],
+      'workspace-b': ['deactivated', 'consensus_hold', 'consensus_hold'],
+      'workspace-c': ['ok'],
+    });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      tokens: { counts: { deactivated: 2, consensus_hold: 2, ok: 2 } },
+    });
+    // The hold still alerts.
+    expect(error).toHaveBeenCalledWith(
+      'calendar.oauth.deactivation_spike',
+      expect.objectContaining({ held: 2 })
+    );
+  });
+
+  it('keeps one tenant that removed our Entra app from stopping other tenants', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const tenantRemoved = {
+      provider: 'microsoft' as const,
+      reason: 'microsoft_unauthorized_client' as const,
+    };
+    workspacesWithOutcomes({
+      'tenant-a': [
+        { ...tenantRemoved, outcome: 'deactivated' },
+        { ...tenantRemoved, outcome: 'deactivated' },
+        { ...tenantRemoved, outcome: 'consensus_hold' },
+      ],
+      'tenant-b': [{ provider: 'microsoft', outcome: 'ok' }],
+    });
+    expect((await GET(cronRequest())).status).toBe(200);
+  });
+
+  it('does not fail the job for systemic outcomes below the threshold', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    workspacesWithOutcomes({ 'workspace-a': ['systemic', 'systemic'] });
+    expect((await GET(cronRequest())).status).toBe(200);
   });
 
   it('rejects unauthorized calls before enumerating workspaces', async () => {
