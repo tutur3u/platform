@@ -719,6 +719,15 @@ render the session snapshot. See the Parley product guide and studio setup,
 invitation, review-route and Meet-link regression tests. Keep shared chat mention
 markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
 
+## Calendar OAuth operator alerts
+
+Calendar OAuth spike alerts use the existing `create_notification` queue. Configure
+`CALENDAR_OAUTH_ALERT_RECIPIENTS` on Calendar and verify queue acceptance separately
+from actual operator delivery. Keep the five-recipient bound, aggregate-only
+payload, hourly recurring-hold cadence and nonfatal delivery status; never retry
+an unknown notification write in the same run. The Calendar product decision
+and `oauth-spike-notification`/provider-cron tests define this contract.
+
 ## Immediate notification selection
 
 Read immediate request bodies after authentication with the256KiB/4096chunk
