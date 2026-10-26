@@ -12,9 +12,9 @@ permissions:
   contents: read
   actions: read
   deployments: read
-# PR revisions supersede (each PR has its own merge ref). Main, production and
-# manual runs never cancel: staging publication consumes a durable attempt
-# ledger and wave1-native-publish serializes each upload under its own queue.
+# PR revisions supersede. Running main/production/manual jobs never cancel;
+# older pending main/manual runs coalesce. Uploads retain the independent
+# queue:max / cancel-in-progress:false lock in wave1-native-publish.yaml.
 concurrency:
   group: native-mail-cloudflare-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
