@@ -1,5 +1,6 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { NextResponse } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { authorizeCalendarOAuthCallback } from '@/lib/calendar/calendar-oauth-callback-guard';
 import {
   buildCalendarPostAuthRedirectUrl,
@@ -11,12 +12,14 @@ import {
 } from '@/lib/calendar/calendar-oauth-state';
 import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-reconnect';
 import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
+import { admitGoogleConsentRestart } from '@/lib/calendar/google-consent-restart';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import {
   calendarOAuthDebug,
   calendarOAuthError,
 } from '@/lib/calendar/oauth-callback-logger';
+import { resolveCalendarLocale } from '@/runtime/request-locale';
 
 async function loadPerformFullSyncForWorkspace() {
   const { performFullSyncForWorkspace } = await import(
@@ -203,8 +206,43 @@ export async function GET(request: Request) {
         ? tokens.refresh_token
         : null;
     // Asking again with consent makes Google issue a new refresh token.
-    const askAgainWithConsent = () =>
-      NextResponse.redirect(
+    const askAgainWithConsent = async () => {
+      const admission = await admitGoogleConsentRestart({
+        userId: user.id,
+        wsId,
+        account:
+          existingToken?.id ??
+          accountEmail?.trim().toLowerCase() ??
+          'unknown-account',
+        clientSecret: oauthConfig.config.clientSecret,
+      });
+      if (admission.kind !== 'allowed') {
+        const t = await getTranslations({
+          locale: resolveCalendarLocale(request),
+          namespace: 'calendar',
+        });
+        const unavailable = admission.kind === 'unavailable';
+        return NextResponse.json(
+          {
+            code: unavailable
+              ? 'google_calendar_consent_restart_unavailable'
+              : 'google_calendar_consent_restart_limited',
+            error: t(
+              unavailable
+                ? 'consent_restart_unavailable'
+                : 'consent_restart_limited'
+            ),
+          },
+          {
+            status: unavailable ? 503 : 429,
+            headers: {
+              'Retry-After': String(admission.retryAfterSeconds),
+              'Cache-Control': 'no-store',
+            },
+          }
+        );
+      }
+      return NextResponse.redirect(
         buildGoogleCalendarAuthUrl({
           request,
           userId: user.id,
@@ -214,6 +252,7 @@ export async function GET(request: Request) {
           consent: true,
         })
       );
+    };
     // A quarantined row's stored refresh token is the one Google rejected;
     // never revive it.
     if (
