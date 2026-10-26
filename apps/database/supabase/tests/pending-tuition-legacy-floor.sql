@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 set local timezone = 'UTC';
-select plan(23);
+select plan(24);
 
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 insert into public.workspaces(id, name, personal, creator_id) values
@@ -63,10 +63,7 @@ insert into fixture_invoices values
   ('00000000-0000-4000-8000-00000009820c', '08', '00000000-0000-4000-8000-000000098005', null, array['2025-06-01']::date[], '2025-06-25 10:00:00+07'),
   ('00000000-0000-4000-8000-00000009820d', '08', '00000000-0000-4000-8000-000000098005', null, array['2025-07-01']::date[], '2025-07-17 10:00:00+07'),
   ('00000000-0000-4000-8000-00000009820e', '0a', '00000000-0000-4000-8000-000000098005', null, array['2025-06-01','2025-07-01']::date[], '2025-06-05 10:00:00+07'),
-  ('00000000-0000-4000-8000-00000009820f', '0a', '00000000-0000-4000-8000-000000098006', '2025-07-01 00:00:00+00', null, '2025-06-20 10:00:00+07'),
-  -- Recorded in the fixture workspace for the other workspace's student and class.
-  ('00000000-0000-4000-8000-000000098210', '0b', '00000000-0000-4000-8000-000000098015', null, array['2025-01-01','2025-02-01','2025-03-01','2025-04-01','2025-05-01','2025-06-01','2025-07-01']::date[], '2025-07-17 10:00:00+07'),
-  ('00000000-0000-4000-8000-000000098211', '0b', '00000000-0000-4000-8000-000000098015', '2025-08-01 00:00:00+00', null, '2025-07-17 10:00:00+07');
+  ('00000000-0000-4000-8000-00000009820f', '0a', '00000000-0000-4000-8000-000000098006', '2025-07-01 00:00:00+00', null, '2025-06-20 10:00:00+07');
 insert into public.finance_invoices(id, ws_id, wallet_id, category_id, customer_id, price, paid_amount, completed_at, valid_until, subscription_months)
 select id, '00000000-0000-4000-8000-000000098001', '00000000-0000-4000-8000-000000098002', '00000000-0000-4000-8000-000000098003',
   ('00000000-0000-4000-8000-0000000981' || customer)::uuid, 100, 100, completed, valid_until, months
@@ -109,9 +106,14 @@ select is(pg_temp.months('0a'), array['2025-01','2025-02','2025-03','2025-04','2
 select is(pg_temp.months('0a', '00000000-0000-4000-8000-000000098006'), array['2025-07'],
   'Two classes: class one''s July payment never clears class two''s July');
 
+select throws_ok(
+  $$insert into public.finance_invoices(ws_id, wallet_id, category_id, customer_id, price, paid_amount, completed_at, subscription_months)
+    values ('00000000-0000-4000-8000-000000098001', '00000000-0000-4000-8000-000000098002', '00000000-0000-4000-8000-000000098003',
+      '00000000-0000-4000-8000-00000009810b', 100, 100, '2025-07-17 10:00:00+07', array['2025-07-01']::date[])$$,
+  '23503', null, 'Workspace isolation: an invoice cannot name another workspace''s student');
 select is((select array_agg(month order by month) from public.get_pending_invoices_base('00000000-0000-4000-8000-000000098011', false)),
   array['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07'],
-  'Workspace isolation: invoices recorded in another workspace never cover or floor pending tuition');
+  'Workspace isolation: invoices in another workspace never cover or floor pending tuition');
 select ok(not exists(select 1 from pending where user_id = '00000000-0000-4000-8000-00000009810b'),
   'Workspace isolation: another workspace''s student never appears in this workspace');
 
