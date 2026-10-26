@@ -1,4 +1,6 @@
 BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
 CREATE FUNCTION private.password_vault_require_workspace_member(p_ws uuid, p_actor uuid)
 RETURNS void LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
 BEGIN
@@ -18,6 +20,7 @@ BEGIN
     WHERE l.ws_id = p_ws AND l.platform_user_id = p_actor AND u.archived) THEN
     RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501';
   END IF;
+  PERFORM private.password_vault_require_lifecycle_clean(p_ws);
 END $$;
 CREATE FUNCTION private.password_vault_execute(
   p_ws uuid, p_vault uuid, p_actor uuid, p_request uuid, p_action text,

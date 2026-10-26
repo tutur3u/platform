@@ -15358,6 +15358,42 @@ export type Database = {
           },
         ];
       };
+      password_vault_lifecycle_jobs: {
+        Row: {
+          attempts: number;
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          last_error_code: string | null;
+          next_attempt_at: string;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          attempts?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          last_error_code?: string | null;
+          next_attempt_at?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          last_error_code?: string | null;
+          next_attempt_at?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [];
+      };
       password_vault_machine_grants: {
         Row: {
           authorization_epoch: number;
@@ -24599,6 +24635,14 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      password_vault_apply_lifecycle: {
+        Args: { p_job: string };
+        Returns: number;
+      };
+      password_vault_enqueue_lifecycle: {
+        Args: { p_kind: string; p_user: string; p_ws: string };
+        Returns: undefined;
+      };
       password_vault_execute: {
         Args: {
           p_action: string;
@@ -24626,6 +24670,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      password_vault_reconcile_lifecycle: { Args: never; Returns: number };
       password_vault_register_file: {
         Args: {
           p_bytes: number;
@@ -24638,9 +24683,17 @@ export type Database = {
         };
         Returns: undefined;
       };
+      password_vault_require_lifecycle_clean: {
+        Args: { p_ws: string };
+        Returns: undefined;
+      };
       password_vault_require_workspace_member: {
         Args: { p_actor: string; p_ws: string };
         Returns: undefined;
+      };
+      password_vault_retry_lifecycle: {
+        Args: { p_limit?: number };
+        Returns: Json;
       };
       periodic_report_delivery_contract_ready: {
         Args: Record<PropertyKey, never>;

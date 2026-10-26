@@ -1,5 +1,7 @@
 -- Apply after 001, before the operation entrypoints and lifecycle hooks.
 BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
 INSERT INTO storage.buckets(id, name, public, file_size_limit, allowed_mime_types)
   VALUES ('password-vault-files', 'password-vault-files', false, 10485760, ARRAY['application/octet-stream'])
   ON CONFLICT (id) DO NOTHING;

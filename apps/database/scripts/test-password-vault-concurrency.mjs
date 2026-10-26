@@ -252,6 +252,68 @@ SELECT 'PW_READY';
   console.log(
     'PASS: membership erasure wins before vault locking without deadlock'
   );
+  const repair = connect(`pw-lifecycle-holder-${randomUUID()}`);
+  repair.process.stdin.write(`BEGIN; SET LOCAL ROLE service_role;
+    SELECT private.password_vault_retry_lifecycle(25); SELECT 'PW_READY';\n`);
+  await waitUntil(
+    () => repair.ready,
+    'Lifecycle retry did not acquire its job'
+  );
+  const competingRetry = succeeded(
+    await query(`SET ROLE service_role;
+    SELECT private.password_vault_retry_lifecycle(25)->>'processed';`)
+  );
+  assert.equal(
+    competingRetry.split(/\r?\n/u).at(-1),
+    '0',
+    'Concurrent retry must skip the locked job'
+  );
+  repair.process.stdin.end('COMMIT;\n');
+  succeeded(await repair.done);
+  const beforeRetry = succeeded(
+    await query(`SELECT revision, authorization_epoch,
+    (SELECT count(*) FROM private.password_vault_audit_events WHERE vault_id='${vault}')
+    FROM private.password_vaults WHERE id='${vault}';`)
+  );
+  assert.equal(
+    succeeded(
+      await query(`SET ROLE service_role;
+    SELECT private.password_vault_retry_lifecycle(25)->>'processed';`)
+    )
+      .split(/\r?\n/u)
+      .at(-1),
+    '0'
+  );
+  const afterRetry = succeeded(
+    await query(`SELECT revision, authorization_epoch,
+    (SELECT count(*) FROM private.password_vault_audit_events WHERE vault_id='${vault}')
+    FROM private.password_vaults WHERE id='${vault}';`)
+  );
+  assert.equal(
+    afterRetry,
+    beforeRetry,
+    'Repeated lifecycle retry must preserve epochs and audit'
+  );
+  console.log(
+    'PASS: concurrent lifecycle retry skips the locked job and completed replay is idempotent'
+  );
+  const vaultLock = connect(`pw-erasure-vault-lock-${randomUUID()}`);
+  vaultLock.process.stdin.write(`BEGIN; SELECT 1 FROM private.password_vaults
+    WHERE id='${vault}' FOR UPDATE; SELECT 'PW_READY';\n`);
+  await waitUntil(
+    () => vaultLock.ready,
+    'Vault holder did not acquire its row'
+  );
+  succeeded(
+    await query(
+      `SET lock_timeout='500ms'; DELETE FROM auth.users WHERE id='${viewer}';`
+    )
+  );
+  vaultLock.process.stdin.end('ROLLBACK;\n');
+  succeeded(await vaultLock.done);
+  console.log(
+    'PASS: account erasure completes before an existing vault row lock is released'
+  );
 } finally {
   for (const client of clients) client.process.stdin.end('ROLLBACK;\n');
   await Promise.allSettled([...clients].map((client) => client.done));

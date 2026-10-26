@@ -526,3 +526,17 @@ owns the accepted claim forms and Auth source references; the
 grants. Replay installation and rollback as the non-superuser `postgres` role:
 Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
 have different privilege requirements.
+
+## Password vault lifecycle isolation
+
+Vault lifecycle triggers capture metadata only. Do not put vault row locks, audit
+appends or cross-domain FK actions back on account/workspace erasure paths.
+Supported vault operations deny pending/terminal lifecycle work; the bounded
+service-only retry owns revocation, retirement, identity-link cleanup and audit
+in one subtransaction. Preserve SQLSTATE-only diagnostics, SKIP LOCKED job claims,
+NOWAIT vault locks, the five-attempt stop and replay/concurrency regressions.
+A caller/pump and oldest-job alert are separate activation requirements; no caller
+means no finite cleanup guarantee and continued denial. See the approved
+[feature contract and scoped rollback](../../../../../apps/docs/platform/features/passwords-vault.mdx#lifecycle-recovery-and-cleanup-sla).
+Never drop the shared private schema for a feature rollback. Use the guarded
+empty-feature fixture, and retain data and audit on an activated installation.

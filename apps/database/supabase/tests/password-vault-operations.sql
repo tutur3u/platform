@@ -264,6 +264,7 @@ SELECT is(pg_temp.pw_op('request.status','{"request_id":"f7400000-0000-0000-0000
 SELECT is(pg_temp.pw_op('vault.rotate',pg_temp.pw_rotate())->>'error',NULL,'rotation completes member removal');
 DELETE FROM public.workspace_members WHERE ws_id='f7100000-0000-0000-0000-000000000001'
  AND user_id='f7000000-0000-0000-0000-000000000002';
+DO $$ BEGIN PERFORM pg_temp.pw_sql_as('service_role','SELECT private.password_vault_retry_lifecycle(25)'); END $$;
 SELECT ok((SELECT revoked_at IS NOT NULL FROM private.password_vault_members
  WHERE vault_id='f7200000-0000-0000-0000-000000000001' AND user_id='f7000000-0000-0000-0000-000000000002'),
  'workspace removal revokes retained vault membership');
@@ -383,6 +384,7 @@ INSERT INTO public.workspace_user_linked_users(ws_id,platform_user_id,virtual_us
  AND platform_user_id='f7000000-0000-0000-0000-000000000003');
 UPDATE public.workspace_users SET archived=true WHERE id IN (SELECT virtual_user_id FROM public.workspace_user_linked_users
  WHERE ws_id='f7100000-0000-0000-0000-000000000001' AND platform_user_id='f7000000-0000-0000-0000-000000000003');
+DO $$ BEGIN PERFORM pg_temp.pw_sql_as('service_role','SELECT private.password_vault_retry_lifecycle(25)'); END $$;
 SELECT is(pg_temp.pw_op('item.list','{}','f7000000-0000-0000-0000-000000000003')->>'error','42501','archived member is blocked');
 UPDATE public.workspace_users SET archived=false WHERE id IN (SELECT virtual_user_id FROM public.workspace_user_linked_users
  WHERE ws_id='f7100000-0000-0000-0000-000000000001' AND platform_user_id='f7000000-0000-0000-0000-000000000003');

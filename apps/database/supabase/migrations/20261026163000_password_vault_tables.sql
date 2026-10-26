@@ -1,9 +1,12 @@
 -- No plaintext fields, secret fingerprints, token prefixes, or token suffixes.
 BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
 CREATE SCHEMA IF NOT EXISTS private;
+-- Live IDs are validated by RPCs; lifecycle jobs clear them without cross-domain FK writes.
 CREATE TABLE private.password_vaults (
   id uuid PRIMARY KEY,
-  ws_id uuid REFERENCES public.workspaces(id) ON DELETE SET NULL,
+  ws_id uuid,
   -- Stable encryption/FK context survives detachment from a hard-deleted workspace.
   scope_ws_id uuid NOT NULL,
   retired_at timestamptz,
@@ -12,7 +15,7 @@ CREATE TABLE private.password_vaults (
   authorization_epoch bigint NOT NULL DEFAULT 1 CHECK (authorization_epoch > 0),
   active_version integer NOT NULL DEFAULT 1 CHECK (active_version > 0),
   rotation_required boolean NOT NULL DEFAULT false,
-  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (scope_ws_id, id),
@@ -24,7 +27,7 @@ CREATE TABLE private.password_vault_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ws_id uuid NOT NULL,
   vault_id uuid NOT NULL,
-  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_id uuid,
   role text NOT NULL CHECK (role IN ('owner', 'editor', 'viewer')),
   revoked_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -90,7 +93,7 @@ CREATE TABLE private.password_vault_machine_grants (
   ws_id uuid NOT NULL,
   vault_id uuid NOT NULL,
   id uuid NOT NULL,
-  issuer_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  issuer_user_id uuid,
   authorization_epoch bigint NOT NULL,
   scopes text[] NOT NULL CHECK (cardinality(scopes) BETWEEN 1 AND 2
     AND scopes <@ ARRAY['item.read', 'item.write']::text[] AND array_position(scopes, NULL) IS NULL),
