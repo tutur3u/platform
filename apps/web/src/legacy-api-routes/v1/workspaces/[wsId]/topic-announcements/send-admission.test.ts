@@ -9,6 +9,7 @@ const f = vi.hoisted(() => ({
   contactWsId: '',
   nullRecipient: false,
   recipientError: false,
+  unverified: false,
   provider: vi.fn(),
   admin: vi.fn(),
   row: {} as Record<string, any>,
@@ -59,7 +60,7 @@ const contactId = '00000000-0000-4000-8000-000000000003';
 function client() {
   const db: any = {
     schema: () => db,
-    rpc: vi.fn(async () => ({ data: true, error: null })),
+    rpc: vi.fn(async () => ({ data: !f.unverified, error: null })),
   };
   db.from = (table: string) => {
     let patch: Record<string, any> | undefined;
@@ -83,13 +84,15 @@ function client() {
           },
         ];
       if (table === 'topic_announcement_contact_verifications')
-        return [
-          {
-            contact_id: contactId,
-            status: 'verified',
-            expires_at: '2027-01-01T00:00:00Z',
-          },
-        ];
+        return f.unverified
+          ? []
+          : [
+              {
+                contact_id: contactId,
+                status: 'verified',
+                expires_at: '2027-01-01T00:00:00Z',
+              },
+            ];
       if (table === 'topic_announcement_attachments') return [];
       if (table === 'workspaces')
         return [
@@ -173,10 +176,11 @@ const request = () =>
     'https://web.example.test/api/cron/process-topic-announcement-queue',
     { headers: { authorization: 'Bearer synthetic-test-cron' } }
   );
-const send = () =>
+const send = (markSkippedWhenUnverified?: boolean) =>
   sendTopicAnnouncement({
     actorUserId: 'synthetic-actor',
     announcementId,
+    markSkippedWhenUnverified,
     normalizedWsId: workspaceId,
     request: request(),
     resend: false,
@@ -193,6 +197,7 @@ beforeEach(() => {
   f.contactWsId = workspaceId;
   f.nullRecipient = false;
   f.recipientError = false;
+  f.unverified = false;
   f.archived = false;
   f.failReceipt = false;
   f.row = {
@@ -249,6 +254,35 @@ describe('real topic sender admission and authoritative receipt', () => {
     await expect(send()).rejects.toThrow('Synthetic recipient query rejection');
     expect(f.provider).not.toHaveBeenCalled();
     expect(f.row.status).toBe('queued');
+  });
+  it('blocks an interactive send to an unverified recipient without changing the announcement', async () => {
+    f.unverified = true;
+    expect(await send()).toEqual({
+      error: 'EMAIL_NOT_VERIFIED',
+      status: 409,
+      unverifiedContacts: [
+        {
+          email: 'teacher@example.test',
+          id: contactId,
+          name: 'Synthetic teacher',
+        },
+      ],
+    });
+    expect(f.provider).not.toHaveBeenCalled();
+    expect(f.row.status).toBe('queued');
+    expect(f.row.last_error).toBeUndefined();
+  });
+  it('records a queue send to an unverified recipient as skipped', async () => {
+    f.unverified = true;
+    expect(await send(true)).toMatchObject({
+      error: 'EMAIL_NOT_VERIFIED',
+      status: 409,
+    });
+    expect(f.provider).not.toHaveBeenCalled();
+    expect(f.row).toMatchObject({
+      last_error: 'EMAIL_NOT_VERIFIED: teacher@example.test',
+      status: 'skipped',
+    });
   });
   it('preserves the ordinary verified-recipient successful receipt control', async () => {
     const result = await send();

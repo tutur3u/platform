@@ -4,10 +4,8 @@ extension _EducationOwnedSheets on _EducationPageState {
   Future<T?> _showOwnedSheet<T>({
     required BuildContext context,
     required WidgetBuilder builder,
-    bool isScrollControlled = false,
-  }) => showModalBottomSheet<T>(
+  }) => showAppSheet<T>(
     context: context,
-    isScrollControlled: isScrollControlled,
     builder: (context) =>
         _EducationOwnedOverlay(alive: _alive, child: builder(context)),
   );

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
-import 'package:mobile/core/ui/components/app_option_tile.dart';
 import 'package:mobile/core/ui/components/app_tap_target.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
-import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
+import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// One choice of an [AppSelect].
@@ -109,31 +107,24 @@ class AppSelect<T> extends StatelessWidget {
   }
 }
 
-/// Opens the option sheet used by [AppSelect]; resolves to the picked option,
-/// or null when dismissed.
+/// Opens the option sheet used by [AppSelect]: the shared `AppChoiceSheet`.
+/// Resolves to the picked option, or null when dismissed.
 Future<AppSelectOption<T>?> showAppSelectSheet<T>({
   required BuildContext context,
   required String title,
   required List<AppSelectOption<T>> options,
   required T? value,
-}) => showAppSheet<AppSelectOption<T>>(
+}) => showAppChoiceSheet<AppSelectOption<T>>(
   context: context,
-  builder: (sheetContext) => AppSheetScaffold(
-    title: title,
-    slivers: [
-      SliverList.builder(
-        itemCount: options.length,
-        itemBuilder: (_, index) {
-          final option = options[index];
-          return AppOptionTile(
-            title: option.label,
-            subtitle: option.description,
-            leading: option.icon == null ? null : Icon(option.icon),
-            selected: option.value == value,
-            onTap: () => Navigator.of(sheetContext).pop(option),
-          );
-        },
+  title: title,
+  selected: options.where((option) => option.value == value).firstOrNull,
+  choices: [
+    for (final option in options)
+      AppSheetChoice(
+        value: option,
+        label: option.label,
+        subtitle: option.description,
+        icon: option.icon,
       ),
-    ],
-  ),
+  ],
 );

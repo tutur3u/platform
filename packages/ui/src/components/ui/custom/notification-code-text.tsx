@@ -3,6 +3,7 @@
 // the stored text when an app does not ship the keys.
 export const LOCALIZED_NOTIFICATION_CODES = [
   'calendar_reconnect_required',
+  'tutoring_session_completed',
 ] as const;
 
 export type NotificationCodeText = Partial<

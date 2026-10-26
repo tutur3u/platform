@@ -120,9 +120,13 @@ localization changes.
 ## Overlays And Shell
 
 - Open sheets and dialogs with `showAppSheet` / `showAppDialog` and lay them out
-  with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
-  `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
-  `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+  with `AppSheetScaffold` / `AppDialog`. Menus use `showAppActionSheet`; single
+  choices use `showAppChoiceSheet` (also behind `AppSelect`). Do not call
+  `shad.openDrawer`, `shad.showDialog`, `shad.showDropdown` or raw
+  `showModalBottomSheet`, and do not hand-draw drag handles or a second sheet
+  background (use `AppSheetHandle`). `showAdaptiveSheet` remains a
+  compatibility path that draws the same `AppSheetSurface`, handle and
+  keyboard inset, with the same Back binding.
 - Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
   add a second IME padding layer in their bodies. Verify phone paths with a
   keyboard open and tap OK/Save; a tablet-only picker test does not cover them.
@@ -141,8 +145,11 @@ localization changes.
   text, and renders through `SETTINGS_RENDER_DIR`.
 - Shell actions should open overlays immediately and let overlay content fetch
   or refresh on mount instead of blocking the tap on pre-open network work.
-- Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
-  variants are for compact inline affordances.
+- Loading states use `AppLoadingIndicator` (`core/ui`), never a bare
+  `NovaLoadingIndicator`: `.page()` for a page, pane or full-screen gate (56dp,
+  centred), the default section size (32dp) for cards and list footers, and
+  `.inline()` (20dp) for buttons and row slots. A full-screen loader must not
+  use a section or inline size. Cold list loads still prefer `AppSkeletonRows`.
 
 - Settings rows use `SettingsRowLayout` and `SettingsTile` (re-exported from
   `settings_widgets.dart`) for consistent heading/icon insets, text slots and

@@ -195,10 +195,8 @@ void registerSettingsAssistantShellChecks() {
               await tester.drag(scrollable, const Offset(0, -1200));
               await _settle(tester);
               expect(tester.getRect(back), dockRect);
-              final lastControl = find.widgetWithText(
-                AppListTile,
-                l10n.assistantLocalRemote,
-              );
+              // The last grouped row of the page clears the floating dock.
+              final lastControl = find.byType(AppGroupedRow).last;
               await tester.ensureVisible(lastControl);
               await _settle(tester);
               expect(lastControl.hitTestable(), findsOneWidget);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -75,20 +76,18 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
     var autoApply = item?['aiAutoApply'] as bool? ?? false;
     var saving = false;
     var failed = false;
-    await showDialog<void>(
+    await showAppDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) {
           final l10n = context.l10n;
-          return AlertDialog(
-            title: Text(
-              _members
-                  ? l10n.mailMembers
-                  : widget.kind == 'labels'
-                  ? l10n.mailLabels
-                  : l10n.mailFolders,
-            ),
+          return AppDialog(
+            title: _members
+                ? l10n.mailMembers
+                : widget.kind == 'labels'
+                ? l10n.mailLabels
+                : l10n.mailFolders,
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -141,7 +140,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                         labelText: l10n.mailAiInstructions,
                       ),
                     ),
-                    SwitchListTile(
+                    AppToggleRow(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       title: Text(l10n.mailSmartLabels),
                       value: aiEnabled,
                       onChanged: saving
@@ -151,7 +151,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                               if (!v) autoApply = false;
                             }),
                     ),
-                    SwitchListTile(
+                    AppToggleRow(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       title: Text(l10n.mailAutoApply),
                       value: autoApply,
                       onChanged: saving || !aiEnabled
@@ -165,13 +166,14 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
               ),
             ),
             actions: [
-              TextButton(
+              AppButton.ghost(
                 onPressed: saving
                     ? null
                     : () => Navigator.of(dialogContext).pop(),
                 child: Text(l10n.commonCancel),
               ),
-              TextButton(
+              AppButton.primary(
+                key: const ValueKey('mail-organization-save'),
                 onPressed: saving
                     ? null
                     : () async {
@@ -231,17 +233,17 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
   }
 
   Future<void> _remove(Map<String, dynamic> item) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
         content: Text(context.l10n.mailDeleteConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
@@ -295,7 +297,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
         child: const Icon(Icons.add),
       ),
       body: _busy
-          ? const Center(child: NovaLoadingIndicator(size: 20))
+          ? const AppLoadingIndicator.page()
           : _failed
           ? Center(
               child: TextButton(

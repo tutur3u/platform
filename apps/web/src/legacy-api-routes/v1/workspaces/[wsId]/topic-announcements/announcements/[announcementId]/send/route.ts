@@ -60,7 +60,13 @@ export async function POST(request: Request, { params }: Params) {
 
   if ('error' in result) {
     return NextResponse.json(
-      { message: result.error },
+      {
+        code: result.error,
+        message: result.error,
+        ...('unverifiedContacts' in result
+          ? { unverifiedContacts: result.unverifiedContacts }
+          : {}),
+      },
       { status: result.status }
     );
   }

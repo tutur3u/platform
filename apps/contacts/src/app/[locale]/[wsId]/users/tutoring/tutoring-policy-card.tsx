@@ -60,7 +60,11 @@ export function TutoringPolicyCard({
     timing: NUMERIC_FIELDS.map(([field]) => field),
     exceptions: ['timeRules', 'shiftByGroupId'],
     groupShifts: ['shiftByGroupId'],
-    weak: ['weakContentReviewDays', 'groupExclusions'],
+    weak: [
+      'weakContentReviewDays',
+      'restrictWeakContentEditors',
+      'groupExclusions',
+    ],
     campuses: ['campusByGroupId'],
     message: ['parentMessageTemplate'],
   };
