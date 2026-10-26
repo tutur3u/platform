@@ -1,4 +1,4 @@
-import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
+import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type AssetsBinding, fetchAsset } from '../core/assets';
@@ -109,13 +109,13 @@ export function createBridgeHandler<
       }
     });
   const publicAssets = options.publicAssets ?? new Set<string>();
-  const framable = [...framablePathRegexes(), ...(options.framablePaths ?? [])];
+  const isFramable = createFramablePathMatcher(options.framablePaths);
   const inBase = (path: string, prefix: string) =>
     path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
 
-  return async function handle(
+  async function handleRequest(
     incoming: Request,
     env: Env,
     ctx: Ctx
@@ -213,7 +213,7 @@ export function createBridgeHandler<
     // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
     // WebGL builds) must reach the browser untouched, or the uploaded
     // scripts run unsandboxed on the app origin.
-    if (framable.some((pattern) => pattern.test(appPath))) return final;
+    if (isFramable(appPath)) return final;
     const policy = options.csp(nonce, {
       request: incoming,
       response: final,
@@ -223,5 +223,32 @@ export function createBridgeHandler<
     const secured = new Response(final.body, final);
     secured.headers.set('Content-Security-Policy', policy);
     return secured;
+  }
+
+  return async function handle(
+    incoming: Request,
+    env: Env,
+    ctx: Ctx
+  ): Promise<Response> {
+    try {
+      return await handleRequest(incoming, env, ctx);
+    } catch (error) {
+      // A failure in the proxy, an endpoint or Start still answers through
+      // the app's response policy (no-store, robots, framing), never with
+      // its details.
+      console.error('[start-bridge] request failed', error);
+      return bridgeErrorResponse();
+    }
   };
+}
+
+/** The bridge's own failure response: generic text, never error details. */
+export function bridgeErrorResponse() {
+  return new Response('Internal Server Error', {
+    status: 500,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'private, no-store',
+    },
+  });
 }
