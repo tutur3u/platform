@@ -6,6 +6,7 @@ const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  freeze: vi.fn(),
   getPermissions: vi.fn(),
 }));
 
@@ -30,6 +31,7 @@ const query = {
     error: null,
   })),
   select: vi.fn(() => query),
+  update: vi.fn(() => query),
 };
 
 vi.mock('next/server', () => ({
@@ -38,6 +40,9 @@ vi.mock('next/server', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: async () => ({}),
   createAdminClient: mocks.createAdminClient,
+}));
+vi.mock('@/lib/tutoring/linked-content', () => ({
+  freezeLinkedLessonContent: mocks.freeze,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: async () => wsId,
@@ -123,5 +128,40 @@ describe('DELETE tutoring session', () => {
     const response = await deleteSession();
 
     expect(response.status).toBe(409);
+  });
+});
+
+describe('PUT tutoring session completion', () => {
+  async function complete(body: Record<string, unknown>) {
+    const { PUT } = await import('./route');
+    return PUT(
+      new Request(
+        `http://localhost/api/v1/workspaces/${wsId}/tutoring/sessions/${sessionId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ attendanceStatus: 'DONE', ...body }),
+        }
+      ),
+      { params: Promise.resolve({ id: sessionId, wsId }) }
+    );
+  }
+
+  it.each([
+    ['without content', {}],
+    ['with empty content', { content: '' }],
+    ['with whitespace-only content', { content: '   ' }],
+  ])('stores the linked notes when completed %s', async (_label, body) => {
+    expect((await complete(body)).status).toBe(200);
+    expect(mocks.freeze).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId, wsId })
+    );
+  });
+
+  it('keeps text sent with the completion as a manual edit', async () => {
+    expect((await complete({ content: 'Tutor plan' })).status).toBe(200);
+    expect(query.update).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'Tutor plan' })
+    );
+    expect(mocks.freeze).not.toHaveBeenCalled();
   });
 });

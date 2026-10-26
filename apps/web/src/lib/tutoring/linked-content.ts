@@ -208,7 +208,8 @@ export async function loadLinkedLessonContent({
 
 /**
  * Stores the linked lesson notes when a make-up session is completed. The
- * write only lands while the content is still empty, so a staff edit made in
+ * write only lands while the content is still blank (empty or whitespace, as
+ * the listing treats it), so a staff edit made in
  * the meantime is never overwritten. Failures are logged, never thrown:
  * completion must not depend on the notes lookup.
  */
@@ -232,7 +233,9 @@ export async function freezeLinkedLessonContent({
       .eq('ws_id', wsId)
       .maybeSingle();
     if (error) throw error;
-    if (!session) return;
+    // Same rule as the listing: blank content is linked, real text is a
+    // manual edit that must never be overwritten.
+    if (session?.content.trim() !== '') return;
 
     // Derive as if still pending: the notes as they stood at completion.
     const linked = await loadLinkedLessonContent({
@@ -249,7 +252,9 @@ export async function freezeLinkedLessonContent({
       .eq('id', sessionId)
       .eq('ws_id', wsId)
       .eq('attendance_status', 'DONE')
-      .eq('content', '');
+      // Compare-and-set on the blank value read above, whitespace included,
+      // so a staff edit made in the meantime is left alone.
+      .eq('content', session.content);
     if (updateError) throw updateError;
   } catch (error) {
     console.error('Failed to store linked tutoring lesson content', {
