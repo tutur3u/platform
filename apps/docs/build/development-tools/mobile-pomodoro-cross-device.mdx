@@ -5,7 +5,7 @@ description: The migration, API contract and deadline scheduling for sharing a P
 
 <Warning>
 **Migration awaiting approval.** The owner approved this design on
-2026-10-26. The migration `20261026180000_time_tracker_cross_device_pomodoro`
+2026-10-26. The migration `20261026194000_time_tracker_cross_device_pomodoro`
 ships in its own draft PR. It needs an independent review and the owner's
 explicit approval before it merges. The routes, the Timer-route change and
 the clients build on it in later PRs.
@@ -208,14 +208,14 @@ under Realtime.
 
 ### Rollback
 
-`apps/database/rollbacks/20261026180000_time_tracker_cross_device_pomodoro.rollback.sql`
+`apps/database/rollbacks/20261026194000_time_tracker_cross_device_pomodoro.rollback.sql`
 runs as one transaction with `lock_timeout = 5s` and `statement_timeout = 30s`.
 It resets every control to OFF, restores the prior function bodies, drops the
 new functions, shape and columns, and re-adds the foundation checks by name.
 Session rows are never touched.
 
 Record it afterwards with
-`supabase migration repair --status reverted 20261026180000`.
+`supabase migration repair --status reverted 20261026194000`.
 
 To prove it on a disposable stack (a scratch copy of `apps/database/supabase`
 with its own `project_id` and ports, as in
