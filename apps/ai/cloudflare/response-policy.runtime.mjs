@@ -5,7 +5,21 @@ import { startFixtureWorker } from './runtime-fixture.mjs';
 test('emitted ai Worker applies security and personalized cache policy', {
   timeout: 120000,
 }, async (t) => {
-  const worker = await startFixtureWorker(t);
+  const upstream = [];
+  const worker = await startFixtureWorker(t, {
+    bindings: { INVENTORY_APP_URL: 'https://inventory.invalid' },
+    outboundService(request) {
+      upstream.push(request.url);
+      return Response.json(
+        { fixture: true },
+        {
+          headers: {
+            'Cache-Control': 'public, max-age=0, s-maxage=0, must-revalidate',
+          },
+        }
+      );
+    },
+  });
   for (const host of ['ai.tuturuuu.com', 'ai-staging.tuturuuu.com']) {
     for (const path of ['/api/build-info', '/api/private', '/vi']) {
       const response = await worker.request(path, { host });
@@ -24,6 +38,26 @@ test('emitted ai Worker applies security and personalized cache policy', {
       assert.match(
         response.headers['cache-control'] ?? '',
         /(?:^|[, ])no-store(?:$|[, ])/
+      );
+      assert.match(response.headers.vary ?? '', /(?:^|,\s*)cookie(?:,|$)/i);
+    }
+  }
+  const publicPath = '/api/cache-policy-fixture.json';
+  const publicResponse = await worker.request(publicPath);
+  assert.equal(publicResponse.status, 200);
+  assert.equal(publicResponse.headers['cache-control'], 'private, no-store');
+  assert.match(publicResponse.headers.vary ?? '', /(?:^|,\s*)cookie(?:,|$)/i);
+  assert.ok(
+    upstream.includes(`https://central.invalid${publicPath}`),
+    'Probe must reach the upstream public cache fixture'
+  );
+  for (const path of ['/assets/client.js', '/robots.txt']) {
+    for (const method of ['POST', 'PUT']) {
+      const response = await worker.request(path, { method });
+      assert.equal(
+        response.headers['cache-control'],
+        'private, no-store',
+        `${method} ${path}`
       );
       assert.match(response.headers.vary ?? '', /(?:^|,\s*)cookie(?:,|$)/i);
     }

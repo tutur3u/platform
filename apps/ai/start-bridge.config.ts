@@ -30,11 +30,11 @@ export default defineBridgeAppConfig({
     result.headers.set('X-Content-Type-Options', 'nosniff');
     result.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     const path = new URL(request.url).pathname;
-    const isAsset = path.startsWith('/assets/') || path === '/robots.txt';
+    const isAsset =
+      (request.method === 'GET' || request.method === 'HEAD') &&
+      (path.startsWith('/assets/') || path === '/robots.txt');
     if (!isAsset) {
-      if (!result.headers.has('Cache-Control')) {
-        result.headers.set('Cache-Control', 'private, no-store');
-      }
+      result.headers.set('Cache-Control', 'private, no-store');
       const vary = result.headers.get('Vary');
       if (
         !vary

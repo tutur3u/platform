@@ -256,11 +256,13 @@ do not provision DNS or authorize publication. The shared generator derives `wor
 profile and seals that setting with the app-owned request-signal flag.
 
 Every native response denies framing and content sniffing, sets the strict-origin
-referrer policy, and remains noindex. Documents and APIs default to
-`Cache-Control: private, no-store` and vary by Cookie; explicit endpoint cache
-policies and static asset caching are preserved. Source tests cover the defaults,
+referrer policy, and remains noindex. Every response except GET/HEAD reads under `/assets/` or the enumerated
+`/robots.txt` file receives `Cache-Control: private, no-store` and varies by
+Cookie, overriding endpoint and upstream public cache headers. Only those static
+reads retain their cache policy; non-read asset requests remain private. Source tests cover the defaults,
 endpoint overrides and variation merging; `cloudflare/response-policy.runtime.mjs`
-checks the emitted Worker on both admitted hosts and rejects apex/unknown hosts.
+checks the emitted Worker on every admitted host, rejects apex/unknown hosts,
+and probes upstream public cache headers and non-read asset paths.
 
 Staging profile verification is an explicit cutover-prep gate. Supply and verify
 `INTERNAL_WEB_API_ORIGIN`, `SUPABASE_SERVER_URL`, the public Supabase URL/key,
