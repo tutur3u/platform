@@ -138,23 +138,26 @@ function escapeHtml(value: string) {
     .replace(/'/gu, '&#39;');
 }
 
-// Only a top-level navigation may receive the CLI token. Same-origin script
-// (fetch, iframe) carries Fetch Metadata that says otherwise; the CLI itself
-// and browsers without Fetch Metadata send none.
-function isTopLevelNavigationOrNonBrowser(request: NextRequest) {
-  const mode = request.headers.get('sec-fetch-mode');
-  const dest = request.headers.get('sec-fetch-dest');
-
-  if (mode === null && dest === null) {
-    return true;
-  }
-
-  return mode === 'navigate' && dest === 'document';
+// Only a top-level browser navigation may receive the CLI token. Same-origin
+// script cannot fake Fetch Metadata, so fetch and iframe loads are refused.
+// Requests without Fetch Metadata are refused too: the CLI only ever opens
+// this URL in a browser, and every current browser sends it.
+function isTopLevelNavigation(request: NextRequest) {
+  return (
+    request.headers.get('sec-fetch-mode') === 'navigate' &&
+    request.headers.get('sec-fetch-dest') === 'document'
+  );
 }
 
-function acceptsJson(request: NextRequest) {
-  return request.headers.get('accept')?.includes('application/json') ?? false;
-}
+// The copy page renders in an opaque origin with no script, so a same-origin
+// opener (window.open from injected script) cannot read the token, and COOP
+// severs the opener handle.
+const COPY_PAGE_SECURITY_HEADERS = {
+  'Content-Security-Policy':
+    "sandbox; default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Referrer-Policy': 'no-referrer',
+};
 
 function renderCopyTokenPage(token: string, email: string | null) {
   const safeToken = escapeHtml(token);
@@ -233,6 +236,7 @@ function renderCopyTokenPage(token: string, email: string | null) {
 </html>`,
     {
       headers: {
+        ...COPY_PAGE_SECURITY_HEADERS,
         'Cache-Control': 'no-store',
         'Content-Type': 'text/html; charset=utf-8',
       },
@@ -246,11 +250,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing state' }, { status: 400 });
   }
 
-  if (!isTopLevelNavigationOrNonBrowser(request)) {
+  if (!isTopLevelNavigation(request)) {
     return NextResponse.json(
       {
         code: 'CLI_LOGIN_NAVIGATION_REQUIRED',
-        error: 'Open this page directly in the browser',
+        error: 'Open this link directly in a current browser',
       },
       { headers: { 'Cache-Control': 'no-store' }, status: 403 }
     );
@@ -261,6 +265,15 @@ export async function GET(request: NextRequest) {
 
   if (authError || !user) {
     return redirectToLogin(request);
+  }
+
+  const copyMode = request.nextUrl.searchParams.get('mode') === 'copy';
+  const redirectUri = request.nextUrl.searchParams.get('redirect_uri');
+  if (!copyMode && (!redirectUri || !isLoopbackCallback(redirectUri))) {
+    return NextResponse.json(
+      { error: 'Invalid CLI callback URL' },
+      { status: 400 }
+    );
   }
 
   const token = await generateAssuredCrossAppToken(
@@ -279,27 +292,8 @@ export async function GET(request: NextRequest) {
 
   const email = user.email ?? null;
 
-  if (request.nextUrl.searchParams.get('mode') === 'copy') {
-    if (acceptsJson(request)) {
-      return NextResponse.json(
-        { email, token },
-        {
-          headers: {
-            'Cache-Control': 'no-store',
-          },
-        }
-      );
-    }
-
+  if (copyMode || !redirectUri) {
     return renderCopyTokenPage(token, email);
-  }
-
-  const redirectUri = request.nextUrl.searchParams.get('redirect_uri');
-  if (!redirectUri || !isLoopbackCallback(redirectUri)) {
-    return NextResponse.json(
-      { error: 'Invalid CLI callback URL' },
-      { status: 400 }
-    );
   }
 
   const callbackUrl = new URL(redirectUri);
