@@ -33,11 +33,16 @@ source. `tuturuuu.com/<app>` is the app root; product marketing moves to
 path-mounted variant. The bridge supplies the asset base, server-function base,
 router basepath, Location rewriting, base-aware links and auth return URLs.
 
-Session cookies under a base are `tuturuuu_app_session__<app>` with
-`Path=/<app>`, translated at the edge so auth code is unchanged. Sessions on a
-legacy subdomain are host-only and are not carried to the shared origin: users
-**re-login once at cutover**, unless a valid central (root) session silently
-mints the new app session. There is no cross-host session handoff.
+Under a base, every app uses the **one shared `tuturuuu.com` root session**,
+with no per-app cookie names or paths (user decisions of 2026-10-25 and
+2026-10-26: one session for every app, held server-side in an `HttpOnly`
+cookie). Mounted apps read that session and derive their per-app claims in
+memory; they never write or clear `tuturuuu_app_session*` or Supabase session
+cookies (the mounted no-writer guard).
+Users who already hold the root session stay signed in at cutover; only users
+without one sign in once on the apex. There is no cross-host token handoff from
+the subdomain. Subdomain hosts keep their host-only app-session cookies until
+they only redirect.
 
 ## Gates before cutover
 
