@@ -25,6 +25,7 @@ export default defineBridgeAppConfig({
       const directives =
         csp
           ?.split(';')
+          .map((directive) => directive.trim())
           .filter(
             (directive) =>
               directive.trim() &&
