@@ -184,6 +184,18 @@ describe('Calendar provider cron ownership', () => {
     );
   });
 
+  it('returns a bounded degradation signal when every sampled Google account is transient', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    workspacesWithOutcomes({ 'workspace-a': ['transient', 'transient'] });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      degraded: true,
+      transientProviders: ['google'],
+    });
+  });
+
   it('raises the deactivation spike hook and queues the operator alert', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});

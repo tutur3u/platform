@@ -1,5 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { isWorkspaceUuidLiteral } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   requireWorkspaceExternalProjectAccess,
@@ -50,8 +52,19 @@ export async function GET(
       return NextResponse.json(payload, { headers: privateHeaders });
     }
 
+    const resolvedWsId = resolveWorkspaceId(wsId);
+    if (!isWorkspaceUuidLiteral(resolvedWsId)) {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
     const admin = (await createAdminClient()) as TypedSupabaseClient;
-    const binding = await resolveWorkspaceExternalProjectBinding(wsId, admin);
+    const binding = await resolveWorkspaceExternalProjectBinding(
+      resolvedWsId,
+      admin
+    );
 
     if (!binding.enabled || !binding.canonical_project) {
       return NextResponse.json(
@@ -64,7 +77,7 @@ export async function GET(
       {
         binding,
         includeDrafts: false,
-        workspaceId: wsId,
+        workspaceId: resolvedWsId,
       },
       admin
     );
@@ -76,7 +89,7 @@ export async function GET(
       )
     );
     const cacheTags = [
-      workspaceExternalProjectCacheTag(wsId),
+      workspaceExternalProjectCacheTag(resolvedWsId),
       ...[...new Set(assetCacheTags)].slice(0, MAX_VERCEL_CACHE_TAGS - 1),
     ];
     const publicHeaders = {
