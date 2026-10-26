@@ -1417,6 +1417,8 @@
     "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
     "connected_accounts": "Tài khoản đã kết nối",
     "connected_calendars": "Lịch đã kết nối",
+    "consent_restart_limited": "Google chưa cấp mã làm mới. Vui lòng chờ trước khi kết nối lại tài khoản này.",
+    "consent_restart_unavailable": "Tạm thời không thể kết nối lại lịch. Vui lòng thử lại sau.",
     "create": "Tạo",
     "create_calendar": "Tạo lịch mới",
     "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
