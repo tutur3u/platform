@@ -7,8 +7,8 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import {
   parseAiChatResourcePath,
-  verifyAiChatResourceScopes,
-} from '../_lib/chat-resource-access';
+  resolveAiChatResourceAccess,
+} from '../_lib/chat-resource-ownership';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const DeleteFileRequestSchema = z.object({
@@ -20,7 +20,8 @@ const DeleteFileRequestSchema = z.object({
  * POST /api/ai/chat/delete-file
  *
  * Deletes a previously uploaded chat file from Supabase Storage.
- * Path must remain within `{wsId}/chats/ai/resources/`.
+ * Path must remain within `{wsId}/chats/ai/resources/` and belong to the
+ * caller: their own temp folder, or an existing chat (UUID) they created.
  */
 export const POST = withSessionAuth(
   async (req, { user, supabase }) => {
@@ -36,12 +37,8 @@ export const POST = withSessionAuth(
         );
       }
 
-      const expectedPrefix = `${wsId}/chats/ai/resources/`;
-      if (
-        sanitizePathStrict(path) !== path ||
-        !path.startsWith(expectedPrefix) ||
-        path.length === expectedPrefix.length
-      ) {
+      const resource = parseAiChatResourcePath(wsId, path);
+      if (sanitizePathStrict(path) !== path || !resource) {
         return NextResponse.json(
           { message: 'Invalid storage path' },
           { status: 400 }
@@ -72,32 +69,31 @@ export const POST = withSessionAuth(
         );
       }
 
-      const scope = parseAiChatResourcePath(path);
-      if (!scope || scope.wsId !== wsId) {
-        return NextResponse.json(
-          { message: 'Invalid storage path' },
-          { status: 400 }
-        );
-      }
-      const access = await verifyAiChatResourceScopes({
-        scopes: [scope],
+      const sbAdmin = await createDynamicAdminClient();
 
-        userId: user.id,
-      });
+      const access =
+        resource.kind === 'temp'
+          ? resource.userId === user.id
+            ? 'allowed'
+            : 'forbidden'
+          : await resolveAiChatResourceAccess(
+              sbAdmin,
+              resource.chatId,
+              user.id
+            );
       if (access === 'lookup_failed') {
         return NextResponse.json(
           { message: 'Failed to verify chat access' },
           { status: 500 }
         );
       }
-      if (access !== 'allowed') {
+      if (access === 'forbidden') {
         return NextResponse.json(
-          { message: 'File not found' },
-          { status: 404 }
+          { message: "You don't have access to this file" },
+          { status: 403 }
         );
       }
 
-      const sbAdmin = await createDynamicAdminClient();
       const { error } = await sbAdmin.storage.from('workspaces').remove([path]);
 
       if (error) {

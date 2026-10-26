@@ -29,6 +29,7 @@ import 'package:mobile/features/assistant/models/assistant_playback_spectrum.dar
 
 part 'assistant_live_camera.dart';
 part 'assistant_live_microphone.dart';
+part 'assistant_live_reconnect.dart';
 part 'assistant_live_recovery.dart';
 part 'assistant_live_screen.dart';
 part 'assistant_live_socket_events.dart';
@@ -60,7 +61,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     String? Function()? currentUserId,
     int Function()? currentScopeToken,
     AssistantLiveScreenService? screenService,
-  }) : _currentScopeToken = currentScopeToken ?? (() => 0),
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now,
+       _currentScopeToken = currentScopeToken ?? (() => 0),
        _currentUserId = currentUserId ?? currentCacheUserId,
        _repository = repository,
        _socket = socket,
@@ -123,7 +126,15 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   bool _manualDisconnect = false;
   bool _isClosing = false;
   Future<void>? _closeFuture;
-  bool _reconnectScheduled = false;
+  Timer? _reconnectTimer;
+  int _reconnectTimerRequest = 0;
+  bool _reconnectClosed = false;
+  int _intentEpoch = 0;
+  int _sessionEpoch = 0;
+  int _reconnectAttempts = 0;
+  bool _automaticReconnect = false;
+  DateTime? _readyAt;
+  final DateTime Function() _now;
   StreamSubscription<AssistantPlaybackSpectrum>? _playbackSubscription;
   final _startupAudio = AssistantAudioBuffer();
   int _microphoneVersion = 0;
@@ -152,11 +163,16 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool Function()? isCurrent,
     Future<void> Function(String wsId, String chatId)? onChatBound,
   }) async {
+    // A user start is a new intent; an automatic reconnect inherits the one it
+    // was admitted under. Every continuation re-checks it after each await.
+    final intentEpoch = _automaticReconnect ? _intentEpoch : _startIntent();
+    bool intentCurrent() => intentEpoch == _intentEpoch;
     final preparationVersion = ++_preparationVersion;
     final admissionVersion = _requestVersion;
     final requestedActor = _currentUserId();
     final requestedScope = _currentScopeToken();
     bool admitted() =>
+        intentCurrent() &&
         preparationVersion == _preparationVersion &&
         (isCurrent?.call() ?? true) &&
         !_isClosing &&
@@ -165,7 +181,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         requestedActor == _currentUserId() &&
         requestedScope == _currentScopeToken();
     Future<int?> rejectAdmission() async {
-      if (preparationVersion == _preparationVersion &&
+      if (intentCurrent() &&
+          preparationVersion == _preparationVersion &&
           !_isStale(admissionVersion) &&
           state.workspaceId == wsId &&
           state.isBusy &&
@@ -197,11 +214,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
     final requestVersion = ++_requestVersion;
     bool currentRequest() =>
+        intentCurrent() &&
         preparationVersion == _preparationVersion &&
         !_isStale(requestVersion) &&
         (isCurrent?.call() ?? true);
     _sessionUserId = requestedActor;
     _sessionScopeToken = requestedScope;
+    _sessionEpoch = intentEpoch;
     _pendingTools = Future<void>.value();
     _manualDisconnect = false;
     _readyCompleter = Completer<void>();
@@ -315,7 +334,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       timings.finish();
       // A retired attempt that still owns the latest request may have opened
       // the provider during binding; close it even if the actor/scope moved.
-      if (preparationVersion == _preparationVersion &&
+      // A newer intent (End Call, close, user start) owns teardown instead.
+      if (intentCurrent() &&
+          preparationVersion == _preparationVersion &&
           requestVersion == _requestVersion &&
           !_isClosing &&
           !isClosed &&
@@ -366,10 +387,15 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     final endingVersion = _requestVersion;
     final preparationVersion = _preparationVersion;
     if (finishTurn && _isStale(endingVersion)) return;
+    // A new intent before the first await: in-flight and pending reconnects
+    // are retired, and a drop during a slow teardown cannot reconnect.
+    final endEpoch = _endIntent();
     _disconnectVersion++;
     if (finishTurn) {
       bool current() =>
-          preparationVersion == _preparationVersion && !_isStale(endingVersion);
+          endEpoch == _intentEpoch &&
+          preparationVersion == _preparationVersion &&
+          !_isStale(endingVersion);
       await _stopInputs(isCurrent: current);
       if (!current()) return;
     }
@@ -385,6 +411,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     final finishing = finishTurn ? _finalizeTurn() : Future<void>.value();
     final disconnectVersion = ++_requestVersion;
     bool superseded() =>
+        endEpoch != _intentEpoch ||
         preparationVersion != _preparationVersion ||
         (finishTurn
             ? _isStale(disconnectVersion)
@@ -483,34 +510,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
 
   void _emitSessionHandle(String? handle) {
     if (!isClosed) emit(state.copyWith(sessionHandle: handle));
-  }
-
-  void _scheduleReconnect() {
-    if (_manualDisconnect || _reconnectScheduled || state.workspaceId == null) {
-      return;
-    }
-
-    _reconnectScheduled = true;
-    final requestVersion = _requestVersion;
-    final wsId = state.workspaceId!;
-    final chatId = state.chatId;
-    final model = state.model;
-
-    unawaited(
-      Future<void>.delayed(const Duration(milliseconds: 800), () async {
-        try {
-          if (_manualDisconnect || _isStale(requestVersion)) return;
-          await prepareSession(
-            wsId: wsId,
-            chatId: chatId,
-            model: model,
-            reconnect: true,
-          );
-        } finally {
-          _reconnectScheduled = false;
-        }
-      }),
-    );
   }
 
   Future<void> _waitForReady() async {

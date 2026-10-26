@@ -142,9 +142,9 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('PERSONAL'), findsOneWidget);
-      expect(find.text('INTERNAL'), findsOneWidget);
-      expect(find.text('TEAM WORKSPACES'), findsOneWidget);
+      expect(find.text('Personal'), findsOneWidget);
+      expect(find.text('Internal'), findsOneWidget);
+      expect(find.text('Team workspaces'), findsOneWidget);
       expect(find.text('Alex Nguyen'), findsOneWidget);
       expect(find.text('Platform'), findsOneWidget);
       expect(find.text('Product'), findsOneWidget);

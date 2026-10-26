@@ -1,14 +1,21 @@
 import { MAX_AI_CHAT_UPLOAD_BYTES } from '@tuturuuu/ai/chat/attachment-content-guard';
+import {
+  isMiraImagePath,
+  resolveMiraImageReadAccess,
+} from '@tuturuuu/storage-core/mira-image-access';
+import {
+  classifyWorkspaceStoragePath,
+  resolveWorkspaceStorageAccess,
+} from '@tuturuuu/storage-core/workspace-storage-access';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
-  type AiChatResourceScope,
-  parseAiChatResourcePath,
-  verifyAiChatResourceScopes,
-} from '../_lib/chat-resource-access';
+  createMiraImageAccessContext,
+  createWorkspaceStorageAccessContext,
+  WorkspaceStorageAccessLookupError,
+} from '@/lib/storage/workspace-storage-access-context';
 import { verifyAiChatStoredObjects } from '../_lib/chat-resource-object-guard';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
@@ -28,77 +35,72 @@ const SIGNED_URL_EXPIRY_SECONDS = 3600;
  *
  * Request body: { paths: string[] }
  * Response: { urls: Array<{ path: string; signedUrl: string | null }> }
+ *
+ * Only AI chat attachment paths (`{wsId}/chats/ai/resources/...`) and Mira
+ * generated images (`{wsId}/mira/images/{file}`) are accepted; Drive files
+ * go through Drive APIs, which add egress controls. Chat paths must pass the
+ * same rules as the `workspaces` bucket RLS
+ * (`@tuturuuu/storage-core/workspace-storage-access`): the caller must be a
+ * workspace MEMBER and own the chat (or the temp folder). Mira images stay
+ * service-only in RLS and are signed on read only for the member who
+ * generated them (`@tuturuuu/storage-core/mira-image-access`). One denied
+ * path rejects the whole request. Authorized chat attachments are then
+ * signed only if their stored size and leading bytes match their extension
+ * (`chat-resource-object-guard`); Mira images are server-written.
  */
 export const POST = withSessionAuth(
   async (req, { supabase, user }) => {
     try {
       const body = await req.json();
       const { paths } = SignedReadUrlRequestSchema.parse(body);
-      const workspaceIds = new Set<string>();
-      const scopes: AiChatResourceScope[] = [];
-
-      for (const path of paths) {
-        const scope = parseAiChatResourcePath(path);
-        if (!scope) {
-          return NextResponse.json(
-            { message: 'Invalid storage path' },
-            { status: 400 }
-          );
-        }
-
-        scopes.push(scope);
-        workspaceIds.add(scope.wsId);
-      }
-
-      for (const wsId of workspaceIds) {
-        const membership = await verifyWorkspaceMembershipType({
-          wsId,
-          userId: user.id,
-          supabase,
-        });
-
-        if (membership.error === 'membership_lookup_failed') {
-          console.error(
-            'Error validating workspace membership for signed-read-url',
-            { error: membership.error, wsId }
-          );
-          return NextResponse.json(
-            { message: 'Failed to verify workspace access' },
-            { status: 500 }
-          );
-        }
-
-        if (!membership.ok) {
-          return NextResponse.json(
-            { message: "You don't have access to this workspace" },
-            { status: 403 }
-          );
-        }
-      }
-
-      const access = await verifyAiChatResourceScopes({
-        scopes,
-
-        userId: user.id,
-      });
-      if (access === 'lookup_failed') {
+      if (
+        paths.some(
+          (path) => !isAiChatResourcePath(path) && !isMiraImagePath(path)
+        )
+      ) {
         return NextResponse.json(
-          { message: 'Failed to verify chat access' },
-          { status: 500 }
-        );
-      }
-      if (access !== 'allowed') {
-        return NextResponse.json(
-          { message: 'File not found' },
-          { status: 404 }
+          { message: 'Invalid storage path' },
+          { status: 400 }
         );
       }
 
       const storageAdmin = await createDynamicAdminClient();
+      const context = createWorkspaceStorageAccessContext({
+        sbAdmin: storageAdmin,
+        supabase,
+        userId: user.id,
+      });
+      const miraContext = createMiraImageAccessContext({
+        sbAdmin: storageAdmin,
+        storageContext: context,
+      });
+      const decisions = await Promise.all(
+        paths.map((path) =>
+          isMiraImagePath(path)
+            ? resolveMiraImageReadAccess(path, miraContext)
+            : resolveWorkspaceStorageAccess(path, 'select', context)
+        )
+      );
+
+      if (decisions.includes('invalid')) {
+        return NextResponse.json(
+          { message: 'Invalid storage path' },
+          { status: 400 }
+        );
+      }
+
+      if (decisions.includes('forbidden')) {
+        return NextResponse.json(
+          { message: "You don't have access to this file" },
+          { status: 403 }
+        );
+      }
 
       const verdicts = await verifyAiChatStoredObjects({
         admin: storageAdmin,
-        objects: paths.map((path) => ({ path })),
+        objects: paths
+          .filter((path) => !isMiraImagePath(path))
+          .map((path) => ({ path })),
       });
       const verdictList = [...verdicts.values()];
       if (verdictList.includes('rejected')) {
@@ -147,6 +149,14 @@ export const POST = withSessionAuth(
         );
       }
 
+      if (err instanceof WorkspaceStorageAccessLookupError) {
+        console.error('Error verifying chat file access', err);
+        return NextResponse.json(
+          { message: 'Failed to verify file access' },
+          { status: 500 }
+        );
+      }
+
       console.error('Unexpected error in signed-read-url', err);
       return NextResponse.json(
         { message: 'Internal server error' },
@@ -160,3 +170,12 @@ export const POST = withSessionAuth(
     rateLimitKind: 'read',
   }
 );
+
+/** AI chat attachment paths only: `{wsId}/chats/ai/resources/...`. */
+function isAiChatResourcePath(path: string) {
+  const target = classifyWorkspaceStoragePath(path);
+  return (
+    (target?.kind === 'ai-chat' || target?.kind === 'ai-chat-temp') &&
+    path.split('/')[1] === 'chats'
+  );
+}

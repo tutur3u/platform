@@ -171,7 +171,9 @@ const auth = vi.hoisted(() => ({
   getSession: vi.fn(),
   getUser: vi.fn(),
   setSession: vi.fn(),
+  signOut: vi.fn(),
 }));
+const rpc = vi.hoisted(() => vi.fn());
 
 vi.mock('next/headers', () => ({
   cookies: () =>
@@ -187,7 +189,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     Promise.resolve({
       schema: () => ({ from: (table: string) => new FakeQuery(table) }),
     }),
-  createClient: () => Promise.resolve({ auth }),
+  createClient: () => Promise.resolve({ auth, rpc }),
 }));
 
 vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
@@ -429,5 +431,74 @@ describe('switchWebAccount', () => {
       success: false,
     });
     expect(auth.setSession).not.toHaveBeenCalled();
+  });
+});
+
+describe('web account logout revokes derived credentials before sign-out', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.devices = [
+      {
+        active_user_id: 'user-a',
+        id: 'device-1',
+        revoked_at: null,
+        secret_hash: 'hashed:secret-1',
+      },
+    ];
+    store.sessions = [sessionRow('user-a', 'refresh-a-stored')];
+    auth.getUser.mockResolvedValue({ data: { user: { id: 'user-a' } } });
+    auth.signOut.mockResolvedValue({ error: null });
+    rpc.mockResolvedValue({ error: null });
+  });
+
+  async function expectRevokedThenSignedOut() {
+    const { revokeUserAiTempAuthTokens } = await import(
+      '@tuturuuu/utils/ai-temp-auth'
+    );
+
+    expect(revokeUserAiTempAuthTokens).toHaveBeenCalledWith('user-a');
+    expect(rpc).toHaveBeenCalledWith('revoke_all_cross_app_tokens', {
+      p_user_id: 'user-a',
+    });
+    expect(auth.getUser).toHaveBeenCalledTimes(1);
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(
+      auth.signOut.mock.invocationCallOrder[0] as number
+    );
+  }
+
+  it('signing out of the last account on the device (logout)', async () => {
+    const { logoutCurrentWebAccount } = await import('./vault');
+
+    await logoutCurrentWebAccount(request());
+
+    await expectRevokedThenSignedOut();
+  });
+
+  it('signing out without a stored device (satellite menu logout)', async () => {
+    store.devices = [];
+    const { logoutCurrentWebAccount } = await import('./vault');
+
+    await logoutCurrentWebAccount(request());
+
+    await expectRevokedThenSignedOut();
+  });
+
+  it('signing out of every account (logout-all)', async () => {
+    const { logoutAllWebAccounts } = await import('./vault');
+
+    await logoutAllWebAccounts(request());
+
+    await expectRevokedThenSignedOut();
+  });
+
+  it('still signs out when the cross-app revocation fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    rpc.mockResolvedValue({ error: { message: 'unavailable' } });
+    const { logoutAllWebAccounts } = await import('./vault');
+
+    await logoutAllWebAccounts(request());
+
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
 });

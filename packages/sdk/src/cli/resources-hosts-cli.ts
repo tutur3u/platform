@@ -15,6 +15,7 @@ import {
 } from './resources-hosts-config';
 import type { HostDispatchDeps } from './resources-hosts-dispatch';
 import { hostLedger } from './resources-hosts-ledger';
+import { probeAutomaticHosts } from './resources-hosts-probe';
 import {
   compareWithCurrent,
   preferenceScenarios,
@@ -61,6 +62,7 @@ export function hostsDependencies({
     return { module, client };
   };
   return {
+    probeHosts: probeAutomaticHosts,
     fleet: async () => {
       const { module, client } = await session();
       return module.offloadRequest((signal) =>

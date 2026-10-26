@@ -114,7 +114,6 @@ lib/features/settings/cubit/theme_cubit.dart
 lib/features/settings/cubit/theme_state.dart
 lib/features/settings/view/release_notes_page.dart
 lib/features/settings/view/settings_page.dart
-lib/features/settings/view/settings_profile_header.dart
 lib/features/settings/view/settings_profile_parts.dart
 lib/features/settings/view/settings_route_frame.dart
 lib/features/settings/view/settings_row_layout.dart
@@ -209,8 +208,6 @@ lib/features/time_tracker/widgets/timer_tab.dart
 lib/features/time_tracker/widgets/workspace_stats_tab.dart
 lib/features/workspace/view/workspace_select_page.dart
 lib/features/workspace/widgets/create_workspace_dialog.dart
-lib/features/workspace/widgets/workspace_avatar.dart
-lib/features/workspace/widgets/workspace_picker_sheet.dart
 lib/features/workspace/widgets/workspace_tier_badge.dart
 lib/widgets/app_dialog_scaffold.dart
 lib/widgets/app_splash_surface.dart
@@ -284,7 +281,6 @@ test/features/task_planning/view/task_planning_view_test.dart
 test/features/tasks/widgets/task_section_accordion_test.dart
 test/features/tasks_boards/view/task_board_relationship_navigation_test.dart
 test/features/time_tracker/widgets/threshold_settings_dialog_test.dart
-test/features/workspace/widgets/workspace_picker_sheet_test.dart
 test/helpers/helpers.dart
 test/helpers/pump_app.dart
 test/helpers/text_editing_harness.dart

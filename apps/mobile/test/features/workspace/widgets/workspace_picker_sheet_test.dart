@@ -4,23 +4,28 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
-import 'package:mobile/features/shell/view/shell_brand_title.dart';
-import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
+
+/// A phone tall enough to show every row of the short fixtures at once.
+void _useTallPhone(WidgetTester tester) {
+  tester.view
+    ..physicalSize = const Size(390, 1400)
+    ..devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
 
 void main() {
   group('WorkspacePickerSheet', () {
@@ -54,6 +59,7 @@ void main() {
     });
 
     testWidgets('shows tier badges for each workspace', (tester) async {
+      _useTallPhone(tester);
       const state = WorkspaceState(
         status: WorkspaceStatus.loaded,
         workspaces: [
@@ -105,6 +111,7 @@ void main() {
     testWidgets('keeps filtered results stable when search loses focus', (
       tester,
     ) async {
+      _useTallPhone(tester);
       const state = WorkspaceState(
         status: WorkspaceStatus.loaded,
         workspaces: [personalWorkspace, proWorkspace, freeWorkspace],
@@ -135,64 +142,27 @@ void main() {
       );
 
       await tester.tap(find.text('Open picker'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
 
-      expect(find.byType(EditableText), findsNothing);
-      expect(find.text('Product'), findsOneWidget);
+      // Outside the shell the sheet falls back to an inline search field.
+      expect(find.byType(AppSearchField), findsOneWidget);
+      expect(find.text('Search workspaces'), findsOneWidget);
       expect(find.text('Design'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.search_rounded).first);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(EditableText), findsOneWidget);
-      expect(
-        find.ancestor(
-          of: find.byType(EditableText),
-          matching: find.byType(shad.AppBar),
-        ),
-        findsOneWidget,
-      );
       await tester.enterText(find.byType(EditableText), 'Product');
       await tester.pumpAndSettle();
-
+      // The query and the single matching row; Design is filtered out.
       expect(find.text('Product'), findsNWidgets(2));
       expect(find.text('Design'), findsNothing);
 
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
-
-      expect(find.byType(EditableText), findsOneWidget);
       expect(find.text('Design'), findsNothing);
       expect(find.text('Product'), findsNWidgets(2));
-      await tester.tap(find.byIcon(Icons.close_rounded).last);
-      await tester.pumpAndSettle();
-      expect(find.byType(EditableText), findsNothing);
-      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
-      expect(find.byType(EditableText), findsNothing);
-      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
-      expect(find.text('Design'), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.search_rounded).first);
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(EditableText), 'Product');
-      await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.close_rounded).last);
-      await tester.pumpAndSettle();
-      expect(find.byType(EditableText), findsNothing);
-      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.search_rounded).first);
-      await tester.pumpAndSettle();
+
       await tester.enterText(find.byType(EditableText), '   ');
       await tester.pumpAndSettle();
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
-      expect(find.byType(EditableText), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.close_rounded).last);
-      await tester.pumpAndSettle();
-      expect(find.byType(EditableText), findsNothing);
-      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      expect(find.text('Design'), findsOneWidget);
     });
 
     testWidgets('selects the workspace represented by a filtered result', (
@@ -232,8 +202,6 @@ void main() {
       );
 
       await tester.tap(find.text('Open picker'));
-      await tester.pump(const Duration(milliseconds: 250));
-      await tester.tap(find.byIcon(Icons.search_rounded).first);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(EditableText), 'Exocorpse');
       await tester.pumpAndSettle();
@@ -291,8 +259,6 @@ void main() {
           ),
         );
         await tester.tap(find.text('Open picker'));
-        await tester.pump(const Duration(milliseconds: 250));
-        await tester.tap(find.byIcon(Icons.search_rounded).first);
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(EditableText), 'Alpha');
         await tester.pumpAndSettle();
@@ -320,73 +286,60 @@ void main() {
         verifyNever(() => workspaceCubit.selectWorkspace(duplicateA));
       });
     }
-    testWidgets(
-      'narrow fullscreen picker supports large text, keyboard and close',
-      (tester) async {
-        tester.view.physicalSize = const Size(320, 568);
-        tester.view.devicePixelRatio = 1;
-        tester.platformDispatcher.textScaleFactorTestValue = 2;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        const state = WorkspaceState(
-          status: WorkspaceStatus.loaded,
-          workspaces: [proWorkspace, enterpriseWorkspace, freeWorkspace],
-          visibilityResolved: true,
-          visibilityStatus: WorkspaceStatus.loaded,
-          visibilityError: 'offline',
-        );
-        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-        when(() => workspaceCubit.state).thenReturn(state);
-        whenListen(
-          workspaceCubit,
-          const Stream<WorkspaceState>.empty(),
-          initialState: state,
-        );
-        await tester.pumpApp(
-          BlocProvider.value(
-            value: workspaceCubit,
-            child: Builder(
-              builder: (context) => Scaffold(
-                body: TextButton(
-                  onPressed: () => showWorkspacePickerSheet(context),
-                  child: const Text('Open picker'),
-                ),
+    testWidgets('narrow picker sheet supports large text, keyboard and close', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [proWorkspace, enterpriseWorkspace, freeWorkspace],
+        visibilityResolved: true,
+        visibilityStatus: WorkspaceStatus.loaded,
+        visibilityError: 'offline',
+      );
+      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpApp(
+        BlocProvider.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showWorkspacePickerSheet(context),
+                child: const Text('Open picker'),
               ),
             ),
           ),
-        );
-        await tester.tap(find.text('Open picker'));
-        await tester.pumpAndSettle();
-        expect(find.byType(Dialog), findsOneWidget);
-        expect(find.byType(FloatingActionButton), findsNothing);
-        expect(find.byType(ShellDockActionButton), findsNWidgets(2));
-        final actionRects = find
-            .byType(ShellDockActionButton)
-            .evaluate()
-            .map((element) => tester.getRect(find.byWidget(element.widget)))
-            .toList();
-        expect(
-          (actionRects.first.left + actionRects.last.right) / 2,
-          closeTo(160, 0.1),
-        );
-        expect(tester.takeException(), isNull);
-        await tester.tap(find.byIcon(Icons.search_rounded).last);
-        await tester.pumpAndSettle();
-        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
-        addTearDown(tester.view.resetViewInsets);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(find.byTooltip('Close workspace picker'), findsNothing);
-        await tester.tap(find.byIcon(Icons.close_rounded).last);
-        await tester.pumpAndSettle();
-        expect(find.byTooltip('Close workspace picker'), findsOneWidget);
-        await tester.tap(find.byTooltip('Close workspace picker'));
-        await tester.pumpAndSettle();
-        expect(find.byType(Dialog), findsNothing);
-        expect(find.text('Open picker'), findsOneWidget);
-      },
-    );
+        ),
+      );
+      await tester.tap(find.text('Open picker'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byType(EditableText));
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      tester.view.resetViewInsets();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('app-sheet-close')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppSheetScaffold), findsNothing);
+      expect(find.text('Open picker'), findsOneWidget);
+    });
     testWidgets(
       'Settings row opens private restore without selecting a scope',
       (tester) async {
@@ -426,7 +379,7 @@ void main() {
         verifyNever(() => workspaceCubit.setDefaultWorkspace(proWorkspace));
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(find.byType(Dialog), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsNothing);
       },
     );
 
@@ -478,11 +431,8 @@ void main() {
           find.text('You have reached the workspace limit'),
           findsOneWidget,
         );
-        final add = tester.widget<FilledButton>(
-          find.descendant(
-            of: find.byType(ShellDockActionButton).last,
-            matching: find.byType(FilledButton),
-          ),
+        final add = tester.widget<AppButton>(
+          find.byKey(const ValueKey('workspace-picker-create')),
         );
         expect(add.onPressed, isNull);
       },
@@ -550,7 +500,7 @@ void main() {
         expect(find.byTooltip('Hide: Product'), findsNothing);
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(find.byType(Dialog), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsNothing);
       },
     );
     testWidgets(
@@ -591,20 +541,16 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Retry'), findsOneWidget);
-        expect(tester.getRect(find.byType(Dialog)).bottom, 640);
-        expect(tester.getRect(find.byType(shad.AppBar)).top, 44);
-        final scroll = find.byKey(const ValueKey('workspace-picker-scroll'));
-        expect(
-          tester.getRect(scroll).bottom,
-          closeTo(tester.getRect(find.byType(Dialog)).bottom, 1),
-        );
+        final scroll = find
+            .descendant(
+              of: find.byType(CustomScrollView),
+              matching: find.byType(Scrollable),
+            )
+            .first;
         await tester.scrollUntilVisible(
           find.byKey(const ValueKey('workspace-result-synthetic-19')),
           250,
-          scrollable: find.descendant(
-            of: scroll,
-            matching: find.byType(Scrollable),
-          ),
+          scrollable: scroll,
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
@@ -614,84 +560,12 @@ void main() {
         expect(
           last.bottom,
           lessThan(
-            tester.getRect(find.byType(ShellDockActionButton).first).top,
+            tester
+                .getRect(find.byKey(const ValueKey('workspace-picker-create')))
+                .top,
           ),
         );
       },
     );
-
-    for (final brightness in [Brightness.light, Brightness.dark]) {
-      testWidgets('fullscreen shell header, action styling and row accents '
-          'in $brightness', (tester) async {
-        tester.platformDispatcher.platformBrightnessTestValue = brightness;
-        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
-        await openPicker(
-          tester,
-          const WorkspaceState(
-            status: WorkspaceStatus.loaded,
-            workspaces: [
-              Workspace(
-                id: 'synthetic-personal',
-                name: 'Synthetic personal',
-                personal: true,
-              ),
-              Workspace(
-                id: '00000000-0000-0000-0000-000000000000',
-                name: 'Synthetic system',
-              ),
-              proWorkspace,
-            ],
-            visibilityResolved: true,
-            visibilityStatus: WorkspaceStatus.loaded,
-          ),
-        );
-        final bar = tester.widget<shad.AppBar>(find.byType(shad.AppBar));
-        final barContext = tester.element(find.byType(shad.AppBar));
-        expect(bar.height, mobileSectionAppBarHeightFor(barContext));
-        expect(bar.padding, mobileSectionAppBarPadding);
-        expect(find.byType(ShellBrandTitle), findsOneWidget);
-        final logo = tester.widget<Image>(
-          find.descendant(
-            of: find.byType(ShellBrandTitle),
-            matching: find.byType(Image),
-          ),
-        );
-        expect(logo.width, 28);
-        expect(logo.height, 28);
-        expect(find.byType(FloatingActionButton), findsNothing);
-        final search = tester.widget<FilledButton>(
-          find.descendant(
-            of: find.byType(ShellDockActionButton).first,
-            matching: find.byType(FilledButton),
-          ),
-        );
-        final scheme = Theme.of(barContext).colorScheme;
-        expect(search.style!.backgroundColor!.resolve({}), scheme.onSurface);
-        expect(search.style!.foregroundColor!.resolve({}), scheme.surface);
-        expect(search.style!.shape!.resolve({}), isA<StadiumBorder>());
-        final rowColors =
-            [
-                  'synthetic-personal',
-                  '00000000-0000-0000-0000-000000000000',
-                  'ws_1',
-                ]
-                .map(
-                  (id) => tester
-                      .widget<Material>(
-                        find
-                            .descendant(
-                              of: find.byKey(ValueKey('workspace-result-$id')),
-                              matching: find.byType(Material),
-                            )
-                            .first,
-                      )
-                      .color,
-                )
-                .toSet();
-        expect(rowColors.length, 3);
-        expect(rowColors, isNot(contains(scheme.surfaceContainerHigh)));
-        expect(tester.takeException(), isNull);
-      });
-    }
   });
 }

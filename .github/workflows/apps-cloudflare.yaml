@@ -3,6 +3,7 @@ on:
   workflow_call:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       [
         'apps/apps/**',
@@ -15,6 +16,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -47,6 +49,8 @@ on:
         'turbo.json',
         'tuturuuu.ts',
         'tuturuuu.ci.ts',
+        '!**/*.md',
+        '!**/*.mdx',
       ]
   push:
     branches: [main]
@@ -62,6 +66,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -98,10 +103,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -110,7 +116,7 @@ jobs:
       workflow_name: apps-cloudflare.yaml
   validate:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -150,11 +156,13 @@ jobs:
       - name: Test exact emitter resource guard and fixture egress policy
         working-directory: apps/apps
         run: node --test cloudflare/native-runtime-fence.test.mjs
+      - name: Reject unregistered App Router routes and pages
+        run: bun packages/start-bridge/src/codegen/cli.ts check apps/apps
       - name: Test actual native app boundaries
         working-directory: apps/apps
         run: bun run test:cloudflare
       - name: Check native owning source and fixture formatting
-        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
+        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json apps/apps/start-bridge.routes.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
       - name: Record Apps route tree presence before frontend build
         id: apps-route-tree-before
         shell: bash
@@ -216,7 +224,7 @@ jobs:
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Apps route tree evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
@@ -244,7 +252,7 @@ jobs:
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/apps "$APPS_SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-apps.json"
       - name: Retain apps diagnostic config receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-native-config-receipt-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config-apps.json
@@ -300,7 +308,7 @@ jobs:
         run: |
           python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
           python3 scripts/ci/apps-native-artifact.py pack apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json" --archive "$RUNNER_TEMP/apps-native.tar.gz"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: apps-native-${{ env.APPS_SOURCE_SHA }}
           path: ${{ runner.temp }}/apps-native.tar.gz
@@ -320,7 +328,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/apps-debug-sealed-source.tar.gz" "$RUNNER_TEMP/apps-native-artifact.json" >> "$RUNNER_TEMP/apps-debug-sealed-source.txt"
       - name: Retain failed-job sealed source for debugging
         if: ${{ failure() && steps.apps-canonical-seal.outcome == 'success' && steps.apps-debug-pack.outcome == 'success' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-debug-sealed-source-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -337,13 +345,14 @@ jobs:
           fi
       - name: Retain Apps finite public SDK evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-native-evidence-validate-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-native-evidence.tar.gz
           retention-days: 7
           if-no-files-found: ignore
   restore-acceptance:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -408,7 +417,7 @@ jobs:
           fi
       - name: Retain Apps finite public SDK evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-native-evidence-restored-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-native-evidence.tar.gz
@@ -416,6 +425,7 @@ jobs:
           if-no-files-found: ignore
 
   native-publication-profiles:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     needs: restore-acceptance
     permissions:
       contents: read
@@ -432,7 +442,7 @@ jobs:
 
   native-publish-staging:
     needs: native-publication-profiles
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true'
+    if: (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       actions: read
