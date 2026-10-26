@@ -13225,6 +13225,30 @@ abstract class AppLocalizations {
   /// **'Close dates and browse agenda'**
   String get profileTimelineHideDates;
 
+  /// No description provided for @profileTimelineKindNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get profileTimelineKindNote;
+
+  /// No description provided for @profileTimelineKindTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get profileTimelineKindTask;
+
+  /// No description provided for @profileTimelineKindTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get profileTimelineKindTransaction;
+
+  /// No description provided for @profileTimelineKindWorkspaceEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace event'**
+  String get profileTimelineKindWorkspaceEvent;
+
   /// No description provided for @profileTimelineLimited.
   ///
   /// In en, this message translates to:
@@ -13242,12 +13266,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show more loaded days'**
   String get profileTimelineMoreDays;
-
-  /// No description provided for @profileTimelineNotes.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{Added 1 note} other{Added {count} notes}}'**
-  String profileTimelineNotes(int count);
 
   /// No description provided for @profileTimelinePartial.
   ///
@@ -13267,12 +13285,6 @@ abstract class AppLocalizations {
   /// **'Timeline'**
   String get profileTimelineTab;
 
-  /// No description provided for @profileTimelineTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{Created 1 task} other{Created {count} tasks}}'**
-  String profileTimelineTasks(int count);
-
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
@@ -13285,23 +13297,11 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get profileTimelineToday;
 
-  /// No description provided for @profileTimelineTransactions.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{Created 1 transaction} other{Created {count} transactions}}'**
-  String profileTimelineTransactions(int count);
-
   /// No description provided for @profileTimelineUnavailable.
   ///
   /// In en, this message translates to:
   /// **'Activity could not be refreshed.'**
   String get profileTimelineUnavailable;
-
-  /// No description provided for @profileTimelineWorkspaceEvents.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{1 workspace event added} other{{count} workspace events added}}'**
-  String profileTimelineWorkspaceEvents(int count);
 
   /// No description provided for @profileTimelineYesterday.
   ///

@@ -718,34 +718,6 @@
       }
     }
   },
-  "@profileTimelineNotes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTasks": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTransactions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineWorkspaceEvents": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@profileTrackedMinutes": {
     "placeholders": {
       "minutes": {
@@ -3423,19 +3395,19 @@
   "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
   "profileTimelineHasActivity": "Có hoạt động trong dữ liệu đã tải",
   "profileTimelineHideDates": "Đóng thanh ngày và xem dòng hoạt động",
+  "profileTimelineKindNote": "Ghi chú",
+  "profileTimelineKindTask": "Công việc",
+  "profileTimelineKindTransaction": "Giao dịch",
+  "profileTimelineKindWorkspaceEvent": "Sự kiện không gian làm việc",
   "profileTimelineLimited": "Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.",
   "profileTimelineLoadedEnd": "Đã hiển thị toàn bộ hoạt động đã tải",
   "profileTimelineMoreDays": "Hiện thêm ngày đã tải",
-  "profileTimelineNotes": "Đã thêm {count} ghi chú",
   "profileTimelinePartial": "Một số hoạt động chưa hiển thị.",
   "profileTimelineShowDates": "Hiện thanh chọn ngày",
   "profileTimelineTab": "Dòng thời gian",
-  "profileTimelineTasks": "Đã tạo {count} công việc",
   "profileTimelineTitle": "Dòng thời gian",
   "profileTimelineToday": "Hôm nay",
-  "profileTimelineTransactions": "Đã tạo {count} giao dịch",
   "profileTimelineUnavailable": "Không thể làm mới hoạt động.",
-  "profileTimelineWorkspaceEvents": "Đã thêm {count} sự kiện vào không gian",
   "profileTimelineYesterday": "Hôm qua",
   "profileTitle": "Hồ sơ",
   "profileTrackedMinutes": "Đã theo dõi {minutes} phút",
