@@ -6,6 +6,7 @@ const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  freeze: vi.fn(),
   getPermissions: vi.fn(),
 }));
 
@@ -30,6 +31,7 @@ const query = {
     error: null,
   })),
   select: vi.fn(() => query),
+  update: vi.fn(() => query),
 };
 
 vi.mock('next/server', () => ({
@@ -38,6 +40,10 @@ vi.mock('next/server', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: async () => ({}),
   createAdminClient: mocks.createAdminClient,
+}));
+vi.mock('@/lib/tutoring/linked-content', () => ({
+  freezeLinkedLessonContent: mocks.freeze,
+  LINKED_CONTENT_NOT_STORED: 'LINKED_CONTENT_NOT_STORED',
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: async () => wsId,
@@ -123,5 +129,39 @@ describe('DELETE tutoring session', () => {
     const response = await deleteSession();
 
     expect(response.status).toBe(409);
+  });
+});
+
+describe('PUT tutoring session completion', () => {
+  async function complete() {
+    const { PUT } = await import('./route');
+    return PUT(
+      new Request(
+        `http://localhost/api/v1/workspaces/${wsId}/tutoring/sessions/${sessionId}`,
+        { method: 'PUT', body: JSON.stringify({ attendanceStatus: 'DONE' }) }
+      ),
+      { params: Promise.resolve({ id: sessionId, wsId }) }
+    );
+  }
+
+  it('completes and warns when the lesson notes could not be stored', async () => {
+    mocks.freeze.mockResolvedValue('failed');
+
+    const response = await complete();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      message: 'success',
+      warning: 'LINKED_CONTENT_NOT_STORED',
+    });
+  });
+
+  it('completes without a warning once the notes are stored', async () => {
+    mocks.freeze.mockResolvedValue('stored');
+
+    const response = await complete();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ message: 'success' });
   });
 });

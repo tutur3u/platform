@@ -9176,6 +9176,7 @@
     "homeroom_teacher": "Homeroom teacher",
     "homeroom_unassigned": "Not assigned",
     "invalid_duration": "Duration must be between 1 and 480 minutes",
+    "linked_content_not_stored": "Session completed, but the missed lesson notes could not be saved to it. Check its content.",
     "loading_queue": "Loading support queue",
     "loading_sessions": "Loading tutoring sessions",
     "mark_cancelled": "Cancel session",

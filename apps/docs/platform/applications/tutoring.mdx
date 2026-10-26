@@ -233,6 +233,22 @@ on, no setting):
   updates for that session; a completion never overwrites it. Clearing the
   content of a pending session links it to the notes again.
 - No-show and cancelled sessions keep whatever content they have.
+- **Which missed class**: each make-up session follows exactly one missed class.
+  Within a learner's class, absences in the lookback window and that learner's
+  pending or done make-up sessions are paired in date order. The oldest
+  absence not yet covered goes to the earliest session dated on or after it.
+  Sessions dated before every open absence follow no class and show no
+  notes. Deleting or rescheduling a session, or editing attendance, can
+  re-pair later pending sessions; completed sessions keep their stored notes.
+- **Content narrows to one date**: the scheduling draft lists notes for every
+  missed date in the queue row (`YYYY-MM-DD: notes`, one line each). Once the
+  session is saved linked, it shows only its own paired date's notes, so a
+  learner with two absences sees one date on each of their two sessions.
+- **Completion stays fast**: storing the notes waits at most three seconds. If
+  the lookup fails or times out, the session is still completed. The response
+  carries `warning: "LINKED_CONTENT_NOT_STORED"`, and the schedule shows a
+  non-blocking warning so staff can check the content. A slow write may still
+  land after the timeout, but only while the content is empty.
 
 Implementation: no schema change. A linked session is one with empty stored
 content, so the create form saves an unchanged drafted note as empty. The
@@ -244,7 +260,9 @@ content is still empty. If the lookup fails, the list shows the stored content
 and completion still succeeds. Regression coverage:
 [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
 (notes filled after scheduling, frozen after completion, manual edit kept,
-lookup failure) and
+lookup failure, bounded wait, pairing order),
+[`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
+(completion warning) and
 [`use-tutoring-create.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/use-tutoring-create.test.ts).
 
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`

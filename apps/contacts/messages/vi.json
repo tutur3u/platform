@@ -9176,6 +9176,7 @@
     "homeroom_teacher": "Giáo viên chủ nhiệm",
     "homeroom_unassigned": "Chưa phân công",
     "invalid_duration": "Thời lượng phải trong khoảng từ 1 đến 480 phút",
+    "linked_content_not_stored": "Đã hoàn thành buổi kèm nhưng chưa lưu được ghi chú của buổi học đã nghỉ. Hãy kiểm tra lại nội dung.",
     "loading_queue": "Đang tải danh sách cần hỗ trợ",
     "loading_sessions": "Đang tải các buổi phụ đạo",
     "mark_cancelled": "Huỷ buổi",

@@ -226,6 +226,12 @@ export async function deleteTutoringSession(
   );
 }
 
+/** A completion succeeds even when its linked lesson notes were not stored. */
+export interface TutoringCompletionResponse {
+  message: string;
+  warning?: 'LINKED_CONTENT_NOT_STORED';
+}
+
 export async function markTutoringSession(
   workspaceId: string,
   sessionId: string,
@@ -233,7 +239,7 @@ export async function markTutoringSession(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
+  return client.json<TutoringCompletionResponse>(
     `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}/mark`,
     {
       method: 'POST',

@@ -1,7 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { TutoringMarkSchema } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
-import { freezeLinkedLessonContent } from '@/lib/tutoring/linked-content';
+import {
+  freezeLinkedLessonContent,
+  LINKED_CONTENT_NOT_STORED,
+} from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 interface Params {
@@ -69,11 +72,17 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   if (parsed.data.attendanceStatus === 'DONE') {
-    await freezeLinkedLessonContent({
+    const frozen = await freezeLinkedLessonContent({
       sbAdmin,
       sessionId: id,
       wsId: normalizedWsId,
     });
+    // Completion stands; the client warns that the notes may need a check.
+    if (frozen === 'failed')
+      return NextResponse.json({
+        message: 'success',
+        warning: LINKED_CONTENT_NOT_STORED,
+      });
   }
 
   return NextResponse.json({ message: 'success' });

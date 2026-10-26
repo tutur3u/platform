@@ -2,6 +2,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  FREEZE_TIMEOUT_MS,
   freezeLinkedLessonContent,
   isLinkedContentSession,
   type LinkableTutoringSession,
@@ -196,7 +197,9 @@ describe('linked make-up content', () => {
     expect(linked.has(edited.id)).toBe(false);
 
     edited.attendance_status = 'DONE';
-    await freezeLinkedLessonContent({ sbAdmin, sessionId: edited.id, wsId });
+    await expect(
+      freezeLinkedLessonContent({ sbAdmin, sessionId: edited.id, wsId })
+    ).resolves.toBe('skipped');
     expect(updates).toEqual([]);
     expect(edited.content).toBe('Tutor plan');
   });
@@ -206,7 +209,9 @@ describe('linked make-up content', () => {
     tables.workspace_tutoring_sessions = [completed];
     tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
 
-    await freezeLinkedLessonContent({ sbAdmin, sessionId: completed.id, wsId });
+    await expect(
+      freezeLinkedLessonContent({ sbAdmin, sessionId: completed.id, wsId })
+    ).resolves.toBe('stored');
     expect(completed.content).toBe(`${missedDate}: Unit 4: past tense`);
     expect(updates[0]?.filters).toEqual(
       expect.arrayContaining([
@@ -242,8 +247,37 @@ describe('linked make-up content', () => {
 
     await expect(
       freezeLinkedLessonContent({ sbAdmin: failing, sessionId: 'x', wsId })
-    ).resolves.toBeUndefined();
+    ).resolves.toBe('failed');
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
+  });
+
+  it('stops waiting for a slow notes lookup so completion latency stays bounded', async () => {
+    vi.useFakeTimers();
+    const consoleWarn = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined);
+    const hanging = {
+      schema: () => ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({ maybeSingle: () => new Promise(() => undefined) }),
+            }),
+          }),
+        }),
+      }),
+    } as unknown as TypedSupabaseClient;
+
+    const result = freezeLinkedLessonContent({
+      sbAdmin: hanging,
+      sessionId: 'x',
+      wsId,
+    });
+    await vi.advanceTimersByTimeAsync(FREEZE_TIMEOUT_MS);
+    await expect(result).resolves.toBe('failed');
+    expect(consoleWarn).toHaveBeenCalled();
+    consoleWarn.mockRestore();
+    vi.useRealTimers();
   });
 });
