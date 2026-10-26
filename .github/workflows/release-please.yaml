@@ -40,6 +40,8 @@ jobs:
     needs: [check-ci]
     if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    # RELEASE_PLEASE_TOKEN is an admin PAT; only main and production may read it.
+    environment: release-please
     permissions:
       contents: write
       issues: write

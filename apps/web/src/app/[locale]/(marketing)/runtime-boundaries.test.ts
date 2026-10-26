@@ -21,4 +21,19 @@ describe('marketing request-time boundaries', () => {
       new RegExp(`<Suspense[\\s\\S]*<${runtime}[\\s\\S]*</Suspense>`)
     );
   });
+
+  it('reads the download page user agent inside page-level Suspense', () => {
+    const read = (path: string) =>
+      readFileSync(
+        resolve(process.cwd(), 'src/app/[locale]/(marketing)', path),
+        'utf8'
+      );
+
+    expect(read('download/download-runtime.tsx')).toMatch(
+      /export async function DownloadRuntime\([\s\S]*await connection\(\)/
+    );
+    expect(read('download/page.tsx')).toMatch(
+      /<Suspense[\s\S]*<DownloadRuntime[\s\S]*<\/Suspense>/
+    );
+  });
 });
