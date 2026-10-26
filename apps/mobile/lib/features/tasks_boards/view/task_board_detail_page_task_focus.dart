@@ -133,7 +133,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
             taskName: title,
           );
         } on Exception {
-          // Tracking succeeded; keep its success feedback and Open timer action.
+          // Tracking succeeded; keep its feedback and Open timer action.
         }
       }
       if (!toastContext.mounted) return;

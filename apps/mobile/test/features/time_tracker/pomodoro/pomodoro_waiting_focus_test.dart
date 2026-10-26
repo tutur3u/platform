@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
-import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_sessions.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 
 import 'pomodoro_fakes.dart';
 
