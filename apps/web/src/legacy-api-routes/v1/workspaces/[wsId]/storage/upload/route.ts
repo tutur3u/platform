@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import { triggerWorkspaceStorageAutoExtract } from '@tuturuuu/storage-core/workspace-storage-auto-extract';
 import {
   uploadWorkspaceStorageFileDirect,
@@ -70,7 +70,7 @@ export async function POST(
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
 
-    if (isReservedMobileDeploymentDrivePath(normalizedWsId, storagePath)) {
+    if (isExcludedDrivePath(normalizedWsId, storagePath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
