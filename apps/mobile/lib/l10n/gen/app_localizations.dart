@@ -4219,6 +4219,12 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get commonSave;
 
+  /// No description provided for @commonSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get commonSearch;
+
   /// No description provided for @commonSelectDate.
   ///
   /// In en, this message translates to:
@@ -11701,6 +11707,18 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get navHome;
 
+  /// No description provided for @navInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get navInbox;
+
+  /// No description provided for @navMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira'**
+  String get navMira;
+
   /// No description provided for @navMore.
   ///
   /// In en, this message translates to:
@@ -11724,6 +11742,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timer'**
   String get navTimer;
+
+  /// No description provided for @navYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get navYou;
 
   /// No description provided for @notesArchive.
   ///
@@ -16932,6 +16956,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop the running timer?'**
   String get taskBoardDetailFocusReplaceTitle;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedPausedEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus, and your paused timer was ended. Open the timer to resume it.'**
+  String get taskBoardDetailFocusStartFailedPausedEnded;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus. Your paused timer is back as it was.'**
+  String get taskBoardDetailFocusStartFailedRestored;
 
   /// No description provided for @taskBoardDetailFocusStarted.
   ///

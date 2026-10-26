@@ -107,51 +107,54 @@ class _ChipFrame extends StatelessWidget {
     final c = tokens.colorScheme;
     final radius = BorderRadius.circular(AppRadius.pill);
     final ink = selected ? c.primaryForeground : c.foreground;
-    return Material(
-      color: selected ? c.primary : c.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(
-          color: selected ? c.primary : c.border.withValues(alpha: 0.7),
+    // The pill stays 44dp tall; its hit region is padded to 48dp.
+    return AppTapTarget(
+      child: Material(
+        color: selected ? c.primary : c.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: selected ? c.primary : c.border.withValues(alpha: 0.7),
+          ),
         ),
-      ),
-      child: InkWell(
-        borderRadius: radius,
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
-          child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(
-              leading == null ? AppSpacing.md : AppSpacing.xs,
-              AppSpacing.xs,
-              AppSpacing.md,
-              AppSpacing.xs,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (leading != null) ...[
-                  leading!,
-                  const SizedBox(width: AppSpacing.sm),
-                ],
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 180),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: tokens.typography.small.copyWith(
-                      color: ink,
-                      fontWeight: FontWeight.w600,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+            child: Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(
+                leading == null ? AppSpacing.md : AppSpacing.xs,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (leading != null) ...[
+                    leading!,
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 180),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tokens.typography.small.copyWith(
+                        color: ink,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  Icon(trailing, size: 16, color: ink),
+                  if (trailing != null) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    Icon(trailing, size: 16, color: ink),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

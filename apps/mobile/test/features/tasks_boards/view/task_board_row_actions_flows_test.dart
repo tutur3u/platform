@@ -16,6 +16,11 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
   final List<({String wsId, String? title, String? taskId})> starts = [];
   final List<String> stops = [];
   final List<String> resumes = [];
+  final List<String> pauses = [];
+
+  /// When set, starting a session fails, and optionally so does resuming.
+  bool failStart = false;
+  bool failResume = false;
 
   @override
   Future<TimeTrackingSession?> getRunningSession(String wsId) async => running;
@@ -34,8 +39,20 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
     String wsId,
     String sessionId,
   ) async {
+    if (failResume) throw Exception('offline');
     resumes.add(sessionId);
     return TimeTrackingSession(id: '$sessionId-resumed');
+  }
+
+  @override
+  Future<TimeTrackingSession> pauseSession(
+    String wsId,
+    String sessionId, {
+    String? breakTypeId,
+    String? breakTypeName,
+  }) async {
+    pauses.add(sessionId);
+    return TimeTrackingSession(id: sessionId);
   }
 
   @override
@@ -49,6 +66,7 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
     String? parentSessionId,
     bool wasResumed = false,
   }) async {
+    if (failStart) throw Exception('offline');
     starts.add((wsId: wsId, title: title, taskId: taskId));
     return TimeTrackingSession(id: 'session-new', title: title, taskId: taskId);
   }
@@ -217,6 +235,58 @@ void main() {
       // Stopping closes the paused session's open break before the start.
       expect(timer.stops, ['paused']);
       expect(timer.starts.single.taskId, 'task-1');
+      await drainToasts(tester);
+    });
+
+    Future<void> replacePaused(WidgetTester tester) async {
+      await openMenu(tester, 'Alpha task');
+      await tester.tap(find.byKey(const ValueKey('task-row-menu-focus')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Stop and start'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a failed start puts the paused timer back as it was', (
+      tester,
+    ) async {
+      final timer = _TimerRepository(
+        paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+      )..failStart = true;
+      await pumpBoard(tester, timer: timer);
+
+      await replacePaused(tester);
+
+      expect(timer.stops, ['paused']);
+      expect(timer.resumes, ['paused']);
+      expect(timer.pauses, ['paused-resumed']);
+      expect(
+        find.text("Couldn't start focus. Your paused timer is back as it was."),
+        findsOneWidget,
+      );
+      await drainToasts(tester);
+    });
+
+    testWidgets('says plainly when the paused timer could not be restored', (
+      tester,
+    ) async {
+      final timer =
+          _TimerRepository(
+              paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+            )
+            ..failStart = true
+            ..failResume = true;
+      await pumpBoard(tester, timer: timer);
+
+      await replacePaused(tester);
+
+      expect(
+        find.text(
+          "Couldn't start focus, and your paused timer was ended. "
+          'Open the timer to resume it.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Open timer'), findsOneWidget);
       await drainToasts(tester);
     });
 

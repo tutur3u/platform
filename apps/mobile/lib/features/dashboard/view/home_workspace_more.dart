@@ -25,7 +25,7 @@ Future<void> showHomeWorkspaceMore(
   required List<Workspace> shown,
   required List<String> pins,
   required bool canEditPins,
-  required Future<void> Function(List<String> pins) onPinsChanged,
+  required Future<List<String>> Function(List<String> pins) onPinsChanged,
 }) async {
   final l10n = context.l10n;
   final remaining = [
@@ -98,7 +98,9 @@ class _PinsEditor extends StatefulWidget {
 
   final List<Workspace> workspaces;
   final List<String> pins;
-  final Future<void> Function(List<String> pins) onChanged;
+
+  /// Saves the pins and resolves with what is persisted afterwards.
+  final Future<List<String>> Function(List<String> pins) onChanged;
 
   @override
   State<_PinsEditor> createState() => _PinsEditorState();
@@ -113,7 +115,15 @@ class _PinsEditorState extends State<_PinsEditor> {
           ? [..._pins, workspace.id]
           : [..._pins.where((id) => id != workspace.id)];
     });
-    unawaited(widget.onChanged(_pins));
+    unawaited(_persist(_pins));
+  }
+
+  /// A failed save rolls the row back, so the checkboxes follow what is
+  /// actually stored rather than the tap.
+  Future<void> _persist(List<String> pins) async {
+    final persisted = await widget.onChanged(pins);
+    if (!mounted || !identical(pins, _pins)) return;
+    setState(() => _pins = [...persisted]);
   }
 
   @override
