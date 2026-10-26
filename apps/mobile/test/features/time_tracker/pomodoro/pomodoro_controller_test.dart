@@ -326,6 +326,63 @@ void main() {
     });
   });
 
+  group('payloads from before runs existed', () {
+    final legacy = {
+      'phase': 'focus',
+      'userId': 'u1',
+      'wsId': 'ws',
+      'sessionId': 's1',
+      'taskId': 't1',
+      'startedAt': '2026-10-26T02:00:00.000Z',
+    };
+
+    test('a running legacy phase becomes one open run', () {
+      final state = PomodoroState.fromJson({
+        ...legacy,
+        'deadline': '2026-10-26T02:25:00.000Z',
+      });
+      expect(state.runs, hasLength(1));
+      expect(state.runs.single.end, isNull);
+      expect(state.ranAt(DateTime.utc(2026, 10, 26, 2, 10)), isTrue);
+      expect(state.ranAt(DateTime.utc(2026, 10, 26, 2, 30)), isFalse);
+    });
+
+    test('a paused legacy phase becomes one closed run', () {
+      final state = PomodoroState.fromJson({
+        ...legacy,
+        'pausedAt': '2026-10-26T02:05:00.000Z',
+      });
+      expect(state.ranAt(DateTime.utc(2026, 10, 26, 2, 3)), isTrue);
+      expect(state.ranAt(DateTime.utc(2026, 10, 26, 2, 8)), isFalse);
+    });
+
+    test('a restored legacy phase still claims its task session', () async {
+      final start = DateTime.utc(2026, 10, 26, 2);
+      now = start.add(const Duration(minutes: 5));
+      // The session the phase started, resumed twice elsewhere since.
+      await tracker.startSession('ws', taskId: 't1');
+      tracker
+        ..pauseAndResumeElsewhere()
+        ..pauseAndResumeElsewhere();
+      final real = tracker.runningId!;
+      store.saved = PomodoroState.fromJson({
+        ...legacy,
+        'deadline': start.add(const Duration(minutes: 25)).toIso8601String(),
+      });
+      final controller = build();
+      addTearDown(controller.close);
+      await controller.restore('u1');
+
+      await controller.skip();
+
+      expect(tracker.calls.last, 'stop:$real');
+    });
+
+    test('payloads with neither field have no runs', () {
+      expect(PomodoroState.fromJson(const {'phase': 'focus'}).runs, isEmpty);
+    });
+  });
+
   group('startFocus rollback (r3 b)', () {
     test('a failed adopt stops the new session and keeps the error', () async {
       final controller = build();
