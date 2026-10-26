@@ -168,17 +168,16 @@ export async function sendNativeAiConversationMessages({
   clientCapabilities?: string[];
   userMessage: ChatMessage;
 }): Promise<NativeAiMessagePersistence> {
-  const settings = await getNativeAiSettings(conversation.id);
-  const privateMessages = await callPrivateChatRpc<ChatMessage[]>(
-    'chat_list_messages',
-    {
+  const [settings, privateMessages] = await Promise.all([
+    getNativeAiSettings(conversation.id),
+    callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
       p_actor_user_id: auth.user.id,
       p_before: null,
       p_conversation_id: conversation.id,
       p_limit: 100,
       p_ws_id: context.normalizedWsId,
-    }
-  );
+    }),
+  ]);
   const replayedMessages = (privateMessages ?? []).filter((message) => {
     const metadata = readRecord(message.metadata);
     return (
