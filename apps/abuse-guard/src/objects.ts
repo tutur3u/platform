@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import type {
+  AbuseGuardFamily,
   GuardResult,
   ParsedGuardCommand,
 } from '@tuturuuu/utils/abuse-guard/protocol';
@@ -99,14 +100,19 @@ export class GuardSubject extends DurableObject {
   }
 }
 
-export type ControlReason = 'operator' | 'budget';
-export type ControlState = {
-  stopped: boolean;
-  reason: ControlReason | null;
-  day: string;
+export type FamilyUsage = {
   used: number;
   budget: number;
   warned: boolean;
+  /** Budget stop for this family only; other families keep serving. */
+  stopped: boolean;
+};
+
+export type ControlState = {
+  /** Operator stop: every family fails closed. */
+  stopped: boolean;
+  day: string;
+  families: Partial<Record<AbuseGuardFamily, FamilyUsage>>;
   changedAt: number;
 };
 
@@ -117,9 +123,16 @@ function utcDay(now: number) {
   return new Date(now).toISOString().slice(0, 10);
 }
 
+/** Whether a family may run: neither the operator nor its budget stopped it. */
+export function familyOpen(state: ControlState, family: AbuseGuardFamily) {
+  return !state.stopped && !state.families[family]?.stopped;
+}
+
 /**
- * Durable stop fence and daily operation budget for the whole Worker. A stop
- * persists until an operator resumes, including a budget stop on a new day.
+ * Durable stop fence and per-family daily operation budgets. Budgets are per
+ * family so exhausting one (for example unauthenticated offline traffic)
+ * cannot stop the others. A stop persists until an operator resumes,
+ * including a budget stop on a new day.
  */
 export class GuardControl extends DurableObject {
   constructor(ctx: DurableObjectState, env: unknown) {
@@ -131,27 +144,21 @@ export class GuardControl extends DurableObject {
       .toArray();
   }
 
-  private load(now: number, budget: number): ControlState {
+  private load(now: number): ControlState {
     const [row] = this.ctx.storage.sql
       .exec('SELECT state FROM control WHERE id = 1')
       .toArray();
     const state: ControlState = row
       ? (JSON.parse(String(row.state)) as ControlState)
-      : {
-          stopped: false,
-          reason: null,
-          day: utcDay(now),
-          used: 0,
-          budget,
-          warned: false,
-          changedAt: now,
-        };
+      : { stopped: false, day: utcDay(now), families: {}, changedAt: now };
     if (state.day !== utcDay(now)) {
       state.day = utcDay(now);
-      state.used = 0;
-      state.warned = false;
+      for (const usage of Object.values(state.families)) {
+        if (!usage) continue;
+        usage.used = 0;
+        usage.warned = false;
+      }
     }
-    state.budget = budget;
     return state;
   }
 
@@ -164,48 +171,65 @@ export class GuardControl extends DurableObject {
       .toArray();
   }
 
-  /** Records admitted operations and returns the fence state. */
-  async report(delta: number, budget: number): Promise<ControlState> {
+  /** Records a family's admitted operations and returns the fence state. */
+  async report(
+    family: AbuseGuardFamily,
+    delta: number,
+    budget: number
+  ): Promise<ControlState> {
     const now = Date.now();
-    const state = this.load(now, budget);
+    const state = this.load(now);
+    const usage = state.families[family] ?? {
+      used: 0,
+      budget,
+      warned: false,
+      stopped: false,
+    };
+    state.families[family] = usage;
+    usage.budget = budget;
     // A stopped fence admits nothing, so nothing it rejects is billed.
-    if (!state.stopped) state.used += Math.max(0, Math.trunc(delta));
-    if (!state.warned && state.used >= budget * BUDGET_WARNING_RATIO) {
-      state.warned = true;
+    if (familyOpen(state, family)) {
+      usage.used += Math.max(0, Math.trunc(delta));
+    }
+    if (!usage.warned && usage.used >= budget * BUDGET_WARNING_RATIO) {
+      usage.warned = true;
       console.warn(
-        `[abuse-guard] daily operation budget at ${state.used}/${budget}`
+        `[abuse-guard] ${family} daily operation budget at ${usage.used}/${budget}`
       );
     }
     // `used` counts only admitted operations, so stopping at the budget
-    // admits exactly `budget` commands per day.
-    if (!state.stopped && state.used >= budget) {
-      state.stopped = true;
-      state.reason = 'budget';
+    // admits exactly `budget` commands per family per day.
+    if (!usage.stopped && usage.used >= budget) {
+      usage.stopped = true;
       state.changedAt = now;
       console.error(
-        `[abuse-guard] daily operation budget exhausted (${state.used}/${budget}); guard stopped`
+        `[abuse-guard] ${family} daily operation budget exhausted (${usage.used}/${budget}); family stopped`
       );
     }
     this.save(state);
     return state;
   }
 
-  async setStopped(stopped: boolean, budget: number): Promise<ControlState> {
+  /** Operator stop or resume. Resume also clears every family budget stop. */
+  async setStopped(stopped: boolean): Promise<ControlState> {
     const now = Date.now();
-    const state = this.load(now, budget);
+    const state = this.load(now);
     state.stopped = stopped;
-    state.reason = stopped ? 'operator' : null;
     state.changedAt = now;
     if (!stopped) {
-      // Resuming after a budget stop starts a fresh allowance for the day.
-      state.used = 0;
-      state.warned = false;
+      // Resuming starts a fresh allowance for the day.
+      for (const usage of Object.values(state.families)) {
+        if (!usage) continue;
+        usage.used = 0;
+        usage.warned = false;
+        usage.stopped = false;
+      }
     }
     this.save(state);
     return state;
   }
 
-  async read(budget: number): Promise<ControlState> {
-    return this.load(Date.now(), budget);
+  async read(): Promise<ControlState> {
+    return this.load(Date.now());
   }
 }

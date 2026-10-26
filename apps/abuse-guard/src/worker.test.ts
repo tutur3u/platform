@@ -43,7 +43,7 @@ afterAll(async () => {
 
 function createRuntime(
   options: {
-    budget?: string;
+    familyBudgets?: string;
     persist?: string;
     secrets?: string;
     operator?: string;
@@ -67,7 +67,8 @@ function createRuntime(
             options.secrets ?? `${SECRET},${'old-secret-'.padEnd(48, 'o')}`,
           ABUSE_GUARD_OPERATOR_TOKEN: options.operator ?? OPERATOR,
           ABUSE_GUARD_CONTROL_CACHE_MS: '0',
-          ABUSE_GUARD_DAILY_OP_BUDGET: options.budget ?? '100000',
+          ABUSE_GUARD_DAILY_OP_BUDGET: '100000',
+          ABUSE_GUARD_FAMILY_BUDGETS: options.familyBudgets ?? '',
         },
       },
       {
@@ -171,7 +172,8 @@ describe('abuse-guard Worker in workerd', () => {
     expect(anonymousControl.status).toBe(401);
 
     const state = await control(mf, 'state');
-    expect(state.body).toMatchObject({ stopped: false, used: 0 });
+    // No family has admitted any work yet.
+    expect(state.body).toMatchObject({ stopped: false, families: {} });
   });
 
   it('applies a replayed or duplicated signed request exactly once', async () => {
@@ -345,9 +347,10 @@ describe('abuse-guard Worker in workerd', () => {
     const client = httpClient(mf, 'offline');
     expect((await control(mf, 'stop', 'POST')).body).toMatchObject({
       stopped: true,
-      reason: 'operator',
     });
-    const before = (await control(mf, 'state')).body.used;
+    const usedBy = async () =>
+      JSON.stringify((await control(mf, 'state')).body.families);
+    const before = await usedBy();
     await expect(client.get('offline:clearance:s2')).rejects.toMatchObject({
       code: 'guard_stopped',
     });
@@ -355,7 +358,7 @@ describe('abuse-guard Worker in workerd', () => {
       code: 'guard_stopped',
     });
     // Stopped requests are neither executed nor billed.
-    expect((await control(mf, 'state')).body.used).toBe(before);
+    expect(await usedBy()).toBe(before);
 
     expect((await control(mf, 'resume', 'POST')).body).toMatchObject({
       stopped: false,
@@ -385,7 +388,7 @@ describe('secret configuration', () => {
 describe('daily operation budget', () => {
   it('persists a budget stop across restarts until an operator resumes', async () => {
     const persist = join(workDir, 'budget-state');
-    const first = createRuntime({ budget: '5', persist });
+    const first = createRuntime({ familyBudgets: 'replay=5', persist });
     const client = httpClient(first, 'replay');
     for (let index = 0; index < 5; index += 1) {
       await expect(client.get(`budget:${index}`)).resolves.toBeNull();
@@ -394,23 +397,36 @@ describe('daily operation budget', () => {
       code: 'guard_stopped',
     });
     expect((await control(first, 'state')).body).toMatchObject({
-      stopped: true,
-      reason: 'budget',
-      used: 5,
+      stopped: false,
+      families: { replay: { stopped: true, used: 5, budget: 5 } },
     });
     await first.dispose();
 
-    const second = createRuntime({ budget: '5', persist });
+    const second = createRuntime({ familyBudgets: 'replay=5', persist });
     await expect(
       httpClient(second, 'replay').get('budget:after')
     ).rejects.toMatchObject({ code: 'guard_stopped' });
     expect((await control(second, 'resume', 'POST')).body).toMatchObject({
       stopped: false,
-      used: 0,
+      families: { replay: { stopped: false, used: 0 } },
     });
     await expect(
       httpClient(second, 'replay').get('budget:resumed')
     ).resolves.toBeNull();
     await second.dispose();
+  });
+
+  it('keeps other families serving when one exhausts its budget', async () => {
+    const mf = createRuntime({ familyBudgets: 'offline=3' });
+    const offline = httpClient(mf, 'offline');
+    for (let index = 0; index < 3; index += 1) {
+      await expect(offline.get(`flood:${index}`)).resolves.toBeNull();
+    }
+    await expect(offline.get('flood:over')).rejects.toMatchObject({
+      code: 'guard_stopped',
+    });
+    await expect(httpClient(mf, 'replay').get('fence')).resolves.toBeNull();
+    await expect((await bindingClient(mf)).get('login')).resolves.toBeNull();
+    await mf.dispose();
   });
 });

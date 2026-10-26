@@ -84,7 +84,8 @@ forget consumed replay fences and spent limits.
 | --- | --- |
 | `ABUSE_GUARD_SECRETS` | Comma list of accepted signing secrets: current first, then the previous one during rotation. If any entry is shorter than 32 characters, the Worker rejects every RPC with 503. |
 | `ABUSE_GUARD_OPERATOR_TOKEN` | Bearer token for `/control/*`, at least 32 characters. It must differ from every signing secret; if it matches one, the Worker rejects every RPC with 503. |
-| `ABUSE_GUARD_DAILY_OP_BUDGET` | Admitted commands per UTC day (default 1,000,000). |
+| `ABUSE_GUARD_DAILY_OP_BUDGET` | Total admitted commands per UTC day (default 1,000,000), split across families. |
+| `ABUSE_GUARD_FAMILY_BUDGETS` | Optional explicit split, such as `offline=600000,replay=100000`. When empty, offline gets 60%, proxy 20%, and replay and password 10% each. |
 | `ABUSE_GUARD_LOCATION_HINT` | Placement hint for new partitions (default `apac`, near Vercel `sin1`). |
 
 Native Workers call `configureAbuseGuardRuntime({ binding: env.ABUSE_GUARD,
@@ -104,11 +105,14 @@ with a 503, refresh replay fences report `unavailable`, and password limits fail
   `guard_stopped` before any subject call, and stopped requests are not billed.
   Each isolate caches the fence for at most 5 seconds. `POST /control/resume` clears
   it, and `GET /control/state` reads it. Stored data is preserved.
-- **Budget:** each isolate reports admitted commands every 5 seconds or 200 commands.
-  At 80% of the daily budget the control object logs a warning once. Above the budget
-  it persists a `budget` stop that stays in place, across restarts and new days,
-  until an operator resumes. Overshoot is bounded by isolates × 200 commands.
-  A budget stop fails closed for every family; each caller then applies its own policy.
+- **Budget:** each family has its own daily allowance, so exhausting one cannot
+  stop another. Unauthenticated marked-bulk traffic spends only `offline`'s share.
+  Each isolate reports admitted commands per family every 5 seconds or 200
+  commands. At 80% of a family's budget the control object logs a warning once.
+  When a family exhausts its budget, the control object persists a stop for that
+  family only. The stop survives restarts and new days until an operator resumes.
+  Rejected requests are never counted, so a family admits exactly its budget.
+  Each caller of a stopped family applies its own fail policy.
 - **Alarm failures:** a failed cleanup is logged and re-armed with capped
   exponential backoff (1, 2, 4, 8 minutes). After five consecutive failures it
   stops until the next write; lazy expiry keeps reads correct meanwhile. An emptied

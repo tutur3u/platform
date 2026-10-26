@@ -19,6 +19,9 @@ export default defineConfig({
     },
     env: {
       ABUSE_GUARD_DAILY_OP_BUDGET: bindings.text('1000000'),
+      // Optional explicit split, e.g. `offline=600000,replay=100000`; empty
+      // uses the default shares (offline 60%, proxy 20%, replay/password 10%).
+      ABUSE_GUARD_FAMILY_BUDGETS: bindings.text(''),
       ABUSE_GUARD_LOCATION_HINT: bindings.text('apac'),
       ABUSE_GUARD_SECRETS: bindings.secret(),
       ABUSE_GUARD_OPERATOR_TOKEN: bindings.secret(),

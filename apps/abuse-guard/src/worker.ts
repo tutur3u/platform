@@ -2,7 +2,7 @@
  * Abuse-guard store Worker: authenticated RPC over SQLite Durable Objects.
  *
  * Every request is authenticated and bounded before any Durable Object call.
- * The durable stop fence and daily budget in `GuardControl` are checked before
+ * The durable stop fence and per-family daily budgets in `GuardControl` are checked before
  * subject work; a stopped or unreachable fence fails closed (503).
  */
 
@@ -25,26 +25,20 @@ import {
   isGuardDenial,
   type ParsedGuardRpc,
 } from '@tuturuuu/utils/abuse-guard/protocol';
+import { admit, applyOperatorStop, controlStub, type FenceEnv } from './fence';
 import type { GuardControl, GuardSubject } from './objects';
 
 export { GuardControl, GuardSubject } from './objects';
 
-export interface Env {
+export interface Env extends FenceEnv {
   GUARD_SUBJECT: DurableObjectNamespace<GuardSubject>;
   GUARD_CONTROL: DurableObjectNamespace<GuardControl>;
   /** Comma-separated HMAC secrets: current first, previous during rotation. */
   ABUSE_GUARD_SECRETS?: string;
   ABUSE_GUARD_OPERATOR_TOKEN?: string;
-  ABUSE_GUARD_DAILY_OP_BUDGET?: string;
   ABUSE_GUARD_LOCATION_HINT?: string;
-  /** Per-isolate fence cache; tests set 0 for immediate stops. */
-  ABUSE_GUARD_CONTROL_CACHE_MS?: string;
 }
 
-const DEFAULT_DAILY_BUDGET = 1_000_000;
-const MAX_CONTROL_CACHE_MS = 5000;
-/** Flush buffered usage to the control object after this many operations. */
-const USAGE_FLUSH_OPS = 200;
 const LOCATION_HINTS = new Set([
   'wnam',
   'enam',
@@ -78,73 +72,6 @@ function failure(
   return { status, body: { error } };
 }
 
-export function dailyBudget(env: Env) {
-  const parsed = Number(env.ABUSE_GUARD_DAILY_OP_BUDGET);
-  return Number.isSafeInteger(parsed) && parsed > 0
-    ? Math.min(parsed, 1_000_000_000)
-    : DEFAULT_DAILY_BUDGET;
-}
-
-function controlCacheMs(env: Env) {
-  const parsed = Number(env.ABUSE_GUARD_CONTROL_CACHE_MS);
-  return env.ABUSE_GUARD_CONTROL_CACHE_MS?.trim() && Number.isFinite(parsed)
-    ? Math.min(MAX_CONTROL_CACHE_MS, Math.max(0, parsed))
-    : MAX_CONTROL_CACHE_MS;
-}
-
-function controlStub(env: Env) {
-  return env.GUARD_CONTROL.get(env.GUARD_CONTROL.idFromName('control:v1'));
-}
-
-/** Per-isolate view of the durable fence plus buffered usage. */
-const fence = {
-  stopped: false,
-  checkedAt: Number.NEGATIVE_INFINITY,
-  pending: 0,
-  refreshing: null as Promise<void> | null,
-};
-
-/** Test hook: forget isolate state between Miniflare runs. */
-export function resetFenceCache() {
-  fence.stopped = false;
-  fence.checkedAt = Number.NEGATIVE_INFINITY;
-  fence.pending = 0;
-  fence.refreshing = null;
-}
-
-async function refreshFence(env: Env) {
-  const delta = fence.pending;
-  fence.pending = 0;
-  try {
-    const state = await controlStub(env).report(delta, dailyBudget(env));
-    fence.stopped = state.stopped;
-    fence.checkedAt = Date.now();
-  } catch (error) {
-    fence.pending += delta;
-    // Unknown fence state is treated as stopped until a refresh succeeds.
-    fence.checkedAt = Number.NEGATIVE_INFINITY;
-    throw error;
-  }
-}
-
-/**
- * Returns whether `ops` may run. Previously admitted usage is flushed to the
- * control object before deciding, and this request's operations are counted
- * only once admitted, so rejected requests are never billed.
- */
-async function admit(env: Env, ops: number): Promise<'open' | 'stopped'> {
-  const stale = Date.now() - fence.checkedAt >= controlCacheMs(env);
-  if (stale || fence.pending + ops >= USAGE_FLUSH_OPS) {
-    fence.refreshing ??= refreshFence(env).finally(() => {
-      fence.refreshing = null;
-    });
-    await fence.refreshing;
-  }
-  if (fence.stopped) return 'stopped';
-  fence.pending += ops;
-  return 'open';
-}
-
 function subjectStub(env: Env, rpc: ParsedGuardRpc, partition: string) {
   const hint = env.ABUSE_GUARD_LOCATION_HINT?.trim() || 'apac';
   const id = env.GUARD_SUBJECT.idFromName(`${rpc.family}:${partition}`);
@@ -162,7 +89,7 @@ export async function executeRpc(
 ): Promise<RpcOutcome> {
   const ops = rpc.steps.reduce((total, step) => total + step.cmds.length, 0);
   try {
-    if ((await admit(env, ops)) === 'stopped') {
+    if ((await admit(env, rpc.family, ops)) === 'stopped') {
       return failure(503, 'guard_stopped');
     }
   } catch {
@@ -320,21 +247,18 @@ async function handleControl(request: Request, env: Env, pathname: string) {
     return json({ status: 401, body: { error: 'unauthorized' } });
   }
   const stub = controlStub(env);
-  const budget = dailyBudget(env);
   try {
     if (request.method === 'GET' && pathname === '/control/state') {
-      return json({ status: 200, body: await stub.read(budget) });
+      return json({ status: 200, body: await stub.read() });
     }
     if (request.method === 'POST' && pathname === '/control/stop') {
-      const state = await stub.setStopped(true, budget);
-      fence.stopped = true;
-      fence.checkedAt = Date.now();
+      const state = await stub.setStopped(true);
+      applyOperatorStop(true);
       return json({ status: 200, body: state });
     }
     if (request.method === 'POST' && pathname === '/control/resume') {
-      const state = await stub.setStopped(false, budget);
-      fence.stopped = false;
-      fence.checkedAt = Date.now();
+      const state = await stub.setStopped(false);
+      applyOperatorStop(false);
       return json({ status: 200, body: state });
     }
   } catch (error) {
