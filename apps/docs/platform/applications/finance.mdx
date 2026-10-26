@@ -460,12 +460,12 @@ rows to appear; a deployed UI and a green application build do not prove the
 database function changed. Check the migration marker and a read-only customer
 row after sync. Never manually push the migration from an agent checkout.
 
-#### Legacy cutoff before the first exact-month invoice (draft)
+#### Legacy cutoff before the first exact-month invoice
 
-Status: proposed in
-`20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.sql`;
-it needs a product decision and per-workspace migration approval before
-release.
+Decision: months before a student's first exact-month invoice for a class
+never reappear as owed. The rule ships in
+`20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.sql`.
+Production rollout still follows the gated migration workflow.
 
 - **Scope:** every workspace's pending tuition, per student and class. It
   affects the Finance and web Pending invoices tab, its badge and pagination,
@@ -474,31 +474,32 @@ release.
 - **Default:** a student-class pair with a completed legacy invoice (no
   `subscription_months`) starts pending months at the later of the legacy
   paid-through month and the first month of the student's first completed
-  exact-month invoice for that class. Earlier months keep the legacy
-  high-water-mark meaning and do not reappear after an exact-month payment.
-  From the first exact month onward only listed months are covered, so a
-  later payment still never hides an earlier gap. The legacy cutoff month is
-  read in the Ho Chi Minh time zone.
+  exact-month invoice for that class. Months before that floor are hidden,
+  not settled: no payment is recorded for them, and they are not owed in
+  Pending. From the first exact month onward only listed months are covered,
+  so a later payment never hides an earlier gap. The legacy cutoff month is
+  read in the Ho Chi Minh time zone, so a cutoff at Ho Chi Minh midnight on
+  the first of a month (17:00 UTC on the previous day) starts at that month.
 - **Exceptions:** a pair without a legacy invoice keeps the join-date start
   above. Uncompleted invoices neither cover nor move the start. An exact month
-  older than the legacy cutoff never moves the start earlier.
+  older than the legacy cutoff never moves the start earlier. Each class is
+  independent: one class's invoices never cover or floor another class, and
+  invoices from another workspace never apply.
 - **Standard invoices:** a standard (non-subscription) invoice has no class
   link and no tuition months, so it never covers, floors or creates pending
   tuition, even though it stores a 30-day `valid_until`. This is unchanged.
   A fee that settles a class's tuition must be issued as that class's
   subscription invoice.
 - **Display:** the Pending tab shows one row per student and class whose
-  months column lists every owed month, oldest first. A row that stays after
-  a paid month therefore names the older reopened months, not the paid month.
-- **Open question:** should months before a student's first exact-month
-  invoice ever reappear? Under this rule, an unpaid month between the legacy
-  cutoff and the first exact month is hidden, as it was before exact months
-  existed.
+  months column lists every owed month, oldest first. Before this rule, a row
+  that stayed after a paid month named the older reopened months, not the
+  paid month.
 
 Regression coverage: `apps/database/supabase/tests/pending-tuition-legacy-floor.sql`
-(legacy plus exact month, the reported receipt shape, gaps after the first exact
-month, exact-only students, standard invoices, Pending row months,
-Ho Chi Minh month boundaries) and `apps/database/supabase/tests/subscription-coverage.sql`.
+(fixed 2025 fixtures for legacy-only, exact-only, mixed with a later gap, the
+reported receipt shape, two classes, Ho Chi Minh cutoffs on both sides of
+midnight, standard invoices, workspace isolation, the permission guard and
+Pending row months) and `apps/database/supabase/tests/subscription-coverage.sql`.
 Rollback restores the previous definition with
 `apps/database/rollbacks/20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.rollback.sql`.
 
