@@ -189,6 +189,7 @@
                   "build/devops/tasks-viteplus-cloudflare",
                   "build/devops/start-bridge-codemod",
                   "build/devops/finance-pay-start",
+                  "build/devops/pay-start",
                   "build/devops/nova-inventory-start-bridge",
                   "build/devops/shortener-start-void",
                   "build/devops/environments-release-flow",

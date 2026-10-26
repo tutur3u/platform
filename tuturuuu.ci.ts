@@ -132,6 +132,7 @@ export const ci = {
   'web-start-candidate.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
+  'pay-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
