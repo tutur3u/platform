@@ -97,3 +97,33 @@ test('CI Admitted is always on, read-only and immune to PR edits', () => {
   assert.equal(workflow.concurrency['cancel-in-progress'], true);
   assert.match(workflow.concurrency.group, /pull_request\.number/u);
 });
+
+test('a missing base-commit script fails visibly instead of passing', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-admission-boot-'));
+  try {
+    const result = require('node:child_process').spawnSync(
+      'bash',
+      ['-c', job.steps[2].run],
+      {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, RUNNER_TEMP: dir, PAYLOAD_LABELS: '[]' },
+      }
+    );
+    assert.equal(result.status, 1, 'bootstrap must not be a false green');
+    assert.match(result.stdout, /::warning::/u);
+    assert.match(result.stdout, /::error title=CI admission unverifiable::/u);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('comments do not overstate the admission boundary', () => {
+  const text = fs.readFileSync(
+    path.join(__dirname, '../../.github/workflows/ci-admitted.yaml'),
+    'utf8'
+  );
+  assert.doesNotMatch(text, /cannot rewrite its own admission/u);
+  assert.match(text, /not[\s#]+a[\s#]+security[\s#]+boundary/u);
+  assert.match(text, /protects[\s#]+the[\s#]+script[\s#]+only/u);
+});
