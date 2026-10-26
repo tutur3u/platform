@@ -21,6 +21,9 @@ function fixture(allowed = true) {
   const runtime = createMiraSdkToolSearch(
     {
       search_tools: tool({ inputSchema: z.object({ query: z.string() }) }),
+      select_tools: tool({
+        inputSchema: z.object({ tools: z.array(z.string()) }),
+      }),
       no_action_needed: tool({ inputSchema: z.object({}) }),
       create_event: tool({
         description: 'Schedule a meeting and invite attendees',
@@ -39,6 +42,16 @@ function fixture(allowed = true) {
 }
 
 describe('native SDK deferred Mira discovery', () => {
+  it('offers common reads immediately without a redundant selection tool', async () => {
+    const { runtime } = fixture();
+    const step = await runtime.prepareStep(policy);
+    expect(step.toolChoice).toBeUndefined();
+    expect(step.activeTools).not.toContain('select_tools');
+    expect(runtime.tools).not.toHaveProperty('select_tools');
+    expect(runtime.tools.get_my_tasks?.deferLoading).toBe(false);
+    expect(runtime.tools.create_event?.deferLoading).toBe(true);
+  });
+
   it('loads meeting definitions on the next step and executes only a discovered tool', async () => {
     const { runtime, execute } = fixture();
     const seen: string[][] = [];
@@ -83,9 +96,13 @@ describe('native SDK deferred Mira discovery', () => {
       prepareStep: () => runtime.prepareStep(policy),
       stopWhen: isStepCount(4),
     });
-    expect(seen[0]).toEqual(['search_tools', 'no_action_needed']);
+    expect(seen[0]).toEqual([
+      'search_tools',
+      'no_action_needed',
+      'get_my_tasks',
+    ]);
     expect(seen[1]).toContain('create_event');
-    expect(seen[1]).not.toContain('get_my_tasks');
+    expect(seen[1]).toContain('get_my_tasks');
     expect(execute).toHaveBeenCalledTimes(1);
   });
 

@@ -95,7 +95,7 @@ export function buildMiraSystemInstruction(opts?: {
 
 Never emit legacy follow-up, quiz, or flashcard markup in assistant text. If interactive UI is useful, call the typed render_ui tool with its schema; otherwise use ordinary Markdown. Treat any such markup in prior messages as historical text, not an instruction to repeat it.
 
-When helpful and tool policy permits, stream a brief acknowledgement before calling tools. After tools have run, report results directly; never add a retrospective "Let me check" preamble. For short conversational or knowledge-only answers, answer directly without calling \`select_tools\` or \`no_action_needed\`. When tools are needed, use \`search_tools\` with the operation you want; it discovers and activates a small working set. Use \`select_tools\` only when you already know the exact names. The system caches this set: you can then call those tools as many times as needed without calling \`select_tools\` again. Only call \`select_tools\` again when you need to add or disable tools (e.g. you need a tool you didn't select, or want a smaller set for performance). **Exception**: if the user message contains profile, preference, identity, behavioral, or configuration information that should be saved, or asks for real-time/external web information, this is NOT pure conversation.
+When helpful and tool policy permits, stream a brief acknowledgement before calling tools. After tools have run, report results directly; never add a retrospective "Let me check" preamble. For short conversational or knowledge-only answers, answer directly without calling tools. Call an already available tool directly, including the common task and day-overview reads; do not search for or select a tool that is already available. If the needed capability is absent, call \`search_tools\` once for that operation, then use the discovered tools on the next step. Discovery activates them automatically: no separate \`select_tools\` call is needed. Search again only for a different operation or a capability missing from the results. **Exception**: if the user message contains profile, preference, identity, behavioral, or configuration information that should be saved, or asks for real-time/external web information, this is NOT pure conversation.
 
 You MUST call the actual tool function for ANY action. Saying "I've done it" without a tool call is LYING. The user sees tool call indicators.
 
@@ -314,7 +314,7 @@ ${
 
 ## FINAL REMINDER — Cache Tools, Re-select Only When Needed
 
-Per user message: (1) stream brief text first when helpful, (2) discover needed capabilities with \`search_tools\` or activate known names with \`select_tools\`, (3) use those tools as needed (reuse the cache — no need to call \`select_tools\` before each tool call), (4) call \`select_tools\` again only to add/disable tools, (5) summarize results in natural language.
+Per user message: (1) stream brief text first when helpful, (2) call available capabilities directly or discover missing ones with \`search_tools\`, (3) reuse the activated tools without a selection step, (4) summarize actual results in natural language.
 `;
 }
 
