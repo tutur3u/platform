@@ -34,6 +34,7 @@ import { parseGoogleSearchSources } from './parse-google-search-sources';
 import { parseQrCodeOutput } from './parse-qr-code-output';
 import { SourcesPart } from './sources-part';
 import { getToolPartStatus } from './tool-status';
+import { useGeneratedImageUrl } from './use-generated-image-url';
 
 type ToolNamePart = Parameters<typeof getToolName>[0];
 
@@ -130,6 +131,9 @@ export function ToolCallPart({
   const hasOutput = isDone || isError;
   const isImageTool = rawToolName === 'create_image';
   const isQrCodeTool = rawToolName === 'create_qr_code';
+  const generatedImageUrl = useGeneratedImageUrl(
+    isImageTool ? outputRecord : null
+  );
 
   const outputText = isToolPart
     ? isError
@@ -425,8 +429,7 @@ export function ToolCallPart({
   }
 
   if (isImageTool && isDone && !logicalError && output) {
-    const imageUrl = (output as { imageUrl?: string }).imageUrl;
-    if (imageUrl) {
+    if (generatedImageUrl) {
       return (
         <>
           <div className="flex flex-col gap-1.5">
@@ -440,7 +443,7 @@ export function ToolCallPart({
               </span>
             </div>
             <ImagePreviewWithCopy
-              imageUrl={imageUrl}
+              imageUrl={generatedImageUrl}
               alt={t('generated_image')}
               copiedImageUrl={copiedImageUrl}
               onCopy={handleCopyImageToClipboard}

@@ -89,6 +89,11 @@ function healthy(live) {
           text,
         })),
         ...live.secrets.map((name) => ({ name, type: 'secret_text' })),
+        ...Object.entries(live.durableObjects ?? {}).map(([name, object]) => ({
+          name,
+          type: 'durable_object_namespace',
+          class_name: object.className,
+        })),
       ],
     }),
     subdomain: ok({ enabled: true, previews_enabled: true }),
