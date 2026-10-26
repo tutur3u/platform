@@ -282,10 +282,31 @@ describe('Pomodoro route commands', () => {
 
     expect(response.status).toBe(409);
     expect((await response.json()).error).toBe('revision_conflict');
-    expect(commandCalls()).toEqual([]);
+    // Only a receipt lookup with no session effects reaches the database.
+    expect(effectsOf(commandCalls()[0])).toEqual([]);
     expect(db.calls.map((call) => call.name)).not.toContain(
       'configure_time_tracker_control'
     );
+  });
+
+  it('a retried first start replays instead of conflicting', async () => {
+    const first = {
+      type: 'start',
+      commandId: id(10),
+      expectedRevision: 0,
+      title: 'Write',
+    };
+    const applied = await (await post(first)).json();
+    const retry = await post(first);
+    const body = await retry.json();
+
+    expect(retry.status).toBe(200);
+    expect(body.replayed).toBe(true);
+    expect(body.state).toEqual(applied.state);
+    expect(effectsOf(commandCalls()[1])).toEqual([]);
+    expect(
+      db.calls.filter((call) => call.name === 'configure_time_tracker_control')
+    ).toHaveLength(1);
   });
 
   it('a running manual timer is a 409 the client can explain', async () => {
