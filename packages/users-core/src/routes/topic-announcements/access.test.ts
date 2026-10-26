@@ -126,6 +126,7 @@ describe('teacher assignment helpers', () => {
   it('lets teachers change only the topic content', () => {
     expect(
       validateTeacherTopicAnnouncementWrite({
+        existingStatus: 'draft',
         next: {
           attachmentDrafts: [],
           body: 'b',
@@ -149,10 +150,26 @@ describe('teacher assignment helpers', () => {
     });
     expect(
       validateTeacherTopicAnnouncementWrite({
+        existingStatus: 'draft',
         next: { status: 'queued' },
         scope: teacher,
       })
     ).toMatchObject({ status: 403 });
+    // Re-saving a scheduled topic as a draft would cancel its send.
+    expect(
+      validateTeacherTopicAnnouncementWrite({
+        existingStatus: 'queued',
+        next: { status: 'draft', topic: 't' },
+        scope: teacher,
+      })
+    ).toMatchObject({ status: 403 });
+    expect(
+      validateTeacherTopicAnnouncementWrite({
+        existingStatus: 'queued',
+        next: { topic: 't' },
+        scope: teacher,
+      })
+    ).toBeNull();
     expect(
       validateTeacherTopicAnnouncementWrite({
         next: { sessionDate: '2026-11-01' },

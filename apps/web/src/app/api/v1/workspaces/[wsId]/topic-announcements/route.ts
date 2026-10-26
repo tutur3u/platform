@@ -1,6 +1,7 @@
 import {
   createTopicAnnouncementListHandler,
   gateTopicAnnouncementTeacherFields,
+  normalizeTopicAnnouncementTopic,
 } from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import {
@@ -151,7 +152,7 @@ export async function POST(request: Request, { params }: Params) {
       status: payload.status ?? 'draft',
       teacher_workspace_user_id: teacherWorkspaceUserId,
       title: payload.title,
-      topic: payload.topic,
+      topic: normalizeTopicAnnouncementTopic(payload.topic),
       updated_by: actorUserId,
       video_url: payload.videoUrl ?? null,
       ws_id: normalizedWsId,

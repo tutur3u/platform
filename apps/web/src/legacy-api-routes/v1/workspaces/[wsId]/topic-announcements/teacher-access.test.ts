@@ -185,6 +185,29 @@ describe('teacher-scoped PATCH', () => {
     expect(row(OWN_TOPIC).send_due_at).toBeUndefined();
   });
 
+  it('stores a blanked topic as NULL', async () => {
+    const response = await patch(OWN_TOPIC, { status: 'draft', topic: '   ' });
+    expect(response.status).toBe(200);
+    expect(row(OWN_TOPIC).topic).toBeNull();
+  });
+
+  it('cannot cancel a scheduled send by re-saving it as a draft', async () => {
+    row(OWN_TOPIC).status = 'queued';
+    row(OWN_TOPIC).scheduled_send_at = '2026-11-04T10:00:00.000Z';
+    const response = await patch(OWN_TOPIC, {
+      status: 'draft',
+      topic: 'Edited',
+    });
+    expect(response.status).toBe(403);
+    expect(row(OWN_TOPIC)).toMatchObject({
+      status: 'queued',
+      topic: 'Existing topic',
+    });
+    // Content-only edits on a scheduled topic stay allowed.
+    expect((await patch(OWN_TOPIC, { topic: 'Edited' })).status).toBe(200);
+    expect(row(OWN_TOPIC)).toMatchObject({ status: 'queued', topic: 'Edited' });
+  });
+
   it('lets a TEACHER of the class edit a topic with no assigned teacher', async () => {
     const response = await patch(CLASS_TOPIC, { topic: 'Class topic' });
     expect(response.status).toBe(200);
@@ -292,6 +315,12 @@ describe('teacher-scoped PATCH', () => {
 
 describe('supervisor PATCH', () => {
   beforeEach(() => grant('manage_users'));
+
+  it('stores a blanked draft topic as NULL', async () => {
+    const response = await patch(OTHER_TOPIC, { topic: '  \t ' });
+    expect(response.status).toBe(200);
+    expect(row(OTHER_TOPIC).topic).toBeNull();
+  });
 
   it('recomputes the deadline when the schedule changes', async () => {
     const response = await patch(OTHER_TOPIC, { sessionDate: '2026-11-10' });
