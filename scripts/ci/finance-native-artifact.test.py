@@ -52,6 +52,11 @@ class FinanceArtifactTest(unittest.TestCase):
         (app / base.REDIRECT).write_text(json.dumps({"configPath": "../../dist/native/wrangler.json", "auxiliaryWorkers": []}))
         return app, config
 
+    def write_emitted(self, app, config):
+        # Resolve the emitted config through the fixture's deploy pointer.
+        pointer = app / base.REDIRECT
+        (pointer.parent / json.loads(pointer.read_text())["configPath"]).write_text(json.dumps(config))
+
     def test_identity_is_finance_and_base_module_is_untouched(self):
         self.assertIn("robots.txt", wrapper.PUBLIC_FILES)
         self.assertEqual(artifact.IDENTITY["name"], WORKER)
@@ -144,7 +149,7 @@ class FinanceArtifactTest(unittest.TestCase):
                     sealed.validate_output(app)
                 for key in ("name", "topLevelName"):
                     config[key] = sealed.IDENTITY["name"]
-                (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+                self.write_emitted(app, config)
                 with self.assertRaisesRegex(ValueError, "contract drift: vars"):
                     sealed.validate_output(app)
 
@@ -159,7 +164,7 @@ class FinanceArtifactTest(unittest.TestCase):
     def test_routes_are_flip_time_actions_not_config(self):
         for module in (artifact, production):
             app, config = self.fixture(module)
-            (app / "dist/native/wrangler.json").write_text(json.dumps({**config, "routes": [{"pattern": "finance.tuturuuu.com/*", "zone_name": "tuturuuu.com"}]}))
+            self.write_emitted(app, {**config, "routes": [{"pattern": "finance.tuturuuu.com/*", "zone_name": "tuturuuu.com"}]})
             with self.assertRaisesRegex(ValueError, "unreviewed emitted config field"):
                 module.validate_output(app)
 
