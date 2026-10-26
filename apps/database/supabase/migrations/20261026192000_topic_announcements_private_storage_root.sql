@@ -7,9 +7,11 @@
 -- directly through the Storage API and manage_drive members could overwrite
 -- or delete them, bypassing ENABLE_TOPIC_ANNOUNCEMENTS and manage_users.
 --
--- Uploads already go through the topic announcement attachment route
--- (feature flag + manage_users, admin client) and email delivery downloads
--- attachments with the admin client, so no client path needs Storage access.
+-- Uploads already use server-issued signed upload URLs from
+-- POST /api/v1/workspaces/[wsId]/storage/upload-url, whose topic branch checks
+-- the feature flag and manage_users (the multipart attachments/upload route
+-- writes with the admin client), and email delivery downloads attachments
+-- with the admin client, so no client path needs direct Storage access.
 --
 -- Only workspace_storage.object_access() changes; grants, owner and the
 -- policies from 20261026170000 are untouched (create or replace keeps them).

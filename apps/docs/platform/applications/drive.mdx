@@ -97,7 +97,7 @@ These source locations are the upload contracts for the separate Storage RLS lan
 | `AI Agent Imports/<adapter>/<channel>/<thread>/` | Chat external-channel imports | `apps/web/src/lib/ai-agents/external-chat-attachments.ts:143` (upload at 58) |
 | `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:109` (upload at 123) |
 | `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:91`; sibling `chunks/route.ts:112` |
-| `topic-announcements/attachments/` | Contacts topic announcement attachments | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/attachments/upload/route.ts` (feature flag and `manage_users`, service-role upload) |
+| `topic-announcements/attachments/` | Contacts topic announcement attachments | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts` (topic branch: feature flag and `manage_users`, signed upload) |
 
 Mobile voice attachments use the same AI/native upload flow through
 `apps/mobile/lib/features/assistant/data/assistant_repository.dart:513` and 540;
