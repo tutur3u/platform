@@ -265,15 +265,21 @@ export async function commandPomodoro(
 ): Promise<PomodoroResponse> {
   try {
     let row = await deps.store.read();
-    if (!row && command.type === 'start') {
+    const creating = !row && command.type === 'start';
+    if (creating) {
       row = await deps.store.configure({
         expectedRevision: 0,
         commandId: deps.newId(),
         config: DEFAULT_POMODORO_CONFIG,
       });
     }
-    // Control revisions start at 1, so 0 always names the first one.
-    const expectedRevision = row ? Math.max(command.expectedRevision, 1) : 0;
+    // Revision 0 names a control that does not exist yet. It maps to the
+    // first revision only when this request created that control; against
+    // an existing control it is stale.
+    const expectedRevision =
+      creating && command.expectedRevision === 0
+        ? 1
+        : command.expectedRevision;
     const planned = { ...command, expectedRevision };
     const stored = toPlannerState(row);
     const now = deps.now();
@@ -289,6 +295,7 @@ export async function commandPomodoro(
     }
     if (!row) return applied({ ...IDLE_ROW }, serverNow, false);
     if (!plan.ok) {
+      if (expectedRevision < 1) return conflict(deps, 'revision_conflict');
       // A retry of an applied command arrives with an old revision; the
       // database replays it from its receipt or reports the conflict.
       const replay = await deps.store.apply({
