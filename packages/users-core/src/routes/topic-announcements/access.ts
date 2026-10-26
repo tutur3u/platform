@@ -225,9 +225,12 @@ export const TEACHER_EDITABLE_TOPIC_FIELDS = [
  * supervisors (that also keeps teachers from moving their own deadline).
  */
 export function validateTeacherTopicAnnouncementWrite({
+  existingStatus,
   next,
   scope,
 }: {
+  /** Current status; a teacher may only (re)save `draft` on a draft. */
+  existingStatus?: string;
   next: Record<string, unknown>;
   scope: TopicAnnouncementAccessScope | undefined;
 }): { message: string; status: number } | null {
@@ -244,7 +247,11 @@ export function validateTeacherTopicAnnouncementWrite({
       status: 403,
     };
   }
-  if (next.status !== undefined && next.status !== 'draft') {
+  if (
+    next.status !== undefined &&
+    (next.status !== 'draft' || existingStatus !== 'draft')
+  ) {
+    // Moving a queued (scheduled) topic back to draft would cancel its send.
     return { message: 'Teachers can only save topic drafts', status: 403 };
   }
   return null;

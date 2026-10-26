@@ -108,6 +108,16 @@ describe('create with teacher fields', () => {
     });
   });
 
+  it('stores a blank draft topic as NULL, never an empty string', async () => {
+    grant('manage_users');
+    for (const topic of [undefined, '', '   ']) {
+      const response = await create(topic === undefined ? {} : { topic });
+      expect(response.status).toBe(201);
+      const { data } = await response.json();
+      expect(row(data.id).topic).toBeNull();
+    }
+  });
+
   it('requires a topic when the announcement is not a draft', async () => {
     grant('manage_users');
     expect((await create({ status: 'queued' })).status).toBe(400);

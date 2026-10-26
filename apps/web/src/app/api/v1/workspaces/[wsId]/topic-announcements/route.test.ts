@@ -116,6 +116,8 @@ vi.mock(
       ),
       validateTopicAnnouncementAttachmentDraftObjects:
         mocks.validateTopicAnnouncementAttachmentDraftObjects,
+      normalizeTopicAnnouncementTopic: (topic?: string) =>
+        topic === undefined ? undefined : topic.trim() || null,
       validateTeacherTopicAnnouncementWrite: vi.fn(() => null),
       validateTopicAnnouncementGroupId: vi.fn(async () => null),
       validateTopicAnnouncementWorkspaceUserId: vi.fn(async () => null),
