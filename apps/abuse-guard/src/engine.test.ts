@@ -275,6 +275,19 @@ describe('res.reserve / res.refund', () => {
     });
   });
 
+  it('keeps the target window anchored after a refund to zero', () => {
+    const { run } = setup();
+    run(0, reserve('r1'));
+    expect(run(1000, refund('r1'))[0]).toEqual({ op: 'res.refund', n: 0 });
+    // The next attempt reuses the zero row's original expiry, unlike the Lua
+    // script's fresh window on 0 -> 1 (documented policy in the runbook).
+    run(600_000, reserve('r2'));
+    expect(run(600_000, { op: 'kv.ttl', k: K('target') })[0]).toEqual({
+      op: 'kv.ttl',
+      ttlMs: WINDOW - 600_000,
+    });
+  });
+
   it('never admits more reservations than the limit', () => {
     const { run } = setup();
     let admitted = 0;

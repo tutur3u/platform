@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import { AbuseGuardUnavailableError } from '../../abuse-guard/client';
+import {
+  AbuseGuardUnavailableError,
+  createAbuseGuardClient,
+} from '../../abuse-guard/client';
 import type { AbuseGuardSelection } from '../../abuse-guard/select';
 import {
   createPasswordAttemptLimiter,
@@ -141,6 +144,45 @@ describe('password attempts on the abuse-guard store', () => {
         () => ({ kind: 'legacy' })
       ).check(meetGuest)
     ).resolves.toEqual({ allowed: true });
+    warn.mockRestore();
+  });
+
+  it('fails closed on a malformed reply from a real client', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const client = createAbuseGuardClient({
+      family: 'password',
+      pepper: 'p'.repeat(40),
+      transport: async () => ({ v: 1, steps: [{ results: [] }] }),
+    });
+    await expect(
+      createPasswordAttemptLimiter(vi.fn(), () => ({
+        kind: 'durable-object',
+        client,
+      })).check(meetGuest)
+    ).resolves.toMatchObject({ allowed: false, retryAfter: 30 });
+    warn.mockRestore();
+  });
+
+  it('fails closed when the reply times out after the store committed', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let committed = 0;
+    const client = createAbuseGuardClient({
+      family: 'password',
+      pepper: 'p'.repeat(40),
+      transport: async () => {
+        // The reservation is spent remotely, but the caller never learns it.
+        committed += 1;
+        throw new AbuseGuardUnavailableError('timeout');
+      },
+    });
+    const result = await createPasswordAttemptLimiter(vi.fn(), () => ({
+      kind: 'durable-object',
+      client,
+    })).check(meetGuest);
+    expect(result).toMatchObject({ allowed: false, retryAfter: 30 });
+    // No refund handle: the unknown-outcome attempt stays counted.
+    expect('refund' in result).toBe(false);
+    expect(committed).toBe(1);
     warn.mockRestore();
   });
 

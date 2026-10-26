@@ -65,8 +65,15 @@ One RPC is limited to 16 steps (partitions), 8 commands per step, 32 commands,
 - Generic records, windows, clearance and replay fences get one partition per hashed
   subject key, so there is no hotspot and little storage per object.
 - Password, Meet guest and Nova reservations use one partition per limiter scope, so the
-  source and target budgets reserve atomically. Throughput is bounded by the caller,
-  which runs a password KDF for every admitted attempt.
+  source and target budgets reserve atomically. The KDF bounds only admitted
+  attempts. Every check, including one already denied, spends a `res.reserve`
+  command and writes a dedupe row; see the password activation hold.
+  The target window is anchored to its first reservation: after a successful
+  login refunds the target to zero, the next attempt keeps the existing expiry.
+  The legacy Lua script instead restarts a full window on that 0→1 increment.
+  The store keeps the anchored window, which can return a fresh target allowance
+  up to one window sooner after a refund. That is bounded and accepted, and it is
+  covered by an engine expiry test.
 - A sequential RPC runs its steps in order and skips the rest after the first denial.
   Callers do not rely on snapshot consistency across partitions.
 
@@ -109,9 +116,15 @@ binding to an unpublished Worker fails the Meet deploy. To activate it:
 2. Set the `ABUSE_GUARD_KEY_PEPPER` secret to the environment's pepper.
 3. Set `ABUSE_GUARD_FAMILIES=password`.
 
-To roll back, remove the family or the binding and redeploy Meet. With the
-binding present and a missing pepper, the assigned family reports `off` and fails
-closed.
+**Rollback is explicit unassignment:** remove `password` from
+`ABUSE_GUARD_FAMILIES`, or set `ABUSE_GUARD_BACKEND=upstash` to deliberately select
+the legacy store, then redeploy Meet. Removing only the binding does not roll back.
+Meet runs with `nodejs_compat`, so the selector still reads `ABUSE_GUARD_FAMILIES`
+from the Worker's variables. The family stays assigned and fails closed (`off`), or
+uses the HTTP store if one is configured. A missing or short pepper on an assigned
+family also reports `off`. Switching stores or peppers starts every password
+counter fresh. Drain the 15-minute window, by waiting it out after unassigning,
+before trusting limits on the new store.
 
 Every store failure throws `AbuseGuardUnavailableError`, and each caller applies
 the fail mode below. That includes a timeout, an auth or configuration error, an
@@ -203,7 +216,23 @@ families keep their legacy path.
    per-principal rate. A family budget stop then fails CLI refresh, app-token
    exchange and cross-app refresh closed for everyone until 07:00 GMT+7 (UTC
    midnight), or until an operator resumes.
-5. **Replay cutover:** fence keys consumed before cutover live only in the legacy
+5. **Password — HIGH activation hold (open finding PW-R1-DRAIN, not fixed):** do
+   not assign `password` until two things exist: per-source or per-principal
+   fairness before the shared family allowance is spent, and a bounded cache of
+   repeated denials. A scoped, authorized risk disposition under the security
+   rule is the only alternative. Each check spends a `res.reserve` command before
+   learning that its source or target is already blocked. The denial is not
+   refunded and still writes a dedupe row. At 5 rejected attempts per second,
+   one caller drains the default 100,000-command password share in about five
+   and a half hours. The family stop then refuses every unrelated Meet and Nova
+   password check until UTC midnight or an operator resumes. The worker test
+   "denied reservations still spend the password share" documents this.
+   Still owed before activation:
+   - real-store concurrent saturation through the wired callers;
+   - a hosted stop and resume;
+   - restart and unknown-outcome behavior;
+   - scope-partition capacity under bounded traffic.
+6. **Replay cutover:** fence keys consumed before cutover live only in the legacy
    store, and CLI refresh tokens live 90 days. Choose one:
    - **Read-through.** Stop every writer to the legacy fence keys first, so the
      legacy store is frozen. Keep `UPSTASH_REDIS_REST_*` configured and set
@@ -220,7 +249,7 @@ families keep their legacy path.
      which does not know fences recorded in the guard store. Either bump the
      generation on rollback, or keep the guard store readable until its tokens
      expire.
-6. Alerting is live (see Cost safety) and the operator stop has been exercised in
+7. Alerting is live (see Cost safety) and the operator stop has been exercised in
    staging.
 
 ## Cost safety
