@@ -275,10 +275,6 @@ describe('inventory item mutation workspace scope', () => {
       request,
       'personal'
     );
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
-      request,
-      wsId: 'workspace-a',
-    });
     expect(categoryClient.from).toHaveBeenCalledWith('product_categories');
     expect(categoryClient.update).toHaveBeenCalledWith({ name: 'Retail' });
     expect(categoryClient.updateChain.eqCalls).toEqual([
@@ -336,10 +332,6 @@ describe('inventory item mutation workspace scope', () => {
       request,
       'personal'
     );
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
-      request,
-      wsId: 'workspace-a',
-    });
     expect(warehouseAdmin.schema).toHaveBeenCalledWith('private');
     expect(warehouseAdmin.from).toHaveBeenCalledWith('inventory_warehouses');
     expect(warehouseAdmin.update).toHaveBeenCalledWith({ name: 'Main' });

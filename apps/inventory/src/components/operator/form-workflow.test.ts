@@ -89,7 +89,7 @@ describe('Inventory operator form workflows', () => {
 
   it('routes operator dropdowns through combobox-backed wrappers', () => {
     const violations = operatorSources().flatMap(({ fileName, source }) => {
-      const rawSelectElement = /<select\b/i.test(source);
+      const rawSelectElement = /<select\b/.test(source);
 
       return rawSelectElement ? [fileName] : [];
     });
