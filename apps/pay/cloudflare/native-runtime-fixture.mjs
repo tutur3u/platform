@@ -19,10 +19,7 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 export const app = await realpath(
   fileURLToPath(new URL('../', import.meta.url))
 );
-export const modes = [
-  { origin: 'https://pay.tuturuuu.com', base: '' },
-  { origin: 'https://pay-staging.tuturuuu.com', base: '' },
-];
+export const modes = [{ origin: 'https://pay-staging.tuturuuu.com', base: '' }];
 
 export async function payRuntime(t, options = {}) {
   assert.equal(process.env.CI, 'true', 'Requires an emitted native build');
@@ -75,6 +72,7 @@ export async function payRuntime(t, options = {}) {
       INTERNAL_WEB_API_ORIGIN: plain(fixtureOrigin),
       PAY_APP_URL: plain(options.payOrigin),
       POLAR_SANDBOX: plain('true'),
+      CRON_SECRET: { type: 'secret_text', value: secret },
       POLAR_ACCESS_TOKEN: {
         type: 'secret_text',
         value: 'fixture-sandbox-only',
