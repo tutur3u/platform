@@ -13,7 +13,7 @@ export function PrimaryDownload({
   return (
     <section
       aria-labelledby="primary-download-title"
-      className="flex min-h-72 min-w-0 flex-col rounded-3xl border border-border/70 bg-background/80 p-6 shadow-sm backdrop-blur-sm sm:p-8"
+      className="flex min-w-0 flex-col rounded-3xl border border-border/70 bg-background/80 p-6 shadow-sm backdrop-blur-sm sm:min-h-72 sm:p-8"
     >
       <p className="flex items-center gap-2 text-muted-foreground text-sm">
         <PlatformIcon

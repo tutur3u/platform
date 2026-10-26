@@ -18,9 +18,17 @@ export type MobileStoreListing = {
   kind: 'store' | 'beta';
 };
 
-// Stable listing derived from the package id, used when no policy is set.
-export const ANDROID_STORE_FALLBACK_URL =
-  'https://play.google.com/store/apps/details?id=com.tuturuuu.app.mobile';
+export const ANDROID_PACKAGE_ID = 'com.tuturuuu.app.mobile';
+
+// The Android app is in Google Play closed testing, where the public details
+// page 404s. Flip this only once the listing is public.
+export const ANDROID_PUBLICLY_LISTED = false;
+
+const ANDROID_PACKAGE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
+
+export function androidTestingUrl(packageId: string) {
+  return `https://play.google.com/apps/testing/${packageId}`;
+}
 
 export function detectPlatform(userAgent: string | null | undefined) {
   const ua = userAgent ?? '';
@@ -77,7 +85,8 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
 export function parseStoreListing(
   platform: 'ios' | 'android',
   url: string | null | undefined,
-  version: string | null | undefined
+  version: string | null | undefined,
+  { androidPubliclyListed = ANDROID_PUBLICLY_LISTED } = {}
 ): MobileStoreListing | null {
   if (!url) return null;
   let parsed: URL;
@@ -86,26 +95,46 @@ export function parseStoreListing(
   } catch {
     return null;
   }
-  if (parsed.protocol !== 'https:') return null;
-  const kind = storeKind(platform, parsed);
-  if (!kind) return null;
+  if (
+    parsed.protocol !== 'https:' ||
+    parsed.username ||
+    parsed.password ||
+    parsed.port
+  )
+    return null;
+  const listing =
+    platform === 'ios'
+      ? appleListing(parsed)
+      : googlePlayListing(parsed, androidPubliclyListed);
+  if (!listing) return null;
   return {
-    url: parsed.toString(),
+    ...listing,
     version: version && SEMVER.test(version) ? version : null,
-    kind,
   };
 }
 
-function storeKind(platform: 'ios' | 'android', url: URL) {
-  if (platform === 'ios') {
-    if (url.hostname === 'apps.apple.com') return 'store';
-    if (url.hostname === 'testflight.apple.com') return 'beta';
-    return null;
-  }
-  if (url.hostname !== 'play.google.com') return null;
-  if (url.pathname === '/store/apps/details') return 'store';
-  if (url.pathname.startsWith('/apps/testing')) return 'beta';
+function appleListing(url: URL) {
+  if (url.hostname === 'apps.apple.com')
+    return { url: url.toString(), kind: 'store' as const };
+  if (url.hostname === 'testflight.apple.com')
+    return { url: url.toString(), kind: 'beta' as const };
   return null;
+}
+
+// Rebuild Play links from a validated package id instead of echoing input.
+function googlePlayListing(url: URL, publiclyListed: boolean) {
+  if (url.hostname !== 'play.google.com') return null;
+  const packageId =
+    url.pathname === '/store/apps/details'
+      ? url.searchParams.get('id')
+      : url.pathname.match(/^\/apps\/testing\/([^/]+)\/?$/)?.[1];
+  if (!packageId || !ANDROID_PACKAGE.test(packageId)) return null;
+  return publiclyListed
+    ? {
+        url: `https://play.google.com/store/apps/details?id=${packageId}`,
+        kind: 'store' as const,
+      }
+    : { url: androidTestingUrl(packageId), kind: 'beta' as const };
 }
 
 // desktop-v0.26.0-40215487156 -> 0.26.0 (the suffix is the CI run id).

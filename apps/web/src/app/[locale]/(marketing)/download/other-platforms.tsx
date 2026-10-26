@@ -1,6 +1,7 @@
 import { ActionLink } from './action-link';
 import type { DownloadLabels, DownloadOption } from './download-option';
 import { PlatformIcon } from './platform-icon';
+import { RowDetails } from './row-details';
 
 export function OtherPlatforms({
   options,
@@ -21,7 +22,7 @@ export function OtherPlatforms({
         {options.map((option) => (
           <li
             key={option.platform}
-            className="flex min-h-16 items-center gap-4 px-4 py-3 sm:px-5"
+            className="flex min-h-16 items-start gap-4 px-4 py-3 sm:items-center sm:px-5"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
               <PlatformIcon platform={option.platform} className="size-4" />
@@ -31,6 +32,7 @@ export function OtherPlatforms({
               <p className="text-muted-foreground text-xs">
                 {option.meta.join(' · ')}
               </p>
+              <RowDetails option={option} labels={labels} />
             </div>
             {option.action && (
               <ActionLink

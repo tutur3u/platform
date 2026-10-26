@@ -26,6 +26,7 @@ export type DownloadLabels = {
   recommended: string;
   others: string;
   checksum: string;
+  details: string;
   newTab: string;
   qrTitle: string;
   qrDescription: string;

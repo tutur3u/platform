@@ -6791,6 +6791,7 @@
     "checksum": "SHA-256 checksum",
     "coming_soon": "Coming soon",
     "description": "Beta apps for your phone, tablet, and computer. Your workspace stays in sync everywhere.",
+    "details": "Install details",
     "download": "Download",
     "download_for": "Download for {platform}",
     "invite_only": "Invitation only",

@@ -14,11 +14,18 @@ the client), and lists every other platform compactly. Desktop visitors also
 get a QR code to the same page, which then leads with their phone's store. A
 desktop OS without a published package falls back to opening the web app.
 Versions are never guessed: desktop versions and checksums come from the cached
-GitHub Releases parse, and mobile store links and versions come from the
-`MOBILE_*_STORE_URL` and `MOBILE_*_EFFECTIVE_VERSION` root workspace configs
-(only `apps.apple.com`, `testflight.apple.com` and `play.google.com` links are
-accepted). Without a policy, Android shows its Play listing without a version
-and iOS offers an early-access request. Platform rules are covered by
+GitHub Releases parse, and mobile store links come from the
+`MOBILE_*_STORE_URL` root workspace configs. The mobile version shown is the
+policy's `MOBILE_*_EFFECTIVE_VERSION`, not a store lookup. Only HTTPS
+`apps.apple.com`, `testflight.apple.com` and `play.google.com` links without
+credentials or ports are accepted. Play links are rebuilt from the validated
+package id; while the Android app is in closed testing
+(`ANDROID_PUBLICLY_LISTED` in `apps/web/src/lib/download-platform.ts`), they
+point at the `play.google.com/apps/testing/<package>` opt-in page because the
+public details page returns 404. Without a policy, Android shows that testing
+link without a version and iOS offers an early-access request. Desktop rows
+keep the checksum, release notes and Windows SmartScreen note in a collapsed
+details section. Platform rules are covered by
 `apps/web/src/lib/download-platform.test.ts`.
 
 ## Release workflow

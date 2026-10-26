@@ -6791,6 +6791,7 @@
     "checksum": "Mã kiểm tra SHA-256",
     "coming_soon": "Sắp ra mắt",
     "description": "Ứng dụng beta cho điện thoại, máy tính bảng và máy tính. Không gian làm việc luôn được đồng bộ ở mọi nơi.",
+    "details": "Chi tiết cài đặt",
     "download": "Tải xuống",
     "download_for": "Tải xuống cho {platform}",
     "invite_only": "Chỉ dành cho người được mời",
@@ -6809,7 +6810,7 @@
       "name": "macOS",
       "requirements": "macOS 12 trở lên · Apple silicon và Intel"
     },
-    "mobile_invite": "Bản beta có thể yêu cầu lời mời. Hãy dùng tài khoản Apple hoặc Google bạn đã đăng ký truy cập sớm.",
+    "mobile_invite": "Bản beta có thể cần lời mời. Hãy dùng tài khoản Apple hoặc Google bạn đã đăng ký truy cập sớm.",
     "navigation_description": "Ứng dụng cho Windows, macOS và Linux",
     "opens_new_tab": "(mở trong thẻ mới)",
     "other_title": "Nền tảng khác",

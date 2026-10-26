@@ -44,7 +44,7 @@ describe('download platform detection', () => {
 });
 
 describe('store listings', () => {
-  it('accepts first-party store hosts and real versions only', () => {
+  it('accepts first-party Apple hosts and real versions only', () => {
     expect(
       parseStoreListing(
         'ios',
@@ -57,19 +57,49 @@ describe('store listings', () => {
       kind: 'beta',
     });
     expect(
+      parseStoreListing('ios', 'https://apps.apple.com/app/id1', 'latest')
+    ).toMatchObject({ kind: 'store', version: null });
+    expect(parseStoreListing('ios', 'not a url', null)).toBe(null);
+  });
+
+  it('sends Android to closed testing until the listing is public', () => {
+    const details =
+      'https://play.google.com/store/apps/details?id=com.tuturuuu.app.mobile';
+    expect(parseStoreListing('android', details, '0.22.4')).toEqual({
+      url: 'https://play.google.com/apps/testing/com.tuturuuu.app.mobile',
+      version: '0.22.4',
+      kind: 'beta',
+    });
+    expect(
+      parseStoreListing('android', details, null, {
+        androidPubliclyListed: true,
+      })
+    ).toMatchObject({ url: details, kind: 'store' });
+    expect(
       parseStoreListing(
         'android',
-        'https://play.google.com/store/apps/details?id=com.tuturuuu.app.mobile',
-        'latest'
-      )
-    ).toMatchObject({ kind: 'store', version: null });
-    expect(parseStoreListing('ios', 'https://evil.example/app', '1.0.0')).toBe(
-      null
-    );
-    expect(parseStoreListing('android', 'http://play.google.com/x', null)).toBe(
-      null
-    );
-    expect(parseStoreListing('ios', 'not a url', null)).toBe(null);
+        'https://play.google.com/apps/testing/com.tuturuuu.app.mobile',
+        null
+      )?.url
+    ).toBe('https://play.google.com/apps/testing/com.tuturuuu.app.mobile');
+  });
+
+  it.each([
+    ['ios', 'https://user:pass@apps.apple.com/app/id1'],
+    ['ios', 'https://apps.apple.com@evil.example/app/id1'],
+    ['ios', 'https://apps.apple.com:8443/app/id1'],
+    ['ios', 'https://apps.apple.com.evil.example/app/id1'],
+    // Cyrillic lookalikes (IDN) punycode to a different hostname.
+    ['ios', 'https://\u0430pps.apple.com/app/id1'],
+    ['ios', 'https://evil.example/app'],
+    ['android', 'http://play.google.com/apps/testing/com.tuturuuu.app.mobile'],
+    ['android', 'https://play.google.com:444/apps/testing/com.example.app'],
+    ['android', 'https://pl\u0430y.google.com/apps/testing/com.example.app'],
+    ['android', 'https://play.google.com/store/apps/details?id=bad id'],
+    ['android', 'https://play.google.com/store/apps/details'],
+    ['android', 'https://play.google.com/store/search?q=tuturuuu'],
+  ] as const)('rejects %s link %s', (platform, url) => {
+    expect(parseStoreListing(platform, url, '1.0.0')).toBe(null);
   });
 
   it('drops the CI run suffix from desktop tags', () => {

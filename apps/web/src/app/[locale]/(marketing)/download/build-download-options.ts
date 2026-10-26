@@ -20,6 +20,7 @@ export async function buildDownloadContent(
     recommended: t('recommended'),
     others: t('other_title'),
     checksum: t('checksum'),
+    details: t('details'),
     newTab: t('opens_new_tab'),
     qrTitle: t('qr.title'),
     qrDescription: t('qr.description'),

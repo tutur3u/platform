@@ -1,7 +1,8 @@
 import 'server-only';
 import { cacheLife } from 'next/cache';
 import {
-  ANDROID_STORE_FALLBACK_URL,
+  ANDROID_PACKAGE_ID,
+  androidTestingUrl,
   type MobileStoreListing,
   parseStoreListing,
 } from './download-platform';
@@ -14,7 +15,8 @@ export type MobileStoreListings = {
 
 // The mobile version policy (root workspace config) is the source of truth for
 // store links and the current release. A missing policy shows the store link
-// without a version rather than a guessed one.
+// without a version rather than a guessed one. The version shown is the
+// policy's effective version.
 export async function getMobileStoreListings(): Promise<MobileStoreListings> {
   'use cache';
   cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
@@ -35,6 +37,10 @@ export async function getMobileStoreListings(): Promise<MobileStoreListings> {
       'android',
       policies?.android.storeUrl,
       policies?.android.effectiveVersion
-    ) ?? { url: ANDROID_STORE_FALLBACK_URL, version: null, kind: 'store' },
+    ) ?? {
+      url: androidTestingUrl(ANDROID_PACKAGE_ID),
+      version: null,
+      kind: 'beta',
+    },
   };
 }

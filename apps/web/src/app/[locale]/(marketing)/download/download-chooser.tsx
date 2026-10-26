@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useSyncExternalStore } from 'react';
 import {
   DOWNLOAD_PLATFORMS,
@@ -9,9 +10,18 @@ import {
   resolvePrimaryPlatform,
 } from '@/lib/download-platform';
 import type { DownloadLabels, DownloadOption } from './download-option';
-import { MobileQr } from './mobile-qr';
 import { OtherPlatforms } from './other-platforms';
 import { PrimaryDownload } from './primary-download';
+
+// Mobile visitors never see the QR code, so they never load its library.
+const MobileQr = dynamic(
+  () => import('./mobile-qr').then((mod) => mod.MobileQr),
+  {
+    loading: () => (
+      <div className="h-64 rounded-3xl border border-border/70 bg-background/80" />
+    ),
+  }
+);
 
 const subscribe = () => () => {};
 
